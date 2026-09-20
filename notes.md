@@ -33048,3 +33048,15 @@ psiI∈W0 無条件 = Subst1 の証明 = 真に新しいアイデア（整礎な
 
 **通算 9 角度が Subst1 に底打ち**（WCat/DM-QS/bump-Aok/平坦→対角/2行port/Lift1強Aop/translate帰納/大u弱化/特定インスタンス）。
 Subst1 の既約性は確定。真の前進 = 整礎 Lift1 置換測度（新順序数解析）= ユーザーの熟慮研究。
+
+## 追記758: 再検証 — C4f⟸Subst1 は一方向だが直接路は無い。族は Dzf インスタンスでない (2026-09-21)
+
+（coordinator が「Subst1 は十分条件に過ぎず、族が Subst1 を必要とするとは限らない」可能性を再検証。Fitcat が row1 で誤ったため。）
+
+- `C4_mem_of_subst1 : Subst1 → C4f∈W0` は**一方向**（Subst1 で十分）。「C4f が一般 Subst1 を必要とする」ではない。
+  ∴ 特定族 (0,0,0)::Rc4^n の直接証明（非 Subst1）が有り得るか再検証した。
+- `Dzf_W_root : GoodF J → ∀n Dzf J 0 0 n∈W0`（一般、緑）。だが `Dzf J a b n = flatMap k:(a+k,b+k,0)::J(a+k)(b+k)` は
+  **本質的に成長記録 (a+k,b+k,0) を持つ（対角）**。族は記録なし・row0 リセットの**平坦**。∴ **族は Dzf インスタンスでない**。
+  flat-Dzf（b 固定）変種も無い。二重頭（Rc4=(1,1,1)(2,1,1)(3,1,0)）は Jz1c（単一頭）と arity も違う。
+- 族の oper は smaller族 + 二重頭尾 or 対角様の混在で、clean な induction（各 oper が対角∈W0 か smaller族）にならない。level-consistency の壁も残る。
+- **結論**: 一方向でも、現機構で非 Subst1 の直接路は構成できない。族は Dzf に載らず、対角機構が効かない。Subst1 の既約性は変わらず（12 角度目）。
