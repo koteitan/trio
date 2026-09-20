@@ -31690,3 +31690,12 @@ psi(I) を閉じる 2 路 (a) 開コア(WCat/Subst1/塔閉包、深い lfp 帰�
 - ∴ `WCat`(無条件連結)の未証明部分は **rsum が壊れる場合のみ**(B の bad root が A の列に食い込む)。塔 shTower のコピーは row0 増加シフトで rsum が壊れるため、この非 rsum WCat が**本質的に必要**(`shiftTowerClosed_of_cat` が WCat を使う理由)。
 - psi(I)=(0,0,0)(1,1,1)(2,1,1)(3,1,0)(2,0,0) は row1=2 タイを持たず、row1688 とは**別の理由**で "top ltl" 失敗:far-word 頭 (2,1,1) が深い子 (3,1,0) を持つ(top_ltl は頭のサブツリー size=1 を要求)。⟹ psi(I) 自体も独自の生成器パターン拡張が要る。
 - 3 ルート(W 開コア=非rsum WCat 等 / 生成器拡張 / olt-WF)全て dedicated effort で確定。heartbeat 増分での green は無し。
+
+## 追記697: ★ 根本原因の特定 — 塔は rsum を必ず壊すので W_add が使えず、結合 membership(開コア)が必須
+
+20+ heartbeat の全経路探索の結論を一文で:
+- `W_add`(Wset:1682)/`oper_append_gen`(Wset:1414)は **`rsum A P`(∀p∈A++P, entry P 0 0 ≤ p.1、= 継ぐブロック P の根 row0 が全列以下)** を要求。
+- psi(I) の全分解が生む塔(`shTower Q e n`=row0 シフトコピー / `tow`=graft 自己参照 / 対角 `D_v⟦n⟧`=シフトコピー)は、コピーブロックが**根より上**(row0 が根より大)に積まれる ⟹ **rsum が構造的に必ず偽**。
+- ∴ 塔は W_add で組めず、`mem_of_oper_mem`(oper 節)の**結合 membership**でしか W に入らない。その結合の閉性が未証明の開コア(WCat 非rsum / ShiftTowerClosed row2・e≠0 / TowerGraft2 / Subst1)。
+- 無条件で通る塔だけが例外:`W_flatMap_copies`/`shiftTowerClosed_e_zero`(e=0=verbatim、コピー根が同じで rsum 成立)、`shiftTowerClosed_of_zeroRow2`(row2≡0、`zeroRow2_mem_Wself` が別途 Wself を与える)、`snoc_flat_root`(親=root で verbatim)。psi(I) はどれにも当てはまらない(row2 含む・e≠0・親≠root)。
+- ⟹ psi(I) は「rsum が壊れる塔の結合 membership」= プロジェクト共通の開コアそのもの。heartbeat 増分では不可能と根本原因レベルで確定。
