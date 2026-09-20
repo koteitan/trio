@@ -32054,3 +32054,23 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
 **戦略オプション**: gt_trc4 は universal GT（任意 L に append）だが、Cpsi は Trc4 を Trc4-list にしか
   append しない。∴ Cpsi を GTC-文脈閉包（GLctx 版）に緩め、wordsG_replicate/starOK_wordsG を
   rewire すれば、既存 deep-tie 機構の文脈制限に合致し universal GT を回避できる。
+
+## 追記724: ★★ 訂正 — Trc4 ≠ wLT 0 p（WltCheck の marker 壁）。upleaf_deep_core は marker-free エンジンなので直接使う
+
+（coordinator 訂正。追記723 の GLctx/R_pm3 経路は marker 世界で Trc4 に不適。）
+
+**marker 壁（WltCheck.lean, green）**: FTL0 r Lds = (1,r,1)::Lds.flatMap(fun Ld => (1,r,0)::shiftr01 1 0 Ld)。
+  ∴ FTL0 1 Lds は [] なら [(1,1,1)]、非空なら必ず (1,1,0) marker を含む。
+  → **Trc4 = (1,1,1)(2,1,0)（marker-free）≠ wLT 0 p（任意 p）**。GLctx/R_pm3 は marker 世界で Trc4 に不適。
+  Cpsi の GLctx 緩和は marker 壁に戻る（追記723 の戦略オプションは棄却）。
+
+**正しい統合**: marker は wLT/FTL0 の letter 定義のみ。**upleaf_deep_core（HeQ:83）自体は R 任意の
+  marker-free GpT 再帰エンジン**: GpT (Pre ++ Yp ++ shiftr01 d 0 (shiftr01 1 0 ((0,q,0)::R)))
+  を hrep（∀m'≥1 の自己相似塔）から出す。
+  → **wLT/GLctx ラッパーを飛ばし、upleaf_deep_core を marker-free Trc4 構造へ直接適用**。
+  Pre=P（rword 接頭辞）、Yp=頭部 (1,u+1,1)(2,u+1,1)、R=内側 content、hrep=oper 自己相似
+  （farhead_base_oper / oper_zcone_succ 塔）。GpT→Wg 橋（GPF via ∧Fr、or Wstarv/A1g）。
+  Trc4 の描画末尾 (3,u+1,0) が根への graft = upleaf_deep_core の (0,q,0)::R graft 塔そのもの。
+
+**現状**: 残余 = GT 0 Trc4（Gtrc4test の 1 sorry）。fork は marker-free RFbase/Wrap 経路を維持し
+  upleaf_deep_core を塔エンジンとして graft に差す方針。
