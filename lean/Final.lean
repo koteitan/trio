@@ -935,4 +935,19 @@ theorem no_infinite_expansion_of_diag
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_climb (climbAll_of_diag hd)
 
+/-! ### 対角生成元の基底 `v ≤ 1`(無条件、|R| ≤ 1 の row-2 塔基底)
+
+`v = 0`: `diagSeqT 0 0 = [(0,0,0)]` は `singleton_mem_W`。
+`v = 1`: `diagSeqT 0 1 = [(0,0,0),(1,1,1)]` は `two_col_mem_W`(根 (0,0,0) の二列は
+展開が `diagz`(単一列コピー塔)= pair 定理で `W 0`)。
+`v ≥ 2` は多列コピー塔(row 2 = 1 を含む)= open core(課題 L50)。 -/
+
+/-- 対角生成元の基底: `v ≤ 1` は無条件で `W 0`。 -/
+theorem diagSeqT_mem_W_of_le1 {v : ℕ} (hv : v ≤ 1) : diagSeqT 0 v ∈ Wset.W 0 := by
+  obtain rfl | rfl : v = 0 ∨ v = 1 := by omega
+  · have h : diagSeqT 0 0 = [((0, 0, 0) : ℕ × ℕ × ℕ)] := by decide
+    rw [h]; exact singleton_mem_W (by omega)
+  · have h : diagSeqT 0 1 = [((0, 0, 0) : ℕ × ℕ × ℕ), ((1, 1, 1) : ℕ × ℕ × ℕ)] := by decide
+    rw [h]; exact two_col_mem_W (by omega) (by omega) ((1, 1, 1) : ℕ × ℕ × ℕ)
+
 end TRIO
