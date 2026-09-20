@@ -32165,3 +32165,30 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
 - Trc4 家系（replicate n Trc4）は構造化されているので context 化はできるが、Trc4 の遠い語頭+子を塔内容の GpT にする = R_farword（元の gap）に戻る。
 
 **次の正しい方向**: R_farword（遠い語頭+PVF/GPF内容の GpT constructor）を GyK 世界で作り、tower_GPF 型で Trc4 家系の塔内容を GpT にして WordsG letter → BwT_append_words。marker-free だが GpT 世界。upleaf_deep_coreD が graft(深いタイ)側のエンジン。
+
+## 追記727: ★★★ Wrap は FALSE（素の遠い語頭 ∉ Wg）。genuine path = Trc4-族文脈の childLoad-analog（R_farword）
+
+（fork 検証 + coordinator 精緻化。私の Wrap-直接証明 steering は誤りだった。）
+
+**Wrap は FALSE（fork が Aopg 3ケースで確認, Gw:24-28）**:
+  [(1,w+1,1)] ∉ Wg。short は lev=0 要求（実 2w+3）、natDom 失敗、**graft は entry M 2 last =0 要求だが頭は row2=1**。
+  ∴ Wg は row2=0 でのみ graft、素の遠い語頭は根なしでは Wg に入らない。
+  → RFbase.farhead_base_oper（Wrap 仮定）は green だが vacuous。hangv 路は fundamentally dead。
+  （注: Lean の oper は length=1 で恒等 `if j1=0 then M`。モデル trio.py は [] を返す。差異注意。
+   ∴ mem_of_oper_mem も素の頭に使えない。）
+
+**positive（fork commit, RFarword green ×8）**:
+- Trc4_eq_childLoad: **Trc4 = (1,0+1,1)::shiftr01 2 0 [(0,1,0)] = childLoad 0 [(0,1,0)] の content**。
+- load_Trc4_mem/based: **[(0,1,0)] = Om ∈ Wg 2, based**（Om_mem_Wg 1）。
+- ∴ childLoad 0 [(0,1,0)] : GTC CQ 0 Trc4（childLoad 完成後）。
+
+**genuine path（R_farword）**:
+- GTC C v K := ∀L, C v L → BwT v L → BwT v (L++[K])。GTC_oper は文脈非依存。CQ = wT/fwTop 語（Trc4 非該当）。
+- Cpsi の族は Trc4-list 文脈で CQ でない（marker 壁）。∴ **Trc4-族文脈 C_fam での childLoad-analog** が必要 = R_farword。
+- Trc4 は Y=[(0,1,0)]（length 1）→ childLoad の **short case**（line 38-39 sorry）。
+  (2,1,0) は row1=1=v+1 で根に高 graft → deep-tie（upleaf_deep_coreD）。
+- 塔は接頭辞を oper に焼く（oper_zcone が P' 複写）ので構造化文脈必須。族接頭辞 Rc4^k は構造化済み。
+
+**次の一手**: (1) childLoad の short case を upleaf_deep_coreD で埋め GTC CQ 0 Trc4 完成（deep-tie 機構実証）。
+  (2) C_fam（Trc4-族文脈）版 childLoad-analog を構築（base は BwT_farword 系、graft は upleaf_deep_coreD）
+  → Cpsi を C_fam-GTC に緩和。
