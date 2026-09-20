@@ -73,11 +73,17 @@ theorem GpT_snocz_content {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA
       shiftr01 1 0 (V k ++ ((1, u' + k + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (Vy k))
       = shiftr01 1 0 U0 := by rw [hU0]; simp [shiftr01]
   rw [eU]
-  -- GREEN to here: goal = R F u' (X ++ shiftr01 1 0 U0),
-  --   U0 = (0,u'+k,0)::(V k ++ head::shiftr01 1 0 (Vy k))  [Y woven at the leaf, matches GpT_snocz_core's U0 + content].
-  -- Remaining: apply (hR F).1.oper then the tower claim. BUT U0's last col is now Y's (Vy k), not the head,
-  --   so the oper is Y-GOVERNED (via hY/RLC), not the bare far-word head tower (oper_zcone). This is the deep weave.
-  sorry
+  have hlen : 2 ≤ U0.length := by rw [hU0]; simp; omega
+  refine (hR F).1.oper u' X (shiftr01 1 0 U0) hX (Fr_shift1 U0)
+    (fun _ => by rw [entry0_shiftr01 (by rw [hU0]; simp), hU0]; rfl)
+    (by rw [shiftr01_length]; exact hlen) ?_ (fun m hm => ?_)
+  · -- hasParent: U0 の最後の列（Vy k の末尾 tie）の親は根 (0,u'+k,0)。
+    -- モデル: (0,u,0)(1,u+1,1)(2,u+1,0) の bad root の親 = col 0（根）。
+    sorry
+  · -- oper reduction: (shiftr01 1 0 U0)⟦m⟧ を計算 → 内容 tie が graft し (根,遠い語頭) を複写する
+    -- 塔（bare-head far-word tower）になる（モデル検証済み）。この塔は GpT_snocz_core の機構で閉じる。
+    -- 残余 = 内容 oper 補題 (0,u,0)(1,u+1,1)(2,u+1,0)⟦m⟧ = flatMap k<m [(2k,u,0),(2k+1,u+1,1)]。
+    sorry
 
 /-- RLC の段シフト（o → o+t、Y → mlift Y u t）。wrapper が o+t で GpT_snocz_content を使うため。 -/
 theorem RLC_levelshift {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) {f : ℕ → ℕ} {b : ℕ} {Y : TrioSeq}

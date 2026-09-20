@@ -32544,3 +32544,30 @@ LC1_farword はこれらを RLC content 内に nested で持ち込む（LC1 の 
   → PVP_snoc_gen(wrapper green) → GpT_snocz_content（opening/setup/oper点 green、残り claim = bare-head 塔）。
 
 **次**: fork が claim を bare-head 塔で discharge。green → 最終目標。
+
+## 追記740: ★ GpT_snocz_content の残り2 goal を (hR F).1.oper で切り出し（Hd/length green）。モデルで内容 oper を検証
+
+（GpT_snocz_content の setup 後 goal `R F u' (X ++ shiftr01 1 0 U0)` に (hR F).1.oper を適用。
+U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
+
+**green 化した部品**: Hd(shiftr01 1 0 U0)、length。残り2 goal:
+1. `hasParent (shiftr01 1 0 U0) (srow ...) (len-1)` — U0 の末尾列（Vy k の tie）の親。
+2. `R F u' (X ++ (shiftr01 1 0 U0)⟦m⟧)` — 内容 oper の還元。
+
+**★ モデル検証（tools/trio.py, expand）**: 根+遠い語頭+tie の oper =
+  `(0,u,0)(1,u+1,1)(2,u+1,0)⟦m⟧ = flatMap k<m [(2k,u,0),(2k+1,u+1,1)]`
+  （u=0,1,2 で確認）。bad root の親 = col 0（根）。∴:
+  - **内容 tie は根を親として graft し、(根, 遠い語頭) を複写する** → **bare-head far-word tower** になる。
+  - 末端 Y=Om（Trc4）なら複写は bare head のみ → GpT_snocz_core / farword_Wg の機構で閉じる。
+  - 一般 Y なら複写は (根,遠い語頭,内容 Y) で、Y は hY(RLC=SlotAx, RLC_ax GyI:68)で再帰的に discharge。
+  - hasParent は tie でも根が親なので成立（oper 終わりの Y なら Vy 内部が親）→ **両場合で成立**。
+
+**確定した frontier 補題**: 内容 oper 補題
+  `(0,u,0)::(P ++ (h,u+1,1)::shiftr01 1 0 C))⟦m⟧ = <(根,頭,C) 自己相似塔>`（oper_zcone GxV:28 の内容版、未証明）。
+  oper_zcone/oper_zcone_succ は bare-head 専用（頭が末尾列）で内容版が無い。L53.oper_unfold で証明可能。
+
+**RLC_levelshift/PVP_snoc_gen は 追記738 で偽/誤り確定**（∀t-wrapper 分解は不可、単一塔で Y carry）。
+  RFsnoc の RLC_levelshift(sorry)と PVP_snoc_gen(それに依存)は dead。core = GpT_snocz_content 単独。
+
+**次**: 内容 oper 補題を証明（bare-head 版 oper_zcone の内容拡張）→ hasParent → claim 塔（Y を hY で carry）
+  → GpT_snocz_content green → LC1_farword → 目標。
