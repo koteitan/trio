@@ -32251,3 +32251,24 @@ upleaf_deep_coreD(HeQ:108) が graft(深いタイ)エンジン。次: R_farword 
   ch-Z の荷は shiftr01 2 0 Z = fwU の some Z 荷形なので FarCU/fwU 隣接の marker-free 路がある見込み。
 
 **Cpsi 還元は model で再確認済み**: psiI⟦n⟧ = (0,0,0)::Rc4^n, Rc4=(1,1,1)(2,1,1)(3,1,0)。基盤堅実。
+
+## 追記730: ★★★ marker-free 橋 PVF_farWAt(HdH:310)発見。HeJ が far-word-head-with-content letter を marker-free に構築済み
+
+（fork が ch-Z redirect から発見。marker 壁の解消機構。）
+
+**PVF_farWAt（HdH:310）**: GoodChtX → PVF の **marker-free** 橋（wLT を通らない、GpT/PVP world）。
+  PVF_farWAt (OkWsAt ...) : PVF A0 o b (farWt b (b+o+1) ws)。
+
+**HeJ（R1654-R1658, green シート行）= template**:
+  TF_tieG (TF_nil) (GF_of_GPF (GPF_of_PVF (PVF_farWAt (OkWsAt_cons
+    (GoodChtX_snocT (GoodChtX_nil) (TreeOKs_cons_up ...)) ...))))
+  → WordsG_consT → starOK_N2 → Wg。
+  = **far-word-head-with-content の good letter を marker-free に構築**（既存機構、GoodChtX_snocT で木葉、
+    PVF_farWAt で GpT へ、TF_tieG で tie letter に）。
+
+**注意（要解決）**: HeJ の letter は TF_tieG 由来で (1,u+1,0) tie marker 始まり。Cpsi の Trc4 letter は
+  (1,1,1) far-word-head 始まり（marker-free）。letter 構造が違う可能性 → fork が HeJ を childLoad/Trc4 に
+  どう適用するか（childLoad の content を PVF_farWAt/GoodChtX で構築 → GTC）を精査中。
+
+**次**: fork が PVF_farWAt/HeJ を childLoad の sorry 閉じに適用中。childLoad green → gtc_trc4 green
+  → GTC CQ 0 Trc4 → STEP 2（族橋）→ Cpsi → 最終目標。
