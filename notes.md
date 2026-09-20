@@ -32297,3 +32297,30 @@ upleaf_deep_coreD(HeQ:108) が graft(深いタイ)エンジン。次: R_farword 
 
 **次**: R_farword（marker-free 同レベル子構成子）を新規構築 or 直接 oper ルート（二重頭列）を探索。
   fork の判断に委ねる（coordinator の route prescription は Wrap/ch-Z で誤った前例あり、事実のみ提供）。
+
+## 追記732: direct-oper(b)は族を閉じない(oper 再帰)。R_farword = marker-free RLF_child 変種が確定的 target
+
+（coordinator。route(b) 検証で棄却。shortcut は Wrap/ch-Z/direct-oper と 3 度外れ、R_farword が不可避と確定。）
+
+**route(b) 棄却（model）**: (0,0,0)::Rc4^m ⟦n⟧ は最初の m-1 ブロック保持、最後だけ展開。
+  ∴ mem_of_oper_mem は族に再帰、帰納ステップ = append Rc4 to Rc4^m = GT 0 Trc4（族文脈）に戻る。
+  → uniform GT 0 Trc4（or 族文脈 GTC）が不可避。
+
+**R_farword の確定形 = marker-free RLF_child 変種**:
+  RLF_child（GyK:126）: RLF A o b (K ++ (1,b+τ,0)::shiftr01 1 0 L)  ← (1,b+τ,0) は row2=0 marker。
+  R_farword: RLF A o b (K ++ (1,b+?,1)::shiftr01 1 0 L)  ← (1,b+?,1) は row2=1 遠い語頭（marker なし）、
+    L は同レベル GPF/Wg 子。
+  **crux**: RLF_child の soundness（R_child + CtxP_RLC + GC_slot/GpT）が row2=1 頭 node で通るか。
+  marker（row2=0）の役割は parent-anchoring。row2=1 頭は bad root で anchor 方式が違う。
+  → R_child/GC_slot が row2=1 頭で通るかが正確な検証点。
+
+**確定した障害マップ**（全て検証済み）:
+  - Wrap（素頭∈Wg）: FALSE。
+  - wLT/ch-Z/farWt/FTLt: (1,r,0) marker 挿入。
+  - RLF_load: marker-free だが荷が頭より下。
+  - RLF_child: (1,b+τ,0) marker。
+  - direct-oper: 族に再帰。
+  → 残る唯一 = R_farword（marker-free RLF_child 変種）を新規構築。
+
+**次**: fork が R_farword（RLF_child 変種の row2=1 頭 soundness）を構築。coordinator は route prescription を停止、
+  事実のみ提供。fork が具体的失敗ステップを報告 → そこを支援。
