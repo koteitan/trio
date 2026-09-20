@@ -31652,3 +31652,13 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - ガード世界の `Gw.Wstarg_closed`(Gw:289)は**無条件で塔を閉じる**。実際 GwS〜GwZ は srow=2 塔(R379 の (4,2,1) 等)を Wg 0/W 0 に構成済み。
 - D_v は natDom(追記691)⟹ ガード oper 分岐可。汎用エンジン `Bw l := ∀v≥1 rword 0 v l ∈ Wstarv v`(GwU:353)+ `Bw_snoc_mem`(Bw l→T∈Wg2→Bw(l++[T]))+ `content_mem`(Bw l→(1,1,0)::rword 1 1 l∈Wg 2)+ `W0_of_starOK`(GxL)。
 - **plan**: `diagSeqT 0 v ∈ Wg 0` を、対角線 tail T_v=[(1,1,1)..(v,v,1)] の `Bw`/words 分解の v 帰納で示す ⟹ `Wg0_sub_W0` で W 0。各 (k,k,1) は shiftr01 で持ち上げた小対角線(some Z unit)として words に入るはず。次 heartbeat はここから。
+
+## 追記693: psi(I)=G=(0,0,0)(1,1,1)(2,1,1)(3,1,0)(2,0,0) の構造偵察 — 現機構の frontier 外(row 4784)
+
+ハートビート目標 G の具体攻略を偵察:
+- **G = to-psi-I.tsv の row 4784、ラベル psi(I)**(まさに最終目標)。展開 G[n] = (0,0,0)(1,1,1)(2,1,1)(3,1,0) ++ [(1,1,1)(2,1,1)(3,1,0)]×n(**一様コピー、シフト無し**)。最終列 (2,0,0) srow=0 だが **parent = col 1(root でない)** ⟹ `snoc_flat_root`(parent=root 必須)は効かない。
+- 部分形 **C3 = (0,0,0)(1,1,1)(2,1,1) ∈ W 0 は証明済み**(`GzD.R1317_mem`、`W0_of_starOK (starOK_farwords …)`)。
+- チェーン G→C4→C3 は中間段が未証明: C4=(0,0,0)(1,1,1)(2,1,1)(3,1,0)(srow=1、parent=root、C4⟦n⟧=tow 0 0 R n = row0 シフト C3 のコピー塔)、G(srow=0 非 root snoc)。`oper_cons_tower1` は展開等式のみで membership 補題なし。flat W_add は rsum(コピー根 ≤ 全列)で不可(根 (0,0,0) が下)。
+- 自動生成器 `tools/gen_gyk.py` の `tree(G,0)` / `tree(C4,0)` は "top ltl" で失敗(8 個の top_* ハンドラ全滅)。C3 は成功。⟹ G/C4 は**新しい構造ハンドラが必要**。現 climb frontier は ~row1531(HbL)で、row 4784 は遥か先。
+
+∴ psi(I) は現機構では heartbeat 増分で閉じない。2 つの実路: (a) 一般対角線(私の還元、全形を一括、開コア)、(b) 生成器の段階的拡張(row 1531→4784、多数の新ハンドラ)。どちらも off-heartbeat の研究工程。今 heartbeat は偵察のみ(新 green 無し)。
