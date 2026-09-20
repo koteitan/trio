@@ -32229,3 +32229,25 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
 **この turn の確定した収束**: Wrap(裸頭∈Wg)偽 → hangv 不可。childLoad(GTC,根文脈)が正しい形だが全ケースが R_farword を要する。
 ∴ **唯一の genuine gap = R_farword**（遠い語頭+PVF/GPF内容の GpT constructor, GyK 世界, 追記716-720 の標的）。
 upleaf_deep_coreD(HeQ:108) が graft(深いタイ)エンジン。次: R_farword を GyK で直接構築 or childLoad graft を upleaf_deep_coreD で。
+
+## 追記729: ★★★ ch-Z ルート発見（ChildLoadAnchor.lean, coordinator-verified）— fork の deep-leaf 固執を回避する可能性
+
+（coordinator。fork が upleaf_deep_coreD/deep-leaf に固執し、既存 scaffold ChildLoadAnchor を見落とした。）
+
+**ChildLoadAnchor.lean（green, 0 sorry, 前セッションで coordinator-verified）**が主張:
+  「childLoad が ch-Z（low load, row1≤c）で **既存機構で achievable**」（deep-leaf でない）。
+- okLowS_wgload（:17）: 任意 Wg-load Z（∈Wg(2c) based）→ okLowS c (shiftr01 1 0 Z)。case-split 不要。
+- LRawTs_chZ（:23）: LRawTs c [ch (shiftr01 1 0 Z)]。
+- chZ_render（:30）: topT v (ch (shiftr01 1 0 Z)) = shiftr01 2 0 Z。
+- **topT v (.ch Z) = shiftr01 1 0 Z は MARKER-FREE**（HdQ:24。marker は .tie 葉のみ。
+  WltCheck の marker は wLT/FTL0 の wrapping 由来で、topT/topTs は marker-free）。
+
+**Trc4 の荷 Y=[(0,1,0)]∈Wg2 は row1=1≤c=1 の LOW load**（deep-leaf row1≥m でない）→ ch-Z 適合。
+  childLoad content = (1,v+1,1)::shiftr01 2 0 Y = (1,v+1,1) :: topT v (ch (shiftr01 1 0 Y)) = marker-free Trc4。
+
+**次（fork へ redirect）**: childLoad を ch-Z で構築（GoodChtX_nil → GoodChtX_snocL(HdP:249) +
+  LRawTs_chZ → GoodChtX→far-word→GTC 橋）。**要検証: 橋が marker-free（topTs/rcol、wLT でない）か**。
+  もし GoodChtX→Wg 橋が topCLT_WgL（wLT/marker）のみなら、それが正確な blocker。
+  ch-Z の荷は shiftr01 2 0 Z = fwU の some Z 荷形なので FarCU/fwU 隣接の marker-free 路がある見込み。
+
+**Cpsi 還元は model で再確認済み**: psiI⟦n⟧ = (0,0,0)::Rc4^n, Rc4=(1,1,1)(2,1,1)(3,1,0)。基盤堅実。
