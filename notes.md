@@ -32346,3 +32346,23 @@ upleaf_deep_coreD(HeQ:108) が graft(深いタイ)エンジン。次: R_farword 
 既存 constructor は全滅（FTLt/farWt/wLT marker、RLF_load 深い load、RLF_child marker、fwTop 兄弟 based-load、PVF_snoc o≥1 深い）。
 ∴ **新 constructor R_farword（同段子、marker-free、o=0 相当）が必須**。RFpvf(PVF_snoc+RLF_load)は深い版の雛形。
 次: RLF_load の同段版（Z を shiftr01 1 でなく同段に置く RLF constructor）or PVF_snoc の o=0 版。
+
+## 追記733: R_child の crux = GpT_elim0(row2=0 marker peel）。R_farword は row2=1 頭の tower-elim が必要
+
+（coordinator。R_child GyF:259 の soundness 構造を精査。fork の R_farword 構築支援用の事実。）
+
+**R_child（GyF:259）の証明**:
+  R h b (X ++ (1,b+τ,0)::shiftr01 1 0 L) ⟸ R h b X, GC A h τ b L, τ≤liftOff h A o'。
+  核 = `GpT_elim0 hL hR1`（+ CtxP_restrict）。**(1,b+τ,0) の row2=0 が GpT_elim0 で peel される**。
+
+**R_farword（row2=1 頭）の crux**:
+  頭 (1,b+?,1) は row2=1 なので **GpT_elim0 が使えない**（row2=0 専用）。
+  row2=1 頭の elim = **oper 展開（tower）** = tower_GPF（GzD:55, GPF/PVF/RLF の頭塔）style。
+  ∴ R_farword = R_child の構造 + 頭の elim を GpT_elim0 → tower_GPF(row2=1 頭塔)に置換。
+  これが正確な検証点（fork が R_child を読んで到達するはず）。
+
+**全ルート収束（fork も独立確認）**: C4scratch の TowStepC4 も、childLoad graft も、
+  (0,0,0)(1,1,1)(2,1,1)(shiftr01 3 0 X)∈W0 = 同 R_farword gap。psi(I) 主脈の真の frontier。
+
+**方針**: coordinator は route prescription を停止。fork が R_child を読み R_farword を構築中。
+  具体的失敗ステップ（GpT_elim0 の row2=1 置換）を報告 → tower_GPF で支援。
