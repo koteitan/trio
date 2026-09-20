@@ -31922,3 +31922,12 @@ fork が GTnestBase.lean(cone_farhead green)で plain GT_nest の base case `GT 
 - **PzW_Wg(GxJ:300)不適合**: PzW は shift-1 単一頭 `flatMap (k => (k,u+k,0)::rword k (u+k) (mlift L))`、base case は row2=1 content が rcol で **pair (1,u+1,1)(2,u+1,1)** になり **shift-2 double-head** ⟹ 不一致(= 追記714 の double-head/marker crux、green 確定)。
 - **2 framing 同一核**: plain=昇順 double-head tower-assembly / GTC-CQ=tie 再帰(∀u'∀Z)同時帰納。plain の方が cone/copies green で clean、残り 1 本。
 - ∴ 残余 = **from-scratch marker-free double-head tower-assembly**(昇順シフト BwT-copy → Wg)。base+oper+anchor+cone_farhead committed green。証明可能だが major construction。
+
+## 追記716: ★ 残余を 1 本の precise 補題 grandchild-hang に pin(row0=2 の hang、既存は child-hang のみ)
+
+double-head tower fork が base case を hang level まで分解:
+- cone(cone_farhead green)+ oper copies(各 (0,u+k,0)::rword 0 (u+k) (L''++[[]]) ∈ Wg via BwT_snocz)は green 済。
+- **唯一の残余 = grandchild-hang(新規)**: `A∈Wstarv v → R∈Wg u based → (0,v,0)::(A ++ shiftr01 2 0 R) ∈ Wg`。R を row0=2(A の最終 rcol 頭 (1,u+1,1) の子)として吊るす。
+- **既存 hang は全て child-hang(row0≤1)**: `hang_Wg`(GwU:140)は rsum(R 根 ≤ A++R 全列)要求 → A の row0=1 頭列で R 根=2 が違反。`hangv`(GxD:27)/base_hang(GwY:23)も entry R 0 0 ≤ 1 要求。
+- ∴ 残余 = **row0=2 の "grandchild-hang" 補題**(新規 Wstarv_closed 変種、A2g'(R)で、R が A より深く分離するので expansion が R 局所 = separation 論法が候補)。BM4 で真、証明可能。
+- 攻め筋: (a) hang_Wg の Wstarv_closed(GwU:43)を row0=2 に一般化、(b) R(row0≥2)が A(row0≤1 頭)と分離 → R の展開が局所 → 帰納で Wg。committed green: cone_farhead + base/oper + anchor + Cpsi 接続。
