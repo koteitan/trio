@@ -31969,3 +31969,40 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
 - row2=1 頭の oper = shift-2 昇順塔(bad root parent=ROOT, d0=2/d1=1)= top の `PVF_snoc`(GyK:107)/`PVP_snocz`(GyG:230)のみ。∴ R_child の row2=0 機構は非適用。
 - **唯一の欠落 = `R_farword`/`LC1_farword`**: `RLF A o b K → PVF A' τ b Y → RLF A o b (K ++ (1,b+τ,1)::shiftr01 1 0 Y)` = PVF_snoc の row2=1-頭-塔機構を nested RLC content に持ち込む(mutual recursion RLC↔PVF、入れ子深さ整礎)。substantial GpT-closure 拡張、one-shot 非可。
 - それ以外(Cpsi の GT 0 Trc4 族還元、cone_farhead、copies)は全 green。**方針**: one-shot でなく sustained build(fork resume で context 維持、green helper 逐次 commit)。20 fork 収束の「字の中の字」open frontier。
+
+## 追記721: RFarword.lean に GT_nest の green 部品 5 本を commit（sustained build 開始）
+
+**新方針の実行**: sustained build（fork resume で継続、tiny でも green を逐次 commit）。
+`lean/RFarword.lean`（roots に追加、全 green、sorry なし）に GT_nest の構成部品を積んだ。
+
+真の残余 = **GT_nest**（Gtrc4test.lean の唯一の sorry、GxK/BwT 世界）:
+  `GT_nest {v W} (GT (v+1) W) (∀y∈W, 1≤y.1) : GT v (rcol 0 v W)`
+  rcol 0 v W = (1,v+1,1)::shiftr01 1 0 W（遠い語頭 + 中身 W↑1）。
+これが閉じれば gt_trc4 → Cpsi.psiI_mem gt_trc4 で最終目標が無条件。
+（注: 前 fork の R_farword は GyK/GPF 世界の対応物。GT_nest は GxK/BwT 世界の同じ構成。
+  GyK 経由は WordsG が循環＝GT_nest 自身が遠い語 letter の欠落 WordsG generator。
+  ∴ GT_nest は BwT 塔で直接証明するしかない。）
+
+**commit した green helper（RFarword.lean）**:
+- `mlift_rcol`: mlift (rcol 0 v W) v t = rcol 0 (v+t) (mlift W v t)（mlift_letter で頭が t 上がる）
+- `rcol_rcol`: rcol 0 u (rcol 0 u M) = (1,u+1,1)::(2,u+1,1)::shiftr01 2 0 M（rword が rcol を 2 回）
+- `rword_snoc_rcol`: rword 0 u ((L++[rcol 0 v W]).map mlift) = rword 0 u (L.map mlift) ++ (1,u+1,1)::(2,u+1,1)::shiftr01 2 0 (mlift W v (u-v))
+  → GT_nest を具体 Wstarv 目標へ還元する描画。
+- `coneV_double_head`: coneV (P++[(1,u+1,1),(2,u+1,1)]) u (P.length+1) for Fr P（内側頭の行0祖先は自身と (1,u+1,1) だけ、P は行0≥1 で鎖外）
+- `natDom_double_head`: natDom ((0,u,0)::(P++[(1,u+1,1),(2,u+1,1)])) for Fr P（zcone_natDom + coneV_double_head）
+
+**GT_nest への還元（確立）**: rword_snoc_rcol で、目標は
+  ∀L(good BwT) u≥v a≥2u, (0,u,0)::(P ++ (1,u+1,1)(2,u+1,1)(M↑2)) ∈ Wg a
+  （P = rword 0 u (L.map mlift), M = mlift W v (u-v)）。
+底 W=[]（M=[]）でも二重遠い語頭 = 入れ子遠い語（字の中の字、内側は空中身）。
+
+**残る唯一の obligation = 接頭辞つき遠い語‐子‐塔の Wg 補題**:
+  底 W=[] で: (0,u,0)::(P ++ [(1,u+1,1),(2,u+1,1)]) ∈ Wg。
+  oper_zcone_succ（h=2, P''=P++[(1,u+1,1)]）で
+    M(u)⟦m+1⟧ = (0,u,0)::(P'' ++ shiftr01 2 0 (M(u+1)⟦m⟧))
+  = 自己相似（段 u+1 の同型 M(u+1) を子として shiftr01 2 で吊るす）。
+  m の帰納で M(u+1)⟦m⟧ ∈ Wg（IH）だが、**shiftr01 2 0 X を (1,u+1,1) 頭の下（行0=1 の非根節点）に吊るす primitive が無い**。
+  hang_Wg は根 (0,u,0) の下（行0=1 兄弟）にしか吊るせない。units/fwTop/GTC は全て row2=0 兄弟。
+  topCQ_Wg(HbB:140)/towWAQ_GpT は同じ塔だが CQ context 固定・WordsG 経由（一般 BwT 接頭辞に非可）。
+  → 必要 = 「(0,r,1) 根の遠い語（row2=1 根）が Wg」or「行0=1 節点下 graft」primitive。
+  次 resume: この 1 本を狙う（tower_Wg/topCQ_Wg の一般 BwT 接頭辞版）。
