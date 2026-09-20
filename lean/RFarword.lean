@@ -44,5 +44,16 @@ theorem rcol_rcol (u : ℕ) (M : TrioSeq) :
       = ((2, u + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (shiftr01 1 0 M) by simp [shiftr01]]
   rw [shiftr01_add0]
 
+/-- **GT_nest の語の描画**: 良い語 L の後に遠い語 `rcol 0 v W` を足した語を、段 u で
+    展開したときの形。頭 (1,u+1,1)・入れ子頭 (2,u+1,1)・中身 (mlift W v (u-v))↑2。 -/
+theorem rword_snoc_rcol {v : ℕ} {W : TrioSeq} (hW : Fr W) (L : List TrioSeq) {u : ℕ}
+    (hu : v ≤ u) :
+    rword 0 u ((L ++ [rcol 0 v W]).map (fun X => mlift X v (u - v)))
+      = rword 0 u (L.map (fun X => mlift X v (u - v)))
+        ++ ((1, u + 1, 1) : ℕ × ℕ × ℕ) :: ((2, u + 1, 1) : ℕ × ℕ × ℕ) ::
+            shiftr01 2 0 (mlift W v (u - v)) := by
+  rw [List.map_append, List.map_singleton, rword_append, rword_singleton,
+    mlift_rcol hW (u - v), show v + (u - v) = u by omega, rcol_rcol]
+
 end RFarword
 end TRIO
