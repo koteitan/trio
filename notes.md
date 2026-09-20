@@ -32681,3 +32681,23 @@ U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
 
 **finish**: core = tower_snoc 型 A1g_intro + hangv 帰納（全て Wg、bridge なし）。green → gt_trc4' → GT 0 Trc4
   → Cpsi.psiI_mem → 最終目標。fork に回答済み。
+
+## 追記743: ★★ 核を完全に地図化 — PzW_Wg(GxJ:300)が任意前置の単一頭塔(green, BwT_snocz の engine)
+
+核 `Q ++ [(1,u+1,1),(2,u+1,1),(3,u+1,0)] ∈ Wg a`（Q=(0,u,0)::rword L ∈ Wg, hQ green）を完全分解:
+
+**外（tie 3,u+1,0）**: oper_cons_tower1(srow=1)→tow→hangv。前置 A = rword L ++ 二重頭 ∈ Wstarv（=内）。
+**内（rword L ++ 二重頭 ∈ Wstarv）= GT 0 [(1,1,1)]（bare 遠い語頭を L 末尾に継ぐ）**。
+  モデル: (0,u,0)::二重頭 の oper = farword 塔（farword_oper GzD:115 / tower_Wg GzD:121, **空前置で green**）。dh2(2,u+1,1)の親=根。
+
+**既存 green テンプレート（全部発見）**:
+- **PzW_Wg(GxJ:300)**: `BwT w L → PzW u (mlift L) n ∈ Wg(2u)` = **任意前置の単一頭塔**（hangv 帰納）。
+- **oper_zword(GxJ:200)**: `((0,v,0)::rword L ++ [(1,v+1,1)])⟦n⟧ = PzW v L n`（単一頭 append の oper）。
+- **BwT_snocz(GxJ:320)**: `BwT L → BwT(L++[[]])` = 単一頭を L 末尾に継ぐ（oper_zword+PzW_Wg）。**= 単一頭版 GT が既に green!**
+- farword_Wg/tower_Wg/farword_oper(GzD): 空前置の二重頭塔。
+- hangv, oper_zcone/succ, oper_cons_tower1, cone_farhead(GTnestBase, green), natDom_double_head(RFarword green)。
+
+**残る核 = PzW_Wg の「二重頭+tie」版**（Trc4 は 2 列なので rcol が二重頭+tie を作る）。単一頭(PzW_Wg)は green、
+  二重頭+tie の類似（oper_zword2 + PzW2_Wg 相当、~2 補題）が要る。GTnestBase.lean は前セッションの GT_nest base 着手。
+
+**次**: PzW_Wg/oper_zword/BwT_snocz を二重頭+tie に一般化（or 既存の far 塔 lemma で二重頭前置版があれば流用）。
