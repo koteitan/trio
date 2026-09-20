@@ -2,7 +2,7 @@ import L105Cap
 import GzD
 
 namespace TRIO
-open Wset
+open Wset Gw GxL GxN GzD
 
 /-! # C4 = (0,0,0)(1,1,1)(2,1,1)(3,1,0) ∈ W 0 の grind (scratch, 複数ハートビート)
 Step 1: R の基本事実(argOK / domT / hasParent)を手構成で green に。 -/
@@ -167,5 +167,11 @@ theorem famC4_domT (v : ℕ) : domT (famC4 v) (2 * v + 1) := by
     · rw [show entry (famC4 v) 1 1 = v + 1 from rfl] at hent; omega
 
 theorem famC4_zero : famC4 0 = Rc4 := rfl
+
+/-! Step 5: graft 閉包の底(y=[]): C3 ∈ Wg 0(R1317 の Wg 版、再利用可能)。 -/
+
+theorem C3_Wg : ([((0,0,0):ℕ×ℕ×ℕ), ((1,1,1):ℕ×ℕ×ℕ), ((2,1,1):ℕ×ℕ×ℕ)] : TrioSeq) ∈ Wg 0 := by
+  have h := Wg_of_starOK (starOK_farwords (v := 0) (WordsG_nil 0))
+  simpa [GwS.rword, GwS.rcol, shiftr01] using h
 
 end TRIO
