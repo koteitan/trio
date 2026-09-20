@@ -32855,3 +32855,26 @@ RFarword helpers, RLC_levelshift削除。W 世界には towerGraft2_lift_fam(sro
 **推奨**: psiI∈W0⟸Subst1 を Cpsi 級の緑事実として確定(Wg の GT 0 Trc4 dead-end を supersede)し、
   以後は Subst1 の十分条件の中で最も z<2 で扱い易いもの(Subst1gReviveSelf = stage-free 残余が有力)
   に集中。あるいは既存の実績方法論(sheet-climb/hang/budget/loads の逐次)を継続。
+
+## 追記749: ★★★ フロンティアを原子節に確定 — Wtower2 は sorry ゼロ、鎖は全緑。psiI∈W0 ⟺ {Subst1gReviveSelf} or {Clause2,Clause3} (2026-09-21)
+
+（追記748 の Subst1 還元を coordinator が検証・鋭利化。）
+
+**Wtower2.lean = sorry 0。Subst1 変種の還元鎖は完全に緑:**
+  Subst1gReviveSelf →(3292 subst1gRevive_of_self) Subst1gRevive →(3485 subst1g_of_revive)
+  Subst1g →(2727 subst1_of_subst1g) Subst1 →(2668 substClosed_of_subst1) SubstClosed
+  →(3864 towerExp_of_substG 経由) TowerExp。
+∴ 最弱の原子核 = **Subst1gReviveSelf**（Wtower2:3274, stage-free 残余。W を Wself に潰し u を消した形）。
+
+**別ルート（同値の原子核ペア）: {Clause2, Clause3}**（L7Subst.lean）:
+  - `substFree_of_clauses (Clause2)(Clause3) : SubstFree`（:115, 緑）, `TRIO_terminates_of_clauses`（:129, 緑）。
+  - Clause2(:99) = 余帰納: ∀S,(∀n≥1 SubstProp(S⟦n⟧))→SubstProp S。
+  - Clause3(:108) = graft 帰納。**D=S.drop(p+1)≠[] は易（帰納が効く）、D=[] が難（残余）** と def コメント明記。
+  - Subst1gReviveSelf / Clause2 / Clause3 いずれも `theorem X:_` は grep 0（無条件証明なし）。経験的真（probe 多数）。
+
+**確定した最終状態**: z<2 証明全体は原子節 {Subst1gReviveSelf} または {Clause2∧Clause3} ただ1本を法として緑。
+  psiI∈W0 無条件 ⟺ その節 = z<2 全停止性の中心的未解決問題。一発では閉じない。
+
+**次の攻撃点**: 最鋭の残余 = Clause3 の D=[] ケース（≒ Subst1gReviveSelf の revived-residue, Wtower2:3341）。
+  兄弟 lean-yapss（2 行、停止性完成）の Clause 類似の証明術に倣う（project CLAUDE.md 指示）。
+  trio 側の既存 clause-attack 足場（loads 多重集合 DM / guarded-Wg / probe 群）の最前線から継続。ゼロから建て直さない。
