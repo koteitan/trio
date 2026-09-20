@@ -32823,3 +32823,35 @@ RFarword helpers, RLC_levelshift削除。W 世界には towerGraft2_lift_fam(sro
 **green 部品**: oper_headtie, tower1_mem_v_fam, tower_mem_fam, gt_trc4' scaffold。W 世界: towerGraft2_lift_fam + Final:264。
 
 **次**: (b) W 世界で (0,0,0)::Rc4^n ∈ W0 を towerGraft2_lift_fam で直接(GT/BwT/Wg/marker を bypass)。
+
+## 追記748: ★★★ (b)W世界も壁を回避しない — fam_far_mem_W ≡ Subst1(全証明の master 開コア)。psiI∈W0 は開フロンティアそのもの (2026-09-21)
+
+（fork が (b) W 世界ルートを検証。model + Lean 精査。）
+
+**族の構造(model 検証済み)**: F(n)=(0,0,0)::Rc4^n, Rc4=(1,1,1)(2,1,1)(3,1,0)。
+  - F(n) 末尾列 (3,1,0)=srow=1(tie)。∴ 外殻は tie 塔。mem_of_oper_mem で F(n)⟦m⟧ の族に。
+  - F(1)⟦m⟧ = (0,0,0)(1,1,1)(2,1,1) ++ [(3k,0,0)(3k+1,1,1)(3k+2,1,1): k=1..m-1]。各 F(1)⟦m⟧ 末尾 srow=2。
+  - F(1)⟦2⟧ を展開すると row1 が (6,2,1)(8,3,1)… と**無限に上昇**(Lift1)。psi(I)=弱コンパクトの塔を登る。
+    ∴ 固定有限の閉包は無い。帰納的停止論法(= clause)が必須。
+
+**(b) W 世界は壁を「回避」しない、「移設」する**:
+  - Wg 壁: Lift1∉Wg → 遠い語頭+子が**そもそも書けない**(dead end)。
+  - W 壁: Lift1∈W なので塔は**組める**(towerGraft2_lift_mem_fam)。だが graft-closure hgrF が残る。
+    hgrF/hgr(`towerGraft2_holds` Wset:3590 の仮定)は**未証明の停止 clause そのもの**。
+  - ∴ W 世界の利得 = 障害が「書けない」→「書けて 1 本の clause に isolate」。壁自体は消えない。
+
+**既存 C4scratch.lean が F(1) を Subst1 に還元済み(緑, 仮定を法として)**:
+  - `C4_mem_of_subst1 (hs:Subst1)(hsub) : C4f ∈ W 0`。C4f=(0,0,0)::Rc4=F(1)。
+  - hsub = ∀X∈W0 based, (2,1,1)::shiftr01 3 0 X ∈ W 3 (遠い語頭 (2,1,1)+子, W 世界)。
+  - **Subst1**(Wtower2:2656)= 置換閉包: S∈W u, C∈W(lev S p), 頭一致 + 深列 row0 上 ⟹ S[p→C]∈W u。
+    **これは trio 停止性全体の master 開コア**(Final: TRIO_terminates_of_* は全て Subst1/変種から)。
+
+**結論**: fam_far_mem_W(= psiI∈W0 の無条件化, = GT 0 Trc4)は**開フロンティアそのもの**。
+  ツール接続で閉じない。n=1 の接頭辞 F(1) ですら Subst1(全証明の核)に等価。
+  真の frontier = Subst1 または十分条件(Subst1g/Subst1gRevive(Self)/WCat+Subst1/Row1Mono/
+  Row1Down/WConvex1/WSnoc/MliftR — 全て未証明の `_of_X`)の**どれかを z<2 で無条件証明**。
+  多セッションの研究課題。1 fork で閉じるものではない。
+
+**推奨**: psiI∈W0⟸Subst1 を Cpsi 級の緑事実として確定(Wg の GT 0 Trc4 dead-end を supersede)し、
+  以後は Subst1 の十分条件の中で最も z<2 で扱い易いもの(Subst1gReviveSelf = stage-free 残余が有力)
+  に集中。あるいは既存の実績方法論(sheet-climb/hang/budget/loads の逐次)を継続。
