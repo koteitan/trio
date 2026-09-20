@@ -32781,3 +32781,23 @@ U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
 **W 世界には towerGraft2_lift_fam(Wset:3458, srow=2 fam)がある**が Wg 世界は tower1_mem_v_fam(srow非依存)で代替。
 
 **残り**: 三重入れ子の組立(~120 行)。各段 tower1_mem_v_fam + oper_cons_tower1/tower2 + fam hgr 連鎖 → 底 BwT_snocz。
+
+## 追記745: ★★★ 決定的障害 — srow=2 頭塔は Lift1-closure が要り、それは W 世界のみ(Wg に無い)
+
+tower_mem_fam(srow非依存 tow 塔)green。だが核の三重塔で **中段(dh2, 頭, srow=2)が閉じない**:
+
+- 核の oper は tie(srow=1)支配 → tower_mem_fam で tow_out。だが **各 tow_out 段は dh2(頭)で終わる**ので、
+  tow_out(k+1)∈Wg は dh2 の oper が要る。
+- dh2 の oper = `oper_cons_tower2`(Wset:3231) → `Lift1(⟦n⟧)(d1)` の **Lift1-graft 塔**（行1が昇る、srow=1 の tow と違う）。
+- **Lift1-closure は W 世界のみ**: Final.lean:264 `based X → X∈W m → Lift1 X d ∈ W(m+2d)`、towerGraft2_lift(Wset:3512)は `Lift1(⟦n⟧)s ∈ W`。**`Lift1 … ∈ Wg` は存在せず**（grep 0 件）。しかも dh2 塔の写しは頭(行2=1)を含むので based でなく、based-Lift1-closure も効かない。
+
+**∴ 遠い語頭+子のネスト（= childLoad の graft, 普遍的障害）は本質的に W 世界（Lift1-closure がある）に棲む。
+核は Wg(Wstarv/BwT)束縛なので、raw Wg 直接路はこの Lift1 の壁に必ず当たる**。これが全 Wg 経路が
+循環した理由。座長の tower1_mem_v(Wg srow=1)は tie には効くが srow=2 頭には効かない（W 世界の towerGraft2_lift_fam のみ）。
+
+**含意**: (a) childLoad は GTC 世界で、GTC_oper/GTC_tie が srow=2/Lift1 を文脈内で扱う → GTC 路が正しいかも。
+または (b) 最終目標は psiI∈**W 0**（Wg でなく）。Wg⊆W なので、GT/BwT/Wstarv の W 世界版で連鎖を組めば
+Lift1-closure(W)が使える可能性。どちらも大きい。
+
+**green 部品（全て）**: oper_headtie, tower1_mem_v_fam, tower_mem_fam, gt_trc4'直接scaffold(核isolate,hQ green),
+RFarword helpers, RLC_levelshift削除。W 世界には towerGraft2_lift_fam(srow=2 fam), Final:264(Lift1-closure)。
