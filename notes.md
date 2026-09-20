@@ -32904,3 +32904,30 @@ RFarword helpers, RLC_levelshift削除。W 世界には towerGraft2_lift_fam(sro
 
 **推奨攻撃**: revive 残余に直接。既存足場 = loads 多重集合の DM 整礎性（dm-on-loads / budget-is-load-multiset;
   無限 row1 lift を吸収する設計）。または兄弟 2 行プロジェクトの Clause 類似の証明術に倣う（術のみ、パス/名は書かない）。
+
+## 追記751: WCat/revive の精密障害 — revive は Aok/Bok/bump で証明済み(Mono∧Zroot 類)。gap=非 Mono/非 root-revive。psiI 断片は全て Mono∧Zroot (2026-09-21)
+
+（DMcat fork: QS/DM を WCat に接続する試み。増分でなく精密障害を報告。）
+
+**WCat = ∀u A B, A∈W u→B∈W u→A++B∈W u**（Wtower2:1974, W_add の rsum を落とした形）。¬rsum「revive」が唯一の gap。
+
+**revive/指数化は既に証明済み（構造化クラスで）:**
+- `bump B := shiftr01 1 0 B`（SmallX:773, 全列 row0 を +1 = 根を 1 段 revive）。
+- `Bok.append / bump_zm`（SmallX:1898）: `Aok A → Bok B → A ++ bump B ∈ W0`。**証明済みの revive**。
+- 反復する: `Aok A→Bok B→Aok(A++bump B)`（SmallX 冒頭のコメント）→ 塔 o(A)^o(B), o(A)^ω, o(A)^o(B) 全て（bms -s 標準形確認済み）。
+- クラス: `Aok`=W0∧≠[]∧Deep∧Zroot∧Mono, `Bok`=W0∧Zroot∧Mono∧根 row0=0。
+  `Zroot B`:=∀c∈B, row0=0→row1=0∧row2=0。`Mono B`:=∀c∈B, row2≤row1。
+
+**別機構（Small.lean, DM）**: `wf_LdDM`/`QS`（Jk1 木文法 = junk 列 (l,1,0)/(l,2,0) + shiftr01 荷）。marker 文法に特化。
+
+**WCat への精密 gap:**
+1. Aok/Bok は Zroot∧Mono を要求。一般 W 元は非 Mono（row2>row1, 例 (a,0,1) の z-jump）・非 Zroot もあり得る。
+2. `bump` は +1 の revive。一般 revive は任意段（B 根が A を任意超過）。B=bump^r(unbump B) だが unbump B∈W は保証されない。
+3. snoc は `snoc_flat_root`（root revive, 緑）は済み。`WSnoc` の残り = **非 root 親への revive**（= 無限 row1 上昇塔 = Lift1 現象を DM/W で）。
+
+**★ 注目**: psiI 断片（psiI, その oper, 族 (0,0,0)::Rc4^n, climb 列 (6,2,1)(8,3,1)…）は**全て Mono∧Zroot**。
+  ∴ psiI には一般 WCat は不要。bump クラスがその列を被覆。壁は psiI の塊を bump 構成子に合わせること
+  （= 既記録の diagonal/Subst1 の壁）。一般 WCat（非 Mono）は psiI と無関係の過剰一般化かもしれない。
+
+**結論**: 一般 WCat の無条件化 = 開問題（Zroot/Mono/bump を外す = Subst1 と同じ核）。増分は relocate になるので追加せず。
+  psiI 専用路の再検討価値: bump/Aok 機構は Mono∧Zroot を扱う成熟機構で、psiI 断片はその中。次はこの路で psiI の塊を bump 構成に載せる gap を精査。
