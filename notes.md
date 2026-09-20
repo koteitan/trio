@@ -32493,3 +32493,30 @@ LC1_farword はこれらを RLC content 内に nested で持ち込む（LC1 の 
    → RLF → RLC → PVP_snoc_gen(wrapper green) → GpT_snocz_content（残る唯一の core sorry）。
 
 **次**: fork が GpT_snocz_content の 120 行 surgery 実行中（terminal Y 先）。green → 最終目標。
+
+## 追記739: GpT_snocz_content の opening が green(reliftX_node で z=1 頭、anchor A 一貫)。残り = claim 塔の weave(~85 行)
+
+（fork が opening を green 化。RLC_levelshift 問題は消滅。）
+
+**opening green（commit a6bea252）**:
+  GpT_intro + reliftX_app + reliftX_node(GyB:338, hYfr, r=liftOff f A o+1, z=1)。
+  - reliftX_node は **z=1 遠い語頭**を扱う（z=0 だけでない）→ head+content が正しく reliftX。
+  - head row1 = b + reOff f g A(liftOff+1) = b + liftOff(addF f g) A o + 1 = **GpT_snocz_core の頭と一致**（reOff_above GyG:28）。
+  - content: lowP f A(liftOff+1)=A（全 A が low）→ threaded content = reliftX b f g A Y = **RLC_lift(GyI:47)が供給**。
+  - ∴ post-opening goal = **GpT_snocz_core の goal に shiftr01 1 0 (reliftX A Y) を頭の後に織り込んだ形**。
+    anchor A 一貫、offset/anchor mismatch 無し（RLC_levelshift 問題は消滅、単一 tower）。
+
+**残り = claim 塔（GyG:129-163）+ final assembly（164-214）~85 行**に reliftX A Y を各 level の頭の content として
+  織り込み、hY/RLC_lift で discharge。dense core。
+
+**探索中の近道**: nslot decomposition — GpT_snocz_core（bare head, green）を black-box 再利用 + content step
+  （succ の GpT_node child GC に Y を carry）。再導出でなく再利用できれば 85 行回避。
+
+**practical rate-limiter（fork flag）**: blind iteration（leanman は error のみ、goal state 無し）が遅い。
+  対処 = 明示 `have hStep : <goal type> := by …` で typed step 化、claim を named sub-lemma に分割・commit。
+
+**全連鎖（green scaffold、残る唯一 = GpT_snocz_content の claim 塔 weave）**:
+  Cpsi → gt_trc4(green) → childLoad → LC1_farword → LC1_farword_base_of_rlf(green) → RLF → RLC
+  → PVP_snoc_gen(wrapper green, opening green) → GpT_snocz_content の claim 塔（残り）。
+
+**次**: fork が claim 塔 weave（decomposition 優先、typed-have method）実行中。green → 最終目標。
