@@ -33099,3 +33099,23 @@ TowStepC4/C4scratch は Subst1 経由だったが、この X 帰納は **Subst1 
 **基底の性質**: base(1)=(0,0,0)(1,1,1)(2,1,1) の oper は対角を生成（(2,1,0)(3,2,1)(4,2,0)(5,3,1)…、record 上昇）。
 base(1) = 対角の sup（∴ Dzf 0 0 m のどれより上、m=None）。row1 は依然無界だが、Dzf/GoodF で証明できる可能性。
 next: 基底 (0,0,0)(1,1,1)(2,1,1)^n ∈ W0 を Dzf/GoodF/tower で証明（route(B) を閉じる鍵）。関連 [[wworld-route-tools-exist]]
+
+## 追記761: ★★★ route(B) が証明済み部品だけの具体 proof structure に — 残 crux = multi-head GoodF (2026-09-21)
+
+（base(n) の oper 構造を model 検証。）
+
+**base(n)=(0,0,0)(1,1,1)(2,1,1)^n の oper（model）:**
+- base(n)⟦1⟧ = base(n-1)（頭を 1 つ落とす）。
+- base(n)⟦m≥2⟧ = **base(1) ++ 対角ブロック** `[(2j,j,0)(2j+1,j+1,1)…(2j+n,j+1,1)]`（n 個の頭/ブロック）= `Dzf_W` の形。
+
+**route(B) 完全連鎖（全て証明済み部品の上、general Subst1 を完全回避）:**
+```
+psiI∈W0 ⟸[X∈W0 の A2'帰納 + oper恒等式 collapse(X)⟦n⟧=collapse(X⟦n⟧)]⟸ collapse([(0,0,0)])∈W0
+       ⟸[mem_of_oper_mem]⟸ base(n)=(0,0,0)(1,1,1)(2,1,1)^n∈W0
+       ⟸[n 帰納(⟦1⟧=base(n-1)) + Dzf_W(prefix base(1) ++ Dzf 対角)]⟸ base(1)=R1317(済,GzE) + multi-head GoodF
+```
+**証明済み部品**: R1317_mem(GzE:13), Dzf_W(SmallX:15533), Dzf_W_root, mem_of_oper_mem, A2'。
+**残 crux**: multi-head GoodF（J(a,b)=[(a+1,b+1,1),(a+2,b+1,1),…,(a+n,b+1,1)] が GoodF の 7 fields を満たすか）。
++ oper 恒等式 2 本の Lean 証明、A2' 帰納の graft 分岐。
+
+これが「12+ 角度全て Subst1 底打ち」の膠着を破る具体路。次: multi-head GoodF と oper 恒等式を Lean で検証。関連 [[wworld-route-tools-exist]]
