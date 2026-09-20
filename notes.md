@@ -32723,3 +32723,25 @@ U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
 
 **finish**: oper_zword/PzW_Wg の証明を copy し、append を [単一頭] → [二重頭,tie] に拡張、hangv 帰納を維持。
   green → gt_trc4' → GT 0 Trc4 → Cpsi.psiI_mem → 最終目標。**証明済み機構を頭 1 個+tie 1 個 拡張するだけ**。
+
+## 追記745: ★★ unlock — tower1_mem_v(GwU:24)は hgr を tow 元だけに使う → fam 制限 Wg 塔は ~5 行 restatement
+
+（fork の 2 obstacle への coordinator 回答。obstacle 2 解決。）
+
+**fork の 2 obstacle**:
+1. 二頭 mask: oper_z1_mask(SmallX:14322)は単一頭専用。内側は二重頭 → 新規要。
+2. 深い tie(行0=3): hang_Wg の rsum(子根≤全列行0)が 3≤2 で偽。fam 制限塔は W 世界のみ(tower1_mem2_fam)、
+   Wg 世界(tower1_mem_v)は一般 hgr(∀y∈Wg, childLoad 規模)。
+
+**obstacle 2 解決（coordinator が tower1_mem_v の証明確認）**:
+  tower1_mem_v(GwU:37): `have hgk := hgr (tow v 0 R k) hk ...` — **hgr を tow 元だけに適用**、全 y に使わない。
+  ∴ signature の一般 hgr は over-strong。**`tower1_mem_v_fam`**(hgr を `∀k, graft R (tow v 0 R k) ∈ Wstarv v`
+  に弱めた版)は tower1_mem_v の証明を verbatim copy で ~5 行。**Wg 世界の fam 制限 deep-tie 塔、一般 hgr 不要**。
+  （tower1_mem2_fam が W 世界なのは W の graft が unguarded だから。tower1_mem_v は既に Wg かつ証明本体で fam。）
+  fam hgr = 自己相似: graft R (tow k) = (rword L++二重頭) ++ (tow k を子)、hangv(prefix=内側 Wstarv, child=tow k∈Wg)。
+  底 = rword L ∈ Wstarv(BwT L)。子 tow k は rooted 塔段(bare head でない)→ rsum OK。
+
+**obstacle 1**: 二頭 mask は無い。fold dh1 を prefix へ(BwT_snocz: rword L++[dh1]∈Wstarv, green)→ mask は dh2+tie 単頭だけ。
+
+**次**: fork が (1) tower1_mem_v_fam(~5 行 copy)、(2) deep-tie tow∈Wg(+自己相似 fam hgr via hangv on tow levels)、
+  (3) dh1 を BwT_snocz で prefix 化。→ core → gt_trc4' → GT 0 Trc4 → Cpsi.psiI_mem → 最終目標。
