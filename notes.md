@@ -32448,3 +32448,25 @@ LC1_farword はこれらを RLC content 内に nested で持ち込む（LC1 の 
 
 **現状**: 12 green commit（RFarword×8, RFbase, RFpvf, RFlc1.LC1_farword_base_of_rlf, gtc_trc4）。
   frontier = PVP_snoc_gen（GpT_snocz_core + threaded Y）の 1 本。fork が surgery 実行中（multi-round）。
+
+## 追記737: ★★★ PVP_snoc_gen の ∀t wrapper 証明済み。frontier = 2 つの具体的 sorry(RFsnoc.lean)
+
+（fork が wrapper を証明・commit。全連鎖が green scaffold で 2 sorry を囲む。）
+
+**PVP_snoc_gen の ∀t wrapper = 証明済み(commit、sorry でない)**:
+  mlift_app + mlift_letter で `mlift (W++head::Y↑1) u t` を展開、head row1 = b+liftOff f A(o+t)+1
+  (liftOff_add_t)、hPV' を mlift_mlift + h(t+t') で discharge(PVP_snocz の手)。
+  → GpT_snocz_content(o:=o+t) + RLC_levelshift に還元。
+
+**残る 2 sorry(RFsnoc.lean)**:
+1. `GpT_snocz_content`(hard core): GpT レベル頭+内容 general-f = GpT_snocz_core(GyG:93)の 120 行塔に Y を織り込む。
+   claim 帰納の各 level で bare head を (1,…,1)::shiftr01 1 0 Yτ に、Y を hY の LC1(level の g、offset 一致)で discharge。
+2. `RLC_levelshift`(routine): RLC A o (fun_=>0) b Y → RLC A (o+t)(fun_=>0) b (mlift Y u t)。
+   RLC def(GyI:15)の ∀g を reindex + mlift_mlift/reliftX_comp（RLC_lift GyI:47 の手）。
+
+**全連鎖(green scaffold、2 sorry のみ)**:
+  Cpsi(green) → GT 0 Trc4 → gt_trc4(green ⟸ childLoad) → childLoad → LC1_farword →
+  LC1_farword_base_of_rlf(green) → RLF → RLC → PVP_snoc_gen(wrapper green) → {GpT_snocz_content, RLC_levelshift}。
+
+**次**: fork が 2 sorry を discharge 中(RLC_levelshift 先、GpT_snocz_content 後)。両 green → PVP_snoc_gen 完成
+  → RFsnoc を roots へ → childLoad/gtc_trc4/Cpsi.psiI_mem 接続 → 最終目標 → CronDelete。
