@@ -32878,3 +32878,29 @@ RFarword helpers, RLC_levelshift削除。W 世界には towerGraft2_lift_fam(sro
 **次の攻撃点**: 最鋭の残余 = Clause3 の D=[] ケース（≒ Subst1gReviveSelf の revived-residue, Wtower2:3341）。
   兄弟 lean-yapss（2 行、停止性完成）の Clause 類似の証明術に倣う（project CLAUDE.md 指示）。
   trio 側の既存 clause-attack 足場（loads 多重集合 DM / guarded-Wg / probe 群）の最前線から継続。ゼロから建て直さない。
+
+## 追記750: ★★ 原子残余の正体 = "revive" ケース = WCat \ W_add。全原子条件が1現象に収束 (2026-09-21)
+
+（追記749 のフロンティアを Residue fork が1段深く掘った。Lean コードは追加せず＝skeleton は sorry を移すだけ。）
+
+**live な sorry の所在**: RFsnoc(4)/ChildLoad(4)/Gtrc4test(1) は全て**死んだ Wg far-word ルート**。
+  SmallX(2)/SmallA(1) は sheet-climb。**原子節そのものへの部分的 Lean 攻撃は存在しない**
+  （Wtower2/L7Subst の残余還元は全緑だが節を仮定している）。
+
+**原子残余の正体（sharpened）**:
+  `W_add`(Wset:1682) = `A∈W u → B∈W u → rsum A B → A++B∈W u`（緑）。
+  `rsum A B := ∀p∈A++B, entry B 0 0 ≤ p.1`（B 根の高さ ≤ 全列）。
+  **WCat = W_add から rsum 仮説を落としたもの**。∴ 唯一の gap = `¬rsum`（B 根が或る列より高い）= "revive" ケース。
+  これは **Clause3 の D=[] ケース**、**Subst1gRevive の "revived-by-A" 残余**と**同一現象**。
+  based B なら entry B 0 0=0≤全て → rsum 自明 → W_add（= prefixCopies_of_based）。revive は根が下から湧く場合。
+
+**∴ 全原子条件（WCat / Clause3 / Subst1gRevive(Self) / Subst1g / …）は ONE phenomenon = revive 残余に収束。**
+  経験的 0 違反（probe_cat/subst1g/… 多数）だが未証明 = z<2 全停止性。bounded な quick-win は無い（残余が核そのもの）。
+
+**充足条件の全景**（全て緑 `TRIO_terminates_of_X`、無条件証明ゼロ）:
+  Subst1gReviveSelf / {Clause2,Clause3} / WCat+{TowerExp2|SubstClosed|Subst1} / Row1Mono+TowerExp /
+  LiftTieSelf+TowerExp / LiftTieCore(Row2) / MliftR / WConvex / TowerExpBigRow2 / …。
+  `TRIO_terminates_of_towerExp`(Final:343) は TowerExp 単独で足る。⚠ 行0版(Row0Free)は停止性と同値＝補題化禁止。
+
+**推奨攻撃**: revive 残余に直接。既存足場 = loads 多重集合の DM 整礎性（dm-on-loads / budget-is-load-multiset;
+  無限 row1 lift を吸収する設計）。または兄弟 2 行プロジェクトの Clause 類似の証明術に倣う（術のみ、パス/名は書かない）。
