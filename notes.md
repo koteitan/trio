@@ -31833,3 +31833,16 @@ fork が keystone `GTC C u (fwTop u [] ++ shiftr01 2 0 Z)` を GTC_loadTop の A
 - **∴ 真の構造 = A2g'(Y)整礎帰納**(Y∈Wg=lfp なので停止)。各 Wg 構造段を「head の子」位置で処理する load 補題が要る。tie-load は入れ子 tie-level を生む(再帰、整礎)。base Y=[] → fwTop v [] → GTC_far。
 - GoodChtX_deep 級だが**整礎な道は明確**: 「far-word head の子として Wg-load を吊るす GTC」を A2g'(Y)で構築(case: flat根→GTC_oper/tower、tie根→再帰GTC_tie、一般→Wg構造)。
 - 現状 green: Cpsi.psiI_mem 経由の接続、Gtrc4test.gt_trc4(GT_nest sorry 1本)。
+
+## 追記707: ★ keystone の再帰構造を確定 = childLoad ∀Y の A2g'(整礎)、tie根で入れ子 tie-level 再帰
+
+追記706 のスケルトンを実装可能な形に確定。目標 = **`childLoad`**:
+`GTC C v ((1,v+1,1) :: shiftr01 2 0 Y)` for ∀Y∈Wg(2(v+1)) based(A2g' on Y)。
+これが GTC_tie(K=[(1,v+1,1)]相当, x=2)の hload そのもの ⟹ gt_trc4 の GT_nest sorry を閉じる。
+- **A2g'(Y) の3 case**:
+  ① base Y=[] → content=fwTop v [] → `GTC_far_CQ`(green)。
+  ② flat 根(Y の末尾展開が (·,0,0)=row1=0)→ head を row0 親に持つ ⟹ `GTC_oper`。展開 = tie head の tower(要 tie-tower 補題)。
+  ③ tie 根(row1=v+1)→ **再帰 childLoad**(GTC_tie の hload がまた childLoad)。整礎性は Y∈Wg=lfp(A2g' の IH)+ 深さ(入れ子 tie-level)。
+- **Trc4 の実 case**: content=(1,1,1)(2,1,0)、(2,1,0) は tie 根(row1=1=v+1)⟹ ③。sub-load は Y=[(0,1,0)] の残り(空)で底。
+- **2 route**: (1) GTC_tie + childLoad ∀Y(本命, スケルトン明示)。(2) 文脈フリー深さ補題 `BwT v L→BwT(v+1)[W]→BwT v (L++[rcol 0 v W])`(mlift の off-by-one lift が要注意)。
+- **残工程(build フェーズ)**: ① tie-tower 補題(GTC of ((1,v+1,1) の n コピー)) ② childLoad の A2g' 骨組み ③ tie 根再帰の整礎測度 ④ Cpsi を BwTC_rep に rewire。GoodChtX_deep 級だが整礎な道は完全に明示済。
