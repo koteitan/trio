@@ -33060,3 +33060,23 @@ Subst1 の既約性は確定。真の前進 = 整礎 Lift1 置換測度（新順
   flat-Dzf（b 固定）変種も無い。二重頭（Rc4=(1,1,1)(2,1,1)(3,1,0)）は Jz1c（単一頭）と arity も違う。
 - 族の oper は smaller族 + 二重頭尾 or 対角様の混在で、clean な induction（各 oper が対角∈W0 か smaller族）にならない。level-consistency の壁も残る。
 - **結論**: 一方向でも、現機構で非 Subst1 の直接路は構成できない。族は Dzf に載らず、対角機構が効かない。Subst1 の既約性は変わらず（12 角度目）。
+
+## 追記759: ★★ ebp2bms が順序数解析を与える — collapse 再帰 = ネスト構造 = C4scratch の hsub。測度候補 = subscript 減少 (2026-09-21)
+
+（ユーザーが ebp2bms/ を指摘。調査した。）
+
+**ebp2bms/algorithm/2 = Extended Buchholz ψ ↔ トリオ z<2 の順序数対応**（sheet で 744/785 行検証済み）。
+決定的な collapse 再帰:
+- `M(Ω_1) = (0,0,0)(1,1,1)(2,1,1)(3,1,0)` = flat(1)。
+- **`M(ψ_0(Ω_X)) = (0,0,0)(1,1,1)(2,1,1) ++ shift(M(X),3)`** ← 「ネスト二重頭 ψ(ψ)」の正体。
+
+**C4scratch との一致**: `C4_mem_of_subst1` の副条件 `hsub = (2,1,1)::shiftr01 3 0 X ∈ W3` は
+collapse 再帰の一段（prefix (2,1,1) + shift 3 の X）そのもの。
+
+**新しい測度候補（生成的）**: ebp2bms は「なぜ collapse 再帰が停止するか」の順序数的正当化を与える —
+collapse では **subscript X < ψ_0(Ω_X)**。∴ 欠けていた整礎 Lift1 置換測度 = **subscript 順序数（collapse 深さ）の減少**の可能性。
+Subst1 の帰納を collapse 再帰に沿って subscript 減少で回す = ルート(B)。
+
+**2 ルート**: (A) translate ≅ ψ 記法を Lean 化し ψ の WF を輸入（強力だが巨大、Mathlib に ψ なし、41 mismatch）。
+(B) collapse 再帰を Subst1 の帰納構造に（subscript 減少を測度に）。C4scratch/W 機構の上で現実的。次は (B) の検証。
+関連: [[wworld-route-tools-exist]]
