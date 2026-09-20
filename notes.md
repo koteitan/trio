@@ -32099,3 +32099,28 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
   要: (a) Trc4 の letter 内容を upleaf_deep_core の形 (Pre++Yp++shiftr01 d 0(shiftr01 1 0((0,q,0)::R))) に一致させる、
       (b) 遠い語頭 (1,u+1,1)(2,u+1,1) を Yp(Fr+Hd)、深いタイ (3,u+1,0) を R として、hrep を self-similar から供給。
   次: この具体 instantiate（upleaf_deep_coreD, HeQ:108 の方が (d0,m,0) 末尾で近い）。
+
+## 追記725: ★★★ 残余を単一 linchpin `Wrap` に完全隔離。直接証明路 = A2g'(ChildLoad の green base+oper + upleaf_deep_coreD graft)
+
+（coordinator。RFbase.farhead_base_oper が完全証明(0 sorry)で全てを Wrap に還元。追記番号は
+  fork との衝突回避で 725。fork の 918260a2 が別の 追記723 を持つ。）
+
+**linchpin（RFbase:11）**:
+  Wrap := ∀ w X, X∈Wg(2(w+1)) → based X → (1,w+1,1)::shiftr01 2 0 X ∈ Wg(2(w+1))
+  = 遠い語頭が任意の based Wg 子を包む（marker-free、一般）。
+
+**Wrap が閉じれば全部閉じる**:
+- W=[] 塔: farhead_base_oper（green, Wrap 条件付き）。
+- Trc4: (1,u+1,1)(2,u+1,1)(3,u+1,0) = (1,u+1,1)::shiftr01 2 0 X_T, X_T=[(0,u+1,1),(1,u+1,0)]。
+  X_T∈Wg（Wrap 形、同じ A2g' で）→ Wrap で包む → hangv で接頭辞 P → GT 0 Trc4 → Cpsi.psiI_mem → 最終目標。
+
+**直接証明路（WordsG letter 路は marker 壁で不可: TF語は row2=0/marker 始まり、内容は (1,w+1,1) row2=1 始まり）**:
+- **ChildLoad.lean の childLoad が同じ head-wraps-child 形**（GTC CQ 版）: base（GTC_far_CQ）と oper
+  （GTC_oper via oper_shift+hasParent_append_right_of）が既に green。Wrap はその Wg 版。
+- Wrap を A2g' on X で: base X=[]→farword_Wg/tower_Wg、oper→mem_of_oper_mem+oper_shift、
+  graft（末尾 row2=0 高 graft）→ **upleaf_deep_coreD（HeQ:108, marker-free R-一般 GpT 再帰）**。
+  = ChildLoad の 3rd sorry（行55-57, j=v+1 の GTC_tie/GoodChtX_deep core）。GpT→Wg 橋。
+  A2g' の再帰 IH（部分 X が Wg で小）が upleaf_deep_coreD の hrep に一致。
+
+**次の具体的一手**: ChildLoad の graft sorry を upleaf_deep_coreD で埋める or Wrap を A2g' で直接
+  （childLoad の green base+oper 移植）。commit を刻む。
