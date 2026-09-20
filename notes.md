@@ -33000,3 +33000,23 @@ psiI の平坦・同一・z=1-遠い語コピー（row1 有界、記録なし）
   メンバーシップが 2 行同様に無料（Subst1 を独立証明する代わりに、閉包に Lift1 強度を組み込む）。
   **リスク**: 単に Subst1 に relocate する可能性。**検証法**: 既存 Aop を触らず新 Aop'/Wstar' を additive に prototype し、
   Wstar'_closed の塔分岐が余帰納で通る（unlock）か relocate する（死）かを判定。build を壊さない。
+
+## 追記755: ★ Lift1 強 Aop アイデアの評決 = RELOCATE（Subst1 は既約）。閉包の再構成では free にならない (2026-09-21)
+
+（追記754 の「唯一の新アイデア=Lift1 強 Aop」を設計レベルで検証。prototype せず＝relocate のため。）
+
+**構造の確認**:
+- `TowerOK`(Wset:4365) = 支配的 R（根が末尾孤児を revive）の tower⟦n⟧∈W a。`towerOK_of : TowerGraft2∧TowerExp→TowerOK`。
+- `Wstar_closed`(Wset:4372) の tower 分岐（clause2/3 の hpM=true, 行4447/4461）だけが `htow`(TowerOK) に委譲。他は Aop の hgr/hop から discharge。
+- `mem_of_Aclosed_aux`(Wset:4556) は clause-3 を直接証明せず、shiftl0 再帰 + `A2'`（real-W の lfp 帰納）で real-W メンバーシップを得て X に移す。
+  ∴ tower 内容は全て Wstar_closed ← htow ← Subst1 に集約。gap は正確に TowerOK。
+
+**Lift1 強 Aop' の評決 = RELOCATE**:
+- Aop'(Wset:171) の clause-3 `∀z∈Wfam m,based z→graft M z∈X` を Lift1 強 `…→∀d, graft M (Lift1 z d)∈X` にすれば、
+  Wstar'_closed の srow=2 tower 分岐は強化 hgr' から tower2_mem（Lift1 帰納、tower1_mem の srow=2 版）で discharge でき、そこでは htow 不要。
+- **だが** tower2_mem を hgr' から証明する crux goal state: 各レベルで `graft R (Lift1 (M⟦k⟧) d1) ∈ Wstar'`。
+  hgr' は `y∈W m`(based) にしか graft を供給しない。tower レベル M⟦k⟧（それ自身 Lift1 塔、based でも W m 元でもない）を
+  hgr' の y に橋渡し = 自己参照 Lift1 置換閉包 = **まさに Subst1**。（過去 tower1_mem_v_fam が「fam hgr が tow k∈Wg を要る」で循環したのと同一の壁。）
+
+**結論**: row2/Lift1 次元は 3 行固有で、閉包（Aop）の再構成では Subst1 を free にできない。**Subst1 は既約な 3 行固有の数学的内容**（Sibling の NEEDS-NEW-IDEA と整合）。
+psiI∈W0 無条件 = Subst1 の証明 = 真に新しいアイデア（整礎な Lift1 置換測度）を要する複数セッション研究。ツール接続・閉包再構成では閉じない、確定。
