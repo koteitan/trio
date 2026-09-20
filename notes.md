@@ -32977,3 +32977,26 @@ psiI の平坦・同一・z=1-遠い語コピー（row1 有界、記録なし）
 **教訓（[[check-standard-with-bms]] 系）**: 展開の有界性は**単一 oper でなく入れ子 oper（完全木 / BFS）で確認**する。
   単一 oper の row1≤1 は偽の安心。diagnosis fork は4回収束したが row1 有界の false positive も出た。以後は診断を増やさず、
   残余閉包（制限 Subst1）を直接 proof engineering するか、ユーザーの熟慮セッションに委ねる。
+
+## 追記754: ★★ 兄弟比較で gap 確定 + 唯一の新アイデア=Lift1 強 Aop。共終性は port 完了、残るはメンバーシップの Lift1 塔分岐=Subst1 (2026-09-21)
+
+（Sibling fork: 兄弟 2 行プロジェクト（停止性完成）の方法と trio の gap を比較。外部パス/名は非記載。）
+
+**2 行の方法**: 停止性 = 共終性 + `mem_Wstar`（メンバーシップ**無条件**、Wstar_closed の Aop 閉性帰納）。
+  2 行はリフトが行0のみ → Aop 供給の graft-closure `hgr` が塔を無料で閉じる → メンバーシップ無料。
+
+**trio の状態**: 共終性半分は port 完了・緑（`argDomCore_holds` Core:4598, `trio_cofinality` Core:4602）。
+  停止性 `wf_of_cofinality_and_membership`(Wset:334) は共終性 + **メンバーシップ** `∀M ST_TS M→∃u M∈W u`。
+  この後者 = `Wstar_closed`(Wset:4372, TowerOK 条件付き) = psiI∈W0 / Subst1。
+
+**3 行固有の gap**: Wstar_closed の Aop 閉性帰納の 3 分岐（successor/natDom/**domT tower**）のうち、
+  分岐 1-2 と 2 行の塔は `hgr` で閉じる（無料）。**3 行の塔分岐だけ** `oper_cons_tower2` が **Lift1-graft 塔**を生み、
+  その閉包は hgr 以上 = 行1リフト置換閉包 = **Subst1**。2 行は Lift1 が無いので Subst1 不要 → メンバーシップ無料。
+  ∴ psiI∈W0 は **3 行固有**（第2の遠い語次元/row2 A 行列上昇）で 2 行に shortcut 無し。評決: NEEDS-NEW-IDEA。
+
+**★ 唯一の未試行 genuine 新アイデア**: `Aop`(Wset:171) の第3分岐
+  `(∃m<u, domT M m ∧ ∀z∈Wfam m, based z → graft M z ∈ X)` を **Lift1 強**
+  （… → ∀d, graft M (Lift1 z d) ∈ X 相当）に再構成 → 余帰納が塔/Lift1 分岐を**無料 discharge** →
+  メンバーシップが 2 行同様に無料（Subst1 を独立証明する代わりに、閉包に Lift1 強度を組み込む）。
+  **リスク**: 単に Subst1 に relocate する可能性。**検証法**: 既存 Aop を触らず新 Aop'/Wstar' を additive に prototype し、
+  Wstar'_closed の塔分岐が余帰納で通る（unlock）か relocate する（死）かを判定。build を壊さない。
