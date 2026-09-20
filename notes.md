@@ -32366,3 +32366,19 @@ upleaf_deep_coreD(HeQ:108) が graft(深いタイ)エンジン。次: R_farword 
 
 **方針**: coordinator は route prescription を停止。fork が R_child を読み R_farword を構築中。
   具体的失敗ステップ（GpT_elim0 の row2=1 置換）を報告 → tower_GPF で支援。
+
+## 追記733: R_child-analog が row2=1 で壊れる EXACT step = GpT_elim0/CtxP node-slot は row1 専用
+
+**coordinator の問いへの回答（R_child 証明の row2=1 での失敗点）**:
+- R_child(GyF:262-269) の核: `have hn := GpT_elim0 hL hR1`（hL : GC A h τ b L）。
+- `GpT_elim0`(GyD:153): GpT A o H b E → CtxP (GC A) A o R → **nslot** (R H) (liftOff H A o) b E。
+- CtxP(GyB:396) の node-slot（第4 field `fun s hs2 hs => ...`）は **row1-node**（marker (1,b+τ,0), row2=0）を GC/GpT で処理。
+- **row2=1 遠い語頭 (1,b+τ,1) は bad root**。その内容は row1-children(GC)でなく far-word 塔（PVP_snocz/PVF_snoc/oper_zcone）。CtxP に far-word-head slot が無い → `GpT_elim0`(row1-slot)は非適用。
+- ∴ R_farword ≠ R_child-variant（elimination が別種: row1-slot vs far-word 塔）。
+
+**SlotAx(RLC_ax, GyI:62)の field = {lift, oper, orph, tie, flat}（全て row2=0）**。nested row2=1 遠い語頭の field が無い。
+∴ R_farword = SlotAx 拡張 or 新 LC1 constructor **LC1_farword**（nested 遠い語頭、mutual recursion RLC↔PVF/PVP、追記719 の標的）。
+
+**green 部品（この resume）**: RFpvf.PVF_farhead_load = PVF_snoc+RLF_load で 遠い語頭+Wg-load PVF（深い版、head row1=b+2）。同段版が LC1_farword。
+PVP_snocz(GyG:229, GpT_snocz_core)= bare 遠い語頭の PVP 追加機構。PVF_snoc(GyK:107)= 頭+RLF内容の PVF 追加（top）。
+LC1_farword はこれらを RLC content 内に nested で持ち込む（LC1 の head を content 内に入れる mutual recursion）。
