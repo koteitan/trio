@@ -52,7 +52,8 @@ theorem childLoad (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based 
           rw [oper_shift K Y 2 n hlen2 hp]
           exact ((hop n hn).2 (based_oper hn hb))
         · sorry
-      · -- graft: tie-root case → recursive GTC_tie
+      · -- graft: last col row2=0, srow=1 (row1=j∈[1,v+1]). j≤v → GTC_orph (needs row1-noCross
+        -- lemma to avoid rsum); j=v+1 → recursive GTC_tie (GoodChtX_deep core). Both open.
         sorry
   intro Y hY hb
   exact (key hY).2 hb
