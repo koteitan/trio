@@ -32124,3 +32124,28 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
 
 **次の具体的一手**: ChildLoad の graft sorry を upleaf_deep_coreD で埋める or Wrap を A2g' で直接
   （childLoad の green base+oper 移植）。commit を刻む。
+
+## 追記726: upleaf_deep_coreD（HeQ:108）の graft 案件実体化パラメータ（coordinator 先行解析）
+
+（fork が ChildLoad 精査中の裏で coordinator が upleaf_deep_coreD の hyp を精査。fork へは未送信、
+  記録のみ。）
+
+**upleaf_deep_coreD の結論**:
+  GpT A o f b (Pre ++ (Yp ++ shiftr01 d 0 (shiftr01 1 0 ((0,q,0)::(D++[(d0,m,0)])))))
+  from hrep: ∀m'≥1, GpT ... (Pre ++ Yp ++ shiftr01 d 0 (shiftr01 1 0 (tow q 0 (D++[(d0,m,0)]) m')))。
+  hyp: Fr Pre, Fr Yp, Hd Yp, Yp≠[], Fr D, (∀p∈D, m≤p.2.1), 1≤d0, q<m, 1≤m。
+
+**Wrap の graft 案件への実体化**:
+  Wrap 目標 (1,w+1,1)::shiftr01 2 0 X。X=(0,q,0)::(D++[(d0,m,0)])（based, 末尾 tie）とすると:
+  - Yp = [(1,w+1,1)]（Fr/Hd/≠[] OK）。
+  - d = 1（shiftr01 2 = shiftr01 1 ∘ shiftr01 1）。∴ (1,w+1,1)::shiftr01 2 0 X = Yp ++ shiftr01 1 0 (shiftr01 1 0 X)。
+  - inner = X、q = X 根 row1、D = X 中間、(d0,m,0) = X 末尾 tie。
+  - Pre = []（letter 本体）。接頭辞 P は hangv で別途（farhead_base_oper succ 節と同じ）。
+  - hrep = A2'(on X) の IH（部分 X が Wg で小、tow が自己相似塔）。
+
+**crux（世界渡り）**: 結論 GpT（world-2）、Wrap は Wg（world-1）。橋が TF/GF 経由だと marker 混入
+  （追記724 の壁）。∴ 選択肢:
+  (a) GpT→GPF→(marker-free な)Wg 直接橋を探す（GF_of_GPF の先、TF_tieG を通さない路）。
+  (b) upleaf_deep_coreD を使わず、**純 Wg-world の A2'(on X) + mem_of_oper_mem** で graft を閉じる
+     （ChildLoad は GTC world で A2' on Y、base/oper green。Wg 版に移植し graft は Aopg の tie 枝
+     + oper 自己相似で直接）。fork の判断に委ねる。
