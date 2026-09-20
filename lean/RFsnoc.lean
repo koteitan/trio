@@ -31,6 +31,21 @@ theorem tower1_mem_v_fam {v m a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R �
         exact (hgr k hk) (argOK_graft hRne hR _) a' ha'
   exact fun k => key k a hva
 
+/-- **srow 非依存の fam 塔**: tower1_mem_v_fam から srow=1 専用の tower1_le を外し、hvm を直接取る。
+    tie(srow1, oper_cons_tower1)にも頭(srow2, oper_cons_tower2)にも使える。graft がシフトを担う。 -/
+theorem tower_mem_fam {v m a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hva : 2 * v ≤ a) (hvm : 2 * v ≤ m)
+    (hgr : ∀ k, tow v 0 R k ∈ Wg m → graft R (tow v 0 R k) ∈ Wstarv v) :
+    ∀ k, tow v 0 R k ∈ Wg a := by
+  have key : ∀ k, ∀ a', 2 * v ≤ a' → tow v 0 R k ∈ Wg a' := by
+    intro k
+    induction k with
+    | zero => intro a' _; simpa [tow] using Wg_nil a'
+    | succ k ih =>
+        intro a' ha'
+        exact (hgr k (ih m hvm)) (argOK_graft hRne hR _) a' ha'
+  exact fun k => key k a hva
+
 /-- 内容 oper（末端 tie 版, P=[]）: 根+遠い語頭+tie の展開 = (根,遠い語頭) の塔。
     モデル検証済み（tools/trio.py）。bad root=tie(行1), 親=根(col0), d0=2, d1=0。 -/
 theorem oper_headtie (u n : ℕ) :
