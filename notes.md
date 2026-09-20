@@ -31895,3 +31895,11 @@ fork(8a4bbf8, ChildLoadAnchor.lean green helpers)が**決定的な構造障害**
 - **psi(I) の Rc4=(1,1,1)(2,1,1)(3,1,0) は depth-3**: load (3,1,0) は row0=3 = 第2頭 (2,1,1) の**子**(trio.py: p0=2)。fwU の shift=2 固定 ⟹ based load では row0=2 止まり、row0=3 には非based load [(1,1,0)](除外)か余分列(fwU 反復は余分な (2,1,1) 頭を注入)が要り、Rc4 に整形不可。
 - **∴ childLoad = rcol²([(1,1,0)]) の二重 rcol(単一頭 nested)= 既存の全 far-word 閉包(二重頭 fwU / depth-2)より厳密に 1 段深い = 「字の中の字」= gen_gyk 未対応・前セッション類似 tower keystone 未 close の真の open frontier**。
 - **確定的評価(8 fork ~5M tok)**: 目標を単一 keystone childLoad に還元 → base+oper green(committed 6341f32)→ 既存全機構(deep-leaf/ch-Z/fwU-FarCU/GT・GTC 6規則)を depth 不一致で route-除外。残余 = 単一頭 nested far-word child-load 閉包の from-scratch 構築 = major open construction。**証明可能だが本プロジェクトの中心的 open problem 級**。
+
+## 追記713: ★★ 訂正(希望的・決定的) — 経路 VIABLE。GLctx/wLT 単一頭 + upleaf_deep_core(R一般)で閉じられる
+
+追記712 の「open frontier / from-scratch」評価を訂正。fork が経路を validate:
+- **単一頭 bridge は存在**(fwU 二重頭は強制でない): `GLctx`(HeW:13)/`GTC_far_gen`(HeW:21)→ BwT → StarOK → W0 は wLT rendering で **1 component = 1 rcol 頭**(R_pm3/bwt_KK2 が実使用)。
+- **graft case が upleaf_deep_core(HeQ:83, R 一般)に構造一致**: childLoad graft content `(1,v+1,1)::shiftr01 2 0 Y` = upleaf_deep_core 結論(Pre=[], Yp=[(1,v+1,1)] Fr/Hd/≠[]✓, d=1, Y=(0,q,0)::R)。root row2=0 は Aopg graft 分岐が保証(Gw:27)。∴ R≠[] graft-form 荷は GpT 世界で閉じる。
+- **残工程(再定式化 = 実 build)**: (a) 族 `(0,0,0)::Rc4^n` を `(0,0,0)::rword 0 0 (ps.map (wLT 0))` で表す(ps の tree-forest が荷を担う、GLctx の RawWskt/FarCAt/RawWsAt を全段で満たす)。(b) 葉 base case(Trc4 の実 Y=[(0,1,0)] 単一列 → R=[] で hRne 違反 → 独立の `ch Z` 葉補題 via GoodChtX_snocL)。(c) Aopg graft Y(domT 形)→ upleaf_deep_core の (0,q,0)::R 分解の写像。
+- **∴ psi(I)∈W0 は既存機構(upleaf_deep_core + GLctx/wLT 単一頭 bridge, R_pm3 と同型)で閉じられる VIABLE 経路。from-scratch open problem でなく、GLctx/wLT 世界への再定式化(multi-session build)**。base+oper+anchor は committed green。
