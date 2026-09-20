@@ -32382,3 +32382,26 @@ upleaf_deep_coreD(HeQ:108) が graft(深いタイ)エンジン。次: R_farword 
 **green 部品（この resume）**: RFpvf.PVF_farhead_load = PVF_snoc+RLF_load で 遠い語頭+Wg-load PVF（深い版、head row1=b+2）。同段版が LC1_farword。
 PVP_snocz(GyG:229, GpT_snocz_core)= bare 遠い語頭の PVP 追加機構。PVF_snoc(GyK:107)= 頭+RLF内容の PVF 追加（top）。
 LC1_farword はこれらを RLC content 内に nested で持ち込む（LC1 の head を content 内に入れる mutual recursion）。
+
+## 追記734: 失敗点確定 = CtxP に far-word-head slot 無し。target = LC1_farword base case(PVP_snocz + load-hang)
+
+（fork が正確な失敗ステップ特定 + coordinator が base case に絞る。）
+
+**失敗点（fork 確定）**: R_child(GyF:265)の `GpT_elim0` は CtxP の node-slot(row1-node, row2=0 marker)で
+  content を elim。row2=1 遠い語頭は bad root で elim は far-word tower(PVP_snocz/GpT_snocz_core/oper_zcone)。
+  **CtxP に far-word-head slot 無し**（SlotAx=RLC_ax GyI:62 = {lift,oper,orph,tie,flat} 全 row2=0）。
+  ∴ R_child-variant では不可（追記733 訂正）。
+
+**genuine target = LC1_farword**（新 theorem、SlotAx field でない）:
+  LC1 A o H b (Y ++ (1,b+τ,1)::shiftr01 1 0 Z) ⟸ LC1 A o H b Y + Z good(深い level)+ tie 条件。
+  LC1(GyH:16): ∀W PVP, PVP(W ++ (1,b+liftOff+1,1)::shiftr01 1 0 Y)。既存 constructor(nil/oper/flat/orph/tie)
+  は Y を row2=0 で構築。LC1_farword は Y 内に入れ子頭（row2=1）を許す。
+  building blocks: PVP_snocz(GyG:229, 頭の tower append=GpT_snocz_core)、PVF_snoc、RFpvf.PVF_farhead_load。
+
+**base case（Trc4 が実際に必要、depth-1）**: Y=[] で
+  LC1 A o H b ((1,b+τ,1)::shiftr01 1 0 Z), Z=based Wg-load(flat, Trc4 の Om)。
+  = 頭 + Wg-load-child、深い入れ子なし。PVP_snocz(頭) + GpT_snocz_core の tower に load を hang。
+  → まず base case を build（RFlc1.lean）、first Lean error を報告 → 支援。
+
+**方針**: coordinator は route prescription 停止（Wrap/ch-Z/direct-oper/R_child-variant と外れ多数）。
+  fork に LC1_farword base case を build させ、具体的 Lean error で支援。
