@@ -33136,3 +33136,19 @@ psiI∈W0 ⟸[X∈W0 の A2'帰納 + oper恒等式 collapse(X)⟦n⟧=collapse(X
   starOK_farwords/GT に戻れば route(B) は base で Subst1 に帰着。要 Lean 検証。
   progress: psiI を「base(n) 多頭頭コピー塔」に還元（Subst1 より具体的）。base(1) は proven。
 関連 [[wworld-route-tools-exist]]
+
+## 追記763: route(B) の oper 恒等式は oper_graft_inner(緑)で確定。3ピース中2つ緑支持、残 crux=base(n) (2026-09-21)
+
+（coordinator が BaseN と非干渉で piece 1 を de-risk。）
+
+**`oper_graft_inner`(Xbar:151, 緑)**: `(graft M y)⟦n⟧ = graft M (y⟦n⟧)`（hM,hy≠[], hyL:y.length-1≠0, hp:y 末尾に親）。
+route(B) の collapse tail `(2,1,1)::shiftr01 3 0 X = graft [(2,1,1),(3,1,0)] X` で、
+その oper `= (2,1,1)::shiftr01 3 0 (X⟦n⟧)`（model 一致）が oper_graft_inner で**直接証明できる**。piece 1 確定。
+
+**route(B) 3 ピースの状態**:
+1. oper 恒等式 = oper_graft_inner(Xbar:151, 緑)✓
+2. A2' 帰納(X∈W0, W-lfp, olt 非循環) = A2'/mem_of_oper_mem 機構実在、組み立てのみ。
+3. base(n)=(0,0,0)(1,1,1)(2,1,1)^n ∈ W0 = 残 crux（空内容 starOK で証明可か、GT 要か）。BaseN 検証中。
+
+関連 oper 補題: oper_graft_pred(Xbar:195), oper_graft_blocked(Xbar:309), oper_append_inner/pred(Xbar:49,126)。
+残るは base(n) の一点。関連 [[wworld-route-tools-exist]]
