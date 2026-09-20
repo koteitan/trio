@@ -31683,3 +31683,10 @@ psi(I) を閉じる 2 路 (a) 開コア(WCat/Subst1/塔閉包、深い lfp 帰�
 - `Three = Z | P (a1 a2:ℕ)(b c:Three)`、translate の (a1,a2)=(row1,row2)(z<2 で row2≤1)、(b,c)=(深さ優先の子, 兄弟)。cnf = 兄弟の先頭対が非増加(Cantor 正規形)。
 - olt b f は「異なる節点の子」を比べるので構造的減少でなく、WF は Ordinal 埋め込み(値関数 val:Three→Ordinal、a1=Ω段の collapse を含む)か Buchholz 流の直接証明が要る。z<2 断片は psi(K)(弱コンパクト)まで届くので記法は大きく、これは OCF レベルの重い未探索路。
 - ∴ 3 つ目の路として存在するが、W-route(開コア)/生成器拡張(row1688 入れ子タイ)と同様 dedicated effort。ただし**未探索**なので、W が詰まっている以上、検討価値はある。
+
+## 追記696: WCat の未証明部分は「非 rsum」だけ / psi(I) は row1688 と別パターン
+
+- `oper_append_gen`(Wset:1414、rsum 前提で `(A++P)⟦n⟧=A++P⟦n⟧`)と `W_add`(rsum 前提の連結)は**証明済み**。Gw は guarded 連結も証明済み。
+- ∴ `WCat`(無条件連結)の未証明部分は **rsum が壊れる場合のみ**(B の bad root が A の列に食い込む)。塔 shTower のコピーは row0 増加シフトで rsum が壊れるため、この非 rsum WCat が**本質的に必要**(`shiftTowerClosed_of_cat` が WCat を使う理由)。
+- psi(I)=(0,0,0)(1,1,1)(2,1,1)(3,1,0)(2,0,0) は row1=2 タイを持たず、row1688 とは**別の理由**で "top ltl" 失敗:far-word 頭 (2,1,1) が深い子 (3,1,0) を持つ(top_ltl は頭のサブツリー size=1 を要求)。⟹ psi(I) 自体も独自の生成器パターン拡張が要る。
+- 3 ルート(W 開コア=非rsum WCat 等 / 生成器拡張 / olt-WF)全て dedicated effort で確定。heartbeat 増分での green は無し。
