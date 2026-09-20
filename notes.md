@@ -32214,3 +32214,18 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
 
 **結論**: childLoad(GTC) を C_fam で再証明すれば、Cpsi を C_fam-GTC の反復 append に緩和でき、
   marker 壁を回避して最終目標に到達。route は viable。残りは Lean 構築（STEP 1 → STEP 2）。
+
+## 追記726: childLoad の全ケースが遠い語頭+子(=R_farword)を要する。Trc4 は graft ケース(short でない)
+
+**訂正（coordinator の STEP1 想定は誤り）**: childLoad の A2g'(Y 帰納)で
+- short ケース = `lev Y 0 = 0`（行1=0∧行2=0）→ based で Y=[(0,0,0)]。**Trc4 の [(0,1,0)] は行1=1 で lev=2≠0 → graft ケース(c)**（domT 成立、entry2=0）。
+- ∴ Trc4 = childLoad の **graft ケース**（深いタイ (2,1,0), j=v+1=1 が根に graft）。short でない。
+
+**全ケースが遠い語頭+子を要する（GTC_flat 等の既存 constructor では閉じない）**:
+- short(Y=[(0,0,0)]): 内容 = (1,v+1,1)(2,0,0)。(2,0,0) は行0=2 で頭(行0=1)の**子**（兄弟でない）。GTC_flat は hKx:x≤K行0（2≤1）で失敗。
+- oper-no-parent / graft: 同様に頭+子構造。
+- ∴ childLoad の 3 sorry は全て「遠い語頭が子を包む」構成 = **R_farword**（元の gap）。GTC_far_CQ(base Y=[]) だけが子なしで green。
+
+**この turn の確定した収束**: Wrap(裸頭∈Wg)偽 → hangv 不可。childLoad(GTC,根文脈)が正しい形だが全ケースが R_farword を要する。
+∴ **唯一の genuine gap = R_farword**（遠い語頭+PVF/GPF内容の GpT constructor, GyK 世界, 追記716-720 の標的）。
+upleaf_deep_coreD(HeQ:108) が graft(深いタイ)エンジン。次: R_farword を GyK で直接構築 or childLoad graft を upleaf_deep_coreD で。
