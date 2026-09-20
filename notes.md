@@ -33036,3 +33036,15 @@ psiI∈W0 無条件 = Subst1 の証明 = 真に新しいアイデア（整礎な
 ∴ **level-consistency ⟺ membership ⟺ Subst1**。7 個目の角度も同じ核。Subst1 の既約性を再確認。
   有用な framing: Subst1 = 「標準形の全 oper が有界 level で終了する」simultaneous level-closure。
   真の前進には整礎 Lift1 置換測度（新しい順序数解析）が要る。反射的 fork/角度探索は打ち止め。
+
+## 追記757: さらに2角度を消去（大きい u への弱化 / 特定インスタンス）。両方 Subst1 (2026-09-21)
+
+（coordinator 思考、fork なし。再 tread 防止の記録。）
+
+- **W u(大きい u)への弱化**: W 0⊆W u(W_mono)だが clause-3 `∃m<u` は Lift1 塔の level まで m が要り、
+  塔は row1→∞ で level 無界 → 有限 u では覆えない。→ Subst1。目標を弱めても無界 Lift1 は消えない。
+- **特定インスタンス Subst1 のみ**（一般でなく C4/Rc4 の hsub = (2,1,1)::shiftr01 3 0 X∈W3 だけ）:
+  C4scratch が n=1 でも Subst1 等価と示済み。特定でも遠い語頭の residue = 同じ核。→ Subst1。
+
+**通算 9 角度が Subst1 に底打ち**（WCat/DM-QS/bump-Aok/平坦→対角/2行port/Lift1強Aop/translate帰納/大u弱化/特定インスタンス）。
+Subst1 の既約性は確定。真の前進 = 整礎 Lift1 置換測度（新順序数解析）= ユーザーの熟慮研究。
