@@ -33020,3 +33020,19 @@ psiI の平坦・同一・z=1-遠い語コピー（row1 有界、記録なし）
 
 **結論**: row2/Lift1 次元は 3 行固有で、閉包（Aop）の再構成では Subst1 を free にできない。**Subst1 は既約な 3 行固有の数学的内容**（Sibling の NEEDS-NEW-IDEA と整合）。
 psiI∈W0 無条件 = Subst1 の証明 = 真に新しいアイデア（整礎な Lift1 置換測度）を要する複数セッション研究。ツール接続・閉包再構成では閉じない、確定。
+
+## 追記756: translate 帰納も Subst1 に還元（7 個目の角度）。crux = level-consistency (2026-09-21)
+
+（coordinator が自己検証。fork なし。）
+
+**新角度**: メンバーシップ `∀M ST_TS, ∃u M∈W u` を Aop 閉性帰納でなく **translate（順序数）上の整礎帰納**で出せないか。
+  共終性は port 済みなので、「M∈W ⟸ opers∈W（mem_of_oper_mem）」で translate 帰納が回れば Subst1 不要かと期待。
+
+**結果: 還元する（不成立）**。`mem_of_oper_mem`(Wchar:70) = `(∀n≥1, S⟦n⟧∈W a)→S∈W a` は
+  **全 oper が単一の同じ level a に居ること**を要求。M⟦n⟧ は n で系列が伸び level が育つが、
+  membership の終了 level は小さいまま（psiI: opers=(0,0,0)::Rc4^n が全て W0）。この
+  **level-consistency（標準形の全 oper が M と同じ有界 level で終了）を証明すること自体が membership = Subst1**。循環。
+
+∴ **level-consistency ⟺ membership ⟺ Subst1**。7 個目の角度も同じ核。Subst1 の既約性を再確認。
+  有用な framing: Subst1 = 「標準形の全 oper が有界 level で終了する」simultaneous level-closure。
+  真の前進には整礎 Lift1 置換測度（新しい順序数解析）が要る。反射的 fork/角度探索は打ち止め。
