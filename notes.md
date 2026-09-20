@@ -32149,3 +32149,19 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
   (b) upleaf_deep_coreD を使わず、**純 Wg-world の A2'(on X) + mem_of_oper_mem** で graft を閉じる
      （ChildLoad は GTC world で A2' on Y、base/oper green。Wg 版に移植し graft は Aopg の tie 枝
      + oper 自己相似で直接）。fork の判断に委ねる。
+
+## 追記725: ★重要訂正 — Wrap は偽（裸の遠い語頭 [(1,w+1,1)] は Wg でない）。hangv 路は原理的に不可
+
+**確定（Aopg 3ケース分析）**: `[((1,w+1,1))] ∉ Wg(2(w+1))`。
+- (a) short: lev [(1,w+1,1)] 0 = 2(w+1)+1 = 2w+3 ≠ 0 → 不成立。
+- (b) natDom: domT [(1,w+1,1)] (2w+2) が成立（lev = 2w+3 = (2w+2)+1、親なし ¬hasParent）→ ¬natDom → 不成立。
+- (c) graft: **entry M 2 (last) = 0 を要求**（Aopg, Gw:27）が、遠い語頭は row2=1 で entry 2 0 = 1 ≠ 0 → 不成立。
+- ∴ どの Aopg ケースも当たらず [(1,w+1,1)] ∉ Wg。**Wg の graft は row2=0（タイ/孤児）のみ、row2=1（遠い語頭）は graft 不可**。
+
+**帰結**:
+- **linchpin `Wrap` は偽**（X=[] で反例）。RFbase の `farhead_base_oper` は Wrap 仮定下で green だが**空虚**（Wrap 証明不能）。
+- **hangv 路は原理的に不可**: hangv は根なし R を吊るすが、遠い語（R の頭が row2=1）は根なしでは Wg でない。遠い語は必ず根 (0,u,0) と共に oper/塔/WordsG 機構で組む必要がある。
+- ∴ 遠い語塔は oper_zcone flatMap + 塔Wg(WordsG/tower_GPF) が正しい機構。これは接頭辞を塔に焼き込む（oper_zcone が P' をコピー）ので**接頭辞は構造化（context）必須**。一般 BwT 接頭辞は不可。
+- Trc4 家系（replicate n Trc4）は構造化されているので context 化はできるが、Trc4 の遠い語頭+子を塔内容の GpT にする = R_farword（元の gap）に戻る。
+
+**次の正しい方向**: R_farword（遠い語頭+PVF/GPF内容の GpT constructor）を GyK 世界で作り、tower_GPF 型で Trc4 家系の塔内容を GpT にして WordsG letter → BwT_append_words。marker-free だが GpT 世界。upleaf_deep_coreD が graft(深いタイ)側のエンジン。
