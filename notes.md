@@ -32405,3 +32405,27 @@ LC1_farword はこれらを RLC content 内に nested で持ち込む（LC1 の 
 
 **方針**: coordinator は route prescription 停止（Wrap/ch-Z/direct-oper/R_child-variant と外れ多数）。
   fork に LC1_farword base case を build させ、具体的 Lean error で支援。
+
+## 追記735: ★★★ frontier が単一補題に = general-f PVP_snoc(遠い語頭+content、任意 f)。LC1_farword_base green
+
+（fork が gap を 1 本に driven down + coordinator が build approach 提供。）
+
+**新 green（fork commit）**: `RFlc1.LC1_farword_base_of_rlf`:
+  LC1 A o (fun_=>0) b ((1,b+τ,1)::shiftr01 1 0 Z) ⟸ RLF A o b ((1,b+τ,1)::shiftr01 1 0 Z)（PVF_snoc 経由、no sorry）。
+
+**残る唯一の blocker = general-f `PVP_snoc`**:
+  PVP A o f b (W ++ (1,b+liftOff f A o+1,1)::shiftr01 1 0 Y) ⟸ PVP A o f b W + RLF A o b Y、**任意 f**。
+  - PVF_snoc(GyK:107)は hY.1 を fun_=>0 に固定 → f=0 のみ。
+  - GpT_snocz_core(GyG:93)は general-f だが bare head（content 無し）。
+  - 中間（general-f で頭+content）が欠けている。
+
+**build approach（coordinator）**:
+  - RLF = RLC ∧ Fr、RLC は **既に general-g**（∀g b', LC1 … g …）。∴ hY.1 は任意 g で content Y の LC1 を供給。
+    content は blocker でない（RLF が general）。PVF_snoc は g=0 のみ使った。general f は matching g で instantiate。
+  - 頭の tower が general-f blocker = GpT_snocz_core（general-f bare head）。
+  - ∴ **GpT_snocz_core の proof skeleton を copy し、bare head [(1,…,1)] の代わりに (1,…,1)::shiftr01 1 0 Y を
+    append、Y の部分を hY.1(matching g)で discharge**。
+  - green になれば: PVP_snoc_gen → LC1_farword(general H) → RLC → RLF(R_farword) → childLoad → gtc_trc4
+    → Cpsi → 最終目標。
+
+**次**: fork が PVP_snoc_gen を build 中（RFlc1.lean、GpT_snocz_core skeleton + Y content）。last mile。
