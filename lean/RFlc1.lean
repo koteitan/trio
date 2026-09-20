@@ -22,5 +22,15 @@ theorem LC1_farword_base_of_rlf {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < 
   rw [liftOff_zeroF]
   exact h.1
 
+/-
+CONCRETE Lean error for the direct PVF_snoc-mirror at general f (via `hY.1 f b le_rfl`):
+  `hL W hW h` fails — `h : PVP A o f b W` but hL expects
+  `PVP A (o + addF (fun x => 0) f o) (addF (fun x => 0) f) b W`.
+∴ RLC の LC1 は offset **o + f·o**（≠ o、state = addF(0)f = f）で content は reliftX'd。
+PVF_snoc は g=fun_=>0 で f·o=0 → offset o、content Y だったから通った。general-f では offset がずれる。
+∴ PVP_snoc_gen は hY.1 直接適用でなく GpT_snocz_core の塔（PVP の ∀t が per-level の shift を供給、
+hY.1 を per-t の g で使う）が必須。= GpT_snocz_core(120行)に content Y を通す construction。
+-/
+
 end RFlc1
 end TRIO
