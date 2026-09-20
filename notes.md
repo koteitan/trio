@@ -31950,3 +31950,13 @@ farword_Wg_L fork が GyK の GPF/PVF/RLF 塔 engine を精査し、残余を**�
 - **唯一の genuine 構築 = `RLF_farword`**: PVF far-word を RLF content に入れ子にする新規 constructor = **mutual PVF-in-RLF recursion**(RLF content が PVF far-word になれる、最内 row2=0 [(1,1,0)] で底、入れ子深さで整礎)。
 - **それ以外は全て green か reduces**: cone(cone_farhead)、copies(BwT_snocz)、oper 恒等式、Cpsi の族還元(GT 0 Trc4 に還元済、WordsG)。
 - ∴ psi(I)∈W0 は **GyK に RLF_farword(1 constructor + mutual recursion)を足せば閉じる**。substantial(mutual def + GpT/Wg 証明)だが well-defined・整礎。17 fork を経た最精密 target。committed green 維持。
+
+## 追記719: ★★★ 残余を LC1 レベルの exact constructor `LC1_farword` に確定(grep 確認、18 fork 収束)
+
+RLF_farword fork が GyH→GyI→GyK を LC1 まで trace し、残余を確定:
+- `LC1`(GyH:16 def)= `∀W, PVP W → PVP (W ++ (1,b+liftOff H A o+1,1)::shiftr01 1 0 Y)` — row2=1 頭を **top に 1 個**、content Y。
+- RLC content = RLF_nil/RLF_load(based Wg-load, row2=0)/RLF_child(row2=0 node (1,b+τ,0))のみ = **全て row2=0**。**row2=1 constructor は content 機構(GyF/GyG/GyH/GyI/GyK)に皆無**(grep 確認、LC1_letter/R_far 等無し)。
+- Trc4 = rcol 0 u で (1,u+1,1)(2,u+1,1)(3,u+1,0)、外頭の content = (1,u+1,1)(2,u+1,0) = row2=1 **sub-head** + row2=0 leaf。この content 内 row2=1 sub-head が RLC 文法の禁止事項。
+- **唯一の欠落 constructor = `LC1_farword`**(= RLF_farword / PVP→RLC bridge):
+  `RLF A o b K → PVF A' τ b Y → RLF A o b (K ++ (1,b+τ,1)::shiftr01 1 0 Y)`。row2=1 sub-head に入れ子 far-word content Y。RLF_child(row2=0)の mirror ではなく、**sub-head の oper(入れ子 far-word 展開)**の処理が必要。tower_GPF との mutual recursion(有限、RLF_child で底)。
+- それ以外(cone_farhead, copies, oper 恒等式, Cpsi の GT 0 Trc4 族還元)は全て green。∴ psi(I)∈W0 は **LC1_farword 1 個で閉じる**。substantial LC1 拡張だが exact・有限・整礎。本プロジェクトの「字の中の字」open frontier(前セッション類似 keystone も未 close)。committed green 維持。
