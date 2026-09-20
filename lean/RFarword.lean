@@ -97,5 +97,36 @@ theorem natDom_double_head {P : TrioSeq} (hP : Fr P) (u : ℕ) :
     show ([((1, u + 1, 1) : ℕ × ℕ × ℕ)] ++ [((2, u + 1, 1) : ℕ × ℕ × ℕ)] : TrioSeq)
       = [((1, u + 1, 1) : ℕ × ℕ × ℕ), ((2, u + 1, 1) : ℕ × ℕ × ℕ)] from rfl] at h
 
+/-! ## Trc4 の描画（graft アプローチ用の深いタイの明示） -/
+
+/-- Trc4 = 遠い語頭 + 平らな子。Cpsi.Trc4 と同値（rcol 0 0 [(1,1,0)]）。 -/
+def Trc4 : TrioSeq := [((1, 1, 1) : ℕ × ℕ × ℕ), ((2, 1, 0) : ℕ × ℕ × ℕ)]
+
+theorem Trc4_eq_rcol : Trc4 = rcol 0 0 [((1, 1, 0) : ℕ × ℕ × ℕ)] := by
+  simp [Trc4, rcol, shiftr01]
+
+/-- 平らな子 [(1,1,0)] を段 u に mlift すると [(1,u+1,0)]（コーン内で行1が u 上がる）。 -/
+theorem mlift_flat (u : ℕ) :
+    mlift ([((1, 1, 0) : ℕ × ℕ × ℕ)] : TrioSeq) 0 u = [((1, u + 1, 0) : ℕ × ℕ × ℕ)] := by
+  have hc : coneV ([((1, 1, 0) : ℕ × ℕ × ℕ)] : TrioSeq) 0 0 := by
+    intro y hy; obtain rfl : y = 0 := Nat.le_zero.mp (rtg0_le hy); decide
+  unfold mlift
+  simp only [List.length_singleton, List.range_one, List.map_cons, List.map_nil, if_pos hc,
+    show entry ([((1, 1, 0) : ℕ × ℕ × ℕ)] : TrioSeq) 0 0 = 1 from rfl,
+    show entry ([((1, 1, 0) : ℕ × ℕ × ℕ)] : TrioSeq) 1 0 = 1 from rfl,
+    show entry ([((1, 1, 0) : ℕ × ℕ × ℕ)] : TrioSeq) 2 0 = 0 from rfl]
+  rw [Nat.add_comm 1 u]
+
+/-- **Trc4 の段 u 描画**: rcol 0 u (mlift Trc4 0 u) = (1,u+1,1)(2,u+1,1)(3,u+1,0)。
+    最終列 (3,u+1,0) が深いタイ（graft 塔）。mlift_rcol + rcol_rcol + mlift_flat。 -/
+theorem render_Trc4 (u : ℕ) :
+    rcol 0 u (mlift Trc4 0 u)
+      = [((1, u + 1, 1) : ℕ × ℕ × ℕ), ((2, u + 1, 1) : ℕ × ℕ × ℕ), ((3, u + 1, 0) : ℕ × ℕ × ℕ)] := by
+  rw [Trc4_eq_rcol,
+    mlift_rcol (v := 0) (W := [((1, 1, 0) : ℕ × ℕ × ℕ)])
+      (by intro y hy; simp only [List.mem_singleton] at hy; subst hy; exact le_rfl) u,
+    Nat.zero_add, rcol_rcol, mlift_flat u]
+  simp [shiftr01]
+
 end RFarword
 end TRIO
