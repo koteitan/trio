@@ -31865,3 +31865,12 @@ build fork(6341f32)が base+oper green を確定し、残り全 case を精査:
 - **本質核 = 再帰 GTC_tie**: hload(GzJ:181)が ∀u'≥v ∧ ∀Z∈Wg(2u') で childLoad を要求 ⟹ stage/level/A2g'-on-Y 帰納すべて不可、**GoodChtX_deep(HeU:124, tie 1 [tie 1 []])の同時整礎帰納**が必須(lead③、本体)。
 - Trc4 は Y=[(0,1,0)] 単一列でも GTC_tie の hload は full childLoad(∀u'∀Z)を要求 ⟹ shortcut 無し。
 - **接続は全 green(Cpsi.psiI_mem)、base+oper committed。残り = GoodChtX_deep 同時帰納 1本 = 本プロジェクトの真の open frontier**(6 fork ~2.5M tok + 前セッションの類似 tower keystone [memory tower-keystone-bridge] でも未 close)。証明可能だが major construction。
+
+## 追記710: ★ GoodChtX_deep(upleaf_deep_coreD)は childLoad に非適用 — load 高さ不一致
+
+childLoad の再帰 tie を GoodChtX_deep(HeU:124 / upleaf_deep_coreD HeQ:108)で閉じる route を精査 → 不可:
+- **upleaf_deep_coreD の deep-child D は `hD1: ∀p∈D, m ≤ p.2.1`(row1 ≥ m > q = 高い入れ子タイ木)を要求**。GoodChtX_deep は D=[(1,q0+2,0)](高い単一タイ)。
+- childLoad の load Y∈Wg(2(v+1)) は **row1 ≤ v+1 = head と同レベル(高くない)** ⟹ hD1 を満たさない。
+- ∴ **deep-leaf(高い load)機構は childLoad(同レベル load)に非適用**。graft/GTC_orph は j≤v(低い load)。**childLoad の j=v+1(同レベル load を far-word 頭に吊るす)は既存3機構(deep-leaf 高 / graft 低 / orph)いずれとも異なる新規機構**。
+- 残余の正確な性質 = 「far-word 頭 (1,v+1,1) の直下(row0=2)に、同レベル(row1≤v+1)の Wg-load を吊るした語」の GpT/GTC。これは本プロジェクト未構築。
+- base+oper は green(ChildLoad.lean)、接続 green(Cpsi.psiI_mem)。残り = この同レベル-load keystone(GoodChtX_deep 級だが別種)。
