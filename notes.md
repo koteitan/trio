@@ -32571,3 +32571,27 @@ U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
 
 **次**: 内容 oper 補題を証明（bare-head 版 oper_zcone の内容拡張）→ hasParent → claim 塔（Y を hY で carry）
   → GpT_snocz_content green → LC1_farword → 目標。
+
+## 追記741: ★ oper_headtie GREEN — 末端内容 oper 補題を証明。一般版は oper_cons_tower1(Wset:2789)
+
+**oper_headtie (RFsnoc.lean, GREEN, sorry なし)**:
+  `(0,u,0)::[(1,u+1,1),(2,u+1,0)]⟦n⟧ = flatMap k<n [(2k,u,0),(2k+1,u+1,1)]`
+  = 根+遠い語頭+tie の展開 = (根,遠い語頭) の塔（モデル一致）。証明:
+  - L53.oper_unfold (j1=2, i1=1, j0=0, d0=2, d1=0)。
+  - hsrow: srow M 2 = 1（tie 行2=0, 行1=u+1>0）。
+  - hpar: H12Export.hasParent1_of_le0 + le0_cons_zero（根 col0 が le0 祖先, 行1: u<u+1）。
+  - hj0(親=根): parent_cons_eq_zero（domT R (2u+1): lev=2u+2, R 内に行1親なし=nextrel1 の entry< が u+1<u+1 で矛盾）。
+
+**一般版のツール（発見）**: `oper_cons_tower1`(Wset:2789)
+  `argOK R → R≠[] → domT R m → srow R (R.length-1)=1 → hasParent((0,v,z)::R)... →
+   ((0,v,z)::R)⟦n⟧ = tow v z R n`。R 一般（V 接頭・非末端 Vy も）に効く。tow=graft 塔。
+  → GpT_snocz_content の oper goal refine_4 は、U0=(0,u'+k,0)::R (R=V k++head::shiftr01(Vy k)) に
+    oper_cons_tower1 を適用 → U0⟦m⟧ = tow(u'+k)0 R m → tow 帰納で各 graft copy を
+    bare-head 機構 + hY(RLC) で discharge。
+
+**GpT_snocz_content の残り2 goal（(hR F).1.oper 適用後, Hd/length green）**:
+  refine_3: hasParent(shiftr01 1 0 U0)... （根が tie の親、hasParent1_of_le0 で成立）。
+  refine_4: R F u' (X ++ (shiftr01 1 0 U0)⟦m⟧) （oper_cons_tower1 + tow 帰納 + hY）。
+
+**次**: refine_3 を hasParent1_of_le0 で、refine_4 を oper_cons_tower1+tow 帰納で。W=[]&Y=Om なら
+  oper_headtie で U0⟦m⟧ 直接。一般は oper_cons_tower1。
