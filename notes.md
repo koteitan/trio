@@ -32595,3 +32595,27 @@ U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
 
 **次**: refine_3 を hasParent1_of_le0 で、refine_4 を oper_cons_tower1+tow 帰納で。W=[]&Y=Om なら
   oper_headtie で U0⟦m⟧ 直接。一般は oper_cons_tower1。
+
+## 追記741: design 決定 — GpT_snocz_content を Y ∈ Wg based(具体, RLC でない)に restate。両壁を解決
+
+（fork の設計質問「RLC-SlotAx vs Wg-load 帰納」への coordinator 回答。oper_headtie GREEN 後。）
+
+**fork の発見**: 一般 Y の GpT_snocz_content は hY:RLC から Y の末尾列型が取れず (hR F).1.oper で hasParent が
+  Y 依存で閉じない(design boundary)。oper_headtie(GREEN、終端 tie の oper)+ oper_cons_tower1(Wset:2789,
+  ((0,v,z)::R)⟦n⟧=tow v z R n)が道具。
+
+**回答 = GpT_snocz_content を Y ∈ Wg(2b) based(具体 Wg-load、RLC でない)に restate**。両壁を解決:
+1. **Y-structure stuck**: 具体 Wg-load は末尾列型を与える(A2g' で tail 露出)。Trc4 の Om=[(0,1,0)] は単一 tie 列
+   (srow=1)→ oper_cons_tower1 直接適用(hyp は oper_headtie と同様に computable)。一般帰納不要。
+2. **RLC_levelshift(死)解決**: 具体 Wg-load Y なら wrapper の ∀t は GpT_snocz_content を (o+t) で
+   (mlift W, **mlift Y**) に適用、mlift Om はまだ Wg-load(tie 列)→ 直接適用、RLC bridge 不要。
+   Wg-load は mlift-closed なので mlift-vs-reliftX mismatch が消える。
+
+**plan（terminal Om 先、Trc4 が必要とする分）**:
+- restate: GpT_snocz_content (Y∈Wg(2b)) (based Y) : GpT A o f b (W ++ head::shiftr01 1 0 Y)。
+- (hR F).1.oper → oper_cons_tower1(R=content, last=Om tie, srow=1)→ tow=bare-head 塔(model 洞察: tie が
+  (root,head) 複写)→ GpT_snocz_core claim / tower_Wg で close。
+- wrapper: ∀t で (o+t), (mlift W, mlift Y) に適用。RLC_levelshift 削除。
+- 一般 Y ∈ Wg は A2g' で tail 分岐(childLoad と PVP-world 重複、Om で閉じなければ)。
+
+**次**: fork が GpT_snocz_content を Y∈Wg で restate + Om で oper_cons_tower1 → 塔で close。green → 最終目標。
