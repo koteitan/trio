@@ -881,4 +881,58 @@ theorem no_infinite_expansion_of_mTowerClosedRow2 (h : L105.MTowerClosedRow2) :
     ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
   no_infinite_expansion_of_mTowerClosedS (L105.mTowerClosedS_of_row2 h)
 
+/-! ### ★ membership 一本への還元（ガード付き climb 用）
+
+`wf_of_cofinality_and_membership` が実際に要求するのは第 2 引数
+`∀ M, ST_TS M → ∃ u, M ∈ W u`（＝到達標準形の `W` membership）だけ。
+これを `ClimbAll` として残余に据えると、閉性 `Wstar_closed`（未解決コア
+`TowerExp` / `TowerGraft2` を要求）を経由しなくてよい。ガード付き世界の
+閉性 `Gw.Wstarg_closed` は**無条件**なので、`ClimbAll` はガード climb で
+直接攻められる。 -/
+
+/-- **残余（membership 版）**: 全到達標準形が `W` に入る。 -/
+def ClimbAll : Prop := ∀ M : TrioSeq, ST_TS M → ∃ u : ℕ, M ∈ Wset.W u
+
+/-- **Trio sequences terminate**, modulo `ClimbAll`（全到達形の `W` membership）。 -/
+theorem TRIO_terminates_of_climb (h : ClimbAll) : WellFounded stepRel :=
+  step_terminates (wf_Rnf_of_wf_TS
+    (Wset.wf_of_cofinality_and_membership
+      (fun hM hN hlt => trio_cofinality hM hN hlt) h))
+
+/-- **No infinite expansion sequence**, from `ClimbAll`. -/
+theorem no_infinite_expansion_of_climb (h : ClimbAll) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion (wf_Rnf_of_wf_TS
+    (Wset.wf_of_cofinality_and_membership
+      (fun hM hN hlt => trio_cofinality hM hN hlt) h))
+
+/-! ### ★★ `ClimbAll` は対角生成元 membership に完全還元される
+
+`ST_TS` は `diag`（対角生成元 `diagSeqT 0 v`）と `oper`（展開 `M⟦n⟧`）の帰納。
+`Wset.oper_closed`（**無条件**: `M ∈ W u → M⟦n⟧ ∈ W u`）が `oper` 段を無料にするので、
+`ClimbAll` は `∀ v, ∃ u, diagSeqT 0 v ∈ W u` に同値。これは既知の未解決課題
+（`L47W.lean` の「課題 L50」）と一致し、停止性全体の**最鋭残余**。 -/
+
+/-- **`ClimbAll` ⟸ 対角生成元がすべて `W` に入る。** -/
+theorem climbAll_of_diag (hd : ∀ v : ℕ, ∃ u : ℕ, diagSeqT 0 v ∈ Wset.W u) :
+    ClimbAll := by
+  intro M hM
+  induction hM with
+  | diag v => exact hd v
+  | oper hN hn ih =>
+      obtain ⟨u, hu⟩ := ih
+      exact ⟨u, Wset.oper_closed hu hn⟩
+
+/-- **Trio sequences terminate**, modulo「対角生成元が `W` に入る」1 本。 -/
+theorem TRIO_terminates_of_diag
+    (hd : ∀ v : ℕ, ∃ u : ℕ, diagSeqT 0 v ∈ Wset.W u) :
+    WellFounded stepRel :=
+  TRIO_terminates_of_climb (climbAll_of_diag hd)
+
+/-- **No infinite expansion sequence**, from the diagonal-generator membership. -/
+theorem no_infinite_expansion_of_diag
+    (hd : ∀ v : ℕ, ∃ u : ℕ, diagSeqT 0 v ∈ Wset.W u) :
+    ¬ ∃ S : ℕ → TrioSeq, (∀ i, ST_TS (S i)) ∧ ∀ i, step (S i) (S (i + 1)) :=
+  no_infinite_expansion_of_climb (climbAll_of_diag hd)
+
 end TRIO
