@@ -31821,3 +31821,15 @@ fork が keystone `GTC C u (fwTop u [] ++ shiftr01 2 0 Z)` を GTC_loadTop の A
   (A) 新規 `GTC_deepflat/oper/orph`(浅いタイ支配下の深い列3規則)を建てて GTC_loadTop_s を完成。
   (B) 深さ補題 `BwT (u+1) [W'] → GTC C u (rcol 0 u W')`(level-crossing、mlift_rcol GxJ:144 が鍵)。W' は level u+1 で処理され深い flat を回避。
 - 現状: 接続は全 green(Cpsi.psiI_mem 経由)、残りこの keystone 1本。GoodChtX_deep 級の dedicated 構築が必要。
+
+## 追記706: ★ keystone の壁を訂正・精密化(GTC_flat でなく GTC_oper/再帰的 GTC_tie)
+
+追記705 の「GTC_flat が壊れる」は不正確。子 load の実体を A2g'(Y 帰納, Y∈Wg(2(v+1)) based)で精査:
+- keystone = `GTC C v (rcol 0 v (shiftr01 1 0 Y))` = `GTC C v ((1,v+1,1) :: shiftr01 2 0 Y)`, Y∈Wg(2(v+1)) based。
+- **Trc4 の実 load は Y=[(0,1,0)]∈Wg(2)**(tie, row1=1; tree_mem_Wg)。∵ shiftr01 1 0 [(0,1,0)]=[(1,1,0)]、rcol 0 0=[(1,1,1),(2,1,0)]=Trc4。base row1=0 の Y=[(0,0,0)] は誤り。
+- **子 load 列は head を親に持つ**(row0)ので、GTC_flat でなく:
+  - flat load 根 (2,0,0)(row1=0): GTC_oper 適用可(親=head)。K⟦n⟧ = tie head の n コピー(tower、trio.py 検証済)。
+  - tie load 根 (2,1,0)(row1=1): srow=1, head(row1=v+1)を親に持たない ⟹ **tie-level orphan ⟹ 再帰的 GTC_tie**(また load を要求)。
+- **∴ 真の構造 = A2g'(Y)整礎帰納**(Y∈Wg=lfp なので停止)。各 Wg 構造段を「head の子」位置で処理する load 補題が要る。tie-load は入れ子 tie-level を生む(再帰、整礎)。base Y=[] → fwTop v [] → GTC_far。
+- GoodChtX_deep 級だが**整礎な道は明確**: 「far-word head の子として Wg-load を吊るす GTC」を A2g'(Y)で構築(case: flat根→GTC_oper/tower、tie根→再帰GTC_tie、一般→Wg構造)。
+- 現状 green: Cpsi.psiI_mem 経由の接続、Gtrc4test.gt_trc4(GT_nest sorry 1本)。
