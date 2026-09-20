@@ -128,5 +128,19 @@ theorem render_Trc4 (u : ℕ) :
     Nat.zero_add, rcol_rcol, mlift_flat u]
   simp [shiftr01]
 
+/-! ## Trc4 = childLoad の内容形（GTC 路の linchpin は childLoad, not 偽の Wg-Wrap） -/
+
+/-- **Trc4 = 遠い語頭 (1,1,1) が Wg-load [(0,1,0)] を子として包む形**
+    = ChildLoad.childLoad 0 [(0,1,0)] の内容 (1,0+1,1)::shiftr01 2 0 [(0,1,0)]。 -/
+theorem Trc4_eq_childLoad :
+    Trc4 = ((1, 0 + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 [((0, 1, 0) : ℕ × ℕ × ℕ)] := by
+  simp [Trc4, shiftr01]
+
+/-- Trc4 の load [(0,1,0)] は Om ∈ Wg 2、based。childLoad の仮説 Y∈Wg(2(0+1)) based を満たす。 -/
+theorem load_Trc4_mem : ([((0, 1, 0) : ℕ × ℕ × ℕ)] : TrioSeq) ∈ Wg (2 * (0 + 1)) := by
+  have := Om_mem_Wg 1; simpa using this
+
+theorem load_Trc4_based : based ([((0, 1, 0) : ℕ × ℕ × ℕ)] : TrioSeq) := rfl
+
 end RFarword
 end TRIO
