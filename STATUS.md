@@ -1,3 +1,33 @@
+# 現在地（2026-09-21）★ 兄弟比較でフロンティア確定 = 既約な Subst1
+
+（このセッションの合議。詳細は notes.md 追記748-757。以下の 2026-08-30 節以前は sheet-climb/blocker フレームで、同じ壁の別 view。）
+
+## 剃刀のように鋭い結論
+**psiI = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(2,0,0) ∈ W0（無条件）= `Subst1`(Wtower2:2656) の証明 = z<2 全停止性 = 既約な 3 行固有の開核。**
+それ以外は全緑:
+- **共終性半分は 2 行 lean-yapss から port 完了・緑**: `argDomCore_holds`(Core:4598), `trio_cofinality`(Core:4602)。
+- **還元鎖は完全**（Wtower2=0 sorries）: `Subst1gReviveSelf → Subst1gRevive → Subst1g → Subst1 → SubstClosed → TowerExp`。別ルート {Clause2,Clause3}(L7Subst)。
+- **psiI∈W0 ⟸ Subst1 の道は開通**: Cpsi（psiI∈W0 ⟸ ∀n (0,0,0)::Rc4^n∈W0, 緑）+ C4scratch（n=1 を Subst1 に還元）。
+
+## gap の正体（2 行との差）
+2 行は停止性 = 共終性 + メンバーシップで**メンバーシップ無条件**（リフト行0のみ→Aop の graft-closure `hgr` が塔を無料で閉じる）。
+3 行は Wstar_closed(Wset:4372) の Aop 閉性帰納の **domT 塔分岐だけ** `oper_cons_tower2` が **Lift1-graft 塔**（行1 無界上昇）を生み、`hgr` 以上 = **Subst1** を要る。
+2 行に Lift1 は無い。∴ Subst1 = row2/Lift1 の第2遠い語次元の既約な数学的内容。旧 STATUS の「blocker（行0祖先で行1が根以下）」= この Lift1 revive と同一。
+
+## 潰した 9 角度（全て Subst1 に底打ち。再 tread 禁止）
+一般 WCat / DM-QS 荷（Jk1 特化で一般化=開問題）/ bump-Aok fitting（遠い語頭で壁）/ 平坦→対角の橋（偽:平坦は入れ子 oper で row1 無界）/
+2 行 port（メンバーシップの Lift1 塔分岐=Subst1）/ Lift1 強 Aop 再構成（RELOCATE: 自己参照 Lift1 置換=Subst1）/ translate 帰納（level-consistency⟺membership⟺Subst1）/
+大 u 弱化（無界 Lift1 は有限 u で覆えない）/ 特定インスタンス（C4scratch n=1=Subst1）。
+
+## 緑の関連基盤（新測度の材料）
+`Dzf Jz1c 0 0 n∈W0`(Dzf_W_root SmallX:15589, z=1 対角塔=生成元 D_v 系) / `wf_LdDM`(Small:10309, DershowitzManna 荷) / `QS`(Small:10452 予算木) / 共終性 translate。
+
+## 真の前進 = 整礎 Lift1 置換測度（新しい順序数解析）
+Subst1 = 「標準形の全 oper が有界 level で終了する」simultaneous level-closure。probe で経験的真（62151 例 0 違反）だが未証明。
+残るは複数セッションの研究。反射的 fork/角度探索は打ち止め（9 角度収束）。新しい数学的洞察待ち。
+
+---
+
 # 現在地（2026-08-30）
 
 ## ★★★★★★★ **問題が 2 つに割れた。(A) はほぼ閉じている**
