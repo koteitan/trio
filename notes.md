@@ -31846,3 +31846,12 @@ fork が keystone `GTC C u (fwTop u [] ++ shiftr01 2 0 Z)` を GTC_loadTop の A
 - **Trc4 の実 case**: content=(1,1,1)(2,1,0)、(2,1,0) は tie 根(row1=1=v+1)⟹ ③。sub-load は Y=[(0,1,0)] の残り(空)で底。
 - **2 route**: (1) GTC_tie + childLoad ∀Y(本命, スケルトン明示)。(2) 文脈フリー深さ補題 `BwT v L→BwT(v+1)[W]→BwT v (L++[rcol 0 v W])`(mlift の off-by-one lift が要注意)。
 - **残工程(build フェーズ)**: ① tie-tower 補題(GTC of ((1,v+1,1) の n コピー)) ② childLoad の A2g' 骨組み ③ tie 根再帰の整礎測度 ④ Cpsi を BwTC_rep に rewire。GoodChtX_deep 級だが整礎な道は完全に明示済。
+
+## 追記708: ★ childLoad の tie 再帰は GoodChtX_deep 級の同時帰納(stage/level 単独帰納では不可)
+
+build fork が ChildLoad.lean で **base 段(GTC_far_CQ)+ oper 段(GTC_oper via oper_shift 2 + hasParent_append_right_of, rsum 回避)を green 化**(commit f69d2ee)。鍵 = `hasParent_append_right_of`(Wset:2604)で shift-2 の hasParent を rsum 無しで確立。
+- 残 sorry: short(単一列 Y)、oper 無親、graft(tie 根 → 再帰 GTC_tie)。
+- **tie 再帰の整礎性を精査**: GTC_tie の hload(GzJ:181)= **∀u'≥v ∀Z∈Wg(2u') based, GTC CQ u' (...++shiftr01 x 0 Z)** = childLoad を **全レベル u'・全 Z** で要求。
+  - ∴ stage(Wg-段)帰納は不可(∀u' が大きい u'=大 stage を含む)。level 帰納も不可(tie は同 level に留まる)。Y の A2g' も不可(∀Z は Y の下でない)。
+  - **⟹ childLoad と tie-load 閉包の同時整礎帰納(GoodChtX_deep 級)が必須**。He 系 GoodChtX_deep(HeU:124, 深い葉 tie 1 [tie 1 []] の同時帰納)が唯一の既知パターンだが Rc4 は valid UT 無し(直接適用不可)。
+- **現状**: 目標接続は全 green(Cpsi.psiI_mem)、ChildLoad の base+oper green、残り = tie 再帰(GoodChtX_deep 同時帰納)= 本プロジェクトの真の hard frontier。5 fork(~3M tok)で integ礎な道は完全に明示したが、構築は sustained dedicated effort(複数セッション規模)。**解不能ではなく証明可能**。
