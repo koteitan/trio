@@ -79,5 +79,23 @@ theorem coneV_double_head {P : TrioSeq} (hP : Fr P) (u : ℕ) :
   rw [show entry [((1, u + 1, 1) : ℕ × ℕ × ℕ)] 1 0 = u + 1 from rfl]
   omega
 
+/-- 良い接頭辞 P の後の二重遠い語頭を根 (0,u,0) につけた語は自然な優越域（natDom）。
+    zcone_natDom を内側頭 (2,u+1,1) に適用。GT_nest 底の A1g_intro に使う。 -/
+theorem natDom_double_head {P : TrioSeq} (hP : Fr P) (u : ℕ) :
+    natDom (((0, u, 0) : ℕ × ℕ × ℕ) ::
+      (P ++ [((1, u + 1, 1) : ℕ × ℕ × ℕ), ((2, u + 1, 1) : ℕ × ℕ × ℕ)])) := by
+  have hP' : Fr (P ++ [((1, u + 1, 1) : ℕ × ℕ × ℕ)]) :=
+    Fr_append hP (by intro y hy; simp only [List.mem_singleton] at hy; subst hy; exact le_rfl)
+  have hc : coneV ((P ++ [((1, u + 1, 1) : ℕ × ℕ × ℕ)]) ++ [((2, u + 1, 1) : ℕ × ℕ × ℕ)]) u
+      (P ++ [((1, u + 1, 1) : ℕ × ℕ × ℕ)]).length := by
+    rw [List.length_append, List.length_singleton, List.append_assoc,
+      show ([((1, u + 1, 1) : ℕ × ℕ × ℕ)] ++ [((2, u + 1, 1) : ℕ × ℕ × ℕ)] : TrioSeq)
+        = [((1, u + 1, 1) : ℕ × ℕ × ℕ), ((2, u + 1, 1) : ℕ × ℕ × ℕ)] from rfl]
+    exact coneV_double_head hP u
+  have h := zcone_natDom hP' (show 1 ≤ 2 by omega) hc
+  rwa [List.append_assoc,
+    show ([((1, u + 1, 1) : ℕ × ℕ × ℕ)] ++ [((2, u + 1, 1) : ℕ × ℕ × ℕ)] : TrioSeq)
+      = [((1, u + 1, 1) : ℕ × ℕ × ℕ), ((2, u + 1, 1) : ℕ × ℕ × ℕ)] from rfl] at h
+
 end RFarword
 end TRIO
