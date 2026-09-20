@@ -31637,3 +31637,18 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - 対比 diag1 = (0,0,1)(1,1,1)...(v,v,1)(root row2=1): 最終列は row-2 親なし(None)⟹ domT(orphan)⟹ 展開=dropLast で易しい(diag1_mem_W)。差は先頭 row2(0 vs 1)の1点。
 
 ∴ 正しい結論: **ガードは対角線を構造的に塞がない**。D_v ∈ Wg a ⟸ (natDom D_v ✓) ∧ (∀n≥1 D_v[n] ∈ Wg a)[ガード oper]。残る仕事 = 展開塔 D_v[n](good part + n copies)を Wg で構成すること。ガード側の汎用エンジンは `Bw l := ∀v≥1 rword 0 v l ∈ Wstarv v`(GwU:353)+ `Bw_snoc_mem`(Bw l→T∈Wg2→Bw(l++[T]))+ `content_mem` + `W0_of_starOK`(GxL)。対角線をこの rword/Bw 符号化に嵌めるのが次の課題。
+
+## 追記692: 核心確定(srow=2 graft+Lift1 塔再帰)+ 基底 v≤1 green + 次の攻め筋(対角線を Bw/words でガード構成)
+
+### 還元の最終形(green, commit 2fa6780, ad85468)
+- `ClimbAll ⟺ ∀v ∃u, diagSeqT 0 v ∈ W u`。`Wself={M|M∈W(lev M 0)}`(Wtower2:2988)で、D_v は lev(root)=0 ⟹ **`diagSeqT 0 v ∈ Wself ⟺ ∈ W 0`**。既存 `exists_stage_of_ST_TS`(L47W:214、課題 L50)と同値。私の寄与 = これを full termination `WellFounded stepRel` へ green 配線(`TRIO_terminates_of_diag`)+ 基底。
+- 基底 `diagSeqT_mem_W_of_le1`(green): v=0 `singleton_mem_W`、v=1 `two_col_mem_W`(|R|=1 コピー塔基底=pair 定理)。
+
+### 核心 = srow=2 graft+Lift1 塔再帰(v≥2)
+- `oper_cons_tower2`(L105Cap:1044): `((0,v,z)::R)⟦n+1⟧ = (0,v,z) :: graft R (Lift1 (((0,v,z)::R)⟦n⟧) (entry R 1 last - v))`。展開が**前段の展開を graft+Lift1 で参照**する自己参照塔。
+- D_2=(0,0,0)::[(1,1,1),(2,2,1)]: D_2⟦1⟧=D_1(基底済)、D_2⟦n+1⟧=(0,0,0)::graft [(1,1,1),(2,2,1)] (Lift1 (D_2⟦n⟧) 1)。この graft+Lift1 が W 0 を保つ = 開コア(v=2 でも困難)。
+
+### 次の攻め筋(ガード climb で対角線を構成)
+- ガード世界の `Gw.Wstarg_closed`(Gw:289)は**無条件で塔を閉じる**。実際 GwS〜GwZ は srow=2 塔(R379 の (4,2,1) 等)を Wg 0/W 0 に構成済み。
+- D_v は natDom(追記691)⟹ ガード oper 分岐可。汎用エンジン `Bw l := ∀v≥1 rword 0 v l ∈ Wstarv v`(GwU:353)+ `Bw_snoc_mem`(Bw l→T∈Wg2→Bw(l++[T]))+ `content_mem`(Bw l→(1,1,0)::rword 1 1 l∈Wg 2)+ `W0_of_starOK`(GxL)。
+- **plan**: `diagSeqT 0 v ∈ Wg 0` を、対角線 tail T_v=[(1,1,1)..(v,v,1)] の `Bw`/words 分解の v 帰納で示す ⟹ `Wg0_sub_W0` で W 0。各 (k,k,1) は shiftr01 で持ち上げた小対角線(some Z unit)として words に入るはず。次 heartbeat はここから。
