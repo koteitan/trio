@@ -58,5 +58,27 @@ theorem childLoad (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based 
   intro Y hY hb
   exact (key hY).2 hb
 
+/-- **Trc4 = [(1,1,1),(2,1,0)] は CQ 文脈で GTC**（GTC_tie + childLoad, hload=childLoad at level u）。 -/
+theorem gtc_trc4 : GTC CQ 0 ([((1, 1, 1) : ℕ × ℕ × ℕ), ((2, 1, 0) : ℕ × ℕ × ℕ)]) := by
+  refine GTC_tie (C := CQ) (v := 0) (K := [((1, 1, 1) : ℕ × ℕ × ℕ)]) (x := 2) ?_ ?_ ?_
+  · -- hcone : coneV ([(1,1,1)] ++ [(2,1,0)]) 0 1
+    intro y hy
+    have hyle : y ≤ 1 := rtg0_le hy
+    obtain rfl | rfl : y = 0 ∨ y = 1 := by omega
+    · decide
+    · decide
+  · -- hload : ∀u, ∀Z∈Wg(2u) based, GTC CQ u ([(1,u+1,1)] ++ shiftr01 2 0 Z) = childLoad u Z
+    intro u _ Z hZ hbZ
+    have em : mlift ([((1, 1, 1) : ℕ × ℕ × ℕ)] : TrioSeq) 0 (u - 0) = [((1, u + 1, 1) : ℕ × ℕ × ℕ)] := by
+      rw [Nat.sub_zero]
+      have h := mlift_one_letter 0 u
+      rw [show (0 : ℕ) + 1 = 1 from rfl, Nat.add_comm 1 u] at h
+      exact h
+    rw [em]
+    have hZ' : Z ∈ Wg (2 * (u + 1)) := Wg_mono (by omega) hZ
+    exact childLoad u Z hZ' hbZ
+  · -- hClift : CQ_lift
+    exact fun L hC u hu => CQ_lift L 0 hC u hu
+
 end ChildLoad
 end TRIO
