@@ -13,16 +13,23 @@ namespace RFsnoc
 open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY
 open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzD
 
-/-- **tower1_mem_v の fam 制限版**: graft-closure を塔自身の元 tow k のみに弱めた Wg 世界の深い tie 塔。
-    tower1_mem_v(GwU:24)の証明本体は hgr を tow k にしか使わないので、そのまま成立。 -/
-theorem tower1_mem_v_fam {v a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
-    (hva : 2 * v ≤ a)
-    (hgr : ∀ k, argOK (graft R (tow v 0 R k)) → graft R (tow v 0 R k) ∈ Wstarv v) :
+/-- **tower1_mem_v の fam 制限版**: graft-closure を塔自身の元 tow k のみに弱め、かつ IH
+    `tow k ∈ Wg m` を仮定に持てる（tower1_mem_v GwU:24 の証明の通り、内部 induction を保つ）。 -/
+theorem tower1_mem_v_fam {v m a : ℕ} {R : TrioSeq} (hR : argOK R) (hRne : R ≠ [])
+    (hva : 2 * v ≤ a) (hd : domT R m) (hi1 : srow R (R.length - 1) = 1)
+    (hgr : ∀ k, tow v 0 R k ∈ Wg m → graft R (tow v 0 R k) ∈ Wstarv v)
+    (hpM : hasParent (((0, v, 0) : ℕ × ℕ × ℕ) :: R) (srow R (R.length - 1)) R.length) :
     ∀ k, tow v 0 R k ∈ Wg a := by
-  intro k
-  cases k with
-  | zero => simpa [tow] using Wg_nil a
-  | succ k => exact hgr k (argOK_graft hRne hR _) (argOK_graft hRne hR _) a hva
+  have hvm : 2 * v + 0 ≤ m := tower1_le hRne (by omega) hd hi1 hpM
+  have key : ∀ k, ∀ a', 2 * v ≤ a' → tow v 0 R k ∈ Wg a' := by
+    intro k
+    induction k with
+    | zero => intro a' _; simpa [tow] using Wg_nil a'
+    | succ k ih =>
+        intro a' ha'
+        have hk : tow v 0 R k ∈ Wg m := ih m (by omega)
+        exact (hgr k hk) (argOK_graft hRne hR _) a' ha'
+  exact fun k => key k a hva
 
 /-- 内容 oper（末端 tie 版, P=[]）: 根+遠い語頭+tie の展開 = (根,遠い語頭) の塔。
     モデル検証済み（tools/trio.py）。bad root=tie(行1), 親=根(col0), d0=2, d1=0。 -/
