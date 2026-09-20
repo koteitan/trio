@@ -31721,3 +31721,18 @@ core は **olt-WF(OCF)ではなく構造的な族 co-recursion**(GxB.ZBr / Words
 - raw `GxB.ZF` は**コードベース未使用**(specific family の ∈ZF 証明ゼロ)。C4 で作れば初。
 - または WordsG/`fwU`(GzH/GzM)を「継続頭に深い子」で拡張(far-word soundness の拡張)。
 どちらも psi(I)=row4784 へ向けたプロジェクト frontier(現到達 row1687)の substantial インフラで手本が無い。psi(I) 自体も C4 の上に (2,0,0) の verbatim 塔(=同種の族)が乗る。
+
+## 追記699: ★重大訂正 — 追記690-698 の「olt-WF/未解決/手本無し」は誤り。深塔技法は追記28で確立済み、climb は row1690 到達
+
+このセッションは自分の過去成果を見失い ~60 heartbeat 空回りした。ユーザが README との食い違いを指摘して発覚。
+
+### 誤り
+追記690-698 で「psi(I) の残余 = far-word 深子の族 co-recursion は olt-WF/手本の無い大規模インフラで heartbeat では不可能」と繰り返し結論した。**これは誤り**。
+- climb は row1687 でなく **row1690(R_pm3, HeW)まで到達済み、証明中=row1691**。
+- 深い塔/深子の解法は **methodology 追記28「深い塔は遠い段で木」** で確立済み(HeT/HeU/HeV/HeW、`Kdeep`/`bwt_KK2`/`GTC_far_gen`/`GLctx_deep`)。追記28 は「段0で無限整礎帰納が要ると誤結論した。正しくは遠い段 q で木」と明記 — 私が繰り返した誤りそのもの。
+- 私は climb(1690)を無視して C4(row~4770、psi(I) 直前)へ飛び、その間の ~3000 行を無視して「未解決」と誤断した。C4scratch(C4⟸Subst1)は valid だが的外れ(climb を飛ばした)。
+
+### 正しい状態と進め方
+- 正しい frontier = **証明中 row1691 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,2,0)**。
+- 進め方 = to-psi-I.tsv を **row1691 から順に climb**(gen_gyk + 深塔 He* 機構)。psi(I)=row4784 まで ~3000 行の継続工程。
+- 教訓:結論する前に **README/methodology/過去 commit(自分の R_pm 等)を必ず確認**。「未解決」を軽々に言わない。
