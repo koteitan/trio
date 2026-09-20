@@ -31674,3 +31674,12 @@ psi(I)=row4784 への climb 経路を精査:
 
 ### 状況の要約(9 heartbeat 分)
 psi(I) を閉じる 2 路 (a) 開コア(WCat/Subst1/塔閉包、深い lfp 帰納)(b) 生成器拡張(1687→4784、まず同レベル反復タイ補題)。どちらも heartbeat 増分でなく dedicated effort。私の green 貢献(対角線還元+基底 v≤1)は確定。生成器フロンティアは 1687 で、既存生成可能行は全て .lean 済み(遊んでいる green 無し)。
+
+## 追記695: 別ルート観察 — `WellFounded olt`(cnf 上)は未証明・未探索。示せれば W_membership を全バイパス
+
+順序数側(translate, cnf, translate_oper_bad, cnf_ST_TS, trio_cofinality)は全証明済みだが、`grep` で **`WellFounded olt` 系の補題は存在しない**。停止性 = `wf_olt_ST_TS` は現状 `wf_olt_ST_TS_of_cofinality`(W_membership 必須)経由でしか出ない。
+
+観察: もし **olt が cnf Three 上で独立に整礎**と示せれば、`cnf_ST_TS`(translate(ST_TS)⊆cnf、証明済)+ InvImage で `wf_olt_ST_TS` が出て、**W_membership / 塔閉包を完全バイパス**できる。
+- `Three = Z | P (a1 a2:ℕ)(b c:Three)`、translate の (a1,a2)=(row1,row2)(z<2 で row2≤1)、(b,c)=(深さ優先の子, 兄弟)。cnf = 兄弟の先頭対が非増加(Cantor 正規形)。
+- olt b f は「異なる節点の子」を比べるので構造的減少でなく、WF は Ordinal 埋め込み(値関数 val:Three→Ordinal、a1=Ω段の collapse を含む)か Buchholz 流の直接証明が要る。z<2 断片は psi(K)(弱コンパクト)まで届くので記法は大きく、これは OCF レベルの重い未探索路。
+- ∴ 3 つ目の路として存在するが、W-route(開コア)/生成器拡張(row1688 入れ子タイ)と同様 dedicated effort。ただし**未探索**なので、W が詰まっている以上、検討価値はある。
