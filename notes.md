@@ -32470,3 +32470,26 @@ LC1_farword はこれらを RLC content 内に nested で持ち込む（LC1 の 
 
 **次**: fork が 2 sorry を discharge 中(RLC_levelshift 先、GpT_snocz_content 後)。両 green → PVP_snoc_gen 完成
   → RFsnoc を roots へ → childLoad/gtc_trc4/Cpsi.psiI_mem 接続 → 最終目標 → CronDelete。
+
+## 追記738: framing 確定 — GpT_snocz_content(GpT_snocz_core+Y, RLC_lift 使用)。RLC_levelshift は偽、Trc4 は terminal Om で非再帰
+
+（fork が concrete Lean evidence で framing 確定。追記735-737 の wrapper 分解を訂正。）
+
+**確定事項（concrete Lean）**:
+1. **RLC_levelshift は偽**（anchor (o::A)→((o+t)::A) を RLC が供給不可）→ ∀t-wrapper-at-offset-o 分解は誤り。
+2. CtxP に far-word-head slot 無し。FarP（GyB:386）は結論 `R f b (P++[(d,b+s,0)])` = row2=0 deep tie（頭でない）。
+   ∴ GpT_snocz_core（GyG:93 の far-word tower）必須。
+3. **core = GpT_snocz_content = GpT_snocz_core に Y を織り込む**、**RLC_lift（green, GyI:47）で level 整合**
+   （誤 RLC_levelshift でなく）。wrapper 分解でなく、tower の内部 ∀t/level-progression が Y を carry
+   （anchor (o::A) が単一 tower proof 内で一貫、外部 o→o+t シフト不要）。
+4. **Trc4 は非再帰**: Y=Om=[(0,1,0)] は terminal Wg-load（RLF_load）→ GpT_snocz_content を 1 回、terminal Y で。
+   depth-1、mutual recursion 不要。
+
+**surgery（fork へ）**: GpT_snocz_core body を copy、bare head の各 tower level を (1,…,1)::shiftr01 1 0 Yτ に、
+   Y を hY の LC1（RLC_lift で reliftX'd）で discharge。claim 帰納: base(m=0)は hY 直接、succ は GpT_node の
+   child GC に Y。terminal Y（Wg-load）の specialized 版を先に（Trc4 が必要とする分、より簡単）。
+
+**全連鎖（green scaffold）**: Cpsi → gt_trc4(green) → childLoad → LC1_farword → LC1_farword_base_of_rlf(green)
+   → RLF → RLC → PVP_snoc_gen(wrapper green) → GpT_snocz_content（残る唯一の core sorry）。
+
+**次**: fork が GpT_snocz_content の 120 行 surgery 実行中（terminal Y 先）。green → 最終目標。
