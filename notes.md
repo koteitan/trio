@@ -32324,3 +32324,25 @@ upleaf_deep_coreD(HeQ:108) が graft(深いタイ)エンジン。次: R_farword 
 
 **次**: fork が R_farword（RLF_child 変種の row2=1 頭 soundness）を構築。coordinator は route prescription を停止、
   事実のみ提供。fork が具体的失敗ステップを報告 → そこを支援。
+
+## 追記732: 全ルート収束確定 — 唯一の無条件 gap = R_farword(同段 遠い語頭+子)。route(b)も同じ
+
+**この resume の green**:
+- `ChildLoad.gtc_trc4`: GTC CQ 0 Trc4 ⟸ childLoad（GTC_tie 組立、全 hyp green）。
+- `RFpvf.PVF_farhead_load`: PVF [] 1 b ((1,b+2,1)::shiftr01 2 0 Z) for Z∈Wg(2b) based。marker-free、PVF_snoc+RLF_load、deep-leaf 不要。**R_farword の GpT 部品**。
+
+**route(b) 検証（C4scratch.lean, 既存）**:
+- C4f=(0,0,0)::Rc4=psiI⟦1⟧。C4_oper: C4f⟦n⟧ = tow 0 0 Rc4 n（graft 塔、green）。
+- C4_mem_of_step (TowStepC4): C4f∈W0（green、開コア isolate）。TowStepC4 = ∀X∈W0 based, (0,0,0)(1,1,1)(2,1,1)(shiftr01 3 0 X)∈W0。
+- C4scratch は TowStepC4 を `Subst1`(開 conjecture) + hsub に還元 → **無条件でない**。
+- **無条件では TowStepC4 = 遠い語二重頭+子（R_farword gap）そのもの**。
+
+**level 解析（RFpvf が childLoad に効かない理由）**:
+- RFpvf: 頭 row1 = b+2、load ∈ Wg(2b)（load 段 = 頭 row1 − 2、**深い load**）。
+- childLoad/Trc4/TowStepC4: load ∈ Wg(2(v+1))、頭 row1 = v+1（load 段 = 頭 row1、**同段 load**）。
+- ∴ RFpvf(深い load, o=1 gap≥2)は同段 load を作れない。o=0(gap1)は RLF_load の ho:1≤o で不可。
+
+**確定した収束**: childLoad / GT_nest / TowStepC4 / gt_trc4 の load / R_farword — 全て「遠い語頭が**同段**の子を包む」= 唯一の無条件 gap。
+既存 constructor は全滅（FTLt/farWt/wLT marker、RLF_load 深い load、RLF_child marker、fwTop 兄弟 based-load、PVF_snoc o≥1 深い）。
+∴ **新 constructor R_farword（同段子、marker-free、o=0 相当）が必須**。RFpvf(PVF_snoc+RLF_load)は深い版の雛形。
+次: RLF_load の同段版（Z を shiftr01 1 でなく同段に置く RLF constructor）or PVF_snoc の o=0 版。
