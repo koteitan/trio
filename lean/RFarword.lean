@@ -55,5 +55,29 @@ theorem rword_snoc_rcol {v : ℕ} {W : TrioSeq} (hW : Fr W) (L : List TrioSeq) {
   rw [List.map_append, List.map_singleton, rword_append, rword_singleton,
     mlift_rcol hW (u - v), show v + (u - v) = u by omega, rcol_rcol]
 
+/-! ## 二重頭のコーン -/
+
+/-- 良い接頭辞 P の後の二重遠い語頭 (1,u+1,1)(2,u+1,1) のコーン。内側頭 (2,u+1,1) の
+    行0祖先は自身と (1,u+1,1) だけで、どちらも行1 = u+1 > u。P は行0≥1 なので祖先鎖に入らない。
+    oper_zcone / zcone_natDom を内側頭に適用するための条件。 -/
+theorem coneV_double_head {P : TrioSeq} (hP : Fr P) (u : ℕ) :
+    coneV (P ++ [((1, u + 1, 1) : ℕ × ℕ × ℕ), ((2, u + 1, 1) : ℕ × ℕ × ℕ)]) u (P.length + 1) := by
+  rw [coneV_iff_amin,
+    amin_append_right (A := P) (B := [((1, u + 1, 1) : ℕ × ℕ × ℕ), ((2, u + 1, 1) : ℕ × ℕ × ℕ)])
+      (q := 1) (by simp) (fun x hx => by have := hP x hx; show (1 : ℕ) ≤ x.1; omega)]
+  have e : ([((1, u + 1, 1) : ℕ × ℕ × ℕ), ((2, u + 1, 1) : ℕ × ℕ × ℕ)] : TrioSeq)
+      = shiftr01 1 0 [((0, u + 1, 1) : ℕ × ℕ × ℕ), ((1, u + 1, 1) : ℕ × ℕ × ℕ)] := by
+    simp [shiftr01]
+  rw [e, amin_shift0]
+  have h1 := amin_cons_root (S := [((1, u + 1, 1) : ℕ × ℕ × ℕ)])
+    (by intro y hy; simp only [List.mem_singleton] at hy; subst hy; exact le_rfl) (u + 1) 1
+    (j := 0) (by simp)
+  rw [show ([((0, u + 1, 1) : ℕ × ℕ × ℕ), ((1, u + 1, 1) : ℕ × ℕ × ℕ)] : TrioSeq)
+      = ((0, u + 1, 1) : ℕ × ℕ × ℕ) :: [((1, u + 1, 1) : ℕ × ℕ × ℕ)] from rfl,
+    show (1 : ℕ) = 1 + 0 from rfl, h1, amin_zero]
+  show u < min (u + 1) (entry [((1, u + 1, 1) : ℕ × ℕ × ℕ)] 1 0)
+  rw [show entry [((1, u + 1, 1) : ℕ × ℕ × ℕ)] 1 0 = u + 1 from rfl]
+  omega
+
 end RFarword
 end TRIO
