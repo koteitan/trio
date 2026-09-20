@@ -31769,3 +31769,17 @@ Trc4 = rcol 0 0 [(1,1,0)](word-in-word)。gen_gyk.py は "top ltl"/"字の中身
   - `(0,0,0)(1,1,1)(2,1,1)(3,1,0)` を無条件に証明した定理はコードベースに皆無(grep 0 hits)。
 - **∴ 真の残工数 = GoodChtX_deep 級の新規 keystone**(入れ子行1 letter の GT / far-word content)。深い葉技法(追記28)は入れ子タイ専用で、これには効かない。
 - 接続は全て green: `Cpsi.psiI_mem (hGT : GT 0 Trc4) : psiI ∈ W 0`(commit a7f3efb)。この 1 本の sorry を閉じれば目標達成。
+
+## 追記702: ★★★ frontier を GT_nest(遠い語の入れ子化)に還元・キーストーン確定(fork)
+
+追記701 の hload を代数変形で単一キーストーンに圧縮(Gtrc4test.lean, commit 済, green modulo 1 sorry):
+- **hload = GT u ([(1,u+1,1)] ++ shiftr01 2 0 Z) = GT u (rcol 0 u (shiftr01 1 0 Z))**(shiftr01_comp で確認, green)。
+- ∴ frontier = **`GT_nest : GT (v+1) W → (∀y∈W,1≤y.1) → GT v (rcol 0 v W)`**。
+  base W = shiftr01 1 0 Z は GT_loadTop で GT(u+1) が出る(green)。hcone/hmlift/hrw 全 green。残り = GT_nest 1本。
+- **決定的同定**: `rcol 0 v W = fwTop v [some W]`(荷が1個の遠い語)。∴ GT_nest = 「遠い語に **GT荷(入れ子の字)** を1個載せる」。
+- **既存機構は Wg荷のみ**: GTC_load_CQ(HbB:194)/GT_loadTop(GxK:478)/GTC_loadTop(GzJ:296)は載荷 T∈Wg based を要求。
+  GT荷(= GTで良い content、Wg元でない入れ子の字)を載せる補題は**皆無**。plain GT の遠い語(GT v (fwTop v []))も無い(GTC_far_* のみ)。
+- **∴ 真の新規機構 = 「遠い語に GT荷を載せる」= 深さ2の遠い語荷 = 字の中の字**。GoodChtX_deep 級。
+  - route A: GT荷版の GT_loadTop/GTC_loadTop を新設(A2g' 帰納で Z を分解、base=GT v [(1,v+1,1)] も要新設)。
+  - route B: Cpsi を plain GT/WordsG から GTC+新文脈 C に pivot し、C が入れ子遠い語を扱う(He 系 CLTL 流だが Trc4 は wLT でない)。
+- 到達点: 目標 psi(I)∈W0 が **Cpsi.psiI_mem ∘ gt_trc4 ∘ GT_nest** で完全に配線済。GT_nest 1本(遠い語の GT荷載せ)が唯一の数学的残余。
