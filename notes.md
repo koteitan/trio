@@ -32661,3 +32661,23 @@ U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
 
 **次**: 核 Q++二重頭+tie ∈ Wg を閉じる。oper_cons_tower1 で ⟦n⟧=tow → tower1_mem_v/fam。
   green → gt_trc4' → Cpsi.psiI_mem → 目標。GpT_snocz_content 経由は不要になった（直接路が優る）。
+
+## 追記743: ★ 答え — Wg-world fam 塔は tower_snoc(GxD:143)。A1g_intro + htow(hangv で前段を hang、bare head でない → Wrap 不要)
+
+（fork の「Wg 世界に fam 制限塔補題があるか」への coordinator 回答。W 経由不要。）
+
+**答え = YES。tower_snoc(GxD:143)が Wg-world fam 塔**:
+  `(0,v,0)::(A++[tie]) ∈ Wg a` ⟸ A ∈ Wstarv v。証明:
+  - A1g_intro（natDom 枝）— Wg 自身の intro。
+  - htow: ∀k, tow v 0 R k ∈ Wg。**k 帰納 + hangv**: tow(k+1)=(0,v,0)::(A ++ shiftr01 1 0 (tow k))、
+    **前の tow 段(∈ Wg, IH)を子として hang**（bare head でない）→ **Wrap 問題なし**。
+  - ∴ W 世界 / tower1_mem2_fam / Wg→W 変換 不要。fam 制限（tow 自身の元のみ）。
+
+**core を直接 Wg で閉じる（tower_snoc を template に）**:
+  `Q ++ [(1,u+1,1),(2,u+1,1),(3,u+1,0)] ∈ Wg a`（Q=(0,u,0)::rword L ∈ Wstarv, hQ green）:
+  - natDom: coneV_double_head/natDom_double_head（RFarword、(3,u+1,0) tie の親=根）。
+  - htow: k 帰納、hangv（hA=Wstarv prefix、child=shiftr01 1 0 (tow k)∈Wg IH）。
+  - 二重頭で終わる Wstarv prefix: tieFar_Wstarv（HaJ:32, towF(u+1) 0 ++ [(2,u+1,1)] ∈ Wstarv u）系。
+
+**finish**: core = tower_snoc 型 A1g_intro + hangv 帰納（全て Wg、bridge なし）。green → gt_trc4' → GT 0 Trc4
+  → Cpsi.psiI_mem → 最終目標。fork に回答済み。
