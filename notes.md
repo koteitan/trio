@@ -31598,3 +31598,30 @@ FarP_GpT_ge / lt（GyD）と CtxP_restrict（GyF）が道を渡すだけで通�
 - **specific psi(I)**: ✗ 展開木が非有界 ⟹ 一般閉包が要る(近道なし)。Gw 個別行(小)は流用不可。
 - **∴ 唯一残る = graft(clause3=MTowerClosedRow2 for 非標準 Q)一般閉包 = hard-open 研究課題**。全 route が同一 core に帰着。
 - ★教訓11: trio 停止性は heartbeat 増分では閉じない研究レベル課題。13 heartbeat で全 route を系統的除外し core 確定。実質前進は graft 一般証明の dedicated off-heartbeat effort のみ。
+
+## 追記690: ★★★ ガード route pivot の成果 — 停止性を「対角生成元が W に入る」1本に還元(green)、ただし srow=2 塔コアはガードで楽にならない
+
+ユーザ提案「非標準列も含めるようアプローチを変えたら?」を受け、ガード付き Wg 世界へ pivot。
+結論: 含め方は2方向あり、片方(測度を非標準に拡張)は ✗、もう片方(非標準をガードで除外)が正解で既にコードにある。
+
+### 定義レベルの確認(Wset.lean:171 vs Gw.lean:24)
+- 本物 Aop: oper 節 `∀n≥1 M⟦n⟧∈X`(前提なし)/ graft 節 `∃m<u, domT M m ∧ ∀z∈W m,...`。
+- ガード Aopg: oper 節 `natDom M ∧ ∀n≥1 M⟦n⟧∈X`(natDom で幽霊排除)/ graft 節 `∃m<u, domT M m ∧ entry M 2 last=0 ∧ ∀z∈Wg m,...`(z<2 で srow=2 を graft から排除)。
+- natDom M := ∀m,¬domT M m(支配列を持たない)。
+
+### ★ green 成果(Final.lean、commit ad85468)
+1. `ClimbAll := ∀M, ST_TS M → ∃u, M∈W u`。`W_membership`(Wset:4744)により「閉性 route ⟹ ClimbAll」なので **ClimbAll は真に弱い残余**(閉性 MTowerClosedRow2/TowerExp/TowerGraft2 は未解決コアあり、ClimbAll は membership 一本)。`TRIO_terminates_of_climb`。
+2. `oper_closed`(Wset:2103、**無条件**: M∈W u → M⟦n⟧∈W u、同じ u)が ST_TS 帰納の oper 段を無料化。ST_TS = 帰納型(diag + oper, Trio:127)。
+   ⟹ **`ClimbAll ⟺ ∀v, ∃u, diagSeqT 0 v ∈ W u`**。`climbAll_of_diag` / `TRIO_terminates_of_diag` / `no_infinite_expansion_of_diag`。
+   これは既知の未解決 課題 L50(L47W.lean:214-222、`diagSeqT 0 v ∈ Wself`)と一致し、**停止性全体の最鋭残余(単一の対角生成元族)**。
+
+### ★ ガードが買うもの/買わないもの(確定)
+- ガード世界の閉性 `Gw.Wstarg_closed`(Gw:289)は **無条件**。⟹ ガード側には未解決コア(TowerExp/TowerGraft2 相当)が無い。= 非標準幽霊の障害はガードで構造的に消える(追記688 の W⊄cnf 問題を回避)。実例: `Q∈Wg 2 → GOKW Q / RawW Q`(GwU、ガード付き lfp 帰納で構造を引き出す)。
+- しかし対角線 `diagSeqT 0 v = (0,0,0)(1,1,1)(2,2,1)...(v,v,1)` は最終列 (v,v,1) が srow=2、その row-2 親 = root (0,0,0)(row2=0<1)。数値確認: D_v[1]=D_{v-1}(最終列を落とす)、D_v[n≥2] は最終列がコピー塔。
+  - ガード graft 節は `entry M 2 last=0` で srow=2 を除外 ⟹ 対角線の srow=2 最終列は graft を通れない。
+  - ガード oper 節は natDom を要求するが、srow=2 最終列は hasParent(row-2 親=root)⟹ ¬natDom ⟹ oper も通れない。
+  - ∴ **ガードは srow=2 コピー塔コアを楽にしない**。対角線 membership = 同じ srow=2 塔 open core。
+- 対比: diag1_mem_W(Wtower2:2362、全列 row2=1 で親なし ⟹ 展開=dropLast で易しい)/ diagz_mem_W(z 一様)は対角線に効かない。差は「先頭 (0,0,0) の row2=0」1点で、これが最終列に row-2 親を与え塔を発生させる。
+
+### ★教訓12(追記689 教訓11 を精密化)
+「非標準を含める」pivot の正体 = 非標準をガードで**除外**(Wstarg_closed 無条件)。これで幽霊障害は消え、閉性 route(未解決コアあり)を membership route(ClimbAll=対角線1本)に置換できた(green)。だが残る core は srow=2 コピー塔で、ガードはこれを楽にしない。停止性の真の壁 = **対角生成元 diagSeqT 0 v の srow=2 コピー塔 membership(課題 L50)** に確定。off-heartbeat の dedicated effort が要る点は不変。
