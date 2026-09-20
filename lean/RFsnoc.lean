@@ -24,6 +24,10 @@ theorem GpT_snocz_content {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA
 theorem RLC_levelshift {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) {f : ℕ → ℕ} {b : ℕ} {Y : TrioSeq}
     (hY : RLC A o (fun _ => 0) b Y) (t : ℕ) :
     RLC A (o + t) (fun _ => 0) b (mlift Y (b + liftOff f A o) t) := by
+  -- FALSE as reindex: `hY g b'` gives LC1 at offset o+g·o, anchor (o::A);
+  -- goal needs offset o+t+g·(o+t), anchor ((o+t)::A). The anchor shift o→o+t is the blocker.
+  -- ∴ the ∀t-wrapper-at-offset-o framing is wrong; R_farword uses RLC's LC1 at the
+  -- shifted offset (o+g·o) directly. Core = LC1_farword at GENERAL offset (like RLF_child/R_child).
   sorry
 
 /-- **PVP_snoc_gen**: general-f の PVF_snoc。∀t で GpT_snocz_content を回す（PVP_snocz に倣う、wrapper 完成）。 -/
