@@ -32429,3 +32429,22 @@ LC1_farword はこれらを RLC content 内に nested で持ち込む（LC1 の 
     → Cpsi → 最終目標。
 
 **次**: fork が PVP_snoc_gen を build 中（RFlc1.lean、GpT_snocz_core skeleton + Y content）。last mile。
+
+## 追記736: PVP_snoc_gen の EXACT error = offset o vs o+f·o。surgery = GpT_snocz_core に Y を織り込む
+
+（fork が直接証明の Lean error を取得 + coordinator が surgery 手順を確定。）
+
+**EXACT error（直接 hY.1 f b le_rfl）**:
+  `hL W hW h` で h:PVP A o f b W だが expected PVP A (o + addF(fun_=>0) f o) f b W = **PVP A (o+f·o) f b W**。
+  → offset mismatch **o vs o+f·o**。PVF_snoc は g=fun_=>0 で f·o=0 だったから offset o で成功。
+  general f では RLC content が shift し、直接 hY.1 は不可。
+
+**surgery（確定手順、fork へ）= GpT_snocz_core(GyG:93) に content Y を織り込む**:
+  - PVP A o f b V = ∀t, GpT A (o+t) f b (mlift V …) の **∀t が per-level shift を供給** → 各 level で
+    hY.1 が per-t g で match（offset o+g·o が level の shifted offset に一致）。
+  - GpT_snocz_core の proof を copy、bare head [(1,…,1)] の各 tower level を (1,…,1)::shiftr01 1 0 (Yτ) に、
+    Y 部を hY.1(level の g)で discharge。claim（二重頭塔帰納）に Y を carry。
+  - green → PVP_snoc_gen → LC1_farword(general H) → RLC → RLF → childLoad → gtc_trc4 → Cpsi → 目標。
+
+**現状**: 12 green commit（RFarword×8, RFbase, RFpvf, RFlc1.LC1_farword_base_of_rlf, gtc_trc4）。
+  frontier = PVP_snoc_gen（GpT_snocz_core + threaded Y）の 1 本。fork が surgery 実行中（multi-round）。
