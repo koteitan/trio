@@ -31886,3 +31886,12 @@ childLoad の再帰 tie を GoodChtX_deep(HeU:124 / upleaf_deep_coreD HeQ:108)�
 - **childLoad content = (1,v+1,1)::shiftr01 2 0 Z = fwU の単一頭版**(Trc4=(1,1,1)(2,1,0)=fwU から第2頭 (2,1,1) を除いたもの)。単一 vs 二重頭が構造差。
 - **残り 2 点**: ① FarCU/fwU → W0(または Wstarv/StarOK)ブリッジ(towU_GpT GzH:241, farU_collapse GzH:330 経由)② 単一頭(childLoad)⟷ 二重頭(fwU)の照合(GTC/BwT の外側 rcol rendering で単一頭が二重頭化するか)。
 - **∴ keystone は既存機構(GTU_load + FarCU→W0 bridge)で閉じる可能性大 = from-scratch でない**。running fork がこの経路を調査中。base+oper は committed green。
+
+## 追記712: ★★★ 決定的確定 — childLoad は既存 far-word 閉包より 1 段深い(depth-3 vs depth-2)= 真の open frontier
+
+fork(8a4bbf8, ChildLoadAnchor.lean green helpers)が**決定的な構造障害**を確定:
+- **ch-Z(GoodChtX_snocL+okLowS_load, HdP)も fwU/GTU/FarCU(GTU_load GzI:107, FarCU_all GzI:331, bridge towU_GpT→GzJ:597-604→StarOK/Wg/W0)も、child-load 閉包を無条件で与える(実在・既存)**。
+- **だが両者とも depth-2**: load は row0=2(第2 far-word 頭 (2,r,1) の兄弟)。例 `fwU 0 1 [some [(0,1,0)]] = (1,1,1)(2,1,1)(2,1,0)`、`ch(shiftr01 1 0 [(0,1,0)])` → (2,1,0)。
+- **psi(I) の Rc4=(1,1,1)(2,1,1)(3,1,0) は depth-3**: load (3,1,0) は row0=3 = 第2頭 (2,1,1) の**子**(trio.py: p0=2)。fwU の shift=2 固定 ⟹ based load では row0=2 止まり、row0=3 には非based load [(1,1,0)](除外)か余分列(fwU 反復は余分な (2,1,1) 頭を注入)が要り、Rc4 に整形不可。
+- **∴ childLoad = rcol²([(1,1,0)]) の二重 rcol(単一頭 nested)= 既存の全 far-word 閉包(二重頭 fwU / depth-2)より厳密に 1 段深い = 「字の中の字」= gen_gyk 未対応・前セッション類似 tower keystone 未 close の真の open frontier**。
+- **確定的評価(8 fork ~5M tok)**: 目標を単一 keystone childLoad に還元 → base+oper green(committed 6341f32)→ 既存全機構(deep-leaf/ch-Z/fwU-FarCU/GT・GTC 6規則)を depth 不一致で route-除外。残余 = 単一頭 nested far-word child-load 閉包の from-scratch 構築 = major open construction。**証明可能だが本プロジェクトの中心的 open problem 級**。
