@@ -31912,3 +31912,13 @@ fork が WltCheck.lean(441b2ef, green, 0 sorry)で**構造障害を green 証明
 - GoodChtX_snocL の ch-Z 葉も chT/farWt→FTL0 経由で marker 挿入。fwU/FarCU/GTU は第2頭 (2,r,1) 挿入。**3 family(wLT/fwU/ch-Z)全て Rc4 に無い列を足す**。
 - **∴ 決定的(green-verified)**: Rc4/Trc4 = marker-free 純二重 rcol(`Rc4=rcol 0 0 (rcol 0 0 [(1,1,0)])`, Cpsi.rcol_Trc4 green)。既存の far-word closure は全て marker/第2頭付きで Rc4 に非適用。keystone = **新規 marker-free 単一頭 rcol-nesting rendering + GpT→W0 bridge の from-scratch 構築**(= 元の GT_nest/childLoad graft、既存 closure 無し)。
 - 11 fork(~7M tok)で確定。base+oper+anchor committed green、Cpsi.psiI_mem 接続維持。**証明可能だが本プロジェクト中心の from-scratch major construction(multi-session)**。
+
+## 追記715: ★ base case を精密分解(cone+copies green)。残余 = 昇順 double-head tower-assembly 1本
+
+fork が GTnestBase.lean(cone_farhead green)で plain GT_nest の base case `GT v [(1,v+1,1)]` を分解:
+- **cone は green・context-free**(`cone_farhead`: far-word 頭のペアの cone は任意 good L で clean、rword row0≥1 ゆえ bad root (2,u+1,1) の row0 祖先は 2 頭のみ)⟹ `oper_zcone`(GxV:28)が任意 L で適用可。
+- **oper copies も green**(BwT_snocz on hB、各 copy=(0,u+k,0)::mlift P u k ∈ Wg)。
+- **唯一の gap = tower ASSEMBLY**: `(range n).flatMap (fun k => shiftr01 (k·2) 0 copy_k) ∈ Wg`(昇順シフト copy の塔)。
+- **PzW_Wg(GxJ:300)不適合**: PzW は shift-1 単一頭 `flatMap (k => (k,u+k,0)::rword k (u+k) (mlift L))`、base case は row2=1 content が rcol で **pair (1,u+1,1)(2,u+1,1)** になり **shift-2 double-head** ⟹ 不一致(= 追記714 の double-head/marker crux、green 確定)。
+- **2 framing 同一核**: plain=昇順 double-head tower-assembly / GTC-CQ=tie 再帰(∀u'∀Z)同時帰納。plain の方が cone/copies green で clean、残り 1 本。
+- ∴ 残余 = **from-scratch marker-free double-head tower-assembly**(昇順シフト BwT-copy → Wg)。base+oper+anchor+cone_farhead committed green。証明可能だが major construction。
