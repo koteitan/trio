@@ -31855,3 +31855,13 @@ build fork が ChildLoad.lean で **base 段(GTC_far_CQ)+ oper 段(GTC_oper via 
   - ∴ stage(Wg-段)帰納は不可(∀u' が大きい u'=大 stage を含む)。level 帰納も不可(tie は同 level に留まる)。Y の A2g' も不可(∀Z は Y の下でない)。
   - **⟹ childLoad と tie-load 閉包の同時整礎帰納(GoodChtX_deep 級)が必須**。He 系 GoodChtX_deep(HeU:124, 深い葉 tie 1 [tie 1 []] の同時帰納)が唯一の既知パターンだが Rc4 は valid UT 無し(直接適用不可)。
 - **現状**: 目標接続は全 green(Cpsi.psiI_mem)、ChildLoad の base+oper green、残り = tie 再帰(GoodChtX_deep 同時帰納)= 本プロジェクトの真の hard frontier。5 fork(~3M tok)で integ礎な道は完全に明示したが、構築は sustained dedicated effort(複数セッション規模)。**解不能ではなく証明可能**。
+
+## 追記709: ★ childLoad の全 case が GoodChtX_deep 核に収束確定。Trc4 本質=再帰 GTC_tie(同時帰納)
+
+build fork(6341f32)が base+oper green を確定し、残り全 case を精査:
+- **(a) tie-tower**(flat 段 Y=[(0,0,0)]): content⟦n⟧=(1,v+1,1)^n、末尾 row2-orphan far-word 頭。既存 GTC 規則外(BwT_snocz は [[]]、GTC_flat は shallower 要求)。→ lead①「far-word 頭を content に append する BwT 補題(orphan Pred-drop)」新規。
+- **(b) oper 無親** → (a) に還元。
+- **(c) graft**: j≤v → GTC_orph(shift-2 の eC'/graft は adapt 済だが ¬hasParent が rsum-false のため row1-noCross 補題が要る=lead②、L106 の hasParent_append_of_noCross を roots に port)。**j=v+1 → 再帰 GTC_tie(Trc4 の実 case)**。
+- **本質核 = 再帰 GTC_tie**: hload(GzJ:181)が ∀u'≥v ∧ ∀Z∈Wg(2u') で childLoad を要求 ⟹ stage/level/A2g'-on-Y 帰納すべて不可、**GoodChtX_deep(HeU:124, tie 1 [tie 1 []])の同時整礎帰納**が必須(lead③、本体)。
+- Trc4 は Y=[(0,1,0)] 単一列でも GTC_tie の hload は full childLoad(∀u'∀Z)を要求 ⟹ shortcut 無し。
+- **接続は全 green(Cpsi.psiI_mem)、base+oper committed。残り = GoodChtX_deep 同時帰納 1本 = 本プロジェクトの真の open frontier**(6 fork ~2.5M tok + 前セッションの類似 tower keystone [memory tower-keystone-bridge] でも未 close)。証明可能だが major construction。
