@@ -31903,3 +31903,12 @@ fork(8a4bbf8, ChildLoadAnchor.lean green helpers)が**決定的な構造障害**
 - **graft case が upleaf_deep_core(HeQ:83, R 一般)に構造一致**: childLoad graft content `(1,v+1,1)::shiftr01 2 0 Y` = upleaf_deep_core 結論(Pre=[], Yp=[(1,v+1,1)] Fr/Hd/≠[]✓, d=1, Y=(0,q,0)::R)。root row2=0 は Aopg graft 分岐が保証(Gw:27)。∴ R≠[] graft-form 荷は GpT 世界で閉じる。
 - **残工程(再定式化 = 実 build)**: (a) 族 `(0,0,0)::Rc4^n` を `(0,0,0)::rword 0 0 (ps.map (wLT 0))` で表す(ps の tree-forest が荷を担う、GLctx の RawWskt/FarCAt/RawWsAt を全段で満たす)。(b) 葉 base case(Trc4 の実 Y=[(0,1,0)] 単一列 → R=[] で hRne 違反 → 独立の `ch Z` 葉補題 via GoodChtX_snocL)。(c) Aopg graft Y(domT 形)→ upleaf_deep_core の (0,q,0)::R 分解の写像。
 - **∴ psi(I)∈W0 は既存機構(upleaf_deep_core + GLctx/wLT 単一頭 bridge, R_pm3 と同型)で閉じられる VIABLE 経路。from-scratch open problem でなく、GLctx/wLT 世界への再定式化(multi-session build)**。base+oper+anchor は committed green。
+
+## 追記714: ★★★ GREEN 証明で決定的確定 — Rc4 は marker-free 純二重rcol、既存全 rendering は marker/第2頭を挿入
+
+fork が WltCheck.lean(441b2ef, green, 0 sorry)で**構造障害を green 証明**:
+- `wLT 0 ([[ch [(0,1,0)]]], []) = (1,1,1)(1,1,0)(2,1,0) ≠ Trc4=(1,1,1)(2,1,0)`(simp+decide)。FTL0 marker (1,r,0) 挿入(`FTL0 1 [T]=(1,r,1)::(1,r,0)::shiftr01 1 0 T`, HbP:22)。
+- 外側 rcol 後: marker 形 = (1,1,1)(2,1,1)**(2,1,0)**(3,1,0)(4列)≠ Rc4=(1,1,1)(2,1,1)(3,1,0)(3列, marker-free, psi(I) の実展開)。= R_pm3 の形(R_pm3 tail は (2,1,0) marker を持つ)。
+- GoodChtX_snocL の ch-Z 葉も chT/farWt→FTL0 経由で marker 挿入。fwU/FarCU/GTU は第2頭 (2,r,1) 挿入。**3 family(wLT/fwU/ch-Z)全て Rc4 に無い列を足す**。
+- **∴ 決定的(green-verified)**: Rc4/Trc4 = marker-free 純二重 rcol(`Rc4=rcol 0 0 (rcol 0 0 [(1,1,0)])`, Cpsi.rcol_Trc4 green)。既存の far-word closure は全て marker/第2頭付きで Rc4 に非適用。keystone = **新規 marker-free 単一頭 rcol-nesting rendering + GpT→W0 bridge の from-scratch 構築**(= 元の GT_nest/childLoad graft、既存 closure 無し)。
+- 11 fork(~7M tok)で確定。base+oper+anchor committed green、Cpsi.psiI_mem 接続維持。**証明可能だが本プロジェクト中心の from-scratch major construction(multi-session)**。
