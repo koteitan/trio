@@ -32192,3 +32192,25 @@ LC1_farword fork が LC1 の全 constructor を trace し、mechanism gap を ex
 **次の一手**: (1) childLoad の short case を upleaf_deep_coreD で埋め GTC CQ 0 Trc4 完成（deep-tie 機構実証）。
   (2) C_fam（Trc4-族文脈）版 childLoad-analog を構築（base は BwT_farword 系、graft は upleaf_deep_coreD）
   → Cpsi を C_fam-GTC に緩和。
+
+## 追記728: ★★ STEP 2 viability 確認 — GTC C_fam は WordsG/marker 壁を回避する脱出路
+
+（coordinator。STEP 2 の C_fam 文脈橋が dead end でないことを確認。）
+
+**marker 壁の回避**:
+- WordsG letter 路（BwT_append_words + TF_tieG）は Trc4 が marker-free letter になれず壁（TF語は
+  row2=0 marker 始まり、Trc4 は (1,1,1) row2=1 始まり）。
+- しかし **childLoad は GTC を与える**（WordsG 非経由）: GTC C 0 Trc4 := ∀L, C v L → BwT v L →
+  BwT v (L++[Trc4])。**Trc4 を C-文脈に直接 append**（marker 不要、TF 文法を通らない）。
+- ∴ C_fam（Trc4-族文脈）版 GTC が marker 壁の脱出路。
+
+**Cpsi の族を GTC C_fam で組む**（STEP 2 の具体形）:
+- C_fam v L := ∃ k, L = （族の接頭辞 replicate k Trc4 を lift したもの）。
+- 必要: (a) [] が C_fam（基底）、(b) C_fam が Trc4 append で閉じる（成長文脈が C_fam を保つ）、
+  (c) GTC C_fam 0 Trc4 が childLoad-analog で証明可能。
+- childLoad-analog: base=GTC_far の C_fam 版（BwT_farwords は universal で C 非依存の見込み）、
+  oper=GTC_oper（文脈非依存, GzJ:26）、short/graft=upleaf_deep_coreD（GpT world, context-general）。
+- BwT_append_words（GzJ:713）は prefix-general（R_pm3 で確認）。C_fam の族接頭辞は構造化済み。
+
+**結論**: childLoad(GTC) を C_fam で再証明すれば、Cpsi を C_fam-GTC の反復 append に緩和でき、
+  marker 壁を回避して最終目標に到達。route は viable。残りは Lean 構築（STEP 1 → STEP 2）。
