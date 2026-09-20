@@ -32767,3 +32767,17 @@ U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
 
 **次**: fork が nested tower を試行 → inner dh2 が頭(tie でない)を発見するはず。fam hgr k≥1 の nested head を
   どう閉じるか(dh2 の oper が bare-head 塔に還元するか=oper_headtie 型、or Wrap 循環か)が核心。
+
+## 追記744: tower1_mem_v_fam GREEN(srow非依存)。核 = 三重入れ子塔(tie→dh2→dh1→BwT_snocz)
+
+**tower1_mem_v_fam(green, commit)**: `tow v 0 R k ∈ Wg` を fam hgr(塔自身の元のみ)で。tow は graft 定義なので **srow 非依存**——tie(srow1)にも頭(srow2)にも効く。oper↔tow の橋だけ oper_cons_tower1(tie)/oper_cons_tower2(head, Wset:3231)で違う。
+
+**核の完全構造（graft シフト検証済み）**: render_Trc4 = (1,u+1,1)(2,u+1,1)(3,u+1,0)。graft シフト = 最終列の行0。
+- 外(tie 行0=3): oper_cons_tower1 → tow_outer。fam hgr = graft = (rword L++二重頭)++shift3(tow k)。子は dh2 の下。
+- 中(dh2 行0=2, head): oper_cons_tower2 → tow。fam hgr = (rword L++dh1)++shift2(child)。子は dh1 の下。
+- 内(dh1 行0=1, head): oper_cons_tower2/zword → **BwT_snocz(green, 単一頭を L 末尾に)** で底。
+各段 tower1_mem_v_fam(srow非依存)+ fam hgr が次段へ連鎖。子は「上の頭の子」(深い入れ子)で hangv でなく graft-tow が正しい道具(座長指摘通り)。
+
+**W 世界には towerGraft2_lift_fam(Wset:3458, srow=2 fam)がある**が Wg 世界は tower1_mem_v_fam(srow非依存)で代替。
+
+**残り**: 三重入れ子の組立(~120 行)。各段 tower1_mem_v_fam + oper_cons_tower1/tower2 + fam hgr 連鎖 → 底 BwT_snocz。
