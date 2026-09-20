@@ -22,7 +22,29 @@ theorem GpT_snocz_content {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA
   rw [reliftX_app hW (Hd_letter _ _) b f g,
     show ((1, b + liftOff f A o + 1, 1) : ℕ × ℕ × ℕ) = ((1, b + (liftOff f A o + 1), 1) : ℕ × ℕ × ℕ)
       from by rw [Nat.add_assoc],
-    reliftX_node hYfr b (liftOff f A o + 1) 1 f g A]
+    reliftX_node hYfr b (liftOff f A o + 1) 1 f g A,
+    reOff_above hA f g 1,
+    show lowP f A (liftOff f A o + 1) = A from
+      lowP_all (fun a ha => by have := liftVal_lt_liftOff (f := f) hA ha; omega)]
+  have hW1 : Fr (reliftX b f g A W) := Fr_reliftX hW _ _ _ _
+  have hY1 : Fr (reliftX b f g A Y) := Fr_reliftX hYfr _ _ _ _
+  have hPV1 : ∀ t, GpT A (o + t) (addF f g) b
+      (mlift (reliftX b f g A W) (b + liftOff (addF f g) A o) t) := by
+    intro t
+    have := GpT_lift (fun a ha => by have := hA a ha; omega) (hPV t) g
+    rwa [mlift_reliftX_high hA] at this
+  obtain ⟨F, hF⟩ : ∃ F, F = addF f g := ⟨_, rfl⟩
+  obtain ⟨k, hk⟩ : ∃ k, k = liftOff F A o := ⟨_, rfl⟩
+  rw [← hF] at hPV1 ⊢
+  rw [← hk] at hPV1 ⊢
+  intro u' hu X hX hRX
+  obtain ⟨d, hd⟩ : ∃ d, d = u' - b := ⟨_, rfl⟩
+  rw [← hd]
+  rw [mlift_app hW1 (Hd_letter (b + (k + 1)) (reliftX b f g A Y)) b d,
+    mlift_letter (show b < b + (k + 1) by omega) hY1 d]
+  -- goal: R F u' (X ++ (1,u'+k,0)::shiftr01 1 0 (mlift(reliftX W) b d ++ (1,b+(k+1)+d,1)::shiftr01 1 0 (mlift(reliftX Y) b d)))
+  -- setup GREEN to here. Remaining: the far-word head + content Y is a "字" (LC1 mechanism via hY),
+  -- NOT the bare-head tower (GpT_snocz_core); content makes the head non-last. Next: use hY's LC1 / RLC_F.
   sorry
 
 /-- RLC の段シフト（o → o+t、Y → mlift Y u t）。wrapper が o+t で GpT_snocz_content を使うため。 -/
