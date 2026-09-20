@@ -42,9 +42,41 @@ theorem GpT_snocz_content {A : List ℕ} {o : ℕ} (hA : ∀ a ∈ A, a < o) (hA
   rw [← hd]
   rw [mlift_app hW1 (Hd_letter (b + (k + 1)) (reliftX b f g A Y)) b d,
     mlift_letter (show b < b + (k + 1) by omega) hY1 d]
-  -- goal: R F u' (X ++ (1,u'+k,0)::shiftr01 1 0 (mlift(reliftX W) b d ++ (1,b+(k+1)+d,1)::shiftr01 1 0 (mlift(reliftX Y) b d)))
-  -- setup GREEN to here. Remaining: the far-word head + content Y is a "字" (LC1 mechanism via hY),
-  -- NOT the bare-head tower (GpT_snocz_core); content makes the head non-last. Next: use hY's LC1 / RLC_F.
+  obtain ⟨V, hV⟩ : ∃ V : ℕ → TrioSeq,
+      V = fun τ => mlift (mlift (reliftX b f g A W) b d) (u' + k) (τ - k) := ⟨_, rfl⟩
+  obtain ⟨Vy, hVy⟩ : ∃ Vy : ℕ → TrioSeq,
+      Vy = fun τ => mlift (mlift (reliftX b f g A Y) b d) (u' + k) (τ - k) := ⟨_, rfl⟩
+  have hVFr : ∀ τ, Fr (V τ) := fun τ => by rw [hV]; exact Fr_mlift (Fr_mlift hW1 _ _) _ _
+  have hVyFr : ∀ τ, Fr (Vy τ) := fun τ => by rw [hVy]; exact Fr_mlift (Fr_mlift hY1 _ _) _ _
+  have hk1 : 1 ≤ k := by rw [hk]; unfold liftOff; omega
+  have hBase : ∀ τ, k ≤ τ → GpT A (o + (τ - k)) F u' (V τ) := by
+    intro τ hτ
+    have h0 := hPV1 (τ - k)
+    have h1 := (GpT_ax (fun a ha => by have := hA a ha; omega) hA1 (by omega) F).lift b _
+      (Fr_mlift hW1 _ _) h0 u' hu
+    rw [← hd, mlift_commk, show b + k + d = u' + k by omega] at h1
+    rw [hV]; exact h1
+  have eStep : ∀ τ, k ≤ τ → mlift (V τ) (u' + τ) 1 = V (τ + 1) := by
+    intro τ hτ
+    rw [hV]
+    have := mlift_mlift (mlift (reliftX b f g A W) b d) (u' + k) (τ - k) 1
+    rw [show u' + k + (τ - k) = u' + τ by omega, show τ - k + 1 = τ + 1 - k by omega] at this
+    exact this
+  rw [show mlift (reliftX b f g A W) b d = V k from by rw [hV]; simp [mlift_zero],
+    show mlift (reliftX b f g A Y) b d = Vy k from by rw [hVy]; simp [mlift_zero],
+    show ((1, b + (k + 1) + d, 1) : ℕ × ℕ × ℕ) = ((1, u' + k + 1, 1) : ℕ × ℕ × ℕ) from by
+      rw [hd, show b + (k + 1) + (u' - b) = u' + k + 1 by omega]]
+  obtain ⟨U0, hU0⟩ : ∃ U0 : TrioSeq,
+      U0 = ((0, u' + k, 0) : ℕ × ℕ × ℕ) ::
+        (V k ++ ((1, u' + k + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (Vy k)) := ⟨_, rfl⟩
+  have eU : ((1, u' + k, 0) : ℕ × ℕ × ℕ) ::
+      shiftr01 1 0 (V k ++ ((1, u' + k + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (Vy k))
+      = shiftr01 1 0 U0 := by rw [hU0]; simp [shiftr01]
+  rw [eU]
+  -- GREEN to here: goal = R F u' (X ++ shiftr01 1 0 U0),
+  --   U0 = (0,u'+k,0)::(V k ++ head::shiftr01 1 0 (Vy k))  [Y woven at the leaf, matches GpT_snocz_core's U0 + content].
+  -- Remaining: apply (hR F).1.oper then the tower claim. BUT U0's last col is now Y's (Vy k), not the head,
+  --   so the oper is Y-GOVERNED (via hY/RLC), not the bare far-word head tower (oper_zcone). This is the deep weave.
   sorry
 
 /-- RLC の段シフト（o → o+t、Y → mlift Y u t）。wrapper が o+t で GpT_snocz_content を使うため。 -/
