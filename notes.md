@@ -31931,3 +31931,13 @@ double-head tower fork が base case を hang level まで分解:
 - **既存 hang は全て child-hang(row0≤1)**: `hang_Wg`(GwU:140)は rsum(R 根 ≤ A++R 全列)要求 → A の row0=1 頭列で R 根=2 が違反。`hangv`(GxD:27)/base_hang(GwY:23)も entry R 0 0 ≤ 1 要求。
 - ∴ 残余 = **row0=2 の "grandchild-hang" 補題**(新規 Wstarv_closed 変種、A2g'(R)で、R が A より深く分離するので expansion が R 局所 = separation 論法が候補)。BM4 で真、証明可能。
 - 攻め筋: (a) hang_Wg の Wstarv_closed(GwU:43)を row0=2 に一般化、(b) R(row0≥2)が A(row0≤1 頭)と分離 → R の展開が局所 → 帰納で Wg。committed green: cone_farhead + base/oper + anchor + Cpsi 接続。
+
+## 追記717: ★★ framing 訂正(希望的) — 残余は graft 閉包でなく tower_GPF の L 一般化(既存 extendable 機構)
+
+fork が far-word 頭の展開を trio.py で精査し訂正:
+- **far-word 頭 (1,u+1,1)(2,u+1,1) の bad root (2,u+1,1) は t=2, parent=ROOT (0,u,0), delta d0=2/d1=1 の shift-2 昇順塔**。engine は **`tower_GPF`(GzD:55)**(GPF/PVF/RLF 塔、`tower_Wg` GzD:121 が使用、L=[] で green)。`farword_oper→tower_GPF→Wg_of_starOK` が L=[] の marker-free green 証明。
+- **∴ 追記716 の「grandchild-hang=graft 閉包」は誤り**。hangv/grandchild-hang は red herring。真の機構は tower_GPF(shift-2 塔を PVF_snoc/RLF_child で回す、GyK/GzA-D)。
+- **真の target(既存 extendable 機構、graft 閉包でない)**:
+  - Route 1(base 一般化): `farword_Wg_L : WordsG u L → (0,u,0)::(rword 0 u L ++ [(1,u+1,1),(2,u+1,1)]) ∈ Wg(2u)` — tower_GPF/farword_Wg を L=[] から任意 WordsG L に一般化(L の rword を PVF/RLF 再帰に足す)。→ GT v [head] → GT_nest → GT 0 Trc4。
+  - Route 2(CQ, 推奨): childLoad base=GTC_far_CQ green, oper green、残り tie-recursion(GTC_tie hload)は tower_GPF-adjacent な GPF-world 塔(graft 閉包でない)。Cpsi を WordsG→BwTC_rep に rewire。
+- **∴ 残余は tower_GPF の L 一般化 = 既存機構の拡張**(from-scratch graft 閉包でない)。より tractable。committed green 維持。
