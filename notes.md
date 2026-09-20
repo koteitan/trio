@@ -31783,3 +31783,17 @@ Trc4 = rcol 0 0 [(1,1,0)](word-in-word)。gen_gyk.py は "top ltl"/"字の中身
   - route A: GT荷版の GT_loadTop/GTC_loadTop を新設(A2g' 帰納で Z を分解、base=GT v [(1,v+1,1)] も要新設)。
   - route B: Cpsi を plain GT/WordsG から GTC+新文脈 C に pivot し、C が入れ子遠い語を扱う(He 系 CLTL 流だが Trc4 は wLT でない)。
 - 到達点: 目標 psi(I)∈W0 が **Cpsi.psiI_mem ∘ gt_trc4 ∘ GT_nest** で完全に配線済。GT_nest 1本(遠い語の GT荷載せ)が唯一の数学的残余。
+
+## 追記703: ★★ route 決定 = GTC 文脈(coordinator hint)。plain GT_nest は恐らく偽
+
+coordinator の指摘: He 系は入れ子構造を**必ず GTC(文脈)**で証明する(R_pm3/Kdeep は GTC CLTL、plain GT/WordsG 皆無)。
+∴ plain `GT v (rcol 0 v W)`(= GT_nest)は as stated で**偽の可能性大**(任意 L への追加は文脈条件が要る)。
+
+**pivot(route B 採用)**:
+- 族は plain GT 0 Trc4 を経由せず、**GTC C 0 Trc4 + BwTC_rep(GzJ:50)**で `BwT 0 (replicate n Trc4)` を直接構成。
+- BwT 0 L は u=0 で mlift 恒等 → `rword 0 0 (replicate n Trc4) ∈ Wstarv 0` → StarOK 0(row0≥1 は rword_ge)。
+  ∴ Cpsi.fam_far_mem を WordsG/starOK_wordsG から **BwT→StarOK** に張り替えれば plain GT 不要。
+- 必要部品(全確認済): `rcol 0 v W = fwTop v [some W]`; `mlift_rcol`(GxJ:144) mlift(rcol 0 v X) v t = rcol 0 (v+t)(mlift X v t); `rword_singleton`(GwS:76)。
+- **唯一の残余 = `GTC C 0 Trc4`**(C = 例えば「L は Trc4 の反復」or 適切な文脈)= 文脈つき入れ子遠い語の追加。
+  これは依然として入れ子行1 letter の追加(研究キーストーン)だが、正しい枠(GTC)に載った。次: 文脈 C の設計と GTC C 0 Trc4 の構成(He 系 GTC_load/GTC_tie を GT荷対応に拡張、or 新 keystone)。
+- Cpsi.psiI_mem(plain GT 版)は条件付き定理として有効なまま(GT 0 Trc4 ⟹ psi(I)∈W0)。族の実装だけ GTC に差し替える。
