@@ -31755,3 +31755,17 @@ core は **olt-WF(OCF)ではなく構造的な族 co-recursion**(GxB.ZBr / Words
 Trc4 = rcol 0 0 [(1,1,0)](word-in-word)。gen_gyk.py は "top ltl"/"字の中身の中の字は未対応" で失敗
 (C4f=行2193 は frontier 越え)。だが He 系 GoodChtX は R_pm3 で入れ子 tie を証明済 → 同系で GT 0 Trc4 を狙う。
 次: He 系(topTs/GoodChtX/chT/CLTL)で BwT 0 [Trc4] or GT 0 Trc4 を構成。
+
+## 追記701: ★★ frontier lemma を厳密特定 = GT u ([(1,u+1,1)] ++ shiftr01 2 0 Z)(Explore 2体で確認)
+
+追記700 の残余 GT 0 Trc4(Trc4=[(1,1,1),(2,1,0)])を GT_tie で分解し、frontier を 1 本の sorry に isolate。
+- **Gtrc4test.lean(未追跡, sorry=1)**: `GT_tie (v:=0)(K:=[(1,1,1)])(x:=2)` で hcone は green(mono01+decide)、
+  残り hload = **`∀u≥0, ∀Z∈Wg(2u) based, GT u ([(1,u+1,1)] ++ shiftr01 2 0 Z)`**。
+- **正体**: content が **行1 letter (1,u+1,1)(row2=1)を先頭に持つ** = 「字の中身の中の字」= 入れ子 far-word。
+  Rc4 = rcol 0 0 (rcol 0 0 [(1,1,0)]) の二重 rcol。gen_gyk.py が "未対応" とする所(C4f=行2193 は frontier 越え)。
+- **既存機構では割れない(Explore 2体で全数確認)**:
+  - GT 規則6本(nil/oper/flat/orph/tie/loadTop)に「行1 letter 先頭 content」の構成子なし。GT_loadTop は shiftr01 1(x=2 と不一致)かつ GT u [(1,u+1,1)] を要求(未証明)。
+  - He 系(wLT/topTs/GoodChtX/BwT_CLTL)は入れ子**タイ**(tie 1 [tie 1 []]=Kdeep, R_pm3)は扱うが**入れ子行1 letter**は扱わない。Trc4 に valid な UT t は無い(Q2: (2,1,0) は unitC の載荷 Z=(1,1,0) が非 based)。
+  - `(0,0,0)(1,1,1)(2,1,1)(3,1,0)` を無条件に証明した定理はコードベースに皆無(grep 0 hits)。
+- **∴ 真の残工数 = GoodChtX_deep 級の新規 keystone**(入れ子行1 letter の GT / far-word content)。深い葉技法(追記28)は入れ子タイ専用で、これには効かない。
+- 接続は全て green: `Cpsi.psiI_mem (hGT : GT 0 Trc4) : psiI ∈ W 0`(commit a7f3efb)。この 1 本の sorry を閉じれば目標達成。
