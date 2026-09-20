@@ -32272,3 +32272,28 @@ upleaf_deep_coreD(HeQ:108) が graft(深いタイ)エンジン。次: R_farword 
 
 **次**: fork が PVF_farWAt/HeJ を childLoad の sorry 閉じに適用中。childLoad green → gtc_trc4 green
   → GTC CQ 0 Trc4 → STEP 2（族橋）→ Cpsi → 最終目標。
+
+## 追記731: ★★★ 障害の確定分析 — 全 grammar 構成子は marker or 誤 level。R_farword は真に不在。直接 oper ルートが未試
+
+（coordinator。ch-Z championing は誤り訂正。全構成子を検証。）
+
+**検証済み事実（全構成子が Trc4 の marker-free 頭+同レベル子を作れない）**:
+- FTLt（HdA:268）/farWt/wLT: (1,r,0) marker 挿入。∴ ch-Z→PVF_farWAt は **marker-ful**（私の ch-Z championing は誤り）。
+- RLF_load（GyK:120）: marker-free だが荷を頭の row1=b+2（**頭より下**、level 不一致）。
+- RLF_child（GyK:126）: (1,b+τ,0) marker 挿入。
+- ∴ **marker-free かつ 頭と同レベルの子**を作る構成子は grammar に無い = R_farword の真の gap。
+- Trc4=(1,1,1)(2,1,0) の子 (2,1,0) は row1=1=v+1（頭と同 row1）= marker-free 同レベル子。fwU も
+  荷が based 要求で不適（(1,1,0) 非 based）。
+
+**未試ルート = 直接 mem_of_oper_mem（marker-free by rword、頭を根に attach）**:
+- model: (0,0,0)::Rc4 = (0,0,0)(1,1,1)(2,1,1)(3,1,0) の oper:
+  [1]→(0,0,0)(1,1,1)(2,1,1)、[2]→…(3,0,0)(4,1,1)(5,1,1)、[3]→…(6,0,0)(7,1,1)(8,1,1)…
+  = **(0,0,0) + 二重頭 + [(3k,0,0) セパレータ + 二重頭]\* 反復**（marker-free、二重頭=farword_Wg 可、
+  セパレータ=平坦 (k,0,0)）。
+- ∴ (0,0,0)::Rc4^n ∈ W0 を mem_of_oper_mem で、二重頭列+平坦セパレータとして直接証明できる可能性。
+  farhead_base_oper の hangv 分離（→ 偽 Wrap）を避け、頭を根に attach したまま。
+
+**Cpsi は committed green**: psiI⟦n⟧=(0,0,0)::Rc4^n（model 再確認）。族の各 n を閉じれば psiI∈W0。
+
+**次**: R_farword（marker-free 同レベル子構成子）を新規構築 or 直接 oper ルート（二重頭列）を探索。
+  fork の判断に委ねる（coordinator の route prescription は Wrap/ch-Z で誤った前例あり、事実のみ提供）。
