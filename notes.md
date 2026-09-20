@@ -32619,3 +32619,25 @@ U0 = (0,u'+k,0)::(V k ++ (1,u'+k+1,1)::shiftr01 1 0 (Vy k))。）
 - 一般 Y ∈ Wg は A2g' で tail 分岐(childLoad と PVP-world 重複、Om で閉じなければ)。
 
 **次**: fork が GpT_snocz_content を Y∈Wg で restate + Om で oper_cons_tower1 → 塔で close。green → 最終目標。
+
+## 追記742: 決定 — (a) Om で足りる（Trc4 content は FLAT/terminal、bare-head 再帰）。GT 0 Trc4 は直接ルートで（GT_tie/GTC_tie の ∀ を bypass）
+
+（fork の (a) Om vs (b) 一般 A2g' 質問への coordinator 回答。）
+
+**答え = (a) Om 具体で足りる**:
+- **Trc4 の content Om=[(0,1,0)] は FLAT（row2=0, 単一 terminal tie 列）** — その下に深い nesting 無し。
+- ∴ tie の graft は **bare head を複写**（oper_headtie 証明済み: (0,u,0)(1,u+1,1)(2,u+1,0)⟦n⟧=(flat,bare-head)塔）、
+  再帰は即 bottom out、arbitrary Wg-load への再帰なし。graft の各 level の「荷」= bare 遠い語頭。
+- tow-close（tower1_mem2_fam / GpT_snocz_core）は Y 非依存。∴ 一般 A2g' 不要。
+
+**GpT_snocz_content(Om) 具体で書く**: A=[]、reliftX=id、oper_cons_tower1（Om の tie の domT/hasParent は
+  oper_headtie と同様に computable: srow=1, hasParent-to-root, domT via lev=2(u+1)）→ tow → tower1_mem2_fam。
+
+**chain 注意**: Om 具体を使うには gtc_trc4/GTC_tie・gt_trc4/GT_tie（∀Z/∀W 強制）を通さず、**GT 0 Trc4 を直接証明**:
+  GT 0 Trc4 = ∀L BwT, BwT(L++[Trc4]) → (0,u,0)::(P ++ rcol(mlift Trc4)) ∈ Wg、
+  rcol(mlift Trc4)=(1,u+1,1)(2,u+1,1)(3,u+1,0) = Om-concrete GpT_snocz_content の形（二重頭 + 終端 tie）。
+  GpT_snocz_content(Om) を prefix P に適用 → BwT(L++[Trc4]) 直接 → GT 0 Trc4 → Cpsi.psiI_mem → 目標。
+  P=rword(L) は BwT-good、tower1_mem2_fam の graft-closure が扱う（Y 非依存）。
+
+**次**: fork が (1) GpT_snocz_content(Om) 具体（oper_cons_tower1 + tower1_mem2_fam、A2g' なし）、
+  (2) GT 0 Trc4 へ直接接続（GT_tie/GTC_tie bypass）、(3) Cpsi close。これが flat-content Trc4 の finish line。
