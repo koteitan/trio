@@ -22,9 +22,17 @@
 ## 緑の関連基盤（新測度の材料）
 `Dzf Jz1c 0 0 n∈W0`(Dzf_W_root SmallX:15589, z=1 対角塔=生成元 D_v 系) / `wf_LdDM`(Small:10309, DershowitzManna 荷) / `QS`(Small:10452 予算木) / 共終性 translate。
 
+## ★ なぜ測度 shortcut が原理的に存在しないか（2026-09-21 追加、10 角度目）
+`translate : TrioSeq → Three`（3 行 BM 記法, Term:138）、`olt`(<o) は Three の順序。`wf_olt_ST_TS_of_cofinality`(Wset:4750) は
+**olt の整礎性を共終性 + Wstar(membership) から導出** — olt WF は a priori でなく**証明の目標**。
+∴ translate を帰納測度にするのは循環（olt WF を仮定）。`acc_of_W`(Wset:291) は W の lfp 帰納(A2')で accessibility を出す＝
+**W メンバーシップが唯一の構成的整礎性証明書**。∴「well-founded 測度を見つけて membership を bypass」という手法クラス全体
+（DM 測度拡張・translate 帰納・accessibility 帰納）は原理的に不可能: olt WF を証明する（循環）か membership 証明書（=Subst1）を与えるか。
+残る唯一の道 = membership 証明書 = Subst1 を、3 行 Lift1 forms について構成的に証明すること。
+
 ## 真の前進 = 整礎 Lift1 置換測度（新しい順序数解析）
 Subst1 = 「標準形の全 oper が有界 level で終了する」simultaneous level-closure。probe で経験的真（62151 例 0 違反）だが未証明。
-残るは複数セッションの研究。反射的 fork/角度探索は打ち止め（9 角度収束）。新しい数学的洞察待ち。
+残るは複数セッションの研究。反射的 fork/角度探索は打ち止め（10 角度収束）。新しい数学的洞察待ち。
 
 ---
 
