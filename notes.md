@@ -31699,3 +31699,25 @@ psi(I) を閉じる 2 路 (a) 開コア(WCat/Subst1/塔閉包、深い lfp 帰�
 - ∴ 塔は W_add で組めず、`mem_of_oper_mem`(oper 節)の**結合 membership**でしか W に入らない。その結合の閉性が未証明の開コア(WCat 非rsum / ShiftTowerClosed row2・e≠0 / TowerGraft2 / Subst1)。
 - 無条件で通る塔だけが例外:`W_flatMap_copies`/`shiftTowerClosed_e_zero`(e=0=verbatim、コピー根が同じで rsum 成立)、`shiftTowerClosed_of_zeroRow2`(row2≡0、`zeroRow2_mem_Wself` が別途 Wself を与える)、`snoc_flat_root`(親=root で verbatim)。psi(I) はどれにも当てはまらない(row2 含む・e≠0・親≠root)。
 - ⟹ psi(I) は「rsum が壊れる塔の結合 membership」= プロジェクト共通の開コアそのもの。heartbeat 増分では不可能と根本原因レベルで確定。
+
+## 追記698: C4 grind の成果と frontier(handoff)— psi(I) を検証済みで単一義務=far-word 深子の族へ
+
+「1 ハートビートで完成させる必要はない、grind せよ」の指示を受けた grind の到達点。
+
+### 検証済み(commit 済、lean/C4scratch.lean + Final.lean)
+- **termination ⟸ ∀v diagSeqT 0 v ∈ W u**(Final.lean、`TRIO_terminates_of_diag`、green)。基底 v≤1 も。
+- **C4 = (0,0,0)(1,1,1)(2,1,1)(3,1,0) ⟸ Subst1 + hsub**(C4scratch、commit 17a76cb):
+  - `C4_mem_of_step (TowStepC4) : C4∈W0`(oper_cons_tower1 で C4⟦n⟧=tow、tow 帰納)。
+  - `TowStepC4_of_subst1`:TowStepC4=C3++shiftr01 3 0 X が Subst1 インスタンス(S=C3,p=2,C=(2,1,1)::shiftr01 3 0 X∈W(lev C3 2)=W3=hsub)。
+- **C4 の族 famC4 v=[(1,v+1,1),(2,v+1,1),(3,v+1,0)]**(commit 03e4608):argOK/srow=1/domT(2v+1)/entry/famC4 0=Rc4 を検証。C4 を **単一義務=ZBr graft 閉包**に還元。
+
+### core の訂正
+core は **olt-WF(OCF)ではなく構造的な族 co-recursion**(GxB.ZBr / WordsG、grind 可能)。A2'(lfp 帰納)が oper 節で IH を供給するので非交差ケースは olt-WF 不要。earlier「全部 olt-WF」は誤り。
+
+### 残る単一義務(frontier)
+`∀y∈Wg(2v+1) based, (v, fun u => graft (famC4 u) y) ∈ ZF`。grafted 族 [(1,u+1,1),(2,u+1,1)]++shiftr01 3 0 y は y の last srow で ZBr 分岐が決まり、頭が 2→1→0 と縮む**有限 co-recursion**(各段で Wg-member を graft)。= C4 の「far-word 継続頭 (2,·+1,1) に深い子(row0=3)」= gen_gyk "top ltl" 未対応。
+
+### 完成に要るもの(手本無し)
+- raw `GxB.ZF` は**コードベース未使用**(specific family の ∈ZF 証明ゼロ)。C4 で作れば初。
+- または WordsG/`fwU`(GzH/GzM)を「継続頭に深い子」で拡張(far-word soundness の拡張)。
+どちらも psi(I)=row4784 へ向けたプロジェクト frontier(現到達 row1687)の substantial インフラで手本が無い。psi(I) 自体も C4 の上に (2,0,0) の verbatim 塔(=同種の族)が乗る。
