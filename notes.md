@@ -33119,3 +33119,20 @@ psiI∈W0 ⟸[X∈W0 の A2'帰納 + oper恒等式 collapse(X)⟦n⟧=collapse(X
 + oper 恒等式 2 本の Lean 証明、A2' 帰納の graft 分岐。
 
 これが「12+ 角度全て Subst1 底打ち」の膠着を破る具体路。次: multi-head GoodF と oper 恒等式を Lean で検証。関連 [[wworld-route-tools-exist]]
+
+## 追記762: route(B) の正直な評価 — base residue base(n) が新 crux（多頭 Dzf か Subst1 か未確定）(2026-09-21)
+
+（RouteB fork は誤発火[tool 0]。coordinator が crux を精査。）
+
+**route(B) は psiI を base(n)=(0,0,0)(1,1,1)(2,1,1)^n に還元する（collapse 帰納で top の Subst1 を回避）**。だが:
+- base(1)=R1317_mem は `W0_of_starOK (starOK_farwords (v:=0) (WordsG_nil 0))` = **遠い語ゼロ**で証明。
+  base(n)（遠い語 n 個）を同機構で出すには WordsG（= GT = Wg 壁 = Subst1）が要る。
+- base(n) の深 oper（base(1)-prefix ++ 対角）は **record spacing=2、2 頭/ブロック**（(2j,j,0)(2j+1,j+1,1)(2j+2,j+1,1)）で
+  **標準 Dzf（record spacing=1）に合わない**。Dzf_W/Dzf_W_root で直接は閉じない。
+- collapse([(0,0,0)])=(0,0,0)(1,1,1)(2,1,1)(3,0,0), base(2)=(...)(2,1,1)(2,1,1) は未証明（grep 0）。
+
+**∴ route(B) は clean な勝ちでない。base residue base(n) が新 crux:**
+  多頭 Dzf/GoodF（record spacing 可変）で閉じれば route(B) 成功（Subst1 回避）；
+  starOK_farwords/GT に戻れば route(B) は base で Subst1 に帰着。要 Lean 検証。
+  progress: psiI を「base(n) 多頭頭コピー塔」に還元（Subst1 より具体的）。base(1) は proven。
+関連 [[wworld-route-tools-exist]]
