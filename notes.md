@@ -31874,3 +31874,15 @@ childLoad の再帰 tie を GoodChtX_deep(HeU:124 / upleaf_deep_coreD HeQ:108)�
 - ∴ **deep-leaf(高い load)機構は childLoad(同レベル load)に非適用**。graft/GTC_orph は j≤v(低い load)。**childLoad の j=v+1(同レベル load を far-word 頭に吊るす)は既存3機構(deep-leaf 高 / graft 低 / orph)いずれとも異なる新規機構**。
 - 残余の正確な性質 = 「far-word 頭 (1,v+1,1) の直下(row0=2)に、同レベル(row1≤v+1)の Wg-load を吊るした語」の GpT/GTC。これは本プロジェクト未構築。
 - base+oper は green(ChildLoad.lean)、接続 green(Cpsi.psiI_mem)。残り = この同レベル-load keystone(GoodChtX_deep 級だが別種)。
+
+## 追記711: ★★ 訂正(希望的) — child-load 閉包は既存・無条件(GTU_load/FarCU_all, GzH/GzI)
+
+追記708-710 の「from-scratch 中心的 open problem」評価を訂正。停止 fork が発見:
+- **far-word-units 世界(FarCU/fwU/GpT, GzH/GzI)は任意 Wg-load を child として吊るせ、無条件**:
+  - `FarCU_all`(GzI:331): ∀uss, FarCU b0 uss(無条件)。
+  - `GTU_units`(GzI:321): ∀us b0, GTU b0 us(無条件)。
+  - `GTU_load`(GzI:107): 任意 based Z∈Wg(2b1) を `some Z` として追加(A2g'(Z)で証明済)= **同レベル child-load 閉包そのもの**。
+- `fwU b r us`(GzH:103)= (1,r,1)::shiftr01 1 0 ((1,r,1)::unitsC b us)。∴ `fwU b r [some Z] = (1,r,1)(2,r,1)::shiftr01 2 0 Z`(**二重頭**)。
+- **childLoad content = (1,v+1,1)::shiftr01 2 0 Z = fwU の単一頭版**(Trc4=(1,1,1)(2,1,0)=fwU から第2頭 (2,1,1) を除いたもの)。単一 vs 二重頭が構造差。
+- **残り 2 点**: ① FarCU/fwU → W0(または Wstarv/StarOK)ブリッジ(towU_GpT GzH:241, farU_collapse GzH:330 経由)② 単一頭(childLoad)⟷ 二重頭(fwU)の照合(GTC/BwT の外側 rcol rendering で単一頭が二重頭化するか)。
+- **∴ keystone は既存機構(GTU_load + FarCU→W0 bridge)で閉じる可能性大 = from-scratch でない**。running fork がこの経路を調査中。base+oper は committed green。
