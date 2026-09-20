@@ -32520,3 +32520,27 @@ LC1_farword はこれらを RLC content 内に nested で持ち込む（LC1 の 
   → PVP_snoc_gen(wrapper green, opening green) → GpT_snocz_content の claim 塔（残り）。
 
 **次**: fork が claim 塔 weave（decomposition 優先、typed-have method）実行中。green → 最終目標。
+
+## 追記740: ★★ breakthrough — content-tie の oper は bare-head 遠い語塔を produce（head-in-copies 壁が解消）
+
+（fork が model で確定。GpT_snocz_content の claim が既存 bare-head 機構に bottom out。）
+
+**model 決定的洞察**: root+Trc4 = (0,0,0)(1,1,1)(2,1,0)。bad root は **root(col 0)**（頭でも content でもない）。
+  content-tie (2,1,0) が graft して (root, 遠い語頭) を copy →
+  `(0,u,0)(1,u+1,1)(2,u+1,0)⟦m⟧ = flatMap k<m [(2k,u,0),(2k+1,u+1,1)]`
+  = **bare-head 遠い語塔**（頭 (2k+1,u+1,1) が各 block の最後 = bad root、flat (2k,u,0) が separator）。
+  bad root の親は root(col 0)。
+
+**含意**: GpT_snocz_content の claim（content-tie の oper）は **既存の bare-head 機構
+  （GpT_snocz_core / farword_Wg / oper_zcone）に bottom out**。head-in-copies の懸念（追記739 の
+  Y-governed oper が新機構を要するか）は解消 — oper が reshuffle して頭を各 copy の bad root にする。
+  ∴ 新 oper 補題は不要、既存 bare-head 塔で claim を discharge。
+
+**現状**: (hR F).1.oper で 2 goal（hasParent[root 親で成立] + R F u' (X++(shiftr01 1 0 U0)⟦m⟧)）。
+  後者を bare-head 塔展開で。fork が trivial oper goal（Hd, length）を discharge 中（sorry 5→3）。
+
+**全連鎖（green scaffold、残る = GpT_snocz_content の bare-head 塔 discharge）**:
+  Cpsi → gt_trc4(green) → childLoad → LC1_farword → LC1_farword_base_of_rlf(green) → RLF → RLC
+  → PVP_snoc_gen(wrapper green) → GpT_snocz_content（opening/setup/oper点 green、残り claim = bare-head 塔）。
+
+**次**: fork が claim を bare-head 塔で discharge。green → 最終目標。
