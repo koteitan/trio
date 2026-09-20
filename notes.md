@@ -31736,3 +31736,22 @@ core は **olt-WF(OCF)ではなく構造的な族 co-recursion**(GxB.ZBr / Words
 - 正しい frontier = **証明中 row1691 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,2,0)**。
 - 進め方 = to-psi-I.tsv を **row1691 から順に climb**(gen_gyk + 深塔 He* 機構)。psi(I)=row4784 まで ~3000 行の継続工程。
 - 教訓:結論する前に **README/methodology/過去 commit(自分の R_pm 等)を必ず確認**。「未解決」を軽々に言わない。
+
+## 追記700: ★★★ psi(I)∈W0 を単一残余 GT 0 [(1,1,1),(2,1,0)] に還元(Cpsi.lean, green, commit a7f3efb)
+
+前セッションの「olt-WF/未解決」誤結論(追記690-698)と C4-direct(C4scratch, Subst1 依存)を
+超えて、目標 psi(I)=(0,0,0)(1,1,1)(2,1,1)(3,1,0)(2,0,0) ∈ W 0 を**具体的な単一残余**に還元。
+
+- **展開の実測(trio.py)**: psi(I)⟦n⟧ = (0,0,0) :: Rc4^n。bad root (2,0,0) は t=0(行0 collapse)、
+  parent=列1、delta=0 なので **flat**(昇順シフト無し)。Rc4=(1,1,1)(2,1,1)(3,1,0) を n 個 flat 連結。
+- **far-word 分解**: Rc4 = rcol 0 0 Trc4、Trc4=[(1,1,1),(2,1,0)]。∴ Rc4^n = rword 0 0 (replicate n Trc4)。
+- **族の還元(Cpsi.fam_far_mem, green)**: WordsG 0 (replicate n Trc4) → starOK_wordsG → W0_of_starOK。
+  WordsG は pointwise なので **GT 0 Trc4 一本**で全 n が出る(BwT_rep 不要、WordsG_cons/replicate で十分)。
+- **本体接続(Cpsi.psiI_oper/psiI_mem, green)**: oper_gcopies で psi(I)⟦n⟧=(0,0,0)::(range n).flatMap(_=>Rc4)、
+  parent=1/srow=0/hasParent を手構成、gcopy が d0=d1=0 で Rc4 に潰れる。mem_of_oper_mem で閉じる。
+- ∴ **`Cpsi.psiI_mem (hGT : GT 0 Trc4) : psiI ∈ W 0`**(検証済み還元)。**残余 = GT 0 [(1,1,1),(2,1,0)] のみ**。
+
+**残余の正体 = 「字の中身の中の字」frontier**: Trc4[0]=(1,1,1) は row2=1 = 入れ子 tie。
+Trc4 = rcol 0 0 [(1,1,0)](word-in-word)。gen_gyk.py は "top ltl"/"字の中身の中の字は未対応" で失敗
+(C4f=行2193 は frontier 越え)。だが He 系 GoodChtX は R_pm3 で入れ子 tie を証明済 → 同系で GT 0 Trc4 を狙う。
+次: He 系(topTs/GoodChtX/chT/CLTL)で BwT 0 [Trc4] or GT 0 Trc4 を構成。
