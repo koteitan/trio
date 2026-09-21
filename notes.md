@@ -33169,3 +33169,21 @@ flat(n) は (0,0,0)::graft Rc4 Y の形でない（shiftr01 3 0 Y に (1,1,1) �
 
 **残る真の問い**: 平坦族 (0,0,0)::Rc4^n を GT なしで証明できるか（route(B) の C4f を全 n に拡張 or 別ルート）。
 base(n)(BaseN 検証中)は C4f に有用なので継続。関連 [[wworld-route-tools-exist]]
+
+## 追記765: BaseN 結果 — base(2) は GT1 義務(Wstarv/Wg)に還元されるが Lift1∉Wg の壁で stuck。route(B) は壁を回避しない (2026-09-21)
+
+（BaseN=general-purpose agent、base(2) を試行。37 分 stuck で停止。）
+
+**BaseN の成果（コミット d7c7047f、保存）**: base(2)=(0,0,0)(1,1,1)(2,1,1)(2,1,1)∈W0 を
+`starOK_wordsG + WordsG_consT + GTall_zlet` で **2 つの GT1 義務**に還元:
+- hload0 = GT1 w [(1,w+1,1)]（空内容の遠い語、bare head）。
+- hload = GT1 w ([(1,w+1,1)] ++ shiftr01 1 0 ((0,w+1,0)::R))（遠い語 + given-Wg-荷 Z）。
+
+**壁**: `GT1 u K := ∀L BwT, rword 0 u (L++[K]) ∈ Wstarv u`（GxV:138）。**Wstarv = Wg 系**。
+GT1_oper(oper 帰納)で回すと遠い語頭 (1,w+1,1) の展開が行1を上げ（Lift1）、Wg で閉じる必要 = **Lift1∉Wg の死ルート**。
+GT1 の discharge 補題は既存に無い（GT1_of_GT/GTall は full GT=壁を要る）。BaseN は 37 分 discharge できず stuck。
+
+**∴ route(B)/base(n) は Wg/Lift1 の壁を回避しない**。ebp2bms/route(B) 探索は psiI の構造を明晰化した
+（M(ψ_0(Ω_X))=(0,0,0)(1,1,1)(2,1,1)++shift(M(X),3) の collapse 再帰、psiI=M(Ω_1)+遠い語 add-unit）が、
+遠い語閉包（GT1/GT/Subst1）は依然 Lift1∉Wg に当たる。**psiI = Subst1 = Lift1∉Wg の壁**、多角度で再確定。
+route(B) の残存価値: base(2) 還元の設定（GTall_zlet で GT1 に isolate）は記録として有用。関連 [[wworld-route-tools-exist]]
