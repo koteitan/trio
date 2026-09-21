@@ -33152,3 +33152,20 @@ route(B) の collapse tail `(2,1,1)::shiftr01 3 0 X = graft [(2,1,1),(3,1,0)] X`
 
 関連 oper 補題: oper_graft_pred(Xbar:195), oper_graft_blocked(Xbar:309), oper_append_inner/pred(Xbar:49,126)。
 残るは base(n) の一点。関連 [[wworld-route-tools-exist]]
+
+## 追記764: ★ 自己訂正 — route(B)/TowStepC4 は C4f(=flat(1)=M(Ω_1))に届くが psiI(平坦族)には届かない (2026-09-21)
+
+（coordinator が assembly chain を精査して flaw 発見。）
+
+**flaw**: route(B) の TowStepC4 = ∀X∈W0, (0,0,0)::graft Rc4 X ∈W0 → `C4_mem_of_step` で **C4f=(0,0,0)::Rc4∈W0**。
+C4f⟦n⟧ = tow 0 0 Rc4 n = **入れ子塔**（tow 2=(0,0,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)）。
+だが **Cpsi(green): psiI⟦n⟧ = (0,0,0)::Rc4^n = 平坦族**（flat 2=(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)）。
+**tow ≠ flat**。C4f = flat(1) = psiI の n=1 oper（C4f < psiI）。∴ route(B) は **C4f（n=1）に届くが psiI には届かない**。
+flat(n) は (0,0,0)::graft Rc4 Y の形でない（shiftr01 3 0 Y に (1,1,1) が入らない）→ TowStepC4 で平坦族は出ない。
+
+**正直な状態**: route(B) の genuine な成果 = C4f=M(Ω_1)（psiI の第1 oper）を GT/Subst1 なしで証明（base(n) が効けば）。
+これは C4scratch の C4_mem_of_subst1（Subst1 経由）を n=1 で置換し、n=1 の Subst1 依存を退役する milestone。
+だが **psiI は平坦族 (0,0,0)::Rc4^n 全体（famC4 frontier、現状 GT 依存）を要る**。route(B) は psiI を閉じない。
+
+**残る真の問い**: 平坦族 (0,0,0)::Rc4^n を GT なしで証明できるか（route(B) の C4f を全 n に拡張 or 別ルート）。
+base(n)(BaseN 検証中)は C4f に有用なので継続。関連 [[wworld-route-tools-exist]]
