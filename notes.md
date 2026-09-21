@@ -33187,3 +33187,39 @@ GT1 の discharge 補題は既存に無い（GT1_of_GT/GTall は full GT=壁を�
 （M(ψ_0(Ω_X))=(0,0,0)(1,1,1)(2,1,1)++shift(M(X),3) の collapse 再帰、psiI=M(Ω_1)+遠い語 add-unit）が、
 遠い語閉包（GT1/GT/Subst1）は依然 Lift1∉Wg に当たる。**psiI = Subst1 = Lift1∉Wg の壁**、多角度で再確定。
 route(B) の残存価値: base(2) 還元の設定（GTall_zlet で GT1 に isolate）は記録として有用。関連 [[wworld-route-tools-exist]]
+
+## 追記766: ★★ DM(荷多重集合)経路の精密判定 — 実働機構は「平坦荷 Bok」限定、Rc4 は入れ子 z=1 で圏外 (2026-09-21)
+
+（DMflat coordinator。wf_LdDM 経路が psiI の平坦族 (0,0,0)::Rc4^n に効くかを、実働コードに接地して判定。）
+
+**訂正(good news)**: GOK/GoodFb 機構は Wstarv/Wg を**経由せず W0 に直接着地**する
+（rowJ_mem_genF/row_mem_of_GoodFb → GoodFb.seg → SegA.reapp(SmallA:5829) → ∈W0）。
+Wstarv/Wg は入力証明書としてのみ登場。∴ DM 経路の「W0-direct・非循環」という主張は正しい。
+
+**しかし壁は別の場所(荷の平坦性)にある**:
+- QS(Small:10452)は**完全未使用の足場**。実働の DM 荷経路は Bml+PcB+GOK_twoPayZ_DM で、
+  既に具体 far-word `R375m61_mem`(Small:10977)を ∈W0 で証明済み（荷が全部 Flat の junk 鎖）。
+- PcB(10870)/ChNN(10848)/GOK_twoPayZ_DM(10674) は鎖の**全荷 Z に `Bok Z`** を要求。
+  Bok = ∈W0 ∧ Zroot ∧ Mono ∧ (entry 0 0 = 0)。Zroot=「row0=0 の列は行1=行2=0」なので
+  **Bok 荷は根が (0,0,0) の平坦(行1=行2=0)遠い語**。橋 GoodFb_snoc_innerJs0/dupJs0 も `Bok Y` 必須。
+- psiI の展開ブロック Rc4=(1,1,1)(2,1,1)(3,1,0) は entry 0 0=1、行1=1、z=1 で **Bok になれない**
+  （検証: DMflat.not_bok_Rc4 / not_flat_Rc4、Trc4 も同様）。
+
+**構文的な非表現性(核心)**: jk1 文法で z=1 列が出るのは (a) colJ ヘッド(far-word 1 本に 1 個、
+鎖内では a,b 固定)か (b) pay 荷(shiftr01 は z 保存)だけ。荷は Bok=Flat なので z=0。
+∴ 1 本の colJ far-word = 「z=1 ヘッド 1 個 + z=0 本体」。Rc4 は連続する 2 つの z=1 列
+(1,1,1)(2,1,1) を持つ**入れ子 far-word**なので、単一 colJ でも鎖 2 本でも表せない
+（鎖の 2 本目のヘッドも同じ (a+1,b+1,1) で増やせない）。入れ子 z=1 を pay 荷に入れると
+非 Bok(非 Flat)荷が要り、その荷閉包 = 保護付き far-word 閉包(BwT/GT/Wstarv) = Lift1 の壁に戻る。
+
+**∴ 判定: DM/wf_LdDM 経路も psiI では Lift1∉Wg/Subst1 の壁に当たる**。理由は「橋が Wg 経由」ではなく
+「荷が平坦(Bok)限定 = jk1 文法が z の 1 段しか表現しない」から。psiI が ψ(I)(弱コンパクト)に届くのは
+まさに入れ子 z=1(多段の遠い語)を使うためで、DM の junk 塔機構(平坦荷)はその 1 段下で閉じている。
+
+**検証済み成果(DMflat.lean、緑・sorry 無し、追跡)**:
+- `LdDM_step_W0`/`LdDM_tree_W0`: DM の減少ステップは荷に Bok でなく `∈W0` だけで足りる
+  （元 LdDM_step は Bok を仮定するが実際は .mem のみ使用）。→ **壁は DM の順序側でなく荷の平坦性側**に
+  局所化。任意の W0 荷は DM の順序を通るが、pay 表現/GoodFb 橋が Flat を要求して弾く。
+- `not_bok_Rc4`/`not_flat_Rc4`/`not_bok_Trc4`: psiI の遠い語が Bok/Flat でない具体事実。
+
+**残る真の問い(不変)**: 入れ子 z=1 遠い語の荷閉包 = Subst1/GT/Wstarv の壁。DM は迂回しない。関連 [[wworld-route-tools-exist]]
