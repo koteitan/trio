@@ -33223,3 +33223,20 @@ Wstarv/Wg は入力証明書としてのみ登場。∴ DM 経路の「W0-direct
 - `not_bok_Rc4`/`not_flat_Rc4`/`not_bok_Trc4`: psiI の遠い語が Bok/Flat でない具体事実。
 
 **残る真の問い(不変)**: 入れ子 z=1 遠い語の荷閉包 = Subst1/GT/Wstarv の壁。DM は迂回しない。関連 [[wworld-route-tools-exist]]
+
+## 追記766: ★ DM ルート（最後の非循環候補）も Lift1 壁に収束。だが壁を「荷の Flat 性」に精密局所化（DMflat, 緑）(2026-09-21)
+
+（DMflat=general-purpose agent。lean/DMflat.lean、緑・sorry 無し。）
+
+**DMflat の成果（緑の補題）:**
+- `LdDM_step_W0` / `LdDM_tree_W0`（DMflat.lean）: DM 減少ステップは荷に `Bok` でなく **`∈W0` だけで足りる**
+  （元 LdDM_step は Bok 要求だが証明で使うのは `.mem` のみ）。∴ **壁は DM 順序側でなく荷の Flat 表現側**、と局所化。
+- `not_flat_Rc4` / `not_bok_Rc4` / `not_bok_Trc4`: Rc4=(1,1,1)(2,1,1)(3,1,0) は行1=1・z=1・根高1 で Flat/Bok になれない（具体事実）。
+
+**壁の正体（DM 経路での局所化）**: 実働 DM 経路（PcB/ChNN/GOK_twoPayZ_DM/GoodFb 橋）は**全荷が Flat(Bok)の水平鎖しか扱えない**。
+jk1 文法で z=1 が出るのは colJ ヘッド 1 個 or pay 荷（Flat, z=0）のみ。Rc4 は**連続 2 つの z=1 列 (1,1,1)(2,1,1)=入れ子 far-word**で
+単一 colJ でも鎖でも表せず、pay 荷に入れると非 Flat 荷 → その閉包 = 保護付き far-word 閉包（BwT/GT/Wstarv）= **Lift1 の壁に逆戻り**。
+
+**∴ 確定（全アクセス可能な角度で）**: psiI = 入れ子 z=1 far-word 閉包 = Lift1∉Wg = Subst1。
+DM（最後の非循環候補、wf_LdDM proven）も同じ壁に収束。**DM 順序は W0 荷を受け付ける（DMflat 証明）が、荷の Flat 表現が Rc4 の入れ子 z=1 を表せない**のが壁。
+残余価値: LdDM_step_W0（DM 順序の一般化）は将来有用。壁は「入れ子 z=1 far-word を平坦荷で表現できない」に精密局所化された。関連 [[wworld-route-tools-exist]]
