@@ -33240,3 +33240,21 @@ jk1 文法で z=1 が出るのは colJ ヘッド 1 個 or pay 荷（Flat, z=0）
 **∴ 確定（全アクセス可能な角度で）**: psiI = 入れ子 z=1 far-word 閉包 = Lift1∉Wg = Subst1。
 DM（最後の非循環候補、wf_LdDM proven）も同じ壁に収束。**DM 順序は W0 荷を受け付ける（DMflat 証明）が、荷の Flat 表現が Rc4 の入れ子 z=1 を表せない**のが壁。
 残余価値: LdDM_step_W0（DM 順序の一般化）は将来有用。壁は「入れ子 z=1 far-word を平坦荷で表現できない」に精密局所化された。関連 [[wworld-route-tools-exist]]
+
+## 追記767: 最深の特徴づけ — far-word 置換の整礎測度は順序数でなければならない（独立 WF 源は全て不適）(2026-09-21)
+
+（coordinator。なぜ非順序数の迂回路が存在しないかの crisp な理由。）
+
+far-word 展開では **row1・長さが増大**する。それを通じて減少する整礎測度は**順序数（translate/ψ）だけ**:
+- ℕ（長さ/entry）: 展開で増大 → 不可。
+- DM 荷多重集合（wf_LdDM, proven）: **Flat(Bok)荷限定**（DMflat 追記766）→ 入れ子 z=1 far-word 不可。
+- olt（translate 自身）: その WF = 証明の目標（循環）or route(A) の輸入。
+- Rex'/Acc_Rex': W 由来（循環）。
+- Mathlib Ordinal への解釈: = route(A)（順序数解析）。
+
+∴ **測度は順序数でなければならず、その WF = route(A)（Extended Buchholz ψ 整礎性の Lean 化・輸入）か Subst1
+（それを組合せ論的に encode = trio の選んだ道、Wtower2 で緑鎖済み、残 = Subst1gReviveSelf）**。両者 = 順序数解析。
+これが「DM 等の非順序数迂回路が psiI で必ず Lift1∉Wg/Flat 壁に戻る」最深の理由。
+
+**確定（全角度・最深）**: psiI = 入れ子 z=1 far-word 閉包 = Lift1∉Wg = Subst1 = 順序数解析、既約。
+angle 探索と ~9 agent を尽くした。前進 = 順序数測度の formalization（route(A) or Subst1gReviveSelf）= 複数セッション研究。
