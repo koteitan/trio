@@ -1,0 +1,56 @@
+/-
+Climb.lean.wip: シート登り（フロンティア R_pm3 = 行 1690 の直上）。**未完（sorry あり）**。
+lakefile には入れない。次の行 1691 の壁の scaffolding を記録する。
+
+確定事項:
+- 真のフロンティア = HeW.R_pm3 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(1,1,1)(2,1,1)
+  = シート行 1690 = psi(W_(w^2+1)^2+W_(w^2))。全 lean の無条件 `∈ W 0` を translate+olt で機械照合。
+- 次の行 1691 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,2,0) = psi(W_(w^2+1)^2+W_(w^2+1))。
+  語 w1691（下記）は **検証済み**: R1691 の simpa が sorry ベースの hK_1691 で閉じる ⇒
+  (0,0,0) :: rword 0 0 [w1691] が行 1691 の行列にちょうど一致する。
+- 残る唯一の穴 = hK_1691 : GTC CLTL 0 w1691。これが壁。
+
+壁の正体（Subst1 とは別、それより下）:
+- w1691 の F のタイ (2,1,0) の子 = [深い葉 tie 1 [tie 1 []], shallow 兄弟 tie 1 []]。
+- 深い葉はトップレベルなので TreeTs でなく HeT の upleaf 経路（upleaf_deep_coreDT）が要る。
+  upleaf は descent を tower に還元するが、その tower
+    tow 1 0 [(1,2,0),(2,2,0),(1,2,0)] (j+1)
+  = base (0,1,0)(1,2,0)(2,2,0) + ブロック (b,1,0)(b+1,2,0)(b+2,2,0) の階段（b=1..j）。
+  各ブロックは深い葉 (b+1,2,0)(b+2,2,0) = tie 1 [tie 1 []] を含む ⇒ **tower が木に潰れない**
+  （単一深い葉の tow_dtree は tie1/tie0 交互で TreeTs だが、兄弟つきはブロックごとに深い葉）。
+  ∴ GTC_wLTL（TreeTs 要求）不可。トップレベルの「深い葉の塔」= HeU.GoodChtX_deep（遠い段用）の
+  トップレベル版を新規開発（HeT+HeU 規模の整礎/塔帰納）する必要がある。生成器 gen_gyk.py も
+  同じ理由で 1688-1780 全滅（treelit_top の p<l 検査が深い葉を弾く）。
+-/
+import HeW
+
+namespace TRIO
+namespace Climb
+
+open Wset Small HdA HdB HdE HdQ HeI HeK HeL
+open GwS GxL GxJ GzJ GxP GxN HbP
+open HeN HeT HeU HeW
+
+/-- 行 1691 の語: 深い葉 tie 1 [tie 1 []] の F のタイに shallow 兄弟 tie 1 [] を足す。 -/
+noncomputable def w1691 : TrioSeq :=
+  wLT 0 ([[HdA.UT.tie 1 [HdA.UT.tie 1 []], HdA.UT.tie 1 []]], ([] : List (Option TrioSeq)))
+
+/-- ★ 残る穴（壁）: 深い葉+兄弟の tower が木に潰れないため未証明。 -/
+theorem hK_1691 : GTC CLTL 0 w1691 := by
+  unfold w1691
+  sorry
+
+/-- 行 1691 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,2,0)。語 w1691 が正しいことの確認
+    （hK_1691 が sorry でも simpa が閉じる ⇒ 行列一致）。 -/
+theorem R1691 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(3,2,0)] : TrioSeq) ∈ W 0 := by
+  have hB := hK_1691 [] ⟨[], PsLTL_nil 0, rfl⟩ (by simp) (BwT_nil 0)
+  have hS : StarOK 0 (rword 0 0 [w1691]) := by
+    refine ⟨?_, fun p hp => rword_ge 0 0 _ p hp⟩
+    have h2 := hB 0 le_rfl
+    rw [Nat.sub_self] at h2
+    simpa only [mlift_zero, List.map_id', List.nil_append] using h2
+  have h := W0_of_starOK hS
+  simpa [w1691, rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01] using h
+
+end Climb
+end TRIO
