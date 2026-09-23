@@ -98,7 +98,15 @@ theorem childLoad (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based 
             · rw [hasParent_shiftr01, shiftr01_length]
               have := hd.2; rw [hsrY] at this; exact this
           · -- hzK from hgr
-            sorry
+            have hzm : z ∈ Wg m' := by
+              have he : 2 * jj - 1 = m' := by omega
+              rw [he] at hz'; exact hz'
+            have hgg := (hgr z hzm hbz).2 (based_graft_arg hYne hb hbz)
+            have egg : (((1, v + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 (graft Y z))
+                = Ko ++ shiftr01 (hh + 2) 0 z := by
+              rw [graft_eq_shift, ← hhh, shiftr01_append0, shiftr01_add0, hKo, List.append_assoc,
+                hKdef, List.cons_append, List.nil_append]
+            rw [egg] at hgg; exact hgg
         · -- jj = v+1: GTC_tie
           sorry
   intro Y hY hb
