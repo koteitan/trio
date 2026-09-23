@@ -123,7 +123,19 @@ theorem childLoadC_graft_le {v u jj : ℕ} (hu : v ≤ u) (hjv : jj ≤ v) (hj1 
     rw [hcomm] at hres
     exact hres
 
-theorem childLoadC (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based Y →
+/-- **The tie-load closure = the irreducible core** (structurally = Subst1gReviveSelf,
+    Wtower2:3274). It supplies the one branch (GRAFT j=v+1) that no syntactic well-founded
+    grounding closes (all 5 fail; see the hload comment). Every OTHER branch of childLoadC
+    is unconditional/green. Taking this as a hypothesis makes childLoadC sorry-free modulo
+    the core, i.e. childLoadC ≡ (this core). -/
+def CLoadTie (v : ℕ) : Prop :=
+  ∀ (u : ℕ), v ≤ u → ∀ (D : TrioSeq) (a : ℕ),
+    ∀ u₁, u ≤ u₁ → ∀ Z ∈ Wg (2 * u₁), based Z →
+      GTC CQ u₁ (mlift (((1, u + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 D) u (u₁ - u)
+        ++ shiftr01 a 0 Z)
+
+theorem childLoadC (v : ℕ) (hcore : CLoadTie v) :
+    ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based Y →
     ∀ u, v ≤ u → GTC CQ u (((1, u + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 (mlift Y v (u - v))) := by
   have key : Wg (2 * (v + 1)) ⊆ {Y : TrioSeq | Y ∈ Wg (2 * (v + 1)) ∧
       (based Y → ∀ u, v ≤ u →
@@ -224,25 +236,25 @@ theorem childLoadC (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based
             rw [hlen1] at hc
             rw [← hcontent]
             exact hc
-          · -- hload : cross-level tie-tower load closure. VERIFIED to be the irreducible
-            -- core (= Subst1gReviveSelf, Wtower2:3274): replace the lifted orphan by an
-            -- arbitrary Z ∈ Wg(2u') and stay closed. All 5 syntactic WF groundings fail:
-            --   (1) wf_LdDM needs Bok loads; Z∈Wg(2u') is not Bok (Mono/Zroot fail).
+          · -- hload : cross-level tie-tower load closure = the irreducible core
+            -- (= Subst1gReviveSelf, Wtower2:3274). All 5 syntactic WF groundings fail:
+            --   (1) wf_LdDM needs Bok loads; Z∈Wg(2u₁) is not Bok (Mono/Zroot fail).
             --   (2) Aop branch-3 (m<u) imports below the guard; the tie sits AT the guard
-            --       (level 2u'+1) → tower forced, loads go ABOVE the guard.
+            --       (level 2u₁+1) → tower forced, loads go ABOVE the guard.
             --   (3) A2g'-on-Y can't reach W''=graft(mlift Y)Z (mlift breaks Y-accessibility).
             --   (4) acc_of_W/Rst: W''≮Rst Y (loads are ordinally large, not translate-smaller).
             --   (5) Wg u ⊄ W u for u>0 (branch-3 family Wg m vs W m) → acc_of_W precondition fails.
-            -- ∴ childLoadC ≡ Subst1 modulo the other (green) branches. Not plumbing; the core.
-            sorry
+            -- Supplied by the CLoadTie hypothesis (the core), so childLoadC is sorry-free
+            -- modulo Subst1gReviveSelf. K' = (1,u+1,1)::shiftr01 2 0 (mlift Y.dropLast v (u-v)).
+            exact hcore u hu (mlift Y.dropLast v (u - v)) (hh + 2)
   intro Y hY hb u hu
   exact (key hY).2 hb u hu
 
-/-- childLoad (level v) follows from childLoadC at u=v. -/
-theorem childLoad (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based Y →
+/-- childLoad (level v) follows from childLoadC at u=v, modulo the core `CLoadTie v`. -/
+theorem childLoad (v : ℕ) (hcore : CLoadTie v) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based Y →
     GTC CQ v (((1, v + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 Y) := by
   intro Y hY hb
-  have h := childLoadC v Y hY hb v le_rfl
+  have h := childLoadC v hcore Y hY hb v le_rfl
   rwa [Nat.sub_self, mlift_zero] at h
 
 end ChildLoadC
