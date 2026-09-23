@@ -33331,3 +33331,34 @@ GdT は定義に TreeTs を含み深い葉 [dl] は TreeTs 不可。→ TreeTs-f
 有限 dtree に潰れる(HeU.tow_eq_chT_dtree)。Subst1 の row1 無界 = dl が深さ→∞ に伸び、内塔が固定 dtree に
 潰れない。ここが有界性の本質的使用点 = Subst1 への正確なギャップ。GdT2 infra = Subst1 塔テンプレートの
 row1 有界版。infra は coordinator の Subst1 研究と重複するため build の steer 待ち。
+
+## 追記770: ★ 壁 A は GdT2 を建てず clean 還元で停止。trio W-world は跨レベル構造を既に全部持つ(archaeology)(2026-09-23)
+
+（Climb。coordinator 判断: GdT2 infra は建てない = 壁 A の 18 行は psiI 非パス、GdT2 は row1 有界の dtree-collapse 専用で Subst1 型紙にならない。→ psiI 本線の code archaeology に転換。）
+
+**壁 A の最終状態（lean/Climb.lean.wip、GdT2 は未建設）:**
+row 1691 を単一 sorry key_towT succ に還元済み（tow_sib + base=hK_pm + hK_1691 配線 + R1691 は緑）。
+GdT2（TreeTs-free 深い葉塔）は建てない。理由: (i) 18 行(1691-1714)は psiI 還元パス上に無い別脈、
+(ii) GdT2 = row1 有界の dtree-collapse 専用（dl=tie 1 [tie 1 []] 固定 + tow_dtree の有界段潰し）で
+Subst1（row1 無界、dtree に潰れない）の型紙にならない。frontier=R_pm3(行1690) を確定成果として残す。
+
+**trio W-world の跨レベル構造（archaeology、全て trio 内、条件付き緑）:**
+- `Aop`(Wset:171) 第3枝 = `∃m<u, domT M m ∧ ∀z∈Wfam m, based z → graft M z ∈ X` = **cross-level**（W_m 輸入+graft）。
+  `W u = Wf(u+1) u`（跨レベル反復帰納集合）。
+- `acc_of_W`(Wset:291): cofinality → M∈W u → Acc Rst M。**あり**。
+- `Om_mem_W`(Wset:1696): [(0,v,z)]∈W(2v+z) = 跨レベル base principal。**証明済み**。
+- `Wstar`(Wset:2684)= {R | argOK R → ∀v z a, z≤1→2v+z≤a → (0,v,z)::R ∈ W a}（跨レベル principal）。
+  `Wstar2`(3451)/`Wstar2s`(3985)、`Wstar2_closed`(4221)/`Wstar2s_closed`(4347) = 跨レベル閉包、
+  仮定 LiftInner∧LiftTower1∧LiftTowerExp2 に条件付きで**緑**。`liftInner_holds`(Lcone:507) **証明済み**。
+  LiftTower1/LiftTowerExp2 ⟸ GraftAll(Wset:4151/4211)。
+- `Subst1`(Wtower2:2656) = ∀u p S C, S∈W u → C∈W(lev S p) → …→ S.take p++C++S.drop(p+1)∈W u
+  = **cross-level substitution**（C を別レベル lev S p から輸入）。`Subst1 ⟸ Subst1g ⟸ Subst1gReviveSelf`。
+- psiI/C4 還元 `C4_mem_of_subst1`(C4scratch:126): 仮定 `∀X∈W 0, based X → (2,1,1)::shiftr01 3 0 X ∈ W 3`
+  = **明示的 cross-level(W 0→W 3)**。`famC4 v=[(1,v+1,1),(2,v+1,1),(3,v+1,0)]` でレベル v に一般化済み。
+  frontier = co-recursive graft 閉包(ZBr case4)。
+
+**最終還元マップ**: 停止性 `TRIO_terminates_of_cat_subst1`(Final:613) ⟸ `WCat` ∧ `Subst1`。
+`WCat`(Wtower2:1974)=∀u A B,A∈W u→B∈W u→A++B∈W u（**同レベル** concat）⟸ `WSnoc`(wcat_of_snoc:2078)。
+`Subst1`（cross-level）⟸ Subst1gReviveSelf。∴ 跨レベル骨格は完備、残核 = Subst1gReviveSelf / GraftAll / WSnoc。
+**gap の本質**: Wset:2684 コメント「row-1 orphan は根に支配されるが row-2 では成立しない(no_hasParent_two_of_row1_zero)。
+この非対称が trio が yapss 以上を要する理由」。跨レベル template は嵌まるが row-2 orphan の co-recursive graft が残核。
