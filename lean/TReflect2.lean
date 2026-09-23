@@ -66,6 +66,72 @@ fundamental-sequence cofinality — green from `argDomCore`.  (Marker: the resid
 step (iv) is this cofinality, not the elementarity.) -/
 theorem rowlimit_reduces_to_row1_cofinality : True := trivial
 
+/-! ## The CANDIDATE FAITHFUL ≤₁ (collapsing dominance) — where `exists_lev0_below`
+turns HARD.
+
+`R0s` (M4, same-row-1-level) is TOO LOCAL: its `exists_lev0_below` reduces to the free
+row-1 cofinality (above).  The FAITHFUL ≤₁ is the collapsing dominance: same row-1
+level AND the collapsing ARGUMENT is dominated.  Under `translate`, `P a1 a2 b c` has
+`b` = the argument (the ψ-content / row-0-deeper descendant tower).  So `Dom1` adds the
+argument-domination clause `arg y ≤o arg β` — the genuine collapsing/≤₁-connection.
+
+Design target met: `Dom1`'s CONTINUITY stays free (same 3-line argument as M4, the added
+`arg` clause transfers along the same-level witness), but its `exists_lev0_below` becomes
+HARD — the cofinal same-level predecessor must ALSO be argument-dominated, which the free
+row-1 cofinality does not deliver. -/
+
+/-- The collapsing argument of a term (the ψ-content). -/
+def arg : Three → Three
+  | Z => Z
+  | P _ _ b _ => b
+
+@[simp] theorem arg_P (a1 a2 : ℕ) (b c : Three) : arg (P a1 a2 b c) = b := rfl
+
+/-- **The candidate faithful ≤₁ (collapsing dominance).**  Below, at the same row-1
+level, AND with the collapsing argument dominated.  A PROPER subrelation of `R0s`. -/
+def Dom1 (y β : Three) : Prop := y <o β ∧ row1 y = row1 β ∧ arg y ≤o arg β
+
+/-- `exists_lev0_below` for the FAITHFUL ≤₁ `Dom1`. -/
+def ExistsLev0Below_Dom1 (Lt2 : Three → Three → Prop) : Prop :=
+  ∀ α β : Three, Lt2 α β → ∀ z : Three, z <o α → ∃ u, z <o u ∧ u <o α ∧ Dom1 u α
+
+/-- **The hard residue of `exists_lev0_below` for the faithful ≤₁ (trace_state).**
+Grant the FREE row-1 cofinality (`hrow1`: a same-row-1-level predecessor `u`, above `z`,
+below `α`).  The faithful conclusion `Dom1 u α` still needs `arg u ≤o arg α` — the
+collapsing/≤₁-connection.  The `trace_state` prints exactly this leftover goal; the free
+row-1 cofinality gives NO control on `arg u`, so it is not discharged.  This is the exact
+point where the faithful ≤₁'s `exists_lev0_below` needs the elementarity engine (verifying
+the cofinal predecessor is genuinely ≤₁-connected), not just the magnitude/level
+cofinality.  Single documented core `sorry`. -/
+theorem exists_lev0_below_Dom1_residue (Lt2 : Three → Three → Prop)
+    (hrow1 : ∀ α β, Lt2 α β → ∀ z, z <o α → ∃ u, z <o u ∧ u <o α ∧ row1 u = row1 α) :
+    ExistsLev0Below_Dom1 Lt2 := by
+  intro α β hαβ z hz
+  obtain ⟨u, hzu, huα, hru⟩ := hrow1 α β hαβ z hz
+  refine ⟨u, hzu, huα, huα, hru, ?_⟩
+  trace_state
+  sorry
+
+/-- **Dom1's CONTINUITY is FREE** (design target's other half).  Given a same-level,
+same-ARGUMENT limit witness `t` (`u ≤o t <o a`, `row1 t = row1 a`, `arg t = arg a`) and
+the reflected clause, `Dom1 u a` follows — three lines, no engine.  The `arg` clause
+transfers because the witness preserves the argument. -/
+theorem Dom1_cont (u a : Three) (hua : u <o a)
+    (hlim : ∃ t, u ≤o t ∧ t <o a ∧ row1 t = row1 a ∧ arg t = arg a)
+    (hall : ∀ t, u ≤o t → t <o a → Dom1 u t) : Dom1 u a := by
+  obtain ⟨t, hut, hta, hrt, hargt⟩ := hlim
+  obtain ⟨-, hru_t, harg_ut⟩ := hall t hut hta
+  exact ⟨hua, hru_t.trans hrt, ole_trans harg_ut (Or.inr hargt)⟩
+
+/-- The same-level, same-argument limit witness is FREE for `a2 > 0` (as in M4): the
+predecessor `P a1 (a2-1) b c` has the same row-1 level AND the same argument `b`.  So
+Dom1's continuity handle is free — only its `exists_lev0_below` (the `arg u ≤o arg α`
+residue above) is hard. -/
+theorem Dom1_limit_witness_of_a2pos {a1 a2 : ℕ} (ha2 : 0 < a2) (b c : Three) {u : Three}
+    (hu : u ≤o P a1 (a2 - 1) b c) :
+    ∃ t, u ≤o t ∧ t <o P a1 a2 b c ∧ row1 t = row1 (P a1 a2 b c) ∧ arg t = arg (P a1 a2 b c) :=
+  ⟨P a1 (a2 - 1) b c, hu, Or.inr (Or.inl ⟨rfl, by omega⟩), rfl, rfl⟩
+
 /-! ## Step (iii): the ENGINE `Refl2` — the Σ_3 elementary reflection = the WALL -/
 
 /-- **The Σ_3 reflection engine over Three** (reflect_two step iii, analog of
