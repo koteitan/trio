@@ -1,9 +1,53 @@
 /-
-UnitsBaseSucc.lean — units_base succ (multi-head far-word tower) in own scratch
-(avoids collision with Climb's UnitsBaseTower). Helpers copied (green there).
-Goal: GTC CQ v (fh v (n+1)) from IH GTC CQ v (fh v n).
-Route: at level u the appended (n+1)-head word wraps to (1,u+1,1)::[(2,u+1,1)]ⁿ⁺¹;
-oper_zcone on the last (2,u+1,1); flat terms via IH.
+UnitsBaseSucc.lean — units_base succ (multi-head far-word tower) in own scratch.
+Goal: GTC CQ v (fh v (n+1)) from IH GTC CQ v (fh v n).  fh v n = [(1,v+1,1)]ⁿ.
+
+CONSOLIDATED FINDING (rigorous, verified in Lean + bms):
+
+1. units_base succ = a genuine h=2 far-word ASCENSION tower, NOT a flat/h=1 tower.
+   • rword 0 u l = l.flatMap (rcol 0 u); rcol 0 u X = (1,u+1,1)::shiftr01 1 0 X.
+     So ONE n-column word fh gives "1 head (1,u+1,1) + n shift-tails (2,u+1,1)ⁿ"
+     (distinct from n separate far-words, which give n (head,tail) pairs).
+   • bms: (0,0,0)(1,1,1)(2,1,1)(2,1,1) has delta=(2,1) — root ascends by (2,1) per
+     copy (row0 += 2), i.e. the trailing (2,u+1,1) has h=2 (row0=2). Contrast the
+     single flat head (0,0,0)(1,1,1): delta=(1,1) (h=1).
+
+2. NAIVE hangv-iteration provably FAILS (concrete wall, not a gap):
+   • oper_zcone (h=2) on the last (2,u+1,1) gives the flatMap
+       (range k).flatMap (fun j => shiftr01 (j*2) 0 ((0,u+j,0)::mlift P u j)).
+   • Each copy content is IH-closed: (0,u+j,0)::mlift P u j = the units_base(n)
+     witness at level u+j (via mlift_rword+mlift_fh+map_CQ) ∈ Wstarv(u+j). GOOD.
+   • But assembling the tower with hangv (GxD:27 / hang_Wg GwU:140) needs
+       rsum A R := ∀p∈A++R, entry R 0 0 ≤ p.1   (Wset:1317).
+     With R = shiftr01 2 0 (tower tail), entry R 0 0 = 2; but A (= copy content)
+     contains the far-head (1,u+1,1) with row0 = 1. So rsum needs 2 ≤ 1 — FALSE.
+     (hangv encodes this as the unused-looking `hhd : entry R 0 0 ≤ 1`, discharged
+     by omega inside the hrs proof.) So Pz_Wg-style hangv iteration does NOT extend
+     to h=2. This is the wall.
+
+3. WHY Aj works but fh doesn't:  Aj v j = [(1,v+1,1),(2,v+1,0)] ++ [(1,v+1,1)]ʲ
+   (GxF:138) closes via Pz_Wg (h=1, Aj_star GxF:166) BECAUSE the (2,v+1,0) SEPARATOR
+   makes each tower level's trailing (1,v+1,1) (row0=1 → h=1 → hhd holds). fh has NO
+   separator. Realizing the h=2 jump as two h=1 steps + a (1,r,0) separator is
+   EXACTLY towWAQ (HaW:85): towWAQ ... (m+1) = (Q++farW) ++ (1,r,1)::shiftr01 1 0
+   ((1,r,0)::shiftr01 1 0 (towWAQ (r+1) m)). So units_base succ = the n-head
+   generalization of topCQ_Wg (HbB:140), which lives in the deep towWAQ/FarCAQ/GpT
+   far-word layer (towWAQ_GpT has ~15 hypotheses). Substantial; = Climb's HbB/HaW.
+
+4. SHORT + OPER-flat COLLAPSE INTO THE SAME BLOCKER:
+   • SHORT content = [(1,u+1,1),(2,0,0)] = K ++ [(2,0,0)], K=[(1,u+1,1)]. The flat
+     (2,0,0) has row0=2 > 1=head, so NOT GTC_flat (needs x ≤ min row0) and NOT a
+     based load shiftr01 1 0 T (that gives head 1, not 2). Via GTC_oper / HdR.gtc_flat
+     (oper_snoc00'') it reduces to hrep: ∀n, GTC C u (M^n), M=[(1,u+1,1)] ⟹ GTC C u
+     (fh u n) = units_base. So SHORT ⟸ units_base (h=2 tower).
+   • OPER-flat content = K ++ [(2,0,0)], K = content of Y.dropLast (GTC from hop:
+     Y⟦1⟧=Y.dropLast); reduces the same way to GTC C u (Kⁿ) = generalized units_base.
+   ⟹ SHORT, OPER-flat, units_base are ONE blocker (towWAQ n-gen), not 3 tasks.
+   (ALT live route: ChildLoadAnchor renders the load via GoodChtX `ch` leaves —
+   chZ_render: topT v (ch (shiftr01 1 0 Z)) = shiftr01 2 0 Z — the HdA-HdR tree
+   layer; also deep. Either way SHORT/OPER need a deep far-word layer.)
+
+Helpers below (fh, shiftr01_fh, mlift_fh, ...) are GREEN and reusable.
 -/
 import HbB
 import GzD
@@ -88,14 +132,11 @@ theorem units_base_succ (n : ℕ) (ih : ∀ v, GTC CQ v (fh v n)) :
     mlift_fh, show v + (u - v) = u from by omega]
   -- Goal: (0,u,0) :: (P ++ rcol 0 u (fh u (n+1))) ∈ Wg a,  P = rword 0 u (CQ-prefix lifted).
   -- rcol 0 u (fh u (n+1)) = (1,u+1,1) :: [(2,u+1,1)]ⁿ⁺¹  (shiftr01_fh).
-  -- ROUTE (mirrors GTC_far_CQ HbB:170, generalized 1→(n+1) far-heads):
-  --   A1g_intro (natDom via zcone_natDom + oper via oper_zcone on the LAST (2,u+1,1));
-  --   oper_zcone peels it → the flat expansion is the n-head tower, closed by IH
-  --   (units_base n) + the n-head generalization of farWAQ_flat / topCQ_Wg / towWAQ.
-  -- GAP: farWAQ_P/farWAQ_flat/topCQ_Wg (HbB) are stated for the SINGLE far-head
-  --   (fwTop v []); the (n+1)-head [(2,u+1,1)]ⁿ⁺¹ needs their n-parametrized versions
-  --   (towWAQ already carries a tower-height m — the connection fh(n) ↔ towWAQ@m is
-  --   the far-word-CQ machinery). That generalization is Climb's HbB layer.
+  -- WALL (see header §2): oper_zcone (h=2) on the LAST (2,u+1,1) opens the tower;
+  --   copies are IH-closed (∈ Wstarv(u+j)); but hangv/hang_Wg assembly needs
+  --   rsum A R (entry R 0 0 ≤ every p.1) and R=shiftr01 2 0(tail) has head row0=2 >
+  --   1=(1,u+1,1).1 ⟹ FALSE. Needs the towWAQ (1,r,0)-separator (Climb's HbB/HaW),
+  --   the n-head generalization of topCQ_Wg. SHORT + OPER-flat reduce here too (§4).
   sorry
 
 end UnitsBaseSucc
