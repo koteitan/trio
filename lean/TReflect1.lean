@@ -101,5 +101,36 @@ theorem order_engine_of_cofinal {M N : TrioSeq} (hM : ST_TS M) (hN : ST_TS N)
   obtain ⟨n, _, _, hlt⟩ := TReflect0 hM hN hlen h
   exact ⟨translate (M⟦n⟧), hlt, Or.inl hlt⟩
 
+/-! ## CONCRETE `Refl1`: why the Σ_2 engine at ≤₁ = ≤o is FREE, and why ≤₂ isn't.
+
+Trio's Σ_1 reflection (`trio_cofinality`) is UNCONDITIONAL: every β = translate M
+(|M|>1) is a proper `<o`-limit, so every point below it is captured cofinally by a
+proper predecessor.  In such a structure the level-0 (≤₁) relation collapses to the
+order `≤o` — Σ_1-elementarity is free.  Consequently the CONCRETE engine `Refl1` at
+`R0 = ≤o` is discharged outright by cofinality (`Refl1_order`, below, GREEN), and
+`reflect_one`'s ≤₁-connection clause `y <₁ β → y' <₁ α` becomes the AUTOMATIC
+`y <o β → y' <o α` (the copy is below α by construction).
+
+This does NOT collapse ≤₂: the Σ_3 step `reflect_two` preserves the ≤₂ connection
+too, and there `exists_lev0_below` (the ≤₁-predecessors-of-α-are-cofinal fact,
+needing the ◁₂ hypothesis) is genuinely required and is NOT free from order
+cofinality.  So the collapse stops exactly at ≤₁: Σ_2 is free, Σ_3 is the core. -/
+
+/-- **CONCRETE `Refl1` at ≤₁ = ≤o, discharged by trio cofinality.**  For β = translate M
+(a standard form, |M|>1), the order-level Σ_2 engine holds unconditionally: the copy
+`u <o β` is the fundamental-sequence approximant `translate (M⟦1⟧)`, and the reflected
+level-0 clause is trivial for the order.  GREEN — no ordinal recursion, no core. -/
+theorem Refl1_order {M : TrioSeq} (hlen : 1 < M.length) :
+    Refl1 (fun a b => a ≤o b) (translate M) (translate M) := by
+  intro y _ _
+  exact ⟨translate (M⟦1⟧), m_step_decreases hlen le_rfl, fun t ht _ => ht⟩
+
+/-- Assembled CONCRETE reflect_one at ≤₁ = ≤o: fully green from trio cofinality,
+no hypotheses beyond standardness.  The Σ_2 layer holds concretely. -/
+theorem TReflect1_concrete {M : TrioSeq} (hlen : 1 < M.length)
+    {y : Three} (hy : y <o translate M) :
+    ∃ u, u <o translate M ∧ u ≤o translate M :=
+  TReflect1_of_engine (fun a b => a ≤o b) ole_cont (Refl1_order hlen) hy (Or.inl hy)
+
 end TReflect1
 end TRIO
