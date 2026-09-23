@@ -47,6 +47,20 @@ CONSOLIDATED FINDING (rigorous, verified in Lean + bms):
    chZ_render: topT v (ch (shiftr01 1 0 Z)) = shiftr01 2 0 Z — the HdA-HdR tree
    layer; also deep. Either way SHORT/OPER need a deep far-word layer.)
 
+5. ALL SHORTCUTS EXHAUSTIVELY RULED OUT (units_base needs new towWAQ n-gen):
+   • hangv iteration — rsum wall (§2).
+   • Pz_Wg (GxF) — h=1 only (needs the Aj (2,v+1,0) separator; fh has none, §3).
+   • GTC_loadTop / GTC_load_CQ / fwTop-with-load — the flat (D,0,0) / the heads are
+     NOT based loads: a based load is shiftr01 1 0 T with T head row0=0 ⟹ result head
+     row0=1, never 2; and fh's heads have row2=1 (units have row2=0). No valid load.
+   • BwTC_rep (GzJ) — gives BwT v (L ++ replicate n [(1,v+1,1)]) = n SEPARATE far-word
+     entries; units_base is ONE n-column word. rword renders them differently.
+   • topCQ_Wg (HbB) with uss extended by the n heads — farW/wsU DO distribute over
+     append, but the rendering mismatches: one word fh u n → rcol → "1 head + n tails"
+     (n+1 cols); n context far-words → "n (head,tail) pairs" (2n cols). Not equal.
+   ⟹ units_base = the n-head generalization of topCQ_Wg via towWAQ_GpT (Climb's
+     HaW/HbB far-word layer). No existing lemma closes it.
+
 Helpers below (fh, shiftr01_fh, mlift_fh, ...) are GREEN and reusable.
 -/
 import HbB
