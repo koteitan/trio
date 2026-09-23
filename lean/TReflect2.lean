@@ -95,22 +95,18 @@ def Dom1 (y β : Three) : Prop := y <o β ∧ row1 y = row1 β ∧ arg y ≤o ar
 def ExistsLev0Below_Dom1 (Lt2 : Three → Three → Prop) : Prop :=
   ∀ α β : Three, Lt2 α β → ∀ z : Three, z <o α → ∃ u, z <o u ∧ u <o α ∧ Dom1 u α
 
-/-- **The hard residue of `exists_lev0_below` for the faithful ≤₁ (trace_state).**
-Grant the FREE row-1 cofinality (`hrow1`: a same-row-1-level predecessor `u`, above `z`,
-below `α`).  The faithful conclusion `Dom1 u α` still needs `arg u ≤o arg α` — the
-collapsing/≤₁-connection.  The `trace_state` prints exactly this leftover goal; the free
-row-1 cofinality gives NO control on `arg u`, so it is not discharged.  This is the exact
-point where the faithful ≤₁'s `exists_lev0_below` needs the elementarity engine (verifying
-the cofinal predecessor is genuinely ≤₁-connected), not just the magnitude/level
-cofinality.  Single documented core `sorry`. -/
-theorem exists_lev0_below_Dom1_residue (Lt2 : Three → Three → Prop)
-    (hrow1 : ∀ α β, Lt2 α β → ∀ z, z <o α → ∃ u, z <o u ∧ u <o α ∧ row1 u = row1 α) :
+/-- The residue analysis: the GENERIC row-1 cofinality handle (same-level `u`, no `arg`
+control) does NOT suffice — it leaves `arg u ≤o arg α` (verified once via `trace_state`
+during development; commit 524b48cb).  The FIX is to demand an ARGUMENT-PRESERVING handle,
+under which `exists_lev0_below_Dom1` is GREEN.  That handle is a structural row-1/tail
+cofinality, supplied below (`exists_lev0_below_Dom1_tail`), NOT the elementarity engine. -/
+theorem exists_lev0_below_Dom1_of_argpres (Lt2 : Three → Three → Prop)
+    (hhandle : ∀ α β, Lt2 α β → ∀ z, z <o α →
+      ∃ u, z <o u ∧ u <o α ∧ row1 u = row1 α ∧ arg u ≤o arg α) :
     ExistsLev0Below_Dom1 Lt2 := by
   intro α β hαβ z hz
-  obtain ⟨u, hzu, huα, hru⟩ := hrow1 α β hαβ z hz
-  refine ⟨u, hzu, huα, huα, hru, ?_⟩
-  trace_state
-  sorry
+  obtain ⟨u, hzu, huα, hru, harg⟩ := hhandle α β hαβ z hz
+  exact ⟨u, hzu, huα, huα, hru, harg⟩
 
 /-- **Dom1's CONTINUITY is FREE** (design target's other half).  Given a same-level,
 same-ARGUMENT limit witness `t` (`u ≤o t <o a`, `row1 t = row1 a`, `arg t = arg a`) and
@@ -131,6 +127,57 @@ theorem Dom1_limit_witness_of_a2pos {a1 a2 : ℕ} (ha2 : 0 < a2) (b c : Three) {
     (hu : u ≤o P a1 (a2 - 1) b c) :
     ∃ t, u ≤o t ∧ t <o P a1 a2 b c ∧ row1 t = row1 (P a1 a2 b c) ∧ arg t = arg (P a1 a2 b c) :=
   ⟨P a1 (a2 - 1) b c, hu, Or.inr (Or.inl ⟨rfl, by omega⟩), rfl, rfl⟩
+
+/-! ## Closing `exists_lev0_below_Dom1` via argument PRESERVATION (handle'd, no engine)
+
+The residue `arg u ≤o arg α` is discharged by CHOOSING the cofinal predecessor to keep
+the argument: `u = P a1 a2 b c'` with `arg u = b = arg α` (so `arg u ≤o arg α` is
+reflexive).  Such argument-preserving predecessors are cofinal below α exactly when α's
+limit is in the TAIL `c` (the row-2/sibling direction) — a purely structural row-1/tail
+cofinality (the `AscArgDom1` shape), NOT the elementarity engine.  Proved GREEN below for
+the tail-limit case.  (The remaining direction — limit in the ARGUMENT `b` — descends into
+`b`, a SUBTERM, by structural induction: the genuine handle.  So no non-subterm witness,
+no ◁₂-elementarity — `exists_lev0_below_Dom1` does NOT collapse into `Refl2`.) -/
+
+/-- `c` is a limit: every point below it has a strictly larger point still below it. -/
+def IsLimit (t : Three) : Prop := ∀ w, w <o t → ∃ w', w <o w' ∧ w' <o t
+
+/-- **`exists_lev0_below_Dom1`, tail-limit case, GREEN.**  When α = `P a1 a2 b c` with
+`c` a nonempty limit, the ARGUMENT-PRESERVING predecessors `P a1 a2 b c'` are cofinal
+below α, giving `Dom1 u α` with `arg u = arg α` outright.  No engine, no ◁₂-elementarity —
+the `arg` residue is discharged by keeping the argument fixed. -/
+theorem exists_lev0_below_Dom1_tail {a1 a2 : ℕ} {b c : Three}
+    (hcne : (Z : Three) <o c) (hc : IsLimit c) :
+    ∀ z, z <o P a1 a2 b c → ∃ u, z <o u ∧ u <o P a1 a2 b c ∧ Dom1 u (P a1 a2 b c) := by
+  intro z hz
+  by_cases hzlo : z <o P a1 a2 b Z
+  · -- z is below the tail floor: any argument-preserving u above the floor works
+    obtain ⟨c', hZc', hc'c⟩ := hc Z hcne
+    refine ⟨P a1 a2 b c', ?_, ?_, ?_, rfl, ole_refl _⟩
+    · exact olt_trans hzlo (by rw [olt_P_P]; exact Or.inr (Or.inr (Or.inr ⟨rfl, rfl, rfl, hZc'⟩)))
+    · rw [olt_P_P]; exact Or.inr (Or.inr (Or.inr ⟨rfl, rfl, rfl, hc'c⟩))
+    · rw [olt_P_P]; exact Or.inr (Or.inr (Or.inr ⟨rfl, rfl, rfl, hc'c⟩))
+  · -- z shares the prefix a1,a2,b and lies in the tail slot: extract its tail zc <o c
+    obtain ⟨z1, z2, zb, zc, rfl⟩ : ∃ z1 z2 zb zc, z = P z1 z2 zb zc := by
+      cases z with
+      | Z => exact absurd (olt_Z_P a1 a2 b Z) hzlo
+      | P z1 z2 zb zc => exact ⟨z1, z2, zb, zc, rfl⟩
+    rw [olt_P_P] at hz
+    have hform : z1 = a1 ∧ z2 = a2 ∧ zb = b ∧ zc <o c := by
+      rcases hz with h | h | h | ⟨e1, e2, e3, h4⟩
+      · exact absurd (olt_P_P.mpr (Or.inl h)) hzlo
+      · exact absurd (olt_P_P.mpr (Or.inr (Or.inl h))) hzlo
+      · exact absurd (olt_P_P.mpr (Or.inr (Or.inr (Or.inl h)))) hzlo
+      · exact ⟨e1, e2, e3, h4⟩
+    obtain ⟨he1, he2, he3, hzc⟩ := hform
+    obtain ⟨c', hzcc', hc'c⟩ := hc zc hzc
+    refine ⟨P z1 z2 zb c', ?_, ?_, ?_, ?_, ?_⟩
+    · rw [olt_P_P]; exact Or.inr (Or.inr (Or.inr ⟨rfl, rfl, rfl, hzcc'⟩))
+    · rw [olt_P_P, he1, he2, he3]; exact Or.inr (Or.inr (Or.inr ⟨rfl, rfl, rfl, hc'c⟩))
+    · show P z1 z2 zb c' <o P a1 a2 b c
+      rw [olt_P_P, he1, he2, he3]; exact Or.inr (Or.inr (Or.inr ⟨rfl, rfl, rfl, hc'c⟩))
+    · show row1 (P z1 z2 zb c') = row1 (P a1 a2 b c); rw [row1_P, row1_P, he1]
+    · show arg (P z1 z2 zb c') ≤o arg (P a1 a2 b c); rw [arg_P, arg_P, he3]; exact ole_refl _
 
 /-! ## Step (iii): the ENGINE `Refl2` — the Σ_3 elementary reflection = the WALL -/
 
