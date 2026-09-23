@@ -18,6 +18,21 @@ noncomputable def fh (v : ℕ) : ℕ → TrioSeq
   | 0 => []
   | n + 1 => ((1, v + 1, 1) : ℕ × ℕ × ℕ) :: fh v n
 
+theorem shiftr01_fh (v n : ℕ) :
+    shiftr01 1 0 (fh v n) = List.replicate n ((2, v + 1, 1) : ℕ × ℕ × ℕ) := by
+  induction n with
+  | zero => simp [fh, shiftr01]
+  | succ n ih => simp only [fh, shiftr01, List.map_cons, List.replicate_succ]; rw [← shiftr01, ih]
+
+theorem fh_row0 (v n : ℕ) : ∀ y ∈ fh v n, 1 ≤ y.1 := by
+  induction n with
+  | zero => intro y hy; simp [fh] at hy
+  | succ n ih =>
+      intro y hy; simp only [fh, List.mem_cons] at hy
+      rcases hy with rfl | hy
+      · omega
+      · exact ih y hy
+
 theorem fh_eq_flatMap (v n : ℕ) :
     fh v n = (List.range n).flatMap (fun _ => [((1, v + 1, 1) : ℕ × ℕ × ℕ)]) := by
   induction n with
