@@ -33306,3 +33306,28 @@ angle 探索と ~9 agent を尽くした。前進 = 順序数測度の formaliza
   **深い位置の z=1 far-word**（入れ子 far-word）を含む → Subst1 系の壁の可能性。
 - ∴ フロンティア〜flat1(行2193) の間は「易しい行」ではない。直上は壁 A、その先は Subst1 系。
   「there ARE rows to climb first」は成り立たず、直上でただちに新機構が要る。
+
+## 追記769: ★ wall A を単一ゴール key_towT succ に還元（tow_sib + base 証明済み）。frontier をシートで再検証(2026-09-23)
+
+（Climb。coordinator の (A) bounded 指示を受けて壁 A を建設中。lean/Climb.lean.wip。）
+
+**frontier のシート再検証**（[[translate-is-syntactic-not-ordinal]] を受けて）:
+全証明済み matrix-literal `∈ W 0` を **シート to-psi-I.tsv に照合**（translate/olt でなく）。
+sorry を除く最大証明済みシート行 = **1690 = R_pm3 (HeW)**。次点 1688,1689(HeT), 1686,1687(HeP)。
+（1948=base2 は sorry、1691 は Climb.lean.wip の未完 R1691。）→ frontier = R_pm3 確定、シートで裏取り。
+
+**行 1691 = 壁 A を単一ゴールに還元**（row1 有界=2 を trio.py で確認、Subst1 とは別種）:
+- dl := tie 1 [tie 1 []]（深い葉）。HeH.towT 0 [dl] j = [dl, tie 0 [dl, tie 0 [...]]]（各段に dl）。
+- **tow_sib（証明済み・緑）**: tow 1 0 [(1,2,0),(2,2,0),(1,2,0)] (j+1) = (0,1,0) :: topTs 0 (towT 0 [dl] j)。
+- **key_towT base(j=0) = HeT.hK_pm（証明済み）**。hK_1691 = upleaf_deep_coreDT + tow_sib + key_towT で配線、R1691 従属。
+- **残る唯一の sorry = key_towT succ**: GTC of towT 0 [dl] j → GTC of towT 0 [dl] (j+1)（tie0 段追加、dl 前置）。
+
+**壁 A の正体（infra 要件、~100-200行）**: GdT_towT/GdT_jump は base・children 両方に GdT を要求、
+GdT は定義に TreeTs を含み深い葉 [dl] は TreeTs 不可。→ TreeTs-free の GdT2（.2 の goodness のみ）+
+深い葉の GdT2（hK_pm を任意接頭辞/道 Q に一般化）+ GdT2_jump/GdT2_towT + 深い葉拡張を受ける path-set TExt2。
+ネストした dl は遠い位置なので HeU.GoodChtX_deep（遠い段の深い葉）で処理できる可能性あり。
+
+**Subst1 ブリッジ**（coordinator 依頼）: row1 有界 = dl が 1 段固定(tie 1 [tie 1 []])で、各段の内塔が
+有限 dtree に潰れる(HeU.tow_eq_chT_dtree)。Subst1 の row1 無界 = dl が深さ→∞ に伸び、内塔が固定 dtree に
+潰れない。ここが有界性の本質的使用点 = Subst1 への正確なギャップ。GdT2 infra = Subst1 塔テンプレートの
+row1 有界版。infra は coordinator の Subst1 研究と重複するため build の steer 待ち。
