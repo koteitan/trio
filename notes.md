@@ -33362,3 +33362,30 @@ Subst1（row1 無界、dtree に潰れない）の型紙にならない。fronti
 `Subst1`（cross-level）⟸ Subst1gReviveSelf。∴ 跨レベル骨格は完備、残核 = Subst1gReviveSelf / GraftAll / WSnoc。
 **gap の本質**: Wset:2684 コメント「row-1 orphan は根に支配されるが row-2 では成立しない(no_hasParent_two_of_row1_zero)。
 この非対称が trio が yapss 以上を要する理由」。跨レベル template は嵌まるが row-2 orphan の co-recursive graft が残核。
+
+## 追記771: ★★ 訂正: row-2 塔は証明済み(towerGraft2_holds)。塔機構は両行 DONE、残核は単一 SubstFree(2026-09-23)
+
+（Climb。coordinator の「trio 塔閉包が yapss 無条件版とどこで分岐するか」archaeology の結論。追記770 の「row-2 が gap」を訂正。）
+
+**塔閉包は両行とも無条件で閉じている（= yapss 技法が移植済み）:**
+- `tower1_mem`(Wset:4483) = **yapss の htow そのもの、無条件・緑**。srow=1 + graft 閉包で
+  `∀k, tow v z R k ∈ W a`（based_tow + graft + W_mono、hvm: 2v+z≤m via tower1_le）。
+- 後続コピー枝: `oper_cons_succ` + `W_flatMap_copies`(2552) + `rsum_self_cons`(2539) で無条件
+  （深さ0根コピー、rsum は壊れない）。arg 再帰 `oper_cons_nat`(2392) も無条件。
+- **`towerGraft2_holds`(Wset:3590) = row-2 塔(srow=2, TowerGraft2)を証明済み・緑**。
+  コピーが root の le1-cone で row1 を w-v 持ち上げる ascension（Wset:2684 が「trio が yapss 以上を
+  要する理由」とした row-2 非対称）は**解決済み**。`towerOK_of`(4513) コメント:
+  「row-1 graft tower is proved; only the two cores left」。両 core とも別途 discharge。
+
+**∴ 停止性は単一 open Prop `SubstFree` に還元:**
+- `TRIO_terminates_of_substFree (h : SubstFree) : WellFounded stepRel`（L5Subst、緑）
+  = z<2 断片の停止性は (SUBST-FREE) 1 本。`SubstFree ⟸ Subst1gReviveSelf`(subst1gReviveSelf_of_free)
+  ⟸ `Clause2 ∧ Clause3`(substFree_of_clauses, L7Subst:115) or `SubstMulti`(substFree_of_multi)。
+- psiI/C4 還元 `TowStepC4_of_subst1`(C4scratch:91) は **Subst1 を最終位置 p=2**（S=[(0,0,0),(1,1,1),(2,1,1)],
+  lev S 2=3, C=(2,1,1)::shiftr01 3 0 X ∈ W 3）で使用。arbitrary-position(SubstClosed 一般性)は psiI では不使用。
+  Subst1g の liberalization は Subst1 の証明チェーンにあり、psiI 応用側には無い。
+
+**分岐点の結論**: trio の塔閉包（両行, row-2 ascension 込み）は yapss 無条件版と完全一致・移植済み。
+yapss の完成証明が渡せない唯一のもの = **cross-level SUBSTITUTION 閉包 SubstFree**（z=1 入れ子 head (2,1,1)
+の下に下位レベルの block C を graft する = ψ(I) の入れ子置換に intrinsic）。攻め所 = Clause2∧Clause3 / SubstFree。
+2 行 collapse には現れない置換（row-3 z の入れ子 head 下の下位レベル block 挿入）が本質。
