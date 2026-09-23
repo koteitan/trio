@@ -13,14 +13,20 @@ lakefile には入れない。次の行 1691 の壁の scaffolding を記録す�
 壁の正体（Subst1 とは別、それより下）:
 - w1691 の F のタイ (2,1,0) の子 = [深い葉 tie 1 [tie 1 []], shallow 兄弟 tie 1 []]。
 - 深い葉はトップレベルなので TreeTs でなく HeT の upleaf 経路（upleaf_deep_coreDT）が要る。
-  upleaf は descent を tower に還元するが、その tower
-    tow 1 0 [(1,2,0),(2,2,0),(1,2,0)] (j+1)
-  = base (0,1,0)(1,2,0)(2,2,0) + ブロック (b,1,0)(b+1,2,0)(b+2,2,0) の階段（b=1..j）。
+  下記 hK_1691 は upleaf_deep_coreDT を適用済み（side condition 全て decide で discharge）、
+  **残る唯一の穴 = hrep（tower の GTC）**:
+    ⊢ GTC CLTL 0 ([(1,1,1)] ++ shiftr01 0 0 (shiftr01 1 0 (tow 1 0 [(1,2,0),(2,2,0),(1,2,0)] m')))
+  この tower = base (0,1,0)(1,2,0)(2,2,0) + 階段ブロック (b,1,0)(b+1,2,0)(b+2,2,0)（b=1..j）。
   各ブロックは深い葉 (b+1,2,0)(b+2,2,0) = tie 1 [tie 1 []] を含む ⇒ **tower が木に潰れない**
-  （単一深い葉の tow_dtree は tie1/tie0 交互で TreeTs だが、兄弟つきはブロックごとに深い葉）。
-  ∴ GTC_wLTL（TreeTs 要求）不可。トップレベルの「深い葉の塔」= HeU.GoodChtX_deep（遠い段用）の
-  トップレベル版を新規開発（HeT+HeU 規模の整礎/塔帰納）する必要がある。生成器 gen_gyk.py も
-  同じ理由で 1688-1780 全滅（treelit_top の p<l 検査が深い葉を弾く）。
+  （単一深い葉 R_pm の tow_dtree は tie1/tie0 交互で TreeTs=木、GTC_wLTL で閉じる。兄弟つきは
+  ブロックごとに tie0 分離子がなく深い葉が残る）。∴ GTC_wLTL 不可。
+- 一般の「深い葉の塔の良さ」は **HeR.Gd_deep_towers**（Xtow・SpineL・clD で各段 clD-good）に存在。
+  ただしこれは far-word 側の GdT/clD 述語パス用。トップレベルの GTC_wLTL/GoodTTL/TreeTs パスへ
+  配線する新規統合（HeU 規模）が要る。生成器 gen_gyk.py も同理由で 1688-1780 全滅
+  （treelit_top の p<l 検査が深い葉を弾く）。
+- 領域 [1691,1948] の壁: 直上 18 行（1691,1692,1693,1695,1696,1697,1698,1701,1702,1703,1706,
+  1707,1709,1710,1711,1712,1713,1714）が深い葉の塔族（壁 A）。行 1715 以降は (3,2,1) 等の
+  入れ子 z=1 far-word = Subst1 系。
 -/
 import HeW
 
@@ -38,6 +44,21 @@ noncomputable def w1691 : TrioSeq :=
 /-- ★ 残る穴（壁）: 深い葉+兄弟の tower が木に潰れないため未証明。 -/
 theorem hK_1691 : GTC CLTL 0 w1691 := by
   unfold w1691
+  have e : wLT 0 ([[HdA.UT.tie 1 [HdA.UT.tie 1 []], HdA.UT.tie 1 []]], ([] : List (Option TrioSeq)))
+      = ([(1,1,1)] : TrioSeq) ++ shiftr01 0 0 (shiftr01 1 0
+        (((0, 1, 0) : ℕ×ℕ×ℕ) :: ([((1,2,0):ℕ×ℕ×ℕ),((2,2,0):ℕ×ℕ×ℕ)] ++ [((1,2,0):ℕ×ℕ×ℕ)]))) := by
+    simp [wLT, FTL0, topTs, topT, unitsC, shiftr01]
+  rw [e]
+  refine upleaf_deep_coreDT (C := CLTL) (u := 0) (d := 0) (q := 1) (d0 := 1) (m := 2)
+    (D := [((1,2,0):ℕ×ℕ×ℕ),((2,2,0):ℕ×ℕ×ℕ)])
+    (by intro p hp; simp at hp; rcases hp with rfl | rfl <;> decide)
+    (by intro p hp; simp at hp; rcases hp with rfl | rfl <;> decide)
+    (by decide) (by decide) (by decide) (fun m' hm' => ?_)
+  -- 残る唯一の穴（壁）: 深い葉+兄弟の tower の GTC。
+  -- ⊢ GTC CLTL 0 ([(1,1,1)] ++ shiftr01 0 0 (shiftr01 1 0 (tow 1 0 [(1,2,0),(2,2,0),(1,2,0)] m')))
+  -- この tower は base + 階段ブロック (b,1,0)(b+1,2,0)(b+2,2,0)（各ブロックに深い葉）で木に潰れない。
+  -- 一般の深い葉の塔の良さは HeR.Gd_deep_towers（Xtow・SpineL・clD）にあるが、これは far-word 側の
+  -- GdT/clD 述語パス用。トップレベルの GTC_wLTL/GoodTTL/TreeTs パスへの配線が要る（HeU 規模の新規統合）。
   sorry
 
 /-- 行 1691 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,2,0)。語 w1691 が正しいことの確認
