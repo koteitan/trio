@@ -39,6 +39,18 @@ theorem row1_noCross {u j : ℕ} (hj : j ≤ u) {Y' : TrioSeq} (hY'ne : Y' ≠ [
   · rw [hB, entry1_shiftr01, hj_eq]
   · rw [hB, hasParent_shiftr01]; exact hY'orph
 
+/-- ¬hasParent(row1) orphan (row1=v+1) → coneV. Inlined from ConeOrph (verified green). -/
+theorem coneV_of_orph {Y : TrioSeq} {v : ℕ} (hYne : Y ≠ [])
+    (hY1 : entry Y 1 (Y.length - 1) = v + 1)
+    (hYorph : ¬ hasParent Y 1 (Y.length - 1)) :
+    coneV Y v (Y.length - 1) := by
+  have hYl : 0 < Y.length := List.length_pos_iff.mpr hYne
+  intro y hy
+  by_contra hle
+  rw [not_lt] at hle
+  have hlt : entry Y 1 y < entry Y 1 (Y.length - 1) := by rw [hY1]; omega
+  exact hYorph (H12Export.hasParent1_of_le0_witness (by omega) hy hlt)
+
 /-- **(B) GRAFT j≤v at level u**. Inlined from Graft61C (verified green). -/
 theorem childLoadC_graft_le {v u jj : ℕ} (hu : v ≤ u) (hjv : jj ≤ v) (hj1 : 1 ≤ jj)
     {Y : TrioSeq} (hYne : Y ≠ [])
@@ -159,8 +171,34 @@ theorem childLoadC (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based
           refine childLoadC_graft_le hu hjv hj1 hYne hjj.symm h20 hYorph (fun z hz hbz => ?_)
           have hzm : z ∈ Wg m' := by rwa [show 2 * jj - 1 = m' by omega] at hz
           exact (hgr z hzm hbz).2 (based_graft_arg hYne hb hbz) u hu
-        · -- j = v+1 : gtc_tie at level u (cross-level hload via hgr@all-u) — OPEN
-          sorry
+        · -- j = v+1 : GTC_tie at level u. obligation A (cone) + content rewrite GREEN;
+          -- hcone reducible via coneV_mlift; hload = cross-level core (GoodChtX_deep).
+          have hjj1 : jj = v + 1 := by omega
+          have hYorph : ¬ hasParent Y 1 (Y.length - 1) := by have h := hd.2; rwa [hsrY] at h
+          have hY1v : entry Y 1 (Y.length - 1) = v + 1 := by rw [← hjj]; exact hjj1
+          have hcone_last : coneV Y v (Y.length - 1) := coneV_of_orph hYne hY1v hYorph
+          have hmY : mlift Y v (u - v)
+              = mlift Y.dropLast v (u - v) ++ [((hh, u + 1, 0) : ℕ × ℕ × ℕ)] := by
+            have hc' : coneV (Y.dropLast ++ [((hh, jj, 0) : ℕ × ℕ × ℕ)]) v Y.dropLast.length := by
+              rw [← hlast, List.length_dropLast]; exact hcone_last
+            conv_lhs => rw [hlast]
+            rw [mlift_snoc_cone Y.dropLast ((hh, jj, 0) : ℕ × ℕ × ℕ) hc' (u - v)]
+            show mlift Y.dropLast v (u - v) ++ [((hh, jj + (u - v), 0) : ℕ × ℕ × ℕ)]
+              = mlift Y.dropLast v (u - v) ++ [((hh, u + 1, 0) : ℕ × ℕ × ℕ)]
+            rw [show jj + (u - v) = u + 1 from by omega]
+          set K' : TrioSeq := ((1, u + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 (mlift Y.dropLast v (u - v))
+            with hK'
+          have hcontent : ((1, u + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 (mlift Y v (u - v))
+              = K' ++ [((hh + 2, u + 1, 0) : ℕ × ℕ × ℕ)] := by
+            rw [hmY, hK', shiftr01_append0]
+            simp only [shiftr01, List.map_cons, List.map_nil, List.cons_append, Nat.add_zero]
+          rw [hcontent]
+          refine GTC_tie (C := CQ) (v := u) (K := K') (x := hh + 2) ?_ ?_
+            (fun L hCL u' hu' => CQ_lift L u hCL u' hu')
+          · -- hcone : coneV (K' ++ [(hh+2,u+1,0)]) u K'.length (via coneV_mlift transport)
+            sorry
+          · -- hload : cross-level GoodChtX_deep core (the real (B) blocker)
+            sorry
   intro Y hY hb u hu
   exact (key hY).2 hb u hu
 
