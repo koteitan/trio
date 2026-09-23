@@ -151,5 +151,40 @@ theorem Tlab_mono {j j' : ℕ} (hjj' : j ≤ j') {a b : Three}
     (h : Tlab Refl1 Refl2 j' a b) : Tlab Refl1 Refl2 j a b :=
   ⟨h.1, Tlev_mono Refl1 Refl2 hjj' h.2⟩
 
+/-! ### `rel_iff` analogs (definitional; external `Basic.lean:176` `rel_iff`) -/
+
+theorem Tlev0_iff {a b : Three} : Tlev Refl1 Refl2 0 a b ↔ a ≤o b := Iff.rfl
+theorem Tlev1_iff {a b : Three} : Tlev Refl1 Refl2 1 a b ↔ a ≤o b ∧ Refl1 a b := Iff.rfl
+theorem Tlev2_iff {a b : Three} :
+    Tlev Refl1 Refl2 2 a b ↔ a ≤o b ∧ Refl1 a b ∧ Refl2 a b := Iff.rfl
+theorem Tlab_iff {j : ℕ} {a b : Three} :
+    Tlab Refl1 Refl2 j a b ↔ a <o b ∧ Tlev Refl1 Refl2 j a b := Iff.rfl
+
+/-! ### Transitivity (external `lev_trans`, Basic.lean:202).
+
+Level 0 is unconditional (order transitivity).  At levels 1,2 transitivity
+reduces to transitivity of the reflection clauses `Refl1/Refl2` — because in the
+external proof `lev_trans` is exactly "composition of elementary substructures".
+So once `Refl1/Refl2` are realised (M3/M5) with that closure, `Tlev` is
+transitive; here we record the reduction. -/
+
+theorem Tlev0_trans {a b c : Three} (h1 : Tlev Refl1 Refl2 0 a b)
+    (h2 : Tlev Refl1 Refl2 0 b c) : Tlev Refl1 Refl2 0 a c := ole_trans h1 h2
+
+theorem Tlev1_trans (htr1 : ∀ x y z, Refl1 x y → Refl1 y z → Refl1 x z)
+    {a b c : Three} (h1 : Tlev Refl1 Refl2 1 a b) (h2 : Tlev Refl1 Refl2 1 b c) :
+    Tlev Refl1 Refl2 1 a c :=
+  ⟨ole_trans h1.1 h2.1, htr1 _ _ _ h1.2 h2.2⟩
+
+theorem Tlev2_trans (htr1 : ∀ x y z, Refl1 x y → Refl1 y z → Refl1 x z)
+    (htr2 : ∀ x y z, Refl2 x y → Refl2 y z → Refl2 x z)
+    {a b c : Three} (h1 : Tlev Refl1 Refl2 2 a b) (h2 : Tlev Refl1 Refl2 2 b c) :
+    Tlev Refl1 Refl2 2 a c :=
+  ⟨ole_trans h1.1 h2.1, htr1 _ _ _ h1.2.1 h2.2.1, htr2 _ _ _ h1.2.2 h2.2.2⟩
+
+theorem Tlab0_trans {a b c : Three} (h1 : Tlab Refl1 Refl2 0 a b)
+    (h2 : Tlab Refl1 Refl2 0 b c) : Tlab Refl1 Refl2 0 a c :=
+  ⟨olt_trans h1.1 h2.1, ole_trans h1.2 h2.2⟩
+
 end TElem
 end TRIO
