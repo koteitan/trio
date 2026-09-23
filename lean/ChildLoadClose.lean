@@ -108,7 +108,16 @@ theorem childLoad (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based 
                 hKdef, List.cons_append, List.nil_append]
             rw [egg] at hgg; exact hgg
         · -- jj = v+1: GTC_tie
-          sorry
+          rw [show jj = v + 1 from by omega]
+          refine GTC_tie (C := CQ) (v := v) (K := Ko) (x := hh + 2) ?_ ?_
+            (fun L hCL u hu => CQ_lift L v hCL u hu)
+          · -- hcone
+            trace_state
+            sorry
+          · -- hload : ∀u≥v, ∀Z∈Wg(2u) based, GTC CQ u (mlift Ko v (u-v) ++ shiftr01 (hh+2) 0 Z)
+            intro u hu Z hZ hbZ
+            trace_state
+            sorry
   intro Y hY hb
   exact (key hY).2 hb
 
