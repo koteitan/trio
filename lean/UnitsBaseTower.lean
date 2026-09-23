@@ -33,6 +33,54 @@ theorem fh_row0 (v n : ℕ) : ∀ y ∈ fh v n, 1 ≤ y.1 := by
       · omega
       · exact ih y hy
 
+theorem fh_replicate (v n : ℕ) : fh v n = List.replicate n ((1, v + 1, 1) : ℕ × ℕ × ℕ) := by
+  induction n with
+  | zero => simp [fh]
+  | succ n ih => rw [fh, ih, List.replicate_succ]
+
+theorem entry_repl0 (v n j : ℕ) (hj : j < n) :
+    entry (List.replicate n ((1, v + 1, 1) : ℕ × ℕ × ℕ)) 0 j = 1 := by
+  simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem
+    (show j < (List.replicate n ((1, v + 1, 1) : ℕ × ℕ × ℕ)).length by
+      rw [List.length_replicate]; exact hj)]
+
+theorem entry_repl1 (v n j : ℕ) (hj : j < n) :
+    entry (List.replicate n ((1, v + 1, 1) : ℕ × ℕ × ℕ)) 1 j = v + 1 := by
+  simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem
+    (show j < (List.replicate n ((1, v + 1, 1) : ℕ × ℕ × ℕ)).length by
+      rw [List.length_replicate]; exact hj)]
+
+theorem entry_repl2 (v n j : ℕ) (hj : j < n) :
+    entry (List.replicate n ((1, v + 1, 1) : ℕ × ℕ × ℕ)) 2 j = 1 := by
+  simp [entry, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem
+    (show j < (List.replicate n ((1, v + 1, 1) : ℕ × ℕ × ℕ)).length by
+      rw [List.length_replicate]; exact hj)]
+
+theorem coneV_repl (v n j : ℕ) (hj : j < n) :
+    coneV (List.replicate n ((1, v + 1, 1) : ℕ × ℕ × ℕ)) v j := by
+  intro y hy
+  have hyj : y = j := by
+    rcases Relation.ReflTransGen.cases_tail hy with h1 | ⟨z, _, hzj⟩
+    · exact h1.symm
+    · exfalso
+      obtain ⟨hzl, hjl, hzlt, hent, -⟩ := hzj
+      rw [List.length_replicate] at hzl hjl
+      rw [entry_repl0 v n z hzl, entry_repl0 v n j hjl] at hent
+      omega
+  rw [hyj, entry_repl1 v n j hj]; omega
+
+theorem mlift_fh (v n d : ℕ) : mlift (fh v n) v d = fh (v + d) n := by
+  rw [fh_replicate, fh_replicate, mlift, List.length_replicate]
+  apply List.ext_getElem
+  · rw [List.length_map, List.length_range, List.length_replicate]
+  · intro j hj1 _
+    rw [List.length_map, List.length_range] at hj1
+    rw [List.getElem_map, List.getElem_range, List.getElem_replicate,
+      entry_repl0 v n j hj1, entry_repl1 v n j hj1, entry_repl2 v n j hj1,
+      if_pos (coneV_repl v n j hj1)]
+    refine Prod.ext rfl (Prod.ext ?_ rfl)
+    show v + 1 + d = v + d + 1; omega
+
 theorem fh_eq_flatMap (v n : ℕ) :
     fh v n = (List.range n).flatMap (fun _ => [((1, v + 1, 1) : ℕ × ℕ × ℕ)]) := by
   induction n with

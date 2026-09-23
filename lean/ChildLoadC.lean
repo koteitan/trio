@@ -30,9 +30,9 @@ theorem childLoadC (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based
         rw [mlift_nil]; simp [shiftr01, fwTop, unitsC]
       rw [e]; exact GTC_far_CQ u
     · rcases hA with ⟨hl, hw0⟩ | ⟨hnat, hop⟩ | ⟨m', hm, hd, h20, hgr⟩
-      · -- SHORT (needs units_base at level u)
+      · -- SHORT: Y=[(0,0,0)] (len≤1, lev0, based) → content=[(1,u+1,1),(2,0,0)]
         sorry
-      · -- OPER
+      · -- OPER: natDom Y. hasParent-last → GTC_oper+oper_shift; else (lev-0 last) → flat
         sorry
       · -- GRAFT
         have hYne : Y ≠ [] := hYnil
@@ -58,7 +58,6 @@ theorem childLoadC (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based
         rcases Nat.lt_or_ge jj (v + 1) with hjlt | hjge
         · -- j ≤ v : GTC_orph at level u
           have hjv : jj ≤ v := by omega
-          trace_state
           sorry
         · -- j = v+1 : gtc_tie at level u
           sorry
