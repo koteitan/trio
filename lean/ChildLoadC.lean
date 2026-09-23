@@ -34,8 +34,34 @@ theorem childLoadC (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based
         sorry
       · -- OPER
         sorry
-      · -- GRAFT (j≤v: GTC_orph at level u; j=v+1: gtc_tie, hload from hgr all-levels)
-        sorry
+      · -- GRAFT
+        have hYne : Y ≠ [] := hYnil
+        have hYl : 0 < Y.length := List.length_pos_iff.mpr hYne
+        have hjeq : 2 * entry Y 1 (Y.length - 1) = m' + 1 := by
+          have h := hd.1; unfold lev at h; rw [h20] at h; omega
+        set jj : ℕ := entry Y 1 (Y.length - 1) with hjj
+        set hh : ℕ := entry Y 0 (Y.length - 1) with hhh
+        have hj1 : 1 ≤ jj := by omega
+        have hjv1 : jj ≤ v + 1 := by omega
+        have hcol : Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) = ((hh, jj, 0) : ℕ × ℕ × ℕ) :=
+          Prod.ext rfl (Prod.ext rfl h20)
+        have hgl : Y.getLast hYne = ((hh, jj, 0) : ℕ × ℕ × ℕ) := by
+          have h1 : Y.getLast hYne = Y.getD (Y.length - 1) ((0, 0, 0) : ℕ × ℕ × ℕ) := by
+            rw [List.getLast_eq_getElem, List.getD_eq_getElem?_getD,
+              List.getElem?_eq_getElem (show Y.length - 1 < Y.length by omega)]
+            rfl
+          rw [h1, hcol]
+        have hlast : Y = Y.dropLast ++ [((hh, jj, 0) : ℕ × ℕ × ℕ)] := by
+          rw [← hgl]; exact (List.dropLast_append_getLast hYne).symm
+        have hsrY : srow Y (Y.length - 1) = 1 := by
+          unfold srow; rw [h20, if_neg (by omega), ← hjj, if_pos (by omega)]
+        rcases Nat.lt_or_ge jj (v + 1) with hjlt | hjge
+        · -- j ≤ v : GTC_orph at level u
+          have hjv : jj ≤ v := by omega
+          trace_state
+          sorry
+        · -- j = v+1 : gtc_tie at level u
+          sorry
   intro Y hY hb u hu
   exact (key hY).2 hb u hu
 
