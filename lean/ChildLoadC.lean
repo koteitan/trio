@@ -13,8 +13,9 @@ namespace ChildLoadC
 
 open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GzD GzH GzJ HbB HdR
 
-/-- row1-noCross (level u). Inlined from Graft61C (verified green). -/
-theorem row1_noCross {u j : ℕ} (hj : j ≤ u) {Y' : TrioSeq} (hY'ne : Y' ≠ [])
+/-- row1-noCross (level u). Inlined from Graft61C (verified green); hj relaxed to j ≤ u+1
+    so it also covers the tie (row1=u+1) case, not only orphans (row1≤u). -/
+theorem row1_noCross {u j : ℕ} (hj : j ≤ u + 1) {Y' : TrioSeq} (hY'ne : Y' ≠ [])
     (hj_eq : entry Y' 1 (Y'.length - 1) = j)
     (hY'orph : ¬ hasParent Y' 1 (Y'.length - 1)) :
     ¬ hasParent (((1, u + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 Y') 1
@@ -195,8 +196,34 @@ theorem childLoadC (v : ℕ) : ∀ Y : TrioSeq, Y ∈ Wg (2 * (v + 1)) → based
           rw [hcontent]
           refine GTC_tie (C := CQ) (v := u) (K := K') (x := hh + 2) ?_ ?_
             (fun L hCL u' hu' => CQ_lift L u hCL u' hu')
-          · -- hcone : coneV (K' ++ [(hh+2,u+1,0)]) u K'.length (via coneV_mlift transport)
-            sorry
+          · -- hcone : coneV (K' ++ [(hh+2,u+1,0)]) u K'.length via coneV_of_orph on content
+            have hmj1 : entry (mlift Y v (u - v)) 1 ((mlift Y v (u - v)).length - 1) = u + 1 := by
+              rw [mlift_length, entry1_mlift (by omega), if_pos hcone_last, ← hjj]; omega
+            have hm2' : entry (mlift Y v (u - v)) 2 ((mlift Y v (u - v)).length - 1) = 0 := by
+              rw [mlift_length, entry2_mlift, h20]
+            have hsrm : srow (mlift Y v (u - v)) ((mlift Y v (u - v)).length - 1) = 1 := by
+              unfold srow; rw [hm2', if_neg (by omega), hmj1, if_pos (by omega)]
+            have hmne : mlift Y v (u - v) ≠ [] := by
+              intro h; have hl := mlift_length Y v (u - v); rw [h] at hl; simp at hl; omega
+            have hmorph : ¬ hasParent (mlift Y v (u - v)) 1 ((mlift Y v (u - v)).length - 1) := by
+              intro hp
+              have hiff := hasParent_mlift_iff (U := Y) v (u - v) hYne
+              rw [hsrY, hsrm] at hiff
+              exact hYorph (hiff.mp hp)
+            have hnp := row1_noCross (u := u) (j := u + 1) le_rfl hmne hmj1 hmorph
+            have hce : entry (((1, u + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 (mlift Y v (u - v))) 1
+                ((((1, u + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 (mlift Y v (u - v))).length - 1)
+                = u + 1 := by
+              rw [hcontent, show (K' ++ [((hh + 2, u + 1, 0) : ℕ × ℕ × ℕ)]).length - 1
+                = K'.length + 0 by simp, entry_append_right]
+              rfl
+            have hlen1 : (((1, u + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 (mlift Y v (u - v))).length - 1
+                = K'.length := by rw [hcontent]; simp
+            have hc := coneV_of_orph (Y := ((1, u + 1, 1) : ℕ × ℕ × ℕ) :: shiftr01 2 0 (mlift Y v (u - v)))
+              (v := u) (by simp) hce hnp
+            rw [hlen1] at hc
+            rw [← hcontent]
+            exact hc
           · -- hload : cross-level GoodChtX_deep core (the real (B) blocker)
             sorry
   intro Y hY hb u hu
