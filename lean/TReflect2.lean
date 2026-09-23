@@ -179,6 +179,75 @@ theorem exists_lev0_below_Dom1_tail {a1 a2 : ℕ} {b c : Three}
     · show row1 (P z1 z2 zb c') = row1 (P a1 a2 b c); rw [row1_P, row1_P, he1]
     · show arg (P z1 z2 zb c') ≤o arg (P a1 a2 b c); rw [arg_P, arg_P, he3]; exact ole_refl _
 
+/-- A strictly larger term (unbounded tails): `t <o bigger t`. -/
+def bigger (t : Three) : Three := P ((lead t).1 + 1) 0 Z Z
+
+theorem olt_bigger (t : Three) : t <o bigger t := by
+  cases t with
+  | Z => exact olt_Z_P _ _ _ _
+  | P t1 t2 tb tc => rw [bigger, lead_P, olt_P_P]; exact Or.inl (Nat.lt_succ_self t1)
+
+/-- **`exists_lev0_below_Dom1`, argument-direction case, GREEN.**  When α = `P a1 a2 b Z`
+with `b` nonempty, the predecessors `P a1 a2 b' c'` with `b' <o b` are cofinal below α
+(the tail slot `c'` is unbounded), and have `arg = b' <o b`.  So `arg u ≤o arg α` holds
+by argument DESCENT (into the subterm `b`), no engine.  GREEN. -/
+theorem exists_lev0_below_Dom1_arg {a1 a2 : ℕ} {b : Three} (hbne : (Z : Three) <o b) :
+    ∀ z, z <o P a1 a2 b Z → ∃ u, z <o u ∧ u <o P a1 a2 b Z ∧ Dom1 u (P a1 a2 b Z) := by
+  intro z hz
+  by_cases hz0 : z <o P a1 a2 Z Z
+  · have huα : P a1 a2 Z (bigger Z) <o P a1 a2 b Z := by
+      rw [olt_P_P]; exact Or.inr (Or.inr (Or.inl ⟨rfl, rfl, hbne⟩))
+    refine ⟨P a1 a2 Z (bigger Z), ?_, huα, huα, rfl, Or.inl hbne⟩
+    exact olt_trans hz0
+      (by rw [olt_P_P]; exact Or.inr (Or.inr (Or.inr ⟨rfl, rfl, rfl, olt_bigger Z⟩)))
+  · obtain ⟨z1, z2, zb, zc, rfl⟩ : ∃ z1 z2 zb zc, z = P z1 z2 zb zc := by
+      cases z with
+      | Z => exact absurd (olt_Z_P a1 a2 Z Z) hz0
+      | P z1 z2 zb zc => exact ⟨z1, z2, zb, zc, rfl⟩
+    rw [olt_P_P] at hz
+    have hform : z1 = a1 ∧ z2 = a2 ∧ zb <o b := by
+      rcases hz with h | h | ⟨e1, e2, h3⟩ | ⟨-, -, -, h4⟩
+      · exact absurd (olt_P_P.mpr (Or.inl h)) hz0
+      · exact absurd (olt_P_P.mpr (Or.inr (Or.inl h))) hz0
+      · exact ⟨e1, e2, h3⟩
+      · exact absurd h4 (not_olt_Z zc)
+    obtain ⟨he1, he2, hzb⟩ := hform
+    have huα : P z1 z2 zb (bigger zc) <o P a1 a2 b Z := by
+      rw [olt_P_P, he1, he2]; exact Or.inr (Or.inr (Or.inl ⟨rfl, rfl, hzb⟩))
+    refine ⟨P z1 z2 zb (bigger zc), ?_, huα, huα, ?_, ?_⟩
+    · rw [olt_P_P]; exact Or.inr (Or.inr (Or.inr ⟨rfl, rfl, rfl, olt_bigger zc⟩))
+    · show row1 (P z1 z2 zb (bigger zc)) = row1 (P a1 a2 b Z); rw [row1_P, row1_P, he1]
+    · show arg (P z1 z2 zb (bigger zc)) ≤o arg (P a1 a2 b Z); rw [arg_P, arg_P]; exact Or.inl hzb
+
+/-- α is a ROW-1 LIMIT (structural): its tuple ends in a limit tail, or `c = Z` with a
+nonempty argument.  This is exactly the structural content the faithful ◁₂ supplies about
+α (it is a limit) — NOT the elementarity engine. -/
+def RowLim : Three → Prop
+  | Z => False
+  | P _ _ b c => (c = Z ∧ (Z : Three) <o b) ∨ ((Z : Three) <o c ∧ IsLimit c)
+
+/-- **`exists_lev0_below_Dom1` is GREEN for every row-1 limit α.**  Dispatches to the
+argument case (`c = Z`) or the tail case (`c` a limit).  Fully green, no engine, no
+non-subterm witness — the argument-domination is discharged structurally (argument
+preservation in the tail direction, argument descent into the subterm in the other).
+This is the `exists_lev0_below` for the FAITHFUL ≤₁, CLOSED. -/
+theorem exists_lev0_below_Dom1_general {α : Three} (hα : RowLim α) :
+    ∀ z, z <o α → ∃ u, z <o u ∧ u <o α ∧ Dom1 u α := by
+  cases α with
+  | Z => exact absurd hα id
+  | P a1 a2 b c =>
+    rcases hα with ⟨rfl, hb⟩ | ⟨hc, hclim⟩
+    · exact exists_lev0_below_Dom1_arg hb
+    · exact exists_lev0_below_Dom1_tail hc hclim
+
+/-- **`exists_lev0_below_Dom1` GREEN**, given that the faithful ◁₂ supplies the (structural)
+row-1-limit property of α.  No engine; the ◁₂→RowLim step is structural (α is a limit),
+the trio analog of "α ◁₂ β makes α a ≤₁-limit". -/
+theorem exists_lev0_below_Dom1_closed (Lt2 : Three → Three → Prop)
+    (hlim : ∀ α β, Lt2 α β → RowLim α) : ExistsLev0Below_Dom1 Lt2 := by
+  intro α β hαβ z hz
+  exact exists_lev0_below_Dom1_general (hlim α β hαβ) z hz
+
 /-! ## Step (iii): the ENGINE `Refl2` — the Σ_3 elementary reflection = the WALL -/
 
 /-- **The Σ_3 reflection engine over Three** (reflect_two step iii, analog of
