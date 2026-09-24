@@ -709,5 +709,14 @@ theorem R1693 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(4,1,0)] : Tri
   have h := W0_of_X _ TX_1693
   simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01] using h
 
+/-- ★ シート行 1694 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(4,1,0)(1,1,1)(2,1,1) ∈ W 0。 -/
+theorem R1694 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(4,1,0),(1,1,1),(2,1,1)] : TrioSeq) ∈ W 0 := by
+  have hS := starOK_X [[UT.tie 1 [UT.tie 1 [], UT.tie 0 []]]] (fun us h => by simp at h; subst h; exact TX_1693)
+    [] (by simp [GzJ.NoTie]) (RawU_nil 0) [PmA.p0]
+    (PsLTL_cons (fun _ h => by simp [PmA.p0] at h) (by simp [PmA.p0, GzJ.NoTie]) (RawU_nil 0) (PsLTL_nil 0))
+    (WordsG_nil 0)
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01, PmA.p0] using h
+
 end PmE
 end TRIO
