@@ -20,7 +20,7 @@ open PmB PmC
 
 /-- 木のクラス（段 v）。並びを後ろから 1 つずつ作る。
 - deep: (0,true) の並びの後ろに深い葉。
-- head1: 深い節点 tie 1 の子の並び (1,false) の先頭の tie 1 []。 -/
+- same: 段 l+1 の節点の子の並び (l+1,false) に同じ段 l+1 の節点（深い節点の鎖）。 -/
 inductive TX (v : ℕ) : ℕ → Bool → List UT → Prop
   | nil (p : ℕ) (cl : Bool) : TX v p cl []
   | ch {p : ℕ} {cl : Bool} {us : List UT} {Z : TrioSeq} :
@@ -30,7 +30,8 @@ inductive TX (v : ℕ) : ℕ → Bool → List UT → Prop
   | up {p : ℕ} {us : List UT} {l : ℕ} {cs : List UT} :
       TX v p true us → p < l + 1 → TX v (l + 1) false cs → TX v p true (us ++ [UT.tie (l + 1) cs])
   | deep {us : List UT} : TX v 0 true us → TX v 0 true (us ++ [deepU])
-  | head1 : TX v 1 false [UT.tie 1 []]
+  | same {l : ℕ} {us cs : List UT} :
+      TX v (l + 1) false us → TX v (l + 1) false cs → TX v (l + 1) false (us ++ [UT.tie (l + 1) cs])
 
 theorem TX_raw {v : ℕ} {p : ℕ} {cl : Bool} {us : List UT} (h : TX v p cl us) : TRawLs v us := by
   induction h with
@@ -39,7 +40,7 @@ theorem TX_raw {v : ℕ} {p : ℕ} {cl : Bool} {us : List UT} (h : TX v p cl us)
   | tie0 _ _ ih ihc => exact TRawLs_snoc.mpr ⟨ih, ihc⟩
   | up _ _ _ ih ihc => exact TRawLs_snoc.mpr ⟨ih, ihc⟩
   | deep _ ih => exact TRawLs_snoc.mpr ⟨ih, by simp [deepU, TRawL, TRawLs]⟩
-  | head1 => simp [TRawL, TRawLs]
+  | same _ _ ih ihc => exact TRawLs_snoc.mpr ⟨ih, ihc⟩
 
 theorem TX_mono {v u : ℕ} (hvu : v ≤ u) {p : ℕ} {cl : Bool} {us : List UT} (h : TX v p cl us) :
     TX u p cl us := by
@@ -49,7 +50,7 @@ theorem TX_mono {v u : ℕ} (hvu : v ≤ u) {p : ℕ} {cl : Bool} {us : List UT}
   | tie0 _ _ ih ihc => exact TX.tie0 ih ihc
   | up _ hpl _ ih ihc => exact TX.up ih hpl ihc
   | deep _ ih => exact TX.deep ih
-  | head1 => exact TX.head1
+  | same _ _ ih ihc => exact TX.same ih ihc
 
 theorem farTs_snoc (us : List UT) (x : UT) : farTs (us ++ [x]) = farTs us ++ [farT x] := by
   rw [HdR.farTs_append]; rfl
@@ -212,46 +213,203 @@ theorem Gd_head1 {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} {c : ℕ} :
     (HcM.EmbU_triv hE.2.2.1 hE.2.2.2.1 hE.2.2.2.2.1 f) u le_rfl Lds hL Q' hQ'
   rwa [HeB.imgT_zero] at this
 
+/-! ## 遠い像側: 深い節点の鎖の位置の集合 SLF -/
+
+/-- 段 l+1 の節点の子の位置（段 l+1 の延長で閉じる）。 -/
+def SLF (l : ℕ) : HeB.PS := HeC.clS (l + 1) (HeC.chU UF (l + 1))
+
+theorem SLF_PSOK (l : ℕ) : HeB.PSOK (SLF l) := HeC.PSOK_clS (HeC.PSOK_chU UF_PSOK (l + 1)) (l + 1)
+
+theorem SLF_PSDec (l : ℕ) : HeC.PSDec (SLF l) := HeC.PSDec_clS (HeC.PSDec_chU UF (l + 1)) (l + 1)
+
+theorem SLF_closed (l : ℕ) : HeB.Ext (SLF l) (l + 1) (SLF l) := HeC.clS_closed (l + 1) _
+
+theorem chU_sub_SLF (l : ℕ) : ∀ C o f u Q, HeC.chU UF (l + 1) C o f u Q → SLF l C o f u Q :=
+  HeC.B_sub_clS (l + 1) _
+
+/-- ★ 鎖への分解: SLF の段 i の道 = UF の道 Qr ＋ 段 l+1 の鎖 Ch。鎖に良い並びを差し込むと UF で良い。 -/
+theorem unplugF (l : ℕ) : ∀ (i : ℕ) (C : List ℕ) (o : ℕ) (f : ℕ → ℕ) (u : ℕ) (Q : HeB.Path),
+    HeC.clE (l + 1) (HeC.chU UF (l + 1)) i C o f u Q →
+    (∀ a ∈ C, 1 ≤ a) → 1 ≤ o → (∀ a ∈ C, a < o) →
+    ∃ Qr Ch, Q = Qr ++ Ch ∧ (∀ e ∈ Ch, e.2 = l + 1) ∧ UF C o f u Qr ∧
+      ∀ Y, HeB.Gd (HeC.clE (l + 1) (HeC.chU UF (l + 1)) i) C o f u Y → HeB.Gd UF C o f u (HeB.plugQ Ch Y)
+  | 0, C, o, f, u, Q, hQ, h1, h2, h3 => by
+      obtain ⟨Qr, p, rfl, hQr, hp⟩ := hQ
+      refine ⟨Qr, [(p, l + 1)], rfl, fun e he => by simp at he; subst he; rfl, hQr, fun Y hY => ?_⟩
+      exact HeB.Gd_tie (HeC.Ext_chU UF (l + 1)) h1 h2 h3 hp hY
+  | i + 1, C, o, f, u, Q, hQ, h1, h2, h3 => by
+      rcases hQ with hQ | ⟨Q'', p, rfl, hQ'', hp⟩
+      · obtain ⟨Qr, Ch, hQe, hCh, hQr, hY⟩ := unplugF l i C o f u Q hQ h1 h2 h3
+        exact ⟨Qr, Ch, hQe, hCh, hQr, fun Y hY' => hY Y (HeB.Gd_mono (fun _ _ _ _ _ h => Or.inl h) hY')⟩
+      · obtain ⟨Qr, Ch, rfl, hCh, hQr, hY⟩ := unplugF l i C o f u Q'' hQ'' h1 h2 h3
+        refine ⟨Qr, Ch ++ [(p, l + 1)], by simp, fun e he => ?_, hQr, fun Y hY' => ?_⟩
+        · rcases List.mem_append.mp he with he | he
+          · exact hCh e he
+          · simp at he; subst he; rfl
+        · rw [PmC.HeB.plugQ_append]
+          exact hY _ (HeB.Gd_tie (HeC.Ext_ext1 _ (l + 1)) h1 h2 h3 hp
+            (HeB.Gd_mono (fun _ _ _ _ _ h => Or.inr h) hY'))
+
+/-- ★★★ 遠い像側: 鎖の末尾の並び p の後ろの同じ段の葉 tie (l+1) []。 -/
+theorem BotT_chainLeaf (l i : ℕ) {C : List ℕ} {o : ℕ} {f : ℕ → ℕ} {u : ℕ} {Q'' : HeB.Path} {p : List UT}
+    (hQ : HeC.clE (l + 1) (HeC.chU UF (l + 1)) i C o f u Q'')
+    (hp : HeB.Gd (HeC.clE (l + 1) (HeC.chU UF (l + 1)) i) C o f u p)
+    (h1 : ∀ a ∈ C, 1 ≤ a) (h2 : 1 ≤ o) (h3 : ∀ a ∈ C, a < o)
+    {Lds : List (List UT)} (hL : GoodChtX C o f u Lds) :
+    HeB.BotT C o f u Lds Q'' (p ++ [UT.tie (l + 1) []]) := by
+  have hPok := HeC.PSOK_clE (HeC.PSOK_chU UF_PSOK (l + 1)) (l + 1) i
+  have hPdec := HeG.PSDec_clE (HeC.PSDec_chU UF (l + 1)) (l + 1) i
+  have hChraw0 := hPok.raw C o f u Q'' hQ
+  obtain ⟨Qr, Ch, rfl, hCh, hQr, hY⟩ := unplugF l i C o f u Q'' hQ h1 h2 h3
+  have hLc : ∀ j, HeB.Gd UF C o f u (Lc Ch p j) := by
+    intro j
+    induction j with
+    | zero => exact hY p hp
+    | succ j ih =>
+        exact hY _ (HeB.Gd_tie (HeC.Ext_chS0 _) h1 h2 h3 hp (UF_sub (AdmF_chS0 hPok hPdec) ih))
+  have hChraw : ∀ e ∈ Ch, RawTs (u + reOff (fun _ => 0) f C o) e.1 :=
+    fun e he => hChraw0 e (List.mem_append_right _ he)
+  have hpraw : RawTs (u + reOff (fun _ => 0) f C o) p := hp.1
+  intro b hub ws hC hR
+  rw [PmC.HeB.plugQ_append]
+  have hrep : ∀ j, GpT C o f b (farWt b (b + liftOff f C o + 1)
+      (ws ++ [(Lds ++ [HeB.plugQ Qr (Lc Ch p j)], u, [])])) := by
+    intro j
+    have := (hLc j).2 (fun _ => 0) [] o f (HcM.EmbU_triv h3 h1 h2 f) u le_rfl Lds hL Qr hQr b hub ws hC hR
+    rwa [HeB.imgT_zero] at this
+  obtain ⟨q0, hq0⟩ : ∃ q0, q0 = b + liftOff f C o := ⟨_, rfl⟩
+  rw [← hq0] at hrep ⊢
+  have hAc : ∀ xs ys, chT b (q0+1) u (xs ++ ys) = chT b (q0+1) u xs ++ chT b (q0+1) u ys := chT_append b (q0+1) u
+  have hTc : ∀ l cs, chT b (q0+1) u [UT.tie l cs]
+      = ((1, q0 + 1 + l, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (chT b (q0+1) u cs) := fun l cs => by
+    simp [chT, unitT]
+  obtain ⟨E, hEd⟩ : ∃ E, E = chT b (q0+1) u (HeB.plugQ Ch p) := ⟨_, rfl⟩
+  have hFr : Fr E := by rw [hEd]; exact Fr_chT _ (HeB.RawTs_plugQ Ch p hChraw hpraw)
+  have eC : chT b (q0+1) u (HeB.plugQ Ch (p ++ [UT.tie (l + 1) []]))
+      = E ++ [((Ch.length + 1, q0 + 1 + (l + 1), 0) : ℕ × ℕ × ℕ)] := by
+    rw [F_plugQ_app hAc hTc, hEd, hTc]; simp [chT, shiftr01]; omega
+  have hnp : ¬ hasParent (E ++ [((Ch.length + 1, q0 + 1 + (l + 1), 0) : ℕ × ℕ × ℕ)]) 1 E.length := by
+    have hA := AncM_chain hAc hTc (l + 1) Ch p hCh (fun e he => Fr_chT _ (hChraw e he)) (Fr_chT _ hpraw)
+    rw [← hEd] at hA
+    have := hnp_of_AncM hA (by simp)
+      (by rw [show (E ++ [((Ch.length + 1, q0 + 1 + (l + 1), 0) : ℕ × ℕ × ℕ)]).length - 1 = E.length + 0 by
+        simp, entry_append_right]; rfl)
+    simpa using this
+  have htow : ∀ j, (tow (q0+1) 0 (E ++ [((Ch.length + 1, q0 + 1 + (l + 1), 0) : ℕ × ℕ × ℕ)]) (j+1) : TrioSeq)
+      = ((0,q0+1,0):ℕ×ℕ×ℕ) :: chT b (q0+1) u (Lc Ch p j) := by
+    intro j; rw [hEd]; exact tow_chain hAc hTc (l + 1) Ch p j
+  have e1 : (((1, q0+1 + 0, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0
+        (E ++ [((Ch.length + 1, q0 + 1 + (l + 1), 0) : ℕ × ℕ × ℕ)]))
+      = shiftr01 1 0 (((0, q0+1, 0) : ℕ×ℕ×ℕ) ::
+          (E ++ [((Ch.length + 1, q0 + 1 + (l + 1), 0) : ℕ × ℕ × ℕ)])) := by
+    simp [shiftr01]
+  rcases List.eq_nil_or_concat Qr with rfl | ⟨Q', ⟨v, p'⟩, rfl⟩
+  · obtain ⟨Yp, hYpd⟩ : ∃ Yp, Yp = ((1, q0+1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (FTLt b (q0+1) u Lds) := ⟨_, rfl⟩
+    have eW : ∀ T : List UT, farWt b (q0+1) (ws ++ [(Lds ++ [HeB.plugQ [] T], u, [])])
+        = farWt b (q0+1) ws ++ (Yp ++ shiftr01 1 0
+            (((1, q0+1 + 0, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (chT b (q0+1) u T))) := by
+      intro T
+      rw [show HeB.plugQ [] T = T from rfl, farWt_snoc, hYpd]
+      simp [fwH, FTLt_snoc, mlift_nil, shiftr01_append0]
+    have hYpF : Fr Yp := by rw [hYpd]; exact Fr_letter _ _
+    have hYpne : Yp ≠ [] := by rw [hYpd]; simp
+    have hYpH : Hd Yp := by rw [hYpd]; exact fun _ => rfl
+    rw [eW, eC, e1]
+    refine upleaf_deep_coreD' h3 h1 h2 f (Fr_farWt _ _ _) hYpF hYpH hYpne hFr hnp
+      (d := 1) (by omega) (by omega) (by omega) ?_
+    intro m' hm'
+    obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+    rw [htow j]
+    have := hrep j
+    rw [eW] at this
+    simpa [shiftr01] using this
+  · simp only [List.concat_eq_append] at hQr hrep ⊢
+    have hp' : p' = 0 := by have := UF_last _ _ _ _ _ hQr; rwa [HeC.lastL_snoc] at this
+    subst hp'
+    have hv := UF_PSOK.raw _ _ _ _ _ hQr (v, 0) (by simp)
+    obtain ⟨Yp, hYpd⟩ : ∃ Yp, Yp = fwH b (q0+1) (FTLt b (q0+1) u (Lds ++ [HeB.plugQ Q' []])) u [] ++
+        shiftr01 (Q'.length + 2) 0 (chT b (q0+1) u v) := ⟨_, rfl⟩
+    have eW : ∀ T : List UT, farWt b (q0+1) (ws ++ [(Lds ++ [HeB.plugQ (Q' ++ [(v, 0)]) T], u, [])])
+        = farWt b (q0+1) ws ++ (Yp ++ shiftr01 (Q'.length + 2) 0
+            (((1, q0+1 + 0, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (chT b (q0+1) u T))) := by
+      intro T
+      rw [HeB.plugQ_snoc, HeD.farWt_botT, hYpd, chT_append, shiftr01_append0]
+      simp [chT, unitT, List.append_assoc]
+    have hYpF : Fr Yp := by rw [hYpd]; exact Fr_append (Fr_fwH _ _ _ _ _) (Fr_shiftr (Fr_chT _ hv) _)
+    have hYpne : Yp ≠ [] := by rw [hYpd]; simp [fwH]
+    have hYpH : Hd Yp := by rw [hYpd]; exact Hd_app_ne (Hd_fwH _ _ _ _ _) (by simp [fwH])
+    rw [eW, eC, e1]
+    refine upleaf_deep_coreD' h3 h1 h2 f (Fr_farWt _ _ _) hYpF hYpH hYpne hFr hnp
+      (d := Q'.length + 2) (by omega) (by omega) (by omega) ?_
+    intro m' hm'
+    obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+    rw [htow j]
+    have := hrep j
+    rw [eW] at this
+    simpa [shiftr01] using this
+
+theorem BotT_nil_clE (l : ℕ) : ∀ (i : ℕ) (C : List ℕ) (o : ℕ) (f : ℕ → ℕ) (u : ℕ) (Q : HeB.Path),
+    HeC.clE (l + 1) (HeC.chU UF (l + 1)) i C o f u Q →
+    (∀ a ∈ C, 1 ≤ a) → 1 ≤ o → (∀ a ∈ C, a < o) →
+    ∀ Lds, GoodChtX C o f u Lds → HeB.BotT C o f u Lds Q []
+  | 0, C, o, f, u, Q, hQ, h1, h2, h3, Lds, hL => by
+      have := (Gd_nil_chU1 (l := l) (A := C) (k := o) (H := f) (c := u)).2 (fun _ => 0) [] o f
+        (HcM.EmbU_triv h3 h1 h2 f) u le_rfl Lds hL Q hQ
+      simpa [HeB.imgT_nil] using this
+  | i + 1, C, o, f, u, Q, hQ, h1, h2, h3, Lds, hL => by
+      rcases hQ with hQ | ⟨Q'', p, rfl, hQ'', hp⟩
+      · exact BotT_nil_clE l i C o f u Q hQ h1 h2 h3 Lds hL
+      · rw [HeB.BotT_snoc_eq]
+        exact BotT_chainLeaf l i hQ'' hp h1 h2 h3 hL
+
+/-- ★ SLF で空の並びは良い。 -/
+theorem Gd_nil_SLF (l : ℕ) {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} {c : ℕ} : HeB.Gd (SLF l) A k H c [] := by
+  refine ⟨by simp [RawTs], fun G S o f hE u _ Lds hL Q hQ => ?_⟩
+  obtain ⟨i, hi⟩ := hQ
+  rw [HeB.imgT_nil]
+  exact BotT_nil_clE l i _ o f u Q hi hE.2.2.2.1 hE.2.2.2.2.1 hE.2.2.1 Lds hL
+
 /-! ## 遠い像側の本定理: TX の並びの遠い像は良い -/
 
 section
 variable {A : List ℕ} {k : ℕ} (hA01 : ∀ a ∈ A, 1 ≤ a) (hk : 1 ≤ k) (hAk : ∀ a ∈ A, a < k) (H : ℕ → ℕ)
 include hA01 hk hAk
 
-/-- ★★★ TX の並びの遠い像は、(0,true) なら UF で、(l+1,false) なら chU UF (l+1) で良い。 -/
+/-- ★★★ TX の並びの遠い像は、(0,true) なら UF で、(l+1,false) なら SLF l で良い。 -/
 theorem Gd_TX {c p : ℕ} {cl : Bool} {us : List UT} (h : TX c p cl us) :
     (cl = true → p = 0 → HeB.Gd UF A k H c (farTs us)) ∧
-    (∀ l, cl = false → p = l + 1 → HeB.Gd (HeC.chU UF (l + 1)) A k H c (farTs us)) := by
+    (∀ l, cl = false → p = l + 1 → HeB.Gd (SLF l) A k H c (farTs us)) := by
   induction h with
-  | nil p cl => exact ⟨fun _ _ => UF_nil, fun l _ _ => Gd_nil_chU1⟩
+  | nil p cl => exact ⟨fun _ _ => UF_nil, fun l _ _ => Gd_nil_SLF l⟩
   | @ch p cl us Z _ hZ hb ih =>
       have hX : HeG.okLowP c (shiftr01 1 0 Z) := by
         have := HeG.okLowP_load (HeG.okLowP_nil c) hZ hb
         simpa using this
       rw [farTs_snoc]
       exact ⟨fun h1 h2 => HeI.Gd_snoc_ch UF_PSOK UF_PSDec hA01 hk (ih.1 h1 h2) hX,
-        fun l h1 h2 => HeI.Gd_snoc_ch (HeC.PSOK_chU UF_PSOK (l + 1)) (HeC.PSDec_chU UF (l + 1)) hA01 hk
-          (ih.2 l h1 h2) hX⟩
+        fun l h1 h2 => HeI.Gd_snoc_ch (SLF_PSOK l) (SLF_PSDec l) hA01 hk (ih.2 l h1 h2) hX⟩
   | @tie0 p cl us cs _ _ ih ihc =>
       rw [farTs_snoc]
       have hcs := ihc.1 rfl rfl
       refine ⟨fun h1 h2 => ?_, fun l h1 h2 => ?_⟩
       · exact HeB.Gd_tie (HeC.Ext_chS0 UF) hA01 hk hAk (ih.1 h1 h2)
           (UF_sub (AdmF_chS0 UF_PSOK UF_PSDec) hcs)
-      · exact HeB.Gd_tie (HeC.Ext_chS0 (HeC.chU UF (l + 1))) hA01 hk hAk (ih.2 l h1 h2)
-          (UF_sub (AdmF_chS0 (HeC.PSOK_chU UF_PSOK (l + 1)) (HeC.PSDec_chU UF (l + 1))) hcs)
+      · exact HeB.Gd_tie (HeC.Ext_chS0 (SLF l)) hA01 hk hAk (ih.2 l h1 h2)
+          (UF_sub (AdmF_chS0 (SLF_PSOK l) (SLF_PSDec l)) hcs)
   | @up p us l cs _ _ _ ih ihc =>
       rw [farTs_snoc]
       refine ⟨fun _ h2 => ?_, fun _ h1 _ => absurd h1 (by simp)⟩
-      exact HeB.Gd_tie (HeC.Ext_chU UF (l + 1)) hA01 hk hAk (ih.1 rfl h2) (ihc.2 l rfl rfl)
+      exact HeB.Gd_tie (HeC.Ext_chU UF (l + 1)) hA01 hk hAk (ih.1 rfl h2)
+        (HeB.Gd_mono (chU_sub_SLF l) (ihc.2 l rfl rfl))
   | @deep us _ ih =>
       rw [farTs_snoc]
       refine ⟨fun _ _ => ?_, fun _ h1 _ => absurd h1 (by simp)⟩
       exact Gd_deepAfter hA01 hk hAk (ih.1 rfl rfl)
-  | head1 =>
-      refine ⟨fun h1 _ => absurd h1 (by simp), fun l _ h2 => ?_⟩
-      obtain rfl : l = 0 := by omega
-      exact Gd_head1
+  | @same l us cs _ _ ih ihc =>
+      rw [farTs_snoc]
+      refine ⟨fun h1 _ => absurd h1 (by simp), fun l' _ h2 => ?_⟩
+      obtain rfl : l' = l := by omega
+      exact HeB.Gd_tie (SLF_closed l') hA01 hk hAk (ih.2 l' rfl rfl) (ihc.2 l' rfl rfl)
 
 end
 
