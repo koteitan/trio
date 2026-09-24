@@ -312,5 +312,46 @@ theorem Rpm_1666 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(2,0,0)] : 
   have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
   simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, unitC, shiftr01, p1] using h
 
+/-! ## 深い葉の語は全ての段で良い（hK_pm の段 u 版） -/
+
+theorem topTs_dtreeQ (u : ℕ) : ∀ j, topTs 0 [HeU.dtreeQ u j] = topTs u [HeT.dtree j] := by
+  intro j
+  induction j with
+  | zero =>
+      simp only [HeU.dtreeQ, HeT.dtree, topTs, topT, List.append_nil]
+      rw [show 0 + 1 + (u + 1) = u + 1 + 1 by omega]
+  | succ j ih =>
+      simp only [HeU.dtreeQ, HeT.dtree, topTs, topT, List.append_nil] at ih ⊢
+      rw [ih, show 0 + 1 + (u + 1) = u + 1 + 1 by omega, show 0 + 1 + u = u + 1 + 0 by omega]
+
+theorem TreeTs_dtree_u (u j : ℕ) : TreeTs u 0 true [HeT.dtree j] := by
+  induction j with
+  | zero => exact TreeTs_cons_up (l := 0) rfl (by decide) (TreeTs_nil u 1 false) (TreeTs_nil u 0 true)
+  | succ j ih =>
+    exact TreeTs_cons_up (l := 0) rfl (by decide)
+      (TreeTs_cons_tie0 ih (TreeTs_nil u 1 false)) (TreeTs_nil u 0 true)
+
+/-- ★★ 深い葉の語は全ての段 u で文脈 CLTL について良い。 -/
+theorem hK_pm_u (u : ℕ) : GTC CLTL u (wLT u ([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Option TrioSeq)))) := by
+  have e : wLT u ([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Option TrioSeq)))
+      = ([(1,u+1,1)] : TrioSeq) ++ shiftr01 0 0 (shiftr01 1 0
+        (((0, u+1, 0) : ℕ×ℕ×ℕ) :: ([((1,u+2,0):ℕ×ℕ×ℕ)] ++ [((2, u+2, 0) : ℕ×ℕ×ℕ)]))) := by
+    simp [wLT, FTL0, topTs, topT, unitsC, shiftr01]
+  rw [e]
+  refine HeN.upleaf_deep_coreDT (C := CLTL) (u := u) (d := 0) (q := u+1) (d0 := 2) (m := u+2)
+    (D := [(1,u+2,0)]) (by intro p hp; simp at hp; subst hp; simp)
+    (by intro p hp; simp at hp; subst hp; simp) (by decide) (by omega) (by omega) (fun m' hm' => ?_)
+  obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+  have ee : ([(1,u+1,1)] : TrioSeq) ++ shiftr01 0 0 (shiftr01 1 0
+      (tow (u+1) 0 ([((1,u+2,0):ℕ×ℕ×ℕ)] ++ [((2,u+2,0):ℕ×ℕ×ℕ)]) (j+1)))
+      = wLT u ([[HeT.dtree j]], ([] : List (Option TrioSeq))) := by
+    rw [show ([((1,u+2,0):ℕ×ℕ×ℕ)] ++ [((2,u+2,0):ℕ×ℕ×ℕ)]) = [((1,u+2,0):ℕ×ℕ×ℕ),((2,u+2,0):ℕ×ℕ×ℕ)] from rfl,
+      HeU.tow_dtreeQ u j, topTs_dtreeQ u j]
+    simp [wLT, FTL0, topTs, unitsC, shiftr01]
+  rw [ee]
+  exact HeN.GTC_wLTL (fun us' hus' => by simp at hus'; subst hus'; exact TreeTs_dtree_u u j)
+    (HeN.GoodTTL_all _ (fun us' hus' => by simp at hus'; subst hus'; exact TreeTs_dtree_u u j))
+    [] (by simp [GzJ.NoTie]) (RawU_nil u)
+
 end PmA
 end TRIO
