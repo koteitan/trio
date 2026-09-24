@@ -1,0 +1,95 @@
+/-
+PmA.lean: R_pm3（シート行 1690）の上、行 1691 の下を漸進で登る。
+土台 = R_pm3 の StarOK（HeW.bwt_KK2）。そこに
+- 遠い語を足す（BwT_append_words）、
+- 荷を吊るす（starOK_hang）。
+-/
+import HeW
+import GxB
+import HdW
+import HeJ
+
+namespace TRIO
+namespace PmA
+
+open Wset Small GwS Gw GwU GwZ GxD GxG GxJ GxK GxL GxN GxP GxR GxT GxV GxW GxY
+open GyA GyB GyC GyD GyE GyF GyG GyH GyI GyJ GyK GzA GzD GzF GzH GzI GzJ GzM GzN GzP GzU GzV GzW GzY
+open HaA HaC HaE HaF HaG HbD HbM HbP HbS HbU HbV HbX HcA HcI HcM
+open HdA HdB HdC HdD HdE HdF HdG HdH HdI HdJ HdQ HeI HeK HeU HeV HeW
+open GzS HaD HaJ HaL HaN HaP HaR HaS HaT HaV HaZ HbB HbJ HbK
+
+/-- R_pm3 の語の並びに、遠い語の並び Ls を足しても StarOK。 -/
+theorem starOK_pm3_words {Ls : List TrioSeq} (hW : WordsG 0 Ls) :
+    StarOK 0 (rword 0 0 ([Kdeep, GzJ.fwTop 0 []] ++ Ls)) := by
+  have hB2 := BwT_append_words (v := 0) (L := [Kdeep, GzJ.fwTop 0 []])
+    (by
+      intro X hX
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
+      rcases hX with rfl | rfl
+      · exact Fr_wLT 0 _
+      · exact Fr_fwTop 0 [])
+    bwt_KK2 Ls hW
+  refine ⟨?_, fun p hp => rword_ge 0 0 _ p hp⟩
+  have := hB2 0 le_rfl
+  rw [Nat.sub_self] at this
+  simpa only [mlift_zero, List.map_id', List.map_cons, List.map_nil] using this
+
+/-- ★ 族: R_pm3 ＋ 遠い語の並び Ls ＋ 吊るした荷 Z。 -/
+theorem pm3_words_hang {Ls : List TrioSeq} (hW : WordsG 0 Ls) {u : ℕ} {Z : TrioSeq}
+    (hZ : Z ∈ Wg u) (hb : based Z) :
+    (((0, 0, 0) : ℕ×ℕ×ℕ) :: (rword 0 0 ([Kdeep, GzJ.fwTop 0 []] ++ Ls) ++ shiftr01 1 0 Z))
+      ∈ W 0 :=
+  GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_hang (starOK_pm3_words hW) hZ hb))
+
+/-- ★ R_pm3 の上、シート行 1649 の形（行 1647 の上の 1649 と同じ足し方）。 -/
+theorem Rp3_1649 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0), (1, 1, 1), (2, 1, 1), (1, 1, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_hang (starOK_pm3_words (WordsG_nil 0)) (Wg_of_starOK (starOK_wordsG (v := 1) (WordsG_nil 1))) rfl))
+  simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, Kdeep, HdQ.wLT] using h
+
+/-- ★ R_pm3 の上、シート行 1650 の形（行 1647 の上の 1650 と同じ足し方）。 -/
+theorem Rp3_1650 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0), (1, 1, 1), (2, 1, 1), (1, 1, 0), (2, 2, 1), (3, 2, 1), (3, 2, 0), (4, 3, 0), (2, 2, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_hang (starOK_pm3_words (WordsG_nil 0)) (Wg_of_starOK (starOK_hang (HdV.starOK_N2 (v := 1) ([] : List (List (List HdA.UT) × List (Option TrioSeq))) (HdQ.PsLT_nil 1) (Uss := ([] : List (List HdA.UT))) (HdV.RawssT_nil 1) (us := ([] : List HdA.UT)) (HdV.TRaws_nil 1) (WordsG_nil 1)) (Wg_of_starOK (starOK_wordsG (v := 2) (WordsG_nil 2))) rfl)) rfl))
+  simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, Kdeep, HdQ.wLT] using h
+
+/-- ★ R_pm3 の上、シート行 1651 の形（行 1647 の上の 1651 と同じ足し方）。 -/
+theorem Rp3_1651 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0), (1, 1, 1), (2, 1, 1), (1, 1, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_pm3_words (WordsG_consT (v := 0) (TF_nil 0) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, Kdeep, HdQ.wLT] using h
+
+/-- ★ R_pm3 の上、シート行 1652 の形（行 1647 の上の 1652 と同じ足し方）。 -/
+theorem Rp3_1652 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0), (1, 1, 1), (2, 1, 1), (1, 1, 1), (2, 1, 0), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_pm3_words (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_GPF (GPF_of_PVF (PVF_snoc (A := []) (o := 1) (by decide) (PVF_nil1 0) (RLF_nil (A := []) (o := 1) (by decide) (by decide) (by decide) 0))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, Kdeep, HdQ.wLT] using h
+
+/-- ★ R_pm3 の上、シート行 1653 の形（行 1647 の上の 1653 と同じ足し方）。 -/
+theorem Rp3_1653 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0), (1, 1, 1), (2, 1, 1), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_pm3_words (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_GPF (GPF_of_PVF (PVF_farU (A := []) (o := 1) (by decide) (by decide) (by decide) 0 ([([] : List (Option TrioSeq))] : List (List (Option TrioSeq))) (RawUs_cons (RawU_nil 0) (RawUs_nil 0)))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, Kdeep, HdQ.wLT] using h
+
+/-- ★ R_pm3 の上、シート行 1654 の形（行 1647 の上の 1654 と同じ足し方）。 -/
+theorem Rp3_1654 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0), (1, 1, 1), (2, 1, 1), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 1), (4, 2, 0), (5, 3, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_pm3_words (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_GPF (GPF_of_PVF (HdH.PVF_farWAt (A0 := []) (o := 1) (by decide) (by decide) (by decide) 0 _ (HdH.OkWsAt_cons le_rfl (HeI.GoodChtX_snocT (A0 := []) (o := 1) (by decide) (by decide) (by decide) (HdE.GoodChtX_nil [] 1 (fun _ => 0) 0) (HeI.TreeOKs_cons_up (l := 0) rfl (by decide) (HeI.TreeOKs_nil 0 1 false) (HeI.TreeOKs_nil 0 0 true))) (HdH.okRAt_nil [] 1 0) (HdH.OkWsAt_nil [] 1 0)))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, HdA.farWt, HdA.FTLt, HdA.chT, HdA.unitT, Kdeep, HdQ.wLT] using h
+
+/-- ★ R_pm3 の上、シート行 1655 の形（行 1647 の上の 1655 と同じ足し方）。 -/
+theorem Rp3_1655 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0), (1, 1, 1), (2, 1, 1), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 1), (4, 2, 0), (5, 3, 0), (3, 2, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_pm3_words (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_GPF (GPF_node (A := []) (o := 1) (by decide) (by decide) (by decide) (b := 0) (τ := 2) [] (by decide) (GPF_of_PVF (HdH.PVF_farWAt (A0 := []) (o := 1) (by decide) (by decide) (by decide) 0 _ (HdH.OkWsAt_cons le_rfl (HeI.GoodChtX_snocT (A0 := []) (o := 1) (by decide) (by decide) (by decide) (HdE.GoodChtX_nil [] 1 (fun _ => 0) 0) (HeI.TreeOKs_cons_up (l := 0) rfl (by decide) (HeI.TreeOKs_nil 0 1 false) (HeI.TreeOKs_nil 0 0 true))) (HdH.okRAt_nil [] 1 0) (HdH.OkWsAt_nil [] 1 0)))) (GPF_nil (A := []) (o := 2) (by decide) (by decide) 0)))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, HdA.farWt, HdA.FTLt, HdA.chT, HdA.unitT, Kdeep, HdQ.wLT] using h
+
+/-- ★ R_pm3 の上、シート行 1656 の形（行 1647 の上の 1656 と同じ足し方）。 -/
+theorem Rp3_1656 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0), (1, 1, 1), (2, 1, 1), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 1), (4, 2, 0), (5, 3, 0), (3, 2, 0), (4, 3, 1), (5, 3, 1), (5, 3, 0), (6, 3, 0), (4, 3, 0)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_pm3_words (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_GPF (GPF_node (A := []) (o := 1) (by decide) (by decide) (by decide) (b := 0) (τ := 2) [] (by decide) (GPF_of_PVF (HdH.PVF_farWAt (A0 := []) (o := 1) (by decide) (by decide) (by decide) 0 _ (HdH.OkWsAt_cons le_rfl (HeI.GoodChtX_snocT (A0 := []) (o := 1) (by decide) (by decide) (by decide) (HdE.GoodChtX_nil [] 1 (fun _ => 0) 0) (HeI.TreeOKs_cons_up (l := 0) rfl (by decide) (HeI.TreeOKs_nil 0 1 false) (HeI.TreeOKs_nil 0 0 true))) (HdH.okRAt_nil [] 1 0) (HdH.OkWsAt_nil [] 1 0)))) (GPF_node (A := []) (o := 2) (by decide) (by decide) (by decide) (b := 0) (τ := 3) [] (by decide) (GPF_of_PVF (HcP.PVF_farWAu (A0 := []) (o := 2) (by decide) (by decide) (by decide) 0 _ (HcP.OkWsAu_cons le_rfl (HcP.GoodChuX_snocU (A0 := []) (o := 2) (by decide) (by decide) (by decide) (HcM.GoodChuX_nil [] 2 (fun _ => 0) 0) (HcP.GoodLow_none (HcN.GoodLow_nil 0))) (HcP.okRAu_nil [] 2 0) (HcP.OkWsAu_nil [] 2 0)))) (GPF_nil (A := []) (o := 3) (by decide) (by decide) 0))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, HdA.farWt, HdA.FTLt, HdA.chT, HdA.unitT, Kdeep, HdQ.wLT] using h
+
+/-- ★ R_pm3 の上、シート行 1657 の形（行 1647 の上の 1657 と同じ足し方）。 -/
+theorem Rp3_1657 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0), (1, 1, 1), (2, 1, 1), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 1), (4, 2, 0), (5, 3, 0), (3, 2, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_pm3_words (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_GPF (GPF_of_PVF (PVF_snoc (A := []) (o := 1) (by decide) (HdH.PVF_farWAt (A0 := []) (o := 1) (by decide) (by decide) (by decide) 0 _ (HdH.OkWsAt_cons le_rfl (HeI.GoodChtX_snocT (A0 := []) (o := 1) (by decide) (by decide) (by decide) (HdE.GoodChtX_nil [] 1 (fun _ => 0) 0) (HeI.TreeOKs_cons_up (l := 0) rfl (by decide) (HeI.TreeOKs_nil 0 1 false) (HeI.TreeOKs_nil 0 0 true))) (HdH.okRAt_nil [] 1 0) (HdH.OkWsAt_nil [] 1 0))) (RLF_nil (A := []) (o := 1) (by decide) (by decide) (by decide) 0))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, HdA.farWt, HdA.FTLt, HdA.chT, HdA.unitT, Kdeep, HdQ.wLT] using h
+
+/-- ★ R_pm3 の上、シート行 1658 の形（行 1647 の上の 1658 と同じ足し方）。 -/
+theorem Rp3_1658 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0), (1, 1, 1), (2, 1, 1), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 1), (4, 2, 0), (5, 3, 0), (3, 2, 1), (4, 2, 0), (5, 3, 1), (6, 3, 1), (6, 3, 0), (7, 4, 0), (5, 3, 1)] : TrioSeq) ∈ W 0 := by
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_pm3_words (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_GPF (GPF_of_PVF (PVF_snoc (A := []) (o := 1) (by decide) (HdH.PVF_farWAt (A0 := []) (o := 1) (by decide) (by decide) (by decide) 0 _ (HdH.OkWsAt_cons le_rfl (HeI.GoodChtX_snocT (A0 := []) (o := 1) (by decide) (by decide) (by decide) (HdE.GoodChtX_nil [] 1 (fun _ => 0) 0) (HeI.TreeOKs_cons_up (l := 0) rfl (by decide) (HeI.TreeOKs_nil 0 1 false) (HeI.TreeOKs_nil 0 0 true))) (HdH.okRAt_nil [] 1 0) (HdH.OkWsAt_nil [] 1 0))) (RLF_child (A := []) (o := 1) (by decide) (by decide) (by decide) (b := 0) (τ := 2) [1] (by decide) (by decide) (RLF_nil (A := []) (o := 1) (by decide) (by decide) (by decide) 0) (GPF_of_PVF (PVF_snoc (A := [1]) (o := 2) (by decide) (HdH.PVF_farWAt (A0 := [1]) (o := 2) (by decide) (by decide) (by decide) 0 _ (HdH.OkWsAt_cons le_rfl (HeI.GoodChtX_snocT (A0 := [1]) (o := 2) (by decide) (by decide) (by decide) (HdE.GoodChtX_nil [1] 2 (fun _ => 0) 0) (HeI.TreeOKs_cons_up (l := 0) rfl (by decide) (HeI.TreeOKs_nil 0 1 false) (HeI.TreeOKs_nil 0 0 true))) (HdH.okRAt_nil [1] 2 0) (HdH.OkWsAt_nil [1] 2 0))) (RLF_nil (A := [1]) (o := 2) (by decide) (by decide) (by decide) 0)))))))) (WordsG_nil 0))))
+  simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, HdA.farWt, HdA.FTLt, HdA.chT, HdA.unitT, Kdeep, HdQ.wLT] using h
+
+end PmA
+end TRIO
