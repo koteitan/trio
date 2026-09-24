@@ -592,5 +592,63 @@ theorem Rpm_1672 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(3,0,0)] : 
   have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
   simpa [rword, rcol, shiftr01] using h
 
+/-! ## 遠い像側: [深い葉] は最上段の道の集合 PNil で Gd -/
+
+/-- ★★ 一般の級 (C, o, f) で、良い子の並び Lds の後ろに [深い葉] を置いた最後の語は GpT。 -/
+theorem BotT_deep {C : List ℕ} {o : ℕ} {f : ℕ → ℕ} {u : ℕ} (hCo : ∀ a ∈ C, a < o)
+    (hC1 : ∀ a ∈ C, 1 ≤ a) (ho : 1 ≤ o) {Lds : List (List UT)} (hL : GoodChtX C o f u Lds) :
+    HeB.BotT C o f u Lds [] [HdA.UT.tie 1 [HdA.UT.tie 1 []]] := by
+  intro b hub ws hC hR
+  rw [show HeB.plugQ [] [HdA.UT.tie 1 [HdA.UT.tie 1 []]] = [HdA.UT.tie 1 [HdA.UT.tie 1 []]] from rfl,
+    farWt_snoc]
+  obtain ⟨q0, hq0⟩ : ∃ q0, b + liftOff f C o + 1 = q0 + 1 := ⟨b + liftOff f C o, rfl⟩
+  rw [hq0]
+  have key : fwH b (q0+1) (FTLt b (q0+1) u (Lds ++ [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]])) u []
+      = fwH b (q0+1) (FTLt b (q0+1) u Lds) u []
+        ++ shiftr01 1 0 (shiftr01 1 0 (((0,q0+1,0):ℕ×ℕ×ℕ) :: ([((1,q0+2,0):ℕ×ℕ×ℕ)] ++ [((2,q0+2,0):ℕ×ℕ×ℕ)]))) := by
+    simp [fwH, FTLt_snoc, chT, unitT, shiftr01, mlift_nil]
+  rw [key]
+  refine HeQ.upleaf_deep_coreD hCo hC1 ho f
+    (Fr_farWt _ _ _) (Fr_fwH _ _ _ _ _) (Hd_fwH _ _ _ _ _) (by simp [fwH])
+    (D := [((1,q0+2,0):ℕ×ℕ×ℕ)]) (d0 := 2) (m := q0+2) (q := q0+1) (d := 1)
+    (by intro p hp; simp only [List.mem_singleton] at hp; subst hp; omega)
+    (by intro p hp; simp only [List.mem_singleton] at hp; subst hp; exact le_refl _)
+    (by omega) (by omega) (by omega) ?_
+  intro m' hm'
+  obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+  rw [show ([((1,q0+2,0):ℕ×ℕ×ℕ)] ++ [((2,q0+2,0):ℕ×ℕ×ℕ)])
+      = [((1,q0+2,0):ℕ×ℕ×ℕ),((2,q0+2,0):ℕ×ℕ×ℕ)] from rfl, HeU.tow_eq_chT_dtree b u q0]
+  have hL0 : GoodChtX ([] ++ C) o f u Lds := by simpa using hL
+  have hL2 := HeC.Gd_P0_good (HeI.Gd_treeP0 hC1 ho hCo f (HeU.TreeOKs_dtree u j))
+    (HcM.EmbU_triv hCo hC1 ho f) le_rfl hL0
+  rw [HeB.imgT_zero] at hL2
+  have hgd := hL2.2 (fun _ => 0) [] o f b (HcM.EmbU_triv hCo hC1 ho f) hub ws
+    (by simpa using hC) (by simpa using hR)
+  have hmap : ∀ L : List (List UT), L.map (relTs C f (fun _ => 0) u) = L := by
+    intro L
+    induction L with
+    | nil => rfl
+    | cons x L ih => simp only [List.map_cons, HdA.relTs_zero C f u x, ih]
+  simp only [List.nil_append] at hgd
+  rw [hmap (Lds ++ [[HeT.dtree j]]), hq0, farWt_snoc] at hgd
+  have key2 : fwH b (q0+1) (FTLt b (q0+1) u (Lds ++ [[HeT.dtree j]])) u []
+      = fwH b (q0+1) (FTLt b (q0+1) u Lds) u []
+        ++ shiftr01 1 0 (shiftr01 1 0 (((0,q0+1,0):ℕ×ℕ×ℕ) :: chT b (q0+1) u [HeT.dtree j])) := by
+    simp [fwH, FTLt_snoc, shiftr01, mlift_nil]
+  rw [key2] at hgd
+  exact hgd
+
+theorem imgT_deep (A : List ℕ) (H G : ℕ → ℕ) (c u : ℕ) :
+    HeB.imgT A H G c u [HdA.UT.tie 1 [HdA.UT.tie 1 []]] = [HdA.UT.tie 1 [HdA.UT.tie 1 []]] := by
+  simp [HeB.imgT, mlTs, mlT, relTs, relT]
+
+/-- ★★ [深い葉] は最上段の道の集合 PNil で Gd。 -/
+theorem Gd_deep {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} {c : ℕ} :
+    HeB.Gd HeC.PNil A k H c [HdA.UT.tie 1 [HdA.UT.tie 1 []]] := by
+  refine ⟨by simp [RawTs, RawT], fun G S o f hE u _ Lds hL Q hQ => ?_⟩
+  simp only [HeC.PNil] at hQ; subst hQ
+  rw [imgT_deep]
+  exact BotT_deep hE.2.2.1 hE.2.2.2.1 hE.2.2.2.2.1 hL
+
 end PmA
 end TRIO
