@@ -33389,3 +33389,33 @@ Subst1（row1 無界、dtree に潰れない）の型紙にならない。fronti
 yapss の完成証明が渡せない唯一のもの = **cross-level SUBSTITUTION 閉包 SubstFree**（z=1 入れ子 head (2,1,1)
 の下に下位レベルの block C を graft する = ψ(I) の入れ子置換に intrinsic）。攻め所 = Clause2∧Clause3 / SubstFree。
 2 行 collapse には現れない置換（row-3 z の入れ子 head 下の下位レベル block 挿入）が本質。
+
+## 追記772: ★★ 漸進で R_pm3（行1690）の上を登る。行1649〜1674 の形を全部 green（lean/PmA.lean）。次は壁 A 本体(2026-09-24)
+
+ユーザー指示「漸進作戦、(0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(1,1,1)(2,1,1)(1,1,0) あたりから」。
+
+**発見**: 追記768 の「フロンティア = R_pm3」は行列リテラル定理だけの照合。族（∀Ls 等）を数えるとシート外に上がある。
+
+**基盤の一般化（全 roots ビルド成功）:**
+- HeK: 文脈 CLTL を PsLd（子は TRawLs・荷 NoTie/RawU・各段で遠い像 OkWsAt）に弱める。深い葉の語も文脈に入る。
+- HeK〜HeN: GdT の「前の子の並びが TreeTs」を WOK（TRawLs ＋ 各段で GoodChtX）に弱める。
+
+**PmA.lean の道具（R_pm = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)、深い葉 = tie 1 [tie 1 []]）:**
+- hK_pm_u（深い葉の語は全段で良い）、deep_after（良い接頭辞の後ろに深い葉の子の並び）、rep_deep。
+- 遠い像側: GoodChtX_snoc_deep、BotT_deep（一般の級で）、Gd_deep（[深い葉] は道 PNil で Gd）。
+- DL/WC（最上段の BotCL と遠い像 Gd を持ち回る）、DL_snoc_ch（HeM.GdT_load の最上段の写し）、DL_tieE。
+- 族: pm3_words_hang / deep_CLTL_hang / deepL_hang / deepW_hang / first_hang。
+- 行列: Rp3_1649〜1659（R_pm3 ＋ 足し項）、Rpm_1661〜1674（R_pm ＋ 行 r の尾）。
+  最大 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,1,0)(1,1,1)(2,1,1)。
+
+**次（行1675 の形 = R_pm ＋ (3,1,0)(4,2,0) = [深い葉, tie 0 [tie 1 []]]）:** 展開は [深い葉, tie 0 の鎖]。
+upleafT_core（接頭辞に条件なし）で「全 j で [深い葉, tie 0 (towT 0 [] j)] が良い」に帰着。だが鎖の中の荷・空 tie 0 は
+**深い葉を含む接頭辞を通る道**の上で、今の GdT（子の並び TreeTs、TPSDec の親が GdT）では扱えない。
+行1676 の形 = 行1691 = [深い葉, tie 1 []] は展開 towT 0 [深い葉] j で深い葉が入れ子（深い葉の塔）。
+
+**計画（壁 A の基盤）:** TreeTs / TreeOKs を「(p=0, cl=true) の並びの先頭に深い葉を 1 つ許す」形に拡張し、
+GdT_treeU / Gd_treeU に先頭の場合を足す。要る基本補題:
+- (G) GTC 側: 道 Q ∈ P（TPSOK, TExt P 0 true 0 P, TLast P 0）で BotCL u Uss Q [深い葉]。GdT_upleaf の第 2 分岐と同じ描画
+  （Y = wLT(Uss++[plugQ Q' []]) ++ shift (topTs v')、d = |Q'|+1）で upleaf_deep_coreDT、dtree 側は GdT_treeL。
+- (F) 遠い像側: 同じく Gd P … [深い葉]（upleaf_deep_coreD、dtree 側は Gd_treeL）。
+注意: upleaf_deep_core は D の全列に行1 ≥ m を要求 → 深い葉の**前に同じ並びの兄弟がある**場合は使えない。先頭限定で十分。
