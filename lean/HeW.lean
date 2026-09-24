@@ -86,7 +86,7 @@ def Kdeep : TrioSeq := wLT 0 ([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Op
 /-- ★★ BwT 0 [K, 空collapse語]（深い葉のあとに collapse 語を足す）。 -/
 theorem bwt_KK2 : BwT 0 [Kdeep, GzJ.fwTop 0 []] := by
   have hBK : BwT 0 [Kdeep] := by
-    have := HeT.hK_pm [] ⟨[], PsLTL_nil 0, rfl⟩ (by simp) (BwT_nil 0)
+    have := HeT.hK_pm [] ⟨[], PsLd_of_PsLTL (PsLTL_nil 0), rfl⟩ (by simp) (BwT_nil 0)
     simpa [Kdeep] using this
   have := GTC_far_gen 0 [Kdeep] (by simpa [Kdeep] using GLctx_deep)
     (by intro X hX x hx; simp only [List.mem_singleton] at hX; subst hX

@@ -157,8 +157,14 @@ end
 def PsLTL (v : ℕ) (ps : List (List (List UT) × List (Option TrioSeq))) : Prop :=
   ∀ p ∈ ps, (∀ us ∈ p.1, TreeTs v 0 true us) ∧ GzJ.NoTie p.2 ∧ RawU v p.2
 
+/-- 文脈の語の条件（深い葉も許す）: 子は TRawLs、荷は NoTie/RawU、各段 u ≥ v で遠い像が OkWsAt。
+    PsLTL（子が TreeTs）はこれを満たす（PsLd_of_PsLTL）。深い葉の語も満たす（GoodChtX_deep）。 -/
+def PsLd (v : ℕ) (ps : List (List (List UT) × List (Option TrioSeq))) : Prop :=
+  (∀ p ∈ ps, (∀ us ∈ p.1, TRawLs v us) ∧ GzJ.NoTie p.2 ∧ RawU v p.2) ∧
+    ∀ u, v ≤ u → OkWsAt [] 1 u (psLT u ps)
+
 def CLTL (v : ℕ) (L : List TrioSeq) : Prop :=
-  ∃ ps : List (List (List UT) × List (Option TrioSeq)), PsLTL v ps ∧ L = ps.map (wLT v)
+  ∃ ps : List (List (List UT) × List (Option TrioSeq)), PsLd v ps ∧ L = ps.map (wLT v)
 
 theorem PsLTL_nil (v : ℕ) : PsLTL v [] := fun _ h => by simp at h
 
@@ -174,6 +180,22 @@ theorem PsLTL_mono {v u : ℕ} (hu : v ≤ u) {ps : List (List (List UT) × List
     (h : PsLTL v ps) : PsLTL u ps :=
   fun p hp => ⟨fun us hus => TreeTs_mono hu ((h p hp).1 us hus), (h p hp).2.1,
     RawU_mono hu (h p hp).2.2⟩
+
+theorem PsLd_mono {v u : ℕ} (hu : v ≤ u) {ps : List (List (List UT) × List (Option TrioSeq))}
+    (h : PsLd v ps) : PsLd u ps :=
+  ⟨fun p hp => ⟨fun us hus => TRawLs_mono hu us ((h.1 p hp).1 us hus), (h.1 p hp).2.1,
+    RawU_mono hu (h.1 p hp).2.2⟩, fun u' hu' => h.2 u' (le_trans hu hu')⟩
+
+theorem PsLd_append {v : ℕ} {ps qs : List (List (List UT) × List (Option TrioSeq))}
+    (h : PsLd v ps) (h' : PsLd v qs) : PsLd v (ps ++ qs) := by
+  refine ⟨fun p hp => ?_, fun u hu w hw => ?_⟩
+  · rcases List.mem_append.mp hp with hp | hp
+    · exact h.1 p hp
+    · exact h'.1 p hp
+  · simp only [psLT, List.map_append] at hw
+    rcases List.mem_append.mp hw with hw | hw
+    · exact h.2 u hu w hw
+    · exact h'.2 u hu w hw
 
 theorem mlift_FTL0TL {v : ℕ} (t : ℕ) : ∀ Uss : List (List UT), (∀ us ∈ Uss, TRawLs v us) →
     mlift (FTL0 (v + 1) (Uss.map (topTs v))) v t = FTL0 (v + 1 + t) (Uss.map (topTs (v + t))) := by
@@ -196,15 +218,15 @@ theorem mlift_wLTL {v u : ℕ} (hu : v ≤ u) {p : List (List UT) × List (Optio
     show v + 1 + (u - v) = u + 1 by omega, show v + (u - v) = u by omega]
 
 theorem map_CLTL {v u : ℕ} (hu : v ≤ u) {ps : List (List (List UT) × List (Option TrioSeq))}
-    (h : PsLTL v ps) : (ps.map (wLT v)).map (fun X => mlift X v (u - v)) = ps.map (wLT u) := by
+    (h : PsLd v ps) : (ps.map (wLT v)).map (fun X => mlift X v (u - v)) = ps.map (wLT u) := by
   rw [List.map_map]
-  exact List.map_congr_left (fun p hp => mlift_wLTL hu (fun us hus => TreeTs_raw 0 true us ((h p hp).1 us hus)) (h p hp).2.1 (h p hp).2.2)
+  exact List.map_congr_left (fun p hp => mlift_wLTL hu (h.1 p hp).1 (h.1 p hp).2.1 (h.1 p hp).2.2)
 
 theorem CLTL_lift : ∀ (L : List TrioSeq) (v : ℕ), CLTL v L → ∀ u, v ≤ u →
     CLTL u (L.map (fun X => mlift X v (u - v))) := by
   intro L v hC u hu
   obtain ⟨ps, h, rfl⟩ := hC
-  exact ⟨ps, PsLTL_mono hu h, map_CLTL hu h⟩
+  exact ⟨ps, PsLd_mono hu h, map_CLTL hu h⟩
 
 /-! ## 潰れ -/
 
@@ -226,6 +248,11 @@ theorem OkWsAt_psLTL {u : ℕ} {ps : List (List (List UT) × List (Option TrioSe
   obtain ⟨p, hp, rfl⟩ := hw
   exact ⟨le_rfl, GoodChtX_topL p.1 (h p hp).1, okRAt_units p.2 (h p hp).2.1 (h p hp).2.2⟩
 
+theorem PsLd_of_PsLTL {v : ℕ} {ps : List (List (List UT) × List (Option TrioSeq))}
+    (h : PsLTL v ps) : PsLd v ps :=
+  ⟨fun p hp => ⟨fun us hus => TreeTs_raw 0 true us ((h p hp).1 us hus), (h p hp).2.1, (h p hp).2.2⟩,
+    fun u hu => OkWsAt_psLTL (PsLTL_mono hu h)⟩
+
 theorem FarCAt_of_PsLTL {u : ℕ} {ps : List (List (List UT) × List (Option TrioSeq))}
     (h : PsLTL u ps) (b0 : ℕ) : FarCAt [] 1 (fun _ => 0) b0 (psLT u ps) :=
   FarCAt_of_OkWsAt (by simp) (by simp) le_rfl _ (OkWsAt_psLTL h) b0
@@ -244,6 +271,44 @@ theorem RawWskt0_psLTL {u : ℕ} {ps : List (List (List UT) × List (Option Trio
   simp only [List.mem_map] at hus
   obtain ⟨us0, hus0, rfl⟩ := hus
   exact RawTs_farTLs us0 (TreeTs_raw 0 true us0 ((h p hp).1 us0 hus0))
+
+theorem RawWskt0_psLd {u : ℕ} {ps : List (List (List UT) × List (Option TrioSeq))}
+    (h : PsLd u ps) : RawWskt 0 u (psLT u ps) := by
+  intro w hw
+  simp only [psLT, List.mem_map] at hw
+  obtain ⟨p, hp, rfl⟩ := hw
+  have hu := HaT.units_ok u p.2 (h.1 p hp).2.1 (h.1 p hp).2.2
+  refine ⟨le_rfl, fun us hus => ?_, hu.1.1, hu.1.2.1, LowC_mono (show u ≤ u + 0 by omega) hu.2⟩
+  simp only [List.mem_map] at hus
+  obtain ⟨us0, hus0, rfl⟩ := hus
+  exact RawTs_farTLs us0 ((h.1 p hp).1 us0 hus0)
+
+/-- topCLT_WgL の一般版: 文脈の条件を OkWsAt で取る。 -/
+theorem topCLT_WgLd {u : ℕ} {ps : List (List (List UT) × List (Option TrioSeq))}
+    (hO : OkWsAt [] 1 u (psLT u ps)) (hB : BwT u (ps.map (wLT u))) (m : ℕ) :
+    (((0, u, 0) : ℕ × ℕ × ℕ) :: towWt u (psLT u ps) (u + 1) m) ∈ Wg (2 * u) := by
+  have key : ∀ K : TrioSeq, WordsG u [K] →
+      (((0, u, 0) : ℕ × ℕ × ℕ) :: rword 0 u (ps.map (wLT u) ++ [K])) ∈ Wg (2 * u) := by
+    intro K hK
+    refine Wg_of_starOK ⟨?_, fun p hp => rword_ge 0 u _ p hp⟩
+    have hB2 := BwT_append_words (Fr_CLT u ps) hB [K] hK u le_rfl
+    rw [Nat.sub_self] at hB2
+    simpa only [mlift_zero, List.map_id'] using hB2
+  cases m with
+  | zero =>
+      have := key [] (WordsG_consT (v := u) (TF_nil u) (WordsG_nil u))
+      rw [rword_append, rword_psLT] at this
+      simpa [towWt, rword, rcol, shiftr01] using this
+  | succ m =>
+      have hC := FarCAt_of_OkWsAt (by simp) (by simp) le_rfl _ hO u
+      have hG := towWt_GpT hC (fun _ => 0) m [] 1 (fun _ => 0) u (fun a ha => by simp at ha) le_rfl
+        (RawWsAt_of_OkWsAt hO) (by simp) (by simp) (by simp) le_rfl (by simp)
+        (by rw [HaG.reOff_zz]; simp [liftOff_zeroF])
+      simp only [List.append_nil, relWst_zero, liftOff_zeroF] at hG
+      have := key _ (WordsG_consT (v := u) (TF_tieG (u := u) (TF_nil u)
+        (GF_of_GPF ⟨hG, Fr_towWt _ _ m _⟩)) (WordsG_nil u))
+      rw [rword_append, rword_psLT] at this
+      simpa [towWt, rword, rcol, shiftr01] using this
 
 theorem topCLT_WgL {u : ℕ} {ps : List (List (List UT) × List (Option TrioSeq))}
     (h : PsLTL u ps) (hB : BwT u (ps.map (wLT u))) (m : ℕ) :
@@ -277,7 +342,7 @@ theorem topCLT_WgL {u : ℕ} {ps : List (List (List UT) × List (Option TrioSeq)
 theorem GTC_far_CLTL (v : ℕ) : GTC CLTL v (GzJ.fwTop v []) := by
   intro L hC hL hB u hu _ a ha
   obtain ⟨ps, h, rfl⟩ := hC
-  have hu' : PsLTL u ps := PsLTL_mono hu h
+  have hu' : PsLd u ps := PsLd_mono hu h
   have hBu : BwT u (ps.map (wLT u)) := by
     have := BwT_lift hB hu
     rwa [map_CLTL hu h] at this
@@ -295,8 +360,8 @@ theorem GTC_far_CLTL (v : ℕ) : GTC CLTL v (GzJ.fwTop v []) := by
   refine A1g_intro (Or.inr (Or.inl ⟨zcone_natDom hP (show 1 ≤ 2 by omega) hcone, fun k hk => ?_⟩))
   obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
   rw [oper_zcone hP (show 1 ≤ 2 by omega) hcone (m + 1),
-    farWt_flat (RawWskt0_psLTL hu') m u (by omega)]
-  exact Wg_mono ha (topCLT_WgL hu' hBu m)
+    farWt_flat (RawWskt0_psLd hu') m u (by omega)]
+  exact Wg_mono ha (topCLT_WgLd (hu'.2 u le_rfl) hBu m)
 
 theorem GTC_load_CLTL {v : ℕ} {Uss : List (List UT)} (hU : ∀ us ∈ Uss, TreeTs v 0 true us)
     {us : List (Option TrioSeq)} (hNT : GzJ.NoTie us) (hRus : RawU v us)
@@ -312,18 +377,16 @@ theorem GTC_load_CLTL {v : ℕ} {Uss : List (List UT)} (hU : ∀ us ∈ Uss, Tre
   refine GTC_loadTop (Fr_wLT v _) hG ?_ T hT hbT
   intro T' hT' hbT' L hC
   obtain ⟨ps, h, rfl⟩ := hC
-  refine ⟨ps ++ [(Uss, us ++ [some T'])], ?_, ?_⟩
+  refine ⟨ps ++ [(Uss, us ++ [some T'])], PsLd_append h (PsLd_of_PsLTL ?_), ?_⟩
   · intro p hp
-    rcases List.mem_append.mp hp with hp | hp
-    · exact h p hp
-    · simp at hp; subst hp
-      refine ⟨hU, fun hn => ?_, fun Z hZ => ?_⟩
-      · rcases List.mem_append.mp hn with hn | hn
-        · exact hNT hn
-        · simp at hn
-      · rcases List.mem_append.mp hZ with hZ | hZ
-        · exact hRus Z hZ
-        · simp at hZ; subst hZ; exact ⟨hT', hbT'⟩
+    simp at hp; subst hp
+    refine ⟨hU, fun hn => ?_, fun Z hZ => ?_⟩
+    · rcases List.mem_append.mp hn with hn | hn
+      · exact hNT hn
+      · simp at hn
+    · rcases List.mem_append.mp hZ with hZ | hZ
+      · exact hRus Z hZ
+      · simp at hZ; subst hZ; exact ⟨hT', hbT'⟩
   · rw [List.map_append, List.map_singleton, e] <;> rfl
 
 end HeK

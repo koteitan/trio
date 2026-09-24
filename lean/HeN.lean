@@ -233,7 +233,7 @@ theorem BwT_CLTL (v : ℕ) : ∀ ps : List (List (List UT) × List (Option TrioS
       have h' : PsLTL v ps := fun q hq => h q (List.mem_append_left _ hq)
       have hp := h p (List.mem_append_right _ (List.mem_singleton_self _))
       have hG := GTC_wLTL hp.1 (GoodTTL_all p.1 hp.1) p.2 hp.2.1 hp.2.2
-      have := hG _ ⟨ps, h', rfl⟩ (Fr_CLT v ps) (ih h')
+      have := hG _ ⟨ps, PsLd_of_PsLTL h', rfl⟩ (Fr_CLT v ps) (ih h')
       rw [List.map_append, List.map_singleton]
       exact this
 

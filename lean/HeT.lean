@@ -60,7 +60,7 @@ theorem hK_pm : GTC CLTL 0 (wLT 0 ([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : Lis
     [] (by simp [GzJ.NoTie]) (RawU_nil 0)
 
 theorem R_pm : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 2, 0)] : TrioSeq) ∈ W 0 := by
-  have hB := hK_pm [] ⟨[], PsLTL_nil 0, rfl⟩ (by simp) (BwT_nil 0)
+  have hB := hK_pm [] ⟨[], PsLd_of_PsLTL (PsLTL_nil 0), rfl⟩ (by simp) (BwT_nil 0)
   have hS : StarOK 0 (rword 0 0 [wLT 0 ([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Option TrioSeq)))]) := by
     refine ⟨?_, fun p hp => rword_ge 0 0 _ p hp⟩
     have h2 := hB 0 le_rfl
@@ -74,7 +74,7 @@ theorem deepleaf1_words {Ls : List TrioSeq} (hW : WordsG 0 Ls) :
     (((0, 0, 0) : ℕ×ℕ×ℕ) :: rword 0 0
       ([wLT 0 ([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Option TrioSeq)))] ++ Ls)) ∈ W 0 := by
   have hBK : BwT 0 [wLT 0 ([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Option TrioSeq)))] := by
-    have := hK_pm [] ⟨[], PsLTL_nil 0, rfl⟩ (by simp) (BwT_nil 0)
+    have := hK_pm [] ⟨[], PsLd_of_PsLTL (PsLTL_nil 0), rfl⟩ (by simp) (BwT_nil 0)
     simpa using this
   have hB2 := BwT_append_words (v := 0)
     (L := [wLT 0 ([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Option TrioSeq)))])
