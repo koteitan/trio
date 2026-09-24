@@ -886,5 +886,55 @@ theorem R1691 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(3,2,0)] : Tri
   have h := W0_of_H [deepU, UT.tie 1 []] (TsH_deep_cons ⟨⟨rfl, by omega, trivial⟩, trivial⟩)
   simpa [deepU, rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01] using h
 
+/-! ## 行1692 = [深い葉, 深い葉]: 2 つ目の深い葉の塔は TsH の木 -/
+
+/-- 2 つ目の深い葉の塔: L 0 = [深い葉, tie 1 []]、L (j+1) = [深い葉, tie 1 [tie 0 (L j)]]。 -/
+def Ldd : ℕ → List UT
+  | 0 => [deepU, UT.tie 1 []]
+  | j + 1 => [deepU, UT.tie 1 [UT.tie 0 (Ldd j)]]
+
+theorem TsH_Ldd (v : ℕ) : ∀ j, TsH v 0 true (Ldd j)
+  | 0 => TsH_deep_cons ⟨⟨rfl, by omega, trivial⟩, trivial⟩
+  | j + 1 => TsH_deep_cons ⟨⟨rfl, by omega, Or.inl ⟨TsH_Ldd v j, trivial⟩⟩, trivial⟩
+
+theorem tow_Ldd (u : ℕ) : ∀ j,
+    (tow (u+1) 0 [((1,u+2,0):ℕ×ℕ×ℕ),((2,u+2,0):ℕ×ℕ×ℕ),((1,u+2,0):ℕ×ℕ×ℕ),((2,u+2,0):ℕ×ℕ×ℕ)] (j+1) : TrioSeq)
+      = ((0,u+1,0):ℕ×ℕ×ℕ) :: topTs u (Ldd j) := by
+  intro j
+  induction j with
+  | zero => simp [tow, graft_eq_shift, Ldd, deepU, topTs, topT, shiftr01, entry, List.getD]
+  | succ j ih =>
+      rw [tow, graft_eq_shift, ih]
+      simp [Ldd, deepU, topTs, topT, shiftr01, entry, List.getD, List.map_map, Function.comp_def]
+
+/-- ★ シート行 1692 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,2,0)(4,2,0) ∈ W 0。 -/
+theorem R1692 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(3,2,0),(4,2,0)] : TrioSeq) ∈ W 0 := by
+  have hG : GTC CLTL 0 (([(1,1,1)] : TrioSeq) ++ shiftr01 0 0 (shiftr01 1 0
+      (((0, 1, 0) : ℕ×ℕ×ℕ) :: ([((1,2,0):ℕ×ℕ×ℕ), (2,2,0), (1,2,0)] ++ [((2, 2, 0) : ℕ×ℕ×ℕ)])))) := by
+    refine HeN.upleaf_deep_coreDT (C := CLTL) (u := 0) (d := 0) (q := 1) (d0 := 2) (m := 2)
+      (D := [(1,2,0),(2,2,0),(1,2,0)]) (by intro p hp; simp at hp; rcases hp with rfl | rfl | rfl <;> simp)
+      (by intro p hp; simp at hp; rcases hp with rfl | rfl | rfl <;> simp) (by decide) (by omega) (by omega)
+      (fun m' hm' => ?_)
+    obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+    have := (GdT_treeTP0H (TsH_Ldd 0 j)).2 0 le_rfl [] (WOK_of_TreeTs (fun _ h => by simp at h))
+      (HeN.GoodTTL_nil 0) [] (TPNil_TP0 0)
+    have e := tow_Ldd 0 j
+    simp only [Nat.zero_add] at e
+    rw [show ([((1,2,0):ℕ×ℕ×ℕ), (2,2,0), (1,2,0)] ++ [((2, 2, 0) : ℕ×ℕ×ℕ)])
+        = [((1,2,0):ℕ×ℕ×ℕ),((2,2,0):ℕ×ℕ×ℕ),((1,2,0):ℕ×ℕ×ℕ),((2,2,0):ℕ×ℕ×ℕ)] from rfl, e]
+    show GTC CLTL 0 _
+    have e2 : HeL.BotCL 0 [] [] (Ldd j) = GTC CLTL 0 (wLT 0 ([Ldd j], [])) := rfl
+    rw [e2] at this
+    simpa [wLT, FTL0, unitsC, shiftr01] using this
+  have hS : StarOK 0 (rword 0 0 [([(1,1,1)] : TrioSeq) ++ shiftr01 0 0 (shiftr01 1 0
+      (((0, 1, 0) : ℕ×ℕ×ℕ) :: ([((1,2,0):ℕ×ℕ×ℕ), (2,2,0), (1,2,0)] ++ [((2, 2, 0) : ℕ×ℕ×ℕ)])))]) := by
+    refine ⟨?_, fun p hp => rword_ge 0 0 _ p hp⟩
+    have hB := hG [] ⟨[], PsLd_of_PsLTL (PsLTL_nil 0), rfl⟩ (by simp) (BwT_nil 0)
+    have h2 := hB 0 le_rfl
+    rw [Nat.sub_self] at h2
+    simpa only [mlift_zero, List.map_cons, List.map_nil, List.nil_append] using h2
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
+  simpa [rword, rcol, shiftr01] using h
+
 end PmB
 end TRIO
