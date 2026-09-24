@@ -889,5 +889,60 @@ theorem Rpm_1674 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(3,1,0),(1,
   have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
   simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01, p0] using h
 
+/-! ## 壁 A の基盤 (G): 閉じた道の集合の全ての道で、並びの先頭に深い葉 -/
+
+/-- ★★★ 道の集合 P（TPSOK, TExt で閉じる, TLast）で空の並びが GdT なら、P の全ての道 Q で
+    [深い葉] を置いた語は良い。GdT_upleaf と同じ描画で upleaf_deep_coreDT、dtree 側は GdT_treeL。 -/
+theorem BotCL_deep {P : HeL.TPS} (hP : HeL.TPSOK P 0 true) (hD : HeL.TPSDec P 0 true)
+    (hcl : HeL.TExt P 0 true 0 P) (hlast : HeL.TLast P 0) {v : ℕ} (hnil : HeL.GdT P 0 true v []) :
+    ∀ u, v ≤ u → ∀ Uss, WOK u Uss → HeL.GoodTTL u Uss → ∀ Q, P u Q →
+      HeL.BotCL u Uss Q [HdA.UT.tie 1 [HdA.UT.tie 1 []]] := by
+  intro u hu Uss hU hG Q hQ
+  have hdt : ∀ j, HeL.BotCL u Uss Q [HeT.dtree j] := by
+    intro j
+    have := HeN.GdT_treeL [HeT.dtree j] P 0 true hP hD hlast (fun _ => ⟨rfl, hcl⟩) v [] (TreeTs_dtree_u v j) hnil
+    exact this.2 u hu Uss hU hG Q hQ
+  have eD : ∀ u' : ℕ, shiftr01 1 0 (topTs u' [HdA.UT.tie 1 [HdA.UT.tie 1 []]])
+      = shiftr01 1 0 ([((1,u'+2,0):ℕ×ℕ×ℕ)] ++ [((2,u'+2,0):ℕ×ℕ×ℕ)]) := by
+    intro u'; simp [topTs, topT, shiftr01]
+  rcases List.eq_nil_or_concat Q with rfl | ⟨Q', ⟨v', p'⟩, rfl⟩
+  · have eW : ∀ T : List UT, HeL.BotCL u Uss [] T
+        = GTC CLTL u (FTL0 (u + 1) (Uss.map (topTs u)) ++ shiftr01 0 0
+            (((1, u + 1 + 0, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (topTs u T))) := by
+      intro T
+      show GTC CLTL u (wLT u (Uss ++ [T], [])) = _
+      rw [shiftr01_zero', Nat.add_zero]
+      simp only [wLT, List.map_append, List.map_singleton, FTL0_snoc]
+      rw [show unitsC u ([] : List (Option TrioSeq)) = [] from rfl, List.append_nil]
+    rw [eW, eD u]
+    refine HeN.upleaf_deep_coreDT (C := CLTL) (u := u) (d := 0) (q := u+1) (d0 := 2) (m := u+2)
+      (D := [(1,u+2,0)]) (by intro p hp; simp at hp; subst hp; simp)
+      (by intro p hp; simp at hp; subst hp; simp) (by decide) (by omega) (by omega) (fun m' hm' => ?_)
+    obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+    have := hdt j
+    rw [eW] at this
+    rw [show ([((1,u+2,0):ℕ×ℕ×ℕ)] ++ [((2,u+2,0):ℕ×ℕ×ℕ)]) = [((1,u+2,0):ℕ×ℕ×ℕ),((2,u+2,0):ℕ×ℕ×ℕ)] from rfl,
+      HeU.tow_dtreeQ u j, topTs_dtreeQ u j]
+    simpa [shiftr01] using this
+  · simp only [List.concat_eq_append] at hQ hdt ⊢
+    have hp' : p' = 0 := by have := hlast u _ hQ; rwa [HeC.lastL_snoc] at this
+    subst hp'
+    have eW : ∀ T : List UT, HeL.BotCL u Uss (Q' ++ [(v', 0)]) T
+        = GTC CLTL u ((wLT u (Uss ++ [HeB.plugQ Q' []], []) ++ shiftr01 (Q'.length + 1) 0 (topTs u v')) ++
+            shiftr01 (Q'.length + 1) 0
+              (((1, u + 1 + 0, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (topTs u T))) := by
+      intro T
+      rw [HeL.BotCL_snoc_eq, HeL.BotCL_word, HeM.topTs_snoc_tieL, shiftr01_append0, List.append_assoc]
+    rw [eW, eD u]
+    refine HeN.upleaf_deep_coreDT (C := CLTL) (u := u) (d := Q'.length + 1) (q := u+1) (d0 := 2) (m := u+2)
+      (D := [(1,u+2,0)]) (by intro p hp; simp at hp; subst hp; simp)
+      (by intro p hp; simp at hp; subst hp; simp) (by decide) (by omega) (by omega) (fun m' hm' => ?_)
+    obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+    have := hdt j
+    rw [eW] at this
+    rw [show ([((1,u+2,0):ℕ×ℕ×ℕ)] ++ [((2,u+2,0):ℕ×ℕ×ℕ)]) = [((1,u+2,0):ℕ×ℕ×ℕ),((2,u+2,0):ℕ×ℕ×ℕ)] from rfl,
+      HeU.tow_dtreeQ u j, topTs_dtreeQ u j]
+    simpa [shiftr01] using this
+
 end PmA
 end TRIO
