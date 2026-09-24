@@ -470,5 +470,127 @@ theorem Rpm_1671 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 
   have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_deepW ([([HdA.UT.tie 1 ([] : List HdA.UT)] : List HdA.UT)] : List (List HdA.UT)) (HeO.TreeTss_cons (HeK.TreeTs_cons_up (l := 0) rfl (by decide) (HeK.TreeTs_nil 0 1 false) (HeK.TreeTs_nil 0 0 true)) (HeO.TreeTss_nil 0)) ([] : List (Option TrioSeq)) (by simp [NoTie]) (RawU_nil 0) ([] : List (List (List HdA.UT) × List (Option TrioSeq))) (HeK.PsLTL_nil 0) (WordsG_nil 0)))
   simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, HdA.farWt, HdA.FTLt, HdA.chT, HdA.unitT, p1, HdQ.wLT] using h
 
+/-! ## 深い葉の子の並びを任意の良い接頭辞の後ろに足す -/
+
+/-- ★★ GoodChtX_deep の接頭辞つき版: 良い子の並び Lds の後ろに深い葉の子の並びを足しても良い。 -/
+theorem GoodChtX_snoc_deep {A0 : List ℕ} {o u : ℕ} (hAo : ∀ a ∈ A0, a < o) (hA01 : ∀ a ∈ A0, 1 ≤ a)
+    (ho : 1 ≤ o) {Lds : List (List UT)} (hL : GoodChtX A0 o (fun _ => 0) u Lds) :
+    GoodChtX A0 o (fun _ => 0) u (Lds ++ [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]]) := by
+  refine ⟨fun us hus => ?_, fun g S o' f b hE hub ws hC hR => ?_⟩
+  · rcases List.mem_append.mp hus with hus | hus
+    · exact hL.1 us hus
+    · simp only [List.mem_singleton] at hus; subst hus; simp [RawTs, RawT]
+  · have hrel : (Lds ++ [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]]).map (relTs A0 (fun _ => 0) g u)
+        = Lds.map (relTs A0 (fun _ => 0) g u) ++ [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]] := by
+      simp [relTs, relT]
+    rw [hrel, farWt_snoc]
+    obtain ⟨q0, hq0⟩ : ∃ q0, b + liftOff f (S ++ A0) o' + 1 = q0 + 1 :=
+      ⟨b + liftOff f (S ++ A0) o', rfl⟩
+    rw [hq0]
+    have key : fwH b (q0+1) (FTLt b (q0+1) u
+          (Lds.map (relTs A0 (fun _ => 0) g u) ++ [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]])) u []
+        = fwH b (q0+1) (FTLt b (q0+1) u (Lds.map (relTs A0 (fun _ => 0) g u))) u []
+          ++ shiftr01 1 0 (shiftr01 1 0 (((0,q0+1,0):ℕ×ℕ×ℕ) :: ([((1,q0+2,0):ℕ×ℕ×ℕ)] ++ [((2,q0+2,0):ℕ×ℕ×ℕ)]))) := by
+      simp [fwH, FTLt_snoc, chT, unitT, shiftr01, mlift_nil]
+    rw [key]
+    refine HeQ.upleaf_deep_coreD hE.2.2.1 hE.2.2.2.1 hE.2.2.2.2.1 f
+      (Fr_farWt _ _ _) (Fr_fwH _ _ _ _ _) (Hd_fwH _ _ _ _ _) (by simp [fwH])
+      (D := [((1,q0+2,0):ℕ×ℕ×ℕ)]) (d0 := 2) (m := q0+2) (q := q0+1) (d := 1)
+      (by intro p hp; simp only [List.mem_singleton] at hp; subst hp; omega)
+      (by intro p hp; simp only [List.mem_singleton] at hp; subst hp; exact le_refl _)
+      (by omega) (by omega) (by omega) ?_
+    intro m' hm'
+    obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+    rw [show ([((1,q0+2,0):ℕ×ℕ×ℕ)] ++ [((2,q0+2,0):ℕ×ℕ×ℕ)])
+        = [((1,q0+2,0):ℕ×ℕ×ℕ),((2,q0+2,0):ℕ×ℕ×ℕ)] from rfl, HeU.tow_eq_chT_dtree b u q0]
+    have hgd := (HeI.GoodChtX_snocT hAo hA01 ho hL (HeU.TreeOKs_dtree u j)).2 g S o' f b hE hub ws hC hR
+    have hreldt : (Lds ++ [[HeT.dtree j]]).map (relTs A0 (fun _ => 0) g u)
+        = Lds.map (relTs A0 (fun _ => 0) g u) ++ [[HeT.dtree j]] := by
+      simp only [List.map_append, List.map_cons, List.map_nil, relTs, HeU.relT_dtree A0 (fun _ => 0) g u j]
+    rw [hreldt, hq0, farWt_snoc] at hgd
+    have key2 : fwH b (q0+1) (FTLt b (q0+1) u
+          (Lds.map (relTs A0 (fun _ => 0) g u) ++ [[HeT.dtree j]])) u []
+        = fwH b (q0+1) (FTLt b (q0+1) u (Lds.map (relTs A0 (fun _ => 0) g u))) u []
+          ++ shiftr01 1 0 (shiftr01 1 0 (((0,q0+1,0):ℕ×ℕ×ℕ) :: chT b (q0+1) u [HeT.dtree j])) := by
+      simp [fwH, FTLt_snoc, shiftr01, mlift_nil]
+    rw [key2] at hgd
+    exact hgd
+
+theorem WOK_snoc_deep {v : ℕ} {Uss : List (List UT)} (h : WOK v Uss) :
+    WOK v (Uss ++ [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]]) := by
+  refine ⟨fun us hus => ?_, fun u hu => ?_⟩
+  · rcases List.mem_append.mp hus with hus | hus
+    · exact h.1 us hus
+    · simp only [List.mem_singleton] at hus; subst hus; exact TRawLs_deep v _ (by simp [p1])
+  · have e : (Uss ++ [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]]).map farTs
+        = Uss.map farTs ++ [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]] := by simp [farTs, farT]
+    rw [e]
+    exact GoodChtX_snoc_deep (by simp) (by simp) (by decide) (h.2 u hu)
+
+/-- ★★ 良い接頭辞 Uss（WOK, GoodTTL）の後ろに深い葉の子の並びを足した語は、文脈 CLTL で良い。 -/
+theorem deep_after (u : ℕ) (Uss : List (List UT)) (hU : WOK u Uss) (hG : HeL.GoodTTL u Uss) :
+    GTC CLTL u (wLT u (Uss ++ [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Option TrioSeq)))) := by
+  have e : wLT u (Uss ++ [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], ([] : List (Option TrioSeq)))
+      = wLT u (Uss, []) ++ shiftr01 0 0 (shiftr01 1 0
+        (((0, u+1, 0) : ℕ×ℕ×ℕ) :: ([((1,u+2,0):ℕ×ℕ×ℕ)] ++ [((2, u+2, 0) : ℕ×ℕ×ℕ)]))) := by
+    simp [wLT, FTL0_snoc, topTs, topT, unitsC, shiftr01]
+  rw [e]
+  refine HeN.upleaf_deep_coreDT (C := CLTL) (u := u) (d := 0) (q := u+1) (d0 := 2) (m := u+2)
+    (D := [(1,u+2,0)]) (by intro p hp; simp at hp; subst hp; simp)
+    (by intro p hp; simp at hp; subst hp; simp) (by decide) (by omega) (by omega) (fun m' hm' => ?_)
+  obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+  have ee : wLT u (Uss, []) ++ shiftr01 0 0 (shiftr01 1 0
+      (tow (u+1) 0 ([((1,u+2,0):ℕ×ℕ×ℕ)] ++ [((2,u+2,0):ℕ×ℕ×ℕ)]) (j+1)))
+      = wLT u (Uss ++ [[HeT.dtree j]], ([] : List (Option TrioSeq))) := by
+    rw [show ([((1,u+2,0):ℕ×ℕ×ℕ)] ++ [((2,u+2,0):ℕ×ℕ×ℕ)]) = [((1,u+2,0):ℕ×ℕ×ℕ),((2,u+2,0):ℕ×ℕ×ℕ)] from rfl,
+      HeU.tow_dtreeQ u j, topTs_dtreeQ u j]
+    simp [wLT, FTL0_snoc, topTs, unitsC, shiftr01]
+  rw [ee]
+  have hG2 := HeL.GdT_good HeL.TPSOK_TP0 (HeN.GdT_treeTP0 (TreeTs_dtree_u u j)) le_rfl hU hG
+    (HeL.TPNil_TP0 u)
+  have e2 : Uss ++ [HeB.plugQ [] [HeT.dtree j]] = Uss ++ [[HeT.dtree j]] := by simp [HeB.plugQ]
+  rw [e2] at hG2
+  exact hG2 u le_rfl
+
+theorem GoodTTL_deep_after {u : ℕ} {Uss : List (List UT)} (hU : WOK u Uss) (hG : HeL.GoodTTL u Uss) :
+    HeL.GoodTTL u (Uss ++ [[HdA.UT.tie 1 [HdA.UT.tie 1 []]]]) :=
+  fun u' hu' => deep_after u' Uss (WOK_mono hu' hU) (fun u'' hu'' => hG u'' (le_trans hu' hu''))
+
+/-- ★ 深い葉の子の並びを n 個並べた語は良い。 -/
+theorem rep_deep (n : ℕ) :
+    WOK 0 (List.replicate n [HdA.UT.tie 1 [HdA.UT.tie 1 []]]) ∧
+      HeL.GoodTTL 0 (List.replicate n [HdA.UT.tie 1 [HdA.UT.tie 1 []]]) := by
+  induction n with
+  | zero => exact ⟨WOK_of_TreeTs (fun _ h => by simp at h), HeN.GoodTTL_nil 0⟩
+  | succ n ih =>
+      rw [List.replicate_succ']
+      exact ⟨WOK_snoc_deep ih.1, GoodTTL_deep_after ih.1 ih.2⟩
+
+/-- ★ R_pm ＋ シート行 1672 の尾: (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,0,0) ∈ W 0。
+    展開は深い葉の子の並びを n+1 個並べた語（gtc_flat + rep_deep）。 -/
+theorem Rpm_1672 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(3,0,0)] : TrioSeq) ∈ W 0 := by
+  have hG : GTC CLTL 0 (([(1,1,1)] : TrioSeq) ++ [((1,1,0):ℕ×ℕ×ℕ), (2,2,0), (3,2,0)] ++ [((1 + 1, 0, 0) : ℕ×ℕ×ℕ)]) := by
+    refine HdR.gtc_flat (C := CLTL) (d := 1) (by simp) rfl ?_ (fun n => ?_)
+    · intro r hr1 hr2
+      simp only [List.length_cons, List.length_nil] at hr2
+      rcases (show r = 1 ∨ r = 2 by omega) with rfl | rfl <;> simp [entry]
+    · have := (rep_deep n).2 0 le_rfl
+      have e : wLT 0 (List.replicate n [HdA.UT.tie 1 [HdA.UT.tie 1 []]], ([] : List (Option TrioSeq)))
+          = ([(1,1,1)] : TrioSeq) ++ (List.range n).flatMap (fun _ => [((1,1,0):ℕ×ℕ×ℕ), (2,2,0), (3,2,0)]) := by
+        have := FTL0_rep 1 [] (topTs 0 [HdA.UT.tie 1 [HdA.UT.tie 1 []]]) n
+        simp only [List.nil_append] at this
+        simp only [wLT, List.map_replicate, unitsC, List.append_nil]
+        rw [this]
+        simp [FTL0, topTs, topT, shiftr01]
+      rwa [e] at this
+  have hS : StarOK 0 (rword 0 0 [([(1,1,1)] : TrioSeq) ++ [((1,1,0):ℕ×ℕ×ℕ), (2,2,0), (3,2,0)] ++ [((1 + 1, 0, 0) : ℕ×ℕ×ℕ)]]) := by
+    refine ⟨?_, fun p hp => rword_ge 0 0 _ p hp⟩
+    have hB := hG [] ⟨[], PsLd_of_PsLTL (PsLTL_nil 0), rfl⟩ (by simp) (BwT_nil 0)
+    have h2 := hB 0 le_rfl
+    rw [Nat.sub_self] at h2
+    simpa only [mlift_zero, List.map_cons, List.map_nil, List.nil_append] using h2
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
+  simpa [rword, rcol, shiftr01] using h
+
 end PmA
 end TRIO
