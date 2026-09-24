@@ -944,5 +944,105 @@ theorem BotCL_deep {P : HeL.TPS} (hP : HeL.TPSOK P 0 true) (hD : HeL.TPSDec P 0 
       HeU.tow_dtreeQ u j, topTs_dtreeQ u j]
     simpa [shiftr01] using this
 
+/-! ## 壁 A の基盤 (F): 遠い像側で、閉じた道の集合の全ての道で並びの先頭に深い葉 -/
+
+theorem imgT_dtree (A : List ℕ) (H G : ℕ → ℕ) (c u : ℕ) (j : ℕ) :
+    HeB.imgT A H G c u [HeT.dtree j] = [HeT.dtree j] := by
+  induction j with
+  | zero => simp [HeB.imgT, mlTs, mlT, relTs, relT, HeT.dtree]
+  | succ j ih =>
+      simp only [HeB.imgT, mlTs, relTs, List.cons.injEq, and_true] at ih ⊢
+      simp [mlT, relT, HeT.dtree, mlTs, relTs]
+      simpa [HeB.imgT, mlTs, relTs] using ih
+
+theorem chT_deep (b r u : ℕ) :
+    chT b r u [HdA.UT.tie 1 [HdA.UT.tie 1 []]] = [((1, r + 1, 0) : ℕ×ℕ×ℕ), ((2, r + 1, 0) : ℕ×ℕ×ℕ)] := by
+  simp [chT, unitT, shiftr01]
+
+/-- ★★★ 遠い像側: 道の集合 P（PSOK, PSDec, 段 0 の延長で閉じる, 最後の段 0）で空の並びが Gd なら、[深い葉] も Gd。 -/
+theorem Gd_deep_gen {P : HeB.PS} (hP : HeB.PSOK P) (hD : HeC.PSDec P) (hcl : HeB.Ext P 0 P)
+    (hlast : HeC.LastL P 0) {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} (hA01 : ∀ a ∈ A, 1 ≤ a) (hk : 1 ≤ k)
+    (hAk : ∀ a ∈ A, a < k) {c : ℕ} (hnil : HeB.Gd P A k H c []) :
+    HeB.Gd P A k H c [HdA.UT.tie 1 [HdA.UT.tie 1 []]] := by
+  refine ⟨by simp [RawTs, RawT], fun G S o f hE u hcu Lds hL Q hQ => ?_⟩
+  intro b hub ws hC hR
+  have hA := hE.2.2.1
+  have hA1 := hE.2.2.2.1
+  have ho := hE.2.2.2.2.1
+  rw [imgT_deep]
+  have hT : ∀ j, HeB.Gd P A k H c [HeT.dtree j] := fun j => by
+    have := HeI.Gd_treeL hA01 hk hAk H [HeT.dtree j] P 0 true hP hD hlast (fun _ => hcl) []
+      (HeU.TreeOKs_dtree c j) hnil
+    simpa using this
+  have hrep : ∀ j, GpT (S ++ A) o f b (farWt b (b + liftOff f (S ++ A) o + 1)
+      (ws ++ [(Lds ++ [HeB.plugQ Q [HeT.dtree j]], u, [])])) := by
+    intro j
+    have := (hT j).2 G S o f hE u hcu Lds hL Q hQ b hub ws hC hR
+    rwa [imgT_dtree] at this
+  obtain ⟨q0, hq0⟩ : ∃ q0, q0 = b + liftOff f (S ++ A) o := ⟨_, rfl⟩
+  rw [← hq0] at hrep ⊢
+  have htow : ∀ j, (tow (q0+1) 0 [((1,q0+1+1,0):ℕ×ℕ×ℕ),((2,q0+1+1,0):ℕ×ℕ×ℕ)] (j+1) : TrioSeq)
+      = ((0,q0+1,0):ℕ×ℕ×ℕ) :: chT b (q0+1) u [HeT.dtree j] := fun j => HeU.tow_eq_chT_dtree b u q0 j
+  rcases List.eq_nil_or_concat Q with rfl | ⟨Q', ⟨v, p'⟩, rfl⟩
+  · obtain ⟨Yp, hYpd⟩ : ∃ Yp, Yp = ((1, q0+1, 1) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (FTLt b (q0+1) u Lds) := ⟨_, rfl⟩
+    have eW : ∀ T : List UT, farWt b (q0+1) (ws ++ [(Lds ++ [HeB.plugQ [] T], u, [])])
+        = farWt b (q0+1) ws ++ (Yp ++ shiftr01 1 0
+            (((1, q0+1 + 0, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (chT b (q0+1) u T))) := by
+      intro T
+      rw [show HeB.plugQ [] T = T from rfl, farWt_snoc, hYpd]
+      simp [fwH, FTLt_snoc, mlift_nil, shiftr01_append0]
+    have hYpF : Fr Yp := by rw [hYpd]; exact Fr_letter _ _
+    have hYpne : Yp ≠ [] := by rw [hYpd]; simp
+    have hYpH : Hd Yp := by rw [hYpd]; exact fun _ => rfl
+    rw [eW, chT_deep]
+    have e1 : (((1, q0+1 + 0, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 [((1, q0+1+1, 0) : ℕ×ℕ×ℕ), ((2, q0+1+1, 0) : ℕ×ℕ×ℕ)])
+        = shiftr01 1 0 (((0, q0+1, 0) : ℕ×ℕ×ℕ) :: ([((1,q0+1+1,0):ℕ×ℕ×ℕ)] ++ [((2,q0+1+1,0):ℕ×ℕ×ℕ)])) := by
+      simp [shiftr01]
+    rw [e1]
+    refine HeQ.upleaf_deep_coreD hA hA1 ho f (Fr_farWt _ _ _) hYpF hYpH hYpne
+      (D := [((1,q0+1+1,0):ℕ×ℕ×ℕ)]) (d0 := 2) (m := q0+1+1) (q := q0+1) (d := 1)
+      (by intro p hp; simp only [List.mem_singleton] at hp; subst hp; omega)
+      (by intro p hp; simp only [List.mem_singleton] at hp; subst hp; exact le_refl _)
+      (by omega) (by omega) (by omega) ?_
+    intro m' hm'
+    obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+    rw [show ([((1,q0+1+1,0):ℕ×ℕ×ℕ)] ++ [((2,q0+1+1,0):ℕ×ℕ×ℕ)])
+        = [((1,q0+1+1,0):ℕ×ℕ×ℕ),((2,q0+1+1,0):ℕ×ℕ×ℕ)] from rfl, htow j]
+    have := hrep j
+    rw [eW] at this
+    simpa [shiftr01] using this
+  · simp only [List.concat_eq_append] at hQ hrep ⊢
+    have hp' : p' = 0 := by have := hlast _ _ _ _ _ hQ; rwa [HeC.lastL_snoc] at this
+    subst hp'
+    have hv := hP.raw _ _ _ _ _ hQ (v, 0) (by simp)
+    obtain ⟨Yp, hYpd⟩ : ∃ Yp, Yp = fwH b (q0+1) (FTLt b (q0+1) u (Lds ++ [HeB.plugQ Q' []])) u [] ++
+        shiftr01 (Q'.length + 2) 0 (chT b (q0+1) u v) := ⟨_, rfl⟩
+    have eW : ∀ T : List UT, farWt b (q0+1) (ws ++ [(Lds ++ [HeB.plugQ (Q' ++ [(v, 0)]) T], u, [])])
+        = farWt b (q0+1) ws ++ (Yp ++ shiftr01 (Q'.length + 2) 0
+            (((1, q0+1 + 0, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (chT b (q0+1) u T))) := by
+      intro T
+      rw [HeB.plugQ_snoc, HeD.farWt_botT, hYpd, chT_append, shiftr01_append0]
+      simp [chT, unitT, List.append_assoc]
+    have hYpF : Fr Yp := by rw [hYpd]; exact Fr_append (Fr_fwH _ _ _ _ _) (Fr_shiftr (Fr_chT _ hv) _)
+    have hYpne : Yp ≠ [] := by rw [hYpd]; simp [fwH]
+    have hYpH : Hd Yp := by rw [hYpd]; exact Hd_app_ne (Hd_fwH _ _ _ _ _) (by simp [fwH])
+    rw [eW, chT_deep]
+    have e1 : (((1, q0+1 + 0, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 [((1, q0+1+1, 0) : ℕ×ℕ×ℕ), ((2, q0+1+1, 0) : ℕ×ℕ×ℕ)])
+        = shiftr01 1 0 (((0, q0+1, 0) : ℕ×ℕ×ℕ) :: ([((1,q0+1+1,0):ℕ×ℕ×ℕ)] ++ [((2,q0+1+1,0):ℕ×ℕ×ℕ)])) := by
+      simp [shiftr01]
+    rw [e1]
+    refine HeQ.upleaf_deep_coreD hA hA1 ho f (Fr_farWt _ _ _) hYpF hYpH hYpne
+      (D := [((1,q0+1+1,0):ℕ×ℕ×ℕ)]) (d0 := 2) (m := q0+1+1) (q := q0+1) (d := Q'.length + 2)
+      (by intro p hp; simp only [List.mem_singleton] at hp; subst hp; omega)
+      (by intro p hp; simp only [List.mem_singleton] at hp; subst hp; exact le_refl _)
+      (by omega) (by omega) (by omega) ?_
+    intro m' hm'
+    obtain ⟨j, rfl⟩ : ∃ j, m' = j + 1 := ⟨m' - 1, by omega⟩
+    rw [show ([((1,q0+1+1,0):ℕ×ℕ×ℕ)] ++ [((2,q0+1+1,0):ℕ×ℕ×ℕ)])
+        = [((1,q0+1+1,0):ℕ×ℕ×ℕ),((2,q0+1+1,0):ℕ×ℕ×ℕ)] from rfl, htow j]
+    have := hrep j
+    rw [eW] at this
+    simpa [shiftr01] using this
+
 end PmA
 end TRIO
