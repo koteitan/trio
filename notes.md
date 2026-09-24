@@ -33419,3 +33419,27 @@ GdT_treeU / Gd_treeU に先頭の場合を足す。要る基本補題:
   （Y = wLT(Uss++[plugQ Q' []]) ++ shift (topTs v')、d = |Q'|+1）で upleaf_deep_coreDT、dtree 側は GdT_treeL。
 - (F) 遠い像側: 同じく Gd P … [深い葉]（upleaf_deep_coreD、dtree 側は Gd_treeL）。
 注意: upleaf_deep_core は D の全列に行1 ≥ m を要求 → 深い葉の**前に同じ並びの兄弟がある**場合は使えない。先頭限定で十分。
+
+## 追記773: ★★★ 壁 A を突破: シート行1691 ∈ W 0（lean/PmB.lean の R1691）(2026-09-24)
+
+追記768 の壁 A（行1691 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,2,0) = [深い葉, tie 1 []]）を証明した。
+
+**基本補題（PmA、両側）:**
+- (G) BotCL_deep: 閉じた道の集合 P（TPSOK, TExt P 0 true 0 P, TLast P 0）で空の並びが GdT なら、P の**全ての道**
+  （入れ子も）で並びの先頭の深い葉は良い。GdT_upleaf と同じ描画で upleaf_deep_coreDT、dtree 側は GdT_treeL。
+- (F) Gd_deep_gen: 遠い像側の同じもの（upleaf_nil/snoc の描画で upleaf_deep_coreD、dtree 側は Gd_treeL）。
+
+**PmB（HeL〜HeN は不変、写しで作る）:** GdT の第 1 成分を TsH（(p=0,cl=true) の並びは入れ子のどこでも先頭に
+深い葉を 1 つ許す）に替え、TPSOK.tree を「差し込んでも WOK」（WOK は遠い像側の Gd_treeHH + (F) で供給）にした
+GdT の仕組みの写し。木の規則 GdT_treeHH の先頭の場合 = GdT_deep_head（(G) の写し）。
+
+**なぜ「木に潰れない深い葉の塔」が障害でなくなるか:** 行1691 は GdT_upleaf（[深い葉] の後ろの tie 1 []）。
+その塔 towT 0 [深い葉] j = [深い葉, tie 0 [深い葉, tie 0 […]]] は GdT_towT が GdT_jump の繰り返しで扱い、
+要るのは「閉じた道の集合で [深い葉] が GdT」だけ。これは (G) が全ての道で与える。塔を木に潰す必要はない。
+
+**次（行1692〜1714）:** 同段の入れ子・上向きの入れ子の一般化が要る。
+- 行1692 = [深い葉, 深い葉]: 2 つ目が兄弟の後ろ。upleaf_deep_coreDT の D に兄弟の列が入るが、兄弟が tie ≥1 の
+  節点だけなら D の行1 ≥ m を満たす → 「高い兄弟の後ろの深い葉」に一般化できる見込み。
+- 行1695 = tie 1 [tie 1 [], tie 1 []]、行1701 = tie 1 [tie 1 [tie 1 []]]、行1703 = tie 1 [tie 2 []]（psi(W_(w^2+2))）:
+  TreeTs は tie (l+1) の中に tie (l'+1) を許さない（cl=false）。この一般化が壁 A 領域の本体。
+- 行1715（psi(W_(w^2+w))）以降は深い位置に z=1 の遠い語。
