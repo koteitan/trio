@@ -206,7 +206,7 @@ theorem GoodTTL_all {v : ℕ} : ∀ Uss : List (List UT), (∀ us ∈ Uss, TreeT
       intro h
       have h' : ∀ us' ∈ Uss, TreeTs v 0 true us' := fun us' hus' => h us' (List.mem_append_left _ hus')
       have hus := h us (List.mem_append_right _ (List.mem_singleton_self _))
-      have := GdT_good TPSOK_TP0 (GdT_treeTP0 hus) le_rfl h' (ih h') (TPNil_TP0 v)
+      have := GdT_good TPSOK_TP0 (GdT_treeTP0 hus) le_rfl (WOK_of_TreeTs h') (ih h') (TPNil_TP0 v)
       simpa [plugQ] using this
 
 theorem GTC_wLTL {v : ℕ} {Uss : List (List UT)} (hU : ∀ us ∈ Uss, TreeTs v 0 true us) (hG : GoodTTL v Uss) :
@@ -221,7 +221,7 @@ theorem GTC_wLTL {v : ℕ} {Uss : List (List UT)} (hU : ∀ us ∈ Uss, TreeTs v
       | none => exact absurd (List.mem_append_right _ (List.mem_singleton_self _)) hNT
       | some Z =>
           have hZ := hR Z (by simp)
-          exact GTC_load_CLTL hU hNT' (RawU_prefix hR) (ih hNT' (RawU_prefix hR)) Z hZ.1 hZ.2
+          exact GTC_load_CLTL (WOK_of_TreeTs hU) hNT' (RawU_prefix hR) (ih hNT' (RawU_prefix hR)) Z hZ.1 hZ.2
 
 theorem BwT_CLTL (v : ℕ) : ∀ ps : List (List (List UT) × List (Option TrioSeq)),
     PsLTL v ps → BwT v (ps.map (wLT v)) := by

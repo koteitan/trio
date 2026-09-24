@@ -72,17 +72,14 @@ theorem GdT_load {P : TPS} {p : ℕ} {cl : Bool} (hP : TPSOK P p cl) (hD : TPSDe
         omega
       · have hDZt : TreeTs u 0 true (us ++ [UT.ch Z]) :=
           hP.tree u [] hQ _ (TreeTs_mono hu hDZ.1)
-        have hGn : ∀ n, (∀ us' ∈ Uss ++ List.replicate n (us ++ [UT.ch Z]), TreeTs u 0 true us') ∧
+        have hGn : ∀ n, WOK u (Uss ++ List.replicate n (us ++ [UT.ch Z])) ∧
             GoodTTL u (Uss ++ List.replicate n (us ++ [UT.ch Z])) := by
           intro n
           induction n with
           | zero => simpa using And.intro hU hG
           | succ n ih =>
               rw [List.replicate_succ', ← List.append_assoc]
-              refine ⟨fun us' h' => ?_, ?_⟩
-              · rcases List.mem_append.mp h' with h' | h'
-                · exact ih.1 us' h'
-                · simp at h'; subst h'; exact hDZt
+              refine ⟨WOK_snoc ih.1 hDZt, ?_⟩
               · have := GdT_good hP hDZ hu ih.1 ih.2 hQ
                 simpa [plugQ] using this
         have := (hGn n).2 u le_rfl
@@ -178,17 +175,17 @@ theorem GdT_tieE {P : TPS} {p : ℕ} {cl : Bool} (hP : TPSOK P p cl) (hD : TPSDe
   refine HdR.gtc_tie (PathCone_YtopL u' Uss Q hQr) (Fr_append (Fr_topTs _ _) (GzF.Fr_single le_rfl _ _))
     (Hd_app (Hd_topTLs u' us0 hraw) (fun _ => rfl)) (coneV_top (Fr_topTs _ _) u')
     (fun u'' hu'' Z hZ hbZ => ?_) (fun L hC u3 hu3 => CLTL_lift L u' hC u3 hu3)
-  rw [mlift_YtopL hu'' (fun us h' => TreeTs_raw 0 true us (hU us h')) hQr,
+  rw [mlift_YtopL hu'' hU.1 hQr,
     mlift_topTLs us0 (TRawLs_mono hu' us0 hraw) u' le_rfl (u'' - u'), show u' + (u'' - u') = u'' by omega]
   have hD2 := GdT_load hP hD Z hZ hbZ us0 (GdT_mono hus (le_trans hu' hu''))
-  have := hD2.2 u'' le_rfl Uss (fun us h' => TreeTs_mono hu'' (hU us h'))
+  have := hD2.2 u'' le_rfl Uss (WOK_mono hu'' hU)
     (fun u3 hu3 => hG u3 (le_trans hu'' hu3)) Q (hP.lift u' Q hQ u'' hu'')
   rwa [BotCL_word, HdS.topTs_snoc_ch] at this
 
 /-! ## 空の並び -/
 
 /-- 新しい F のタイ（子の並びは空）。 -/
-theorem BotCL_nilF (u : ℕ) (Uss : List (List UT)) (hU : ∀ us ∈ Uss, TreeTs u 0 true us)
+theorem BotCL_nilF (u : ℕ) (Uss : List (List UT)) (hU : WOK u Uss)
     (hG : GoodTTL u Uss) : BotCL u Uss [] [] := by
   show GTC CLTL u (wLT u (Uss ++ [[]], []))
   have e : wLT u (Uss ++ [[]], []) = wLT u (Uss, []) ++ [((1, u + 1, 0) : ℕ × ℕ × ℕ)] := by
@@ -196,8 +193,8 @@ theorem BotCL_nilF (u : ℕ) (Uss : List (List UT)) (hU : ∀ us ∈ Uss, TreeTs
   rw [e]
   refine GTC_tie (C := CLTL) (coneV_top (Fr_wLT u _) u) (fun u' hu' Z hZ hbZ => ?_)
     (fun L hC u'' hu'' => CLTL_lift L u hC u'' hu'')
-  have hR' : ∀ us ∈ Uss, TreeTs u' 0 true us := fun us hus => TreeTs_mono hu' (hU us hus)
-  rw [mlift_wLTL hu' (p := (Uss, [])) (fun us h => TreeTs_raw 0 true us (hU us h))
+  have hR' : WOK u' Uss := WOK_mono hu' hU
+  rw [mlift_wLTL hu' (p := (Uss, [])) hU.1
     (by simp [GzJ.NoTie]) (RawU_nil u)]
   have := GTC_load_CLTL (v := u') (Uss := Uss) (us := []) hR' (by simp [GzJ.NoTie]) (RawU_nil u')
     (hG u' hu') Z hZ hbZ

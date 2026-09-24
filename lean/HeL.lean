@@ -109,7 +109,7 @@ abbrev TPS := ℕ → Path → Prop
 
 /-- ★ 最上段の道の集合 P の全ての道の下で良い木の並び。 -/
 def GdT (P : TPS) (p : ℕ) (cl : Bool) (v : ℕ) (x : List UT) : Prop :=
-  TreeTs v p cl x ∧ ∀ u, v ≤ u → ∀ Uss, (∀ us ∈ Uss, TreeTs u 0 true us) → GoodTTL u Uss →
+  TreeTs v p cl x ∧ ∀ u, v ≤ u → ∀ Uss, WOK u Uss → GoodTTL u Uss →
     ∀ Q, P u Q → BotCL u Uss Q x
 
 theorem GdT_mono {P : TPS} {p : ℕ} {cl : Bool} {v v' : ℕ} {x : List UT} (h : GdT P p cl v x)
@@ -138,9 +138,9 @@ theorem TieOK_up {p l : ℕ} (hpl : p < l + 1) : TieOK p true (l + 1) (l + 1) fa
 
 theorem GdT_good {P : TPS} {p : ℕ} {cl : Bool} (hP : TPSOK P p cl) {v : ℕ} {x : List UT}
     (h : GdT P p cl v x) {u : ℕ} (hvu : v ≤ u) {Uss : List (List UT)}
-    (hU : ∀ us ∈ Uss, TreeTs u 0 true us) (hG : GoodTTL u Uss) {Q : Path} (hQ : P u Q) :
+    (hU : WOK u Uss) (hG : GoodTTL u Uss) {Q : Path} (hQ : P u Q) :
     GoodTTL u (Uss ++ [plugQ Q x]) :=
-  fun u' hu' => h.2 u' (le_trans hvu hu') Uss (fun us hus => TreeTs_mono hu' (hU us hus))
+  fun u' hu' => h.2 u' (le_trans hvu hu') Uss (WOK_mono hu' hU)
     (fun u'' hu'' => hG u'' (le_trans hu' hu'')) Q (hP.lift _ _ hQ u' hu')
 
 /-- ★ 延長の集合で良い子の並び cs を、段 l の節点の子として足す。 -/

@@ -253,6 +253,34 @@ theorem PsLd_of_PsLTL {v : ℕ} {ps : List (List (List UT) × List (Option TrioS
   ⟨fun p hp => ⟨fun us hus => TreeTs_raw 0 true us ((h p hp).1 us hus), (h p hp).2.1, (h p hp).2.2⟩,
     fun u hu => OkWsAt_psLTL (PsLTL_mono hu h)⟩
 
+/-- 語の子の並びの条件（深い葉も許す）: 子は TRawLs、各段 u ≥ v で遠い像が GoodChtX。
+    子が TreeTs ならこれを満たす（WOK_of_TreeTs）。 -/
+def WOK (v : ℕ) (Uss : List (List UT)) : Prop :=
+  (∀ us ∈ Uss, TRawLs v us) ∧ ∀ u, v ≤ u → GoodChtX [] 1 (fun _ => 0) u (Uss.map farTs)
+
+theorem WOK_of_TreeTs {v : ℕ} {Uss : List (List UT)} (h : ∀ us ∈ Uss, TreeTs v 0 true us) : WOK v Uss :=
+  ⟨fun us hus => TreeTs_raw 0 true us (h us hus),
+    fun u hu => GoodChtX_topL Uss (fun us hus => TreeTs_mono hu (h us hus))⟩
+
+theorem WOK_mono {v v' : ℕ} (hvu : v ≤ v') {Uss : List (List UT)} (h : WOK v Uss) : WOK v' Uss :=
+  ⟨fun us hus => TRawLs_mono hvu us (h.1 us hus), fun u hu => h.2 u (le_trans hvu hu)⟩
+
+theorem WOK_snoc {v : ℕ} {Uss : List (List UT)} {us : List UT} (h : WOK v Uss)
+    (hus : TreeTs v 0 true us) : WOK v (Uss ++ [us]) := by
+  refine ⟨fun us' h' => ?_, fun u hu => ?_⟩
+  · rcases List.mem_append.mp h' with h' | h'
+    · exact h.1 us' h'
+    · simp at h'; subst h'; exact TreeTs_raw 0 true _ hus
+  · rw [List.map_append, List.map_singleton]
+    exact GoodChtX_snocT (by simp) (by simp) le_rfl (h.2 u hu) (TreeOKs_farTs 0 true us (TreeTs_mono hu hus))
+
+theorem PsLd_word {v : ℕ} {Uss : List (List UT)} {us : List (Option TrioSeq)} (hU : WOK v Uss)
+    (hNT : GzJ.NoTie us) (hR : RawU v us) : PsLd v [(Uss, us)] := by
+  refine ⟨fun p hp => ?_, fun u hu w hw => ?_⟩
+  · simp only [List.mem_singleton] at hp; subst hp; exact ⟨hU.1, hNT, hR⟩
+  · simp only [psLT, List.map_cons, List.map_nil, List.mem_singleton] at hw; subst hw
+    exact ⟨le_rfl, hU.2 u hu, okRAt_units us hNT (RawU_mono hu hR)⟩
+
 theorem FarCAt_of_PsLTL {u : ℕ} {ps : List (List (List UT) × List (Option TrioSeq))}
     (h : PsLTL u ps) (b0 : ℕ) : FarCAt [] 1 (fun _ => 0) b0 (psLT u ps) :=
   FarCAt_of_OkWsAt (by simp) (by simp) le_rfl _ (OkWsAt_psLTL h) b0
@@ -363,7 +391,7 @@ theorem GTC_far_CLTL (v : ℕ) : GTC CLTL v (GzJ.fwTop v []) := by
     farWt_flat (RawWskt0_psLd hu') m u (by omega)]
   exact Wg_mono ha (topCLT_WgLd (hu'.2 u le_rfl) hBu m)
 
-theorem GTC_load_CLTL {v : ℕ} {Uss : List (List UT)} (hU : ∀ us ∈ Uss, TreeTs v 0 true us)
+theorem GTC_load_CLTL {v : ℕ} {Uss : List (List UT)} (hU : WOK v Uss)
     {us : List (Option TrioSeq)} (hNT : GzJ.NoTie us) (hRus : RawU v us)
     (hG : GTC CLTL v (wLT v (Uss, us))) :
     ∀ T ∈ Wg (2 * v), based T → GTC CLTL v (wLT v (Uss, us ++ [some T])) := by
@@ -377,16 +405,15 @@ theorem GTC_load_CLTL {v : ℕ} {Uss : List (List UT)} (hU : ∀ us ∈ Uss, Tre
   refine GTC_loadTop (Fr_wLT v _) hG ?_ T hT hbT
   intro T' hT' hbT' L hC
   obtain ⟨ps, h, rfl⟩ := hC
-  refine ⟨ps ++ [(Uss, us ++ [some T'])], PsLd_append h (PsLd_of_PsLTL ?_), ?_⟩
-  · intro p hp
-    simp at hp; subst hp
-    refine ⟨hU, fun hn => ?_, fun Z hZ => ?_⟩
-    · rcases List.mem_append.mp hn with hn | hn
-      · exact hNT hn
-      · simp at hn
-    · rcases List.mem_append.mp hZ with hZ | hZ
-      · exact hRus Z hZ
-      · simp at hZ; subst hZ; exact ⟨hT', hbT'⟩
+  refine ⟨ps ++ [(Uss, us ++ [some T'])], PsLd_append h (PsLd_word hU ?_ ?_), ?_⟩
+  · intro hn
+    rcases List.mem_append.mp hn with hn | hn
+    · exact hNT hn
+    · simp at hn
+  · intro Z hZ
+    rcases List.mem_append.mp hZ with hZ | hZ
+    · exact hRus Z hZ
+    · simp at hZ; subst hZ; exact ⟨hT', hbT'⟩
   · rw [List.map_append, List.map_singleton, e] <;> rfl
 
 end HeK
