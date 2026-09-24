@@ -689,18 +689,12 @@ def mat(s):
 # Rows whose own matrix yaBMS calls non-standard, so they cannot be a standard form's
 # entry. run_standard re-derives the list; the builder is measured on the rest.
 SHEET_NONSTANDARD = {
-    '1947', '2755', '2756', '2757', '3481', '3482', '3953', '4306', '4307', '4308',
+    '2755', '2756', '2757', '3481', '3482', '3953', '4306', '4307', '4308',
     '4499', '4519', '4520', '4521', '4522', '4523', '4524', '4525', '4526', '4527',
     '4528', '4529', '4530', '4531', '4532', '4533', '4534', '4535',
 }
 
-KNOWN_MISMATCH = {
-    '2113': 'the matrix has the shape of w^5*2; M(w^6)[3] sides with the builder',
-    '2131': 'the content is a two-step +1 staircase, i.e. w^w+2 (label duplicated with 2133)',
-    '2133': '(3,2,0)(4,3,1) vs (4,2,0)(5,3,1); M(w^w+w^2)[2] sides with the builder',
-    '2532': 'the matrix is M(W^(w+1)); the label duplicates 2538, which is W^(W+1)',
-    '2723': 'the matrix drops the trailing Omega leaf; the label duplicates 2724',
-}
+KNOWN_MISMATCH = {}   # the sheet rows 1947/2113/2131/2133/2532/2723/3439/3452/3453 were fixed in the xlsx (column I)
 
 def rows():
     tsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omega_alpha_rows.tsv')

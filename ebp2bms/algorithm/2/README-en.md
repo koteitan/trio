@@ -345,36 +345,40 @@ is not covered and all of $`M(\omega\cdot2)[1:]`$ is written one storey up.
 
 ### Validation
 
-Of the 813 pure $`\psi_0(\Omega_\alpha)`$ rows of the sheet, yaBMS `bms -s` rejects **28
+Of the 812 pure $`\psi_0(\Omega_\alpha)`$ rows of the sheet, yaBMS `bms -s` rejects **27
 rows whose own matrix is not a standard form**; the remaining 785 are the measured set:
 
 | region | match | mismatch |
 |---|---|---|
-| $`\alpha \lt \Omega_1`$ | 124 | 0 |
-| arithmetic on $`\Omega_1`$ | 100 | 0 |
-| arithmetic on $`\Omega_v`$ ($`v \ge 2`$) | 520 | 36 |
-| total | **744** | 36 (+5 duplicate labels) |
+| $`\alpha \lt \Omega_1`$ | 128 | 0 |
+| arithmetic on $`\Omega_1`$ | 101 | 0 |
+| arithmetic on $`\Omega_v`$ ($`v \ge 2`$) | 523 | 33 |
+| total | **752** | 33 |
 
-The 41 mismatches break down as:
+The 33 mismatches break down as:
 
 | verdict | rows | grounds |
 |---|---|---|
-| we are right | 4 | the sheet has two rows with the same label, and we match the other one |
 | the sheet is right | 3 | our output is not a standard form |
-| undecided | 34 | both are standard forms |
+| undecided | 30 | both are standard forms |
+
+Nine sheet rows with an error (1947 / 2113 / 2131 / 2133 / 2532 / 2723 / 3439 / 3452 / 3453)
+were fixed on the sheet's side (the old value and the grounds are in the sheet's column I).
+Each was checked by a BM4 expansion ($`M(\beta)[n]`$ of a following row) or is a
+parenthesis typo.
 
 Two independent cross-checks run alongside.
 
-- **Row order**: the 744 matching rows come out strictly increasing under the builder's own
-  ordinal comparison, in the sheet's row order (0 violations across 743 adjacent pairs).
+- **Row order**: the 752 matching rows come out strictly increasing under the builder's own
+  ordinal comparison, in the sheet's row order (0 violations across 751 adjacent pairs).
   This check is what found the direction of rule 9: the matrices agreed but the order broke
   in 14 places, and setting $`\psi_{\Omega_u}(X) \lt \Omega_u`$ brought it to 0.
 - **Standard form**: **782 of the 785** matrices the builder writes are standard forms
-  (`bms -s`). This checker found 12 separate fixes and also flagged the 28 non-standard
+  (`bms -s`). This checker found 12 separate fixes and also flagged the non-standard
   sheet rows. Collisions, where two different $`\alpha`$ produce the same matrix, went from
   57 pairs down to 11.
 
-### Open (the 41 mismatches)
+### Open (the 33 mismatches)
 
 What is left splits into small families; none of them exceeds 20 rows.
 
