@@ -91,5 +91,54 @@ theorem Rp3_1658 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 
   have h := GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_pm3_words (WordsG_consT (v := 0) (TF_tieG (u := 0) (TF_nil 0) (GF_of_GPF (GPF_of_PVF (PVF_snoc (A := []) (o := 1) (by decide) (HdH.PVF_farWAt (A0 := []) (o := 1) (by decide) (by decide) (by decide) 0 _ (HdH.OkWsAt_cons le_rfl (HeI.GoodChtX_snocT (A0 := []) (o := 1) (by decide) (by decide) (by decide) (HdE.GoodChtX_nil [] 1 (fun _ => 0) 0) (HeI.TreeOKs_cons_up (l := 0) rfl (by decide) (HeI.TreeOKs_nil 0 1 false) (HeI.TreeOKs_nil 0 0 true))) (HdH.okRAt_nil [] 1 0) (HdH.OkWsAt_nil [] 1 0))) (RLF_child (A := []) (o := 1) (by decide) (by decide) (by decide) (b := 0) (τ := 2) [1] (by decide) (by decide) (RLF_nil (A := []) (o := 1) (by decide) (by decide) (by decide) 0) (GPF_of_PVF (PVF_snoc (A := [1]) (o := 2) (by decide) (HdH.PVF_farWAt (A0 := [1]) (o := 2) (by decide) (by decide) (by decide) 0 _ (HdH.OkWsAt_cons le_rfl (HeI.GoodChtX_snocT (A0 := [1]) (o := 2) (by decide) (by decide) (by decide) (HdE.GoodChtX_nil [1] 2 (fun _ => 0) 0) (HeI.TreeOKs_cons_up (l := 0) rfl (by decide) (HeI.TreeOKs_nil 0 1 false) (HeI.TreeOKs_nil 0 0 true))) (HdH.okRAt_nil [1] 2 0) (HdH.OkWsAt_nil [1] 2 0))) (RLF_nil (A := [1]) (o := 2) (by decide) (by decide) (by decide) 0)))))))) (WordsG_nil 0))))
   simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, HdA.farWt, HdA.FTLt, HdA.chT, HdA.unitT, Kdeep, HdQ.wLT] using h
 
+/-! ## 2 本目の collapse 語: 文脈 [Kdeep, fwTop 0 []] は GLctx -/
+
+/-- 空の語のデータ（fwTop v [] = wLT v p0）。 -/
+def p0 : List (List UT) × List (Option TrioSeq) := ([], [])
+
+theorem psLT_p1p0 (u : ℕ) :
+    psLT u [p1, p0] = [([[HdA.UT.tie 1 [HdA.UT.tie 1 []]]], u, ([] : TrioSeq)), ([], u, [])] := by
+  simp [psLT, p1, p0, farTs, farT, unitsC]
+
+theorem OkWsAt_KK {u b : ℕ} (hub : u ≤ b) : OkWsAt [] 1 b (psLT u [p1, p0]) := by
+  rw [psLT_p1p0]
+  exact HdH.OkWsAt_cons hub (HeU.GoodChtX_deep (by simp) (by simp) (by decide)) (HdH.okRAt_nil [] 1 u)
+    (HdH.OkWsAt_cons hub (HdE.GoodChtX_nil [] 1 _ u) (HdH.okRAt_nil [] 1 u) (HdH.OkWsAt_nil [] 1 b))
+
+/-- ★ 文脈 [Kdeep, fwTop 0 []] は GLctx。 -/
+theorem GLctx_KK : GLctx 0 [Kdeep, GzJ.fwTop 0 []] := by
+  have hraw : ∀ u, ∀ p ∈ [p1, p0], (∀ us ∈ p.1, TRawLs u us) ∧ GzJ.NoTie p.2 ∧ RawU u p.2 := by
+    intro u p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl
+    · exact ⟨TRawLs_deep u, by simp [p1, GzJ.NoTie], RawU_nil u⟩
+    · exact ⟨by simp [p0], by simp [p0, GzJ.NoTie], RawU_nil u⟩
+  refine ⟨[p1, p0], hraw 0, fun u _ => ⟨RawWskt0_gen (hraw u),
+    HdH.FarCAt_of_OkWsAt (by simp) (by simp) (by decide) _ (OkWsAt_KK le_rfl) u,
+    HdH.RawWsAt_of_OkWsAt (OkWsAt_KK le_rfl)⟩, ?_⟩
+  simp [Kdeep, p1, p0, wLT, GzJ.fwTop, FTL0]
+
+/-- ★★ BwT 0 [Kdeep, fwTop, fwTop]（深い葉のあとに collapse 語を 2 本）。 -/
+theorem bwt_KK3 : BwT 0 [Kdeep, GzJ.fwTop 0 [], GzJ.fwTop 0 []] := by
+  have := GTC_far_gen 0 [Kdeep, GzJ.fwTop 0 []] GLctx_KK
+    (by
+      intro X hX
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
+      rcases hX with rfl | rfl
+      · exact Fr_wLT 0 _
+      · exact Fr_fwTop 0 []) bwt_KK2
+  simpa using this
+
+/-- ★ (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(1,1,1)(2,1,1)(1,1,1)(2,1,1) ∈ W 0（行 1659 の形）。 -/
+theorem Rp3_1659 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(1,1,1),(2,1,1),(1,1,1),(2,1,1)] : TrioSeq)
+    ∈ W 0 := by
+  have hS : StarOK 0 (rword 0 0 [Kdeep, GzJ.fwTop 0 [], GzJ.fwTop 0 []]) := by
+    refine ⟨?_, fun p hp => rword_ge 0 0 _ p hp⟩
+    have h2 := bwt_KK3 0 le_rfl
+    rw [Nat.sub_self] at h2
+    simpa only [mlift_zero, List.map_cons, List.map_nil] using h2
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01, Kdeep, GzJ.fwTop] using h
+
 end PmA
 end TRIO
