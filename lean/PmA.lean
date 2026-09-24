@@ -211,5 +211,106 @@ theorem Rpm_1665 : ([(0, 0, 0), (1, 1, 1), (2, 1, 1), (2, 1, 0), (3, 2, 0), (4, 
   simpa [shiftr01, rword, rcol, farR, farU, fwU, unitsC, unitC, fwTop, farW, fwW, mlift_zero, Nat.sub_self, HaL.PfF, HaI.towF, HaI.Pf, HaN.QFn, HaN.QF, HaN.towQ, HaN.Lw, List.replicate, HaZ.QP, HaZ.QNil, HbB.wT, HbK.wN, HbD.farWn, HbD.fwWn, HbD.FT, HbV.wL, HbP.FTL0, HbM.fwH, HcA.farWc, HcA.FTLc, HcI.farWu, HcI.FTLu, HcI.chF, HcI.unitF, HcS.wLU, HdQ.wLT, HdQ.topTs, HdQ.topT, HdA.farWt, HdA.FTLt, HdA.chT, HdA.unitT, p1, HdQ.wLT] using h
 
 
+/-! ## 深い葉の語に荷を吊るす -/
+
+/-- 深い葉の語（荷 us つき）は PsLd を満たす。 -/
+theorem PsLd_deepword {v : ℕ} {us : List (Option TrioSeq)} (hNT : GzJ.NoTie us) (hR : RawU v us) :
+    PsLd v [(p1.1, us)] := by
+  refine ⟨fun p hp => ?_, fun u hu w hw => ?_⟩
+  · simp only [List.mem_singleton] at hp; subst hp
+    exact ⟨TRawLs_deep v, hNT, hR⟩
+  · simp only [psLT, List.map_cons, List.map_nil, List.mem_singleton] at hw; subst hw
+    refine ⟨le_rfl, ?_, okRAt_units us hNT (RawU_mono hu hR)⟩
+    simpa [p1, farTs, farT] using
+      (HeU.GoodChtX_deep (A0 := []) (o := 1) (u := u) (by simp) (by simp) (by decide))
+
+/-- ★ 深い葉の語に荷を 1 つ吊るす（GTC_load_CLTL の深い葉版）。 -/
+theorem GTC_load_deep {v : ℕ} {us : List (Option TrioSeq)} (hNT : GzJ.NoTie us) (hRus : RawU v us)
+    (hG : GTC CLTL v (wLT v (p1.1, us))) :
+    ∀ T ∈ Wg (2 * v), based T → GTC CLTL v (wLT v (p1.1, us ++ [some T])) := by
+  intro T hT hbT
+  have e : ∀ T' : TrioSeq, wLT v (p1.1, us ++ [some T']) = wLT v (p1.1, us) ++ shiftr01 1 0 T' := by
+    intro T'
+    show FTL0 (v + 1) (p1.1.map (topTs v)) ++ unitsC v (us ++ [some T'])
+      = FTL0 (v + 1) (p1.1.map (topTs v)) ++ unitsC v us ++ shiftr01 1 0 T'
+    rw [unitsC_snoc, List.append_assoc]; rfl
+  rw [e]
+  refine GTC_loadTop (Fr_wLT v _) hG ?_ T hT hbT
+  intro T' hT' hbT' L hC
+  obtain ⟨ps, h, rfl⟩ := hC
+  refine ⟨ps ++ [(p1.1, us ++ [some T'])], PsLd_append h (PsLd_deepword ?_ ?_), ?_⟩
+  · intro hn
+    rcases List.mem_append.mp hn with hn | hn
+    · exact hNT hn
+    · simp at hn
+  · intro Z hZ
+    rcases List.mem_append.mp hZ with hZ | hZ
+    · exact hRus Z hZ
+    · simp at hZ; subst hZ; exact ⟨hT', hbT'⟩
+  · rw [List.map_append, List.map_singleton, e]
+
+/-- ★ 深い葉の語に荷の並び us を吊るした語は、文脈 CLTL で良い。 -/
+theorem GTC_deep_loads : ∀ us : List (Option TrioSeq), GzJ.NoTie us → RawU 0 us →
+    GTC CLTL 0 (wLT 0 (p1.1, us)) := by
+  intro us
+  induction us using List.reverseRecOn with
+  | nil => intro _ _; simpa [p1] using HeT.hK_pm
+  | append_singleton us o ih =>
+      intro hNT hR
+      have hNT' : GzJ.NoTie us := fun h => hNT (List.mem_append_left _ h)
+      cases o with
+      | none => exact absurd (List.mem_append_right _ (List.mem_singleton_self _)) hNT
+      | some Z =>
+          have hZ := hR Z (by simp)
+          exact GTC_load_deep hNT' (RawU_prefix hR) (ih hNT' (RawU_prefix hR)) Z hZ.1 hZ.2
+
+/-- ★★ 深い葉の語（荷 us0）のあとに段つきの木の語の並び qs。 -/
+theorem BwT_deepL (us0 : List (Option TrioSeq)) (hNT : GzJ.NoTie us0) (hR : RawU 0 us0) :
+    ∀ qs : List (List (List UT) × List (Option TrioSeq)),
+    PsLTL 0 qs → BwT 0 (((p1.1, us0) :: qs).map (wLT 0)) := by
+  intro qs
+  induction qs using List.reverseRecOn with
+  | nil =>
+      intro _
+      have := GTC_deep_loads us0 hNT hR [] ⟨[], PsLd_of_PsLTL (PsLTL_nil 0), rfl⟩ (by simp) (BwT_nil 0)
+      simpa using this
+  | append_singleton qs q ih =>
+      intro h
+      have h' : PsLTL 0 qs := fun r hr => h r (List.mem_append_left _ hr)
+      have hq := h q (List.mem_append_right _ (List.mem_singleton_self _))
+      have hG := HeN.GTC_wLTL hq.1 (HeN.GoodTTL_all q.1 hq.1) q.2 hq.2.1 hq.2.2
+      have hC : PsLd 0 ((p1.1, us0) :: qs) := by
+        have := PsLd_append (PsLd_deepword hNT hR) (PsLd_of_PsLTL h')
+        simpa using this
+      have := hG _ ⟨(p1.1, us0) :: qs, hC, rfl⟩ (Fr_CLT 0 ((p1.1, us0) :: qs)) (ih h')
+      simpa [List.map_append] using this
+
+/-- ★ 族: 深い葉の語（荷 us0）＋ 段つきの木の語 qs ＋ 遠い語 Ls ＋ 吊るした荷 Z。 -/
+theorem deepL_hang (us0 : List (Option TrioSeq)) (hNT : GzJ.NoTie us0) (hR : RawU 0 us0)
+    (qs : List (List (List UT) × List (Option TrioSeq))) (h : PsLTL 0 qs)
+    {Ls : List TrioSeq} (hW : WordsG 0 Ls) {u : ℕ} {Z : TrioSeq} (hZ : Z ∈ Wg u) (hb : based Z) :
+    (((0, 0, 0) : ℕ×ℕ×ℕ) :: (rword 0 0 (((p1.1, us0) :: qs).map (wLT 0) ++ Ls) ++ shiftr01 1 0 Z))
+      ∈ W 0 := by
+  have hS : StarOK 0 (rword 0 0 (((p1.1, us0) :: qs).map (wLT 0) ++ Ls)) := by
+    refine ⟨?_, fun p hp => rword_ge 0 0 _ p hp⟩
+    have hB := BwT_append_words (Fr_CLT 0 ((p1.1, us0) :: qs)) (BwT_deepL us0 hNT hR qs h) Ls hW 0 le_rfl
+    rw [Nat.sub_self] at hB
+    simpa only [mlift_zero, List.map_id'] using hB
+  exact GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_hang hS hZ hb))
+
+/-- ★ R_pm ＋ シート行 1666 の尾: (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(2,0,0) ∈ W 0。 -/
+theorem Rpm_1666 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(2,0,0)] : TrioSeq) ∈ W 0 := by
+  have hZ0 : ([(0, 0, 0)] : TrioSeq) ∈ Wg (2 * 0) := by
+    simpa [rword] using Wg_of_starOK (starOK_wordsG (v := 0) (WordsG_nil 0))
+  have hS : StarOK 0 (rword 0 0 [wLT 0 (p1.1, [some [(0, 0, 0)]])]) := by
+    refine ⟨?_, fun p hp => rword_ge 0 0 _ p hp⟩
+    have hB := GTC_deep_loads [some [(0, 0, 0)]] (by simp [GzJ.NoTie])
+      (RawU_cons_some hZ0 rfl (RawU_nil 0)) [] ⟨[], PsLd_of_PsLTL (PsLTL_nil 0), rfl⟩ (by simp) (BwT_nil 0)
+    have h2 := hB 0 le_rfl
+    rw [Nat.sub_self] at h2
+    simpa only [mlift_zero, List.map_cons, List.map_nil, List.nil_append] using h2
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, unitC, shiftr01, p1] using h
+
 end PmA
 end TRIO
