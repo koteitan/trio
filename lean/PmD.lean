@@ -20,27 +20,31 @@ open PmB PmC
 
 /-- 木のクラス（段 v）。並びを後ろから 1 つずつ作る。
 - deep: (0,true) の並びの後ろに深い葉。
-- same: 段 l+1 の節点の子の並び (l+1,false) に同じ段 l+1 の節点（深い節点の鎖）。 -/
+- same: 段 l+1 の節点の子の並び (l+1,false) に同じ段 l+1 の節点（深い節点の鎖）。
+- upF: (l+1,false) の並びに、より高い段 l'+1 の節点。その子の並びは文脈 (l'+1, true) で、荷と tie 0 だけ。 -/
 inductive TX (v : ℕ) : ℕ → Bool → List UT → Prop
   | nil (p : ℕ) (cl : Bool) : TX v p cl []
   | ch {p : ℕ} {cl : Bool} {us : List UT} {Z : TrioSeq} :
       TX v p cl us → Z ∈ Wg (2 * v) → based Z → TX v p cl (us ++ [UT.ch Z])
   | tie0 {p : ℕ} {cl : Bool} {us cs : List UT} :
       TX v p cl us → TX v 0 true cs → TX v p cl (us ++ [UT.tie 0 cs])
-  | up {p : ℕ} {us : List UT} {l : ℕ} {cs : List UT} :
-      TX v p true us → p < l + 1 → TX v (l + 1) false cs → TX v p true (us ++ [UT.tie (l + 1) cs])
+  | up {us : List UT} {l : ℕ} {cs : List UT} :
+      TX v 0 true us → TX v (l + 1) false cs → TX v 0 true (us ++ [UT.tie (l + 1) cs])
   | deep {us : List UT} : TX v 0 true us → TX v 0 true (us ++ [deepU])
   | same {l : ℕ} {us cs : List UT} :
       TX v (l + 1) false us → TX v (l + 1) false cs → TX v (l + 1) false (us ++ [UT.tie (l + 1) cs])
+  | upF {l l' : ℕ} {us cs : List UT} :
+      TX v (l + 1) false us → l < l' → TX v (l' + 1) true cs → TX v (l + 1) false (us ++ [UT.tie (l' + 1) cs])
 
 theorem TX_raw {v : ℕ} {p : ℕ} {cl : Bool} {us : List UT} (h : TX v p cl us) : TRawLs v us := by
   induction h with
   | nil => trivial
   | ch _ hZ hb ih => exact TRawLs_snoc.mpr ⟨ih, hZ, hb⟩
   | tie0 _ _ ih ihc => exact TRawLs_snoc.mpr ⟨ih, ihc⟩
-  | up _ _ _ ih ihc => exact TRawLs_snoc.mpr ⟨ih, ihc⟩
+  | up _ _ ih ihc => exact TRawLs_snoc.mpr ⟨ih, ihc⟩
   | deep _ ih => exact TRawLs_snoc.mpr ⟨ih, by simp [deepU, TRawL, TRawLs]⟩
   | same _ _ ih ihc => exact TRawLs_snoc.mpr ⟨ih, ihc⟩
+  | upF _ _ _ ih ihc => exact TRawLs_snoc.mpr ⟨ih, ihc⟩
 
 theorem TX_mono {v u : ℕ} (hvu : v ≤ u) {p : ℕ} {cl : Bool} {us : List UT} (h : TX v p cl us) :
     TX u p cl us := by
@@ -48,9 +52,10 @@ theorem TX_mono {v u : ℕ} (hvu : v ≤ u) {p : ℕ} {cl : Bool} {us : List UT}
   | nil p cl => exact TX.nil p cl
   | ch _ hZ hb ih => exact TX.ch ih (Wg_mono (by omega) hZ) hb
   | tie0 _ _ ih ihc => exact TX.tie0 ih ihc
-  | up _ hpl _ ih ihc => exact TX.up ih hpl ihc
+  | up _ _ ih ihc => exact TX.up ih ihc
   | deep _ ih => exact TX.deep ih
   | same _ _ ih ihc => exact TX.same ih ihc
+  | upF _ hll _ ih ihc => exact TX.upF ih hll ihc
 
 theorem farTs_snoc (us : List UT) (x : UT) : farTs (us ++ [x]) = farTs us ++ [farT x] := by
   rw [HdR.farTs_append]; rfl
@@ -224,6 +229,8 @@ theorem SLF_PSDec (l : ℕ) : HeC.PSDec (SLF l) := HeC.PSDec_clS (HeC.PSDec_chU 
 
 theorem SLF_closed (l : ℕ) : HeB.Ext (SLF l) (l + 1) (SLF l) := HeC.clS_closed (l + 1) _
 
+theorem SLF_last (l : ℕ) : HeC.LastL (SLF l) (l + 1) := HeC.LastL_clS (HeC.LastL_chU UF (l + 1))
+
 theorem chU_sub_SLF (l : ℕ) : ∀ C o f u Q, HeC.chU UF (l + 1) C o f u Q → SLF l C o f u Q :=
   HeC.B_sub_clS (l + 1) _
 
@@ -375,41 +382,54 @@ section
 variable {A : List ℕ} {k : ℕ} (hA01 : ∀ a ∈ A, 1 ≤ a) (hk : 1 ≤ k) (hAk : ∀ a ∈ A, a < k) (H : ℕ → ℕ)
 include hA01 hk hAk
 
-/-- ★★★ TX の並びの遠い像は、(0,true) なら UF で、(l+1,false) なら SLF l で良い。 -/
+/-- ★★★ TX の並びの遠い像は、(0,true) なら UF で、(l+1,false) なら SLF l で、
+(l+1,true)（upF の子の並び）なら空の並びが良い任意の集合で良い。 -/
 theorem Gd_TX {c p : ℕ} {cl : Bool} {us : List UT} (h : TX c p cl us) :
     (cl = true → p = 0 → HeB.Gd UF A k H c (farTs us)) ∧
-    (∀ l, cl = false → p = l + 1 → HeB.Gd (SLF l) A k H c (farTs us)) := by
+    (∀ l, cl = false → p = l + 1 → HeB.Gd (SLF l) A k H c (farTs us)) ∧
+    (∀ l, cl = true → p = l + 1 → ∀ P, HeB.PSOK P → HeC.PSDec P → HeB.Gd P A k H c [] →
+      HeB.Gd P A k H c (farTs us)) := by
   induction h with
-  | nil p cl => exact ⟨fun _ _ => UF_nil, fun l _ _ => Gd_nil_SLF l⟩
+  | nil p cl => exact ⟨fun _ _ => UF_nil, fun l _ _ => Gd_nil_SLF l, fun _ _ _ _ _ _ h0 => h0⟩
   | @ch p cl us Z _ hZ hb ih =>
       have hX : HeG.okLowP c (shiftr01 1 0 Z) := by
         have := HeG.okLowP_load (HeG.okLowP_nil c) hZ hb
         simpa using this
       rw [farTs_snoc]
       exact ⟨fun h1 h2 => HeI.Gd_snoc_ch UF_PSOK UF_PSDec hA01 hk (ih.1 h1 h2) hX,
-        fun l h1 h2 => HeI.Gd_snoc_ch (SLF_PSOK l) (SLF_PSDec l) hA01 hk (ih.2 l h1 h2) hX⟩
+        fun l h1 h2 => HeI.Gd_snoc_ch (SLF_PSOK l) (SLF_PSDec l) hA01 hk (ih.2.1 l h1 h2) hX,
+        fun l h1 h2 P hP hD h0 => HeI.Gd_snoc_ch hP hD hA01 hk (ih.2.2 l h1 h2 P hP hD h0) hX⟩
   | @tie0 p cl us cs _ _ ih ihc =>
       rw [farTs_snoc]
       have hcs := ihc.1 rfl rfl
-      refine ⟨fun h1 h2 => ?_, fun l h1 h2 => ?_⟩
+      refine ⟨fun h1 h2 => ?_, fun l h1 h2 => ?_, fun l h1 h2 P hP hD h0 => ?_⟩
       · exact HeB.Gd_tie (HeC.Ext_chS0 UF) hA01 hk hAk (ih.1 h1 h2)
           (UF_sub (AdmF_chS0 UF_PSOK UF_PSDec) hcs)
-      · exact HeB.Gd_tie (HeC.Ext_chS0 (SLF l)) hA01 hk hAk (ih.2 l h1 h2)
+      · exact HeB.Gd_tie (HeC.Ext_chS0 (SLF l)) hA01 hk hAk (ih.2.1 l h1 h2)
           (UF_sub (AdmF_chS0 (SLF_PSOK l) (SLF_PSDec l)) hcs)
-  | @up p us l cs _ _ _ ih ihc =>
+      · exact HeB.Gd_tie (HeC.Ext_chS0 P) hA01 hk hAk (ih.2.2 l h1 h2 P hP hD h0)
+          (UF_sub (AdmF_chS0 hP hD) hcs)
+  | @up us l cs _ _ ih ihc =>
       rw [farTs_snoc]
-      refine ⟨fun _ h2 => ?_, fun _ h1 _ => absurd h1 (by simp)⟩
-      exact HeB.Gd_tie (HeC.Ext_chU UF (l + 1)) hA01 hk hAk (ih.1 rfl h2)
-        (HeB.Gd_mono (chU_sub_SLF l) (ihc.2 l rfl rfl))
+      refine ⟨fun _ _ => ?_, fun _ h1 _ => absurd h1 (by simp), fun _ _ h2 => absurd h2 (by omega)⟩
+      exact HeB.Gd_tie (HeC.Ext_chU UF (l + 1)) hA01 hk hAk (ih.1 rfl rfl)
+        (HeB.Gd_mono (chU_sub_SLF l) (ihc.2.1 l rfl rfl))
   | @deep us _ ih =>
       rw [farTs_snoc]
-      refine ⟨fun _ _ => ?_, fun _ h1 _ => absurd h1 (by simp)⟩
+      refine ⟨fun _ _ => ?_, fun _ h1 _ => absurd h1 (by simp), fun _ _ h2 => absurd h2 (by omega)⟩
       exact Gd_deepAfter hA01 hk hAk (ih.1 rfl rfl)
   | @same l us cs _ _ ih ihc =>
       rw [farTs_snoc]
-      refine ⟨fun h1 _ => absurd h1 (by simp), fun l' _ h2 => ?_⟩
+      refine ⟨fun h1 _ => absurd h1 (by simp), fun l' _ h2 => ?_, fun _ h1 _ => absurd h1 (by simp)⟩
       obtain rfl : l' = l := by omega
-      exact HeB.Gd_tie (SLF_closed l') hA01 hk hAk (ih.2 l' rfl rfl) (ihc.2 l' rfl rfl)
+      exact HeB.Gd_tie (SLF_closed l') hA01 hk hAk (ih.2.1 l' rfl rfl) (ihc.2.1 l' rfl rfl)
+  | @upF l l' us cs _ hll _ ih ihc =>
+      rw [farTs_snoc]
+      refine ⟨fun h1 _ => absurd h1 (by simp), fun l2 _ h2 => ?_, fun _ h1 _ => absurd h1 (by simp)⟩
+      obtain rfl : l2 = l := by omega
+      exact HeB.Gd_tie (HeC.Ext_chU (SLF l2) (l' + 1)) hA01 hk hAk (ih.2.1 l2 rfl rfl)
+        (ihc.2.2 l' rfl rfl _ (HeC.PSOK_chU (SLF_PSOK l2) (l' + 1)) (HeC.PSDec_chU (SLF l2) (l' + 1))
+          (HeH.Gd_nil_chU (SLF_PSOK l2) (SLF_closed l2) (SLF_last l2) (by omega)))
 
 end
 

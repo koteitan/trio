@@ -46,8 +46,8 @@ def TieOK (p : ℕ) (cl : Bool) (l pc : ℕ) (clc : Bool) : Prop :=
 
 theorem TieOK_zero (p : ℕ) (cl : Bool) : TieOK p cl 0 0 true := fun _ _ _ hu hc => TX.tie0 hu hc
 
-theorem TieOK_up {p l : ℕ} (hpl : p < l + 1) : TieOK p true (l + 1) (l + 1) false :=
-  fun _ _ _ hu hc => TX.up hu hpl hc
+theorem TieOK_up {l : ℕ} : TieOK 0 true (l + 1) (l + 1) false :=
+  fun _ _ _ hu hc => TX.up hu hc
 
 theorem GdT_good {P : TPS} {p : ℕ} {cl : Bool} (hP : TPSOK P p cl) {v : ℕ} {x : List UT}
     (h : GdT P p cl v x) {u : ℕ} (hvu : v ≤ u) {Uss : List (List UT)}
@@ -156,8 +156,8 @@ theorem TPSOK_TP0 : TPSOK TP0 0 true := TPSOK_tclS TPSOK_TPNil
 theorem TPSOK_tchS0 {P : TPS} {p : ℕ} {cl : Bool} (hP : TPSOK P p cl) : TPSOK (tchS0 P p cl) 0 true :=
   TPSOK_tclS (TPSOK_text1 hP (TieOK_zero p cl))
 
-theorem TPSOK_tchU {P : TPS} {p l : ℕ} (hP : TPSOK P p true) (hpl : p < l + 1) :
-    TPSOK (tchU P p (l + 1)) (l + 1) false := TPSOK_text1 hP (TieOK_up hpl)
+theorem TPSOK_tchU {P : TPS} {l : ℕ} (hP : TPSOK P 0 true) :
+    TPSOK (tchU P 0 (l + 1)) (l + 1) false := TPSOK_text1 hP TieOK_up
 
 /-! ## 分解 -/
 
@@ -191,8 +191,8 @@ theorem TPSDec_TP0 : TPSDec TP0 0 true := TPSDec_tclS TPSDec_TPNil
 theorem TPSDec_tchS0 (P : TPS) (p : ℕ) (cl : Bool) : TPSDec (tchS0 P p cl) 0 true :=
   TPSDec_tclS (TPSDec_text1 P (TieOK_zero p cl))
 
-theorem TPSDec_tchU (P : TPS) {p l : ℕ} (hpl : p < l + 1) : TPSDec (tchU P p (l + 1)) (l + 1) false :=
-  TPSDec_text1 P (TieOK_up hpl)
+theorem TPSDec_tchU (P : TPS) {l : ℕ} : TPSDec (tchU P 0 (l + 1)) (l + 1) false :=
+  TPSDec_text1 P TieOK_up
 
 /-! ## 最後の段 -/
 
@@ -433,7 +433,7 @@ theorem GdT_towT {P : TPS} (hcl : TExt P 0 true 0 P) {v : ℕ} {us : List UT} (h
 /-- ★ 最上段の上の葉: 段 0 の延長で閉じた集合で、段 l+1 の空の節点を足せる。 -/
 theorem GdT_upleaf {P : TPS} (hP : TPSOK P 0 true) (hcl : TExt P 0 true 0 P) (hlast : TLast P 0) {l : ℕ}
     {v : ℕ} {us : List UT} (h : GdT P 0 true v us) : GdT P 0 true v (us ++ [UT.tie (l + 1) []]) := by
-  refine ⟨TX.up h.1 (by omega) (TX.nil _ _), fun u hu Uss hU hG Q hQ => ?_⟩
+  refine ⟨TX.up h.1 (TX.nil _ _), fun u hu Uss hU hG Q hQ => ?_⟩
   have hT := GdT_towT hcl h
   have hrep : ∀ j, HeL.BotCL u Uss Q (HeH.towT 0 us j) := fun j => (hT j).2 u hu Uss hU hG Q hQ
   have hDF : Fr (topTs u us) := Fr_topTs u us
@@ -521,9 +521,9 @@ theorem Adm_TP0 : Adm TP0 := ⟨TPSOK_TP0, TPSDec_TP0, TP0_closed, TLast_TP0, fu
 theorem GdT_nil_tchU1 {l v : ℕ} : GdT (tchU U0 0 (l + 1)) (l + 1) false v [] :=
   GdT_nil_tchU U0_TPSOK U0_closed U0_last
 
-theorem TPSOK_tchU1 (l : ℕ) : TPSOK (tchU U0 0 (l + 1)) (l + 1) false := TPSOK_tchU U0_TPSOK (by omega)
+theorem TPSOK_tchU1 (l : ℕ) : TPSOK (tchU U0 0 (l + 1)) (l + 1) false := TPSOK_tchU U0_TPSOK
 
-theorem TPSDec_tchU1 (l : ℕ) : TPSDec (tchU U0 0 (l + 1)) (l + 1) false := TPSDec_tchU U0 (by omega)
+theorem TPSDec_tchU1 (l : ℕ) : TPSDec (tchU U0 0 (l + 1)) (l + 1) false := TPSDec_tchU U0
 
 /-! ## 任意の接頭辞の後ろの深い葉 -/
 
@@ -536,7 +536,7 @@ theorem GdT_Lt {v : ℕ} {pre : List UT} (h : GdT U0 0 true v pre) : ∀ j, GdT 
       have hcs := GdT_jump (TExt_tchS0 (tchU U0 0 (0 + 1)) (0 + 1) false) (TieOK_zero (0 + 1) false) hin
         (GdT_nil_tchU1 (l := 0))
       rw [List.nil_append] at hcs
-      exact GdT_jump (TExt_tchU U0 0 (0 + 1)) (TieOK_up (by omega)) hcs h
+      exact GdT_jump (TExt_tchU U0 0 (0 + 1)) TieOK_up hcs h
 
 /-- ★★★ U0 で良い並びの後ろに深い葉を置いても U0 で良い。 -/
 theorem GdT_deepAfter {v : ℕ} {pre : List UT} (h : GdT U0 0 true v pre) :
@@ -680,7 +680,7 @@ theorem unplugT (l : ℕ) : ∀ (i u : ℕ) (Q : Path), tcG (tchU U0 0 (l + 1)) 
   | 0, u, Q, hQ => by
       obtain ⟨Qr, p, rfl, hQr, hp⟩ := hQ
       refine ⟨Qr, [(p, l + 1)], rfl, fun e he => by simp at he; subst he; rfl, hQr, fun Y hY => ?_⟩
-      exact GdT_jump (TExt_tchU U0 0 (l + 1)) (TieOK_up (by omega)) hY hp
+      exact GdT_jump (TExt_tchU U0 0 (l + 1)) TieOK_up hY hp
   | i + 1, u, Q, hQ => by
       rcases hQ with hQ | ⟨Q'', p, rfl, hQ'', hp⟩
       · obtain ⟨Qr, C, hQe, hC, hQr, hY⟩ := unplugT l i u Q hQ
@@ -788,40 +788,99 @@ theorem GdT_nil_SLT (l : ℕ) {v : ℕ} : GdT (SLT l) (l + 1) false v [] :=
 
 /-! ## 本定理: TX の並びは良い -/
 
-/-- ★★★ TX の並びは、(0,true) なら U0 で、(l+1,false) なら SLT l で良い。 -/
+/-! ## より高い段の葉と upF の子の位置 -/
+
+theorem SLT_last (l : ℕ) : TLast (SLT l) (l + 1) := TLast_tcS (TLast_tchU U0 0 (l + 1))
+
+theorem GdT_towTS (l : ℕ) {v : ℕ} {cs : List UT} (h : GdT (SLT l) (l + 1) false v cs) :
+    ∀ j, GdT (SLT l) (l + 1) false v (HeH.towT (l + 1) cs j)
+  | 0 => h
+  | j + 1 => GdT_jump (SLT_closed l) (TieOK_same l) (GdT_towTS l h j) h
+
+/-- ★★ SLT l の並びの後ろに、より高い段 l'+1 の葉。根は道の最後の節点（段 l+1）、塔は同じ段の入れ子。 -/
+theorem GdT_upleafS (l l' : ℕ) (hll : l < l') {v : ℕ} {cs : List UT} (h : GdT (SLT l) (l + 1) false v cs) :
+    GdT (SLT l) (l + 1) false v (cs ++ [UT.tie (l' + 1) []]) := by
+  refine ⟨TX.upF h.1 hll (TX.nil _ _), fun u hu Uss hU hG Q hQ => ?_⟩
+  have hT := GdT_towTS l h
+  have hrep : ∀ j, HeL.BotCL u Uss Q (HeH.towT (l + 1) cs j) := fun j => (hT j).2 u hu Uss hU hG Q hQ
+  have eT : topTs u (cs ++ [UT.tie (l' + 1) []])
+      = topTs u cs ++ [((1, u + 1 + (l' + 1), 0) : ℕ × ℕ × ℕ)] := by
+    simp [topTs_append, topTs, topT, shiftr01]
+  rcases List.eq_nil_or_concat Q with rfl | ⟨Q', ⟨v', p'⟩, rfl⟩
+  · exfalso
+    have := SLT_last l u [] hQ
+    simp [HeC.lastL] at this
+  · simp only [List.concat_eq_append] at hQ hrep ⊢
+    have hp' : p' = l + 1 := by have := SLT_last l u _ hQ; rwa [HeC.lastL_snoc] at this
+    subst hp'
+    have eW : ∀ T : List UT, HeL.BotCL u Uss (Q' ++ [(v', l + 1)]) T
+        = GTC CLTL u ((wLT u (Uss ++ [HeB.plugQ Q' []], []) ++ shiftr01 (Q'.length + 1) 0 (topTs u v')) ++
+            shiftr01 (Q'.length + 1) 0
+              (((1, u + 1 + (l + 1), 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (topTs u T))) := by
+      intro T
+      rw [HeL.BotCL_snoc_eq, HeL.BotCL_word, HeM.topTs_snoc_tieL, shiftr01_append0, List.append_assoc]
+    rw [eW, eT]
+    refine HeN.upleafT_core (Fr_topTs u cs) (by omega) (fun j => ?_)
+    have := hrep j
+    rwa [eW, HeN.topTs_towT] at this
+
+theorem TieOK_upF (l l' : ℕ) (hll : l < l') : TieOK (l + 1) false (l' + 1) (l' + 1) true :=
+  fun _ _ _ hu hc => TX.upF hu hll hc
+
+/-- upF の子の位置（SLT l の道に段 l'+1 の節点）で空の並びは良い（高い葉）。 -/
+theorem GdT_nil_upF (l l' : ℕ) (hll : l < l') {v : ℕ} :
+    GdT (text1 (SLT l) (l + 1) false (l' + 1)) (l' + 1) true v [] := by
+  refine ⟨TX.nil _ _, fun u _ Uss hU hG Q hQ => ?_⟩
+  obtain ⟨Q', p, rfl, hQ', hp⟩ := hQ
+  rw [HeL.BotCL_snoc_eq]
+  exact (GdT_upleafS l l' hll hp).2 u le_rfl Uss hU hG Q' hQ'
+
+/-- ★★★ TX の並びは、(0,true) なら U0 で、(l+1,false) なら SLT l で、(l+1,true)（upF の子）なら
+空の並びが良い任意の集合で良い。 -/
 theorem GdT_TX {v p : ℕ} {cl : Bool} {us : List UT} (h : TX v p cl us) :
     (cl = true → p = 0 → GdT U0 p cl v us) ∧
-    (∀ l, cl = false → p = l + 1 → GdT (SLT l) p cl v us) := by
+    (∀ l, cl = false → p = l + 1 → GdT (SLT l) p cl v us) ∧
+    (∀ l, cl = true → p = l + 1 → ∀ P, TPSOK P p cl → TPSDec P p cl → GdT P p cl v [] → GdT P p cl v us) := by
   induction h with
   | nil p cl =>
       exact ⟨fun h1 h2 => by subst h1; subst h2; exact U0_nil,
-        fun l h1 h2 => by subst h1; subst h2; exact GdT_nil_SLT l⟩
+        fun l h1 h2 => by subst h1; subst h2; exact GdT_nil_SLT l, fun _ _ _ _ _ _ h0 => h0⟩
   | @ch p cl us Z _ hZ hb ih =>
-      refine ⟨fun h1 h2 => ?_, fun l h1 h2 => ?_⟩
+      refine ⟨fun h1 h2 => ?_, fun l h1 h2 => ?_, fun l h1 h2 P hP hD h0 => ?_⟩
       · subst h1; subst h2
         exact GdT_load U0_TPSOK U0_TPSDec Z hZ hb us (ih.1 rfl rfl)
       · subst h1; subst h2
-        exact GdT_load (SLT_TPSOK l) (SLT_TPSDec l) Z hZ hb us (ih.2 l rfl rfl)
+        exact GdT_load (SLT_TPSOK l) (SLT_TPSDec l) Z hZ hb us (ih.2.1 l rfl rfl)
+      · exact GdT_load hP hD Z hZ hb us (ih.2.2 l h1 h2 P hP hD h0)
   | @tie0 p cl us cs _ _ ih ihc =>
       have hcs := ihc.1 rfl rfl
-      refine ⟨fun h1 h2 => ?_, fun l h1 h2 => ?_⟩
+      refine ⟨fun h1 h2 => ?_, fun l h1 h2 => ?_, fun l h1 h2 P hP hD h0 => ?_⟩
       · subst h1; subst h2
         exact GdT_jump (TExt_tchS0 U0 0 true) (TieOK_zero 0 true)
           (U0_sub (Adm_tchS0 U0_TPSOK U0_TPSDec) hcs) (ih.1 rfl rfl)
       · subst h1; subst h2
         exact GdT_jump (TExt_tchS0 (SLT l) (l + 1) false) (TieOK_zero (l + 1) false)
-          (U0_sub (Adm_tchS0 (SLT_TPSOK l) (SLT_TPSDec l)) hcs) (ih.2 l rfl rfl)
-  | @up p us l cs _ hpl _ ih ihc =>
-      refine ⟨fun _ h2 => ?_, fun _ h1 _ => absurd h1 (by simp)⟩
-      subst h2
-      exact GdT_jump (TExt_tchU U0 0 (l + 1)) (TieOK_up hpl) (GdT_sub (tchU_sub_SLT l) (ihc.2 l rfl rfl))
+          (U0_sub (Adm_tchS0 (SLT_TPSOK l) (SLT_TPSDec l)) hcs) (ih.2.1 l rfl rfl)
+      · exact GdT_jump (TExt_tchS0 P p cl) (TieOK_zero p cl)
+          (U0_sub (Adm_tchS0 hP hD) hcs) (ih.2.2 l h1 h2 P hP hD h0)
+  | @up us l cs _ _ ih ihc =>
+      refine ⟨fun _ _ => ?_, fun _ h1 _ => absurd h1 (by simp), fun _ _ h2 => absurd h2 (by omega)⟩
+      exact GdT_jump (TExt_tchU U0 0 (l + 1)) TieOK_up (GdT_sub (tchU_sub_SLT l) (ihc.2.1 l rfl rfl))
         (ih.1 rfl rfl)
   | @deep us _ ih =>
-      exact ⟨fun _ _ => GdT_deepAfter (ih.1 rfl rfl), fun _ h1 _ => absurd h1 (by simp)⟩
+      exact ⟨fun _ _ => GdT_deepAfter (ih.1 rfl rfl), fun _ h1 _ => absurd h1 (by simp),
+        fun _ _ h2 => absurd h2 (by omega)⟩
   | @same l us cs _ _ ih ihc =>
-      refine ⟨fun h1 _ => absurd h1 (by simp), fun l' _ h2 => ?_⟩
+      refine ⟨fun h1 _ => absurd h1 (by simp), fun l' _ h2 => ?_, fun _ h1 _ => absurd h1 (by simp)⟩
       obtain rfl : l' = l := by omega
-      exact GdT_jump (SLT_closed l') (TieOK_same l') (ihc.2 l' rfl rfl) (ih.2 l' rfl rfl)
+      exact GdT_jump (SLT_closed l') (TieOK_same l') (ihc.2.1 l' rfl rfl) (ih.2.1 l' rfl rfl)
+  | @upF l l' us cs _ hll _ ih ihc =>
+      refine ⟨fun h1 _ => absurd h1 (by simp), fun l2 _ h2 => ?_, fun _ h1 _ => absurd h1 (by simp)⟩
+      obtain rfl : l2 = l := by omega
+      exact GdT_jump (TExt_text1 (SLT l2) (l2 + 1) false (l' + 1)) (TieOK_upF l2 l' hll)
+        (ihc.2.2 l' rfl rfl _ (TPSOK_text1 (SLT_TPSOK l2) (TieOK_upF l2 l' hll))
+          (TPSDec_text1 (SLT l2) (TieOK_upF l2 l' hll)) (GdT_nil_upF l2 l' hll))
+        (ih.2.1 l2 rfl rfl)
 
 theorem GdT_TP0_TX {v : ℕ} {us : List UT} (h : TX v 0 true us) : GdT TP0 0 true v us :=
   U0_sub Adm_TP0 ((GdT_TX h).1 rfl rfl)
@@ -895,7 +954,7 @@ theorem W0_of_X (x : List UT) (hx : TX 0 0 true x) :
 
 /-- 行1693 の木: [tie 1 [tie 1 [], tie 0 []]]。 -/
 theorem TX_1693 : TX 0 0 true [UT.tie 1 [UT.tie 1 [], UT.tie 0 []]] := by
-  have := TX.up (TX.nil 0 true) (by omega : 0 < 0 + 1)
+  have := TX.up (TX.nil 0 true)
     (TX.tie0 (TX.same (l := 0) (TX.nil (v := 0) 1 false) (TX.nil 1 false)) (TX.nil 0 true))
   simpa using this
 

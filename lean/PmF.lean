@@ -15,7 +15,7 @@ open PmD PmE
 /-! ## TX の組み立て -/
 
 theorem TX_up1 {v : ℕ} {cs : List UT} (h : TX v 1 false cs) : TX v 0 true [UT.tie 1 cs] := by
-  simpa using TX.up (TX.nil (v := v) 0 true) (by omega : 0 < 0 + 1) h
+  simpa using TX.up (TX.nil (v := v) 0 true) h
 
 theorem TX_same1 {v : ℕ} {us cs : List UT} (hu : TX v 1 false us) (hc : TX v 1 false cs) :
     TX v 1 false (us ++ [UT.tie 1 cs]) := TX.same (l := 0) hu hc
@@ -93,6 +93,67 @@ theorem R1702 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(5,2,0),(6,2,0
     TX_up1 (TX_one1 (TX_one1 (TX_one1 (TX.nil (v := 0) 1 false))))
   have h := W0_of_X _ hx
   simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01] using h
+
+/-! ## 行1703〜1708: (1,false) の並びの中の、より高い段 2 の節点 -/
+
+theorem TX_upF12 {v : ℕ} {us cs : List UT} (hu : TX v 1 false us) (hc : TX v 2 true cs) :
+    TX v 1 false (us ++ [UT.tie 2 cs]) := TX.upF (l := 0) (l' := 1) hu (by omega) hc
+
+theorem TX_1703 : TX 0 0 true [UT.tie 1 [UT.tie 2 []]] := by
+  simpa using TX_up1 (by simpa using TX_upF12 (TX.nil (v := 0) 1 false) (TX.nil 2 true))
+
+/-- ★ シート行 1703 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,3,0) ∈ W 0。 -/
+theorem R1703 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,3,0)] : TrioSeq) ∈ W 0 := by
+  have h := W0_of_X _ TX_1703
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01] using h
+
+/-- ★ シート行 1704 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,3,0)(1,1,1) ∈ W 0。 -/
+theorem R1704 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,3,0),(1,1,1)] : TrioSeq) ∈ W 0 := by
+  have hS := starOK_X [[UT.tie 1 [UT.tie 2 []]]] (fun us h => by simp at h; subst h; exact TX_1703)
+    [] (by simp [GzJ.NoTie]) (RawU_nil 0) [] (PsLTL_nil 0) (Ls := [([] : TrioSeq)])
+    (WordsG_consT (TF_nil 0) (WordsG_nil 0))
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01] using h
+
+/-- ★ シート行 1705 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,3,0)(1,1,1)(2,1,1) ∈ W 0。 -/
+theorem R1705 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,3,0),(1,1,1),(2,1,1)] : TrioSeq) ∈ W 0 := by
+  have hS := starOK_X [[UT.tie 1 [UT.tie 2 []]]] (fun us h => by simp at h; subst h; exact TX_1703)
+    [] (by simp [GzJ.NoTie]) (RawU_nil 0) [PmA.p0]
+    (PsLTL_cons (fun _ h => by simp at h) (by simp [GzJ.NoTie]) (RawU_nil 0) (PsLTL_nil 0))
+    (WordsG_nil 0)
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01, PmA.p0] using h
+
+/-- ★ シート行 1706 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,3,0)(3,2,0) ∈ W 0。 -/
+theorem R1706 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,3,0),(3,2,0)] : TrioSeq) ∈ W 0 := by
+  have hx : TX 0 0 true [UT.tie 1 [UT.tie 2 []], UT.tie 1 []] := by
+    simpa using TX.up (l := 0) TX_1703 (TX.nil 1 false)
+  have h := W0_of_X _ hx
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01] using h
+
+/-- ★ シート行 1707 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,3,0)(4,3,0) ∈ W 0。 -/
+theorem R1707 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,3,0),(4,3,0)] : TrioSeq) ∈ W 0 := by
+  have hx : TX 0 0 true [UT.tie 1 [UT.tie 2 [], UT.tie 2 []]] := by
+    have h1 := TX_upF12 (TX_upF12 (TX.nil (v := 0) 1 false) (TX.nil 2 true)) (TX.nil 2 true)
+    simp only [List.nil_append, List.cons_append] at h1
+    exact TX_up1 h1
+  have h := W0_of_X _ hx
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01] using h
+
+/-- ★ シート行 1708 = (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,3,0)(5,1,0)(1,1,1)(2,1,1) ∈ W 0。 -/
+theorem R1708 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,3,0),(5,1,0),(1,1,1),(2,1,1)] : TrioSeq) ∈ W 0 := by
+  have hx : TX 0 0 true [UT.tie 1 [UT.tie 2 [UT.tie 0 []]]] := by
+    have h0 := TX_tie0E (TX.nil (v := 0) 2 true)
+    simp only [List.nil_append] at h0
+    have h1 := TX_upF12 (TX.nil (v := 0) 1 false) h0
+    simp only [List.nil_append] at h1
+    exact TX_up1 h1
+  have hS := starOK_X [[UT.tie 1 [UT.tie 2 [UT.tie 0 []]]]] (fun us h => by simp at h; subst h; exact hx)
+    [] (by simp [GzJ.NoTie]) (RawU_nil 0) [PmA.p0]
+    (PsLTL_cons (fun _ h => by simp at h) (by simp [GzJ.NoTie]) (RawU_nil 0) (PsLTL_nil 0))
+    (WordsG_nil 0)
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01, PmA.p0] using h
 
 end PmF
 end TRIO
