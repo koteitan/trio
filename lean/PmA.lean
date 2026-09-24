@@ -650,5 +650,244 @@ theorem Gd_deep {A : List ℕ} {k : ℕ} {H : ℕ → ℕ} {c : ℕ} :
   rw [imgT_deep]
   exact BotT_deep hE.2.2.1 hE.2.2.2.1 hE.2.2.2.2.1 hL
 
+/-! ## GTC 側: 深い葉の後ろに荷を足す（HeM.GdT_load の最上段の場合の写し） -/
+
+/-- 子の並び x は、全ての段 u ≥ v・全ての良い接頭辞 Uss の後ろで良い（最上段の道 [] での BotCL）。 -/
+def DL (v : ℕ) (x : List UT) : Prop :=
+  ∀ u, v ≤ u → ∀ Uss, WOK u Uss → HeL.GoodTTL u Uss → HeL.BotCL u Uss [] x
+
+/-- 子の並び x は TRawLs で、遠い像が最上段の道の集合 PNil で Gd（WOK を延ばせる）。 -/
+def WC (v : ℕ) (x : List UT) : Prop :=
+  TRawLs v x ∧ ∀ u, v ≤ u → HeB.Gd HeC.PNil [] 1 (fun _ => 0) u (farTs x)
+
+theorem WOK_snoc_WC {v u : ℕ} (hvu : v ≤ u) {Uss : List (List UT)} {x : List UT} (hU : WOK u Uss)
+    (hx : WC v x) : WOK u (Uss ++ [x]) := by
+  refine ⟨fun us hus => ?_, fun u' hu' => ?_⟩
+  · rcases List.mem_append.mp hus with hus | hus
+    · exact hU.1 us hus
+    · simp only [List.mem_singleton] at hus; subst hus; exact TRawLs_mono hvu _ hx.1
+  · have hL : GoodChtX ([] ++ []) 1 (fun _ => 0) u' (Uss.map farTs) := by simpa using hU.2 u' hu'
+    have := HeB.Gd_good HeC.PSOK_PNil (hx.2 u' (le_trans hvu hu'))
+      (HcM.EmbU_triv (A := []) (by simp) (by simp) (by decide) (fun _ => 0)) le_rfl hL
+      (show HeC.PNil ([] ++ []) 1 (fun _ => 0) u' [] from rfl)
+    rw [List.map_append, List.map_singleton]
+    simpa [HeB.plugQ, HeB.imgT_zero] using this
+
+theorem GoodTTL_of_DL {v u : ℕ} (hvu : v ≤ u) {Uss : List (List UT)} {x : List UT} (hx : DL v x)
+    (hU : WOK u Uss) (hG : HeL.GoodTTL u Uss) : HeL.GoodTTL u (Uss ++ [x]) := by
+  intro u' hu'
+  have := hx u' (le_trans hvu hu') Uss (WOK_mono hu' hU) (fun u'' hu'' => hG u'' (le_trans hu' hu''))
+  exact this
+
+theorem DL_deep (v : ℕ) : DL v [HdA.UT.tie 1 [HdA.UT.tie 1 []]] :=
+  fun u _ Uss hU hG => deep_after u Uss hU hG
+
+theorem WC_deep (v : ℕ) : WC v [HdA.UT.tie 1 [HdA.UT.tie 1 []]] :=
+  ⟨by simp [TRawLs, TRawL], fun u _ => by simpa [farTs, farT] using Gd_deep⟩
+
+theorem WC_snoc_ch {v : ℕ} {pre : List UT} (hp : WC v pre) {Z : TrioSeq} (hZ : Z ∈ Wg (2 * v))
+    (hb : based Z) : WC v (pre ++ [UT.ch Z]) := by
+  refine ⟨TRawLs_append.mpr ⟨hp.1, by simp [TRawLs, TRawL]; exact ⟨hZ, hb⟩⟩, fun u hu => ?_⟩
+  rw [HdR.farTs_append]
+  have hZu : Z ∈ Wg (2 * u) := Wg_mono (by omega) hZ
+  have hX : HeG.okLowP u (shiftr01 1 0 Z) := by simpa using HeG.okLowP_load (HeG.okLowP_nil u) hZu hb
+  simpa [farTs, farT] using
+    HeI.Gd_snoc_ch HeC.PSOK_PNil HeC.PSDec_PNil (by simp) (le_refl 1) (hp.2 u hu) hX
+
+/-- ★★ 最上段で、良い子の並び pre（DL, WC）の後ろに荷 ch Z を足しても良い。 -/
+theorem DL_snoc_ch {v : ℕ} :
+    ∀ Z ∈ Wg (2 * v), based Z → ∀ pre : List UT, DL v pre → WC v pre → DL v (pre ++ [UT.ch Z]) := by
+  have key := based_Wg_ind (u := v)
+    (Q := fun Z => Z ∈ Wg (2 * v) → ∀ pre : List UT, DL v pre → WC v pre → DL v (pre ++ [UT.ch Z]))
+    ?_ ?_ ?_ ?_
+  · exact fun Z hZ hb => key Z hZ hb hZ
+  · -- nil
+    intro _ pre hD _ u hu Uss hU hG
+    have := hD u hu Uss hU hG
+    rw [HeL.BotCL_word] at this ⊢
+    rwa [HdS.topTs_snoc_ch, show shiftr01 1 0 ([] : TrioSeq) = [] from rfl, List.append_nil]
+  · -- flat
+    intro Z hZW hbZ hIH hZW' pre hD hW u hu Uss hU hG
+    have hDZ := hIH hZW pre hD hW
+    have hWZ := WC_snoc_ch hW hZW hbZ
+    have hVF : Fr (topTs u pre ++ shiftr01 1 0 Z) := Fr_append (Fr_topTs _ _) (Fr_shift1 Z)
+    rw [HeL.BotCL_word, HdS.topTs_snoc_ch]
+    obtain ⟨M, hM⟩ : ∃ M : TrioSeq,
+        M = ((1, u + 1, 0) : ℕ × ℕ × ℕ) :: shiftr01 1 0 (topTs u pre ++ shiftr01 1 0 Z) := ⟨_, rfl⟩
+    have eW : wLT u (Uss ++ [HeB.plugQ [] []], []) ++
+          shiftr01 (([] : HeB.Path).length + 1) 0
+            (topTs u pre ++ shiftr01 1 0 (Z ++ [((0, 0, 0) : ℕ × ℕ × ℕ)]))
+        = FTL0 (u + 1) (Uss.map (topTs u)) ++ M ++ [((1 + 1, 0, 0) : ℕ × ℕ × ℕ)] := by
+      rw [hM]; simp [wLT, FTL0_snoc, HeB.plugQ, topTs, unitsC, shiftr01]
+    rw [eW]
+    refine HdR.gtc_flat (by rw [hM]; simp) (by rw [hM]; rfl) ?_ (fun n => ?_)
+    · intro r' hr1 hr2
+      obtain ⟨w, rfl⟩ : ∃ w, r' = w + 1 := ⟨r' - 1, by omega⟩
+      have hw : w < (topTs u pre ++ shiftr01 1 0 Z).length := by
+        rw [hM] at hr2; simp only [List.length_cons, shiftr01_length] at hr2; omega
+      rw [hM, entry_cons, entry0_shiftr01 hw]
+      have := getD_row0_ge hVF hw
+      omega
+    · have hGn : ∀ n, WOK u (Uss ++ List.replicate n (pre ++ [UT.ch Z])) ∧
+          HeL.GoodTTL u (Uss ++ List.replicate n (pre ++ [UT.ch Z])) := by
+        intro n
+        induction n with
+        | zero => simpa using And.intro hU hG
+        | succ n ih =>
+            rw [List.replicate_succ', ← List.append_assoc]
+            exact ⟨WOK_snoc_WC hu ih.1 hWZ, GoodTTL_of_DL hu hDZ ih.1 ih.2⟩
+      have := (hGn n).2 u le_rfl
+      have eR : wLT u (Uss ++ List.replicate n (pre ++ [UT.ch Z]), [])
+          = FTL0 (u + 1) (Uss.map (topTs u)) ++ (List.range n).flatMap (fun _ => M) := by
+        show FTL0 (u + 1) ((Uss ++ List.replicate n (pre ++ [UT.ch Z])).map (topTs u)) ++
+          unitsC u ([] : List (Option TrioSeq)) = _
+        rw [show unitsC u ([] : List (Option TrioSeq)) = [] from rfl, List.append_nil, List.map_append,
+          List.map_replicate, FTL0_rep, HdS.topTs_snoc_ch, hM]
+      rwa [eR] at this
+  · -- oper
+    intro Z hZW hbZ hlen hp hIH hZW' pre hD hW u hu Uss hU hG
+    rw [HeL.BotCL_word, HdS.topTs_snoc_ch, shiftr01_append0, shiftr01_add0, ← List.append_assoc]
+    refine HdR.gtc_oper hlen hp (fun n hn => ?_)
+    have := (hIH n hn).2 (hIH n hn).1 pre hD hW u hu Uss hU hG
+    rwa [HeL.BotCL_word, HdS.topTs_snoc_ch, shiftr01_append0, shiftr01_add0, ← List.append_assoc] at this
+  · -- orph
+    intro Z h j hZW hbZ hj1 hjv hnp hz hZW' pre hD hW u hu Uss hU hG
+    rw [HeL.BotCL_word, HdS.topTs_snoc_ch]
+    have eU : topTs u pre ++ shiftr01 1 0 (Z ++ [((h, j, 0) : ℕ × ℕ × ℕ)])
+        = (topTs u pre ++ shiftr01 1 0 Z) ++ [((h + 1, j, 0) : ℕ × ℕ × ℕ)] := by simp [shiftr01]
+    rw [eU]
+    have hHP : Hd (shiftr01 1 0 (Z ++ [((h, j, 0) : ℕ × ℕ × ℕ)])) := HcS.Hd_shift1_based hbZ
+    refine HdR.gtc_orph (HeL.PathCone_YtopL u Uss [] (fun q hq => by simp at hq))
+      (by rw [← eU]; exact Hd_app (Hd_topTLs u pre (TRawLs_mono hu pre hW.1)) hHP) hj1 (by omega) ?_
+      (fun z hz' hbz => ?_)
+    · have hlen : (topTs u pre ++ shiftr01 1 0 Z).length = (topTs u pre).length + Z.length := by
+        simp only [List.length_append, shiftr01_length]
+      rw [← eU, hlen, hasParent_append_gen (by simp [shiftr01])
+        (rsum_of_Hd (Fr_topTs _ _) (Fr_shift1 _) hHP), hasParent_shiftr01]
+      exact hnp
+    · have hzz := (hz z hz' hbz).2 (hz z hz' hbz).1 pre hD hW u hu Uss hU hG
+      rw [HeL.BotCL_word, HdS.topTs_snoc_ch] at hzz
+      have ez : topTs u pre ++ shiftr01 1 0 (Z ++ shiftr01 h 0 z)
+          = (topTs u pre ++ shiftr01 1 0 Z) ++ shiftr01 (h + 1) 0 z := by
+        rw [shiftr01_append0, shiftr01_add0, List.append_assoc]
+      rwa [ez] at hzz
+
+theorem DL_mono {v v' : ℕ} (h : v ≤ v') {x : List UT} (hx : DL v x) : DL v' x :=
+  fun u hu => hx u (le_trans h hu)
+
+theorem WC_mono {v v' : ℕ} (h : v ≤ v') {x : List UT} (hx : WC v x) : WC v' x :=
+  ⟨TRawLs_mono h x hx.1, fun u hu => hx.2 u (le_trans h hu)⟩
+
+theorem WC_tieE {v : ℕ} {pre : List UT} (hp : WC v pre) : WC v (pre ++ [UT.tie 0 []]) := by
+  refine ⟨TRawLs_append.mpr ⟨hp.1, by simp [TRawLs, TRawL]⟩, fun u hu => ?_⟩
+  rw [HdR.farTs_append]
+  simpa [farTs, farT] using HeG.Gd_tieE HeC.PSOK_PNil HeC.PSDec_PNil (hp.2 u hu)
+
+/-- ★★ 最上段で、良い子の並び pre の後ろに空の tie 0 を足しても良い（HeM.GdT_tieE の写し）。 -/
+theorem DL_tieE {v : ℕ} {pre : List UT} (hD : DL v pre) (hW : WC v pre) :
+    DL v (pre ++ [UT.tie 0 []]) := by
+  intro u' hu' Uss hU hG
+  rw [HeL.BotCL_word]
+  have eT : topTs u' (pre ++ [UT.tie 0 []]) = topTs u' pre ++ [((1, u' + 1, 0) : ℕ × ℕ × ℕ)] := by
+    simp [topTs_append, topTs, topT, shiftr01]
+  rw [eT]
+  have hQr : ∀ q ∈ ([] : HeB.Path), TRawLs u' q.1 := fun q hq => by simp at hq
+  have hraw : TRawLs u' pre := TRawLs_mono hu' pre hW.1
+  refine HdR.gtc_tie (HeL.PathCone_YtopL u' Uss [] hQr) (Fr_append (Fr_topTs _ _) (GzF.Fr_single le_rfl _ _))
+    (Hd_app (Hd_topTLs u' pre hraw) (fun _ => rfl)) (coneV_top (Fr_topTs _ _) u')
+    (fun u'' hu'' Z hZ hbZ => ?_) (fun L hC u3 hu3 => CLTL_lift L u' hC u3 hu3)
+  rw [HeL.mlift_YtopL hu'' hU.1 hQr,
+    mlift_topTLs pre hraw u' le_rfl (u'' - u'), show u' + (u'' - u') = u'' by omega]
+  have hD2 := DL_snoc_ch (v := u'') Z hZ hbZ pre (DL_mono (le_trans hu' hu'') hD)
+    (WC_mono (le_trans hu' hu'') hW)
+  have := hD2 u'' le_rfl Uss (WOK_mono hu'' hU) (fun u3 hu3 => hG u3 (le_trans hu'' hu3))
+  rwa [HeL.BotCL_word, HdS.topTs_snoc_ch] at this
+
+/-! ## 族: 先頭の語の最初の子の並びが x（DL, WC） -/
+
+theorem GoodTTL_first {x : List UT} (hD : DL 0 x) (hW : WC 0 x) :
+    ∀ Uss : List (List UT), (∀ us ∈ Uss, TreeTs 0 0 true us) →
+      WOK 0 ([x] ++ Uss) ∧ HeL.GoodTTL 0 ([x] ++ Uss) := by
+  intro Uss
+  induction Uss using List.reverseRecOn with
+  | nil =>
+      intro _
+      have h0 : WOK 0 ([] : List (List UT)) := WOK_of_TreeTs (fun _ h => by simp at h)
+      have := GoodTTL_of_DL le_rfl hD h0 (HeN.GoodTTL_nil 0)
+      exact ⟨by simpa using WOK_snoc_WC le_rfl h0 hW, by simpa using this⟩
+  | append_singleton Uss us ih =>
+      intro h
+      have h' : ∀ us' ∈ Uss, TreeTs 0 0 true us' := fun us' hus' => h us' (List.mem_append_left _ hus')
+      have hus := h us (List.mem_append_right _ (List.mem_singleton_self _))
+      obtain ⟨hWk, hGt⟩ := ih h'
+      refine ⟨by rw [← List.append_assoc]; exact WOK_snoc hWk hus, ?_⟩
+      have := HeL.GdT_good HeL.TPSOK_TP0 (HeN.GdT_treeTP0 hus) le_rfl hWk hGt (HeL.TPNil_TP0 0)
+      have e : ([x] ++ Uss) ++ [HeB.plugQ [] us] = [x] ++ (Uss ++ [us]) := by simp [HeB.plugQ]
+      rwa [e] at this
+
+/-- ★★ 先頭の語（子の並び x ＋ 段つきの木の子の並び Uss0、荷 us0）のあとに段つきの木の語の並び qs。 -/
+theorem BwT_first {x : List UT} (hD : DL 0 x) (hW : WC 0 x)
+    (Uss0 : List (List UT)) (hU0 : ∀ us ∈ Uss0, TreeTs 0 0 true us)
+    (us0 : List (Option TrioSeq)) (hNT : GzJ.NoTie us0) (hR : RawU 0 us0) :
+    ∀ qs : List (List (List UT) × List (Option TrioSeq)),
+    PsLTL 0 qs → BwT 0 ((([x] ++ Uss0, us0) :: qs).map (wLT 0)) := by
+  obtain ⟨hWk, hGt⟩ := GoodTTL_first hD hW Uss0 hU0
+  intro qs
+  induction qs using List.reverseRecOn with
+  | nil =>
+      intro _
+      have := GTC_wLTLw hWk hGt us0 hNT hR [] ⟨[], PsLd_of_PsLTL (PsLTL_nil 0), rfl⟩ (by simp) (BwT_nil 0)
+      simpa using this
+  | append_singleton qs q ih =>
+      intro h
+      have h' : PsLTL 0 qs := fun r hr => h r (List.mem_append_left _ hr)
+      have hq := h q (List.mem_append_right _ (List.mem_singleton_self _))
+      have hG := HeN.GTC_wLTL hq.1 (HeN.GoodTTL_all q.1 hq.1) q.2 hq.2.1 hq.2.2
+      have hC : PsLd 0 (([x] ++ Uss0, us0) :: qs) := by
+        have := PsLd_append (PsLd_word hWk hNT hR) (PsLd_of_PsLTL h')
+        simpa using this
+      have := hG _ ⟨([x] ++ Uss0, us0) :: qs, hC, rfl⟩ (Fr_CLT 0 (([x] ++ Uss0, us0) :: qs)) (ih h')
+      simpa [List.map_append] using this
+
+theorem starOK_first {x : List UT} (hD : DL 0 x) (hW : WC 0 x)
+    (Uss0 : List (List UT)) (hU0 : ∀ us ∈ Uss0, TreeTs 0 0 true us)
+    (us0 : List (Option TrioSeq)) (hNT : GzJ.NoTie us0) (hR : RawU 0 us0)
+    (qs : List (List (List UT) × List (Option TrioSeq))) (h : PsLTL 0 qs)
+    {Ls : List TrioSeq} (hW' : WordsG 0 Ls) :
+    StarOK 0 (rword 0 0 ((([x] ++ Uss0, us0) :: qs).map (wLT 0) ++ Ls)) := by
+  refine ⟨?_, fun p hp => rword_ge 0 0 _ p hp⟩
+  have hB := BwT_append_words (Fr_CLT 0 (([x] ++ Uss0, us0) :: qs)) (BwT_first hD hW Uss0 hU0 us0 hNT hR qs h)
+    Ls hW' 0 le_rfl
+  rw [Nat.sub_self] at hB
+  simpa only [mlift_zero, List.map_id'] using hB
+
+/-- ★ 族: 先頭の語（子の並び x ＋ Uss0、荷 us0）＋ 語の並び qs ＋ 遠い語 Ls ＋ 吊るした荷 Z。 -/
+theorem first_hang {x : List UT} (hD : DL 0 x) (hW : WC 0 x)
+    (Uss0 : List (List UT)) (hU0 : ∀ us ∈ Uss0, TreeTs 0 0 true us)
+    (us0 : List (Option TrioSeq)) (hNT : GzJ.NoTie us0) (hR : RawU 0 us0)
+    (qs : List (List (List UT) × List (Option TrioSeq))) (h : PsLTL 0 qs)
+    {Ls : List TrioSeq} (hW' : WordsG 0 Ls) {u : ℕ} {Z : TrioSeq} (hZ : Z ∈ Wg u) (hb : based Z) :
+    (((0, 0, 0) : ℕ×ℕ×ℕ) :: (rword 0 0 ((([x] ++ Uss0, us0) :: qs).map (wLT 0) ++ Ls) ++ shiftr01 1 0 Z))
+      ∈ W 0 :=
+  GxB.Wg0_sub_W0 (Wg_of_starOK (starOK_hang (starOK_first hD hW Uss0 hU0 us0 hNT hR qs h hW') hZ hb))
+
+/-- ★ R_pm ＋ シート行 1673 の尾: (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,1,0) ∈ W 0。 -/
+theorem Rpm_1673 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(3,1,0)] : TrioSeq) ∈ W 0 := by
+  have hS := starOK_first (x := [HdA.UT.tie 1 [HdA.UT.tie 1 []], UT.tie 0 []])
+    (by simpa using DL_tieE (DL_deep 0) (WC_deep 0)) (by simpa using WC_tieE (WC_deep 0))
+    [] (fun _ h => by simp at h) [] (by simp [GzJ.NoTie]) (RawU_nil 0) [] (PsLTL_nil 0) (WordsG_nil 0)
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01] using h
+
+/-- ★ R_pm ＋ シート行 1674 の尾: (0,0,0)(1,1,1)(2,1,1)(2,1,0)(3,2,0)(4,2,0)(3,1,0)(1,1,1)(2,1,1) ∈ W 0。 -/
+theorem Rpm_1674 : ([(0,0,0),(1,1,1),(2,1,1),(2,1,0),(3,2,0),(4,2,0),(3,1,0),(1,1,1),(2,1,1)] : TrioSeq) ∈ W 0 := by
+  have hS := starOK_first (x := [HdA.UT.tie 1 [HdA.UT.tie 1 []], UT.tie 0 []])
+    (by simpa using DL_tieE (DL_deep 0) (WC_deep 0)) (by simpa using WC_tieE (WC_deep 0))
+    [] (fun _ h => by simp at h) [] (by simp [GzJ.NoTie]) (RawU_nil 0) [p0]
+    (PsLTL_cons (fun _ h => by simp [p0] at h) (by simp [p0, GzJ.NoTie]) (RawU_nil 0) (PsLTL_nil 0))
+    (WordsG_nil 0)
+  have h := GxB.Wg0_sub_W0 (Wg_of_starOK hS)
+  simpa [rword, rcol, wLT, FTL0, topTs, topT, unitsC, shiftr01, p0] using h
+
 end PmA
 end TRIO
