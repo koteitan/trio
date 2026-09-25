@@ -412,7 +412,8 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
         while n < len(lad_) and n < len(base) and lad_[n] == base[n]: n += 1
         if not is_sib:                           # the ancestors: M(v) goes on after them
             cand = n - 1 if n == len(lad_) else -1   # (psi_{Omega_{w+1}}: after M(w))
-        elif n == len(base) and base[-1][2] == 0 and base[-1][1] > 0:
+        elif (n == len(base) and base[-1][2] == 0 and base[-1][1] > 0
+              and _relative(base, par, len(base) - 1)):
             cand = n - 2                         # a sibling spelt all of M(v): its leaf again
         else:                                    # or the deepest level column they share
             cs = [i for i in range(1, n) if _is_level(base, par, i)]
@@ -457,7 +458,12 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
     dx = own_dx if own is not None else x - tail[0][0]
     out = []
     for i, c in enumerate(tail):
-        cc = (c[0] + dx, c[1] + (bump if _relative(base, par, idx + 1 + i) else 0), c[2])
+        rel = _relative(base, par, idx + 1 + i)
+        cc = (c[0] + dx, c[1] + (bump if rel else 0), c[2])
+        if not rel and c[2] == 0 and c[1] > 0:
+            pp = next((q for q in reversed(out) if q[0] == cc[0] - 1), None)
+            if pp is None or pp[1] != cc[1]:     # an absolute level inside the spelling,
+                cc = FinLeaf(cc)                 # not level with the marker above it
         if seg and c[1] > seg[0][1]:             # W_(w2) + W_(w+2): (3,2,0)(4,3,1)(4,3,0)
             sx, sy = c[0] - seg[0][0], c[1] - seg[0][1]
             my = seg[0][1]                       # a leaf in the copy goes no deeper than
