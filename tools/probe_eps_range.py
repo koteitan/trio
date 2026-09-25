@@ -523,19 +523,32 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
     bump = d - lev if own is None or own_dy is None else own_dy
     dx = own_dx if own is not None else x - tail[0][0]
     out = []
+    seg0 = seg                                   # every storey copies the original part
+    up = 0                                       # the unit is written this many storeys up
     for i, c in enumerate(tail):
+        if (seg and i == 0 and idx > 0 and tuple(c) == tuple(seg[0])
+                and seg[-1][2] == 0 and seg[-1][1] == seg[0][1]
+                and not any(t[0] == seg[-1][0] and t[1] == seg[-1][1] for t in tail)):
+            # it would start on the siblings' marker, whose part ends in a leaf level with
+            # it that this unit does not continue (the upgrade reading): a leaf there, and
+            # the unit one storey up (W_(w^2)*W_(w+1) + W_(w2) inside psi_W_(w+1))
+            out.append((c[0] + dx, c[1] + bump, 0))
+            up = 1
+        c = (c[0] + up, c[1] + up, c[2])
         rel = _relative(base, par, idx + 1 + i)
-        cc = (c[0] + dx, c[1] + (bump if rel else 0), c[2])
+        cc = (c[0] + dx, c[1] + (bump if rel or up else 0), c[2])
         if not rel and c[2] == 0 and c[1] > 0:
             pp = next((q for q in reversed(out) if q[0] == cc[0] - 1), None)
             if pp is None or pp[1] != cc[1]:     # an absolute level inside the spelling,
                 cc = FinLeaf(cc)                 # not level with the marker above it
         if seg and c[1] > seg[0][1]:             # W_(w2) + W_(w+2): (3,2,0)(4,3,1)(4,3,0)
-            sx, sy = c[0] - seg[0][0], c[1] - seg[0][1]
-            my = seg[0][1]                       # a leaf in the copy goes no deeper than
-            seg = [a.__class__((a[0] + sx, a[1] if isinstance(a, FinLeaf) else
-                                min(a[1] + sy, my), a[2])) if isinstance(a, Leaf)
-                   else _mv(a, sx, sy) for a in seg]    # the marker it hung under
+            # a leaf shallower than the marker moves with it (the leaf of W_w under
+            # W_(w2)); one at its depth or deeper names its level and stays (W_(w+1))
+            sx, sy = c[0] - seg0[0][0], c[1] - seg0[0][1]
+            my = seg0[0][1]
+            seg = [a.__class__((a[0] + sx, a[1] if isinstance(a, FinLeaf) or a[1] >= my
+                                else a[1] + sy, a[2])) if isinstance(a, Leaf)
+                   else _mv(a, sx, sy) for a in seg0]
             out += [_mv(a, dx, bump) for a in seg]
         out.append(cc)
     return out
@@ -557,6 +570,13 @@ def _leaf_tail(gamma, arg, plvl):
     if not arg or (plvl is not None and v is not None and cmp_ord(v, plvl) == 0):
         return v
     return None
+
+def _deepened(seg):
+    """Does the marker seg starts with have a descendant in seg at its depth or deeper?"""
+    for a in seg[1:]:
+        if a[0] <= seg[0][0]: return False
+        if a[1] >= seg[0][1] and a[2] == 1: return True
+    return False
 
 def _capped_leaf(v, leaf, path):
     """An exponent leaf under a marker only reaches the marker's depth; each step further
@@ -638,7 +658,7 @@ def _pred_level(u):
     return u
 
 def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path=(),
-          pleaf=False):
+          pleaf=False, spell=None):
     """Copy the ordinal gamma into columns: one column per summand w^delta of gamma, and
     the children of that column spell out strip(delta).
 
@@ -711,7 +731,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
             if (ctx is None and not arg and len(run) == 1 and isinstance(run[0], Leaf)
                     and path and path[-1][2] == 1 and run[0][1] > path[-1][1]
                     and v is not None and fin(v) is None):
-                run = _capped_leaf(v, run[0], path)
+                run = _capped_leaf(v, run[0], spell if spell is not None else path)
             cols += run
             # the children of a collapse are its argument, written one level up
             if ctx is not None:
@@ -733,7 +753,9 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                     hx, hy = run[k][0] + 1, run[k][1]
                     if not sub_arg:              # (an argument keeps the whole spelling
                         cp = cp[:len(cp) - len(run) + k + 1]    # as its ladder)
-                cols += block(sub, hx, hy, sub_arg, None, v, hy, False, cp, len(run) == 1)
+                full = [run[-1]] if coll else _anc(lad, run)
+                cols += block(sub, hx, hy, sub_arg, None, v, hy, False, cp, len(run) == 1,
+                              full)
                 prev = (v if arg else None, lad + run)
                 # a leaf that ends the children and names a limit level (W_w^2 writes
                 # (1,1,1)(2,1,0) + suffix (1,1,1)) takes its upgrade suffix; the next unit
