@@ -469,11 +469,25 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
             if _is_level(base, par, i) and base[i][1] <= d and i > idx:
                 lev, idx = base[i][1], i
     best = None                                  # (cand, dx, dy) from the ladders of our own
-    for lad_, dx_, dy_, is_sib in ([(own, own_dx, own_dy, False)] if own is not None else []) + \
-                                  ([sib + (True,)] if sib is not None and sib[0] is not None else []):
+    cands = [(own, own_dx, own_dy, False, None)] if own is not None else []
+    if sib is not None and sib[0] is not None and len(sib[0]) > 1:
+        # the siblings: all they wrote, or only their last unit (the root's last child)
+        sp, _ = _forest(sib[0])
+        j0 = max([i for i in range(1, len(sib[0])) if sp[i] == 0] or [1])
+        cands.append(sib + (True, list(range(len(sib[0])))))
+        if j0 > 1:
+            cands.append(sib + (True, [0] + list(range(j0, len(sib[0])))))
+    for lad_, dx_, dy_, is_sib, ch in cands:
+        flat = lad_
+        if is_sib:
+            lad_ = [flat[i] for i in ch]
         n = 0
         root = False
-        while n < len(lad_) and n < len(base) and lad_[n] == base[n]: n += 1
+        while (n < len(lad_) and n < len(base) and lad_[n] == base[n]
+               and not (is_sib and (isinstance(lad_[n], SameLeaf) or
+                                    (isinstance(lad_[n], Leaf)
+                                     and not isinstance(lad_[n], FinLeaf))))):
+            n += 1                               # (a leaf is no rung)
         if not is_sib:                           # the ancestors: M(v) goes on after them
             cand = n - 1 if n == len(lad_) else -1   # (psi_{Omega_{w+1}}: after M(w))
         elif (n == len(base) and base[-1][2] == 0 and base[-1][1] > 0
@@ -485,17 +499,18 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
             if cand < 0 and idx == 0 and len(lad_) > 1 and lad_[1][2] == 1:
                 cand, root = 0, True             # only the root: W_(w^2) + W_(w+1)
         if (cand > idx or root) and (best is None or cand > best[0]):
-            best = (cand, dx_, dy_, lad_ if is_sib else None)
+            best = (cand, dx_, dy_,
+                    flat[ch[cand]:] if is_sib else None)   # from the shared column on
     own = None
     seg = []
     if best is not None:
         idx, own_dx, own_dy, slad = best
         lev, own = base[idx][1], True
-        if slad is not None and len(slad) > idx + 1 and slad[idx + 1][2] == 1:
+        if slad is not None and len(slad) > 1 and slad[1][2] == 1:
             # what the siblings wrote past the shared level column starts with a marker
             # (W_(w2): (3,2,1)): a column deeper than it takes a storey first, a copy of
             # that part moved to the column's own place
-            seg = slad[idx + 1:]
+            seg = slad[1:]
     tail = base[idx + 1:]
     if not tail:                                 # the chain already spells v out
         return [(x, base[-1][1], 0)]
@@ -651,6 +666,10 @@ class Leaf(tuple):
     """A column that names an absolute level (an exponent leaf): a storey copies it
     without raising its row-1 entry."""
 
+class SameLeaf(tuple):
+    """A leaf naming the level of the column above it (W_w^2 = (1,1,1)(2,1,0)): it moves
+    with a storey like the spelling, but is no rung of a ladder."""
+
 class FinLeaf(Leaf):
     """A leaf naming a finite level (W, W_2): a storey copies it as it is."""
 
@@ -717,7 +736,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
             if v is None:
                 run = [(x, 0, 0)]
             elif not arg and plvl is not None and cmp_ord(v, plvl) == 0:
-                run = [(x, py, 0)]               # the same level as the column above it
+                run = [SameLeaf((x, py, 0))]     # the same level as the column above it
             elif (ctx is None and arg and pleaf and plvl is not None and path[-1][2] == 0
                   and fin(plvl) is None and cmp_ord(v, add(plvl, ONE)) == 0):
                 # one level above a leaf at a limit level: that leaf is the rung, so only
