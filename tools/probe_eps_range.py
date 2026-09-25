@@ -509,7 +509,13 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
             # the last marker they share, sits one deeper than p (W_(w2), W_(w^2) under
             # the leaf of W_(w+1))
             sx, sy = p[0] + 1 - rest[0][0], p[1] + 1 - rest[0][1]
-            return [(c[0] + sx, c[1] + sy, c[2]) for c in rest]
+            r0 = len(base) - len(rest)
+            out = []
+            for i, c in enumerate(rest):
+                rel = _relative(base, par, r0 + i)
+                cc = (c[0] + sx, c[1] + (sy if rel else 0), c[2])
+                out.append(FinLeaf(cc) if not rel and c[2] == 0 and c[1] > 0 else cc)
+            return out
         if (p[2] == 1 and n == len(a_own) and n < len(base) and base[n][2] == 1
                 and base[n][1] == a_own[-1][1]
                 and all(c[0] > base[n - 1][0] for c in base[n:])):
@@ -594,13 +600,13 @@ def _deepened(seg):
         if a[1] >= seg[0][1] and a[2] == 1: return True
     return False
 
-def _capped_leaf(v, leaf, path):
+def _capped_leaf(v, leaf, path, spell=None):
     """An exponent leaf under a marker only reaches the marker's depth; each step further
     is a storey, a lifted copy of the chain from the deepest level column it shares with
     M(v) (W_(w2)*W_(w+2): (3,2,1) then (4,2,0)(3,2,0)(4,3,1)(5,3,0))."""
     m = path[-1]
     ph = (leaf[0], m[1], 0)                      # the leaf at the marker's depth
-    chain = list(path) + [ph]
+    chain = list(spell if spell is not None else path) + [ph]
     own, x0, y0 = _normal(chain)
     base = M(v)
     par, _ = _forest(base)
@@ -611,7 +617,8 @@ def _capped_leaf(v, leaf, path):
     seg = chain[max(cs):]
     out = [ph]
     for _ in range(leaf[1] - m[1]):
-        seg = [(c[0] + 1, c[1] + 1, c[2]) for c in seg]
+        seg = [c.__class__((c[0] + 1, c[1] if isinstance(c, FinLeaf) else c[1] + 1, c[2]))
+               for c in seg]
         out += seg
     return out
 
@@ -756,7 +763,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
             if (ctx is None and not arg and len(run) == 1 and isinstance(run[0], Leaf)
                     and path and path[-1][2] == 1 and run[0][1] > path[-1][1]
                     and v is not None and fin(v) is None):
-                run = _capped_leaf(v, run[0], spell if spell is not None else path)
+                run = _capped_leaf(v, run[0], path, spell)
             cols += run
             # the children of a collapse are its argument, written one level up
             if ctx is not None:
