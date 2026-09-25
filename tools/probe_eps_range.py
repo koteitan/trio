@@ -486,6 +486,13 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
                 cc = (c[0] + 2 + sdx, c[1] + (1 + sdy if rel else 0), c[2])
                 out.append(FinLeaf(cc) if not rel and c[2] == 0 and c[1] > 0 else cc)
             return out
+    if own is not None and len(own) == 1 and own_dy is not None and len(base) > 2:
+        # right under a collapse column that M(v) itself restarts with at the top (the
+        # storey of M(W_2) is (1,1,0)(2,2,1)(3,2,1)(4,2,0)): only that part is written
+        tops = [i for i in range(2, len(base)) if par[i] == 0
+                and base[i] == (own_dx, own_dy, 0)]
+        if tops:
+            return list(base[tops[-1] + 1:])
     cands = [(own, own_dx, own_dy, False, None)] if own is not None else []
     if sib is not None and sib[0] is not None and len(sib[0]) > 1:
         # the siblings: all they wrote, or only their last unit (the root's last child)
@@ -842,9 +849,15 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                     # (M(W_w) = ...(3,1,0)(1,1,1)); this unit absorbs it as well
                     del cols[start - len(prev_suf):start]
                     start -= len(prev_suf)
+                # the part of the spelling from its last restart at the first column's x
+                # (M(W_w)'s suffix (1,1,1), M(W_2)'s storey (1,1,0)(2,2,1)(3,2,1)(4,2,0))
                 sf = suffix(v) if (arg and v is not None and len(run) > 1) else []
                 prev_suf = run[-len(sf):] if sf and len(run) > len(sf) and \
                     [(c[1], c[2]) for c in run[-len(sf):]] == [(c[1], c[2]) for c in sf] else []
+                rs = [j for j in range(1, len(run)) if run[j][0] == run[0][0]] \
+                    if (arg and v is not None and len(run) > 1) else []
+                if not prev_suf and rs:
+                    prev_suf = run[rs[-1]:]
                 tl = _leaf_tail(sub, sub_arg, v) if sub != ZERO else None
                 if tl is not None and cols[-1][2] == 0:
                     pend = append_suffix(cols, tl)[len(cols):]
