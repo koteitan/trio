@@ -736,6 +736,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
     cols = ctx.cols if ctx is not None else []
     pend = []                                    # an upgrade suffix waiting for the next unit
     prev = None                                  # the last unit written here: (e, run)
+    prev_suf = []                                # its trailing upgrade suffix, if any
     for e, c in gamma:
         eo = ato(e)
         h = eo[0][0] if eo else None
@@ -835,6 +836,15 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                         and not (unit[:len(pend)] == pend and len(unit) > len(pend))):
                     cols[start:start] = pend
                 pend = []
+                if (arg and prev_suf and cols[start - len(prev_suf):start] == prev_suf
+                        and unit[:len(prev_suf)] == prev_suf and len(unit) > len(prev_suf)):
+                    # the previous unit's spelling ended in its level's upgrade suffix
+                    # (M(W_w) = ...(3,1,0)(1,1,1)); this unit absorbs it as well
+                    del cols[start - len(prev_suf):start]
+                    start -= len(prev_suf)
+                sf = suffix(v) if (arg and v is not None and len(run) > 1) else []
+                prev_suf = run[-len(sf):] if sf and len(run) > len(sf) and \
+                    [(c[1], c[2]) for c in run[-len(sf):]] == [(c[1], c[2]) for c in sf] else []
                 tl = _leaf_tail(sub, sub_arg, v) if sub != ZERO else None
                 if tl is not None and cols[-1][2] == 0:
                     pend = append_suffix(cols, tl)[len(cols):]
