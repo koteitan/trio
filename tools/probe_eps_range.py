@@ -496,6 +496,22 @@ def _capped_leaf(v, leaf, path):
         out += seg
     return out
 
+def _attach(run):
+    """Where the children of a spelt level hang, as an index into run, or None for its last
+    column. A level ending in a marker c under a marker m at the same depth (W_(w^2):
+    (1,1,1)(2,1,1)), with only shallower columns after it, is continued by siblings of c:
+    W_(w^2)*w writes (1,1,1)(2,1,1)(2,0,0), W_W*w ...(2,2,1)(3,2,1)(4,1,0)(3,0,0)."""
+    if len(run) < 2: return None
+    par, _ = _forest(run)
+    for j in range(len(run) - 1, 0, -1):
+        m = par[j]
+        c = run[j]
+        if m is not None and c[2] == 1 and run[m][2] == 1 and run[m][1] == c[1]:
+            if all(r[1] < c[1] for r in run[j + 1:]):
+                return m
+            return None
+    return None
+
 def _anc(lad, run):
     """The ancestors the children of a run hang from: the chain of lad above run's first
     column (a sibling's ladder the run was written against), then the whole run."""
@@ -627,9 +643,12 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
             else:
                 sub = strip(e)
                 coll = la is not None and la[0] == 'psi' and not is_card_psi(la)
-                cols += block(sub, run[-1][0] + 1, run[-1][1], sub_arg,
-                              None, v, run[-1][1], False,
-                              [run[-1]] if coll else _anc(lad, run), len(run) == 1)
+                k = None if sub_arg else _attach(run)
+                cp = [run[-1]] if coll else _anc(lad, run)
+                if k is not None:                # hang from the marker pair's parent
+                    cp = cp[:len(cp) - len(run) + k + 1]
+                cols += block(sub, cp[-1][0] + 1, cp[-1][1], sub_arg,
+                              None, v, cp[-1][1], False, cp, len(run) == 1)
                 prev = (v if arg else None, lad + run)
                 # a leaf that ends the children and names a limit level (W_w^2 writes
                 # (1,1,1)(2,1,0) + suffix (1,1,1)) takes its upgrade suffix; the next unit
