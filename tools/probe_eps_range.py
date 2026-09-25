@@ -360,7 +360,7 @@ def _cut(e, v1):
         return None
     return None
 
-def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0):
+def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None):
     """The columns that name the level Omega_v at x, for a column at chain depth d.
 
     A unit's leaf (arg=False) only names the level, and one column does that: the row-1
@@ -398,10 +398,16 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0):
     tail = base[idx + 1:]
     if not tail:                                 # the chain already spells v out
         return [(x, base[-1][1], 0)]
-    bump = d - lev
+    bump = d - lev if own is None or own_dy is None else own_dy
     dx = own_dx if own is not None else x - tail[0][0]
     return [(c[0] + dx, c[1] + (bump if _relative(base, par, idx + 1 + i) else 0), c[2])
             for i, c in enumerate(tail)]
+
+def _normal(lad):
+    """The ladder lad moved so that its first column (the collapse) is (0,0,0): (own, dx)."""
+    if not lad: return None, 0, None
+    x0, y0 = lad[0][0], lad[0][1]
+    return [(c[0] - x0, c[1] - y0, c[2]) for c in lad], x0, y0
 
 def _own(v, run):
     """(M(v), dx) when the column run is M(v) itself moved by dx (a spelt level), else ()."""
@@ -419,7 +425,7 @@ def _pred_level(u):
         return u[:-1] + (((ZERO, u[-1][1] - 1),) if u[-1][1] > 1 else ())
     return u
 
-def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, lads=()):
+def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path=()):
     """Copy the ordinal gamma into columns: one column per summand w^delta of gamma, and
     the children of that column spell out strip(delta).
 
@@ -433,6 +439,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, lads
     """
     cols = ctx.cols if ctx is not None else []
     pend = []                                    # an upgrade suffix waiting for the next unit
+    prev = None                                  # the last unit written here: (e, run)
     for e, c in gamma:
         eo = ato(e)
         h = eo[0][0] if eo else None
@@ -440,6 +447,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, lads
         sub_arg = la is not None and la[0] == 'psi'
         for _ in range(c):
             start = len(cols)
+            lad = list(path)                     # the ladder the run was written against
             if ctx is not None and not ctx.fresh and ctx.spent():
                 ctx.lay_storey()
                 x, d = cols[-1][0], cols[-1][1]
@@ -463,9 +471,16 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, lads
                 # leaf, so it takes the slot one deeper (the bottom level keeps its own)
                 run = [(x, leaf_y(v) + 1, 0)]
             else:
-                run = (write_level(v, x, d, arg, cols) if ctx is not None
-                       else write_level(v, x, d, arg, own=lads[0] if lads else None,
-                                        own_dx=lads[1] if lads else 0))
+                if ctx is not None:
+                    run = write_level(v, x, d, arg, cols)
+                else:
+                    # the ancestors from the enclosing collapse down are a ladder of their
+                    # own; a repeated unit shares the previous one up to its leaf
+                    # (W_(w+1)*2 writes (1,1,1)(2,1,0)(3,2,0)(3,2,0))
+                    rep = prev and prev[0] == e and prev[1][-1][2] == 0 and prev[1][-1][1] > 0
+                    lad = prev[1][:-1] if rep else list(path)
+                    own, odx, ody = _normal(lad)
+                    run = write_level(v, x, d, arg, own=own, own_dx=odx, own_dy=ody)
             cols += run
             # the children of a collapse are its argument, written one level up
             if ctx is not None:
@@ -479,8 +494,11 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, lads
                 ctx.prev = _tail_block(ato(e), arg)
             else:
                 sub = strip(e)
+                coll = la is not None and la[0] == 'psi' and not is_card_psi(la)
                 cols += block(sub, run[-1][0] + 1, run[-1][1], sub_arg,
-                              None, v, run[-1][1], False, _own(v, run))
+                              None, v, run[-1][1], False,
+                              [run[-1]] if coll else list(path) + run)
+                prev = (e, lad + run)
                 # a leaf that ends the children and names a limit level (W_w^2 writes
                 # (1,1,1)(2,1,0) + suffix (1,1,1)) takes its upgrade suffix; the next unit
                 # absorbs it when it starts with the same columns and has children of its
