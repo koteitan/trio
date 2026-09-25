@@ -402,3 +402,37 @@ subscript of $`\Omega`$, and that subscript is again written in the same grammar
 arithmetic on $`\Omega`$ adds is two things: the values in row $`y`$ are **addresses, not
 absolute numbers** (rules 3 and 4), and the ladder has to be relaid when the addresses run
 out (rule 6).
+
+## Extension to the gap rows (general $`\psi_0(X)`$)
+
+The rules above are for the pure rows $`\psi_0(\Omega_\alpha)`$. For the other rows of the
+sheet (the gap rows) the builder first lowers the label $`X`$ to the form the matrix writes
+(`lower`), then lays the columns unit by unit (`block`). The sheet's labels are normal forms
+(the largest form in each argument) while the matrices are terms, so a lowering convention is
+needed between them. Measured by `tools/probe_gap.py`.
+
+| | match | mismatch |
+|---|---|---|
+| pure rows | 752 | 60 (27 of them non-standard) |
+| gap rows (the 3868 with a readable label) | **2029** | 1839 |
+
+The main conventions (details in notes, entries 777 and 778):
+
+1. **Finite lowering**: in the argument of $`\psi_v`$, the part $`H`$ above level $`v{+}1`$ is
+   one column $`\psi_{v+1}(H)`$ ($`\psi_0(\Omega_2+\psi_1(\Omega_2)\cdot\omega) = D_0 D_1(D_2 0 + 1)`$).
+2. **Storeys inside a collapse argument**: when the columns of $`H`$ write a level-$`(v{+}1)`$
+   leaf under a marker of the same depth ($`\Omega_\omega\cdot\Omega = (1,1,1)(2,1,0)`$), a
+   higher level after it would read that leaf as the marker's level. So $`H`$ is cut at that
+   leaf into $`B`$ and written $`B+\psi_{v+1}(H)+R`$. The same happens at level $`\omega`$.
+3. **The upgrade suffix**, and when the next unit absorbs it.
+4. **Cardinal-index $`\psi_{\Omega_{u+1}}`$** is the column of a level-$`u`$ marker, and its
+   argument is written with the column's own spelling as the ladder. It can absorb the
+   summands before it.
+5. **Shared ladders**: what sibling units wrote (all of it, or from their last top unit on) is
+   also a ladder. When the part after the shared level column starts with a marker, a storey
+   copy goes before each deeper column ($`\Omega_{\omega2}+\Omega_{\omega+2} = \ldots(3,2,0)(4,3,1)(4,3,0)`$).
+6. **Where children hang**: when a spelt level ends in a marker pair of equal depth, its
+   children hang from the first marker ($`\Omega_{\omega^2}\cdot\omega = (1,1,1)(2,1,1)(2,0,0)`$).
+
+Fifteen sheet errors found along the way (6 labels, 9 matrices) were corrected in the sheet,
+with notes in column I. Five more rows are on hold, since they cannot be shown to be wrong.
