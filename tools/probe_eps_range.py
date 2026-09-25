@@ -254,13 +254,17 @@ def lower(x):
     matrix writes the column psi_{v+1}(H) for it:
       psi_0(W_2 + psi_1(W_2)*w) is D_0 D_1(D_2 0 + 1),
       psi_0(W_w*2 + W_2) writes W_w*2 + psi_1(W_w*2 + W_2).
-    Not yet covered: a first summand that uses level v+1 inside (W_w*W) lowers what follows
-    it even at an infinite level (psi_0(W_w*W + W_w) writes W_w*W + psi_1(W_w*W + W_w)),
-    the storey of rule 6 inside a collapse argument (notes 777).
+    The storey (rule 6 inside a collapse argument): once the columns of H write a leaf
+    Omega_{v+1} under a limit marker (W_w*W is (1,1,1)(2,1,0)), anything above level v+1
+    written after it would read that leaf as the marker's level (W_w*W + W_w as
+    (1,1,1)(2,1,0)(1,1,1) is psi_0(W_w^2)). So H is cut after that leaf, H = B + ..., and
+    the matrix writes B + psi_{v+1}(H) (see _storey_base):
+      psi_0(W_w*W + W_w) writes W_w*W + psi_1(W_w*W + W_w),
+      psi_0(W_w*W_3) writes W_w*W + psi_1(W_w*W_2 + psi_2(W_w*W_3)).
     """
     return tuple((_lower_exp(e), c) for e, c in x)
 
-def _lower_exp(e):
+def _lower_exp(e, storey=True):
     if not is_atom(e): return lower(e)
     if e[0] == 'W': return ('W', lower(e[1]))
     v = lower(e[1]); X = lower(e[2]); v1 = add(v, ONE)
@@ -272,9 +276,54 @@ def _lower_exp(e):
     H, R = X[:i], X[i:]
     j = 0                                   # H = (infinite levels) + (finite levels)
     while j < len(H) and fin(lvl(ato(H[j][0]))) is None: j += 1
-    if j < len(H):                          # a finite level is left to lower
+    Bp = _storey_base(H, v1) if storey else None
+    B, p = Bp if Bp else (None, None)
+    if B is not None and cmp_ord(H, B) > 0:
+        # the first summand ends in the leaf Omega_{v+1} (W_w*W = w^(W_w + W)); anything
+        # above level v+1 after it would read that leaf as the level of W_w (the upgrade,
+        # W_w*W + W_w would be psi_0(W_w^2)), so the rest goes under psi_{v+1}
+        # the next storey up repeats this at level v+2 (W_w*W_3 -> W_w*W + psi_1(W_w*W_2 +
+        # psi_2(W_w*W_3))); it stops since p is at a finite level
+        X = add(B, add(ato(_lower_exp(('psi', v1, H))), R))
+    elif j < len(H):                        # a finite level is left to lower
         X = add(H[:j], add(ato(_lower_exp(('psi', v1, H))), R))
     return ('psi', v, X)
+
+def _storey_base(H, v1):
+    """The base B of the storey in the argument H (the summands above level v+1), with the
+    part p the truncation dropped, or None.
+
+    B is H cut right after the first leaf Omega_{v+1} its columns would write under a limit
+    marker: for the first summand w^e whose exponent has a cut T(e), B = H[:k] + w^T(e).
+    The summands that are themselves atoms (W_w*2 + W_2) have no exponent to cut; they go
+    to the finite rule. Examples: W_w*W, W_w*W_2 -> W_w*W; W_w^2*W; W_w^W + W_w -> W_w^W."""
+    for k, (g, _) in enumerate(H):
+        if is_atom(g): continue
+        t = _cut(g, v1)
+        if t is not None:
+            return H[:k] + ((t[0], 1),), t[1]
+    return None
+
+def _cut(e, v1):
+    """T(e): the exponent e cut right after its first leaf Omega_{v+1} under a limit
+    marker. In the order the columns are written: inside a term w^f first (T(f), and what
+    follows is dropped), then after a term g at an infinite level whose rest p is at a
+    finite level >= v+1 (g + Omega_{v+1}: W_w + W_2 -> W_w + W, W_w*2 + W). A rest at the
+    marker's own level (W_w*w + W_w) is the leaf of that level, not Omega_{v+1}, and cuts
+    nothing. Returns (T(e), p) or None."""
+    for k, (g, c) in enumerate(e):
+        if g == ZERO: return None
+        if not is_atom(g):
+            t = _cut(g, v1)
+            if t is not None:
+                return e[:k] + ((t[0], 1),), t[1]
+        if fin(lvl(g) or ZERO) is not None: continue
+        p = e[k + 1:]
+        lp = fin(lvl(p) or ZERO) if p else None
+        if lp is not None and cmp_ord(nat(lp), v1) >= 0:
+            return e[:k] + ((g, c), (Om(v1), 1)), p
+        return None
+    return None
 
 def write_level(v, x, d, arg=False, *ladders):
     """The columns that name the level Omega_v at x, for a column at chain depth d.
@@ -312,7 +361,7 @@ def write_level(v, x, d, arg=False, *ladders):
     return [(c[0] + dx, c[1] + (bump if _relative(base, par, idx + 1 + i) else 0), c[2])
             for i, c in enumerate(tail)]
 
-def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None):
+def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True):
     """Copy the ordinal gamma into columns: one column per summand w^delta of gamma, and
     the children of that column spell out strip(delta).
 
@@ -325,12 +374,14 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None):
     summands, or between a column and the next one.
     """
     cols = ctx.cols if ctx is not None else []
+    pend = []                                    # an upgrade suffix waiting for the next unit
     for e, c in gamma:
         eo = ato(e)
         h = eo[0][0] if eo else None
         la = lead_atom(eo)
         sub_arg = la is not None and la[0] == 'psi'
         for _ in range(c):
+            start = len(cols)
             if ctx is not None and not ctx.fresh and ctx.spent():
                 ctx.lay_storey()
                 x, d = cols[-1][0], cols[-1][1]
@@ -366,9 +417,21 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None):
                 block(sub, nx, nd, sub_arg, ctx, v, run[-1][1])
                 ctx.prev = _tail_block(ato(e), arg)
             else:
-                cols += block(strip(e), run[-1][0] + 1, run[-1][1], sub_arg,
-                              None, v, run[-1][1])
-    return cols
+                sub = strip(e)
+                cols += block(sub, run[-1][0] + 1, run[-1][1], sub_arg,
+                              None, v, run[-1][1], False)
+                # a leaf that ends the children and names a limit level (W_w^2 writes
+                # (1,1,1)(2,1,0) + suffix (1,1,1)) takes its upgrade suffix; the next unit
+                # absorbs it when it starts with the same columns and has children of its
+                # own (W_w^2 + W_w*w, W_w^2*2), not when it is the bare marker (W_w^2 + W_w)
+                unit = cols[start:]
+                if pend and (arg and not (unit[:len(pend)] == pend and len(unit) > len(pend))):
+                    cols[start:start] = pend
+                pend = []
+                tl = _tail_block(sub, sub_arg) if sub != ZERO else None
+                if tl is not None and cols[-1][2] == 0:
+                    pend = append_suffix(cols, tl)[len(cols):]
+    return cols + pend if top else cols         # an inner suffix waits for the unit above
 
 def body(beta, x0, y):
     """The body of an add unit w^beta at level y: the z1 root and one digit per summand of
