@@ -428,6 +428,9 @@ def _cut(e, v1):
                 return e[:k] + ((t[0], 1),), t[1]
         if fin(lvl(g) or ZERO) is not None: continue
         p = e[k + 1:]
+        if (g[0] == 'W' and fin(v1) is not None and c == 1 and p
+                and _ends_in_leaf(M(g[1]), fin(v1))):
+            return e[:k + 1], p                 # W_W*w: W_W itself ends in that leaf
         if p and lvl(p) is not None and fin(lvl(p)) is None:
             continue                            # p is another limit term: look inside it
         lp = fin(lvl(p) or ZERO) if p else None
