@@ -368,7 +368,7 @@ def _storey_base(H, v1):
     to the finite rule. Examples: W_w*W, W_w*W_2 -> W_w*W; W_w^2*W; W_w^W + W_w -> W_w^W."""
     for k, (g, _) in enumerate(H):
         if is_atom(g):
-            if g[0] == 'W' and fin(v1) is not None and _ends_in_leaf(M(g[1]), fin(v1)):
+            if g[0] == 'W' and fin(v1) is not None and _ends_in_leaf(M(g[1]), fin(v1), True):
                 # W_W: M(W) ends in the leaf of Omega_1 under a marker, (3,1,0)
                 return H[:k] + ((g, 1),), ZERO
             continue
@@ -406,9 +406,16 @@ def _cut_w(e):
         return e[:k] + ((g, c), (Om(u), 1))
     return None
 
-def _ends_in_leaf(m, y):
-    """Does the matrix m end in a z0 leaf at depth y under a marker at the same depth?"""
-    if len(m) < 2 or m[-1][2] != 0 or m[-1][1] != y: return False
+def _ends_in_leaf(m, y, deeper=False):
+    """Does the matrix m end in a z0 leaf at depth y (or deeper) under a marker at the
+    same depth?"""
+    if len(m) < 2 or m[-1][2] != 0 or m[-1][1] < y or (m[-1][1] != y and not deeper):
+        return False
+    if m[-1][1] != y:                            # deeper: only in the psi_1 storey of M
+        tp, _ = _forest(m)                       # (M(W_2) = ...(1,1,0)(2,2,1)(3,2,1)(4,2,0))
+        if m[max(i for i in range(1, len(m)) if tp[i] == 0)] != (1, 1, 0):
+            return False
+    y = m[-1][1]
     par, _ = _forest(m)
     p = par[len(m) - 1]
     return p is not None and m[p][2] == 1 and m[p][1] == y
@@ -489,10 +496,15 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
     if own is not None and len(own) == 1 and own_dy is not None and len(base) > 2:
         # right under a collapse column that M(v) itself restarts with at the top (the
         # storey of M(W_2) is (1,1,0)(2,2,1)(3,2,1)(4,2,0)): only that part is written
-        tops = [i for i in range(2, len(base)) if par[i] == 0
-                and base[i] == (own_dx, own_dy, 0)]
-        if tops:
-            return list(base[tops[-1] + 1:])
+        tops = [i for i in range(2, len(base)) if par[i] == 0 and base[i] == (1, 1, 0)]
+        if tops and own_dy >= 1:                 # (inside psi_k, lifted by k - 1)
+            out = []
+            for i in range(tops[-1] + 1, len(base)):
+                c = base[i]
+                rel = _relative(base, par, i)
+                cc = (c[0] + own_dx - 1, c[1] + (own_dy - 1 if rel else 0), c[2])
+                out.append(FinLeaf(cc) if not rel and c[2] == 0 and c[1] > 0 else cc)
+            return out
     cands = [(own, own_dx, own_dy, False, None)] if own is not None else []
     if sib is not None and sib[0] is not None and len(sib[0]) > 1:
         # the siblings: all they wrote, or only their last unit (the root's last child)
