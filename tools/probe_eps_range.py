@@ -289,7 +289,47 @@ def _lower_exp(e, storey=True):
         X = add(H[:j], add(ato(_lower_exp(('psi', v1, H))), R))
     a = ('psi', v, X)
     vt = _pred_level(lvl(a)) if is_card_psi(a) else v   # the level the collapse stands at
-    return ('psi', v, _lower_succ(X, add(vt, ONE)))
+    X = _lower_succ(X, add(vt, ONE))
+    if storey:
+        X = _limit_storey(X, vt)
+    return ('psi', v, X)
+
+def _limit_storey(X, vt):
+    """The storey at the limit level w: a summand w^(a*c + p) whose level a is spelt with
+    its children hanging at depth 1 (W_(w^2) = (1,1,1)(2,1,1)) and p >= W_w writes the leaf
+    of W_w there, level with the marker. What follows above level w would read it as the
+    marker's level, so X = B + psi_W_(w+1)(H) + R with B cut at W_w, H the summands above
+    level w: W_(w^2)*W_w + W_(w^2) writes W_(w^2)*W_w + psi_W_(w+1)(W_(w^2)*W_w + W_(w^2))."""
+    w = ((ONE, 1),)                             # the ordinal w
+    if cmp_ord(add(vt or ZERO, ONE), w) > 0: return X    # only below level w
+    Ww = Om(w)
+    i = 0
+    while i < len(X):
+        L = _true_level(X[i][0])
+        if L is None or cmp_ord(L, w) <= 0: break
+        i += 1
+    H, R = X[:i], X[i:]
+    for k, (g, _) in enumerate(H):
+        if is_atom(g): continue
+        e = ato(g)
+        if len(e) < 2 or not is_atom(e[0][0]) or e[0][0][0] != 'W': continue
+        a = e[0][0]
+        run = M(a[1])[1:]
+        m = _attach(run)
+        ay = run[m][1] if m is not None else run[-1][1]
+        L = lvl(e[1:])
+        if ay != 1 or L is None or cmp_ord(L, w) < 0 or cmp_exp(a, Ww) <= 0: continue
+        # the level whose leaf is written there: the largest u <= L with its leaf at
+        # depth 1 (W_(w^3)*W_(w^2): u = w^2 itself; W_(w^2)*W_(w+1): u = w)
+        Lf = L[:-1] if L and L[-1][0] == ZERO else L
+        u = next((c for c in (L, Lf, w) if c and cmp_ord(c, w) >= 0 and leaf_y(c) == 1), None)
+        if u is None: continue
+        B = H[:k] + (((e[0], (Om(u), 1)), 1),)
+        if cmp_ord(H, B) > 0:
+            P = ('psi', ato(Om(add(w, ONE))), H)
+            return add(B, add(ato(_lower_exp(P, False)), R))
+        return X
+    return X
 
 def _true_level(t):
     """The level an exponent's column stands at: psi_{Omega_{u+1}}(X) is at level u."""
@@ -458,7 +498,8 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
             # level in it keeps its depth (psi_W_(w+1)(W_W): ...(6,1,0))
             rest = base[n - 1:]
             sx, sy = p[0] + 2 - rest[0][0], p[1] + 1 - rest[0][1]
-            return [(p[0] + 1, p[1], 0)] + [
+            rung = [] if sib is not None else [(p[0] + 1, p[1], 0)]   # a sibling laid it
+            return rung + [
                 (c[0] + sx, c[1] + (sy if _relative(base, par, n - 1 + i) else 0), c[2])
                 for i, c in enumerate(rest)]
     bump = d - lev if own is None or own_dy is None else own_dy
