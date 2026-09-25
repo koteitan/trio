@@ -213,23 +213,68 @@ def fin(v):
     if v == ZERO: return 0
     return v[0][1] if len(v) == 1 and v[0][0] == ZERO else None
 
-def strip(delta):
-    """The ordinal the children of delta's column spell out.
+def lead_atom(d):
+    """The atom at the head of d: follow the leading exponent down to an atom (None if 0)."""
+    while d and not is_atom(d):
+        d = d[0][0]
+    return d or None
 
-    The column already names delta's leading atom, so the children carry what is left:
-      psi_v(X)*c + rest -> X + psi_v(X)*(c-1) + rest   (the uncollapse: the argument of the
-                           collapse takes the place of the collapse itself)
-      Omega_v*c + rest  -> Omega_v*(c-1) + rest        (the level is cancelled)
-      anything else     -> delta itself                (nothing to cancel: either delta is
-                           below eps_0, or its head absorbs the level)
+def lsub(a, b):
+    """-w^a + b, the c with w^a + c = b (b >= w^a)."""
+    c = cmp_exp(b[0][0], a)
+    if c > 0: return b
+    assert c == 0
+    return (((b[0][0], b[0][1] - 1),) if b[0][1] > 1 else ()) + b[1:]
+
+def strip(delta):
+    """The ordinal the children of delta's column spell out: the argument of the collapse
+    the column stands for, in the normal form the sheet writes.
+
+    The column already names delta's head atom a (followed down the leading exponents), so
+    the children carry what is left:
+      a = psi_v(X) -> X + (-a + delta)   (the uncollapse: X takes the place of the collapse;
+                      psi_v(X)*c + rest gives X + psi_v(X)*(c-1) + rest, and a head buried in
+                      an exponent, as in psi_1(W_2)^w, gives W_2 + psi_1(W_2)^w)
+      a = Omega_v  -> -a + delta          (the level is cancelled)
+      no atom      -> delta itself        (delta is below eps_0)
     """
     d = ato(delta)
     if d == ZERO: return ZERO
-    h, c = d[0]
-    rest = (((h, c - 1),) if c > 1 else ()) + d[1:]
-    if is_atom(h) and h[0] == 'psi': return add(h[2], rest)
-    if is_atom(h) and h[0] == 'W': return rest
+    a = lead_atom(d)
+    if a is not None and a[0] == 'psi': return add(a[2], lsub(a, d))
+    if a is not None and a[0] == 'W': return lsub(a, d)
     return d
+
+def lower(x):
+    """The normal-form argument of each collapse, lowered to the term the matrix writes.
+
+    In the argument X of psi_v, the leading part H of summands above level v+1 is the
+    uncollapsed argument of a following psi_{v+1}(H). Its summands at an infinite level stay
+    (their column is a z1 marker, not a level-(v+1) column); if a finite level is left, the
+    matrix writes the column psi_{v+1}(H) for it:
+      psi_0(W_2 + psi_1(W_2)*w) is D_0 D_1(D_2 0 + 1),
+      psi_0(W_w*2 + W_2) writes W_w*2 + psi_1(W_w*2 + W_2).
+    Not yet covered: a first summand that uses level v+1 inside (W_w*W) lowers what follows
+    it even at an infinite level (psi_0(W_w*W + W_w) writes W_w*W + psi_1(W_w*W + W_w)),
+    the storey of rule 6 inside a collapse argument (notes 777).
+    """
+    return tuple((_lower_exp(e), c) for e, c in x)
+
+def _lower_exp(e):
+    if not is_atom(e): return lower(e)
+    if e[0] == 'W': return ('W', lower(e[1]))
+    v = lower(e[1]); X = lower(e[2]); v1 = add(v, ONE)
+    i = 0
+    while i < len(X):
+        l = lvl(ato(X[i][0]))
+        if l is None or cmp_ord(l, v1) <= 0: break
+        i += 1
+    H, R = X[:i], X[i:]
+    j = 0                                   # H = (infinite levels) + (finite levels)
+    while j < len(H) and fin(lvl(ato(H[j][0]))) is None: j += 1
+    if j < len(H):                          # a finite level is left to lower
+        X = add(H[:j], add(ato(_lower_exp(('psi', v1, H))), R))
+    return ('psi', v, X)
 
 def write_level(v, x, d, arg=False, *ladders):
     """The columns that name the level Omega_v at x, for a column at chain depth d.
@@ -283,7 +328,8 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None):
     for e, c in gamma:
         eo = ato(e)
         h = eo[0][0] if eo else None
-        sub_arg = is_atom(h) and h[0] == 'psi'
+        la = lead_atom(eo)
+        sub_arg = la is not None and la[0] == 'psi'
         for _ in range(c):
             if ctx is not None and not ctx.fresh and ctx.spent():
                 ctx.lay_storey()

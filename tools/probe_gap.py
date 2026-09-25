@@ -3,7 +3,7 @@
 not a single psi_0(Omega_alpha)).
 
 The candidate for a label O (an ordinal < psi_0(Lambda), parsed with probe_eps_range.parse)
-is block(O, 0): one column per summand w^delta, whose children spell strip(delta). For a pure
+is block(lower(O), 0): one column per summand w^delta, whose children spell strip(delta). For a pure
 row psi_0(Omega_alpha) this is M(alpha) again. Prints the counts and the first failures.
 
   python3 tools/probe_gap.py [N]     N = number of failures to print (default 12)
@@ -31,7 +31,7 @@ def main(nshow=12):
         try: O = P.parse(p[3])
         except Exception: O = None
         if O is None: cnt['unparsed'] += 1; continue
-        try: got = P.block(O, 0, 0, False)
+        try: got = P.block(P.lower(O), 0, 0, False)
         except Exception: cnt['error'] += 1; continue
         ok = got == cols(p[1])
         k = 'pure' if str(r) in pure else 'gap'
