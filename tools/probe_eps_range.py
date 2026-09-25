@@ -300,26 +300,29 @@ def _true_level(t):
     return l
 
 def _lower_succ(X, top):
-    """The finite lowering one level up a limit: a run of summands at the level u+1 of a
-    limit u (Omega_{w+1}) that is followed by level <= u is the argument of a
-    psi_{Omega_{u+1}} (the collapse at level u), as psi_1 is for level 2:
-      W_(w+1) + psi_W_(w+1)(W_(w+1))*w writes psi_W_(w+1)(W_(w+1) + 1).
+    """The finite lowering at a limit level: a summand headed by psi_{Omega_{t+1}} (the
+    collapse at level t) takes the summands right before it whose level L > t is spelt
+    through M(t) (M(L) starts with M(t)) into its argument, as psi_1 takes those at levels
+    2, 3, ...:
+      W_(w+1) + psi_W_(w+1)(W_(w+1))*w writes psi_W_(w+1)(W_(w+1) + 1),
+      W_(w2) + psi_W_(w+1)(W_(w2))*w writes psi_W_(w+1)(W_(w2) + 1).
     Only above the level top = v+1 of the collapse itself (the finite rule's H)."""
-    k = 0
-    while k < len(X):
-        u1 = _true_level(X[k][0])
-        if u1 is None or fin(u1) is not None or not u1 or u1[-1][0] != ZERO:
-            k += 1; continue
-        u = _pred_level(u1)
-        if fin(u) is not None or cmp_ord(u1, top) <= 0: k += 1; continue
-        b = k
-        while b < len(X) and _true_level(X[b][0]) == u1: b += 1
-        if b == k: k += 1; continue
-        nxt = _true_level(X[b][0]) if b < len(X) else None
-        if b < len(X) and (nxt is None or cmp_ord(nxt, u) <= 0):
-            P = ('psi', ato(Om(u1)), X[:b])
-            return add(X[:k], add(ato(P), X[b:]))
-        k = b
+    for b in range(1, len(X)):
+        t = _true_level(X[b][0])
+        la = lead_atom(ato(X[b][0]))
+        if (t is None or fin(t) is not None or la is None or not is_card_psi(la)
+                or la != ato(X[b][0])[0][0]):
+            continue
+        mt = M(t)
+        a = b
+        while a > 0:
+            L = _true_level(X[a - 1][0])
+            if L is None or cmp_ord(L, t) <= 0 or cmp_ord(L, top) <= 0: break
+            if M(L)[:len(mt)] != mt: break
+            a -= 1
+        if a < b:
+            P = ('psi', ato(Om(add(t, ONE))), X[:b])
+            return add(X[:a], add(ato(P), X[b:]))
     return X
 
 def _storey_base(H, v1):
@@ -361,7 +364,7 @@ def _cut(e, v1):
     return None
 
 def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
-                sib=None):
+                sib=None, anc_leaf=None):
     """The columns that name the level Omega_v at x, for a column at chain depth d.
 
     A unit's leaf (arg=False) only names the level, and one column does that: the row-1
@@ -402,18 +405,39 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
             cs = [i for i in range(1, n) if _is_level(base, par, i)]
             cand = max(cs) if cs else -1
         if cand > idx and (best is None or cand > best[0]):
-            best = (cand, dx_, dy_)
+            best = (cand, dx_, dy_, lad_ if is_sib else None)
     own = None
+    marks = 0
     if best is not None:
-        idx, own_dx, own_dy = best
+        idx, own_dx, own_dy, slad = best
         lev, own = base[idx][1], True
+        if slad is not None and slad[-1][2] == 1:
+            # the sibling ends in a run of markers (W_(w2): (3,2,1)): a column deeper than
+            # them takes a storey, a copy of that run at its own place first
+            my = slad[-1][1]
+            while marks < len(slad) and slad[-1 - marks][2] == 1 and slad[-1 - marks][1] == my:
+                marks += 1
     tail = base[idx + 1:]
     if not tail:                                 # the chain already spells v out
         return [(x, base[-1][1], 0)]
+    if best is None and anc_leaf is not None:
+        # under a leaf p the ancestors do not spell all of: when what is left of M(v) is
+        # one marker, it sits one deeper than p (W_(w2) under the leaf of W_(w+1))
+        n = 0
+        while n < len(anc_leaf[0]) and n < len(base) and anc_leaf[0][n] == base[n]: n += 1
+        rest = base[n:]
+        p = anc_leaf[1]
+        if len(rest) == 1 and rest[0][2] == 1 and p[2] == 0:
+            return [(p[0] + 1, p[1] + 1, 1)]
     bump = d - lev if own is None or own_dy is None else own_dy
     dx = own_dx if own is not None else x - tail[0][0]
-    return [(c[0] + dx, c[1] + (bump if _relative(base, par, idx + 1 + i) else 0), c[2])
-            for i, c in enumerate(tail)]
+    out = []
+    for i, c in enumerate(tail):
+        cc = (c[0] + dx, c[1] + (bump if _relative(base, par, idx + 1 + i) else 0), c[2])
+        if marks and c[1] > my:                  # W_(w2) + W_(w+2): (3,2,0)(4,3,1)(4,3,0)
+            out += [(cc[0], cc[1], 1)] * marks
+        out.append(cc)
+    return out
 
 def _leaf_tail(gamma, arg, plvl):
     """The level named by the last column block(gamma, .., arg) writes when that column is a
@@ -432,6 +456,15 @@ def _leaf_tail(gamma, arg, plvl):
     if not arg or (plvl is not None and v is not None and cmp_ord(v, plvl) == 0):
         return v
     return None
+
+def _anc(lad, run):
+    """The ancestors the children of a run hang from: the chain of lad above run's first
+    column (a sibling's ladder the run was written against), then the whole run."""
+    out = []
+    need = run[0][0] - 1
+    for c in reversed(lad):
+        if c[0] == need: out.insert(0, c); need -= 1
+    return out + list(run)
 
 def _normal(lad):
     """The ladder lad moved so that its first column (the collapse) is (0,0,0): (own, dx)."""
@@ -516,7 +549,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                     own, odx, ody = _normal(list(path))
                     sib = _normal(prev[1]) if prev and prev[0] is not None else None
                     run = write_level(v, x, d, arg, own=own, own_dx=odx, own_dy=ody,
-                                      sib=sib)
+                                      sib=sib, anc_leaf=(own, path[-1]) if path else None)
                     if sib is not None: lad = prev[1]
             cols += run
             # the children of a collapse are its argument, written one level up
@@ -534,7 +567,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                 coll = la is not None and la[0] == 'psi' and not is_card_psi(la)
                 cols += block(sub, run[-1][0] + 1, run[-1][1], sub_arg,
                               None, v, run[-1][1], False,
-                              [run[-1]] if coll else list(path) + run, len(run) == 1)
+                              [run[-1]] if coll else _anc(lad, run), len(run) == 1)
                 prev = (v if arg else None, lad + run)
                 # a leaf that ends the children and names a limit level (W_w^2 writes
                 # (1,1,1)(2,1,0) + suffix (1,1,1)) takes its upgrade suffix; the next unit
