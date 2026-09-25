@@ -318,8 +318,11 @@ def _lower_succ(X, top):
         while a > 0:
             L = _true_level(X[a - 1][0])
             if L is None or cmp_ord(L, t) <= 0 or cmp_ord(L, top) <= 0: break
-            if M(L)[:len(mt)] != mt: break
-            a -= 1
+            mL = M(L)
+            if mL[:len(mt)] != mt: break
+            i = max(j for j in range(len(mL)) if mL[j] == mt[-1])
+            if i + 1 >= len(mL) or mL[i + 1][2] != 0: break
+            a -= 1                               # its last column of level t has a rung
         if a < b:
             P = ('psi', ato(Om(add(t, ONE))), X[:b])
             if cmp_exp(P, X[b][0]) < 0:           # only when X[b] absorbs it: at level t
@@ -447,13 +450,17 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
             sx, sy = p[0] + 1 - rest[0][0], p[1] + 1 - rest[0][1]
             return [(c[0] + sx, c[1] + sy, c[2]) for c in rest]
         if (p[2] == 1 and n == len(a_own) and n < len(base) and base[n][2] == 1
-                and base[n][1] == a_own[-1][1] and all(c[2] == 1 for c in base[n:])):
+                and base[n][1] == a_own[-1][1]
+                and all(c[0] > base[n - 1][0] for c in base[n:])):
             # under a marker p (the column of psi_W_(w+1)) a marker at its own depth would
             # read as p's level: a rung first, then the rest one storey deeper
-            # (psi_W_(w+1)(W_(w^2)) writes (1,1,1)(2,1,0)(3,2,1)(4,2,1))
+            # (psi_W_(w+1)(W_(w^2)) writes (1,1,1)(2,1,0)(3,2,1)(4,2,1)); an absolute
+            # level in it keeps its depth (psi_W_(w+1)(W_W): ...(6,1,0))
             rest = base[n - 1:]
             sx, sy = p[0] + 2 - rest[0][0], p[1] + 1 - rest[0][1]
-            return [(p[0] + 1, p[1], 0)] + [(c[0] + sx, c[1] + sy, c[2]) for c in rest]
+            return [(p[0] + 1, p[1], 0)] + [
+                (c[0] + sx, c[1] + (sy if _relative(base, par, n - 1 + i) else 0), c[2])
+                for i, c in enumerate(rest)]
     bump = d - lev if own is None or own_dy is None else own_dy
     dx = own_dx if own is not None else x - tail[0][0]
     out = []
