@@ -311,20 +311,9 @@ def _limit_storey(X, vt):
     H, R = X[:i], X[i:]
     for k, (g, _) in enumerate(H):
         if is_atom(g): continue
-        e = ato(g)
-        if len(e) < 2 or not is_atom(e[0][0]) or e[0][0][0] != 'W': continue
-        a = e[0][0]
-        run = M(a[1])[1:]
-        m = _attach(run)
-        ay = run[m][1] if m is not None else run[-1][1]
-        L = lvl(e[1:])
-        if ay != 1 or L is None or cmp_ord(L, w) < 0 or cmp_exp(a, Ww) <= 0: continue
-        # the level whose leaf is written there: the largest u <= L with its leaf at
-        # depth 1 (W_(w^3)*W_(w^2): u = w^2 itself; W_(w^2)*W_(w+1): u = w)
-        Lf = L[:-1] if L and L[-1][0] == ZERO else L
-        u = next((c for c in (L, Lf, w) if c and cmp_ord(c, w) >= 0 and leaf_y(c) == 1), None)
-        if u is None: continue
-        B = H[:k] + (((e[0], (Om(u), 1)), 1),)
+        t = _cut_w(ato(g))
+        if t is None: continue
+        B = H[:k] + ((t, 1),)
         if cmp_ord(H, B) > 0:
             P = ('psi', ato(Om(add(w, ONE))), H)
             return add(B, add(ato(_lower_exp(P, False)), R))
@@ -386,6 +375,35 @@ def _storey_base(H, v1):
         t = _cut(g, v1)
         if t is not None:
             return H[:k] + ((t[0], 1),), t[1]
+    return None
+
+def _cut_w(e):
+    """T(e) for the storey at level w: e cut right after the leaf of a level u >= w written
+    at depth 1, level with the marker its level column hangs from (W_(w^2) + W_(w+1) ->
+    W_(w^2) + W_w; inside a term w^f first, as in _cut). None when there is none."""
+    w = ((ONE, 1),)
+    for k, (g, c) in enumerate(e):
+        if g == ZERO: return None
+        if not is_atom(g):
+            t = _cut_w(g)
+            if t is not None:
+                return e[:k] + ((t, 1),)
+        if g[0] != 'W' or fin(g[1]) is not None or cmp_ord(g[1], w) <= 0:
+            continue
+        p = e[k + 1:]
+        run = M(g[1])[1:]
+        m = _attach(run)
+        ay = run[m][1] if m is not None else run[-1][1]
+        L = lvl(p) if p else None
+        if ay != 1 or L is None or cmp_ord(L, w) < 0:
+            return None
+        # the largest u <= L with its leaf at depth 1 (W_(w^3)*W_(w^2): u = w^2 itself;
+        # W_(w^2)*W_(w+1): u = w)
+        Lf = L[:-1] if L and L[-1][0] == ZERO else L
+        u = next((c_ for c_ in (L, Lf, w) if c_ and cmp_ord(c_, w) >= 0 and leaf_y(c_) == 1),
+                 None)
+        if u is None: return None
+        return e[:k] + ((g, c), (Om(u), 1))
     return None
 
 def _ends_in_leaf(m, y):
@@ -708,12 +726,14 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
             else:
                 sub = strip(e)
                 coll = la is not None and la[0] == 'psi' and not is_card_psi(la)
-                k = None if sub_arg else _attach(run)
+                k = None if coll else _attach(run)
                 cp = [run[-1]] if coll else _anc(lad, run)
+                hx, hy = cp[-1][0] + 1, cp[-1][1]
                 if k is not None:                # hang from the marker pair's parent
-                    cp = cp[:len(cp) - len(run) + k + 1]
-                cols += block(sub, cp[-1][0] + 1, cp[-1][1], sub_arg,
-                              None, v, cp[-1][1], False, cp, len(run) == 1)
+                    hx, hy = run[k][0] + 1, run[k][1]
+                    if not sub_arg:              # (an argument keeps the whole spelling
+                        cp = cp[:len(cp) - len(run) + k + 1]    # as its ladder)
+                cols += block(sub, hx, hy, sub_arg, None, v, hy, False, cp, len(run) == 1)
                 prev = (v if arg else None, lad + run)
                 # a leaf that ends the children and names a limit level (W_w^2 writes
                 # (1,1,1)(2,1,0) + suffix (1,1,1)) takes its upgrade suffix; the next unit
