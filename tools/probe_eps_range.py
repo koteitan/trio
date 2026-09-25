@@ -322,7 +322,8 @@ def _lower_succ(X, top):
             a -= 1
         if a < b:
             P = ('psi', ato(Om(add(t, ONE))), X[:b])
-            return add(X[:a], add(ato(P), X[b:]))
+            if cmp_exp(P, X[b][0]) < 0:           # only when X[b] absorbs it: at level t
+                return add(X[:a], X[b:])         # psi_t(H) is not spelt like H itself
     return X
 
 def _storey_base(H, v1):
@@ -422,15 +423,25 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
     tail = base[idx + 1:]
     if not tail:                                 # the chain already spells v out
         return [(x, base[-1][1], 0)]
-    if best is None and anc_leaf is not None:
-        # under a leaf p the ancestors do not spell all of: when what is left of M(v) is
-        # one marker, it sits one deeper than p (W_(w2) under the leaf of W_(w+1))
+    if anc_leaf is not None and anc_leaf[0] is not None and len(anc_leaf[0]) > 1:
+        a_own, p = anc_leaf
         n = 0
-        while n < len(anc_leaf[0]) and n < len(base) and anc_leaf[0][n] == base[n]: n += 1
-        rest = base[n:]
-        p = anc_leaf[1]
-        if len(rest) == 1 and rest[0][2] == 1 and p[2] == 0:
-            return [(p[0] + 1, p[1] + 1, 1)]
+        while n < len(a_own) and n < len(base) and a_own[n] == base[n]: n += 1
+        rest = base[n - 1:] if n and base[n - 1][2] == 1 else base[n:]
+        if (best is None and p[2] == 0 and rest and rest[0][2] == 1):
+            # under a leaf p the ancestors do not spell all of M(v): what is left, from
+            # the last marker they share, sits one deeper than p (W_(w2), W_(w^2) under
+            # the leaf of W_(w+1))
+            sx, sy = p[0] + 1 - rest[0][0], p[1] + 1 - rest[0][1]
+            return [(c[0] + sx, c[1] + sy, c[2]) for c in rest]
+        if (p[2] == 1 and n == len(a_own) and n < len(base) and base[n][2] == 1
+                and base[n][1] == a_own[-1][1] and all(c[2] == 1 for c in base[n:])):
+            # under a marker p (the column of psi_W_(w+1)) a marker at its own depth would
+            # read as p's level: a rung first, then the rest one storey deeper
+            # (psi_W_(w+1)(W_(w^2)) writes (1,1,1)(2,1,0)(3,2,1)(4,2,1))
+            rest = base[n - 1:]
+            sx, sy = p[0] + 2 - rest[0][0], p[1] + 1 - rest[0][1]
+            return [(p[0] + 1, p[1], 0)] + [(c[0] + sx, c[1] + sy, c[2]) for c in rest]
     bump = d - lev if own is None or own_dy is None else own_dy
     dx = own_dx if own is not None else x - tail[0][0]
     out = []
