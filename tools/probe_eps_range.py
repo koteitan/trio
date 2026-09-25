@@ -383,7 +383,7 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
     if not arg:
         # A unit's leaf only has to name the level, and one column does that: the row-1
         # entry of M(v)'s last column, with z=0 (the level itself, not its spelling).
-        return [(x, base[-1][1], 0)]
+        return [(FinLeaf if fin(v) is not None else Leaf)((x, base[-1][1], 0))]
     par, _ = _forest(base)
     lev = idx = 0                                # the last level column the context covers
     for lad in (M(nat(d)),) + ladders:           # the plain staircase, plus what is around
@@ -407,16 +407,15 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
         if cand > idx and (best is None or cand > best[0]):
             best = (cand, dx_, dy_, lad_ if is_sib else None)
     own = None
-    marks = 0
+    seg = []
     if best is not None:
         idx, own_dx, own_dy, slad = best
         lev, own = base[idx][1], True
-        if slad is not None and slad[-1][2] == 1:
-            # the sibling ends in a run of markers (W_(w2): (3,2,1)): a column deeper than
-            # them takes a storey, a copy of that run at its own place first
-            my = slad[-1][1]
-            while marks < len(slad) and slad[-1 - marks][2] == 1 and slad[-1 - marks][1] == my:
-                marks += 1
+        if slad is not None and len(slad) > idx + 1 and slad[idx + 1][2] == 1:
+            # what the siblings wrote past the shared level column starts with a marker
+            # (W_(w2): (3,2,1)): a column deeper than it takes a storey first, a copy of
+            # that part moved to the column's own place
+            seg = slad[idx + 1:]
     tail = base[idx + 1:]
     if not tail:                                 # the chain already spells v out
         return [(x, base[-1][1], 0)]
@@ -434,8 +433,13 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
     out = []
     for i, c in enumerate(tail):
         cc = (c[0] + dx, c[1] + (bump if _relative(base, par, idx + 1 + i) else 0), c[2])
-        if marks and c[1] > my:                  # W_(w2) + W_(w+2): (3,2,0)(4,3,1)(4,3,0)
-            out += [(cc[0], cc[1], 1)] * marks
+        if seg and c[1] > seg[0][1]:             # W_(w2) + W_(w+2): (3,2,0)(4,3,1)(4,3,0)
+            sx, sy = c[0] - seg[0][0], c[1] - seg[0][1]
+            my = seg[0][1]                       # a leaf in the copy goes no deeper than
+            seg = [a.__class__((a[0] + sx, a[1] if isinstance(a, FinLeaf) else
+                                min(a[1] + sy, my), a[2])) if isinstance(a, Leaf)
+                   else _mv(a, sx, sy) for a in seg]    # the marker it hung under
+            out += [_mv(a, dx, bump) for a in seg]
         out.append(cc)
     return out
 
@@ -457,6 +461,27 @@ def _leaf_tail(gamma, arg, plvl):
         return v
     return None
 
+def _capped_leaf(v, leaf, path):
+    """An exponent leaf under a marker only reaches the marker's depth; each step further
+    is a storey, a lifted copy of the chain from the deepest level column it shares with
+    M(v) (W_(w2)*W_(w+2): (3,2,1) then (4,2,0)(3,2,0)(4,3,1)(5,3,0))."""
+    m = path[-1]
+    ph = (leaf[0], m[1], 0)                      # the leaf at the marker's depth
+    chain = list(path) + [ph]
+    own, x0, y0 = _normal(chain)
+    base = M(v)
+    par, _ = _forest(base)
+    n = 0
+    while n < len(own) and n < len(base) and own[n] == base[n]: n += 1
+    cs = [i for i in range(1, n) if _is_level(base, par, i)]
+    if not cs: return [leaf]
+    seg = chain[max(cs):]
+    out = [ph]
+    for _ in range(leaf[1] - m[1]):
+        seg = [(c[0] + 1, c[1] + 1, c[2]) for c in seg]
+        out += seg
+    return out
+
 def _anc(lad, run):
     """The ancestors the children of a run hang from: the chain of lad above run's first
     column (a sibling's ladder the run was written against), then the whole run."""
@@ -466,11 +491,22 @@ def _anc(lad, run):
         if c[0] == need: out.insert(0, c); need -= 1
     return out + list(run)
 
+class Leaf(tuple):
+    """A column that names an absolute level (an exponent leaf): a storey copies it
+    without raising its row-1 entry."""
+
+class FinLeaf(Leaf):
+    """A leaf naming a finite level (W, W_2): a storey copies it as it is."""
+
+def _mv(c, dx, dy):
+    """c moved by dx, and by dy unless it is a Leaf."""
+    return c.__class__((c[0] + dx, c[1], c[2])) if isinstance(c, Leaf) else (c[0] + dx, c[1] + dy, c[2])
+
 def _normal(lad):
     """The ladder lad moved so that its first column (the collapse) is (0,0,0): (own, dx)."""
     if not lad: return None, 0, None
     x0, y0 = lad[0][0], lad[0][1]
-    return [(c[0] - x0, c[1] - y0, c[2]) for c in lad], x0, y0
+    return [_mv(c, -x0, -y0) for c in lad], x0, y0
 
 def _own(v, run):
     """(M(v), dx) when the column run is M(v) itself moved by dx (a spelt level), else ()."""
@@ -547,10 +583,22 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                     # own; a repeated unit shares the previous one up to its leaf
                     # (W_(w+1)*2 writes (1,1,1)(2,1,0)(3,2,0)(3,2,0))
                     own, odx, ody = _normal(list(path))
-                    sib = _normal(prev[1]) if prev and prev[0] is not None else None
+                    # the siblings already written here are a ladder too: all of it
+                    sib = _normal(list(path) + cols[:start]) if arg and start > 0 else None
+                    al = (own, path[-1]) if path else None
                     run = write_level(v, x, d, arg, own=own, own_dx=odx, own_dy=ody,
-                                      sib=sib, anc_leaf=(own, path[-1]) if path else None)
+                                      sib=sib, anc_leaf=al)
+                    if (sib is not None and pend and run[0][0] <= pend[0][0]
+                            and not (run[:len(pend)] == pend)):
+                        # the suffix waiting here stays, so it is part of the ladder too
+                        sib = _normal(list(path) + cols[:start] + pend)
+                        run = write_level(v, x, d, arg, own=own, own_dx=odx, own_dy=ody,
+                                          sib=sib, anc_leaf=al)
                     if sib is not None: lad = prev[1]
+            if (ctx is None and not arg and len(run) == 1 and isinstance(run[0], Leaf)
+                    and path and path[-1][2] == 1 and run[0][1] > path[-1][1]
+                    and v is not None and fin(v) is None):
+                run = _capped_leaf(v, run[0], path)
             cols += run
             # the children of a collapse are its argument, written one level up
             if ctx is not None:
