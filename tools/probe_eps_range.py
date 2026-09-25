@@ -396,6 +396,7 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
     for lad_, dx_, dy_, is_sib in ([(own, own_dx, own_dy, False)] if own is not None else []) + \
                                   ([sib + (True,)] if sib is not None and sib[0] is not None else []):
         n = 0
+        root = False
         while n < len(lad_) and n < len(base) and lad_[n] == base[n]: n += 1
         if not is_sib:                           # the ancestors: M(v) goes on after them
             cand = n - 1 if n == len(lad_) else -1   # (psi_{Omega_{w+1}}: after M(w))
@@ -404,7 +405,9 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
         else:                                    # or the deepest level column they share
             cs = [i for i in range(1, n) if _is_level(base, par, i)]
             cand = max(cs) if cs else -1
-        if cand > idx and (best is None or cand > best[0]):
+            if cand < 0 and idx == 0 and len(lad_) > 1 and lad_[1][2] == 1:
+                cand, root = 0, True             # only the root: W_(w^2) + W_(w+1)
+        if (cand > idx or root) and (best is None or cand > best[0]):
             best = (cand, dx_, dy_, lad_ if is_sib else None)
     own = None
     seg = []
