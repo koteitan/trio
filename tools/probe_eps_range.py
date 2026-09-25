@@ -520,9 +520,12 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
             rest = base[n - 1:]
             sx, sy = p[0] + 2 - rest[0][0], p[1] + 1 - rest[0][1]
             rung = [] if sib is not None else [(p[0] + 1, p[1], 0)]   # a sibling laid it
-            return rung + [
-                (c[0] + sx, c[1] + (sy if _relative(base, par, n - 1 + i) else 0), c[2])
-                for i, c in enumerate(rest)]
+            out = []
+            for i, c in enumerate(rest):
+                rel = _relative(base, par, n - 1 + i)
+                cc = (c[0] + sx, c[1] + (sy if rel else 0), c[2])
+                out.append(FinLeaf(cc) if not rel and c[2] == 0 and c[1] > 0 else cc)
+            return rung + out
     bump = d - lev if own is None or own_dy is None else own_dy
     dx = own_dx if own is not None else x - tail[0][0]
     out = []
@@ -552,7 +555,17 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
             seg = [a.__class__((a[0] + sx, a[1] if isinstance(a, FinLeaf) or a[1] >= my
                                 else a[1] + sy, a[2])) if isinstance(a, Leaf)
                    else _mv(a, sx, sy) for a in seg0]
-            out += [_mv(a, dx, bump) for a in seg]
+            cp = [_sh(a, dx, bump) for a in seg]
+            if (cc[2] == 0 and len(cp) > 1 and cp[1][2] == 1 and cp[0][2] == 1
+                    and cp[1][0] == cp[0][0] + 1 and cp[1][1] == cp[0][1]
+                    and any(isinstance(a, Leaf) and not isinstance(a, FinLeaf)
+                            and a[0] == seg0[1][0] and a[1] < seg0[0][1] for a in seg0[2:])):
+                # the copy opens with a marker pair (a spelt W_W): the leaf hangs from its
+                # first marker, where the copy's own leaf was (W_W*W_w + W_(w+2))
+                cc = cc.__class__((cp[1][0], cc[1], cc[2]))
+                cp = [a for a in cp if not (isinstance(a, Leaf) and not isinstance(a, FinLeaf)
+                                            and a[0] == cc[0])]
+            out += cp
         out.append(cc)
     return out
 
@@ -634,6 +647,10 @@ class Leaf(tuple):
 class FinLeaf(Leaf):
     """A leaf naming a finite level (W, W_2): a storey copies it as it is."""
 
+def _sh(c, dx, dy):
+    """c moved by (dx, dy), keeping what kind of column it is."""
+    return c.__class__((c[0] + dx, c[1] + dy, c[2]))
+
 def _mv(c, dx, dy):
     """c moved by dx, and by dy unless it is a Leaf."""
     return c.__class__((c[0] + dx, c[1], c[2])) if isinstance(c, Leaf) else (c[0] + dx, c[1] + dy, c[2])
@@ -642,7 +659,7 @@ def _normal(lad):
     """The ladder lad moved so that its first column (the collapse) is (0,0,0): (own, dx)."""
     if not lad: return None, 0, None
     x0, y0 = lad[0][0], lad[0][1]
-    return [_mv(c, -x0, -y0) for c in lad], x0, y0
+    return [_sh(c, -x0, -y0) for c in lad], x0, y0
 
 def _own(v, run):
     """(M(v), dx) when the column run is M(v) itself moved by dx (a spelt level), else ()."""
