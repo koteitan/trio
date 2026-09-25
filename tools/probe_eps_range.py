@@ -360,7 +360,8 @@ def _cut(e, v1):
         return None
     return None
 
-def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None):
+def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
+                sib=None):
     """The columns that name the level Omega_v at x, for a column at chain depth d.
 
     A unit's leaf (arg=False) only names the level, and one column does that: the row-1
@@ -388,13 +389,24 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None):
         for i in range(1, n):                    # the chain only reaches depth d
             if _is_level(base, par, i) and base[i][1] <= d and i > idx:
                 lev, idx = base[i][1], i
-    if own is not None:                          # the column the children hang from spells
-        n = 0                                    # its own level (psi_{Omega_{w+1}}: M(w))
-        while n < len(own) and n < len(base) and own[n] == base[n]: n += 1
-        if n == len(own) and n - 1 > idx:
-            lev, idx = base[n - 1][1], n - 1
-        else:
-            own = None
+    best = None                                  # (cand, dx, dy) from the ladders of our own
+    for lad_, dx_, dy_, is_sib in ([(own, own_dx, own_dy, False)] if own is not None else []) + \
+                                  ([sib + (True,)] if sib is not None and sib[0] is not None else []):
+        n = 0
+        while n < len(lad_) and n < len(base) and lad_[n] == base[n]: n += 1
+        if not is_sib:                           # the ancestors: M(v) goes on after them
+            cand = n - 1 if n == len(lad_) else -1   # (psi_{Omega_{w+1}}: after M(w))
+        elif n == len(base) and base[-1][2] == 0 and base[-1][1] > 0:
+            cand = n - 2                         # a sibling spelt all of M(v): its leaf again
+        else:                                    # or the deepest level column they share
+            cs = [i for i in range(1, n) if _is_level(base, par, i)]
+            cand = max(cs) if cs else -1
+        if cand > idx and (best is None or cand > best[0]):
+            best = (cand, dx_, dy_)
+    own = None
+    if best is not None:
+        idx, own_dx, own_dy = best
+        lev, own = base[idx][1], True
     tail = base[idx + 1:]
     if not tail:                                 # the chain already spells v out
         return [(x, base[-1][1], 0)]
@@ -402,6 +414,24 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None):
     dx = own_dx if own is not None else x - tail[0][0]
     return [(c[0] + dx, c[1] + (bump if _relative(base, par, idx + 1 + i) else 0), c[2])
             for i, c in enumerate(tail)]
+
+def _leaf_tail(gamma, arg, plvl):
+    """The level named by the last column block(gamma, .., arg) writes when that column is a
+    leaf, else None. Inside a collapse argument a level is spelt out, except one at the
+    collapse's own level, which is a leaf there too (psi_W_(w+1)(W_(w+1))*W_w ends in the
+    leaf of W_w under the column of level w)."""
+    e = gamma[-1][0]
+    eo = ato(e)
+    rest = strip(e)
+    la = lead_atom(eo)
+    v = lvl(e)
+    if la is not None and is_card_psi(la) and la == eo[0][0]:
+        v = _pred_level(v)
+    if rest != ZERO:
+        return _leaf_tail(rest, la is not None and la[0] == 'psi', v)
+    if not arg or (plvl is not None and v is not None and cmp_ord(v, plvl) == 0):
+        return v
+    return None
 
 def _normal(lad):
     """The ladder lad moved so that its first column (the collapse) is (0,0,0): (own, dx)."""
@@ -483,11 +513,11 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                     # the ancestors from the enclosing collapse down are a ladder of their
                     # own; a repeated unit shares the previous one up to its leaf
                     # (W_(w+1)*2 writes (1,1,1)(2,1,0)(3,2,0)(3,2,0))
-                    rep = (prev and prev[0] is not None and cmp_ord(prev[0], v) == 0
-                           and prev[1][-1][2] == 0 and prev[1][-1][1] > 0)
-                    lad = prev[1][:-1] if rep else list(path)
-                    own, odx, ody = _normal(lad)
-                    run = write_level(v, x, d, arg, own=own, own_dx=odx, own_dy=ody)
+                    own, odx, ody = _normal(list(path))
+                    sib = _normal(prev[1]) if prev and prev[0] is not None else None
+                    run = write_level(v, x, d, arg, own=own, own_dx=odx, own_dy=ody,
+                                      sib=sib)
+                    if sib is not None: lad = prev[1]
             cols += run
             # the children of a collapse are its argument, written one level up
             if ctx is not None:
@@ -509,12 +539,14 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                 # a leaf that ends the children and names a limit level (W_w^2 writes
                 # (1,1,1)(2,1,0) + suffix (1,1,1)) takes its upgrade suffix; the next unit
                 # absorbs it when it starts with the same columns and has children of its
-                # own (W_w^2 + W_w*w, W_w^2*2), not when it is the bare marker (W_w^2 + W_w)
+                # own (W_w^2 + W_w*w, W_w^2*2), not when it is the bare marker (W_w^2 + W_w);
+                # a unit hanging deeper than the suffix (under a shared ladder) absorbs it
                 unit = cols[start:]
-                if pend and (arg and not (unit[:len(pend)] == pend and len(unit) > len(pend))):
+                if (pend and arg and unit[0][0] <= pend[0][0]
+                        and not (unit[:len(pend)] == pend and len(unit) > len(pend))):
                     cols[start:start] = pend
                 pend = []
-                tl = _tail_block(sub, sub_arg) if sub != ZERO else None
+                tl = _leaf_tail(sub, sub_arg, v) if sub != ZERO else None
                 if tl is not None and cols[-1][2] == 0:
                     pend = append_suffix(cols, tl)[len(cols):]
     return cols + pend if top else cols         # an inner suffix waits for the unit above
