@@ -469,6 +469,23 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
             if _is_level(base, par, i) and base[i][1] <= d and i > idx:
                 lev, idx = base[i][1], i
     best = None                                  # (cand, dx, dy) from the ladders of our own
+    if sib is not None and sib[0] is not None and len(sib[0]) > 2 and len(base) > 2:
+        sl, sdx, sdy = sib
+        sp, _ = _forest(sl)
+        j0 = max([i for i in range(1, len(sl)) if sp[i] == 0] or [1])
+        m, r = sl[j0], sl[j0 + 1] if j0 + 1 < len(sl) else None
+        if (m == base[1] and m[2] == 1 and r is not None and r[2] == 0
+                and r[0] == m[0] + 1 and r[1] == m[1] and base[2][2] == 1
+                and base[2][1] == base[1][1] and all(c[0] > base[1][0] for c in base[2:])):
+            # the siblings' last unit opens with the marker of level w and its rung:
+            # the rest of M(v) goes one storey deeper under that rung (W_(W_w*w) +
+            # W_(w^2) writes ...(1,1,1)(2,1,0)...(3,2,1)(4,2,1))
+            out = []
+            for i, c in enumerate(base[1:]):
+                rel = _relative(base, par, 1 + i)
+                cc = (c[0] + 2 + sdx, c[1] + (1 + sdy if rel else 0), c[2])
+                out.append(FinLeaf(cc) if not rel and c[2] == 0 and c[1] > 0 else cc)
+            return out
     cands = [(own, own_dx, own_dy, False, None)] if own is not None else []
     if sib is not None and sib[0] is not None and len(sib[0]) > 1:
         # the siblings: all they wrote, or only their last unit (the root's last child)
