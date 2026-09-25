@@ -732,6 +732,11 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                                           sib=sib, anc_leaf=al)
                     if sib is not None: lad = prev[1]
             if (ctx is None and not arg and len(run) == 1 and isinstance(run[0], Leaf)
+                    and not isinstance(run[0], FinLeaf) and path and path[0][1] > 0):
+                # a limit level's leaf sits as deep as the collapse it is written in lifts
+                # it (the leaf of W_w inside psi_1 is at depth 2)
+                run = [Leaf((run[0][0], run[0][1] + path[0][1], 0))]
+            if (ctx is None and not arg and len(run) == 1 and isinstance(run[0], Leaf)
                     and path and path[-1][2] == 1 and run[0][1] > path[-1][1]
                     and v is not None and fin(v) is None):
                 run = _capped_leaf(v, run[0], spell if spell is not None else path)
