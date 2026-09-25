@@ -335,11 +335,22 @@ def _storey_base(H, v1):
     The summands that are themselves atoms (W_w*2 + W_2) have no exponent to cut; they go
     to the finite rule. Examples: W_w*W, W_w*W_2 -> W_w*W; W_w^2*W; W_w^W + W_w -> W_w^W."""
     for k, (g, _) in enumerate(H):
-        if is_atom(g): continue
+        if is_atom(g):
+            if g[0] == 'W' and fin(v1) is not None and _ends_in_leaf(M(g[1]), fin(v1)):
+                # W_W: M(W) ends in the leaf of Omega_1 under a marker, (3,1,0)
+                return H[:k] + ((g, 1),), ZERO
+            continue
         t = _cut(g, v1)
         if t is not None:
             return H[:k] + ((t[0], 1),), t[1]
     return None
+
+def _ends_in_leaf(m, y):
+    """Does the matrix m end in a z0 leaf at depth y under a marker at the same depth?"""
+    if len(m) < 2 or m[-1][2] != 0 or m[-1][1] != y: return False
+    par, _ = _forest(m)
+    p = par[len(m) - 1]
+    return p is not None and m[p][2] == 1 and m[p][1] == y
 
 def _cut(e, v1):
     """T(e): the exponent e cut right after its first leaf Omega_{v+1} under a limit
