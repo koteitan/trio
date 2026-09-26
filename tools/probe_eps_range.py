@@ -594,12 +594,18 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
             # the leaf of W_(w+1))
             sx, sy = p[0] + 1 - rest[0][0], p[1] + 1 - rest[0][1]
             r0 = len(base) - len(rest)
+            k = _suflen(base, v)                 # its upgrade suffix stays where it is
+            if k and len(rest) > k and all(c[0] > rest[0][0] for c in rest[1:len(rest) - k]):
+                rest = rest[:len(rest) - k]
+            else:
+                k = 0
             out = []
             for i, c in enumerate(rest):
                 rel = _relative(base, par, r0 + i)
                 cc = (c[0] + sx, c[1] + (sy if rel else 0), c[2])
                 out.append(FinLeaf(cc) if not rel and c[2] == 0 and c[1] > 0 else cc)
-            return out
+            ox, oy = (own_dx, own_dy or 0) if own is not None else (0, 0)
+            return out + [Suf((c[0] + ox, c[1] + oy, c[2])) for c in base[len(base) - k:len(base)]] if k else out
         if (p[2] == 1 and n == len(a_own) and n < len(base) and base[n][2] == 1
                 and base[n][1] == a_own[-1][1]
                 and all(c[0] > base[n - 1][0] for c in base[n:])):
