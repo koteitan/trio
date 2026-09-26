@@ -414,7 +414,7 @@ needed between them. Measured by `tools/probe_gap.py`.
 | | match | mismatch |
 |---|---|---|
 | pure rows | 752 | 60 (27 of them non-standard) |
-| gap rows (the 3868 with a readable label) | **2080** | 1788 |
+| gap rows (the 3868 with a readable label) | **2137** | 1731 |
 
 The main conventions (details in notes, entries 777 and 778):
 
