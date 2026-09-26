@@ -292,7 +292,39 @@ def _lower_exp(e, storey=True):
     X = _lower_succ(X, add(vt, ONE))
     if storey:
         X = _limit_storey(X, vt)
+        X = _suffix_storey(X, vt)
     return ('psi', v, X)
+
+def _suffix_storey(X, vt):
+    """The storey at the level t whose marker pair ends a spelling: M(W_(w^2)) =
+    ...(3,1,0)(1,1,1)(2,1,1) ends in M(w^2)'s pair, so a summand above level w^2 after
+    W_(W_(w^2)) would carry on from it. X = X[:k+1] + psi_W_(t+1)(H) + R, H the summands
+    above level t: W_(W_(w^2)) + W_W writes W_(W_(w^2)) + psi_W_(w^2+1)(W_(W_(w^2)) + W_W)."""
+    for k, (g, _) in enumerate(X):
+        if not is_atom(g) or g[0] != 'W' or fin(g[1]) is not None: continue
+        sub = g[1]                               # W_(W_b): t = b; otherwise the level
+        if len(sub) == 1 and sub[0][1] == 1 and is_atom(sub[0][0]) and sub[0][0][0] == 'W':
+            t = sub[0][0][1]
+        else:
+            t = lvl(ato(sub)) if sub else None
+        if t is None: continue
+        mt = M(t)
+        if len(mt) < 3 or mt[-1][2] != 1 or mt[-2][2] != 1 or mt[-1][1] != mt[-2][1]:
+            continue                             # (M(t) ends in a marker pair)
+        mg = M(g[1])
+        if [tuple(c) for c in mg[-(len(mt) - 1):]] != [tuple(c) for c in mt[1:]]:
+            continue
+        if vt is not None and cmp_ord(add(vt, ONE), t) > 0: continue
+        i = k + 1
+        while i < len(X):
+            L = _true_level(X[i][0])
+            if L is None or cmp_ord(L, t) <= 0: break
+            i += 1
+        if i == k + 1: return X
+        H, R = X[:i], X[i:]
+        P = ('psi', ato(Om(add(t, ONE))), H)
+        return add(X[:k + 1], add(ato(_lower_exp(P, False)), R))
+    return X
 
 def _limit_storey(X, vt):
     """The storey at the limit level w: a summand w^(a*c + p) whose level a is spelt with
