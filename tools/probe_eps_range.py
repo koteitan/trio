@@ -551,7 +551,8 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
     if not tail:                                 # the chain already spells v out
         return [(x, base[-1][1], 0)]
     if anc_leaf is not None and anc_leaf[0] is not None and len(anc_leaf[0]) > 1:
-        a_own, p = anc_leaf
+        a_own, p = anc_leaf[0], anc_leaf[1]
+        apath = anc_leaf[2] if len(anc_leaf) > 2 else None
         n = 0
         while n < len(a_own) and n < len(base) and a_own[n] == base[n]: n += 1
         rest = base[n - 1:] if n and base[n - 1][2] == 1 else base[n:]
@@ -583,6 +584,27 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
                 cc = (c[0] + sx, c[1] + (sy if rel else 0), c[2])
                 out.append(FinLeaf(cc) if not rel and c[2] == 0 and c[1] > 0 else cc)
             return rung + out
+        if (apath is not None and len(apath) >= 2 and p[2] == 1 and n == len(a_own)
+                and len(a_own) >= 3 and a_own[-2][2] == 1 and a_own[-2][1] == a_own[-1][1]
+                and a_own[-1][0] == a_own[-2][0] + 1 and n < len(base)
+                and base[n][0] == a_own[-1][0] + 1
+                and all(c[0] > a_own[-2][0] for c in base[n:len(base) - _suflen(base, v)])):
+            # under a marker pair (the column of psi_W_(w^2+1) is (1,1,1)(2,1,1)) M(v)
+            # would go on as the pair's own level (W_W): a rung under the pair's first
+            # marker, then M(v) from that marker one storey deeper
+            # (psi_W_(w^2+1)(W_W) writes (1,1,1)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0))
+            m = apath[-2]
+            k = _suflen(base, v)                 # its upgrade suffix stays where it is
+            rest = base[n - 2:len(base) - k]
+            sx, sy = m[0] + 2 - rest[0][0], m[1] + 1 - rest[0][1]
+            rung = [] if sib is not None else [(m[0] + 1, m[1], 0)]
+            out = []
+            for i, c in enumerate(rest):
+                rel = _relative(base, par, n - 2 + i)
+                cc = (c[0] + sx, c[1] + (sy if rel else 0), c[2])
+                out.append(FinLeaf(cc) if not rel and c[2] == 0 and c[1] > 0 else cc)
+            ox, oy = (own_dx, own_dy or 0) if own is not None else (0, 0)
+            return rung + out + [(c[0] + ox, c[1] + oy, c[2]) for c in base[len(base) - k:]]
     bump = d - lev if own is None or own_dy is None else own_dy
     dx = own_dx if own is not None else x - tail[0][0]
     out = []
@@ -717,6 +739,14 @@ def _mv(c, dx, dy):
     """c moved by dx, and by dy unless it is a Leaf."""
     return c.__class__((c[0] + dx, c[1], c[2])) if isinstance(c, Leaf) else (c[0] + dx, c[1] + dy, c[2])
 
+def _suflen(base, v):
+    """The length of the upgrade suffix M(v) = base ends in (the z1 columns after its last
+    z0 column, at the top level), or 0."""
+    sf = suffix(v)
+    if not sf or len(base) <= len(sf) + 1: return 0
+    if [tuple(c) for c in base[-len(sf):]] != [tuple(c) for c in sf]: return 0
+    return len(sf) if sf[0][0] == 1 else 0
+
 def _normal(lad):
     """The ladder lad moved so that its first column (the collapse) is (0,0,0): (own, dx)."""
     if not lad: return None, 0, None
@@ -801,7 +831,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                     own, odx, ody = _normal(list(path))
                     # the siblings already written here are a ladder too: all of it
                     sib = _normal(list(path) + cols[:start]) if arg and start > 0 else None
-                    al = (own, path[-1]) if path else None
+                    al = (own, path[-1], list(path)) if path else None
                     run = write_level(v, x, d, arg, own=own, own_dx=odx, own_dy=ody,
                                       sib=sib, anc_leaf=al)
                     if (sib is not None and pend and run[0][0] <= pend[0][0]
