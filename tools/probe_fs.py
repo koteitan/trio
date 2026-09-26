@@ -27,6 +27,7 @@ import trio
 Z = ()
 G0 = os.environ.get('G0', 'zero')
 ITER_SHIFT = os.environ.get('ITER_SHIFT', '0') == '1'
+AUTO = os.environ.get('AUTO', '0') == '1'
 ONEU = (Z, Z)                                   # the unit D_0 0 = 1
 
 # ---- labels -> D-trees ----
@@ -117,8 +118,9 @@ def omega_limit_step(x, P_, v, n):
     (D_1(Omega_w)[m] = D_1 D_2 .. D_m 0, D_0(Omega_w*2)[2] = D_0(Omega_w + D_1(Omega_w)))."""
     xo, vo = to_ord(x), to_ord(v)
     k = from_ord(neg_add(xo, vo)) if xo else v
-    if not k or cof(k) != 'w':
-        return ((x, P_),)
+    if not k or cof(k) != 'w':                  # v at the context's own level: Buchholz
+        vx = fs(v, n)                           # Omega_v[n] = Omega_(v[n])
+        return ((x, P_ + (((vx, Z),) if vx else Z)),)
     lv = from_ord(P.add(xo, to_ord(fs(k, n)))) if xo else fs(k, n)
     if cmp(lv, x) <= 0:
         return ((x, P_),)
@@ -207,7 +209,16 @@ def gen(nshow=10, off=int(os.environ.get('OFF', '1'))):
               elif k == 'w':
                   n = next((n for n in range(0, 64) if cmp(fsl(g, n), D) >= 0), None)
                   if n is None: break
-                  g, X = fsl(g, n), trio.expand(X, n + off)
+                  h = fsl(g, n)
+                  m = n + off
+                  if AUTO:                      # pick m by reading X[m] (here: the builder's
+                      try:                      # matrix of h), only to choose among m's
+                          want = P.block(P.lower(to_ord(h)), 0, 0, False)
+                          m = next((k for k in (n, n + 1, n - 1, n + 2) if k >= 0
+                                    and trio.expand(X, k) == want), m)
+                      except Exception:
+                          pass
+                  g, X = h, trio.expand(X, m)
               else:
                   break
         except Exception:
