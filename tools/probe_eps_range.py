@@ -604,7 +604,7 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
                 cc = (c[0] + sx, c[1] + (sy if rel else 0), c[2])
                 out.append(FinLeaf(cc) if not rel and c[2] == 0 and c[1] > 0 else cc)
             ox, oy = (own_dx, own_dy or 0) if own is not None else (0, 0)
-            return rung + out + [(c[0] + ox, c[1] + oy, c[2]) for c in base[len(base) - k:]]
+            return rung + out + [Suf((c[0] + ox, c[1] + oy, c[2])) for c in base[len(base) - k:]]
     bump = d - lev if own is None or own_dy is None else own_dy
     dx = own_dx if own is not None else x - tail[0][0]
     out = []
@@ -723,6 +723,11 @@ def _anc(lad, run):
 class Leaf(tuple):
     """A column that names an absolute level (an exponent leaf): a storey copies it
     without raising its row-1 entry."""
+
+_LAST_PEND = [[]]
+
+class Suf(tuple):
+    """An upgrade suffix column a spelling leaves pending (the next unit may absorb it)."""
 
 class SameLeaf(tuple):
     """A leaf naming the level of the column above it (W_w^2 = (1,1,1)(2,1,0)): it moves
@@ -850,6 +855,9 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                     and path and path[-1][2] == 1 and run[0][1] > path[-1][1]
                     and v is not None and fin(v) is None):
                 run = _capped_leaf(v, run[0], path, spell)
+            rsuf = []
+            while run and isinstance(run[-1], Suf):
+                rsuf.insert(0, tuple(run.pop()))
             cols += run
             # the children of a collapse are its argument, written one level up
             if ctx is not None:
@@ -874,6 +882,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                 full = [run[-1]] if coll else _anc(lad, run)
                 cols += block(sub, hx, hy, sub_arg, None, v, hy, False, cp, len(run) == 1,
                               full)
+                kid_pend = _LAST_PEND[0]
                 prev = (v if arg else None, lad + run)
                 # a leaf that ends the children and names a limit level (W_w^2 writes
                 # (1,1,1)(2,1,0) + suffix (1,1,1)) takes its upgrade suffix; the next unit
@@ -903,6 +912,11 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                 tl = _leaf_tail(sub, sub_arg, v) if sub != ZERO else None
                 if tl is not None and cols[-1][2] == 0:
                     pend = append_suffix(cols, tl)[len(cols):]
+                if rsuf and not pend:
+                    pend = rsuf                  # a spelling's own suffix, still pending
+                elif sub != ZERO and not pend and kid_pend:
+                    pend = kid_pend              # (one left pending inside the children)
+    _LAST_PEND[0] = pend if (ctx is None and not top) else []
     return cols + pend if top else cols         # an inner suffix waits for the unit above
 
 def body(beta, x0, y):
