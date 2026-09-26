@@ -525,6 +525,17 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
                 cc = (c[0] + 2 + sdx, c[1] + (1 + sdy if rel else 0), c[2])
                 out.append(FinLeaf(cc) if not rel and c[2] == 0 and c[1] > 0 else cc)
             return out
+    if (own is not None and own_dy is not None and len(own) == len(base) + 1 >= 3
+            and [tuple(c) for c in own[:len(base)]] == [tuple(c) for c in base]
+            and base[-1][2] == 1 and own[len(base)][2] == 1
+            and own[len(base)][1] == base[-1][1] and own[len(base)][0] == base[-1][0] + 1):
+        # M(v) is a proper head of the ancestors' spelling (W_w inside the argument of
+        # psi_W_(w^2+1), whose column spells (1,1,1)(2,1,1)): v's leaf hangs from that
+        # head's last marker, and v's suffix is left pending
+        m = base[-1]
+        sf = suffix(v)
+        return [Leaf((m[0] + 1 + own_dx, m[1] + own_dy, 0))] + \
+            [Suf((c[0] + own_dx, c[1] + own_dy, c[2])) for c in sf]
     if own is not None and len(own) == 1 and own_dy is not None and len(base) > 2:
         # right under a collapse column that M(v) itself restarts with at the top (the
         # storey of M(W_2) is (1,1,0)(2,2,1)(3,2,1)(4,2,0)): only that part is written
