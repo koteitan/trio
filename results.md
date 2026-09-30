@@ -26,14 +26,20 @@
 |---|---|
 | `lean/Final.lean` | 停止性の入口。`TRIO_terminates_of_*` が全部ここに並ぶ |
 | `lean/L105Cap.lean` | `TowerExp` への集約、`MTowerClosedS` とその `Based` 版（§77.5）、`TowerGraft2Single` |
-| `lean/L106.lean` | `TowerSnocStep(Based)` への還元、辞書式測度、`oper` の場合分けの部品 |
+| `lean/L106.lean`（削除済み、下の注） | `TowerSnocStep(Based)` への還元、辞書式測度、`oper` の場合分けの部品 |
 | `lean/H12Export.lean` | 塔の構造補題（親の位置、窓の上界、`Lift1` の不変量） |
-| `lean/H12H2.lean` | 同上の作業ファイル |
+| `lean/H12H2.lean`（削除済み、下の注） | 同上の作業ファイル |
 | `lean/L53Subst.lean` | `LiftTie` への置換補題、`MliftR` / `Row1Down` 経路 |
 | `lean/L51Tower.lean` | 一般塔 `gTower Q e d n` と `(e,d)` による分類 |
-| `lean/Cofidx.lean` | `oper` の展開指数についての単調性（`oper_mono_idx`） |
+| `bms2dbms/lean/Cofidx.lean` | `oper` の展開指数についての単調性（`oper_mono_idx`） |
 | `lean/CORES.md` | 核の一覧と、各核の強さ・依存関係 |
 | `lean/LEMMA-INDEX.tsv` | 全補題の索引 |
+
+注（2026-10-01）: どこからも import されていない Lean ファイルを消した。`L106.lean`（ビルド対象でもなかった）と `H12H2.lean` もその中に入る。
+中身は消す前のコミットで読める:
+[L106.lean](https://github.com/koteitan/trio/blob/246a948d/lean/L106.lean)、
+[H12H2.lean](https://github.com/koteitan/trio/blob/246a948d/lean/H12H2.lean)。
+以下の節で `L106.lean` を指しているのはこの版である。
 | `tools/` | 測定スクリプト（338 本） |
 
 すべて `leanman build -C lean` で緑（807 jobs、warning 0）。

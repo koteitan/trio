@@ -9,4 +9,4 @@ path = "../../lean"
 
 [[lean_lib]]
 name = "BMS2DBMS"
-roots = ["Dbms", "DbmsSheet", "DbmsConv", "DbmsStd", "Dbms3", "Conv3M"]
+roots = ["Dbms", "DbmsSheet", "DbmsConv", "DbmsStd", "Cofidx", "Dbms3", "Conv3M"]
