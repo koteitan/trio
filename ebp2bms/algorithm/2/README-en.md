@@ -352,15 +352,15 @@ rows whose own matrix is not a standard form**; the remaining 785 are the measur
 |---|---|---|
 | $`\alpha \lt \Omega_1`$ | 128 | 0 |
 | arithmetic on $`\Omega_1`$ | 101 | 0 |
-| arithmetic on $`\Omega_v`$ ($`v \ge 2`$) | 523 | 33 |
-| total | **752** | 33 |
+| arithmetic on $`\Omega_v`$ ($`v \ge 2`$) | 525 | 31 |
+| total | **754** | 31 |
 
-The 33 mismatches break down as:
+The 31 mismatches break down as:
 
 | verdict | rows | grounds |
 |---|---|---|
 | the sheet is right | 3 | our output is not a standard form |
-| undecided | 30 | both are standard forms |
+| undecided | 28 | both are standard forms |
 
 Nine sheet rows with an error (1947 / 2113 / 2131 / 2133 / 2532 / 2723 / 3439 / 3452 / 3453)
 were fixed on the sheet's side (the old value and the grounds are in the sheet's column I).
@@ -369,8 +369,8 @@ parenthesis typo.
 
 Two independent cross-checks run alongside.
 
-- **Row order**: the 752 matching rows come out strictly increasing under the builder's own
-  ordinal comparison, in the sheet's row order (0 violations across 751 adjacent pairs).
+- **Row order**: the 754 matching rows come out strictly increasing under the builder's own
+  ordinal comparison, in the sheet's row order (0 violations).
   This check is what found the direction of rule 9: the matrices agreed but the order broke
   in 14 places, and setting $`\psi_{\Omega_u}(X) \lt \Omega_u`$ brought it to 0.
 - **Standard form**: **782 of the 785** matrices the builder writes are standard forms
@@ -378,7 +378,7 @@ Two independent cross-checks run alongside.
   sheet rows. Collisions, where two different $`\alpha`$ produce the same matrix, went from
   57 pairs down to 11.
 
-### Open (the 33 mismatches)
+### Open (the 31 mismatches)
 
 What is left splits into small families; none of them exceeds 20 rows.
 
@@ -413,8 +413,8 @@ needed between them. Measured by `tools/probe_gap.py`.
 
 | | match | mismatch |
 |---|---|---|
-| pure rows | 752 | 60 (27 of them non-standard) |
-| gap rows (the 3868 with a readable label) | **2137** | 1731 |
+| pure rows | 754 | 58 (27 of them non-standard) |
+| gap rows (the 3868 with a readable label) | **2149** | 1719 |
 
 The main conventions (details in notes, entries 777 and 778):
 
@@ -435,4 +435,36 @@ The main conventions (details in notes, entries 777 and 778):
    children hang from the first marker ($`\Omega_{\omega^2}\cdot\omega = (1,1,1)(2,1,1)(2,0,0)`$).
 
 Fifteen sheet errors found along the way (6 labels, 9 matrices) were corrected in the sheet,
-with notes in column I. Five more rows are on hold, since they cannot be shown to be wrong.
+with notes in column I.
+
+### Check by an independent evaluator
+
+For the direction matrix → ordinal there is Ytosk's evaluator (an algorithm that turns a matrix
+into an Extended Buchholz term below SRO,
+[Googology Wiki](https://googology.fandom.com/wiki/User_blog:Ytosk/Algorithm_that_changes_BMS_matrices_into_ordinals_up_to_SRO)).
+It is defined in Lean in [`lean/Ebocf.lean`](../../../lean/Ebocf.lean) (the functions v, o, SF).
+The sheet's last row psi(I) is exactly SRO, the upper end of the evaluator's range.
+
+- **The Lean version and the JavaScript one** (https://github.com/hemisemidemipresent/bms) give
+  the same term on all 4767 matrices of the sheet (11 of them have no value, because v and o
+  call each other in a cycle; SRO is one of them).
+- **The value of the sheet's matrix equals its label** on **4428** of the 4680 labelled rows.
+- **Round trip of the builder**: taking "standard under `bms -s` and eval(builder's matrix) =
+  label" as correctness, without looking at the sheet, gives **2967 / 4680** rows. Of the 2903
+  rows where the builder equals the sheet, 2899 pass it. 68 rows differ from the sheet but pass.
+- Measured by `tools/probe_ebocf.py` (its `rt` mode needs only Lean).
+
+This check found 17 sheet errors, now corrected with notes in column I:
+- 9 labels: 1532, 2025, 2654, 2816, 3077, 3319, 3694, 3777, 4384. Each label is out of order
+  with a neighbouring label, and the value of the matrix lies between them.
+- 8 matrices: 1287, 1433, 1787, 1816, 2009, 2817–2819: the same matrix as a neighbour, out of
+  order, or a missing parenthesis. Rows 2817–2819 have (4,1,0) where (4,2,0) belongs; the BM4
+  expansion [1] of row 2820 has the label's value. The builder used to have a special rule to
+  match these three rows; it is removed.
+
+The 27 sheet matrices with broken parentheses (such as `(3,2,1(4,2,1)`) are now read by the
+normalization (rule 4 of `tools/normalize_sheet.py`); before, the broken column was dropped.
+
+27 rows remain where both the sheet's matrix and the builder's are standard and in order, but
+the evaluator gives the sheet's matrix a value other than the label. The evaluator has no proof
+either, so which one is wrong is left open.

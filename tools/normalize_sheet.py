@@ -3,16 +3,21 @@
 
 **Only the format is fixed**; no ordinal value and no matrix is changed.
 
-The three rules:
+The rules (labels):
   1. Alias lists (aliasN)   split 'A = B = C' and take the first alias of the form
      `psi(W...)` as canonical (the first alias otherwise).
   2. Unbalanced parentheses (paren+n / paren-n)   per alias, append the missing ')' or
      drop the surplus trailing ')'.
   3. Leading typo (typo)   a label starting with 'si(' becomes 'psi('.
+The rule (matrices):
+  4. Missing or surplus parentheses (mat)   '(3,2,1(4,2,1)' closes the open column before the
+     next '(', '(4,3,0)5,4,1)' opens the column the ')' closes, a trailing '(' or a surplus ')'
+     is dropped. Without it the columns with a broken parenthesis were dropped when read.
 
 Outputs:
   tmp/fixed-sheet/to-psi-I.tsv   (not under version control)
-    row / matrix / label_orig / label_norm / fix   (fix lists the rules that fired)
+    row / matrix / label_orig / label_norm / fix / matrix_orig   (fix lists the rules that fired;
+    matrix is the normalized matrix, matrix_orig the sheet's column A as it is)
   tools/omega_alpha_rows.tsv     (under version control; the input of the probes and the
     builder) the pure psi_0(Omega_alpha) rows extracted from the normalized labels
 """
@@ -41,6 +46,24 @@ def balance(s):
         return t, 'paren%d' % d
     return s, None
 
+def norm_matrix(m):
+    """Rule 4: read the columns of a matrix string whatever its parentheses."""
+    cols, cur, opened = [], '', False
+    def close():
+        nonlocal cur
+        if cur.strip(','): cols.append('(' + cur.strip(',') + ')')
+        cur = ''
+    for c in m:
+        if c == '(':
+            close(); opened = True
+        elif c == ')':
+            close(); opened = False
+        elif c.isdigit() or c == ',':
+            cur += c
+    close()
+    out = ''.join(cols)
+    return out, (None if out == m.strip() else 'mat')
+
 def normalize(label):
     fixes = []
     s = label.strip()
@@ -64,7 +87,7 @@ def main():
     ws = wb['To psi(I)']
     n = nfix = 0
     with open(OUT, 'w', encoding='utf-8') as f:
-        f.write('row\tmatrix\tlabel_orig\tlabel_norm\tfix\n')
+        f.write('row\tmatrix\tlabel_orig\tlabel_norm\tfix\tmatrix_orig\n')
         for i, r in enumerate(ws.iter_rows(values_only=True)):
             row = i + 1
             mat, lab = (r[0], r[1]) if r else (None, None)
@@ -72,10 +95,12 @@ def main():
                 continue
             n += 1
             canon, fixes = normalize(lab)
+            mraw = mat.strip() if isinstance(mat, str) else ''
+            mnorm, mf = norm_matrix(mraw) if mraw.startswith('(') else (mraw, None)
+            if mf: fixes.append(mf)
             if fixes: nfix += 1
-            f.write('%d\t%s\t%s\t%s\t%s\n'
-                    % (row, mat if isinstance(mat, str) else '',
-                       lab.strip(), canon, ','.join(fixes)))
+            f.write('%d\t%s\t%s\t%s\t%s\t%s\n'
+                    % (row, mnorm, lab.strip(), canon, ','.join(fixes), mraw))
     print('labelled rows %d / with a format fix %d -> %s' % (n, nfix, os.path.normpath(OUT)))
     write_rows()
 

@@ -114,6 +114,9 @@ def roundtrip(nshow=10):
         else:
             cnt['B!=S, no round trip' + (', S = label' if eS == L else '')] += 1
     for k in sorted(cnt): print('%5d  %s' % (cnt[k], k))
+    good = sum(1 for r, lab, S, B in rows if B and v.get(3 * r + 1) == v[3 * r + 2] and standard(B))
+    print('builder correct without the sheet (bms -s standard and eval(B) = label): %d / %d'
+          % (good, len(rows)))
     for r, lab, S, B, eS, eB in cand[:nshow]:
         print(r, lab); print('   sheet', F.smat(S), ' =', eS); print('   build', F.smat(B))
     return cand

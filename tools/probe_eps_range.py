@@ -479,7 +479,7 @@ def _cut(e, v1):
     return None
 
 def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
-                sib=None, anc_leaf=None, stand=None):
+                sib=None, anc_leaf=None, gap=False):
     """The columns that name the level Omega_v at x, for a column at chain depth d.
 
     A unit's leaf (arg=False) only names the level, and one column does that: the row-1
@@ -660,10 +660,8 @@ def write_level(v, x, d, arg=False, *ladders, own=None, own_dx=0, own_dy=None,
     seg0 = seg                                   # every storey copies the original part
     upg = len(suffix(v)) if base[-1][2] == 1 else 0
     before_suffix = len(base) - upg - 1 if upg else None   # a leaf the suffix upgrades
-    if before_suffix is not None and (base[before_suffix][1] != base[-upg][1] or stand
-                                      or stand is None):   # (gap path only)
-        before_suffix = None                     # (only one level with the suffix, and not
-                                                 # right after a standing suffix: row 2817)
+    if before_suffix is not None and (base[before_suffix][1] != base[-upg][1] or not gap):
+        before_suffix = None                     # (only one level with the suffix; gap path only)
     up = 0                                       # the unit is written this many storeys up
     for i, c in enumerate(tail):
         if (seg and i == 0 and idx > 0 and tuple(c) == tuple(seg[0])
@@ -830,7 +828,7 @@ def _pred_level(u):
     return u
 
 def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path=(),
-          pleaf=False, spell=None, stand=False):
+          pleaf=False, spell=None):
     """Copy the ordinal gamma into columns: one column per summand w^delta of gamma, and
     the children of that column spell out strip(delta).
 
@@ -893,13 +891,13 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                     sib = _normal(list(path) + cols[:start]) if arg and start > 0 else None
                     al = (own, path[-1], list(path)) if path else None
                     run = write_level(v, x, d, arg, own=own, own_dx=odx, own_dy=ody,
-                                      sib=sib, anc_leaf=al, stand=bool(stand and start == 0))
+                                      sib=sib, anc_leaf=al, gap=True)
                     if (sib is not None and pend and run[0][0] <= pend[0][0]
                             and not (run[:len(pend)] == pend)):
                         # the suffix waiting here stays, so it is part of the ladder too
                         sib = _normal(list(path) + cols[:start] + pend)
                         run = write_level(v, x, d, arg, own=own, own_dx=odx, own_dy=ody,
-                                          sib=sib, anc_leaf=al, stand=bool(stand and start == 0))
+                                          sib=sib, anc_leaf=al, gap=True)
                     if sib is not None: lad = prev[1]
             if (ctx is None and not arg and len(run) == 1 and isinstance(run[0], Leaf)
                     and not isinstance(run[0], FinLeaf) and path and path[0][1] > 0):
@@ -936,7 +934,7 @@ def block(gamma, x, d=0, arg=False, ctx=None, plvl=None, py=None, top=True, path
                         cp = cp[:len(cp) - len(run) + k + 1]    # as its ladder)
                 full = [run[-1]] if coll else _anc(lad, run)
                 cols += block(sub, hx, hy, sub_arg, None, v, hy, False, cp, len(run) == 1,
-                              full, bool(prev_suf) and coll)
+                              full)
                 kid_pend = _LAST_PEND[0]
                 prev = (v if arg else None, lad + run)
                 # a leaf that ends the children and names a limit level (W_w^2 writes
