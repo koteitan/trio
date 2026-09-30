@@ -42,7 +42,10 @@ def to_unit(e):
     eo = P.ato(e)
     if eo == P.ZERO:
         return ONEU
-    L = P._true_level(e)
+    L = P.lvl(e)
+    a0 = P.lead_atom(eo)                        # psi_{Omega_(u+1)} at the head, however deep,
+    if a0 is not None and P.is_card_psi(a0):    # stands at level u
+        L = P._pred_level(L)
     v = from_ord(L) if L else Z
     return (v, from_ord(P.strip(e)))
 
