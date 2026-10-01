@@ -428,6 +428,179 @@ theorem join_notrig_t0 {k : Nat} (hk1 : 1 ≤ k) (hk : k < n) :
         exact htrN ⟨lt_of_not_ge hc, h2⟩
       exact absurd (lt_of_le_of_lt (le_trans hBb (step_ge hbot)) hS1b) (lt_irrefl' _)
 
+theorem low_ot_t0 : ∀ c, c < j0 → isOT (o2r (TRIO.gexp M j0 Lb 0 0 n) c) = true := by
+  intro c hc
+  by_cases hcA : Anc0 M c (j0 + Lb)
+  · exact (low_path_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre c
+      (anc_g_of_lt hlen hLb hA hg hF hI hn hx0 hx1 hpre hcA hc)).1
+  · rw [low_off_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre c (by omega) hcA]; exact hI.g2.ot c
+
+/-- **Good2 of the expansion** (`t = 0`, `r` not a root). -/
+theorem good2_gexp_t0 : Good2 (TRIO.gexp M j0 Lb 0 0 n) := by
+  have hRg := hR_g hlen hLb hA hg hF hI hn hx0 hx1 hpre
+  refine ⟨hF, ot_t0 hlen hLb hA hRg hF hI.g2 hn hx0 hx1 (low_ot_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre),
+    dec_t0 hlen hLb hA hRg hF hI.g2 hn hx0 hx1 ?_⟩
+  intro h hh
+  by_cases hhg : h = g
+  · subst hhg; exact dec_g_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre
+  rw [children_gexp_lt_t0 hlen hLb hA hg (by omega) hx0 hpre hh hhg]
+  by_cases hA' : Anc0 M h (j0 + Lb)
+  · have hhgA := anc_g_of_lt hlen hLb hA hg hF hI hn hx0 hx1 hpre hA' hh
+    obtain ⟨c, hc, hcg⟩ := anc0_child hhgA hhg
+    have hcA : Anc0 M c (j0 + Lb) := hcg.trans (anc0_up hg hA)
+    have hle := children_le_of_anc_last hcA hlen hc
+    have hcmem : c ∈ children M h := mem_children_iff.mpr ⟨by have := hcA.le; omega, hc⟩
+    have hsplit := split_last_max _ c (children_sorted M h) hcmem hle
+    have hdM := hI.g2.dec h
+    rw [hsplit, List.map_append] at hdM ⊢
+    have hdM' := List.pairwise_append.mp hdM
+    have hCv : ((children M h).filter (fun d => decide (d < c))).map (o2r (TRIO.gexp M j0 Lb 0 0 n)) =
+        ((children M h).filter (fun d => decide (d < c))).map (o2r M) := by
+      apply List.map_congr_left; intro d hd
+      have hdc : d < c := by rw [List.mem_filter] at hd; simpa using hd.2
+      have := hcg.le; have := par_lt M 0 j0 g hg
+      exact low_off_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre d (by omega)
+        (earlier_off hlen hLb hA hg hF hI hn hx0 hx1 hpre hc hcA.le hd)
+    rw [hCv]
+    simp only [List.map_cons, List.map_nil]
+    rw [List.pairwise_append]
+    refine ⟨hdM'.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
+    rw [List.mem_singleton] at hb; subst hb
+    exact le_trans (le_of_lt (low_path_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre c hcg).2)
+      (hdM'.2.2 a ha _ (by simp))
+  · have hv : (children M h).map (o2r (TRIO.gexp M j0 Lb 0 0 n)) = (children M h).map (o2r M) := by
+      apply List.map_congr_left; intro d hd
+      have hdp := mem_children_iff.mp hd
+      have hdh := par_lt M 0 d h hdp.2
+      have hdx : d < j0 + Lb := by
+        by_contra hc
+        have hdl := hdp.1
+        have hde : d = j0 + Lb := by omega
+        have h2 := hdp.2
+        rw [hde, hx0] at h2
+        have := Option.some.inj h2; omega
+      apply low_off_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre d hdx
+      intro hdA; exact hA' (anc0_up hdp.2 hdA)
+    rw [hv]; exact hI.g2.dec h
+
+/-- Shared case split for the frames of the expansion (`t = 0`, `r` not a root). -/
+theorem frames_gexp_t0 (P : T → T → T → T → Prop)
+    (hlow : ∀ h p s y y', p < j0 → par M 0 p = some h → o2r M p = psi s y z →
+      o2r (TRIO.gexp M j0 Lb 0 0 n) p = psi s y' z → y' ≤ y →
+      P (vr M h) (bst M h p) s y → P (vr M h) (bst M h p) s y')
+    (hr : P (vr M g) (bst M g j0) (vr M j0) (app (bst M j0 (j0 + Lb)) one) →
+      P (vr M g) (bst M g j0) (vr M j0) (bst M j0 (j0 + Lb)))
+    (hcopy : ∀ k q' h s y, k < n → 0 < q' → q' < Lb →
+      par (TRIO.gexp M j0 Lb 0 0 n) 0 (j0 + (k * Lb + q')) = some h →
+      o2r (TRIO.gexp M j0 Lb 0 0 n) (j0 + (k * Lb + q')) = psi s y z →
+      P (vr (TRIO.gexp M j0 Lb 0 0 n) h) (bst (TRIO.gexp M j0 Lb 0 0 n) h (j0 + (k * Lb + q'))) s y)
+    (hjoin : ∀ k, 1 ≤ k → k < n →
+      ¬ (lt (bst (TRIO.gexp M j0 Lb 0 0 n) g (j0 + (k * Lb + 0))) (bst M j0 (j0 + Lb)) = true ∧
+        lt (psi (vr (TRIO.gexp M j0 Lb 0 0 n) g) z z) (psi (vr M j0) (bst M j0 (j0 + Lb)) z) = true) →
+      P (vr (TRIO.gexp M j0 Lb 0 0 n) g) (bst (TRIO.gexp M j0 Lb 0 0 n) g (j0 + (k * Lb + 0)))
+        (vr M j0) (bst M j0 (j0 + Lb)))
+    (hM : ∀ h p s y, p < M.length → par M 0 p = some h → o2r M p = psi s y z →
+      P (vr M h) (bst M h p) s y) :
+    ∀ h p s y, p < (TRIO.gexp M j0 Lb 0 0 n).length → par (TRIO.gexp M j0 Lb 0 0 n) 0 p = some h →
+      o2r (TRIO.gexp M j0 Lb 0 0 n) p = psi s y z →
+      P (vr (TRIO.gexp M j0 Lb 0 0 n) h) (bst (TRIO.gexp M j0 Lb 0 0 n) h p) s y := by
+  have hlen' := TRIO.gexp_length (d0 := 0) (d1 := 0) (n := n) hlen
+  have hG2 := good2_gexp_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre
+  intro h p s y hpl hp hc
+  rcases Nat.lt_or_ge p j0 with h1 | h1
+  · -- before `r`
+    have hp' : par M 0 p = some h := by rw [← hpre p (by omega)]; exact hp
+    have hhp := par_lt M 0 p h hp'
+    rw [bst_low_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre hp' (by omega),
+      vr_gexp_pre_t0 hlen hLb hA hg (by omega) hx0 hpre hF hI.g2 (show h < j0 + Lb by omega)]
+    obtain ⟨yM, hyM⟩ := o2r_sub hI.g2 p
+    have hvp := vr_gexp_pre_t0 hlen hLb hA hg (by omega) hx0 hpre hF hI.g2 (show p < j0 + Lb by omega)
+    obtain ⟨yN, hyN⟩ := o2r_sub hG2 p
+    rw [hvp] at hyN
+    rw [hyN] at hc
+    obtain ⟨rfl, rfl, _⟩ := psi.inj hc
+    have hle : yN ≤ yM := by
+      by_cases hpA : Anc0 M p (j0 + Lb)
+      · have hlt := (low_path_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre p
+          (anc_g_of_lt hlen hLb hA hg hF hI hn hx0 hx1 hpre hpA h1)).2
+        rw [hyN, hyM, psi_lt_psi_z_iff] at hlt
+        rcases hlt with h' | ⟨_, h'⟩
+        · exact absurd h' (lt_irrefl' _)
+        · exact le_of_lt h'
+      · rw [low_off_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre p (by omega) hpA, hyM] at hyN
+        rw [(psi.inj hyN).2.1]
+    exact hlow h p (vr M p) yM yN h1 hp' hyM hyN hle (hM h p (vr M p) yM (by omega) hp' hyM)
+  · obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := j0) (n := n) (p := p) hLb h1
+      (by rw [hlen'] at hpl; exact hpl)
+    rcases Nat.eq_zero_or_pos q with hq0 | hq0
+    · subst hq0
+      have hroot := par0_gexp_root_t0 (d1 := 0) hlen hLb hk hA hg
+      rw [hroot] at hp
+      cases hp
+      rw [o2r_root_new_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre hk] at hc
+      obtain ⟨rfl, rfl, _⟩ := psi.inj hc
+      rcases Nat.eq_zero_or_pos k with hk0 | hk0
+      · subst hk0
+        simp only [Nat.zero_mul, Nat.add_zero]
+        rw [bst_low_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre hg (le_refl _),
+          vr_gexp_pre_t0 hlen hLb hA hg (by omega) hx0 hpre hF hI.g2
+            (show g < j0 + Lb by have := par_lt M 0 j0 g hg; omega)]
+        exact hr (hM g j0 _ _ (by omega) hg (o2r_r_succ hI.g2 hlen hx0 hx1))
+      · exact hjoin k hk0 hk (join_notrig_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre hk0 hk)
+    · exact hcopy k q h s y hk hq0 hq hp hc
+
+/-- **PreHi of the expansion** (`t = 0`, `r` not a root). -/
+theorem preHi_gexp_t0 : PreHi (TRIO.gexp M j0 Lb 0 0 n) := by
+  have hRg := hR_g hlen hLb hA hg hF hI hn hx0 hx1 hpre
+  intro h p s y hpl hp hc
+  apply frames_gexp_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre
+    (fun a B s y => B ≠ z → lt B y = true → lt (psi a z z) (psi s y z) = true →
+      hiP s y = B ∧ loP s y ≠ z) _ _ _ _ _ h p s y hpl hp hc
+  · intro h p s y y' _ _ _ _ hle hP hB h1 h2
+    rcases (le_iff _ _).mp hle with hlt | heq
+    · obtain ⟨t1, t2⟩ := trig_mono hlt h1 h2
+      obtain ⟨hhi, hlo⟩ := hP hB t1 t2
+      exact prehi_of_lt hhi hlo h1 hlt
+    · subst heq; exact hP hB h1 h2
+  · intro hP hB h1 h2
+    have hlt : bst M j0 (j0 + Lb) < app (bst M j0 (j0 + Lb)) one := lt_app_of (by simp [one])
+    obtain ⟨t1, t2⟩ := trig_mono hlt h1 h2
+    obtain ⟨hhi, hlo⟩ := hP hB t1 t2
+    exact prehi_of_lt hhi hlo h1 hlt
+  · intro k q' h s y hk hq0 hq hp hc hB h1 h2
+    exact preHi_copy_t0 hlen hLb hA hRg hF hI.g2 hn hx0 hx1 hI.hi hk hq0 hq hp hc hB h1 h2
+  · intro k _ _ hno hB h1 h2
+    exact absurd ⟨h1, h2⟩ hno
+  · intro h p s y hpl hp hc hB h1 h2
+    exact hI.hi h p s y hpl hp hc hB h1 h2
+
+/-- **PreFC of the expansion** (`t = 0`, `r` not a root). -/
+theorem preFC_gexp_t0 : PreFC (TRIO.gexp M j0 Lb 0 0 n) := by
+  have hRg := hR_g hlen hLb hA hg hF hI hn hx0 hx1 hpre
+  intro h p s y hpl hp hc
+  apply frames_gexp_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre
+    (fun a B s y => B = z → lt z y = true → lt (psi a z z) (psi s y z) = true → a = s →
+      hiP s y = z ∧ loP s y ≠ z) _ _ _ _ _ h p s y hpl hp hc
+  · intro h p s y y' _ _ _ _ hle hP hB h1 h2 hv
+    have hz : z < y := lt_of_lt_of_le h1 hle
+    have h2' : lt (psi (vr M h) z z) (psi s y z) = true := by
+      rcases (le_iff _ _).mp hle with hlt | heq
+      · exact (trig_mono (B := z) hlt h1 h2).2
+      · rw [← heq]; exact h2
+    obtain ⟨hhi, hlo⟩ := hP hB hz h2' hv
+    exact prefc_of_le hhi hlo h1 hle
+  · intro hP hB h1 h2 hv
+    have hlt : bst M j0 (j0 + Lb) < app (bst M j0 (j0 + Lb)) one := lt_app_of (by simp [one])
+    obtain ⟨t1, t2⟩ := trig_mono (B := z) hlt h1 h2
+    obtain ⟨hhi, hlo⟩ := hP hB t1 t2 hv
+    exact prefc_of_le hhi hlo h1 (le_of_lt hlt)
+  · intro k q' h s y hk hq0 hq hp hc hB h1 h2 hv
+    exact preFC_copy_t0 hlen hLb hA hRg hF hI.g2 hn hx0 hx1 hI.fc hk hq0 hq hp hc hB h1 h2 hv
+  · intro k _ _ hno hB h1 h2 _
+    exact absurd ⟨by rw [hB]; exact h1, h2⟩ hno
+  · intro h p s y hpl hp hc hB h1 h2 hv
+    exact hI.fc h p s y hpl hp hc hB h1 h2 hv
+
 end
 
 end Ytosk
