@@ -104,7 +104,7 @@ theorem expStep_rootP_t1 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) 
       have he : entry M 1 (r + L) = 0 := by
         unfold entry; unfold col at h2; simpa using h2
       have := par1_entry_lt h1; omega
-  intro n hn ρP Z _ _ _ _ _ _ _ hle _
+  intro n hn ρP Z _ _ _ _ _ _ _ hle _ _
   exact rootP_N_t1 hlen hL hA hd0e hn hRA hRt0 hRlast hRd hpM (hle Rt hRx hRd).1
 
 /-- **The root order of `M.take x`** with any valuation that lowers the values (the drop), when `x` is

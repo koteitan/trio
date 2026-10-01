@@ -51,7 +51,9 @@ theorem qr_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
         Single (fsD (ρ.o Rt) (Zf Rt)) ∧ fsD (ρ.o Rt) (Zf Rt) < ρ.o Rt ∧
         (∀ i, i < r + L → DepX M (r + L) true i → isOT (fsD (ρ.o i) (Zf i)) = true) ∧
         (∀ i, i < r + L → DepX M (r + L) false i → isOT (fsD (ρ.v i) (Zf i)) = true) ∧
-        (∀ c, c < r + L → DepX M (r + L) true c → fsD (ρ.o c) (Zf c) ≤ ρ.o c ∧ fsD (ρ.o c) (Zf c) ≠ z))
+        (∀ c, c < r + L → DepX M (r + L) true c → fsD (ρ.o c) (Zf c) ≤ ρ.o c ∧ fsD (ρ.o c) (Zf c) ≠ z) ∧
+        (∀ i, ∃ k, Zf i = gamS μ br seed k))
+    (hHD : HoleData M (r + L) ρ μ br μ seed)
     -- the base `M[1] = M.take x`
     {ρ1 : Valn} {rk1 : Bool → Nat → Nat}
     (hC1 : Cons (TRIO.gexp M r L d0 0 1) ρ1) (hR1 : Rk (TRIO.gexp M r L d0 0 1) rk1)
@@ -78,7 +80,7 @@ theorem qr_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
         isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧
         root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
     intro n hn ρP rkP hCP hRP hGP hPP hPr hPv
-    obtain ⟨Zf, hZr, hF, hsR, hlt, hoto, hotv, hle⟩ := hLoc n hn ρP hCP hPr
+    obtain ⟨Zf, hZr, hF, hsR, hlt, hoto, hotv, hle, hZg⟩ := hLoc n hn ρP hCP hPr
     have hagree : ∀ g, g ≤ r → ∀ a, a < (n - 1) * L →
         (par (TRIO.gexp M r L d0 0 (n - 1)) 1 (r + a) = some g ∨
           upg (TRIO.gexp M r L d0 0 (n - 1)) (r + a) = some g) →
@@ -93,7 +95,8 @@ theorem qr_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
     have hlex : ρP.o r ≤ ρ.o (r + L) ∧ ρP.o r ≠ z := by rw [hPr]; exact hgam (n - 2)
     have hGN := good3_N_t1 hlen hL hA hd0e hn hpath hx2 (hxnb n hn) hz2 (hiu n hn) (hiux n hn) hC hG hGP hOS
       hoto hotv hle hlex
-    refine ⟨_, _, hCN, hRN, hGN, hPs n hn ρP Zf hCP hGP hPP hCN hGN hoto hotv hle hlex, ?_, ?_, ?_⟩
+    refine ⟨_, _, hCN, hRN, hGN, hPs n hn ρP Zf hCP hGP hPP hCN hGN hoto hotv hle hlex
+      ⟨μ, br, μ, seed, hHD, hZg, ⟨n - 2, hPr⟩⟩, ?_, ?_, ?_⟩
     · rw [glueZ_o_dep ρ _ Zf (by omega) hrD, hro, fsD_here hbr hcb, hZr]
       rw [show n - 1 = (n - 2) + 1 by omega]; rfl
     · intro g hg hd

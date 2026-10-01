@@ -190,7 +190,7 @@ theorem expStep_frameOT {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (
     {ρ : Valn} (hFO : FrameOT M ρ)
     (hOS : ∀ i, i < r + L → DepX M (r + L) true i → OShape M (r + L) i) :
     ExpStepT1 FrameOT M r L d0 ρ := by
-  intro n hn ρP Z hCP _ hFOP _ _ _ _ _ _
+  intro n hn ρP Z hCP _ hFOP _ _ _ _ _ _ _
   exact frameOT_N_t1 hlen hL hA hd0e hn hpath hx2 (hxnb n hn) hz2 (hiu n hn) (hiux n hn) hCP hFO hFOP hOS
 
 /-- **FrameOT is carried** (`t = 1`), with the structural hypotheses from the invariants of `M`. -/
@@ -210,7 +210,7 @@ theorem expStep_frameOT_t1 {M : Mat} {r L d0 q : Nat} (hlen : r + L + 1 = M.leng
 theorem expStep_and {P Q : Mat → Valn → Prop} {M : Mat} {r L d0 : Nat} {ρ : Valn}
     (hP : ExpStepT1 P M r L d0 ρ) (hQ : ExpStepT1 Q M r L d0 ρ) :
     ExpStepT1 (fun N σ => P N σ ∧ Q N σ) M r L d0 ρ :=
-  fun n hn ρP Z hCP hGP hPQ hCN hGN ho hv hle hlex =>
-    ⟨hP n hn ρP Z hCP hGP hPQ.1 hCN hGN ho hv hle hlex, hQ n hn ρP Z hCP hGP hPQ.2 hCN hGN ho hv hle hlex⟩
+  fun n hn ρP Z hCP hGP hPQ hCN hGN ho hv hle hlex hH =>
+    ⟨hP n hn ρP Z hCP hGP hPQ.1 hCN hGN ho hv hle hlex hH, hQ n hn ρP Z hCP hGP hPQ.2 hCN hGN ho hv hle hlex hH⟩
 
 end Ytosk

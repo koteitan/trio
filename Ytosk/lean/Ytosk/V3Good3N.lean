@@ -178,6 +178,16 @@ theorem good3_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
 
 end
 
+/-- **The hole data of the chain** (`t = 1`): the chain `gamS μ br seed`, the seed condition, and the holes
+of the values that change (`D`). -/
+structure HoleData (M : Mat) (x : Nat) (ρ : Valn) (μ br vr seed : T) : Prop where
+  rot : isOT (psi vr br z) = true
+  cb : cof br = .big μ
+  hμ : ¬ lt μ vr = true
+  S : ∀ a', ¬ lt vr a' = true → isOT (psi a' br z) = true → SeedOK a' br μ seed
+  seedS : ∃ a X, seed = psi a X z
+  hole : ∀ bb i, DepX M x bb i → i < x → HoleT μ br vr (valB ρ bb i)
+
 /-- **A property carried along the chain of expansions** (`t = 1`): it passes from `M[n − 1]` to the glued
 valuation of `M[n]`, given the facts the chains know at each step (both valuations are consistent and good,
 the `D` values `fsD(·, Z i)` are standard, lower and nonzero, and the value at `x` bounds the new root). -/
@@ -191,6 +201,8 @@ def ExpStepT1 (Pn : Mat → Valn → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) 
     (∀ i, i < r + L → DepX M (r + L) false i → isOT (fsD (ρ.v i) (Z i)) = true) →
     (∀ c, c < r + L → DepX M (r + L) true c → fsD (ρ.o c) (Z c) ≤ ρ.o c ∧ fsD (ρ.o c) (Z c) ≠ z) →
     (ρP.o r ≤ ρ.o (r + L) ∧ ρP.o r ≠ z) →
+    (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ (∀ i, ∃ k, Z i = gamS μ br seed k) ∧
+      ∃ k, ρP.o r = gamS μ br seed k) →
     Pn (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z)
 
 end Ytosk

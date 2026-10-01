@@ -276,7 +276,7 @@ theorem expStep_bumpDec_t1 {M : Mat} {r L d0 q : Nat} (hlen : r + L + 1 = M.leng
   have hpath := hpath_of_par1 h1 hA (by omega)
   have hVS : ∀ i, i < r + L → DepX M (r + L) false i → VShape M (r + L) i :=
     fun i hi hv => dv_shape hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hi hv
-  intro n hn ρP Z _ _ hBP _ hGN _ _ hle hlex
+  intro n hn ρP Z _ _ hBP _ hGN _ _ hle hlex _
   have hlN := len_N (d0 := d0) hlen hn
   have hxnb := hxnb_t1 hlen hL hA hd0e hZ2 hZ1 h1 n hn
   have hiu := hiu_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn

@@ -62,6 +62,7 @@ theorem qr_main (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → 
       (∀ c, c < r + L → DepX M (r + L) true c →
         fsD (ρ.o c) (zfQ M (r + L) lo lb μ br seed m c) ≤ ρ.o c ∧
         fsD (ρ.o c) (zfQ M (r + L) lo lb μ br seed m c) ≠ z))
+    (hHD : HoleData M (r + L) ρ μ br μ seed)
     -- the base `M[1] = M.take x`
     {ρ1 : Valn} {rk1 : Bool → Nat → Nat}
     (hC1 : Cons (TRIO.gexp M r L d0 0 1) ρ1) (hR1 : Rk (TRIO.gexp M r L d0 0 1) rk1)
@@ -78,10 +79,10 @@ theorem qr_main (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → 
   have hx : r + L + 1 = M.length := hlen
   have hdx : dOf M (r + L) lo lb (r + L) = 0 := dOf_x hx hxv hOS hVS
   refine qr_chain hlen hL hA hd0e hpath hx2 hxnb hz2 hiu hiux hnd hC hG hRM hOS hbr hcb hgam hro hrD hRA
-    hR0 hRlast hRd hsM hpM ?_ hC1 hR1 hG1 hr1 hPv1 Pn hP1 hPs
+    hR0 hRlast hRd hsM hpM ?_ hHD hC1 hR1 hG1 hr1 hPv1 Pn hP1 hPs
   intro n _ ρP _ hPr
   refine ⟨zfQ M (r + L) lo lb μ br seed (n - 2), ?_, ?_, (hRt (n - 2)).1, (hRt (n - 2)).2, (hOT (n - 2)).1,
-    (hOT (n - 2)).2.1, (hOT (n - 2)).2.2⟩
+    (hOT (n - 2)).2.1, (hOT (n - 2)).2.2, fun i => ⟨_, rfl⟩⟩
   · unfold zfQ; rw [hdr, Nat.add_zero]
   · apply qr_path hC hG hx ?_ (hO (n - 2)) (hV (n - 2))
     show ρP.o (r + L - L) = _

@@ -192,7 +192,9 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
         hOS hVS hBk hxv hS hseedS hsp0 hTP hTPL hYB hLs m)
       (fun m => qr_vloc hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS hb hVS
         hBk hxv hseedS hTPL hLs hS hAU' hAD' hADs0 m)
-      hRt hOT (ρ1 := drop1 M (r + L) rkM) (rk1 := rkM) (by rw [gexp_one_eq hlen]; exact hC1)
+      hRt hOT ⟨hrot, cof_br, lt_irrefl' μ, hS, hseedS, fun bb i hd hi =>
+        (qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS bb i hd hi).1⟩
+      (ρ1 := drop1 M (r + L) rkM) (rk1 := rkM) (by rw [gexp_one_eq hlen]; exact hC1)
       (by rw [gexp_one_eq hlen]; exact hRk1) (by rw [gexp_one_eq hlen]; exact hG1) rfl
       (fun g hg a ha h => by
         rw [gexp_one_eq hlen] at h

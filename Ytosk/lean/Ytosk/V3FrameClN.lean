@@ -390,7 +390,7 @@ theorem expStep_frameClosed_t1 {M : Mat} {r L d0 q : Nat} (hlen : r + L + 1 = M.
   have hpath := hpath_of_par1 h1 hA (by omega)
   have hox : ∃ t, ρ.o (r + L) = psi (succ t) z z :=
     ⟨_, o_last_t1 hlen hC hG h1 (by have := par1_entry_lt h1; omega) hx2⟩
-  intro n hn ρP Z hCP _ hFCP _ _ _ _ hle hlex
+  intro n hn ρP Z hCP _ hFCP _ _ _ _ hle hlex _
   have hxnb := hxnb_t1 hlen hL hA hd0e hZ2 hZ1 h1 n hn
   have hiu := hiu_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn
   have hiux := hiux_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn

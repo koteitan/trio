@@ -123,7 +123,10 @@ theorem t1_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
     have hGN : Good3 (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) (fun _ => ζ)) :=
       good3_N_t1 hlen hL hA hd0e hn hpath hx2 (hxnb n hn) hz2 (hiu n hn) (hiux n hn) hC hG hGP hOS
         hoto hotv hle hlex
-    refine ⟨_, _, hCN, hRN, hGN, hPs n hn ρP (fun _ => ζ) hCP hGP hPP hCN hGN hoto hotv hle hlex, ?_, ?_, ?_⟩
+    have hHD : HoleData M (r + L) ρ μ br vr seed :=
+      ⟨hrot, hcb, hμ, hS, hgS 0, fun bb i hd hi => (hHt bb i hd (Or.inl hi)).1⟩
+    refine ⟨_, _, hCN, hRN, hGN, hPs n hn ρP (fun _ => ζ) hCP hGP hPP hCN hGN hoto hotv hle hlex
+      ⟨μ, br, vr, seed, hHD, fun _ => ⟨n - 2, rfl⟩, ⟨n - 2, hPr⟩⟩, ?_, ?_, ?_⟩
     · -- the value at `r`
       show (glue M (r + L) ρ (shiftV ρP L) ζ).o r = _
       rw [glue_o_dep ρ _ ζ (by omega) hrD, hro, fsD_here hbr hcb, ← hμr]
