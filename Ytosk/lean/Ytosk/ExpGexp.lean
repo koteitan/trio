@@ -86,4 +86,11 @@ theorem par0_take (M : Mat) {l i : Nat} (hi : i < l) : par (M.take l) 0 i = par 
       · simpa [he a (by omega), he (c + 1) (le_refl _)] using h2
       · have := h3 j hj1 hj2; simpa [he j (by omega), he (c + 1) (le_refl _)] using this
 
+/-- Before the last column, the row-0 parents after expansion are those of `M`. -/
+theorem par0_expand_prefix (M : Mat) {n i : Nat} (hM : 2 ≤ M.length) (hn : 1 ≤ n)
+    (hi : i < M.length - 1) : par (expand M n) 0 i = par M 0 i := by
+  have h1 : (expand M n).take (M.length - 1) = M.take (M.length - 1) := by
+    rw [expand_eq_oper M n hM]; exact TRIO.oper_take_prefix (by omega) hn (le_refl _)
+  rw [← par0_take (expand M n) hi, h1, par0_take M hi]
+
 end Ytosk
