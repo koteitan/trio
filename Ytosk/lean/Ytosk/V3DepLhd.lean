@@ -459,8 +459,8 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
       (∀ b' i', rk b' i' < rk b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →
         Lhd z (valB σ b' i') (valB ρ b' i')) →
       Lhd z (valB σ b i) (valB ρ b i))
-    (hDvNil : ∀ c, c < bnd → DepS M S false c → CL M c = [])
-    (hCLnil : ∀ c, c < bnd → CL M c = [] → CL N c = [])
+    (hDvNil : ∀ c, c < bnd → ¬ W true c → DepS M S false c → CL M c = [])
+    (hCLnil : ∀ c, c < bnd → ¬ W true c → CL M c = [] → CL N c = [])
     (hOc : ∀ i, i < bnd → ¬ S true i → DepS M S true i → ¬ DepS M S false i →
       ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ DepS M S true c ∧ c < bnd ∧
         ∀ d ∈ Lc, ¬ DepS M S true d ∧ d < bnd)
@@ -482,10 +482,10 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
       ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i)) :
     ∀ b i, DepS M S b i → i < bnd → ¬ W b i → Lhd z (valB σ b i) (valB ρ b i) := by
   -- a call outside `D` with a changed `v` has argument `0` in `N`
-  have hnoc : ∀ c, c < bnd → DepS M S false c → σ.o c = psi (σ.v c) z z := by
-    intro c hc hd
+  have hnoc : ∀ c, c < bnd → ¬ W true c → DepS M S false c → σ.o c = psi (σ.v c) z z := by
+    intro c hc hw hd
     exact o_of_no_counted hCN (by omega) (hGN.ot_v c (by omega))
-      (no_cnt_of_cl_nil (hCLnil c hc (hDvNil c hc hd)))
+      (no_cnt_of_cl_nil (hCLnil c hc hw (hDvNil c hc hw hd)))
   have key : ∀ K, ∀ b i, rk b i ≤ K → DepS M S b i → i < bnd → ¬ W b i →
       Lhd z (valB σ b i) (valB ρ b i) := by
     intro K
@@ -503,8 +503,8 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
         by_cases hv : DepS M S false i
         · -- through `v`
           have hIH : Lhd z (σ.v i) (ρ.v i) := ih _ (by omega) false i (le_refl _) hv hi (hWv i)
-          have hclM := hDvNil i hi hv
-          rw [hnoc i hi hv, o_of_no_counted hC hiM (hG.ot_v i hiM) (no_cnt_of_cl_nil hclM)]
+          have hclM := hDvNil i hi hWi hv
+          rw [hnoc i hi hWi hv, o_of_no_counted hC hiM (hG.ot_v i hiM) (no_cnt_of_cl_nil hclM)]
           exact lhd_of_lhdE_lt (lhdE_oq_v (Or.inr hIH)) (psi_lt_psi_z_iff.mpr (Or.inl hIH.1))
         · obtain ⟨Lc, c, hclM, hclN, hdc, hcb, hLc⟩ := hOc i hi hs hD hv
           have hv' := (hoff i hi).2 hv
@@ -523,10 +523,11 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
             obtain ⟨y0, hy0⟩ := o_psi_sub hC hcM
             rw [h] at hy0; simp only [psi.injEq] at hy0
             rw [hy0.1, sf_ot (hG.ot_v c hcM)]
+          have hWc : ¬ W true c := fun hw => hs (hWo i c hcch hcnt hw)
           have hchv : σ.v c ≠ ρ.v c → σ.o c = psi (σ.v c) z z := by
             intro hne
             have hdv : DepS M S false c := by by_contra hn'; exact hne ((hoff c hcb).2 hn')
-            exact hnoc c hcb hdv
+            exact hnoc c hcb hWc hdv
           have hsv : ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z → σ.v c = ρ.v c → s' = s := by
             intro s y s' y' hsy hs'y' hvc
             obtain ⟨y0, hy0⟩ := o_psi_sub hCN (show c < N.length by omega)
@@ -565,7 +566,7 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
               simp only [psi.injEq] at hs
               rw [hs.2.1] at hlt; exact lt_irrefl' _ hlt
             exact ⟨_, o_of_no_counted hCN (by omega) (hGN.ot_v c (by omega))
-              (no_cnt_of_cl_nil (hCLnil c hcb hclc))⟩
+              (no_cnt_of_cl_nil (hCLnil c hcb hWc hclc))⟩
           · intro s y s' y' hsy hs'y' hy'
             apply hsv s y s' y' hsy hs'y'
             by_contra hvc
@@ -642,7 +643,7 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
               rw [sf_ot (hGN.ot_v k0 (by omega)), hvk] at hy0
               exact Or.inl ⟨_, _, _, hy1, hy0⟩
             · have hdv : DepS M S false k0 := by by_contra hn'; exact hvk ((hoff k0 hkb).2 hn')
-              have ho0 := hnoc k0 hkb hdv
+              have ho0 := hnoc k0 hkb (fun hw => hs (hWb i j0 k0 h1 h2 hj hjb hk hw)) hdv
               have hvIH : Lhd z (σ.v k0) (ρ.v k0) :=
                 ih _ (by have := (hRM k0 hkM).1; have := (hRr h1).2.2 h2 j0 hj hjb k0 hk; omega)
                   false k0 (le_refl _) hdv hkb (hWv k0)
