@@ -485,4 +485,419 @@ theorem not_depX_v_r : ¬ DepX M (r + L) false r := fun h =>
 
 end
 
+section
+variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+  (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)
+include hlen hL hp hn
+
+/-- **The counted children before `r` in `N`** are those of `M`, unless `r` is a counted child. -/
+theorem cl_N_eq (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n) {i : Nat}
+    (hi : i < r) (hb : par M 0 r = some i → col M r = bump M i) :
+    CL (TRIO.gexp M r L 0 0 n) i = CL M i := by
+  unfold CL
+  by_cases hig : par M 0 r = some i
+  · have hbr := hb hig
+    rw [children_g0 hlen hL hp hn hig, List.filter_append]
+    have hz : ((List.range (n - 1)).map (fun k => r + (k + 1) * L)).filter
+        (fun c => decide (Counted (TRIO.gexp M r L 0 0 n) i c)) = [] := by
+      rw [List.filter_eq_nil_iff]
+      intro c hc
+      obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hc
+      have hk' := List.mem_range.mp hk
+      simp only [decide_eq_true_eq]
+      intro h
+      apply h.1
+      rw [col_root0 hlen hL hp hn (by omega), bump_pre0 hlen hL hp hn (by omega)]; exact hbr
+    rw [hz, List.append_nil]
+    apply List.filter_congr
+    intro c hc
+    have hcr := children_g_le hlen hL hp hig hc
+    rcases Nat.lt_or_ge c r with h | h
+    · simp only [counted_lt0 hlen hL hp hn hR0 hZ2 he2 hn2 hi h]
+    · rw [show c = r by omega]
+      have h1 : ¬ Counted (TRIO.gexp M r L 0 0 n) i r := fun h' => h'.1 (by
+        rw [col_pre0 hlen hL hp hn (by omega), bump_pre0 hlen hL hp hn (by omega)]; exact hbr)
+      have h2 : ¬ Counted M i r := fun h' => h'.1 hbr
+      rw [decide_eq_false h1, decide_eq_false h2]
+  · rw [children_pre0 hlen hL hp hn hi hig]
+    apply List.filter_congr
+    intro c hc
+    have hcr := children_lt_r hlen hL hp hi hig hc
+    simp only [counted_lt0 hlen hL hp hn hR0 hZ2 he2 hn2 hi hcr]
+
+end
+
+/-- **Hypothesis on `N`** (as `VSmallNew` of the drop): a last counted child before `r` whose `v`
+changes in `N`, in a rewriting frame of `M`, has a small subscript. -/
+def VSmallNewN (M : Mat) (r : Nat) (ρ σ : Valn) : Prop :=
+  ∀ i, i < r → ∀ (Lc : List Nat) (cs : Nat), CL M i = Lc ++ [cs] → σ.v cs ≠ ρ.v cs →
+    ∀ s y, ρ.o cs = psi s y z →
+      lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
+      VSmallV (σ.v cs)
+
+section
+variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+  (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+  (he1 : entry M 1 (r + L) = 0) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
+  {ρ σ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ)
+  (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : Good3 (TRIO.gexp M r L 0 0 n) σ)
+include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
+
+theorem cl_nil_of_depv {c : Nat} (hc : c < r) (hv : DepX M (r + L) false c) : CL M c = [] := by
+  unfold CL
+  rw [List.filter_eq_nil_iff]
+  intro d hd
+  simp only [decide_eq_true_eq]
+  exact uncnt_of_depv (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp
+    (by omega) hv hd
+
+theorem o_N_noc {c : Nat} (hc : c < r) (hcl : CL M c = []) : σ.o c = psi (σ.v c) z z := by
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
+  have hcN : c < (TRIO.gexp M r L 0 0 n).length := by rw [hlN]; omega
+  have hclN : CL (TRIO.gexp M r L 0 0 n) c = [] := by
+    rw [cl_N_eq hlen hL hp hn hR0 hZ2 he2 hn2 hc]
+    · exact hcl
+    · intro hg
+      by_contra hb
+      have hrc : r ∈ children M c := mem_children_iff.mpr ⟨by omega, hg⟩
+      have : r ∈ CL M c := by
+        unfold CL; rw [List.mem_filter]; refine ⟨hrc, ?_⟩
+        simp only [decide_eq_true_eq]
+        exact ⟨hb, by rw [not_topped_r hlen hL hp he2]; simp⟩
+      rw [hcl] at this; simp at this
+  exact o_of_no_counted hCN hcN (hGN.ot_v c hcN) (no_cnt_of_cl_nil hclN)
+
+/-- **Every call of `D` before `r` drops by `◁`** in `N` (`t = 0`, `n ≥ 2`, `r` has a parent `g`),
+from the two seeds at `g`. -/
+theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat} (hRM : Rk M rk)
+    (hoffD : ∀ i, i < r → (¬ DepX M (r + L) true i → σ.o i = ρ.o i) ∧
+      (¬ DepX M (r + L) false i → σ.v i = ρ.v i))
+    (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
+    (hAbs : BumpAbsC M (r + L) ρ) (hVNN : VSmallNewN M r ρ σ)
+    {ζ μ : T} (hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
+    (hE3 : ∀ p, par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 → col M g ≠ bump M p)
+    (hS1 : Counted M g r → Lhd z (σ.o g) (ρ.o g))
+    (hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g)) :
+    ∀ b i, DepX M (r + L) b i → i < r → Lhd z (valB σ b i) (valB ρ b i) := by
+  have hx : r + L + 1 = M.length := hlen
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
+  have hiN : ∀ i, i < r → i < (TRIO.gexp M r L 0 0 n).length := fun i hi => by rw [hlN]; omega
+  have hAgx : Anc0 M g (r + L) := Anc0.step hp (Anc0.step hg (Anc0.refl g))
+  have key : ∀ K, ∀ b i, rk b i ≤ K → DepX M (r + L) b i → i < r →
+      Lhd z (valB σ b i) (valB ρ b i) := by
+    intro K
+    induction K using Nat.strongRecOn with
+    | _ K ih =>
+      intro b i hK hD hi
+      have hiM : i < M.length := by omega
+      obtain ⟨hRv, hRc, hRr⟩ := hRM i hiM
+      cases hD with
+      | leaf => omega
+      | @ochild _ c hc hcb hcu hdc =>
+        show Lhd z (σ.o i) (ρ.o i)
+        have hcnt : Counted M i c := ⟨hcb, hcu⟩
+        have hvD : ¬ DepX M (r + L) false i := fun hv =>
+          uncnt_of_depv hx hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp (by omega) hv hc hcnt
+        have hv' := (hoffD i hi).2 hvD
+        have hci := (mem_children hc).1
+        have hcl := (mem_children hc).2
+        by_cases hcr : r ≤ c
+        · have hcr' : c = r := by
+            by_contra hne
+            by_cases hig : par M 0 r = some i
+            · have := children_g_le hlen hL hp hig hc; omega
+            · have := children_lt_r hlen hL hp hi hig hc; omega
+          rw [hcr'] at hc hcnt
+          have hig : par M 0 r = some i := (mem_children_iff.mp hc).2
+          have hgi : g = i := Option.some.inj (hg.symm.trans hig)
+          rw [← hgi] at hcnt ⊢
+          exact hS1 hcnt
+        · have hcr : c < r := by omega
+          rcases hOS_t1 hx hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp i (by omega) (DepX.ochild hc hcb hcu hdc) with
+            ⟨hv, _⟩ | ⟨_, Lp, c0, R, hch, _, _, hR, hLnd⟩
+          · exact absurd hv hvD
+          · have hcR : ∀ d ∈ R, ¬ Counted M i d := fun d h hd => by
+              rcases hR d h with h' | h'
+              · exact hd.1 h'
+              · exact hd.2 h'
+            have hcc0 : c = c0 := by
+              have hc' := hc
+              rw [hch] at hc'
+              rcases List.mem_append.mp hc' with h | h
+              · exact absurd hdc (hLnd c h hcnt)
+              · rcases List.mem_cons.mp h with h | h
+                · exact h
+                · exact absurd hcnt (hcR c h)
+            rw [← hcc0] at hch
+            obtain ⟨hLs, hRs⟩ := sib_order (children_sorted M i) hch
+            have hclM : CL M i = Lp.filter (fun d => decide (Counted M i d)) ++ [c] := by
+              unfold CL
+              rw [hch, List.filter_append, List.filter_cons, if_pos (by simpa using hcnt)]
+              have : R.filter (fun d => decide (Counted M i d)) = [] := by
+                rw [List.filter_eq_nil_iff]; intro d hd; simpa using hcR d hd
+              rw [this]
+            set Lc := Lp.filter (fun d => decide (Counted M i d)) with hLc
+            have hb : par M 0 r = some i → col M r = bump M i := by
+              intro hig
+              have hri : r ∈ children M i := mem_children_iff.mpr ⟨by omega, hig⟩
+              have hrR : r ∈ R := by
+                rw [hch] at hri
+                rcases List.mem_append.mp hri with h | h
+                · have := hLs r h; omega
+                · rcases List.mem_cons.mp h with h | h
+                  · omega
+                  · exact h
+              by_contra hb
+              exact hcR r hrR ⟨hb, by rw [not_topped_r hlen hL hp he2]; simp⟩
+            have hclN : CL (TRIO.gexp M r L 0 0 n) i = Lc ++ [c] := by
+              rw [cl_N_eq hlen hL hp hn hR0 hZ2 he2 hn2 hi hb, hclM]
+            have hsame : ∀ d ∈ Lc, σ.o d = ρ.o d := fun d hd => by
+              have hd' := List.mem_filter.mp hd
+              have hdc : Counted M i d := by simpa using hd'.2
+              have := hLs d hd'.1
+              exact (hoffD d (by omega)).1 (hLnd d hd'.1 hdc)
+            have hIH : Lhd z (σ.o c) (ρ.o c) :=
+              ih _ (by have := hRc c hc hcb hcu; omega) true c (le_refl _) hdc hcr
+            have hfr := hVS i hiM Lc c [] (by rw [hclM])
+            -- `c` with a changed `v` has argument `0` in `N`
+            have hchv : σ.v c ≠ ρ.v c → σ.o c = psi (σ.v c) z z := by
+              intro hne
+              have hdv : DepX M (r + L) false c := by
+                by_contra hn'; exact hne ((hoffD c hcr).2 hn')
+              exact o_N_noc hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN hcr
+                (cl_nil_of_depv hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN hcr hdv)
+            have hsv : ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z → σ.v c = ρ.v c → s' = s := by
+              intro s y s' y' hsy hs'y' hvc
+              obtain ⟨y0, hy0⟩ := o_psi_sub hCN (hiN c hcr)
+              rw [hs'y'] at hy0; simp only [psi.injEq] at hy0
+              obtain ⟨y1, hy1⟩ := o_psi_sub hC (show c < M.length by omega)
+              rw [hsy] at hy1; simp only [psi.injEq] at hy1
+              rw [hy0.1, hy1.1, sf_ot (hGN.ot_v c (hiN c hcr)), sf_ot (hG.ot_v c (by omega)), hvc]
+            have hvM : ∀ s y, ρ.o c = psi s y z → s = ρ.v c := by
+              intro s y h
+              obtain ⟨y0, hy0⟩ := o_psi_sub hC (show c < M.length by omega)
+              rw [h] at hy0; simp only [psi.injEq] at hy0
+              rw [hy0.1, sf_ot (hG.ot_v c (by omega))]
+            apply o_frame_lhd hC hG hF hCN hGN hiM (hiN i hi) hv' hclN hclM hsame hIH
+            · intro s y hsy hrw
+              rw [hvM s y hsy]; exact (hfr.2 s y hsy hrw).subSmall _
+            · intro s y s' y' hsy hs'y' hrw
+              by_cases hvc : σ.v c = ρ.v c
+              · have hss := hsv s y s' y' hsy hs'y' hvc
+                subst hss
+                have hle : psi s' y' z ≤ psi s' y z := by rw [← hs'y', ← hsy]; exact le_of_lt hIH.1
+                have hold : lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
+                    lt (psi (ρ.v i) z z) (psi s' y z) = true := by
+                  rcases hrw with hn' | ho
+                  · have hyy : y' ≤ y := by
+                      rcases (le_iff _ _).mp hle with hl | hl
+                      · rcases psi_lt_psi_z_iff.mp hl with hl | ⟨_, hl⟩
+                        · exact absurd hl (lt_irrefl' _)
+                        · exact le_of_lt hl
+                      · simp only [psi.injEq] at hl; rw [hl.2.1]
+                    exact ⟨lt_of_lt_of_le hn'.1 hyy, lt_of_lt_of_le hn'.2 hle⟩
+                  · exact ho
+                rw [hvM s' y hsy]; exact (hfr.2 s' y hsy hold).subSmall _
+              · have ho0 := hchv hvc
+                rw [hs'y'] at ho0; simp only [psi.injEq] at ho0
+                rcases hrw with hn' | ho
+                · exfalso; have := hn'.1; rw [ho0.2.1] at this; exact T.not_lt_z _ this
+                · rw [ho0.1]; exact (hVNN i hi Lc c hclM hvc s y hsy ho).subSmall _
+            · intro s hs
+              have hclc : CL M c = [] := by
+                by_contra hne
+                have hlt := arg_lt_of_cl hC hG (show c < M.length by omega) hne
+                rw [o_cl_eq hC hG (show c < M.length by omega)] at hs
+                simp only [psi.injEq] at hs
+                rw [hs.2.1] at hlt; exact lt_irrefl' _ hlt
+              exact ⟨_, o_N_noc hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN hcr hclc⟩
+            · intro s y s' y' hsy hs'y' hy'
+              apply hsv s y s' y' hsy hs'y'
+              by_contra hvc
+              have := hchv hvc
+              rw [hs'y'] at this; simp only [psi.injEq] at this; exact hy' this.2.1
+      | ov hv =>
+        show Lhd z (σ.o i) (ρ.o i)
+        have hIH : Lhd z (σ.v i) (ρ.v i) := ih _ (by omega) false i (le_refl _) hv hi
+        have hclM := cl_nil_of_depv hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN hi hv
+        rw [o_N_noc hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN hi hclM,
+          o_of_no_counted hC hiM (hG.ot_v i hiM) (no_cnt_of_cl_nil hclM)]
+        exact lhd_of_lhdE_lt (lhdE_oq_v (Or.inr hIH)) (psi_lt_psi_z_iff.mpr (Or.inl hIH.1))
+      | vpar h1 hpm hdm =>
+        exfalso
+        have hm := par_lt M 1 i _ hpm
+        exact (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depX_chgX hdm)).1 rfl (by omega) |>.2.2 i
+          (by omega) hpm
+      | @vupg _ k h1 h2 hu hdk =>
+        show Lhd z (σ.v i) (ρ.v i)
+        obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu
+        have hkr : k < r := by
+          have hkle : k ≤ r := by rcases hcase with h | ⟨_, h⟩ <;> omega
+          rcases Nat.lt_or_ge k r with h | h
+          · exact h
+          · exfalso
+            have : k = r := by omega
+            rw [this] at hdk
+            exact not_depX_v_r hlen hL hp hR0 hZ2 hSD hZ1 hUAT hUAB he1 hdk
+        have hIH : Lhd z (σ.v k) (ρ.v k) :=
+          ih _ (by have := (hRr h1).2.1 h2 k hu; omega) false k (le_refl _) hdk hkr
+        have hVot : isOT (vOpt ρ (par M 1 i)) = true := by
+          cases hpp : par M 1 i with
+          | none => rfl
+          | some m => exact hG.ot_v m (by have := par_lt M 1 i m hpp; omega)
+        have hVot' : isOT (vOpt σ (par (TRIO.gexp M r L 0 0 n) 1 i)) = true := by
+          cases hpp : par (TRIO.gexp M r L 0 0 n) 1 i with
+          | none => rfl
+          | some m => exact hGN.ot_v m (by have := par_lt _ 1 i m hpp; have := hiN i hi; omega)
+        have ek : ρ.v i = ρ.v k :=
+          v_upg_eq hC hiM h1 h2 hu hVot (fun _ _ _ k' hk' => hG.ot_o k' (mem_children hk').2)
+        have huN : upg (TRIO.gexp M r L 0 0 n) i = some k := by
+          rw [upg_pre0 hlen hL hp hn (by omega)]; exact hu
+        have ek' : σ.v i = σ.v k :=
+          v_upg_eq hCN (hiN i hi) (by rw [entry_pre0 hlen hn 1 (by omega)]; exact h1)
+            (by rw [entry_pre0 hlen hn 2 (by omega)]; exact h2) huN hVot'
+            (fun _ _ _ k' hk' => hGN.ot_o k' (mem_children hk').2)
+        rw [ek, ek']; exact hIH
+      | @vbump _ j k h1 h2 hj hjb hk hdk =>
+        show Lhd z (σ.v i) (ρ.v i)
+        have hij := (mem_children hj).1
+        have hjk := (mem_children hk).1
+        have hkl := (mem_children hk).2
+        by_cases hkr : r ≤ k
+        · by_cases hjr : r ≤ j
+          · have hjr' : j = r := by
+              by_contra hne
+              by_cases hig : par M 0 r = some i
+              · have := children_g_le hlen hL hp hig hj; omega
+              · have := children_lt_r hlen hL hp hi hig hj; omega
+            have hig : par M 0 r = some i := by rw [← hjr']; exact (mem_children_iff.mp hj).2
+            have hgi : g = i := Option.some.inj (hg.symm.trans hig)
+            have hkx : k = r + L := by
+              by_contra hne
+              have := nodep_B hlen hL hp hR0 hZ2 hSD hZ1 hUAT hUAB he1 true k hdk (by omega) (by omega)
+              omega
+            rw [hjr'] at hjb
+            rw [← hgi] at hjb h1 h2 ⊢
+            exact hS2 hjb h1 h2
+          · have hjg : par M 0 r = some j := by
+              by_contra hne
+              have := children_lt_r hlen hL hp (by omega) hne hk; omega
+            have hgj : g = j := Option.some.inj (hg.symm.trans hjg)
+            exfalso
+            apply hE3 i (by rw [hgj]; exact (mem_children_iff.mp hj).2) h1 h2
+            rw [hgj]; exact hjb
+        · have hkr' : k < r := by omega
+          obtain ⟨_, hpnd, hcase⟩ := hVL i (by omega) (DepX.vbump h1 h2 hj hjb hk hdk)
+          rcases hcase with ⟨_, h2', _⟩ | ⟨Lb, Kb, j', k', _, hch, _, hchj, hKnd, hLnd, _⟩
+          · exact absurd h2' h2
+          · have hjj : j = j' := by
+              rw [hch] at hj
+              rcases List.mem_append.mp hj with h | h
+              · exact absurd hdk (hLnd j h k hk).2
+              · exact List.mem_singleton.mp h
+            subst hjj
+            have hkk : k = k' := by
+              rw [hchj] at hk
+              rcases List.mem_append.mp hk with h | h
+              · exact absurd hdk (hKnd k h)
+              · exact List.mem_singleton.mp h
+            subst hkk
+            have hLj : ∀ d ∈ Lb, d < j := (sib_order (children_sorted M i) (R := []) (by rw [hch])).1
+            have hKk : ∀ d ∈ Kb, d < k := (sib_order (children_sorted M j) (R := []) (by rw [hchj])).1
+            have hig : par M 0 r ≠ some i := by
+              intro hig
+              have hri : r ∈ children M i := mem_children_iff.mpr ⟨by omega, hig⟩
+              rw [hch] at hri
+              rcases List.mem_append.mp hri with h | h
+              · have := hLj r h; omega
+              · simp at h; omega
+            have hjg : par M 0 r ≠ some j := by
+              intro hjg
+              have hgj : g = j := Option.some.inj (hg.symm.trans hjg)
+              exact hE3 i (by rw [hgj]; exact (mem_children_iff.mp hj).2) h1 h2 (by rw [hgj]; exact hjb)
+            have hchN : children (TRIO.gexp M r L 0 0 n) i = Lb ++ [j] := by
+              rw [children_pre0 hlen hL hp hn hi hig, hch]
+            have hchjN : children (TRIO.gexp M r L 0 0 n) j = Kb ++ [k] := by
+              rw [children_pre0 hlen hL hp hn (by omega) hjg, hchj]
+            have hbL : ∀ d ∈ Lb, bumpTerm (TRIO.gexp M r L 0 0 n) σ i d = bumpTerm M ρ i d := by
+              intro d hd
+              have hdj := hLj d hd
+              have hdM : d ∈ children M i := by rw [hch]; simp [hd]
+              have hdg : par M 0 r ≠ some d := by
+                intro hdg
+                have hgd : g = d := Option.some.inj (hg.symm.trans hdg)
+                have hAj : Anc0 M g j := anc_between hAgx j (by omega) (by omega)
+                have hAi := anc0_par hAj (by omega) (mem_children_iff.mp (show j ∈ children M i by
+                  rw [hch]; simp)).2
+                have := hAi.le
+                have := (mem_children hdM).1
+                omega
+              apply bumpTerm_eq_of
+              · rw [col_pre0 hlen hL hp hn (by omega), bump_pre0 hlen hL hp hn (by omega)]
+              · intro _
+                rw [children_pre0 hlen hL hp hn (by omega) hdg]
+                apply List.map_congr_left
+                intro e he
+                have her := children_lt_r hlen hL hp (by omega) hdg he
+                exact (hoffD e her).1 (hLnd d hd e he).2
+            have hKv : Kb.map σ.o = Kb.map ρ.o := List.map_congr_left (fun d hd => by
+              have := hKk d hd; exact (hoffD d (by omega)).1 (hKnd d hd))
+            have hbjM : bumpTerm M ρ i j = omega (sumN (Kb.map ρ.o ++ [ρ.o k])) := by
+              unfold bumpTerm; rw [if_pos hjb, hchj, List.map_append, List.map_singleton]
+            have hbjN : bumpTerm (TRIO.gexp M r L 0 0 n) σ i j = omega (sumN (Kb.map ρ.o ++ [σ.o k])) := by
+              unfold bumpTerm
+              rw [if_pos (by rw [col_pre0 hlen hL hp hn (by omega), bump_pre0 hlen hL hp hn (by omega)]; exact hjb),
+                hchjN, List.map_append, List.map_singleton, hKv]
+            have hIH : Lhd z (σ.o k) (ρ.o k) :=
+              ih _ (by have := (hRr h1).2.2 h2 j hj hjb k hk; omega) true k (le_refl _) hdk hkr'
+            have hdec := hKD i h1 h2 j hj hjb
+            rw [hchj, List.map_append, List.map_singleton] at hdec
+            have hsK : ∀ u ∈ Kb.map ρ.o, Single u := fun u hu => by
+              obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hu
+              exact single_o hC hG (by have := hKk d hd; omega)
+            have hform : (∃ s y y', ρ.o k = psi s y z ∧ σ.o k = psi s y' z) ∨
+                (∃ w' w Y, σ.o k = psi w' z z ∧ ρ.o k = psi w Y z ∧ LhdE w' w ∧ one ≤ w') := by
+              obtain ⟨y1, hy1⟩ := o_psi_sub hC (show k < M.length by omega)
+              rw [sf_ot (hG.ot_v k (by omega))] at hy1
+              by_cases hvk : σ.v k = ρ.v k
+              · obtain ⟨y0, hy0⟩ := o_psi_sub hCN (hiN k hkr')
+                rw [sf_ot (hGN.ot_v k (hiN k hkr')), hvk] at hy0
+                exact Or.inl ⟨_, _, _, hy1, hy0⟩
+              · have hdv : DepX M (r + L) false k := by
+                  by_contra hn'; exact hvk ((hoffD k hkr').2 hn')
+                have ho0 := o_N_noc hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN hkr'
+                  (cl_nil_of_depv hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN hkr' hdv)
+                have hvIH : Lhd z (σ.v k) (ρ.v k) :=
+                  ih _ (by have := (hRM k (by omega)).1; have := (hRr h1).2.2 h2 j hj hjb k hk; omega)
+                    false k (le_refl _) hdv hkr'
+                have he1k : entry M 1 k ≠ 0 := by
+                  intro he; apply hvk
+                  rw [v_z_of_e1 hC (by omega) he, v_z_of_e1 hCN (hiN k hkr')
+                    (by rw [entry_pre0 hlen hn 1 (by omega)]; exact he)]
+                have hv0 : σ.v k ≠ z := v_ne_z_of_e1 hCN (hiN k hkr')
+                  (by rw [entry_pre0 hlen hn 1 (by omega)]; exact he1k)
+                exact Or.inr ⟨_, _, _, ho0, hy1, Or.inr hvIH, one_le_of_ne_z hv0⟩
+            obtain ⟨hS, hlt, hG'ot⟩ := g_brel hsK hdec (single_o hC hG (by omega))
+              (single_o hCN hGN (hiN k hkr')) hIH hform
+            have hGot : isOT (sumN (Kb.map ρ.o ++ [ρ.o k])) = true := isOT_sumN _ (fun u hu => by
+              rcases List.mem_append.mp hu with h | h
+              · exact (hsK u h).1
+              · simp at h; rw [h]; exact hG.ot_o k (by omega))
+            have hV : vOpt σ (par (TRIO.gexp M r L 0 0 n) 1 i) = vOpt ρ (par M 1 i) := by
+              rw [par1_pre0 hlen hL hp hn hi]
+              cases hpp : par M 1 i with
+              | none => rfl
+              | some m =>
+                have := par_lt M 1 i m hpp
+                exact (hoffD m (by omega)).2 (hpnd m hpp)
+            exact v_bump_lhd hC hG hCN hiM (hiN i hi) h1 h2 (entry_pre0 hlen hn 1 (by omega))
+              (entry_pre0 hlen hn 2 (by omega)) hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt hTD
+              (hAbs i h1 h2 (fun _ _ _ _ => v_z_of_e1 hC (by omega) he1))
+  exact fun b i hD hi => key _ b i (le_refl _) hD hi
+
+end
+
 end Ytosk
