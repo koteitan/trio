@@ -1119,3 +1119,8 @@ i は k ののりしろの子の部分木に入らない。L8 の全接頭辞で
 - 置き換えの見方も成り立たない: 正規化（step の書き換えの判定）が M と M′ で反転する枠が 6.2 万あり、項の形が変わる。
   M の値から M′ の成分の上界を運ぶ案（成分の上界・◁_η・閉性・PreHi・Fit・C_a 分解・添字の順序・置き換え）はすべて否定的。
   2 行の PreHi/PreFC のように、構造（標準形の組合せ的性質）から M′ の枠の形を直接決める道が要る。
+- 値の不変条件 9 個は 1 列落としで保たれる（`V3DropPres`・`drop_pres`、サブエージェント）。
+  - 9 個は Good3・VSmall・FrameClosed・FrameOT・のりしろの 4 つ・UpgAbs。
+  - ただし DropRes を仮定に残す。中身は M′ 側の条件 2 つ（argT・BumpVSmallTake）と BumpWeakShapeNew。
+  - BumpWeakShapeNew は新しい崩れの源の形で、実測では該当 3 件、すべて k = q。
+  - n = 0 は各段の DropRes だけで述べられる（`t1_n0r`）。
