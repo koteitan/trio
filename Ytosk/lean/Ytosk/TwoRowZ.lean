@@ -253,4 +253,55 @@ theorem o2r_gexp_block_t0 : ∀ q, 0 < q → q < Lb →
 
 end
 
+section
+variable {M : Mat} {j0 Lb n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+  (hA : Anc0 M j0 (j0 + Lb)) {g : Nat} (hg : par M 0 j0 = some g)
+  (hF : F1 (TRIO.gexp M j0 Lb 0 0 n)) (hG : Good2 M) (hn : 1 ≤ n)
+  (hx0 : par M 0 (j0 + Lb) = some j0)
+include hlen hLb hA hg hF hG hn hx0
+
+/-- **The value of `r` after a `t = 0` expansion**: `ψ_v(b)` with `b` the state of the siblings before
+`x`. -/
+theorem o2r_gexp_r_t0 :
+    o2r (TRIO.gexp M j0 Lb 0 0 n) (j0 + (0 * Lb + 0)) = psi (vr M j0) (bst M j0 (j0 + Lb)) z := by
+  have hFM := hG.f1
+  set F0 := (List.range Lb).filter (fun q' => decide (0 < q' ∧ par M 0 (j0 + q') = some (j0 + 0)))
+    with hF0
+  have hch : children (TRIO.gexp M j0 Lb 0 0 n) (j0 + (0 * Lb + 0)) =
+      F0.map (fun q' => j0 + (0 * Lb + q')) := children_gexp_t0 hlen hLb hA hg (by omega) hLb
+  have hvals : (children (TRIO.gexp M j0 Lb 0 0 n) (j0 + (0 * Lb + 0))).map
+      (o2r (TRIO.gexp M j0 Lb 0 0 n)) = (F0.map (fun q' => j0 + q')).map (o2r M) := by
+    rw [hch, List.map_map, List.map_map]
+    apply List.map_congr_left
+    intro q' hq'
+    rw [hF0, List.mem_filter, List.mem_range] at hq'
+    simp only [decide_eq_true_eq] at hq'
+    exact o2r_gexp_block_t0 hlen hLb hA hg hF hFM hn hx0 q' hq'.2.1 hq'.1
+  have hC : (children M j0).filter (fun d => decide (d < j0 + Lb)) = F0.map (fun q' => j0 + q') := by
+    have hb : children M j0 = F0.map (fun q' => j0 + q') ++ [j0 + Lb] := by
+      have := children_block (q := 0) hlen (M := M)
+      rw [if_pos (show par M 0 (j0 + Lb) = some (j0 + 0) from hx0)] at this
+      exact this
+    rw [hb, List.filter_append]
+    simp only [List.filter_cons, List.filter_nil, Nat.lt_irrefl, decide_false, Bool.false_eq_true,
+      if_false, List.append_nil]
+    apply List.filter_eq_self.mpr
+    intro c hc
+    obtain ⟨q', hq', rfl⟩ := List.mem_map.mp hc
+    rw [List.mem_filter, List.mem_range] at hq'
+    simpa using hq'.1
+  have hsub : ((F0.map (fun q' => j0 + q')).map (o2r M)).Pairwise (fun a b => b ≤ a) := by
+    rw [← hC]
+    exact List.Pairwise.sublist (List.Sublist.map _ List.filter_sublist) (hG.dec j0)
+  obtain ⟨hSot, _⟩ := sumN_dec _ (fun t ht => by
+    obtain ⟨i, _, rfl⟩ := List.mem_map.mp ht; exact single_o2r hG i) hsub
+  rw [o2r_eq, hvals, vr_gexp_block hlen hLb hA hg hF hFM hn hx0 hLb]
+  show add (sp (sf (vr M (j0 + 0))) z (sf _)) (sf z) = _
+  rw [sf_ot (isOT_vr hFM _), sf_ot hSot, sp_eq_spArg]
+  unfold bst
+  rw [hC]
+  rfl
+
+end
+
 end Ytosk
