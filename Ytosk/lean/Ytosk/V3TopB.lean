@@ -22,8 +22,6 @@ structure Res3A (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   t0 : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     (∀ g p, par M 0 r = some g → par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 →
       col M g ≠ bump M p) ∧
-    (∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
-      Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L)) ∧
     (∀ s' y', (drop1 M (r + L) rk).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
       par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
       lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
@@ -79,8 +77,8 @@ theorem hInv_of_A (h : HInvA) :
   rotate_left
   · -- `t0`: the values of `M[n]` are those of a standard matrix
     intro r L hlen hp he1
-    obtain ⟨hE3, hLast, hVr, hG', hVN⟩ := RA.t0 r L hlen hp he1
-    refine ⟨hE3, hLast, hVr, hG', ?_⟩
+    obtain ⟨hE3, hVr, hG', hVN⟩ := RA.t0 r L hlen hp he1
+    refine ⟨hE3, hVr, hG', ?_⟩
     intro n hn2 σ hCN
     have hL : 0 < L := by
       rcases Nat.eq_zero_or_pos L with h0 | h0

@@ -17,6 +17,7 @@
 import Ytosk.V3QRFinal4
 import Ytosk.V3T0
 import Ytosk.V3T0M
+import Ytosk.V3T0Last
 
 namespace Ytosk
 
@@ -371,8 +372,6 @@ structure Res3 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   t0 : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     (∀ g p, par M 0 r = some g → par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 →
       col M g ≠ bump M p) ∧
-    (∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
-      Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L)) ∧
     (∀ s' y', (drop1 M (r + L) rk).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
       par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
       lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
@@ -470,7 +469,9 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
       exact drop_n1 (d0 := 0) hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hL0 hx2 hr hnx I.cons
         I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua
     · apply dropsAt_of hexp
-      obtain ⟨hE3, hLast, hVr, hG', hN⟩ := ht0 r L hlen hr he1
+      obtain ⟨hE3, hVr, hG', hN⟩ := ht0 r L hlen hr he1
+      have hLast := fun n (hn : 2 ≤ n) g (hg : par M 0 r = some g) (hc : Counted M g r) =>
+        counted_last0 hlen hL0 hr he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc
       exact t0_main' hlen hL0 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr he1 I.cons I.good
         I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.rootS I.rootP hE3 hLast
         hVr hG' hN (n + 2) (by omega)
