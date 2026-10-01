@@ -605,4 +605,24 @@ theorem t1_n0r {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
     hKD hTD hAbs hWS hVSt hUA hVL (fun j hrj hjx =>
       DropHypV.of (hIj _ (j + 1) (le_refl _) (by omega) hjx) (hres j hrj hjx))
 
+/-! ## UpgAbsX を 1 つの行列の条件から -/
+
+/-- **Value invariant** (a single matrix): `UpgAbs` at the upgrades `i → k` with `k < i` or `k` a leaf.
+The global `UpgAbs` is false on standard matrices only at `k = i + 1` with children (e.g. at `i = 11` of
+(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0),
+`ω ⋪ Ω_1`). SRO からの乱択の展開とその M[n] の接頭辞閉包（標準形 40 万個）で例外 0. -/
+def UpgAbsL (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i k W, upg M i = some k → (k < i ∨ children M k = []) → ρ.v k = add (vOpt ρ (par M 1 i)) W →
+    W ≠ z → ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W
+
+/-- **`UpgAbsX` from `UpgAbsL`**: the upgrade of `x − 1` goes to `x` (a leaf) or to an ancestor. -/
+theorem UpgAbsL.x {M : Mat} {ρ : Valn} (h : UpgAbsL M ρ) {x : Nat} (hx : x + 1 = M.length) :
+    UpgAbsX M x ρ := by
+  intro i k W hix hu hv hW
+  obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu
+  refine h i k W hu ?_ hv hW
+  rcases hcase with hk | ⟨_, hk⟩
+  · right; rw [hk, hix]; exact children_last hx
+  · left; exact hk
+
 end Ytosk
