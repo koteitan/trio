@@ -420,7 +420,7 @@ theorem twoRow_qr_PRE {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
       o2r (expand M k) h = fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j) ∧
       isOT (fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j)) = true ∧
       fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j) < o2r M h :=
-  twoRow_qr_all hM hz hr ht1 hG hb1 hr1 hz0 hqr (fun h p s y hp hph hc ht1' ht2' ζ hmono =>
+  twoRow_qr_all hM hz hr ht1 hG hb1 hr1 hz0 hqr (fun h p s y hp hph hc ht1' ht2' _ hmono =>
     trig_persist_of_pre hmono (hPRE h p s y hp hph hc ht1' ht2'))
 
 end Ytosk
