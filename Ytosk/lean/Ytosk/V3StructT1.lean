@@ -183,4 +183,119 @@ theorem nodep_v_q {q : Nat} (hq : par M 0 x = some q) : ¬ DepX M x false q := b
 
 end
 
+/-- Counting in `M` gives counting in `M.take x`, away from the parent of `x`. -/
+theorem cnt_take_of_M {M : Mat} {x : Nat} (hx : x + 1 = M.length) {i c : Nat} (hi : i < x) (hcx : c < x)
+    (hxc : x ∉ children M c) (h : Counted M i c) : Counted (M.take x) i c := by
+  obtain ⟨hb, hu⟩ := h
+  refine ⟨by rw [col_take M hcx, bump_take M hi]; exact hb, ?_⟩
+  rintro ⟨hiu, htop⟩
+  apply hu
+  refine ⟨?_, by rw [← topped_take_eq hx hcx hxc]; exact htop⟩
+  obtain ⟨k, hk, hkc⟩ := (isUpg_take M (by omega) c).mp hiu
+  unfold isUpg
+  rw [List.any_eq_true]
+  exact ⟨k, List.mem_range.mpr (by omega), decide_eq_true hkc⟩
+
+/-- The order of a sibling list split at `c`. -/
+theorem sib_order {l L R : List Nat} {c : Nat} (hs : l.Pairwise (· < ·)) (h : l = L ++ c :: R) :
+    (∀ d ∈ L, d < c) ∧ (∀ d ∈ R, c < d) := by
+  rw [h, List.pairwise_append] at hs
+  obtain ⟨_, hcR, hLc⟩ := hs
+  rw [List.pairwise_cons] at hcR
+  exact ⟨fun d hd => hLc d hd c List.mem_cons_self, hcR.1⟩
+
+/-- Not counted, as the disjunction in `OShape`. -/
+theorem not_counted_iff {M : Mat} {i d : Nat} (h : ¬ Counted M i d) :
+    col M d = bump M i ∨ (isUpg M d = true ∧ topped M d = true) := by
+  by_cases h1 : col M d = bump M i
+  · exact Or.inl h1
+  · exact Or.inr (by by_contra h2; exact h ⟨h1, h2⟩)
+
+section
+variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+  (hx2 : entry M 2 x = 0) {q : Nat} (hq : par M 0 x = some q)
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq
+
+/-- **(P1 in `M`)** After a child in `D`, no sibling counts. -/
+theorem p1_dep {i c c₂ : Nat} (hi : i < x) (hc : c ∈ children M i) (hc₂ : c₂ ∈ children M i)
+    (hcc : c < c₂) (hD : DepX M x true c) (hcnt : Counted M i c₂) : False := by
+  have hc₂l := (mem_children hc₂).2
+  have hpc₂ : par M 0 c₂ = some i := (mem_children_iff.mp hc₂).2
+  rcases Nat.lt_or_ge c₂ x with hc₂x | hc₂x
+  · by_cases hxc : x ∈ children M c₂
+    · have hqc : q = c₂ := by rw [(mem_children_iff.mp hxc).2] at hq; exact (Option.some.inj hq).symm
+      subst hqc
+      exact nodep_sib hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hpc₂ (Anc0.step hq (Anc0.refl q))
+        (fun _ => nodep_v_q hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq) _ c (Nat.le_refl _) hc hcc true c hD
+        (Anc0.refl c)
+    · have hcT : c ∈ children (M.take x) i := by
+        rw [children_take, List.mem_filter]; exact ⟨hc, by simpa using (show c < x by omega)⟩
+      have hc₂T : c₂ ∈ children (M.take x) i := by
+        rw [children_take, List.mem_filter]; exact ⟨hc₂, by simpa using hc₂x⟩
+      exact chg_last hx hR0 hZ2 hSD hZ1 hUAT hUAB hcT (depX_chgX hD) c₂ hc₂T hcc
+        (cnt_take_of_M hx hi hc₂x hxc hcnt)
+  · have hc₂e : c₂ = x := by omega
+    subst hc₂e
+    have hiq : i = q := by rw [hpc₂] at hq; exact Option.some.inj hq
+    subst hiq
+    exact nodep_sib hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq (Anc0.refl c₂) (fun h => absurd h (lt_irrefl _))
+      _ c (Nat.le_refl _) hc hcc true c hD (Anc0.refl c)
+
+/-- **A column whose `v` is in `D` counts no child** (in `M`). -/
+theorem uncnt_of_depv {i d : Nat} (hi : i < x) (hv : DepX M x false i) (hd : d ∈ children M i) :
+    ¬ Counted M i d := by
+  have hdl := (mem_children hd).2
+  have hpd : par M 0 d = some i := (mem_children_iff.mp hd).2
+  have hid := (mem_children hd).1
+  rcases Nat.lt_or_ge d x with hdx | hdx
+  · have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depX_chgX hv)).1 rfl hi
+    have hdT : d ∈ children (M.take x) i := by
+      rw [children_take, List.mem_filter]; exact ⟨hd, by simpa using hdx⟩
+    by_cases hxd : x ∈ children M d
+    · -- `d = q` is the last child of `i` in `M.take x`
+      have hAdx : Anc0 M d x := Anc0.step (mem_children_iff.mp hxd).2 (Anc0.refl d)
+      have hmax : ∀ e ∈ children (M.take x) i, e ≤ d := by
+        intro e he
+        rw [children_take, List.mem_filter] at he
+        have hex : e < x := by simpa using he.2
+        have hpe : par M 0 e = some i := (mem_children_iff.mp he.1).2
+        by_contra hlt
+        have hA := anc_between hAdx e (by omega) (by omega)
+        have := (anc0_par hA (by omega) hpe).le; omega
+      have hsplit := split_last_max _ _ (children_sorted (M.take x) i) hdT hmax
+      have htop := hT.1
+      unfold topped at htop
+      rw [hsplit] at htop
+      simp only [List.getLast?_append, List.getLast?_singleton, Option.some_or, decide_eq_true_eq] at htop
+      rw [col_take M hdx, bump_take M hi] at htop
+      exact fun h => h.1 htop
+    · exact fun h => hT.2.1 d hdT (cnt_take_of_M hx hi hdx hxd h)
+  · have hdx' : d = x := by omega
+    subst hdx'
+    have hiq : i = q := by rw [hpd] at hq; exact Option.some.inj hq
+    subst hiq
+    exact absurd hv (nodep_v_q hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq)
+
+/-- **`hOS`: the shape at every `o` call in `D`.** -/
+theorem hOS_t1 : ∀ i, i < x → DepX M x true i → OShape M x i := by
+  intro i hi hD
+  by_cases hv : DepX M x false i
+  · exact Or.inl ⟨hv, fun d hd =>
+      not_counted_iff (uncnt_of_depv hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hi hv hd)⟩
+  · refine Or.inr ⟨hv, ?_⟩
+    cases hD with
+    | leaf => exact absurd hi (lt_irrefl _)
+    | @ochild _ c hc hcb hcu hdc =>
+      obtain ⟨L, R, hLR⟩ := List.append_of_mem hc
+      obtain ⟨hL, hR⟩ := sib_order (children_sorted M i) hLR
+      refine ⟨L, c, R, hLR, hcb, hcu, fun d hd => ?_, fun d hd hcnt hdD => ?_⟩
+      · have hdM : d ∈ children M i := by rw [hLR]; simp [hd]
+        exact not_counted_iff (fun h => p1_dep hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hi hc hdM (hR d hd) hdc h)
+      · have hdM : d ∈ children M i := by rw [hLR]; simp [hd]
+        exact p1_dep hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hi hdM hc (hL d hd) hdD ⟨hcb, hcu⟩
+    | ov h => exact (hv h).elim
+
+end
+
 end Ytosk
