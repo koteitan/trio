@@ -5,6 +5,7 @@
 数える子でなくなりうるのは M.take x での最後の子だけで、x はもとから最後なので、余分な子は末尾に付く。
 -/
 import Ytosk.V3ChgS
+import Ytosk.V3DropV
 
 namespace Ytosk
 
@@ -354,5 +355,81 @@ theorem lhd_lt_small {r w : T} (hr : isOT r = true) (hw : w < E0) (h : r < w) : 
             have hzu : lt z u = true := by cases u with | z => exact absurd rfl hu | psi _ _ _ => rfl
             simpa [hzu] using this
         rw [hall hr] at hg; simp at hg
+
+/-! ## 吸収つきの和 -/
+
+theorem comps_sub_summands (u : T) : ∀ (X : T), ∀ g ∈ comps u X, ∃ t ∈ summands X, g ∈ comps u t
+  | z, g, hg => by simp [comps] at hg
+  | psi a b c, g, hg => by
+    simp only [comps, List.mem_append] at hg
+    rcases hg with hg | hg
+    · exact ⟨psi a b z, by simp [summands], by simp only [comps, List.mem_append]; left; exact hg⟩
+    · obtain ⟨t, ht, hgt⟩ := comps_sub_summands u c g hg
+      exact ⟨t, by simp [summands, ht], hgt⟩
+
+/-- A term below `w` whose summands are all `◁ w` is `◁ w`. -/
+theorem lhd_of_summands {X w : T} (hlt : X < w) (hle : ∀ t ∈ summands X, t ≤ X)
+    (h : ∀ t ∈ summands X, Lhd z t w) : Lhd z X w := by
+  refine ⟨hlt, fun u c h1 h2 g hg => ?_⟩
+  obtain ⟨t, ht, hgt⟩ := comps_sub_summands u X g hg
+  exact (h t ht).2 u c (lt_of_le_of_lt (hle t ht) h1) h2 g hgt
+
+theorem summands_add_single {s y : T} : ∀ (c : T), ∀ t ∈ summands (add c (psi s y z)),
+    t = psi s y z ∨ (t ∈ summands c ∧ ¬ t < psi s y z)
+  | z, t, ht => by simp [summands] at ht; exact Or.inl ht
+  | psi a b c, t, ht => by
+    rw [add_psi_psi] at ht
+    split at ht
+    · simp [summands] at ht; exact Or.inl ht
+    · rename_i hn
+      simp only [summands, List.mem_cons] at ht
+      rcases ht with rfl | ht
+      · exact Or.inr ⟨by simp [summands], hn⟩
+      · rcases summands_add_single c t ht with h | ⟨h1, h2⟩
+        · exact Or.inl h
+        · exact Or.inr ⟨by simp [summands, h1], h2⟩
+
+/-- **Sum with absorption**: `V + w′ ⊴ V + w` when `w′ ⊴ w` and the summands of `V` that only `w`
+absorbs are `◁ w`. -/
+theorem lhdE_add_absorb {s' y' s y : T} (hw : LhdE (psi s' y' z) (psi s y z)) :
+    ∀ (V : T), isOT V = true → isOT (add V (psi s' y' z)) = true →
+      (∀ r ∈ summands V, ¬ r < psi s' y' z → r < psi s y z → Lhd z r (psi s y z)) →
+      LhdE (add V (psi s' y' z)) (add V (psi s y z))
+  | z, _, _, _ => by simpa using hw
+  | psi a b c, hV, hot, hR => by
+    have hle : psi s' y' z ≤ psi s y z := hw.le
+    rw [add_psi_psi, add_psi_psi]
+    by_cases h1 : psi a b z < psi s' y' z
+    · rw [if_pos h1, if_pos (lt_of_lt_of_le h1 hle)]; exact hw
+    · rw [if_neg h1]
+      by_cases h2 : psi a b z < psi s y z
+      · rw [if_pos h2]
+        right
+        have hot' : isOT (psi a b (add c (psi s' y' z))) = true := by
+          rw [add_psi_psi, if_neg h1] at hot; exact hot
+        have hcb : ∀ t ∈ summands c, t ≤ psi a b z := by
+          intro t ht
+          have := summands_le_head hV t (by simp [summands, ht])
+          simpa [head] using this
+        apply lhd_of_summands
+        · rw [psi_lt_psi_z_iff] at h2 ⊢; exact h2
+        · intro t ht
+          have := summands_le_head hot' t ht
+          exact le_trans this (by simp only [head]; exact psi_le_psi_rest (z_le _))
+        · intro t ht
+          simp only [summands, List.mem_cons] at ht
+          rcases ht with rfl | ht
+          · exact hR _ (by simp [summands]) h1 h2
+          · rcases summands_add_single c t ht with rfl | ⟨htc, htn⟩
+            · rcases hw with he | hl
+              · exact absurd (he ▸ h2) h1
+              · exact hl
+            · exact hR t (by simp [summands, htc]) htn (lt_of_le_of_lt (hcb t htc) h2)
+      · rw [if_neg h2]
+        have hc : isOT c = true := isOT_rest hV
+        have hot' : isOT (add c (psi s' y' z)) = true := by
+          rw [add_psi_psi, if_neg h1] at hot; exact isOT_rest hot
+        have ih := lhdE_add_absorb hw c hc hot' (fun r hr => hR r (by simp [summands, hr]))
+        exact lhdE_app (psi a b z) ih
 
 end Ytosk
