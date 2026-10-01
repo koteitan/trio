@@ -8,7 +8,7 @@ Ytosk の `par`（`Eval.lean`）は同じ親を `climb` で計算する。ここ
 
 などを示し、trio 本体の展開の補題（`Gtrans.lean` の `gexp` 系）を Ytosk の `expand` に使えるようにする。
 -/
-import Ytosk.Eval
+import Ytosk.BMS
 import Trio
 
 namespace Ytosk
@@ -339,5 +339,130 @@ theorem rtg_step2_iff (M : Mat) {a b : Nat} (hb : b < M.length) :
     | refl => exact Relation.ReflTransGen.refl
     | tail _ h2 ih => exact Relation.ReflTransGen.tail (ih h2.1) ((par2_iff M h2.2.1).mpr h2)
 
+
+
+/-! ## Ancestry and the expansion -/
+
+theorem isAnc_iff (M : Mat) (y r : Nat) :
+    ∀ f j, j < f → (isAnc M y r f (some j) = true ↔ Relation.ReflTransGen (StepRel (par M y)) r j)
+  | 0, j, h => absurd h (Nat.not_lt_zero _)
+  | f + 1, j, hjf => by
+    simp only [isAnc]
+    by_cases hjr : j = r
+    · subst hjr; simp; exact Relation.ReflTransGen.refl
+    · simp only [hjr, if_false]
+      cases hp : par M y j with
+      | none =>
+        constructor
+        · intro h; cases f <;> simp [isAnc] at h
+        · intro h
+          rcases Relation.ReflTransGen.cases_tail h with h' | ⟨c, _, hc⟩
+          · exact absurd h' hjr
+          · unfold StepRel at hc; rw [hp] at hc; cases hc
+      | some c =>
+        have hcj : c < j := par_lt M y j c hp
+        rw [isAnc_iff M y r f c (by omega)]
+        constructor
+        · intro h; exact Relation.ReflTransGen.tail h hp
+        · intro h
+          rcases Relation.ReflTransGen.cases_tail h with h' | ⟨c', hc1, hc2⟩
+          · exact absurd h' hjr
+          · unfold StepRel at hc2; rw [hp] at hc2; cases hc2; exact hc1
+
+theorem isAnc0_iff (M : Mat) {r j : Nat} (hj : j < M.length) (hr : r ≤ j) :
+    isAnc M 0 r (j + 1) (some j) = true ↔ TRIO.le0 M r j := by
+  rw [isAnc_iff M 0 r (j + 1) j (Nat.lt_succ_self j), rtg_step0_iff M hj]
+  unfold TRIO.le0
+  constructor
+  · intro h; exact ⟨by omega, hj, h⟩
+  · intro h; exact h.2.2
+
+theorem isAnc1_iff (M : Mat) {r j : Nat} (hj : j < M.length) (hr : r ≤ j) :
+    isAnc M 1 r (j + 1) (some j) = true ↔ TRIO.le1 M r j := by
+  rw [isAnc_iff M 1 r (j + 1) j (Nat.lt_succ_self j), rtg_step1_iff M hj]
+  unfold TRIO.le1
+  constructor
+  · intro h; exact ⟨by omega, hj, h⟩
+  · intro h; exact h.2.2
+
+theorem nextR_iff (M : Mat) {t a b : Nat} (ht : t ≤ 2) (hb : b < M.length) :
+    par M t b = some a ↔ TRIO.nextR M t a b := by
+  unfold TRIO.nextR
+  rcases (by omega : t = 0 ∨ t = 1 ∨ t = 2) with rfl | rfl | rfl
+  · simp only [if_true]; exact par0_iff M hb
+  · simp only [if_neg (by decide : (1:Nat) ≠ 0), if_true]; exact par1_iff M hb
+  · simp only [if_neg (by decide : (2:Nat) ≠ 0), if_neg (by decide : (2:Nat) ≠ 1)]; exact par2_iff M hb
+
+
+theorem col_zero_iff (M : Mat) (j : Nat) :
+    col M j = (0, 0, 0) ↔ TRIO.entry M 0 j = 0 ∧ TRIO.entry M 1 j = 0 ∧ TRIO.entry M 2 j = 0 := by
+  unfold col TRIO.entry
+  generalize M.getD j (0, 0, 0) = c
+  obtain ⟨p, q, w⟩ := c
+  simp
+
+theorem expand_eq_oper (M : Mat) (n : Nat) (hM : 2 ≤ M.length) : expand M n = TRIO.oper M n := by
+  obtain ⟨c0, M', rfl⟩ : ∃ c M', M = c :: M' := by
+    cases M with
+    | nil => simp at hM
+    | cons c M' => exact ⟨c, M', rfl⟩
+  have hlen : (c0 :: M').length = M'.length + 1 := rfl
+  have hx : (c0 :: M').length - 1 ≠ 0 := by omega
+  unfold TRIO.oper
+  simp only [expand]
+  rw [if_neg hx]
+  generalize c0 :: M' = M at *
+  generalize hxdef : M.length - 1 = x at *
+  have hxl : x < M.length := by omega
+  have hdrop : TRIO.Pred M = M.take x := by
+    unfold TRIO.Pred; rw [if_neg (by omega), List.dropLast_eq_take, hxdef]
+  by_cases hz : col M x = (0, 0, 0)
+  · rw [if_pos hz, if_pos ((col_zero_iff M x).mp hz), hdrop]
+  rw [if_neg hz, if_neg (fun h => hz ((col_zero_iff M x).mpr h))]
+  have htt : TRIO.srow M x = (if entry M 2 x > 0 then 2 else if entry M 1 x > 0 then 1 else 0) := rfl
+  rw [htt]
+  have ht2 : (if entry M 2 x > 0 then 2 else if entry M 1 x > 0 then 1 else 0) ≤ 2 := by
+    split_ifs <;> omega
+  generalize (if entry M 2 x > 0 then 2 else if entry M 1 x > 0 then 1 else 0) = t at *
+  cases hp : par M t x with
+  | none =>
+    have hnot : ¬ TRIO.hasParent M t x := by
+      rintro ⟨j0, hj0, _⟩
+      rw [(nextR_iff M ht2 hxl).mpr hj0] at hp; cases hp
+    simp only [hnot, not_false_eq_true, if_true, hdrop]
+  | some r =>
+    have hn : TRIO.nextR M t r x := (nextR_iff M ht2 hxl).mp hp
+    have hhas : TRIO.hasParent M t x := ⟨r, hn, fun j hj => by
+      have := (nextR_iff M ht2 hxl).mpr hj; rw [hp] at this; exact (Option.some.inj this).symm⟩
+    have hparent : TRIO.parent M t x = r := by
+      have h1 : TRIO.nextR M t (TRIO.parent M t x) x := by
+        unfold TRIO.parent; exact Classical.epsilon_spec (p := fun j0 => TRIO.nextR M t j0 x) ⟨r, hn⟩
+      have := (nextR_iff M ht2 hxl).mpr h1; rw [hp] at this; exact (Option.some.inj this).symm
+    have hrx : r < x := par_lt M t x r hp
+    rw [if_neg (not_not_intro hhas)]
+    subst hparent
+    dsimp only
+    generalize TRIO.parent M t x = r at *
+    congr 1
+    apply List.flatMap_congr
+    intro a _
+    rw [List.range'_eq_map_range, List.map_map]
+    apply List.map_congr_left
+    intro k hk
+    have hk' : k < x - r := List.mem_range.mp hk
+    have hkl : r + k < M.length := by omega
+    simp only [Function.comp]
+    refine Prod.ext ?_ (Prod.ext ?_ ?_)
+    · simp only [entry_eq]
+      by_cases h : TRIO.le0 M r (r + k)
+      · rw [if_pos ((isAnc0_iff M hkl (by omega)).mpr h), if_pos h, Nat.mul_comm]
+      · rw [if_neg (fun h' => h ((isAnc0_iff M hkl (by omega)).mp h')), if_neg h]
+    · simp only [entry_eq]
+      by_cases h : TRIO.le1 M r (r + k)
+      · rw [if_pos ((isAnc1_iff M hkl (by omega)).mpr h), if_pos h, Nat.mul_comm]
+      · rw [if_neg (fun h' => h ((isAnc1_iff M hkl (by omega)).mp h')), if_neg h]
+    · simp only [entry_eq]
+      have : ¬ 2 < t := by omega
+      simp [this]
 
 end Ytosk
