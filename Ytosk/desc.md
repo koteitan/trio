@@ -1195,3 +1195,7 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 局所の条件 OLocZ（`qr_oloc`）と VLocZ（`qr_vloc`、のりしろの持ち上げ 0/1/2）を示した。
   - 残る仮定は、値の不変条件（TP1W・TPLoW・AbsUW・AbsDW など）、hYB、始点の条件。
 - t = 0 の n ≥ 2 は、展開した行列の目標の割り当てと写しの列ごとの等式まで進んだ（`V3T0V`）。
+- `qr_final3`（`V3QRFinal3`）: t = 1・q = r の n ≥ 2 で、t1_main_final と同じ形。
+  - 始点の条件（seed ◁ A、SeedOK、spArg_seed）は落とす補題から出した。
+  - q = r 特有の残りの仮定（hYBs・hcs・hLs0）は、始点が小さい場合だけ。
+    実データでは b = 0（r = x − 1、悪い部分が 1 列）のときだけ起きる。
