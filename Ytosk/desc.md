@@ -1475,3 +1475,12 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 必要な理由: q = r の枠 (r, L, x) は n ≥ 3 で書き換えを起こすが、M にも M[2] にも対応する例がない。M では x が高い子なので FrameClosedHi で閉じる。
 - frameClosed_N_t1・frameClosedHi_N_t1・frameClosedHi_take（値は下がるだけなので運べる）。
 - 帰納法では Res3A の欄 fch として運ぶ（2ef33086）。Res3A は帰納法で運ぶ追加の性質の束として使う。
+
+### 接頭辞の閉包 C′ での再測定: VSmallF と DropRes の一部は標準形で偽（2026-10-02、step-ot）
+
+- C′ = A∪B∪C の接頭辞の閉包（404051 個の標準形）。
+- Inv3 の値の欄は VSmallF 以外すべて例外 0。**VSmallF は 84 枠で偽**。
+  - 例: 長さ 28 の行列の枠 (0, 4) で v(c) = ψ_0(Ω_{Ω_1} + ψ_0(Ω_{Ω_1}))。成分 Ω_{Ω_1} > Ω_{v(c)}。
+- DropRes: argT・UpgAbsX は例外 0。VSmallNew 1 件、BWS′ 3 件（k = x の唯一の子の枝）、BumpAbsC 4 件（崩れが弱く上へ伝わる場合）、seed 1 件、hG′・hU 2 件。
+- どの例でも落とす補題の結論は成り立つ。崩れているのは証明の道筋（VSmall 型の仮定、弱い枝に入る条件）。
+- 修理: VSmall 系（po_of/pv_of の VSmallF・VSmallNew と seed）は omega-lhd、のりしろ系（BWS′ の k = x の枝、BumpAbsC を弱い閉包 Wk で除く）は bump-frame。
