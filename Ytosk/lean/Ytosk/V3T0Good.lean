@@ -115,6 +115,40 @@ variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : GoodOT (TRIO.gexp M r L 0 0 n) σ)
 include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
 
+omit hC hG hCN hGN in
+/-- **The counted children of a copy column.** -/
+theorem cl_copy0 {k q : Nat} (hk : k < n) (hq : q < L) :
+    CL (TRIO.gexp M r L 0 0 n) (r + (k * L + q)) =
+      (((children M (r + q)).filter (fun c => decide (c < r + L))).filter
+        (fun d => decide (Counted M (r + q) d))).map (shk r (k * L)) := by
+  unfold CL
+  rw [children_copy0 hlen hL hp hn hk hq, List.filter_map]
+  congr 1
+  apply List.filter_congr
+  intro d hd
+  have h := List.mem_filter.mp hd
+  have h1 := (mem_children h.1).1
+  have h2 : d < r + L := by simpa using h.2
+  obtain ⟨q', rfl⟩ : ∃ q', d = r + q' := ⟨d - r, by omega⟩
+  simp only [Function.comp, shk, if_pos (show r ≤ r + q' by omega)]
+  rw [show r + q' + k * L = r + (k * L + q') by omega]
+  simp only [decide_eq_decide]
+  exact counted_copy0 hlen hL hp hn hR0 hZ2 he2 hk hq (by omega) (by omega)
+
+omit hC hG hCN hGN in
+/-- **The counted children of `r + q` in `M.take x`** are those of `M` below `x`. -/
+theorem cl_take_B {q : Nat} (hq : q < L) :
+    CL (M.take (r + L)) (r + q) =
+      ((children M (r + q)).filter (fun c => decide (c < r + L))).filter
+        (fun d => decide (Counted M (r + q) d)) := by
+  unfold CL
+  rw [children_take]
+  apply List.filter_congr
+  intro d hd
+  have h := List.mem_filter.mp hd
+  simp only [decide_eq_decide]
+  exact cnt_same_B hlen hR0 hp (by omega) (by omega) h.1 (by simpa using h.2)
+
 /-- **The decrease at a copy column.** -/
 theorem dec_copy0 {ρ' : Valn} {oMid : T} (hC' : Cons (M.take (r + L)) ρ') (hGT : Good3 (M.take (r + L)) ρ')
     (hσB : ∀ i, r ≤ i → i < (TRIO.gexp M r L 0 0 n).length → σ.o i = (tauN r L n ρ ρ' oMid).o i)
@@ -209,6 +243,75 @@ theorem dec_pre0
       (cl_mem_children he) hde hD hecnt
   · intro d hd hD; exact hoffD d (hCLr d hd) hD
   · intro d hd hD; exact hdl d (hCLr d hd) hD
+
+/-- **The shape at the parent `g` of `r` when `r` counts there.** -/
+theorem g0_shape {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted M g r)
+    (hσG : ∀ c, c < r → ¬ DepX M (r + L) true c → σ.o c = ρ.o c)
+    (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = omid M r L ρ)
+    (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
+    (hLast : Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
+    (hl : Lhd z (ρ'.o r) (ρ.o r)) :
+    ∃ Lc Cm : List Nat, CL M g = Lc ++ [r] ∧ CL (TRIO.gexp M r L 0 0 n) g = Lc ++ Cm ++ [r + (n - 1) * L] ∧
+      Lc.map σ.o = Lc.map ρ.o ∧ Cm.map σ.o = List.replicate Cm.length (omid M r L ρ) := by
+  have hx : r + L + 1 = M.length := hlen
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
+  have hgr : g < r := par_lt M 0 r g hg
+  have hgM : g < M.length := by omega
+  have hgN : g < (TRIO.gexp M r L 0 0 n).length := by rw [hlN]; omega
+  have hrg : r ∈ children M g := mem_children_iff.mpr ⟨by omega, hg⟩
+  -- the counted children in `M`
+  set F := (children M g).filter (fun d => decide (d < r)) with hFdef
+  have hchM : children M g = F ++ [r] := children_g_last hlen hL hp hg
+  set Lc := F.filter (fun d => decide (Counted M g d)) with hLcdef
+  have hclM : CL M g = Lc ++ [r] := by
+    unfold CL; rw [hchM, List.filter_append]
+    simp only [List.filter_cons, List.filter_nil, decide_eq_true_eq, if_pos hcnt]
+    rfl
+  -- the counted children in `N`
+  set f : Nat → Nat := fun k => r + k * L with hfdef
+  have hroots : [r] ++ (List.range (n - 1)).map (fun k => r + (k + 1) * L) =
+      (List.range (n - 1)).map f ++ [r + (n - 1) * L] := by
+    have e1 : (List.range n).map f = [r] ++ (List.range (n - 1)).map (fun k => r + (k + 1) * L) := by
+      obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+      rw [List.range_succ_eq_map, List.map_cons, List.map_map]
+      simp [hfdef, Nat.add_sub_cancel]
+    have e2 : (List.range n).map f = (List.range (n - 1)).map f ++ [r + (n - 1) * L] := by
+      obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+      rw [List.range_succ, List.map_append]; simp [hfdef]
+    rw [← e1, e2]
+  set Cm := ((List.range (n - 1)).map f).filter
+    (fun d => decide (Counted (TRIO.gexp M r L 0 0 n) g d)) with hCmdef
+  have hclN : CL (TRIO.gexp M r L 0 0 n) g = Lc ++ Cm ++ [r + (n - 1) * L] := by
+    unfold CL
+    rw [children_g0 hlen hL hp hn hg, hchM, List.append_assoc, hroots, List.filter_append,
+      List.filter_append]
+    have hF' : F.filter (fun d => decide (Counted (TRIO.gexp M r L 0 0 n) g d)) = Lc := by
+      apply List.filter_congr
+      intro d hd
+      have hdr : d < r := by simpa using (List.mem_filter.mp hd).2
+      simp only [counted_lt0 hlen hL hp hn hR0 hZ2 he2 hn2 hgr hdr]
+    rw [hF', List.append_assoc]
+    simp only [List.filter_cons, List.filter_nil, decide_eq_true_eq, if_pos hLast]
+    rfl
+  have hCmv : Cm.map σ.o = List.replicate Cm.length (omid M r L ρ) := by
+    rw [List.eq_replicate_iff]
+    refine ⟨by simp, fun b hb => ?_⟩
+    obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hb
+    obtain ⟨k, hk, rfl⟩ := List.mem_map.mp (List.mem_filter.mp hd).1
+    exact hσmid k (by have := List.mem_range.mp hk; omega)
+  have hLcv : Lc.map σ.o = Lc.map ρ.o := by
+    apply List.map_congr_left
+    intro d hd
+    have hdF := (List.mem_filter.mp hd).1
+    have hdr : d < r := by simpa using (List.mem_filter.mp hdF).2
+    have hdM := (List.mem_filter.mp hdF).1
+    apply hσG d hdr
+    intro hD
+    exact p1_dep hx hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp (by omega) hdM hrg hdr hD hcnt
+  -- the values
+  obtain ⟨hsM, hpM⟩ := cl_vals hC hG hgM
+  exact ⟨_, _, hclM, hclN, hLcv, hCmv⟩
 
 /-- **The decrease at the parent `g` of `r` when `r` counts there**: the copy roots before the last are
 `omid`, the last is `o′(r)`. -/
