@@ -34,4 +34,31 @@ theorem expand_eq_gexp (M : Mat) (n : Nat) (hM : 2 ≤ M.length)
     parent_eq_of_par ht hx hp]
   rfl
 
+/-- Row-0 parent inside a copy. -/
+theorem par0_gexp_mir {M : Mat} {j0 Lb d0 d1 n k qa qb : Nat} (hlen : j0 + Lb + 1 = M.length)
+    (hk : k < n) (hqb : qb < Lb) (h : par M 0 (j0 + qb) = some (j0 + qa)) :
+    par (TRIO.gexp M j0 Lb d0 d1 n) 0 (j0 + (k * Lb + qb)) = some (j0 + (k * Lb + qa)) := by
+  have hbnd : j0 + (k * Lb + qb) < (TRIO.gexp M j0 Lb d0 d1 n).length := by
+    rw [TRIO.gexp_length hlen]
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  exact (par0_iff _ hbnd).mpr
+    (TRIO.gexp_nextrel0_mir hlen hk hqb ((par0_iff M (by omega)).mp h))
+
+/-- Row-0 parent of the root of copy `k ≥ 1`: the copy `k - 1` of the parent of the last column. -/
+theorem par0_gexp_root {M : Mat} {j0 Lb d0 d1 n k qp : Nat} (hlen : j0 + Lb + 1 = M.length)
+    (hk : k < n) (hk1 : 1 ≤ k) (hqp : qp < Lb)
+    (hd0e : TRIO.entry M 0 (j0 + Lb) = TRIO.entry M 0 j0 + d0)
+    (h : par M 0 (j0 + Lb) = some (j0 + qp)) :
+    par (TRIO.gexp M j0 Lb d0 d1 n) 0 (j0 + (k * Lb + 0)) = some (j0 + ((k - 1) * Lb + qp)) := by
+  have hLb : 0 < Lb := by omega
+  have hbnd : j0 + (k * Lb + 0) < (TRIO.gexp M j0 Lb d0 d1 n).length := by
+    rw [TRIO.gexp_length hlen]
+    have h1 : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+    have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+    omega
+  exact (par0_iff _ hbnd).mpr
+    (TRIO.gexp_nextrel0_root hlen hk hk1 hqp hd0e ((par0_iff M (by omega)).mp h))
+
 end Ytosk
