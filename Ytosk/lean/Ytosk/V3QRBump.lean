@@ -131,4 +131,61 @@ theorem vRhs_bump_gen {M : Mat} {i j k : Nat} {ρ ρ' : Valn} {ζc ζp : T} (hC 
     sf_ot (isOT_add hAot (isOT_omega hpot)), sf_ot (isOT_add hAot (isOT_omega hpot')), hB1, hB2,
     fsD_app B (single_ne_z (single_omega hpot)), hωp]
 
+/-! ## ω 冪の引き上げ -/
+
+section
+variable {μ b : T} (hb : AllGeT (psi (succ μ) z z) b)
+include hb
+
+/-- **Two `ω` layers over `A`** (no earlier bump terms): `fsD(ω^{ω^A}, next² ζ) = ω^{ω^{next ζ}}`. -/
+theorem omega_lift2 {ζ : T} (hA : isOT (psi μ (app b (psi (succ μ) z z)) z) = true)
+    (hζz : ζ ≠ z) (hζ : ζ < psi (succ μ) z z)
+    (h1 : isOT (qnext μ b ζ) = true) (h2 : isOT (qnext μ b (qnext μ b ζ)) = true)
+    (h1lt : qnext μ b ζ < psi (succ μ) z z) :
+    fsD (omega (omega (psi μ (app b (psi (succ μ) z z)) z))) (qnext μ b (qnext μ b ζ)) =
+      omega (omega (fsD (psi μ (app b (psi (succ μ) z z)) z) ζ)) := by
+  rw [omega_A hb hA, omega_A hb hA, fsD_A, fsD_A, omega_next hb hζz hζ h1,
+    omega_next hb (by unfold qnext; simp) h1lt h2]
+
+
+/-- **One `ω` layer over `A` after earlier bump terms** `P ≠ 0`:
+`fsD(ω^{P + A}, next ζ) = ω^{P + ω^{next ζ}}`. -/
+theorem omega_lift1 {P ζ : T} (hP : P ≠ z) (hA : isOT (psi μ (app b (psi (succ μ) z z)) z) = true)
+    (hPA : isOT (app P (psi μ (app b (psi (succ μ) z z)) z)) = true)
+    (hE : ¬ app P (psi μ (app b (psi (succ μ) z z)) z) < E0)
+    (hζz : ζ ≠ z) (hζ : ζ < psi (succ μ) z z) (h1 : isOT (qnext μ b ζ) = true)
+    (hPη : isOT (app P (qnext μ b (qnext μ b ζ))) = true) :
+    fsD (omega (app P (omega (psi μ (app b (psi (succ μ) z z)) z)))) (qnext μ b ζ) =
+      omega (app P (omega (fsD (psi μ (app b (psi (succ μ) z z)) z) ζ))) := by
+  rw [omega_A hb hA, fsD_A, omega_next hb hζz hζ h1]
+  have hAz : psi μ (app b (psi (succ μ) z z)) z ≠ z := by simp
+  have hAs : isSucc (psi μ (app b (psi (succ μ) z z)) z) = false :=
+    isSucc_psi_z (Or.inr (by intro h; exact absurd (app_eq_z h).2 (by simp)))
+  have hNs : isSucc (qnext μ b (qnext μ b ζ)) = false := by
+    unfold qnext; exact isSucc_psi_z (Or.inr (by intro h; exact absurd (app_eq_z h).2 (by simp)))
+  cases P with
+  | z => exact absurd rfl hP
+  | psi s b' P' =>
+    simp only [app_psi] at hPA hE hPη ⊢
+    have hcz : app P' (psi μ (app b (psi (succ μ) z z)) z) ≠ z := by
+      intro h; exact hAz (app_eq_z h).2
+    have hcs : isSucc (app P' (psi μ (app b (psi (succ μ) z z)) z)) = false := by
+      rw [isSucc_app _ hAz]; exact hAs
+    have hfc : fsD (app P' (psi μ (app b (psi (succ μ) z z)) z)) (qnext μ b ζ) =
+        app P' (qnext μ b (qnext μ b ζ)) := by
+      rw [fsD_app _ hAz, fsD_A]
+    have hfz : fsD (app P' (psi μ (app b (psi (succ μ) z z)) z)) (qnext μ b ζ) ≠ z := by
+      rw [hfc]; intro h; exact absurd (app_eq_z h).2 (by unfold qnext; simp)
+    have hfs : isSucc (fsD (app P' (psi μ (app b (psi (succ μ) z z)) z)) (qnext μ b ζ)) = false := by
+      rw [hfc, isSucc_app _ (by unfold qnext; simp)]; exact hNs
+    rw [omega_fsD_rest hPA hE hcz hcs (by rw [hfc]; exact hPη) hfz hfs]
+    have hfx : fsD (psi s b' (app P' (psi μ (app b (psi (succ μ) z z)) z))) (qnext μ b ζ) =
+        psi s b' (fsD (app P' (psi μ (app b (psi (succ μ) z z)) z)) (qnext μ b ζ)) := by
+      cases hP' : app P' (psi μ (app b (psi (succ μ) z z)) z) with
+      | z => exact absurd hP' hcz
+      | psi => rfl
+    rw [hfx, hfc]
+
+end
+
 end Ytosk
