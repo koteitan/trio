@@ -1,9 +1,14 @@
 /-
-**3 行・t = 1・q ≠ r: v の枠の局所条件 VLocal を不変条件から。**
+**3 行・t = 1・q ≠ r: v の枠の局所条件 VLocal と始点の下限を不変条件から。**
 
 - 値の不変条件: TPLo（すべての o で低い部分が空のまま、TPL より強い）、AbsD（のりしろの枠で v(P_1 i) が
-  W と fsD(W, ψ_μ(Ω_{μ+1})) に吸収される）、AbsU（上げの枠の吸収）。
-- D の v の列の形（`dv_shape`、構造だけから）: 上げなら次の列へ、のりしろなら最後の子 j の最後の子 k だけが D。
+  W と fsD(W, ψ_μ(Ω_{μ+1})) に吸収される）、AbsU（上げの枠の吸収）。SRO より下の L9 網羅で例外 0。
+- D の v の列の形（`dv_shape`、構造だけから）。のりしろの枠の ζ によらないデータ（`bump_data`）。
+- VLocal を使わない穴・共終数の追跡（`t1_hole0`・`t1_cof0`）、b_r（`hcb_of_cof`・`last_br_of_cof`）。
+- ζ の鎖は ω 冪の不動点（`gamS_fix`）。ω 冪と fsD の交換（`omega_fsD_hole`）。
+- VLocal（`vlocal_t1`）。始点 ψ_μ(σ)（M.take x で r の子の v′ は μ より大きいので σ の加数は Ω_{μ+1} 以上、
+  `seed_arg_ge`・`seed_fix`）。
+- まとめ `t1_main_vloc`（`t1_main_tpl` から hV と始点の下限を外す）。
 -/
 import Ytosk.V3FrameT1
 
@@ -1522,5 +1527,115 @@ theorem last_br_of_cof (h1 : par M 1 x = some r) (hx2 : entry M 2 x = 0) (hqr : 
 
 
 end
+
+/-! ## まとめ: VLocal と始点の下限を外す -/
+
+/-- **`t = 1`, `q ≠ r`, all `n ≥ 2`**: `t1_main_tpl` without `hV` and without the seed bound, from the value
+invariants TPLo, AbsD, AbsU. -/
+theorem t1_main_vloc {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1 M ρ) (hTPLo : TPLo M ρ) (hAD : AbsD M ρ) (hAU : AbsU M ρ)
+    (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
+      ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
+      ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
+    (hUA : UpgAbs M ρ)
+    (hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r)
+    {μ br vr : T} (hμr : μ = vr) (hro : ρ.o r = psi vr br z)
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hrx : r < r + L := by omega
+  have hrM : r < M.length := by omega
+  have hvr : ρ.v r = vr := by
+    obtain ⟨y0, hy0⟩ := o_psi_sub hC hrM
+    rw [hro] at hy0; simp only [psi.injEq] at hy0
+    rw [hy0.1, sf_ot (hG.ot_v r hrM)]
+  have hF1 : ∀ i, r < i → i < r + L → DepX M (r + L) true i → ¬ DepX M (r + L) false i →
+      lt μ (ρ.v i) = true := by
+    intro i h2 h3 h4 h5
+    rw [hμr, ← hvr]
+    exact hF1_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB h1 hC hG hRM i h2 h3 h4 h5
+  have hox : ρ.o (r + L) = psi (succ μ) z z := by
+    rw [o_last_t1 hlen hC hG h1 (by have := par1_entry_lt h1; omega) hx2, hvr, hμr]
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
+  have hOS := hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq
+  -- the base `M.take x`
+  have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
+  have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  have hv1r : (drop1 M (r + L) rkM).v r = ρ.v r :=
+    base_v_r hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hA (by omega) hqr hpath
+  have hv1 : (drop1 M (r + L) rkM).v r = μ := by rw [hv1r, hvr, hμr]
+  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hF hFO hArgT
+    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hKD hTD hAbs hWS hVSt)
+    (fun i k W _ hu hv hW => hUA i k W hu hv hW)
+  have hotv : ∀ i, i < r + L → isOT ((drop1 M (r + L) rkM).v i) = true :=
+    fun i hi => (hdrop i hi).2.2.1
+  have hoto : ∀ i, i < r + L → isOT ((drop1 M (r + L) rkM).o i) = true :=
+    fun i hi => (hdrop i hi).1.2.1
+  -- the seed
+  obtain ⟨σ, hs, hσz, hσge⟩ := seed_arg_ge hlen hR0 hZ2 hSD hZ1 hUAB h1 hqr hC1 hRk1 hotv hoto hv1
+  have hsot : isOT (psi μ σ z) = true := by rw [← hs]; exact hoto r hrx
+  obtain ⟨hseedΩ, hseedfix⟩ := seed_fix hsot hσz hσge
+  rw [← hs] at hseedΩ hseedfix
+  -- `b_r`
+  have hcof0 := t1_cof0 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hox hF1 hOS
+  have hcof : ∀ b i, DepX M (r + L) b i → r < i → (i < r + L ∨ (i = r + L ∧ b = true)) →
+      cof (valB ρ b i) = .big μ := fun b i hD hri hp => (hcof0 b i hD hri hp).1
+  obtain ⟨hcb, hbr⟩ := hcb_of_cof hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hOS hcof h1 hx2 hqr hR12 hBE hro
+  have hbrl := last_br_of_cof hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hOS hcof h1 hx2 hqr hR12 hBE hro
+  have hrot : isOT (psi vr br z) = true := by rw [← hro]; exact hG.ot_o r hrM
+  have hμ : ¬ lt μ vr = true := by rw [hμr]; exact lt_irrefl' _
+  -- the seed condition
+  obtain ⟨hlhd0, _⟩ := base_seed hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hrx (hdrop r hrx).1 hv1r hne
+  have hlhd : Lhd z (psi μ σ z) (psi μ br z) := by
+    rw [← hs]; rw [hro, ← hμr] at hlhd0; exact hlhd0
+  have hσb : σ < br := by
+    have := hlhd.1; rw [psi_lt_psi_z_iff] at this
+    rcases this with h | ⟨_, h⟩
+    · exact absurd h (lt_irrefl' _)
+    · exact h
+  have hS : ∀ a', ¬ lt vr a' = true → isOT (psi a' br z) = true →
+      SeedOK a' br μ ((drop1 M (r + L) rkM).o r) := by
+    intro a' ha' hot'
+    rw [hs]
+    exact seedOK_of_lhd_top hot' hcb (by rw [hμr]; exact ha') hsot hσb hlhd
+  have hHx : HoleT μ br vr (ρ.o (r + L)) := Or.inl (by rw [hox]; exact cof_omega_succ μ)
+  have hS2 := hS2_t1 hR0 hA (by omega)
+  have hS3 := hS3_t1 h1 hA (by omega) hlen hR0 hZ2 hSD hZ1
+  -- `VLocal` on the whole chain
+  have hV : ∀ m i, i < r + L → DepX M (r + L) false i →
+      VLocal M (r + L) ρ (gamS μ br ((drop1 M (r + L) rkM).o r) m) μ i := by
+    intro m
+    have hζfix := gamS_fix hrot hcb hμ (hS vr (lt_irrefl' _) hrot) hbrl hseedfix hseedΩ m
+    have hζΩ := gamS_ge_omfix (isOT_arg hrot) hcb hbrl hseedΩ m
+    have hok : ∀ t, isOT t = true → HoleT μ br vr t →
+        isOT (fsD t (gamS μ br ((drop1 M (r + L) rkM).o r) m)) = true ∧
+        fsD t (gamS μ br ((drop1 M (r + L) rkM).o r) m) < t :=
+      fun t hot hH => hok_of_holeT hrot hcb hμ hS hot hH m
+    cases m with
+    | zero =>
+      exact vlocal_t1 (X := σ) hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hrx hA hro hcb hμr
+        hbr hHx hF1 hOS hS2 hS3 hTPLo hAU hbrl hs hσz hζfix hζΩ hok
+    | succ m =>
+      have hne' : gamS μ br ((drop1 M (r + L) rkM).o r) m ≠ z := by
+        intro h
+        have := gamS_ge_omfix (isOT_arg hrot) hcb hbrl hseedΩ m
+        rw [h] at this
+        exact T.not_lt_z _ (lt_of_lt_of_le (T.z_lt_psi _ _ _) this)
+      exact vlocal_t1 (X := fs br (gamS μ br ((drop1 M (r + L) rkM).o r) m)) hlen hR0 hZ2 hSD hZ1 hUAT
+        hUAB hx2 hq hC hG hKD hTD hAD hrx hA hro hcb hμr hbr hHx hF1 hOS hS2 hS3 hTPLo hAU hbrl rfl
+        (fs_ne_z_big hcb hne') hζfix hζΩ hok
+  exact t1_main_tpl hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
+    hVS hF hFO hTP (TPL_of_TPLo hTPLo) hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hseedΩ hV hsM hpM
 
 end Ytosk
