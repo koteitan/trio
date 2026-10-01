@@ -317,6 +317,95 @@ theorem t2_off {ρ σ : Valn} {rkN : Bool → Nat → Nat} (hC : Cons M ρ)
   exact ⟨fun hd => h.1 (by rintro (h' | h'); omega; exact hd h'),
     fun hd => h.2 (by rintro (h' | h'); omega; exact hd h')⟩
 
+/-- **Row 0 at or after `x` in `N` is positive.** -/
+theorem e0_N2_pos (hR0 : R0P M) {j : Nat} (hj0 : r + L ≤ j) (hj : j < r + n * L) :
+    0 < entry (TRIO.gexp M r L d0 d1 n) 0 j := by
+  obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (Lb := L) (n := n) hL (by omega) hj
+  have hk1 : 1 ≤ k := by
+    by_contra h; have : k = 0 := by omega
+    subst this; omega
+  have h := TRIO.gexp_getD_mir (M := M) (j0 := r) (Lb := L) (d0 := d0) (d1 := d1) (n := n)
+    (k := k) (q := q) hlen hk hq
+  have he : entry (TRIO.gexp M r L d0 d1 n) 0 (r + (k * L + q)) = entry M 0 (r + q) + k * d0 := by
+    unfold entry; rw [h]; rfl
+  have hR := hR0 _ _ hp
+  have : d0 ≤ k * d0 := Nat.le_mul_of_pos_left d0 hk1
+  rw [he]; omega
+
+/-- **The root value**: only columns before `x` are roots, in `N` and in `M`. -/
+theorem root_N2 (hR0 : R0P M) (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 = 0)
+    {ρ σ : Valn} (hG : Good3 M ρ) (hGN : Good3 (TRIO.gexp M r L d0 d1 n) σ)
+    (hle : ∀ i, i < r + L → σ.o i ≤ ρ.o i)
+    (hstrict : ∀ R, R < r + L → Anc0 M R (r + L) → col M R = (0, 0, 0) → σ.o R < ρ.o R) :
+    isOT (root (TRIO.gexp M r L d0 d1 n) σ) = true ∧ root (TRIO.gexp M r L d0 d1 n) σ < root M ρ := by
+  classical
+  have hlN : (TRIO.gexp M r L d0 d1 n).length = r + n * L := TRIO.gexp_length hlen
+  have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn2
+  have hcol0 : ∀ {N : Mat} {i : Nat}, entry N 0 i ≠ 0 → col N i ≠ (0, 0, 0) := by
+    intro N i h hc
+    rw [col_eq_entries] at hc
+    simp only [Prod.mk.injEq] at hc
+    exact h hc.1
+  set f' : Nat → T := fun i => if col M i = (0, 0, 0) then σ.o i else z with hf'
+  set f : Nat → T := fun i => if col M i = (0, 0, 0) then ρ.o i else z with hf
+  have hot' : ∀ i, i < r + L → isOT (f' i) = true := by
+    intro i hi; simp only [hf']; split
+    · exact hGN.ot_o i (by rw [hlN]; omega)
+    · rfl
+  have hot : ∀ i, i < r + L → isOT (f i) = true := by
+    intro i hi; simp only [hf]; split
+    · exact hG.ot_o i (by omega)
+    · rfl
+  have hrootN : root (TRIO.gexp M r L d0 d1 n) σ = sumN ((List.range (r + L)).map f') := by
+    unfold root
+    rw [hlN, show r + n * L = (r + L) + (n * L - L) by omega, List.range_add, List.map_append]
+    have hz : ∀ t ∈ (List.map (fun x => r + L + x) (List.range (n * L - L))).map
+        (fun i => if col (TRIO.gexp M r L d0 d1 n) i = (0, 0, 0) then σ.o i else z), t = z := by
+      intro t ht
+      obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ht
+      obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hj
+      have hk' := List.mem_range.mp hk
+      rw [if_neg (hcol0 (by
+        have := e0_N2_pos hlen hL hp hd0e hn2 hXu hXb hrb he2r hIU hR0 (j := r + L + k) (by omega)
+          (by omega); omega))]
+    rw [sumN_append_zeros (fun t ht => by
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ht
+      have hir := List.mem_range.mp hi
+      split
+      · exact hGN.ot_o i (by rw [hlN]; omega)
+      · rfl) _ hz]
+    congr 1
+    apply List.map_congr_left
+    intro i hi
+    rw [col_gexp_pre hlen (by omega) (List.mem_range.mp hi)]
+  have hrootM : root M ρ = sumN ((List.range (r + L)).map f) := by
+    unfold root
+    rw [← hlen, List.range_succ, List.map_append, List.map_singleton]
+    have hx0 : entry M 0 (r + L) ≠ 0 := by have := hR0 _ _ hp; omega
+    rw [if_neg (hcol0 hx0), sumN_snoc_z (fun t ht => by
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ht
+      have hir := List.mem_range.mp hi
+      split
+      · exact hG.ot_o i (by omega)
+      · rfl)]
+  rw [hrootN, hrootM]
+  refine ⟨isOT_sumN _ (fun t ht => by
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ht; exact hot' i (List.mem_range.mp hi)), ?_⟩
+  obtain ⟨R, hRA, hR0c, hRl⟩ := root_t1 hR01 hR12 h00 (r + L)
+  have he0R : entry M 0 R = 0 := by rw [col_eq_entries] at hR0c; simp only [Prod.mk.injEq] at hR0c; exact hR0c.1
+  have hRx : R < r + L := by
+    by_contra h
+    have : R = r + L := by have := hRA.le; omega
+    rw [this] at he0R; have := hR0 _ _ hp; omega
+  apply sumN_range_lt f' f (r + L) hRx hot' hot
+  · intro i hi; simp only [hf', hf]; split
+    · exact hle i hi
+    · exact le_refl _
+  · simp only [hf', hf]; rw [if_pos hR0c, if_pos hR0c]; exact hstrict R hRx hRA hR0c
+  · intro i h1 h2
+    have hn' := hcol0 (hRl i h1 (by omega))
+    simp only [hf', hf]; exact ⟨if_neg hn', if_neg hn'⟩
+
 end
 
 end Ytosk
