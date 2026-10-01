@@ -1,14 +1,15 @@
 /-
-`Ebocf.eval` を標準入力の行列に当てる（シートの検算用、ライブラリには入れない）。
+`eval` を標準入力の行列に当てる（シートの検算用、ライブラリには入れない）。
 入力: 1 行に `行番号<TAB>(0,0,0)(1,1,1)...`（行列）か `行番号<TAB>=[a,b,c]`（項 ψ_a(b)+c、0 は `[]`）。
-出力: `行番号<TAB>` と、行列なら `Ebocf.str (Ebocf.eval M)`（循環なら `none`）、項なら `Ebocf.str (Ebocf.sf t)`。
-実行: `lake env lean --run EbocfRun.lean < in.tsv`（先に `lake build Ebocf`）。
+出力: `行番号<TAB>` と、行列なら `str (eval M)`（循環なら `none`）と標準形か（`OT`/`notOT`）、項なら `str (sf t)`。
+実行: `lake env lean --run Run.lean < in.tsv`（先に `lake build`）。
 -/
-import Ebocf
+import Ytosk.Eval
+import Ytosk.OT
 
-open TRIO
+open Ytosk
 
-def parseMat (s : String) : TrioSeq :=
+def parseMat (s : String) : Mat :=
   ((s.splitOn ")").filterMap fun c =>
     match ((c.replace "(" "").splitOn ",").filter (· ≠ "") |>.map String.toNat! with
     | [x, y, w] => some (x, y, w)
@@ -17,7 +18,7 @@ def parseMat (s : String) : TrioSeq :=
     | _ => none)
 
 /-- Parse `[]` or `[a,b,c]`; returns the term and the rest. -/
-partial def parseT : List Char → Option (Ebocf.T × List Char)
+partial def parseT : List Char → Option (T × List Char)
   | '[' :: ']' :: r => some (.z, r)
   | '[' :: r => do
     let (a, r) ← parseT r
@@ -35,8 +36,11 @@ partial def loop (h : IO.FS.Stream) (o : IO.FS.Stream) : IO Unit := do
   | [r, m] =>
     if m.startsWith "=" then
       let t := ((parseT ((m.toList.drop 1).filter (· ≠ ' '))).map Prod.fst).getD .z
-      o.putStrLn (r ++ "\t" ++ Ebocf.str (Ebocf.sf t))
-    else o.putStrLn (r ++ "\t" ++ ((Ebocf.eval (parseMat m)).map Ebocf.str).getD "none")
+      o.putStrLn (r ++ "\t" ++ str (sf t))
+    else
+      let e := eval (parseMat m)
+      o.putStrLn (r ++ "\t" ++ (e.map str).getD "none" ++ "\t" ++
+        (match e with | some t => if isOT t then "OT" else "notOT" | none => "-"))
   | _ => pure ()
   loop h o
 

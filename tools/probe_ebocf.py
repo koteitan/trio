@@ -8,7 +8,7 @@ Ytosk's algorithm up to SRO (the sheet's last row psi(I) = (0,0,0)(1,1,1)(2,1,1)
 SRO), as implemented in https://github.com/hemisemidemipresent/bms; point EBOCF_LIB at its src/lib.
 
   EBOCF_LIB=... python3 tools/probe_ebocf.py [N]      counts, and the first N disagreements
-  EBOCF_LIB=... python3 tools/probe_ebocf.py lean [N]  the Lean definition lean/Ebocf.lean against the
+  EBOCF_LIB=... python3 tools/probe_ebocf.py lean [N]  the Lean definition Ytosk/lean (Ytosk.Eval) against the
                                                        JavaScript on every sheet matrix
   python3 tools/probe_ebocf.py rt [N]                  round trip of the builder, Lean only
 """
@@ -46,10 +46,10 @@ def main(nshow=20):
     return res
 
 def lean_eval(mats):
-    """{row: str(eval M)} from the Lean definition lean/Ebocf.lean (run through lean/EbocfRun.lean)."""
-    ldir = os.path.join(HERE, '..', 'lean')
+    """{row: str(eval M)} from the Lean definition Ytosk.Eval (run through Ytosk/lean/Run.lean)."""
+    ldir = os.path.join(HERE, '..', 'Ytosk', 'lean')
     inp = ''.join('%d\t%s\n' % (r, F.smat(m)) for r, m in mats)
-    out = subprocess.run(['lake', 'env', 'lean', '--run', 'EbocfRun.lean'], cwd=ldir, input=inp,
+    out = subprocess.run(['lake', 'env', 'lean', '--run', 'Run.lean'], cwd=ldir, input=inp,
                          capture_output=True, text=True)
     return {int(l.split('\t')[0]): l.split('\t')[1] for l in out.stdout.splitlines()}
 
@@ -80,7 +80,7 @@ def standard(m):
 
 def roundtrip(nshow=10):
     """Lean only: the sheet matrix S, the builder's matrix B = block(lower(label)) and the label, all
-    through lean/Ebocf.lean. Classes: B = S or not; eval(B) = label (round trip) or not; bms -s."""
+    through Ytosk.Eval (Ytosk/lean). Classes: B = S or not; eval(B) = label (round trip) or not; bms -s."""
     rows, jobs = [], []
     for L in open(os.path.join(HERE, '..', 'tmp', 'fixed-sheet', 'to-psi-I.tsv')):
         p = L.rstrip('\n').split('\t')
@@ -95,9 +95,9 @@ def roundtrip(nshow=10):
         rows.append((r, p[3], S, B))
         jobs += [(3 * r, S), (3 * r + 2, None)] + ([(3 * r + 1, B)] if B else [])
         labterm[3 * r + 2] = json.dumps(T).replace(' ', '')
-    ldir = os.path.join(HERE, '..', 'lean')
+    ldir = os.path.join(HERE, '..', 'Ytosk', 'lean')
     inp = ''.join('%d\t%s\n' % (k, ('=' + labterm[k]) if m is None else F.smat(m)) for k, m in jobs)
-    out = subprocess.run(['lake', 'env', 'lean', '--run', 'EbocfRun.lean'], cwd=ldir, input=inp,
+    out = subprocess.run(['lake', 'env', 'lean', '--run', 'Run.lean'], cwd=ldir, input=inp,
                          capture_output=True, text=True).stdout
     v = {int(l.split('\t')[0]): l.split('\t')[1] for l in out.splitlines()}
     cnt, cand = Counter(), []

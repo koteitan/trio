@@ -422,7 +422,7 @@ $`y`$ 行の値が**絶対的な数ではなく番地**であること（規則 
 
 行列 → 順序数の向きには、Ytosk 氏の評価器（行列を SRO 未満の拡張 Buchholz の項に変える算法、
 [Googology Wiki](https://googology.fandom.com/wiki/User_blog:Ytosk/Algorithm_that_changes_BMS_matrices_into_ordinals_up_to_SRO)）がある。
-これを Lean で定義した（[`lean/Ebocf.lean`](../../../lean/Ebocf.lean)、関数 v・o・SF）。
+これを Lean で定義した（[`Ytosk/lean/Ytosk/Eval.lean`](../../../Ytosk/lean/Ytosk/Eval.lean)、関数 v・o・SF）。
 シートの最後の行 psi(I) はちょうど SRO で、評価器の範囲の上限にあたる。
 
 - **Lean 版と JavaScript 版**（https://github.com/hemisemidemipresent/bms ）は、シートの行列 4767 行全部で同じ項を出す

@@ -1,0 +1,12 @@
+# Ytosk 氏の翻訳写像（BMS 行列 → 拡張 Buchholz の項）と、その項の順序の整礎性。
+# trio の Lean（../../lean）には依存しない。Mathlib だけを、trio パッケージ経由で借りる。
+name = "ytosk"
+defaultTargets = ["Ytosk"]
+
+[[require]]
+name = "trio"
+path = "../../lean"
+
+[[lean_lib]]
+name = "Ytosk"
+roots = ["Ytosk.Term", "Ytosk.OT", "Ytosk.Eval"]

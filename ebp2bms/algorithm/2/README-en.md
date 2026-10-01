@@ -442,7 +442,7 @@ with notes in column I.
 For the direction matrix → ordinal there is Ytosk's evaluator (an algorithm that turns a matrix
 into an Extended Buchholz term below SRO,
 [Googology Wiki](https://googology.fandom.com/wiki/User_blog:Ytosk/Algorithm_that_changes_BMS_matrices_into_ordinals_up_to_SRO)).
-It is defined in Lean in [`lean/Ebocf.lean`](../../../lean/Ebocf.lean) (the functions v, o, SF).
+It is defined in Lean in [`Ytosk/lean/Ytosk/Eval.lean`](../../../Ytosk/lean/Ytosk/Eval.lean) (the functions v, o, SF).
 The sheet's last row psi(I) is exactly SRO, the upper end of the evaluator's range.
 
 - **The Lean version and the JavaScript one** (https://github.com/hemisemidemipresent/bms) give
