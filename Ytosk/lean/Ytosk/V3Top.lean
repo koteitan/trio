@@ -7,8 +7,10 @@
 - 不変条件の束 `Inv3`（構造・評価・値の不変条件）と残りの仮定の束 `Res3`（x の親、落とす補題の残り DropRes、
   q = r の始点の条件 hcs）。1 つの行列での段 1（`desc_step`）: 型（0 の列、t = 0、t = 1 の q ≠ r・q = r、t = 2）と
   n（0、1、≥ 2）で場合分け。t = 0 の n ≥ 2 と t = 2 は仮定。
-- 段 3（`terminates_of_desc3`）: BMS.lean の `Step` は空の行列で回る（SRO → (0,0,0) → []、expand [] n = []）ので、
-  空の行列を終わりにした `Step'` で整礎性を示す。
+- 段 3（`terminates_of_desc3`）: **BMS.lean の `WellFounded Step` は偽**（`not_wf_Step`）。
+  expand SRO 0 = (0,0,0)、expand (0,0,0) 0 = [] なので [] は Std に入り、expand [] n = [] なので Step [] [] が
+  成り立ち、[] で無限に回る。正しい主張は「SRO からのどの展開の列も [] にたどり着く」で、これは空の行列を
+  終わりにした `Step'`（M ≠ [] を条件に足す）の整礎性。BMS.lean・Val.lean は変えない。
 - トップの定理 `trio_terminates`: 仮定は残りの仕事そのもの（Inv3・Res3 が Std の行列で成り立つこと、t = 0 の
   n ≥ 2、t = 2）。
 -/
@@ -490,5 +492,28 @@ theorem trio_terminates
   obtain ⟨ρ, rk, I, R⟩ := hInv M hM hne hne'
   obtain ⟨t', hv, _, hlt⟩ := desc_step hne' I R (hT0 M ρ rk I R) (hT2 M ρ rk I R) n
   exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
+
+/-! ## 元の Step は整礎でない -/
+
+theorem std_nil : Std [] := by
+  have h1 : expand SRO 0 = [(0, 0, 0)] := by decide
+  have h2 : expand [(0, 0, 0)] 0 = [] := by decide
+  have := Std.exp 0 (Std.exp 0 Std.sro)
+  rw [h1, h2] at this
+  exact this
+
+/-- **`Step` loops at the empty matrix**, so `WellFounded Step` (BMS.lean) is false. -/
+theorem not_wf_Step : ¬ WellFounded Step := by
+  intro hwf
+  have hstep : Step [] [] := ⟨std_nil, 0, rfl⟩
+  have hacc := hwf.apply []
+  have key : ∀ M, Acc Step M → M ≠ [] := by
+    intro M hM
+    induction hM with
+    | intro M _ ih =>
+      intro hM
+      subst hM
+      exact ih [] hstep rfl
+  exact key [] hacc rfl
 
 end Ytosk
