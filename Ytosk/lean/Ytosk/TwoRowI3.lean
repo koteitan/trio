@@ -159,4 +159,162 @@ theorem frames_shift (Q : T → T → T → T → Prop)
 
 end
 
+/-! ## x より前の領域と経路 -/
+
+/-- `par0` depends only on row 0 up to the column. -/
+theorem par0_congr {M M' : Mat} {i : Nat} (he : ∀ j, j ≤ i → entry M 0 j = entry M' 0 j) :
+    par M 0 i = par M' 0 i := by
+  cases h : par M 0 i with
+  | some a =>
+    obtain ⟨hai, hlt, hbet⟩ := (par0_spec M).mp h
+    symm
+    rw [par0_spec]
+    refine ⟨hai, by rw [← he a (by omega), ← he i le_rfl]; exact hlt, fun j h1 h2 => ?_⟩
+    rw [← he j (by omega), ← he i le_rfl]; exact hbet j h1 h2
+  | none =>
+    cases h' : par M' 0 i with
+    | none => rfl
+    | some a =>
+      exfalso
+      obtain ⟨hai, hlt, hbet⟩ := (par0_spec M').mp h'
+      have : par M 0 i = some a := by
+        rw [par0_spec]
+        refine ⟨hai, by rw [he a (by omega), he i le_rfl]; exact hlt, fun j h1 h2 => ?_⟩
+        rw [he j (by omega), he i le_rfl]; exact hbet j h1 h2
+      rw [h] at this; cases this
+
+/-- **The path values drop** (`t = 1`, `n ≥ 2`). -/
+theorem path_lt_t1 {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hI : Inv2 M) {n : Nat} (hn : 2 ≤ n) :
+    ∀ h, Anc0 M h (M.length - 1) →
+      isOT (o2r (expand M n) h) = true ∧ o2r (expand M n) h < o2r M h := by
+  have hr1' : par M 1 (M.length - 1) = some r := by have h := hr; rw [ht1] at h; exact h
+  have hb1 : 0 < entry M 1 (M.length - 1) := by have := par1_entry_lt hr1'; omega
+  have hPRE : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
+      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true →
+      bst M h p ≠ z → ∃ rest, y = app (bst M h p) rest ∧ rest ≠ z := by
+    intro h p s y hp hph hc h1 h2 h3
+    have hpl : p < M.length := by have := hp.le; omega
+    obtain ⟨hhi, hlo⟩ := hI.hi h p s y hpl hph hc h3 h1 h2
+    refine ⟨loP s y, ?_, hlo⟩
+    have := hiP_loP s y; rw [hhi] at this; exact this.symm
+  have hx0 : 0 < entry M 0 (M.length - 1) := by
+    rcases Nat.eq_zero_or_pos (entry M 0 (M.length - 1)) with h | h
+    · exfalso; obtain ⟨e1, e2⟩ := hI.z0 (M.length - 1) (by omega) h; exact hz ⟨h, e1, e2⟩
+    · exact h
+  obtain ⟨q, hq⟩ := par0_some_of (M := M) (show 0 < M.length - 1 by omega) (by rw [hI.e00]; exact hx0)
+  intro h hh
+  by_cases hqr : q = r
+  · subst hqr
+    obtain ⟨j, hj, hjot, hjlt⟩ := twoRow_qr_PRE hM hz hr ht1 hI.g2 hb1 hI.r1 hI.z0 hq hPRE n hn h hh
+    rw [hj]; exact ⟨hjot, hjlt⟩
+  · have hqμ := vr_lt_of_ne hI.g2 (by omega) hr1' hb1 hq hqr
+    have hSa : ∀ a', ¬ lt (vr M r) a' = true → isOT (psi a' (argOf (o2r M r)) z) = true →
+        SeedOK a' (argOf (o2r M r)) (vr M r) (o2r (expand M 1) r) := by
+      intro a' ha' hot
+      rw [expand_n1 hM hz hr]
+      exact seed_of_drop hM hI.g2 hI.hi hI.fc hr1' hb1 a' ha' hot
+    have hch := (twoRow_chain_PRE hM hz hr ht1 hI.g2 hb1 hq hqμ
+      (fun k _ => F1_expand hI.r1 hI.z0 hM k) hSa hPRE n hn).2
+    rw [hch h hh]
+    exact path_ok_seed hM hI.g2 hr1' hb1 hSa _ h hh
+
+/-- Pairwise order survives lowering the last value. -/
+theorem pairwise_last_lower {C : List T} {a a' : T}
+    (h : (C ++ [a]).Pairwise (fun u v => v ≤ u)) (ha : a' ≤ a) :
+    (C ++ [a']).Pairwise (fun u v => v ≤ u) := by
+  have h' := List.pairwise_append.mp h
+  rw [List.pairwise_append]
+  refine ⟨h'.1, List.pairwise_singleton _ _, fun u hu v hv => ?_⟩
+  rw [List.mem_singleton] at hv; subst hv
+  exact le_trans ha (h'.2.2 u hu _ (by simp))
+
+/-- **Good2 of a `t = 1` expansion**, from the invariants of `M` and `M[n−1]`. -/
+theorem good2_expand_t1 {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hI : Inv2 M) {n : Nat} (hn : 2 ≤ n)
+    (hIP : Inv2 (expand M (n - 1))) : Good2 (expand M n) := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  obtain ⟨d1, heqd, hlen, hL, hA, hd0e⟩ := expand_gexp_data M n hM hz hr (by omega)
+  have hN := expand_eq_gexp_t1 M n hM hz hr ht1
+  have hP := expand_eq_gexp_t1 M (n - 1) hM hz hr ht1
+  have hrx := par_lt M _ _ _ hr
+  set L := M.length - 1 - r with hLdef
+  set d0 := entry M 0 (M.length - 1) - entry M 0 r with hd0def
+  have hxe : r + L = M.length - 1 := by omega
+  have hF1n : F1 (TRIO.gexp M r L d0 0 n) := by rw [← hN]; exact F1_expand hI.r1 hI.z0 hM n
+  have hF1p : F1 (TRIO.gexp M r L d0 0 (n - 1)) := by rw [← hP]; exact hIP.g2.f1
+  have hpath := path_lt_t1 hM hz hr ht1 hI hn
+  have hlenN := lenN_t1 hlen hL hA hd0e hn
+  refine ⟨F1_expand hI.r1 hI.z0 hM n, ?_, ?_⟩
+  · intro i
+    rcases Nat.lt_or_ge i (M.length - 1) with h1 | h1
+    · by_cases hiA : Anc0 M i (M.length - 1)
+      · exact (hpath i hiA).1
+      · rw [o2r_expand_off hM hz hr (by omega) hn i h1 hiA]; exact hI.g2.ot i
+    · rw [hN]
+      rcases Nat.lt_or_ge i (r + L + (n - 1) * L) with h2 | h2
+      · rw [show i = r + L + (i - (r + L)) by omega,
+          o2r_gexp_shift hlen hL hA hd0e hn hF1n hF1p _ (by omega), ← hP]
+        exact hIP.g2.ot _
+      · rw [o2r_out (by rw [hlenN]; omega)]; rfl
+  · intro h
+    rcases Nat.lt_or_ge h (M.length - 1) with h1 | h1
+    · rw [children_expand_lt M n hM hz hr (by omega) hn h1]
+      by_cases hhA : Anc0 M h (M.length - 1)
+      · obtain ⟨c, hc, hcA⟩ := anc0_child hhA (by omega)
+        have hle := children_le_of_anc_last hcA hx hc
+        have hcmem : c ∈ children M h := mem_children_iff.mpr ⟨by have := hcA.le; omega, hc⟩
+        have hsplit := split_last_max _ c (children_sorted M h) hcmem hle
+        have hdM := hI.g2.dec h
+        rw [hsplit, List.map_append] at hdM ⊢
+        have hCv : ((children M h).filter (fun d => decide (d < c))).map (o2r (expand M n)) =
+            ((children M h).filter (fun d => decide (d < c))).map (o2r M) := by
+          apply List.map_congr_left; intro d hd
+          rw [List.mem_filter] at hd
+          have hdc : d < c := by simpa using hd.2
+          have hdp := mem_children_iff.mp hd.1
+          exact o2r_expand_off hM hz hr (by omega) hn d (by have := hcA.le; omega)
+            (not_anc_of_earlier hdp.2 hc hdc hcA.le)
+        rw [hCv]
+        simp only [List.map_cons, List.map_nil] at hdM ⊢
+        exact pairwise_last_lower hdM (le_of_lt (hpath c hcA).2)
+      · have hv : (children M h).map (o2r (expand M n)) = (children M h).map (o2r M) := by
+          apply List.map_congr_left; intro d hd
+          have hdp := mem_children_iff.mp hd
+          have hdh := par_lt M 0 d h hdp.2
+          have hdx : d < M.length - 1 := by
+            by_contra hc
+            have hde : d = M.length - 1 := by omega
+            exact hhA (by rw [← hde]; exact anc0_of_par M 0 h d hdp.2)
+          exact o2r_expand_off hM hz hr (by omega) hn d hdx (fun hdA => hhA (anc0_up hdp.2 hdA))
+        rw [hv]; exact hI.g2.dec h
+    · rw [hN]
+      rcases Nat.lt_or_ge h (r + L + (n - 1) * L) with h2 | h2
+      · rw [show h = r + L + (h - (r + L)) by omega,
+          children_shift hlen hL hA hd0e hn (show h - (r + L) < (n - 1) * L by omega), List.map_map]
+        have hv : ((children (TRIO.gexp M r L d0 0 (n - 1)) (r + (h - (r + L)))).map
+            ((o2r (TRIO.gexp M r L d0 0 n)) ∘ (· + L))) =
+            (children (TRIO.gexp M r L d0 0 (n - 1)) (r + (h - (r + L)))).map
+              (o2r (TRIO.gexp M r L d0 0 (n - 1))) := by
+          apply List.map_congr_left; intro d hd
+          have hdc := mem_children hd
+          rw [lenP_t1 hlen hL hA hd0e hn] at hdc
+          simp only [Function.comp]
+          rw [show d + L = r + L + (d - r) by omega,
+            o2r_gexp_shift hlen hL hA hd0e hn hF1n hF1p (d - r) (by omega),
+            show r + (d - r) = d by omega]
+        rw [hv]
+        have := hIP.g2.dec (r + (h - (r + L)))
+        rwa [hP] at this
+      · have : children (TRIO.gexp M r L d0 0 n) h = [] := by
+          rw [List.eq_nil_iff_forall_not_mem]
+          intro c hc; have := mem_children hc; rw [hlenN] at this; omega
+        rw [this]; exact List.Pairwise.nil
+
 end Ytosk
