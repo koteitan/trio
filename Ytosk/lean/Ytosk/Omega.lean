@@ -304,4 +304,159 @@ theorem isOT_omega {x : T} (hx : isOT x = true) : isOT (omega x) = true := by
         · exact lt_trans (hcp g hg) hbY
         · exact lt_of_le_of_lt (hcx g hg) hbY
 
+/-! ## ω 冪の狭義単調性 -/
+
+theorem omega_small {x : T} (h : x < E0) : omega x = psi z x z := by
+  unfold omega; rw [if_pos (show lt x (psi z (psi one z z) z) = true from h)]
+
+/-- The form of `ω^x` above `ψ_0(Ω_1)`: `ψ_s(p + r)` with `p` the part of `b` at or above `Ω_{s+1}`. -/
+theorem omega_big {s b c : T} (hx : isOT (psi s b c) = true) (h : ¬ psi s b c < E0) :
+    omega (psi s b c) = psi s (app (split b (psi (succ s) z z)).1
+      (if (split b (psi (succ s) z z)).2 = z then c else psi s b c)) z := by
+  have hs := isOT_sub hx
+  have hb := isOT_arg hx
+  have hc := isOT_rest hx
+  have hhc : head c ≤ psi s b z := (isOT_psi_iff.mp hx).2.2.2.1
+  have hOm : psi s b z < Om (succ s) := by
+    rw [Om, psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self s)
+  unfold omega
+  rw [if_neg (show ¬ lt (psi s b c) (psi z (psi one z z) z) = true from h)]
+  simp only
+  rw [add_one_eq_succ hs]
+  have hbpl : app (split b (psi (succ s) z z)).1 (split b (psi (succ s) z z)).2 = b := split_app _ b
+  have hpge := split_fst_ge (psi (succ s) z z) b
+  generalize (split b (psi (succ s) z z)) = pr at hbpl hpge ⊢
+  obtain ⟨p, lo⟩ := pr
+  simp only at hbpl hpge ⊢
+  have hpot : isOT p = true := by rw [← hbpl] at hb; exact isOT_app_left hb
+  have hge : ∀ q ∈ summands p, psi s b z ≤ q := fun q hq =>
+    le_of_lt (lt_of_lt_of_le hOm (le_of_not_gt (hpge q hq)))
+  by_cases hlo : lo = z
+  · subst hlo
+    simp only [app_z_right] at hbpl
+    subst hbpl
+    have hsub : sub (psi s p c) (psi s p z) = c := by
+      simp only [sub]; rw [if_neg (show ¬ lt (psi s p z) (psi s p z) = true from lt_irrefl' _)]
+      cases c <;> rfl
+    rw [hsub, if_pos rfl]
+    rw [add_eq_app (isOT_app_of hpot hc (fun q hq => le_trans hhc (hge q hq)))]
+  · have hpb : psi s p z < psi s b z := by
+      rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, by rw [← hbpl]; exact lt_app_of hlo⟩
+    have hsub : sub (psi s b c) (psi s p z) = psi s b c := by
+      simp only [sub]; exact if_pos hpb
+    rw [hsub, if_neg hlo]
+    rw [add_eq_app (isOT_app_of hpot hx hge)]
+
+theorem split_mono (t : T) : ∀ {b b' : T}, b < b' →
+    (split b t).1 < (split b' t).1 ∨ ((split b t).1 = (split b' t).1 ∧ (split b t).2 < (split b' t).2)
+  | z, z, h => absurd h (T.not_lt_z _)
+  | z, psi a' e' f', _ => by
+    simp only [split]
+    split
+    · exact Or.inr ⟨rfl, T.z_lt_psi _ _ _⟩
+    · exact Or.inl (T.z_lt_psi _ _ _)
+  | psi a e f, z, h => absurd h (T.not_lt_z _)
+  | psi a e f, psi a' e' f', h => by
+    have hhd : psi a e z ≤ psi a' e' z := by simpa [head] using head_le_of_lt h
+    simp only [split]
+    by_cases h1 : lt (psi a e z) t = true
+    · rw [if_pos h1]
+      split
+      · exact Or.inr ⟨rfl, h⟩
+      · exact Or.inl (T.z_lt_psi _ _ _)
+    · rw [if_neg h1]
+      have h2 : ¬ lt (psi a' e' z) t = true := fun h2 => h1 (lt_of_le_of_lt hhd h2)
+      rw [if_neg h2]
+      rw [T.psi_lt_psi] at h
+      rcases h with h | ⟨rfl, h⟩ | ⟨rfl, rfl, h⟩
+      · exact Or.inl (by rw [T.psi_lt_psi]; exact Or.inl h)
+      · exact Or.inl (by rw [T.psi_lt_psi]; exact Or.inr (Or.inl ⟨rfl, h⟩))
+      · rcases split_mono t h with h3 | ⟨h3, h4⟩
+        · exact Or.inl (by rw [T.psi_lt_psi]; exact Or.inr (Or.inr ⟨rfl, rfl, h3⟩))
+        · exact Or.inr ⟨by rw [h3], h4⟩
+
+theorem lt_of_head_lt {r a e f : T} (h : head r < psi a e z) : r < psi a e f := by
+  cases r with
+  | z => exact T.z_lt_psi _ _ _
+  | psi a1 e1 f1 =>
+    have h' : psi a1 e1 z < psi a e z := h
+    rw [psi_lt_psi_z_iff] at h'
+    rw [T.psi_lt_psi]
+    rcases h' with h' | ⟨rfl, h'⟩
+    · exact Or.inl h'
+    · exact Or.inr (Or.inl ⟨rfl, h'⟩)
+
+theorem app_lt_of_lt : ∀ {p p' r : T}, p < p' → (∀ q ∈ summands p', head r < q) → app p r < p'
+  | _, z, _, h, _ => absurd h (T.not_lt_z _)
+  | z, psi a' e' f', r, _, hq => by
+    simp only [app_z]; exact lt_of_head_lt (hq _ (by simp [summands]))
+  | psi a e f, psi a' e' f', r, h, hq => by
+    simp only [app_psi]
+    rw [T.psi_lt_psi] at h ⊢
+    rcases h with h | ⟨rfl, h⟩ | ⟨rfl, rfl, h⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl ⟨rfl, h⟩)
+    · exact Or.inr (Or.inr ⟨rfl, rfl, app_lt_of_lt h (fun q hq' => hq q (by simp [summands, hq']))⟩)
+
+/-- **`ω^x` is strictly monotone on standard terms.** -/
+theorem omega_lt_omega {x y : T} (hx : isOT x = true) (hy : isOT y = true) (h : x < y) :
+    omega x < omega y := by
+  have hE1 : E0 < Om one := by rw [E0, Om, T.psi_lt_psi]; exact Or.inl (T.z_lt_psi _ _ _)
+  by_cases hyE : y < E0
+  · have hxE : x < E0 := lt_trans h hyE
+    rw [omega_small hxE, omega_small hyE, psi_lt_psi_z_iff]
+    exact Or.inr ⟨rfl, h⟩
+  · cases y with
+    | z => exact absurd (T.z_lt_psi _ _ _) hyE
+    | psi s' b' c' =>
+      rw [omega_big hy hyE]
+      by_cases hxE : x < E0
+      · rw [omega_small hxE]
+        cases s' with
+        | psi => rw [psi_lt_psi_z_iff]; exact Or.inl (T.z_lt_psi _ _ _)
+        | z =>
+          rw [psi_lt_psi_z_iff]; refine Or.inr ⟨rfl, ?_⟩
+          have hb'1 : ¬ head b' < Om one := fun hh => hyE (by
+            rw [E0, psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, lt_of_head_lt hh⟩)
+          cases b' with
+          | z => exact absurd (T.z_lt_psi _ _ _) hb'1
+          | psi a e f =>
+            have hnl : ¬ lt (psi a e z) (psi (succ z) z z) = true := hb'1
+            simp only [split, if_neg hnl, app_psi]
+            have h1 : Om one ≤ psi a e z := le_of_not_gt hb'1
+            exact lt_of_lt_of_le (lt_trans hxE hE1) (le_trans h1 (head_le_self (psi a e _)))
+      · cases x with
+        | z => exact absurd (T.z_lt_psi _ _ _) hxE
+        | psi s b c =>
+          rw [omega_big hx hxE]
+          have hxy := h
+          have hhc : head c ≤ psi s b z := (isOT_psi_iff.mp hx).2.2.2.1
+          have hOm : psi s b z < Om (succ s) := by
+            rw [Om, psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self s)
+          rw [T.psi_lt_psi] at h
+          rcases h with h | ⟨rfl, h⟩ | ⟨rfl, rfl, h⟩
+          · rw [psi_lt_psi_z_iff]; exact Or.inl h
+          · rw [psi_lt_psi_z_iff]; refine Or.inr ⟨rfl, ?_⟩
+            rcases split_mono (psi (succ s) z z) h with h1 | ⟨h1, h2⟩
+            · apply lt_of_lt_of_le _ (le_app_self _ _)
+              apply app_lt_of_lt h1
+              intro q hq
+              have hr : head (if (split b (psi (succ s) z z)).2 = z then c else psi s b c) ≤ psi s b z := by
+                split
+                · exact hhc
+                · exact le_refl _
+              exact lt_of_le_of_lt hr (lt_of_lt_of_le hOm (le_of_not_gt (split_fst_ge _ b' q hq)))
+            · rw [h1]; apply app_lt_app_left
+              have hlo' : (split b' (psi (succ s) z z)).2 ≠ z := fun h3 => by
+                rw [h3] at h2; exact T.not_lt_z _ h2
+              rw [if_neg hlo']
+              split
+              · exact lt_trans (rest_lt hx) hxy
+              · exact hxy
+          · rw [psi_lt_psi_z_iff]; refine Or.inr ⟨rfl, ?_⟩
+            apply app_lt_app_left
+            by_cases hlo : (split b (psi (succ s) z z)).2 = z
+            · rw [if_pos hlo, if_pos hlo]; exact h
+            · rw [if_neg hlo, if_neg hlo]; exact hxy
+
 end Ytosk
