@@ -194,4 +194,22 @@ theorem lo_ne_of_low_change {θ P R : T} (hRz : R ≠ z) (hR : head R < θ) :
   intro h
   exact hRz (app_eq_z h).2
 
+/-- **A rewrite on both sides, from the shape** `y = P ++ R`, `y' = P ++ R'`: if `y'` has a low part,
+the change is low on both sides. -/
+theorem lhdE_step_tt_shape {a B s P R R' : T} (hc' : isOT (psi s (app P R') z) = true)
+    (hc : isOT (psi s (app P R) z) = true)
+    (ht' : lt B (app P R') = true ∧ lt (psi a z z) (psi s (app P R') z) = true)
+    (ht : lt B (app P R) = true ∧ lt (psi a z z) (psi s (app P R) z) = true)
+    (hy : LhdE (app P R') (app P R)) (hRz : R ≠ z)
+    (hshape : (split (app P R') (psi (succ s) z z)).2 ≠ z →
+      head R < psi (succ s) z z ∧ (R' = z ∨ head R' < psi (succ s) z z)) :
+    LhdE (step a B s (app P R') z) (step a B s (app P R) z) := by
+  apply lhdE_step_tt hc' hc ht' ht hy
+  · intro hl'
+    exact lo_ne_of_low_change hRz (hshape hl').1
+  · intro hl'
+    exact hi_eq_of_low_change (Or.inr (hshape hl').1) (hshape hl').2
+  · intro hl' _
+    exact hmis_of_lhdE (isOT_arg hc) hy hl'
+
 end Ytosk
