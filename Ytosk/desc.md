@@ -1548,3 +1548,9 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - Res3A: fch（FrameClosedHi、252 枠）、seed（hcs）、drop.vst（VSmallNew、1 件）。
   - 修理中: VSmall 系と seed は omega-lhd、FrameClosed・fch は t1-struct。修理後、これらの欄は弱い形に置き換えるか外す。
 - 結論（根の値の降下、落とす補題の関係）が C′ で成り立つかは step-ot が確認中。
+
+### t = 0 の FrameOT N、t = 2 の Res3T2 の C′ 測定（2026-10-02）
+
+- t = 0（node-lhd、V3T0FO、ef62ef8e）: frameOT_N_t0。r より前の列は M の枠（枠の頭の子は D に入らない）、コピーは中間が M・最後が M.take x の枠。g で r が数えられる場合は σ.o g の標準形から。残る仮定は hOTD だけ。
+- t = 2（strict-r）: C′ の 10 万個の t = 2 の行列で Res3T2 は SeedC（X が閉じている）以外は例外 0。SeedC は 61 件偽だが、種の結論 o_N(p) ◁ o_M(p) は全件成り立つ。
+  - n ≥ 2 の種を SeedL := Lhd z (σ.o p) (ρ.o p) に弱めた。n ≤ 1 の種は落とす補題の PO から（lhd_of_po）。n ≤ 1 の hVNN は Res3.drop.vst から。
