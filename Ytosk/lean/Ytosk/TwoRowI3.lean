@@ -445,4 +445,304 @@ theorem frames_t1 {M : Mat} {r q : Nat} (hM : 2 ≤ M.length)
     rw [← hP] at hpl' hp' hc' ⊢
     exact hPP h' p' s' y' hpl' hp' hc'
 
+/-- `r`'s subscript in `M[n−1]` (`n ≥ 2`). -/
+theorem vr_P_r {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r) {n : Nat} (hn : 2 ≤ n) :
+    vr (expand M (n - 1)) r = vr M r := by
+  have hrx := par_lt M _ _ _ hr
+  rcases Nat.eq_or_lt_of_le (show 2 ≤ n from hn) with h | h
+  · subst h; rw [show 2 - 1 = 1 by rfl, expand_n1 hM hz hr]; exact vr_take M r hrx
+  · exact vr_expand_lt hM (show 2 ≤ n - 1 by omega) hrx
+
+/-- **`r` over `x` in `M[n−1]`** when `q = r` (`n ≥ 3`): one step over the copy root `x`. -/
+theorem P_r_qr {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hI : Inv2 M) {n : Nat} (hn : 3 ≤ n)
+    (hIP : Inv2 (expand M (n - 1))) (hq : par M 0 (M.length - 1) = some r) :
+    ∃ yP', o2r (expand M (n - 1)) (M.length - 1) = psi (vr M r) yP' z ∧
+      o2r (expand M (n - 1)) r =
+        psi (vr M r) (step (vr M r) (bst M r (M.length - 1)) (vr M r) yP' z) z ∧
+      par (expand M (n - 1)) 0 (M.length - 1) = some r ∧
+      bst (expand M (n - 1)) r (M.length - 1) = bst M r (M.length - 1) ∧
+      vr (expand M (n - 1)) r = vr M r := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hrx := par_lt M _ _ _ hr
+  have hn1 : 2 ≤ n - 1 := by omega
+  set P := expand M (n - 1) with hPdef
+  have hvr : vr P r = vr M r := vr_expand_lt hM hn1 hrx
+  have hchP : children P r = children M r := children_expand_lt M (n - 1) hM hz hr (by omega) hn1 hrx
+  have hle := children_le_of_anc_last (Anc0.refl (M.length - 1)) hx hq
+  have hxmem : M.length - 1 ∈ children M r := mem_children_iff.mpr ⟨by omega, hq⟩
+  have hsplit := split_last_max _ (M.length - 1) (children_sorted M r) hxmem hle
+  have hpxP : par P 0 (M.length - 1) = some r := by
+    have := mem_children_iff.mp (show M.length - 1 ∈ children P r by rw [hchP]; exact hxmem)
+    exact this.2
+  have hchP' : children P r = (children P r).filter (fun d => decide (d < M.length - 1)) ++
+      [M.length - 1] := by rw [hchP]; exact hsplit
+  have hsingP : ∀ t ∈ (children P r).map (o2r P), Single t := by
+    intro t ht; obtain ⟨i, _, rfl⟩ := List.mem_map.mp ht; exact single_o2r hIP.g2 i
+  have hfr := o2r_frame' hIP.g2.f1 hchP' hsingP (hIP.g2.dec r)
+  have hbP : bst P r (M.length - 1) = bst M r (M.length - 1) :=
+    bst_expand_le hM hz hr (by omega) hn1 hq (le_refl _)
+  -- the subscript of the copy root `x` in `M[n−1]` is that of `r`
+  have hvx : vr P (M.length - 1) = vr M r := by
+    obtain ⟨d1, heqd, hlen, hL, hA, hd0e⟩ := expand_gexp_data M (n - 1) hM hz hr (by omega)
+    have hPg := expand_eq_gexp_t1 M (n - 1) hM hz hr ht1
+    rw [vr_eq_nT hIP.g2.f1, vr_eq_nT hI.g2.f1]
+    congr 1
+    rw [hPdef, hPg]
+    have := entry1_gexp_d1z (M := M) (r := r) (L := M.length - 1 - r)
+      (d0 := entry M 0 (M.length - 1) - entry M 0 r) (k := 1) (q := 0) (m := n - 1) (by omega) (by omega) (by omega)
+    simp only [Nat.one_mul, Nat.add_zero] at this
+    rw [show r + (M.length - 1 - r) = M.length - 1 by omega] at this
+    rw [this]
+  obtain ⟨yP', hyP'⟩ := o2r_sub hIP.g2 (M.length - 1)
+  rw [hvx] at hyP'
+  refine ⟨yP', hyP', ?_, hpxP, hbP, hvr⟩
+  rw [hfr, hvr, hbP, hyP', spArg_single]
+
+section join
+variable {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+  (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+    TRIO.entry M 2 (M.length - 1) = 0))
+  (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+  (ht1 : TRIO.srow M (M.length - 1) = 1) (hI : Inv2 M) {n : Nat} (hn : 2 ≤ n)
+  (hIP : Inv2 (expand M (n - 1)))
+include hM hz hr ht1 hI hn hIP
+
+/-- The state before `x` under `r` is all high (`≥ Ω_{μ+1}`), when `q = r`. -/
+theorem bst_high_qr (hq : par M 0 (M.length - 1) = some r) :
+    ∀ g ∈ summands (bst M r (M.length - 1)), ¬ g < psi (succ (vr M r)) z z := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hr1' : par M 1 (M.length - 1) = some r := by have h := hr; rw [ht1] at h; exact h
+  have hb1 : 0 < entry M 1 (M.length - 1) := by have := par1_entry_lt hr1'; omega
+  have hvx : vr M (M.length - 1) = succ (vr M r) := by
+    obtain ⟨m0, hm0, he⟩ := hI.g2.f1 _ hb1
+    rw [hr1'] at hm0; cases hm0
+    rw [vr_eq_nT hI.g2.f1, vr_eq_nT hI.g2.f1, ← he, nT_succ]
+  intro g hg hlt
+  have hge := bst_summands_ge hI.g2 hx (Anc0.refl _) hq g hg
+  rw [o2r_leaf hx (isOT_vr hI.g2.f1 _), hvx] at hge
+  exact absurd (lt_of_le_of_lt hge hlt) (lt_irrefl' _)
+
+theorem bst_ot_qr (hq : par M 0 (M.length - 1) = some r) : isOT (bst M r (M.length - 1)) = true := by
+  have hG' := good2_take hM hI.g2 hI.hi hI.fc
+  have := hG'.ot r
+  rw [drop_frameQ hM hI.g2 hq] at this
+  exact isOT_arg this
+
+/-- **PreHi at the join frame.** -/
+theorem preHi_join_t1 {q : Nat} (hq : par M 0 (M.length - 1) = some q) {s y : T}
+    (hc : o2r (expand M (n - 1)) r = psi s y z) (hB : bst M q (M.length - 1) ≠ z)
+    (h1 : lt (bst M q (M.length - 1)) y = true) (h2 : lt (psi (vr M q) z z) (psi s y z) = true) :
+    hiP s y = bst M q (M.length - 1) ∧ loP s y ≠ z := by
+  have hrx := par_lt M _ _ _ hr
+  have hr1' : par M 1 (M.length - 1) = some r := by have h := hr; rw [ht1] at h; exact h
+  have hb1 : 0 < entry M 1 (M.length - 1) := by have := par1_entry_lt hr1'; omega
+  obtain ⟨yP, hyP⟩ := o2r_sub hIP.g2 r
+  rw [vr_P_r hM hz hr hn] at hyP
+  rw [hyP] at hc
+  obtain ⟨rfl, rfl, _⟩ := psi.inj hc
+  by_cases hqr : q = r
+  · subst hqr
+    rcases Nat.eq_or_lt_of_le (show 2 ≤ n from hn) with h | h
+    · -- `M[1] = M.take x`
+      subst h
+      have h3 : o2r (expand M (2 - 1)) q = psi (vr M q) (bst M q (M.length - 1)) z := by
+        rw [show 2 - 1 = 1 by rfl, expand_n1 hM hz hr]; exact drop_frameQ hM hI.g2 hq
+      rw [h3] at hyP
+      rw [← (psi.inj hyP).2.1] at h1
+      exact absurd h1 (lt_irrefl' _)
+    · obtain ⟨yP', hyP', hval, hpxP, hbP, hvrP⟩ := P_r_qr hM hz hr ht1 hI (show 3 ≤ n by omega) hIP hq
+      rw [hval] at hyP
+      have hyy := (psi.inj hyP).2.1
+      rw [← hyy]
+      have hcot : isOT (psi (vr M q) yP' z) = true := by rw [← hyP']; exact hIP.g2.ot _
+      have hhigh := bst_high_qr hM hz hr ht1 hI hn hIP hq
+      have hlow : psi (vr M q) yP' z < psi (succ (vr M q)) z z := psi_lt_om_succ.mpr (lt_succ_self _)
+      have happ : isOT (app (bst M q (M.length - 1)) (psi (vr M q) yP' z)) = true := by
+        apply isOT_app_of (bst_ot_qr hM hz hr ht1 hI hn hIP hq) hcot
+        intro g hg
+        exact le_of_lt (lt_of_lt_of_le hlow (le_of_not_gt (hhigh g hg)))
+      have hstep : step (vr M q) (bst M q (M.length - 1)) (vr M q) yP' z =
+          app (bst M q (M.length - 1)) (psi (vr M q) yP' z) := by
+        apply step_append hcot happ
+        intro t1 t2
+        have hpl : M.length - 1 < (expand M (n - 1)).length := by
+          rw [expand_eq_gexp_t1 M (n - 1) hM hz hr ht1, TRIO.gexp_length (by omega)]
+          have : 2 * (M.length - 1 - q) ≤ (n - 1) * (M.length - 1 - q) :=
+            Nat.mul_le_mul_right _ (by omega)
+          omega
+        have := hIP.hi q (M.length - 1) (vr M q) yP' hpl hpxP hyP'
+        rw [hbP, hvrP] at this
+        exact this hB t1 t2
+      rw [hstep]
+      have hsp := split_app_of (t := psi (succ (vr M q)) z z) hhigh
+        (Or.inr (show head (psi (vr M q) yP' z) < psi (succ (vr M q)) z z from hlow))
+      unfold hiP loP
+      rw [hsp]
+      exact ⟨rfl, by simp⟩
+  · exfalso
+    have hqμ := vr_lt_of_ne hI.g2 (by omega) hr1' hb1 hq hqr
+    have h2' : psi (vr M q) z z < psi (vr M r) yP z := h2
+    rw [psi_lt_psi_z_iff] at h2'
+    rcases h2' with h' | ⟨h', _⟩
+    · exact absurd (lt_trans (a := vr M r) hqμ h') (lt_irrefl' _)
+    · rw [h'] at hqμ; exact absurd hqμ (lt_irrefl' _)
+
+/-- **PreFC at the join frame.** -/
+theorem preFC_join_t1 {q : Nat} (hq : par M 0 (M.length - 1) = some q) {s y : T}
+    (hc : o2r (expand M (n - 1)) r = psi s y z) (hB : bst M q (M.length - 1) = z)
+    (h1 : lt z y = true) (h2 : lt (psi (vr M q) z z) (psi s y z) = true) (hv : vr M q = s) :
+    hiP s y = z ∧ loP s y ≠ z := by
+  have hrx := par_lt M _ _ _ hr
+  have hr1' : par M 1 (M.length - 1) = some r := by have h := hr; rw [ht1] at h; exact h
+  have hb1 : 0 < entry M 1 (M.length - 1) := by have := par1_entry_lt hr1'; omega
+  obtain ⟨yP, hyP⟩ := o2r_sub hIP.g2 r
+  rw [vr_P_r hM hz hr hn] at hyP
+  rw [hyP] at hc
+  obtain ⟨rfl, rfl, _⟩ := psi.inj hc
+  by_cases hqr : q = r
+  · subst hqr
+    rcases Nat.eq_or_lt_of_le (show 2 ≤ n from hn) with h | h
+    · subst h
+      have h3 : o2r (expand M (2 - 1)) q = psi (vr M q) (bst M q (M.length - 1)) z := by
+        rw [show 2 - 1 = 1 by rfl, expand_n1 hM hz hr]; exact drop_frameQ hM hI.g2 hq
+      rw [h3] at hyP
+      rw [← (psi.inj hyP).2.1, hB] at h1
+      exact absurd h1 (lt_irrefl' _)
+    · obtain ⟨yP', hyP', hval, hpxP, hbP, hvrP⟩ := P_r_qr hM hz hr ht1 hI (show 3 ≤ n by omega) hIP hq
+      rw [hval, hB] at hyP
+      have hyy := (psi.inj hyP).2.1
+      have hcot : isOT (psi (vr M q) yP' z) = true := by rw [← hyP']; exact hIP.g2.ot _
+      have hlow : psi (vr M q) yP' z < psi (succ (vr M q)) z z := psi_lt_om_succ.mpr (lt_succ_self _)
+      have hy1 : step (vr M q) z (vr M q) yP' z = psi (vr M q) yP' z := by
+        rw [step_first hcot]
+        by_cases htr : lt z yP' = true ∧ lt (psi (vr M q) z z) (psi (vr M q) yP' z) = true
+        · rw [if_pos htr]
+          have hpl : M.length - 1 < (expand M (n - 1)).length := by
+            rw [expand_eq_gexp_t1 M (n - 1) hM hz hr ht1, TRIO.gexp_length (by omega)]
+            have : 2 * (M.length - 1 - q) ≤ (n - 1) * (M.length - 1 - q) :=
+              Nat.mul_le_mul_right _ (by omega)
+            omega
+          have := hIP.fc q (M.length - 1) (vr M q) yP' hpl hpxP hyP'
+          rw [hbP, hvrP] at this
+          obtain ⟨hhi, hlo⟩ := this hB htr.1 htr.2 rfl
+          rw [if_neg hlo, hhi, app_z]
+        · rw [if_neg htr]
+      rw [← hyy, hy1]
+      have hsp : split (psi (vr M q) yP' z) (psi (succ (vr M q)) z z) = (z, psi (vr M q) yP' z) := by
+        simp [split, show lt (psi (vr M q) yP' z) (psi (succ (vr M q)) z z) = true from hlow]
+      unfold hiP loP
+      rw [hsp]
+      exact ⟨rfl, by simp⟩
+  · exfalso
+    have hqμ := vr_lt_of_ne hI.g2 (by omega) hr1' hb1 hq hqr
+    rw [hv] at hqμ
+    exact absurd hqμ (lt_irrefl' _)
+
+end join
+
+/-- **(I2), `t = 1`**, from the invariants of `M` and `M[n−1]`. -/
+theorem inv2_expand_t1 {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hI : Inv2 M) {n : Nat} (hn : 2 ≤ n)
+    (hIP : Inv2 (expand M (n - 1))) : Inv2 (expand M n) := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  obtain ⟨hz0', hr1', he00, hrow⟩ := basic_expand hI hM (show 1 ≤ n by omega)
+  have hx0 : 0 < entry M 0 (M.length - 1) := by
+    rcases Nat.eq_zero_or_pos (entry M 0 (M.length - 1)) with h | h
+    · exfalso; obtain ⟨e1, e2⟩ := hI.z0 (M.length - 1) (by omega) h; exact hz ⟨h, e1, e2⟩
+    · exact h
+  obtain ⟨q, hq⟩ := par0_some_of (M := M) (show 0 < M.length - 1 by omega) (by rw [hI.e00]; exact hx0)
+  have hpath := path_lt_t1 hM hz hr ht1 hI hn
+  refine ⟨good2_expand_t1 hM hz hr ht1 hI hn hIP, ?_, ?_, ?_, hz0', hr1', he00, hrow⟩
+  · intro h c s y hcl hp hc
+    apply frames_t1 hM hz hr ht1 hI hn hIP hq
+      (fun a B s y => B ≠ z → lt B y = true → lt (psi a z z) (psi s y z) = true →
+        hiP s y = B ∧ loP s y ≠ z) _ _ _ _ h c s y hcl hp hc
+    · intro h c s y y' _ _ _ _ hle hP hB h1 h2
+      rcases (le_iff _ _).mp hle with hlt | heq
+      · obtain ⟨t1, t2⟩ := trig_mono hlt h1 h2
+        obtain ⟨hhi, hlo⟩ := hP hB t1 t2
+        exact prehi_of_lt hhi hlo h1 hlt
+      · subst heq; exact hP hB h1 h2
+    · intro s y hc hB h1 h2
+      exact preHi_join_t1 hM hz hr ht1 hI hn hIP hq hc hB h1 h2
+    · intro h p s y hpl hp hc hB h1 h2
+      exact hIP.hi h p s y hpl hp hc hB h1 h2
+    · intro h p s y hpl hp hc hB h1 h2
+      exact hI.hi h p s y hpl hp hc hB h1 h2
+  · intro h c s y hcl hp hc
+    apply frames_t1 hM hz hr ht1 hI hn hIP hq
+      (fun a B s y => B = z → lt z y = true → lt (psi a z z) (psi s y z) = true → a = s →
+        hiP s y = z ∧ loP s y ≠ z) _ _ _ _ h c s y hcl hp hc
+    · intro h c s y y' _ _ _ _ hle hP hB h1 h2 hv
+      have hz' : z < y := lt_of_lt_of_le h1 hle
+      have h2' : lt (psi (vr M h) z z) (psi s y z) = true := by
+        rcases (le_iff _ _).mp hle with hlt | heq
+        · exact (trig_mono (B := z) hlt h1 h2).2
+        · rw [← heq]; exact h2
+      obtain ⟨hhi, hlo⟩ := hP hB hz' h2' hv
+      exact prefc_of_le hhi hlo h1 hle
+    · intro s y hc hB h1 h2 hv
+      exact preFC_join_t1 hM hz hr ht1 hI hn hIP hq hc hB h1 h2 hv
+    · intro h p s y hpl hp hc hB h1 h2 hv
+      exact hIP.fc h p s y hpl hp hc hB h1 h2 hv
+    · intro h p s y hpl hp hc hB h1 h2 hv
+      exact hI.fc h p s y hpl hp hc hB h1 h2 hv
+  · -- RootsDec: only the top root drops
+    have hxr : col M (M.length - 1) ≠ (0, 0, 0) := by
+      intro h; apply hz; unfold col at h
+      rw [← entry_eq, ← entry_eq, ← entry_eq]; unfold entry; rw [h]; simp
+    unfold RootsDec
+    rw [roots_expand_t1 hM hz hr (by omega) (by omega) hxr]
+    obtain ⟨ρ, hρ, hρn⟩ := top_anc M (M.length - 1)
+    have hρ0 := col_zero_of_top hI.z0 hI.e00 (by have := hρ.le; omega) hρn
+    have hρx : ρ < M.length - 1 := by
+      rcases Nat.eq_or_lt_of_le hρ.le with h | h
+      · rw [h] at hρ0; exact absurd hρ0 hxr
+      · exact h
+    have hsplit := roots_split hx hρ hρ0
+    set R := (roots M).filter (fun c => decide (c < ρ)) with hRd
+    have hRv : R.map (o2r (expand M n)) = R.map (o2r M) := by
+      apply List.map_congr_left
+      intro c hc
+      rw [hRd, List.mem_filter] at hc
+      have hcρ : c < ρ := by simpa using hc.2
+      apply o2r_expand_off hM hz hr (by omega) hn c (by omega)
+      intro hcA
+      rcases anc0_total hcA hρ with h' | h'
+      · cases h' with
+        | refl => omega
+        | step hp _ => rw [hp] at hρn; cases hρn
+      · have := h'.le; omega
+    have hRD := hI.rd
+    unfold RootsDec at hRD
+    rw [hsplit, List.map_append] at hRD ⊢
+    rw [hRv]
+    simp only [List.map_cons, List.map_nil] at hRD ⊢
+    exact pairwise_last_lower hRD (le_of_lt (hpath ρ hρ).2)
+
+/-- **(I2), `t = 1`, for every `n ≥ 1`.** -/
+theorem inv2_expand_t1_all {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hI : Inv2 M) :
+    ∀ n, 1 ≤ n → Inv2 (expand M n) := by
+  intro n hn
+  induction n with
+  | zero => omega
+  | succ n ih =>
+    rcases Nat.eq_zero_or_pos n with h0 | h0
+    · subst h0; rw [expand_n1 hM hz hr]; exact inv2_take hI hM
+    · exact inv2_expand_t1 hM hz hr ht1 hI (show 2 ≤ n + 1 by omega) (by simpa using ih h0)
+
 end Ytosk
