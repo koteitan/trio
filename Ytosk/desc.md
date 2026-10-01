@@ -1343,3 +1343,18 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - B 群（非標準形か SRO より上でだけ破れる）: FrameOT・FrameClosed・BumpKidsDec・BumpTermDec・TP1・TP1W・TrigOm・rootP。
     - Good3 と合わせて、展開の型ごとの保存の証明が要る。
 - 順序: A 群の補題（TPLo の族から）→ B 群を型ごとに（FrameOT は good3_N_t1 と同じ道）。
+
+### DropRes の 1 行列の条件への置き換えと、Inv3 が閉じていないこと（2026-10-02、step-ot、実測）
+
+- データ: A∪B（81340）と、その M[n]（n ≤ 3）の集合 C（102032）。全部で 183372 個の標準形。
+- DropRes の各項目に、M とその評価だけで書ける候補があり、どれも例外 0 で、M → M[n] で保たれる:
+  - argT ⟸ Good3(M.take x) ∧ LocA。LocA は構造の条件（i の v と、最後以外の数える子の o は、変わりうる呼び出しの集合 Dx に入らない）。
+  - VSmallNew ⟸ VSmallF(M.take x) ∧ LocA ∧ VSmallF(M) ∧ TrV（VSmallV v ∧ v′ が v から下がる ⇒ VSmallV v′、順序数の補題）。
+  - UpgAbsX ⟸ UpgAbsL（k = upg i が k < i か葉のときの UpgAbs）。
+  - BumpAbsC はそのまま 1 行列の条件。
+  - BumpWeakSrc は k < x にしてもなお偽（標準形で 4 件）。o(k) が弱く、かつ ◁ で変わる場合。
+    修正案: 前件に ¬ LhdE (o′ k) (o k) を足し、落とす補題で ◁ の場合を先に強い道に回す（step-ot が Lean で実施中）。
+- **Inv3 は標準形でない行列では展開で閉じない**: 構造＋Inv3 を満たす非標準形 M から、M[n] で Good3・TrigOm・rootS・TP1 が壊れる。
+  - 最小の例: (0,0,0)(1,1,0)(1,0,0)(2,1,1)（M[3] で TrigOm）、(0,0,0)(1,1,0)(2,2,0)(3,1,1)（M[2] で Good3）。
+  - bump-frame の BumpLeaf では除けない（壊れる 146 件はすべて BumpLeaf を満たす）。
+  - 帰納法には、標準形らしさを表す追加の不変条件が要る。これが残りの中心の課題。
