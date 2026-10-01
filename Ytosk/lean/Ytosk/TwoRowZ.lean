@@ -10,6 +10,8 @@ namespace Ytosk
 
 open T
 
+set_option linter.unusedSectionVars false
+
 theorem entry0_gexp_low {M : Mat} {j0 Lb d0 d1 n p : Nat} (hlen : j0 + Lb + 1 = M.length) (hp : p < j0) :
     entry (TRIO.gexp M j0 Lb d0 d1 n) 0 p = entry M 0 p := by
   unfold entry
@@ -213,6 +215,41 @@ theorem o2r_gexp_copy_t0 {k : Nat} (hk : k < n) :
         have := par_lt M 0 _ _ hq'.2.2
         exact ih q' (by omega) hq'.1
   exact fun q hq => key _ q (Nat.le_refl _) hq
+
+end
+
+section
+variable {M : Mat} {j0 Lb n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+  (hA : Anc0 M j0 (j0 + Lb)) {g : Nat} (hg : par M 0 j0 = some g)
+  (hF : F1 (TRIO.gexp M j0 Lb 0 0 n)) (hFM : F1 M) (hn : 1 ≤ n)
+  (hx0 : par M 0 (j0 + Lb) = some j0)
+include hlen hLb hA hg hF hFM hn hx0
+
+theorem vr_gexp_block {q : Nat} (hq : q < Lb) :
+    vr (TRIO.gexp M j0 Lb 0 0 n) (j0 + (0 * Lb + q)) = vr M (j0 + q) := by
+  rw [vr_eq_nT hF, vr_eq_nT hFM, entry1_gexp_d1z hlen (show 0 < n by omega) hq]
+
+/-- **The first copy keeps the values of the block** (away from `r`, `t = 0`). -/
+theorem o2r_gexp_block_t0 : ∀ q, 0 < q → q < Lb →
+    o2r (TRIO.gexp M j0 Lb 0 0 n) (j0 + (0 * Lb + q)) = o2r M (j0 + q) := by
+  have key : ∀ m q, Lb - q ≤ m → 0 < q → q < Lb →
+      o2r (TRIO.gexp M j0 Lb 0 0 n) (j0 + (0 * Lb + q)) = o2r M (j0 + q) := by
+    intro m
+    induction m with
+    | zero => intro q h1 _ h2; omega
+    | succ m ih =>
+      intro q hm hq0 hq
+      apply o2r_congr (vr_gexp_block hlen hLb hA hg hF hFM hn hx0 hq)
+      rw [children_gexp_t0 hlen hLb hA hg (show 0 < n by omega) hq, children_block hlen,
+        if_neg (by rw [hx0]; intro h; have := Option.some.inj h; omega), List.append_nil,
+        List.map_map, List.map_map]
+      apply List.map_congr_left
+      intro q' hq'
+      rw [List.mem_filter, List.mem_range] at hq'
+      simp only [decide_eq_true_eq] at hq'
+      have := par_lt M 0 _ _ hq'.2.2
+      exact ih q' (by omega) hq'.2.1 hq'.1
+  exact fun q => key _ q (Nat.le_refl _)
 
 end
 
