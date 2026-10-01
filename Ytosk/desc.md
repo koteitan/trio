@@ -1399,3 +1399,12 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - x = 9、r = 7 = bump(6)、g = 6、upg(8) = 4（祖先型の上げ）。r の子の o の和は M で Ω_ω、M.take x で Ω_1。
 - 実測で見落とした理由: 集合 C が接頭辞で閉じていなかった。以後の実測は A∪B∪C の接頭辞の閉包 C′ で行う。
 - 方針: 種 S2 を一般化して hG′/hU を外す。最後のコピーの和を G0′ = Σ o′ とし、ω^G0·(n−1) + ω^G0′ ⊴ ω^G0·n ◁ ω^(G0+1)（hE3 と同じ形）。
+
+### t = 2 の n ≥ 2 の 3 つの場合（2026-10-02、strict-r、緑）
+
+- q = r で x へ上げる列がない: t2_qr_main（V3T2M）。
+- q ≠ r: t2_qn_main（V3T2QM）。x は q のりしろの子。種は v(q)（v_bump_lost: V + ω^S ◁ V + ω^(S+1)）と o(P_0 q)。
+- q = r で x − 1 が x へ上げる: t2_sv_main（V3T2V）。種は o(r) と v(x−1)（V + 1 ◁ V + ω）。
+- 残る仮定（A・B で例外 0）: M の構造の事実、N の isUpg の一致 hIUt、値の hAbs・hVNN・種の閉性。
+- 残り: n = 0, 1（t2_assemble で N = M.take x として）、N の評価（Cons・Rk・Good3）、Res3T2 への集約と hT2 への包装。
+- V3TopB（f1e25b6a）: hT2 は HInvA と Std M を受け取る形にした（trio_terminates′）。N = M[n] の評価に HInvA を当てられる。
