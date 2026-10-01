@@ -310,4 +310,124 @@ theorem dv_shapeX {i : Nat} (hi : i < x) (hv : DepX M x false i) :
 
 end
 
+/-- A column with row 2 zero is neither a bump child nor an upgrade target. -/
+theorem ne_of_e2z {M : Mat} {d : Nat} (h : entry M 2 d = 0) :
+    ∀ p, ((∃ t, col M p = bump M t) ∨ isUpg M p = true) → p ≠ d := by
+  intro p hp e
+  subst e
+  rcases hp with ⟨t, hb⟩ | hu
+  · have := e2_of_col (show col M p = (entry M 0 t + 1, entry M 1 t, 1) from hb); omega
+  · unfold isUpg at hu
+    rw [List.any_eq_true] at hu
+    obtain ⟨k, _, hk⟩ := hu
+    have := upg_target_e2 (of_decide_eq_true hk); omega
+
+section
+variable {M : Mat} {x : Nat} (hUAT : UAT M) (hZ2 : Z2 M) (hR12 : R12 M) (hBE : BumpE2 M)
+include hUAT hZ2 hR12 hBE
+
+/-- **Up the path, `D` continues** (general start): if `o(d)` is in `D`, `d` is neither a bump child nor upgraded, and the subtree of every
+column strictly between `a` and `d` on the path ends at `d`, then `o(a)` is in `D`. -/
+theorem path_upG (n : Nat) : ∀ a d, d - a ≤ n → d < M.length → Anc0 M a d →
+    (∀ p, ((∃ t, col M p = bump M t) ∨ isUpg M p = true) → p ≠ d) →
+    DepX M x true d → (∀ t, a < t → Anc0 M t d → ¬ Anc0 M t (d + 1)) → DepX M x true a := by
+  induction n using Nat.strong_induction_on with
+  | _ n ihn =>
+  intro a d hn hdl had hd2 hD hend
+  have key : ∀ m t, d - t ≤ m → Anc0 M a t → Anc0 M t d → DepX M x true t := by
+    intro m
+    induction m using Nat.strong_induction_on with
+    | _ m ihm =>
+    intro t hm hat htd
+    by_cases htd' : t = d
+    · subst htd'; exact hD
+    obtain ⟨p, hpt, hpd⟩ := anc0_child htd htd'
+    have htp := par_lt M 0 p t hpt
+    have hpdl := hpd.le
+    have hpl : p < M.length := by omega
+    have hpM : p ∈ children M t := mem_children_iff.mpr ⟨hpl, hpt⟩
+    have hat' := hat.le
+    have hap : Anc0 M a p := Anc0.trans hat (Anc0.step hpt (Anc0.refl t))
+    have hDp : DepX M x true p := ihm (d - p) (by omega) p (Nat.le_refl _) hap hpd
+    by_cases hc : Counted M t p
+    · exact DepX.ochild hpM hc.1 hc.2 hDp
+    · rcases not_counted_iff hc with hb | ⟨hiu, htop⟩
+      · -- a bump edge: `v(t)` reads the grandchild on the path
+        have hp2 : entry M 2 p = 1 := e2_of_col (show col M p = (entry M 0 t + 1, entry M 1 t, 1) from hb)
+        have hpd' : p ≠ d := hd2 p (Or.inl ⟨t, hb⟩)
+        obtain ⟨p', hpp', hp'd⟩ := anc0_child hpd hpd'
+        have hp'dl := hp'd.le
+        have hp'M : p' ∈ children M p := mem_children_iff.mpr ⟨by omega, hpp'⟩
+        have hpp'lt := par_lt M 0 p' p hpp'
+        have hDp' : DepX M x true p' := ihm (d - p') (by omega) p' (Nat.le_refl _)
+          (Anc0.trans hap (Anc0.step hpp' (Anc0.refl p))) hp'd
+        have he1 : entry M 1 t ≠ 0 := by
+          have h1 : entry M 1 p = entry M 1 t :=
+            e1_of_col (show col M p = (entry M 0 t + 1, entry M 1 t, 1) from hb)
+          intro h0
+          rw [← h1] at h0
+          have := hR12 p h0
+          omega
+        have he2 : entry M 2 t ≠ 0 := by rw [hBE t p hpM hb]; omega
+        exact DepX.ov (DepX.vbump he1 he2 hpM hb hp'M hDp')
+      · -- an upgraded, topped child: around through `p − 1`
+        have hiu0 := hiu
+        unfold isUpg at hiu
+        rw [List.any_eq_true] at hiu
+        obtain ⟨k0, _, hk0⟩ := hiu
+        have hu : upg M k0 = some p := of_decide_eq_true hk0
+        have hk0p : k0 = p - 1 := by
+          obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu
+          rcases hcase with h | ⟨hA, hlt⟩
+          · omega
+          · exfalso
+            have := hUAT k0 p hu (by have := hA.le; omega)
+            rw [this] at htop; cases htop
+        rw [hk0p] at hu
+        obtain ⟨_, _, _, hcol, _⟩ := upg_spec hu
+        have hp2 := upg_target_e2 hu
+        have hpd' : p ≠ d := hd2 p (Or.inr hiu0)
+        have hpd2 : p < d := by omega
+        obtain ⟨p', hpp', hp'd⟩ := anc0_child hpd hpd'
+        have hp'dl := hp'd.le
+        have hpp'lt := par_lt M 0 p' p hpp'
+        have hp'M : p' ∈ children M p := mem_children_iff.mpr ⟨by omega, hpp'⟩
+        have hlast := last_child_path hdl hpp' hp'd (hend p (by omega) hpd)
+        unfold topped at htop
+        rw [hlast] at htop
+        have hb' : col M p' = bump M p := by simpa using htop
+        have hp'2 : entry M 2 p' = 1 :=
+          e2_of_col (show col M p' = (entry M 0 p + 1, entry M 1 p, 1) from hb')
+        have hp'd' : p' ≠ d := hd2 p' (Or.inl ⟨p, hb'⟩)
+        obtain ⟨p'', hpp'', hp''d⟩ := anc0_child hp'd hp'd'
+        have hp''dl := hp''d.le
+        have hpp''lt := par_lt M 0 p'' p' hpp''
+        have hp''M : p'' ∈ children M p' := mem_children_iff.mpr ⟨by omega, hpp''⟩
+        have hDp'' : DepX M x true p'' := ihm (d - p'') (by omega) p'' (Nat.le_refl _)
+          (Anc0.trans hap (Anc0.step hpp'' (Anc0.step hpp' (Anc0.refl p)))) hp''d
+        obtain ⟨he1, he2⟩ := upg_e12 hu
+        have he2z : entry M 2 (p - 1) = 0 := by have := hZ2 (p - 1); omega
+        have hp1 : entry M 1 p = entry M 1 (p - 1) := e1_of_col hcol
+        have hvp : DepX M x false p :=
+          DepX.vbump (by rw [hp1]; exact he1) (by omega) hp'M hb' hp''M hDp''
+        have hvp1 : DepX M x true (p - 1) := DepX.ov (DepX.vupg he1 he2z hu hvp)
+        have hAt : Anc0 M t (p - 1) :=
+          anc_between (Anc0.step hpt (Anc0.refl t)) (p - 1) (by omega) (by omega)
+        refine ihn ((p - 1) - t) (by omega) t (p - 1) (Nat.le_refl _) (by omega) hAt (ne_of_e2z he2z) hvp1 ?_
+        intro u htu hup hup'
+        rw [show p - 1 + 1 = p by omega] at hup'
+        by_cases hup2 : u = p
+        · have := hup.le; omega
+        · have := (anc0_par hup' hup2 hpt).le; omega
+  exact key (d - a) a (Nat.le_refl _) (Anc0.refl a) had
+
+/-- **Every ancestor of `x` has its `o` in `D`** when `x` is neither a bump child nor upgraded. -/
+theorem dep_anc_xG (hx : x + 1 = M.length)
+    (hxn : ∀ p, ((∃ t, col M p = bump M t) ∨ isUpg M p = true) → p ≠ x) {a : Nat} (ha : Anc0 M a x) :
+    DepX M x true a :=
+  path_upG hUAT hZ2 hR12 hBE (x - a) a x (Nat.le_refl _) (by omega) ha hxn DepX.leaf
+    (fun t _ htx => not_anc_out (by omega) (by have := htx.le; omega))
+
+end
+
 end Ytosk
