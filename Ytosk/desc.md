@@ -1333,3 +1333,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - ψ_v(Y0)·(n−1) + o′ ⊴ ψ_v(Y0)·n ◁ ψ_v(Y0+1)（lhd_mulT）なので、v_N(p) ◁ v_M(p)。
   - 実測（1205 枠、n = 2, 3）で例外 0。新しい仮定はない。
 - Res3A.t0 の残りは hVr・hG′・VSmallNewN の 3 つ。
+
+### 値の不変条件のうち、どれに保存の証明が要るか（2026-10-02、t1-struct、実測）
+
+- 接頭辞（M.take x）の不変条件の場面は、ほとんどが変わった値（D の上）を読む（TP1 で 19361 対 154）。したがって *_take は「制限するだけ」の議論にならない。
+- 構造の不変条件と Good3 を満たすすべての行列（長さ ≤ 8 の網羅 660032 個、長さ 9〜16 の乱択 59110 個）で測った:
+  - A 群（例外 0、Good3 ＋ 構造から出る）: VSmallF・AbsD・AbsU・TPLo・TPLoW・AbsUW・AbsDW・TPLoN・AbsDN・rootS。
+    - 保存の証明は要らない。「Cons ∧ Good3 ∧ 構造 → F」の補題が 1 つずつ要るだけ。rootS は済（V3InvDerive.rootS_of_good）。
+  - B 群（非標準形か SRO より上でだけ破れる）: FrameOT・FrameClosed・BumpKidsDec・BumpTermDec・TP1・TP1W・TrigOm・rootP。
+    - Good3 と合わせて、展開の型ごとの保存の証明が要る。
+- 順序: A 群の補題（TPLo の族から）→ B 群を型ごとに（FrameOT は good3_N_t1 と同じ道）。
