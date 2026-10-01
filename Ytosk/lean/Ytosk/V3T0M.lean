@@ -6,7 +6,7 @@
 - r が根のとき: r より前は値が変わらず、M の根 r（値 ψ_v(Y0 + 1)）が N ではコピーの根
   ψ_v(Y0) × (n − 1) と M.take x での r の値に替わる（`root_N_B`）。
 -/
-import Ytosk.V3T0G
+import Ytosk.V3T0W
 
 namespace Ytosk
 
@@ -271,9 +271,8 @@ end
 Hypotheses: those of the drop lemma (as `t0_n1`, without `hVL`: the shape of `D` is `dv_shape` and the
 strictness of the drop is `dep_strict0`), and for `N = M[n]`: its valuation satisfies `Good3`,
 `VSmallNewN` and the root values do not increase; the last copy root counts at `g` when `r` does;
-`hVr` (a changed `v(r)` in `M.take x` is small in a rewriting frame of `g`); `hWk` (in the bump case,
-a child of `r` whose `o` changes in `M.take x` has `v′ ⊴ v`: the last copy's sum then drops in the strong
-relation, `g0_drop_rel`, and seed S2 is `t0_S2G`). -/
+`hVr` (a changed `v(r)` in `M.take x` is small in a rewriting frame of `g`); in the bump case the
+last copy's sum drops in the strong relation (`g0_drop_rel`, with `v_lhd_B`) and seed S2 is `t0_S2G`. -/
 theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
@@ -295,9 +294,6 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
       par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
       lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
       VSmallV s')
-    (hWk : ∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
-      ∀ k ∈ children M r, k < r + L → (drop1 M (r + L) rkM).o k ≠ ρ.o k →
-        LhdE ((drop1 M (r + L) rkM).v k) (ρ.v k))
     (hN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
       (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
@@ -409,7 +405,9 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
               (sumN ((children (M.take (j' + L)) j').map ρ.o)) :=
           g0_drop_rel (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hWS
             h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN)
-            (fun k _ hk => hdrop k hk) (hWk g hg hjb h1 h2)
+            (fun k _ hk => hdrop k hk)
+            (fun k hk hkx _ => v_lhd_B (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
+              hC hG hC1 hRk1 hKD hTD hAbs hWS hUA hdrop k (mem_children hk).1 hkx)
         have hG0ot : isOT (sumN ((children (M.take (j' + L)) j').map ρ.o)) = true := isOT_sumN _ (fun t ht => by
           obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
           rw [children_take, List.mem_filter] at hc
@@ -575,9 +573,6 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
       lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
       VSmallV s')
-    (hWk : ∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
-      ∀ k ∈ children M r, k < r + L → (drop1 M (r + L) rkM).o k ≠ ρ.o k →
-        LhdE ((drop1 M (r + L) rkM).v k) (ρ.v k))
     (hN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
       (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
@@ -585,6 +580,6 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ :=
   t0_main' hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM hVS hF hFO hArgT hKD hTD
-    hAbs hWS hVSt hUA hsM hpM hLast hVr hWk hN
+    hAbs hWS hVSt hUA hsM hpM hLast hVr hN
 
 end Ytosk

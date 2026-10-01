@@ -66,7 +66,6 @@ theorem hInv_of_E (h : HInvE) :
   have hR := I.rank
   refine ⟨ρ, rk, I, ⟨RA.drop, chain_of_E h hM I, RA.seed, ?_⟩⟩
   intro r L hlen hp he1
-  have hU := RA.t0 r L hlen hp he1
   have hL : 0 < L := by
     rcases Nat.eq_zero_or_pos L with h0 | h0
     · subst h0; have := par_lt M 0 _ r hp; omega
@@ -75,7 +74,7 @@ theorem hInv_of_E (h : HInvE) :
   have hDr := RA.drop
   rw [show M.length - 1 = r + L by omega] at hDr
   refine ⟨t0_vr hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 hC hR
-    ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hDr, hU, ?_⟩
+    ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hDr, ?_⟩
   intro n hn2 σ hCN
   have hRN := rk_N0 hlen hL hp (show 1 ≤ n by omega) I.r0p I.z2 he2 hn2 hR
   have hlN : (TRIO.gexp M r L 0 0 n).length = r + n * L := lenN0 hlen (show 1 ≤ n by omega)
