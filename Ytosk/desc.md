@@ -1358,3 +1358,14 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 最小の例: (0,0,0)(1,1,0)(1,0,0)(2,1,1)（M[3] で TrigOm）、(0,0,0)(1,1,0)(2,2,0)(3,1,1)（M[2] で Good3）。
   - bump-frame の BumpLeaf では除けない（壊れる 146 件はすべて BumpLeaf を満たす）。
   - 帰納法には、標準形らしさを表す追加の不変条件が要る。これが残りの中心の課題。
+
+### BumpWeakSrc の直した形と、Res3A の全項目の実測（2026-10-02、step-ot）
+
+- BWS′（46d767db）: 前件を (k = x ∧ children j = [x]) ∨ (k < x ∧ o′(k) ≠ o(k) ∧ ¬ LhdE (v′ k) (v k)) にした。
+  - 落とす補題の弱い枝の前で v′ ⊴ v を場合分けし、◁ の場合は強い枝（brelS_fix・brelS_app_same）に回す。
+  - 標準形の 4 つの反例は、Lean で v′ ⊴ v を確かめた（lhdE_one、lhd_psi_small）。
+- Res3A の各項目（Lean の文のとおり、A と B∪C の 18 万個）: すべて例外 0。
+  - drop の 5 項目、seed（2 万件）、hVr、hG′。
+  - VSmallNewN は前件が一度も立たない（v(cs) が変わる 32596 枠で、書き換えは起きない）。
+- drop1 を範囲 ≥ x で読む文は、元の BumpWeakSrc だけだった。
+- hVr・VSmallNewN は Inv3 ＋ Res3A.drop から出る見込み（omega-lhd、V3T0Res を作成中）。
