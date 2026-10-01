@@ -4,18 +4,19 @@
 - n = 0・n = 1 の型によらない形（`drop_n1`・`drop_n0`・`drop_n0r`）: x の行 2 が 0 で、v(x) が D に入らなければ、
   落とす補題と D の狭義性 `dep_strict0` から（t = 0、t = 1 の q ≠ r・q = r に共通）。
 - 最後の列が 0 の列（`zero_last_desc`）: M[n] = M.take x、根の列の前で切る（`root_take_root`）。
+- 最後の列の親は構造から（`parLast_of`）。
 - 不変条件の束 `Inv3`（構造・評価・値の不変条件）と残りの仮定の束 `Res3`（落とす補題の残り DropRes、
-  q = r の始点の条件 hcs）。1 つの行列での段 1（`desc_step`）: 型（0 の列、t = 0、t = 1 の q ≠ r・q = r、t = 2）と
-  n（0、1、≥ 2）で場合分け。t = 0 の n ≥ 2 と t = 2 は仮定。
+  q = r の始点の条件 hcs、t = 0 の `t0_main` の残りの仮定）。1 つの行列での段 1（`desc_step`）: 型（0 の列、t = 0、
+  t = 1 の q ≠ r・q = r、t = 2）と n（0、1、≥ 2）で場合分け。t = 2 は仮定。
 - 段 3（`terminates_of_desc3`）: **BMS.lean の `WellFounded Step` は偽**（`not_wf_Step`）。
   expand SRO 0 = (0,0,0)、expand (0,0,0) 0 = [] なので [] は Std に入り、expand [] n = [] なので Step [] [] が
   成り立ち、[] で無限に回る。正しい主張は「SRO からのどの展開の列も [] にたどり着く」で、これは空の行列を
   終わりにした `Step'`（M ≠ [] を条件に足す）の整礎性。BMS.lean・Val.lean は変えない。
-- トップの定理 `trio_terminates`: 仮定は残りの仕事そのもの（Inv3・Res3 が Std の行列で成り立つこと、t = 0 の
-  n ≥ 2、t = 2）。
+- トップの定理 `trio_terminates`: 仮定は残りの仕事そのもの（Inv3・Res3 が Std の行列で成り立つこと、t = 2）。
 -/
 import Ytosk.V3QRFinal4
 import Ytosk.V3T0
+import Ytosk.V3T0M
 
 namespace Ytosk
 
@@ -367,6 +368,23 @@ structure Res3 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   seed : ∀ r, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
     lt (sf ((drop1 M (M.length - 1) rk).v r)) (ρ.v r) = true →
     ∀ u g, g ∈ comps u ((drop1 M (M.length - 1) rk).o r) → g < (drop1 M (M.length - 1) rk).o r
+  t0 : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    (∃ ζ μ : T, ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i) ∧
+    (∀ g p, par M 0 r = some g → par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 →
+      col M g ≠ bump M p) ∧
+    (∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
+      Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L)) ∧
+    (∀ s' y', (drop1 M (r + L) rk).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
+      par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
+      lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
+      VSmallV s') ∧
+    (∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
+      sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rk).o) =
+        sumN ((children (M.take (r + L)) r).map ρ.o)) ∧
+    (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
+      Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
+      (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
+      ((roots (TRIO.gexp M r L 0 0 n)).map σ.o).Pairwise (fun a b => b ≤ a))
 
 /-- The value drops under `M[n]` (the per-matrix form of step 1). -/
 def DropsAt (M : Mat) (ρ : Valn) (n : Nat) : Prop :=
@@ -384,8 +402,6 @@ theorem dropsAt_of {M N : Mat} {ρ : Valn} {n : Nat} (he : expand M n = N)
 `t = 2` are hypotheses. -/
 theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠ [])
     (I : Inv3 M ρ rk) (R : Res3 M ρ rk)
-    (hT0 : col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
-      ∀ n, 2 ≤ n → DropsAt M ρ n)
     (hT2 : col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n)
     (n : Nat) : DropsAt M ρ n := by
   have hpos : 0 < M.length := List.length_pos_of_ne_nil hne
@@ -423,6 +439,7 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
     simp only [show ¬ (0 < 0) from by omega, show ¬ (1 < 0) from by omega, if_false] at hexp
     have hdr := R.drop
     have hch := R.chain
+    have ht0 := R.t0
     have hrx : r < M.length - 1 := par_lt M 0 _ r hr
     obtain ⟨L, hL⟩ : ∃ L, M.length - 1 = r + L := ⟨M.length - 1 - r, by omega⟩
     rw [hL] at hexp hr he1 hx2 hdr
@@ -443,7 +460,11 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
     · apply dropsAt_of hexp
       exact drop_n1 (d0 := 0) hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hL0 hx2 hr hnx I.cons
         I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua
-    · exact hT0 hz h0 (n + 2) (by omega)
+    · apply dropsAt_of hexp
+      obtain ⟨⟨ζ, μ, hVL⟩, hE3, hLast, hVr, hG', hN⟩ := ht0 r L hlen hr he1
+      exact t0_main hlen hL0 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr he1 I.cons I.good
+        I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua hVL I.rootS I.rootP hE3 hLast
+        hVr hG' hN (n + 2) (by omega)
   · -- `t = 1`
     have hx2 : entry M 2 (M.length - 1) = 0 := by
       unfold TRIO.srow at h1t
@@ -574,19 +595,16 @@ theorem terminates_of_desc3 (hD : Desc3) : WellFounded Step' := by
 - `hInv`: every nonempty `Std` matrix other than SRO has a valuation with the invariants `Inv3` and the
   remaining per-matrix hypotheses `Res3` (drop-lemma residuals, the seed
   condition `hcs` of `t = 1`, `q = r`);
-- `hT0`: the case `t = 0`, `n ≥ 2`;
 - `hT2`: the case `t = 2`. -/
 theorem trio_terminates
     (hInv : ∀ M, Std M → M ≠ SRO → M ≠ [] → ∃ ρ rk, Inv3 M ρ rk ∧ Res3 M ρ rk)
-    (hT0 : ∀ M ρ rk, Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
-      TRIO.srow M (M.length - 1) = 0 → ∀ n, 2 ≤ n → DropsAt M ρ n)
     (hT2 : ∀ M ρ rk, Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n) :
     WellFounded Step' := by
   apply terminates_of_desc3
   intro M n hM hne hne'
   obtain ⟨ρ, rk, I, R⟩ := hInv M hM hne hne'
-  obtain ⟨t', hv, _, hlt⟩ := desc_step hne' I R (hT0 M ρ rk I R) (hT2 M ρ rk I R) n
+  obtain ⟨t', hv, _, hlt⟩ := desc_step hne' I R (hT2 M ρ rk I R) n
   exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
 
 /-! ## 元の Step は整礎でない -/
