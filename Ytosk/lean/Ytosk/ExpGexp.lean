@@ -2,7 +2,7 @@
 **Ytosk の展開を trio 本体の `gexp`（先頭 ++ コピー）の形で書く。**
 これで trio 本体のコピーの親の補題（`gexp_nextrel0_mir` など）が使える。
 -/
-import Ytosk.Bridge
+import Ytosk.Prefix
 import Gtrans
 
 namespace Ytosk
@@ -61,30 +61,9 @@ theorem par0_gexp_root {M : Mat} {j0 Lb d0 d1 n k qp : Nat} (hlen : j0 + Lb + 1 
   exact (par0_iff _ hbnd).mpr
     (TRIO.gexp_nextrel0_root hlen hk hk1 hqp hd0e ((par0_iff M (by omega)).mp h))
 
-theorem entry_take (M : Mat) {l q : Nat} (i : Nat) (hq : q < l) : entry (M.take l) i q = entry M i q := by
-  unfold entry
-  rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hq]
-
 /-- The row-0 parent depends only on the columns up to the column itself. -/
-theorem par0_take (M : Mat) {l i : Nat} (hi : i < l) : par (M.take l) 0 i = par M 0 i := by
-  cases i with
-  | zero => simp [par, prev, climb]
-  | succ c =>
-    apply Option.ext
-    intro a
-    simp only [par, prev]
-    rw [climb_prev_iff _ a c (c + 1 + 1) (by omega), climb_prev_iff _ a c (c + 1 + 1) (by omega)]
-    have he : ∀ q, q ≤ c + 1 → entry (M.take l) 0 q = entry M 0 q := fun q hq =>
-      entry_take M 0 (by omega)
-    constructor
-    · rintro ⟨h1, h2, h3⟩
-      refine ⟨h1, ?_, fun j hj1 hj2 => ?_⟩
-      · simpa [he a (by omega), he (c + 1) (le_refl _)] using h2
-      · have := h3 j hj1 hj2; simpa [he j (by omega), he (c + 1) (le_refl _)] using this
-    · rintro ⟨h1, h2, h3⟩
-      refine ⟨h1, ?_, fun j hj1 hj2 => ?_⟩
-      · simpa [he a (by omega), he (c + 1) (le_refl _)] using h2
-      · have := h3 j hj1 hj2; simpa [he j (by omega), he (c + 1) (le_refl _)] using this
+theorem par0_take (M : Mat) {l i : Nat} (hi : i < l) : par (M.take l) 0 i = par M 0 i :=
+  par_take M 0 i hi
 
 /-- Before the last column, the row-0 parents after expansion are those of `M`. -/
 theorem par0_expand_prefix (M : Mat) {n i : Nat} (hM : 2 ≤ M.length) (hn : 1 ≤ n)
