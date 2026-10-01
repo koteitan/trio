@@ -1377,3 +1377,11 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - hU は今の構造の不変条件からは出ない。長さ 7 以下の全数で、反例が 3 つ（すべて非標準形）。例: (0,0,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(5,0,0)。
 - 標準形のどの性質が hU を禁じるかを探して、構造の不変条件の束に入れる（node-lhd と bump-frame）。
 - hVr・VSmallNewN は構造から証明（V3T0Res、omega-lhd）。V3TopB への組み込みは調整中。
+
+### t = 1 の鎖が任意の性質を運ぶ、FrameOT・RootP（2026-10-02、t1-struct）
+
+- t1_chain・qr_chain から最上位まで、任意の性質 Pn を運ぶ形にした（4522bc9f）。入力は Pn (M[1]) と ExpStepT1（M[n−1] から貼り合わせの M[n] へ渡ること）。新しい不変条件は鎖を直さずに V3Top で足せる。
+- FrameOT（0ce549d6・47fa1cee）: x より前の列の枠は M と同じ（v が変わる列には数える子がない、D の子は最後の数える子）。x 以後は M[n−1] の写し。
+- RootP（874d79fd）: M[n] の根は M の根で、下がるのは最後の根 Rt だけ。
+- V3Top: t = 1・n ≥ 2 で Pn := FrameOT ∧ RootP。M[n] の Good3・FrameOT・RootP が出る。
+- 次: BumpKidsDec・BumpTermDec、FrameClosed、TP1・TP1W・TrigOm。
