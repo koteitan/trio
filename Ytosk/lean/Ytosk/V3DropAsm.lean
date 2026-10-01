@@ -432,4 +432,53 @@ theorem lhdE_add_absorb {s' y' s y : T} (hw : LhdE (psi s' y' z) (psi s y z)) :
         have ih := lhdE_add_absorb hw c hc hot' (fun r hr => hR r (by simp [summands, hr]))
         exact lhdE_app (psi a b z) ih
 
+/-! ## のりしろの v の形（吸収の仮定なし） -/
+
+/-- **The value of a bump-type subscript**, `v(P_1 i) + ω^{P + ω^G}` (with absorption by `add`). -/
+theorem v_bump_add {M : Mat} {i j k : Nat} {ρ : Valn} (hC : Cons M ρ) (hiM : i < M.length)
+    (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i ≠ 0)
+    {L K : List Nat} (hch : children M i = L ++ [j]) (hjb : col M j = bump M i)
+    (hchj : children M j = K ++ [k])
+    (hsK : ∀ t ∈ K.map ρ.o ++ [ρ.o k], Single t)
+    (hpK : (K.map ρ.o ++ [ρ.o k]).Pairwise (fun a b => b ≤ a))
+    (hsL : ∀ t ∈ L.map (bumpTerm M ρ i), t = z ∨ Single t)
+    (hpp : (nzs (L.map (bumpTerm M ρ i)) ++ [omega (sumN (K.map ρ.o ++ [ρ.o k]))]).Pairwise
+      (fun a b => b ≤ a))
+    (hgt : ∀ t ∈ nzs (L.map (bumpTerm M ρ i)) ++ [omega (sumN (K.map ρ.o ++ [ρ.o k]))], one < t)
+    (hV : isOT (vOpt ρ (par M 1 i)) = true) :
+    ρ.v i = add (vOpt ρ (par M 1 i))
+      (omega (app (sumN (nzs (L.map (bumpTerm M ρ i)))) (omega (sumN (K.map ρ.o ++ [ρ.o k]))))) := by
+  set P := nzs (L.map (bumpTerm M ρ i)) with hPdef
+  set G := sumN (K.map ρ.o ++ [ρ.o k]) with hGdef
+  have hbj : bumpTerm M ρ i j = omega (sumN ((children M j).map ρ.o)) := by
+    unfold bumpTerm; rw [if_pos hjb]
+  have hGj : sumN ((children M j).map ρ.o) = G := by rw [hchj, List.map_append]; rfl
+  have hl : (children M i).map (bumpTerm M ρ i) = L.map (bumpTerm M ρ i) ++ [omega G] := by
+    rw [hch, List.map_append, List.map_singleton, hbj, hGj]
+  have hGot : isOT G := (sumN_dec _ hsK hpK).1
+  have hsω : ∀ Y, isOT Y = true → Single (omega Y) := fun _ h => single_omega h
+  have hsl : ∀ t ∈ L.map (bumpTerm M ρ i) ++ [omega G], t = z ∨ Single t := by
+    intro t ht
+    rcases List.mem_append.mp ht with ht | ht
+    · exact hsL t ht
+    · rw [List.mem_singleton] at ht; subst ht; exact Or.inr (hsω G hGot)
+  have hnz : nzs (L.map (bumpTerm M ρ i) ++ [omega G]) = P ++ [omega G] := by
+    rw [nzs_append, nzs_single (single_ne_z (hsω G hGot))]
+  have hsP : ∀ t ∈ P ++ [omega G], Single t := by
+    intro t ht
+    rcases List.mem_append.mp ht with ht | ht
+    · simp only [hPdef, nzs, List.mem_filter] at ht
+      rcases hsL t ht.1 with h | h
+      · exact absurd h (by simpa using ht.2)
+      · exact h
+    · rw [List.mem_singleton] at ht; subst ht; exact hsω G hGot
+  have hp : sumN (one :: (children M i).map (bumpTerm M ρ i)) = app (sumN P) (omega G) := by
+    rw [hl, sumN_one_cons hsl (by rw [hnz]; exact hpp) (by rw [hnz]; exact hgt)
+      (by rw [hnz]; simp), hnz, sumN_snoc_dec hsP hpp]
+  have hpot : isOT (app (sumN P) (omega G)) = true := by
+    rw [← sumN_snoc_dec hsP hpp]; exact (sumN_dec _ hsP hpp).1
+  rw [(hC i hiM).2]
+  unfold vRhs
+  rw [if_neg h1, if_neg h2, hp, sf_ot (isOT_add hV (isOT_omega hpot))]
+
 end Ytosk
