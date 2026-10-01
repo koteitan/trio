@@ -254,4 +254,105 @@ theorem omega_psi_fix {w : T} (hw : isOT w = true) (hE : ¬ psi w z z < E0) : om
   rw [omega_big hot hE]
   simp [split]
 
+/-! ## ε_0 より下 -/
+
+/-- All summands of a standard term with leading subscript `0` have subscript `0`, and its components
+at level `0` are at most its leading argument. -/
+theorem comps_le_head_arg : ∀ {b c : T}, isOT (psi z b c) = true → ∀ g ∈ comps z (psi z b c), g ≤ b
+  | b, c, h, g, hg => by
+    obtain ⟨_, _, hc, hhc, hcb⟩ := isOT_psi_iff.mp h
+    simp only [comps, List.mem_append] at hg
+    rcases hg with hg | hg
+    · rw [if_neg (by simp [lt])] at hg
+      simp only [List.mem_cons, List.mem_append] at hg
+      rcases hg with rfl | hg | hg
+      · exact le_refl _
+      · exact le_of_lt (hcb g hg)
+      · simp at hg
+    · cases c with
+      | z => simp [comps] at hg
+      | psi a' b' c' =>
+        simp only [head] at hhc
+        have ha' : a' = z := by
+          rcases (le_iff _ _).mp hhc with h1 | h1
+          · rw [T.psi_lt_psi] at h1
+            rcases h1 with h1 | ⟨rfl, _⟩ | ⟨rfl, _, _⟩
+            · exact absurd h1 (T.not_lt_z _)
+            · rfl
+            · rfl
+          · simp only [psi.injEq] at h1; exact h1.1
+        subst ha'
+        have hb' : b' ≤ b := by
+          rcases (le_iff _ _).mp hhc with h1 | h1
+          · rw [T.psi_lt_psi] at h1
+            rcases h1 with h1 | ⟨_, h1⟩ | ⟨_, h1, _⟩
+            · exact absurd h1 (T.not_lt_z _)
+            · exact le_of_lt h1
+            · rw [h1]
+          · simp only [psi.injEq] at h1; rw [h1.2.1]
+        exact le_trans (comps_le_head_arg hc g hg) hb'
+
+/-- **Below `ψ_0(Ω_1)`, every smaller standard term is `◁`.** -/
+theorem lhd_lt_small {r w : T} (hr : isOT r = true) (hw : w < E0) (h : r < w) : Lhd z r w := by
+  refine ⟨h, fun u c h1 h2 => ?_⟩
+  intro g hg
+  cases r with
+  | z => simp [comps] at hg
+  | psi a b d =>
+    have hrE : psi a b d < E0 := lt_trans h hw
+    have ha : a = z := by
+      unfold E0 at hrE; rw [T.psi_lt_psi] at hrE
+      rcases hrE with h' | ⟨rfl, _⟩ | ⟨rfl, _, _⟩
+      · exact absurd h' (T.not_lt_z _)
+      · rfl
+      · rfl
+    subst ha
+    have hcE : c < E0 := lt_of_le_of_lt h2 hw
+    cases c with
+    | z => exact absurd h1 (T.not_lt_z _)
+    | psi a2 f c2 =>
+      have ha2 : a2 = z := by
+        unfold E0 at hcE; rw [T.psi_lt_psi] at hcE
+        rcases hcE with h' | ⟨rfl, _⟩ | ⟨rfl, _, _⟩
+        · exact absurd h' (T.not_lt_z _)
+        · rfl
+        · rfl
+      subst ha2
+      have hbf : b ≤ f := by
+        rw [T.psi_lt_psi] at h1
+        rcases h1 with h' | ⟨_, h'⟩ | ⟨_, h', _⟩
+        · exact absurd h' (lt_irrefl' _)
+        · exact le_of_lt h'
+        · rw [h']
+      by_cases hu : u = z
+      · subst hu
+        refine ⟨f, List.mem_append_left _ ?_, le_trans (comps_le_head_arg hr g hg) hbf⟩
+        simp only [comps, List.mem_append]; left; rw [if_neg (by simp [lt])]; simp
+      · -- above level `0` there are no components
+        exfalso
+        have hall : ∀ {b d : T}, isOT (psi z b d) = true → comps u (psi z b d) = [] := by
+          intro b d hot
+          induction d generalizing b with
+          | z =>
+            simp only [comps]
+            rw [if_pos (by cases u with | z => exact absurd rfl hu | psi _ _ _ => rfl)]; rfl
+          | psi a' b' c' _ _ ih2 =>
+            obtain ⟨_, _, hc, hhc, _⟩ := isOT_psi_iff.mp hot
+            have ha' : a' = z := by
+              simp only [head] at hhc
+              rcases (le_iff _ _).mp hhc with h1 | h1
+              · rw [T.psi_lt_psi] at h1
+                rcases h1 with h1 | ⟨rfl, _⟩ | ⟨rfl, _, _⟩
+                · exact absurd h1 (T.not_lt_z _)
+                · rfl
+                · rfl
+              · simp only [psi.injEq] at h1; exact h1.1
+            subst ha'
+            have := ih2 hc
+            simp only [comps] at this ⊢
+            rw [if_pos (by cases u with | z => exact absurd rfl hu | psi _ _ _ => rfl)] at this ⊢
+            have hzu : lt z u = true := by cases u with | z => exact absurd rfl hu | psi _ _ _ => rfl
+            simpa [hzu] using this
+        rw [hall hr] at hg; simp at hg
+
 end Ytosk
