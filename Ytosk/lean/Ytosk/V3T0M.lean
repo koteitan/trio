@@ -6,7 +6,7 @@
 - r が根のとき: r より前は値が変わらず、M の根 r（値 ψ_v(Y0 + 1)）が N ではコピーの根
   ψ_v(Y0) × (n − 1) と M.take x での r の値に替わる（`root_N_B`）。
 -/
-import Ytosk.V3T0Good
+import Ytosk.V3T0Root
 
 namespace Ytosk
 
@@ -104,82 +104,6 @@ theorem root_N_A (hR0 : R0P M) (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 
   · intro i h1 h2
     have hn' := hcol0 (hRl i h1 (by omega))
     simp only [hf', hf]; exact ⟨if_neg hn', if_neg hn'⟩
-
-omit hlen hL hp hn in
-theorem col0_ne {N : Mat} {i : Nat} (h : entry N 0 i ≠ 0) : col N i ≠ (0, 0, 0) := by
-  intro hc
-  rw [col_eq_entries] at hc
-  simp only [Prod.mk.injEq] at hc
-  exact h hc.1
-
-/-- **A root `r`** has the zero column. -/
-theorem col_r_root (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 = 0) (hrn : par M 0 r = none) :
-    col M r = (0, 0, 0) := by
-  obtain ⟨R, hRA, hR0c, _⟩ := root_t1 hR01 hR12 h00 r
-  cases hRA with
-  | refl => exact hR0c
-  | step hq _ => rw [hrn] at hq; cases hq
-
-/-- The roots of `M` when `r` is a root. -/
-theorem roots_M_root (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 = 0) (hrn : par M 0 r = none) :
-    roots M = (List.range r).filter (fun i => decide (col M i = (0, 0, 0))) ++ [r] := by
-  have hcr := col_r_root hlen hL hp hn hR01 hR12 h00 hrn
-  unfold roots
-  rw [← hlen, show r + L + 1 = r + (L + 1) by omega, List.range_add, List.filter_append,
-    List.range_succ_eq_map, List.map_cons, List.map_map]
-  congr 1
-  rw [List.filter_cons, if_pos (by simpa using hcr)]
-  congr 1
-  rw [List.filter_eq_nil_iff]
-  intro i hi
-  obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hi
-  have hq' := List.mem_range.mp hq
-  simp only [Function.comp, decide_eq_true_eq]
-  exact col0_ne (show entry M 0 (r + (q + 1)) ≠ 0 by
-    have := e0_B_gt hlen hL hp (q := q + 1) (by omega) (by omega); omega)
-
-/-- The roots of `N` when `r` is a root: those before `r`, then the copy roots. -/
-theorem roots_N_root (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 = 0) (hrn : par M 0 r = none) :
-    roots (TRIO.gexp M r L 0 0 n) = (List.range r).filter (fun i => decide (col M i = (0, 0, 0))) ++
-      (List.range n).map (fun k => r + k * L) := by
-  have hcr := col_r_root hlen hL hp hn hR01 hR12 h00 hrn
-  have hlN := lenN0 hlen hn (M := M) (L := L)
-  unfold roots
-  rw [hlN, List.range_add, List.filter_append]
-  congr 1
-  · apply List.filter_congr
-    intro i hi
-    rw [col_pre0 hlen hL hp hn (by have := List.mem_range.mp hi; omega)]
-  · have hblk : ∀ k, k ≤ n → ((List.range (k * L)).map (fun x => r + x)).filter
-        (fun i => decide (col (TRIO.gexp M r L 0 0 n) i = (0, 0, 0))) =
-        (List.range k).map (fun j => r + j * L) := by
-      intro k
-      induction k with
-      | zero => intro _; simp
-      | succ k ih =>
-        intro hk
-        rw [Nat.succ_mul, List.range_add, List.map_append, List.filter_append, ih (by omega),
-          List.range_succ, List.map_append]
-        congr 1
-        obtain ⟨L', rfl⟩ : ∃ L', L = L' + 1 := ⟨L - 1, by omega⟩
-        rw [List.range_succ_eq_map, List.map_cons, List.map_cons, List.filter_cons]
-        have h0 : col (TRIO.gexp M r (L' + 1) 0 0 n) (r + (k * (L' + 1) + 0)) = (0, 0, 0) := by
-          rw [col_copy0 hlen (by omega) (by omega), Nat.add_zero]; exact hcr
-        rw [Nat.add_zero] at h0
-        rw [if_pos (by simpa using h0)]
-        simp only [List.map_singleton, List.cons.injEq]
-        rw [List.filter_eq_nil_iff]
-        refine ⟨by omega, fun i hi => ?_⟩
-        rw [List.map_map, List.map_map] at hi
-        obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hi
-        have hq' := List.mem_range.mp hq
-        simp only [Function.comp, decide_eq_true_eq]
-        have hc := col_copy0 hlen (k := k) (q := q + 1) (n := n) (by omega) (by omega)
-        rw [show r + (k * (L' + 1) + (q + 1)) = r + (k * (L' + 1) + Nat.succ q) by rfl] at hc
-        rw [hc]
-        exact col0_ne (by have := e0_B_gt hlen hL hp (q := q + 1) (by omega) (by omega); omega)
-    rw [Nat.mul_comm] at *
-    simpa [Nat.mul_comm] using hblk n (le_refl _)
 
 /-- **The root value when `r` is a root**: the root `r` of `M` (value `X`) becomes the copy roots
 `O × (n − 1)` and `X′ ≤ O`, with `O · n < X`. -/
@@ -295,11 +219,10 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
       VSmallV s')
     (hN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-      (∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true) ∧ VSmallNewN M r ρ σ ∧
-      (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
-      ((roots (TRIO.gexp M r L 0 0 n)).map σ.o).Pairwise (fun a b => b ≤ a)) :
+      (∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true) ∧ VSmallNewN M r ρ σ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
-      Good3 (TRIO.gexp M r L 0 0 n) ρN ∧
+      Good3 (TRIO.gexp M r L 0 0 n) ρN ∧ FrameOT (TRIO.gexp M r L 0 0 n) ρN ∧
+      ((roots (TRIO.gexp M r L 0 0 n)).map ρN.o).Pairwise (fun a b => b ≤ a) ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ := by
   intro n hn2
   have hn : 1 ≤ n := by omega
@@ -324,7 +247,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   set rkN : Bool → Nat → Nat := fun b i => rkM b (phi0 r L i) with hrkN
   set σ := rhsIt N (rkBound N rkN) with hσ
   have hCN : Cons N σ := cons_of_rk hRN
-  obtain ⟨hOTD, hVNN, hsN, hpN⟩ := hN n hn2 σ hCN
+  obtain ⟨hOTD, hVNN⟩ := hN n hn2 σ hCN
   refine ⟨σ, rkN, hCN, hRN, ?_⟩
   -- the values of `N`
   have hvC := t0_vals hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hn2 (depLike_chgX M (r + L))
@@ -355,6 +278,25 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   have hGN : GoodOT N σ := goodOT_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN
     hRN hGT hσB (fun i hi hd => (hoffD i hi).1 hd) hOTD
   obtain ⟨hor, hom⟩ := o_r_omid hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG
+  -- roots, frames
+  have hsN : ∀ i ∈ roots N, Single (σ.o i) := fun i hi =>
+    single_oT hCN hGN (by unfold roots at hi; exact List.mem_range.mp (List.mem_filter.mp hi).1)
+  have hOXle : omid M r L ρ ≤ ρ.o r := by
+    rw [hor, hom]; exact le_of_lt (psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_app_one _⟩))
+  have hlt0 : ρ'.o r < ρ.o r :=
+    hD true r (depLike_r hlen hL hp hx2 (depLike_depX M (r + L))) (by omega)
+  have hO'le : ρ'.o r ≤ omid M r L ρ := by
+    obtain ⟨_, s', y', hs'⟩ := (hdrop r (by omega)).1.2
+    have h := hlt0
+    rw [hs', hor] at h
+    rw [hs', hom]
+    rcases psi_lt_psi_z_iff.mp h with h1 | ⟨rfl, h2⟩
+    · exact le_of_lt (psi_lt_psi_z_iff.mpr (Or.inl h1))
+    · exact psi_le_psi_arg ((lt_succ_iff (x := _)).mp h2)
+  have hσBv : ∀ i, r ≤ i → i < N.length → σ.v i = (tauN r L n ρ ρ' (omid M r L ρ)).v i :=
+    fun i hri hiN => (hvC i hiN).2 (fun h => by omega)
+  have hFOT : FrameOT (M.take (r + L)) ρ' :=
+    frameOT_take (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hFO
   by_cases hrg : ∃ g, par M 0 r = some g
   · obtain ⟨g, hg⟩ := hrg
     have hgr : g < r := par_lt M 0 r g hg
@@ -541,7 +483,19 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     refine ⟨good3_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hC1
       hGT
       hσB (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => le_of_lt (hdl true d hD hd).1) hσmid hσlast
-      (hLast n hn2) (fun _ _ _ => hl), ?_⟩
+      (hLast n hn2) (fun _ _ _ => hl),
+      frameOT_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hFO hFOT
+        (fun i hri hiN => ⟨hσB i hri hiN, hσBv i hri hiN⟩) hoffD (fun g' hg' hcnt' => by
+          have hgg : g' = g := Option.some.inj (hg'.symm.trans hg)
+          subst hgg
+          have hσvg : σ.v g' = ρ.v g' := (hoffD g' hgr).2 (fun hd =>
+            uncnt_of_depv hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hp (by omega) hd hrc hcnt')
+          exact frameOT_g0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg' hcnt'
+            (fun c hc hd => (hoffD c hc).1 hd) hσvg hσmid hσlast (hLast n hn2 g' hg' hcnt') hl hy' hFO
+            (hOTD g' hgr (DepX.ochild hrc hcnt'.1 hcnt'.2 hDr))),
+      rootP_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hR01 hR12 h00 hpM
+        (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => le_of_lt (hdl true d hD hd).1)
+        (fun h => absurd h (by rw [hg]; simp)) hσmid hσlast hOXle hO'le, ?_⟩
     apply root_N_A hlen hL hp hn hR0 hR01 hR12 h00 hg hG hGN
     · intro i hi
       by_cases hd : DepX M (r + L) true i
@@ -560,7 +514,18 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       hGT
       hσB (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => absurd hd (by
         have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true d hD; omega))
-      hσmid hσlast (hLast n hn2) (fun g hg => absurd hg (by rw [hrn]; simp)), ?_⟩
+      hσmid hσlast (hLast n hn2) (fun g hg => absurd hg (by rw [hrn]; simp)),
+      frameOT_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hFO hFOT
+        (fun i hri hiN => ⟨hσB i hri hiN, hσBv i hri hiN⟩) hoffD
+        (fun g hg => absurd hg (by rw [hrn]; simp)), ?_, ?_⟩
+    · exact rootP_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hR01 hR12 h00 hpM
+        (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => absurd hd (by
+          have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true d hD; omega))
+        (fun _ => hσG) hσmid hσlast hOXle hO'le
+    have hpN := rootP_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hR01 hR12 h00 hpM
+        (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => absurd hd (by
+          have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true d hD; omega))
+        (fun _ => hσG) hσmid hσlast hOXle hO'le
     exact root_N_B hlen hL hp hn hR01 hR12 h00 hrn hn2 hsM hpM hsN hpN hσG hσmid hσlast hOX
 
 
@@ -598,10 +563,10 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ := by
   intro n hn2
-  obtain ⟨ρN, rkN, hCN, hRN, _, h⟩ := t0_core hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM
+  obtain ⟨ρN, rkN, hCN, hRN, _, _, _, h⟩ := t0_core hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM
     hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hsM hpM hLast hVr
     (fun n hn σ hCN => let h := hN n hn σ hCN;
-      ⟨fun i hi _ => h.1.ot_o i (by rw [lenN0 hlen (by omega)]; omega), h.2⟩) n hn2
+      ⟨fun i hi _ => h.1.ot_o i (by rw [lenN0 hlen (by omega)]; omega), h.2.1⟩) n hn2
   exact ⟨ρN, rkN, hCN, hRN, h⟩
 
 /-- `t0_main′` with the unused hypothesis `hVL` (kept for the existing callers). -/
