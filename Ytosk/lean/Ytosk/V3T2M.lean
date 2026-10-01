@@ -183,4 +183,140 @@ theorem CL_N2 (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L)) {i : Nat} (hi
 
 end
 
+section
+variable {M : Mat} {r L d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+  (hp : par M 0 (r + L) = some r) (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (hn2 : 2 ≤ n)
+  (hXu : ∀ i, upg M i ≠ some (r + L)) (hXb : ∀ p, col M (r + L) ≠ bump M p)
+  (hrb : ∀ p, par M 0 r = some p → col M r ≠ bump M p)
+  (he2r : entry M 2 r = 0)
+  (hIU : ∀ j c, r + L ≤ j → c < r + L → upg (TRIO.gexp M r L d0 d1 n) j ≠ some c)
+include hlen hL hp hd0e hn2 hXu hXb hrb he2r hIU
+
+/-- **Outside `D`, `N` has the values of `M` before `x`.** -/
+theorem t2_off {ρ σ : Valn} {rkN : Bool → Nat → Nat} (hC : Cons M ρ)
+    (hCN : Cons (TRIO.gexp M r L d0 d1 n) σ) (hRN : Rk (TRIO.gexp M r L d0 d1 n) rkN) :
+    ∀ i, i < r + L → (¬ DepS M (fun b i => b = true ∧ i = r) true i → σ.o i = ρ.o i) ∧
+      (¬ DepS M (fun b i => b = true ∧ i = r) false i → σ.v i = ρ.v i) := by
+  set N := TRIO.gexp M r L d0 d1 n with hN
+  set D := DepS M (fun b i => b = true ∧ i = r) with hD
+  have hlN : N.length = r + n * L := TRIO.gexp_length hlen
+  have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn2
+  have hbumpN : ∀ i, i < r + L → bump N i = bump M i := fun i hi => by
+    unfold bump; rw [entry_gexp_pre hlen (by omega) 0 hi, entry_gexp_pre hlen (by omega) 1 hi]
+  have hcolx : ∀ i, col N (r + L) ≠ bump N i := by
+    intro i h'
+    have : entry N 2 (r + L) = (col N (r + L)).2.2 := rfl
+    rw [h', (entry_xprime hlen hL hp hd0e (by omega) hn2).1, he2r] at this; simp [bump] at this
+  have hupgN : ∀ i, i < r + L → upg N i = upg M i := by
+    intro i hi
+    rcases Nat.lt_or_ge (i + 1) (r + L) with h | h
+    · exact upg_N2_pre hlen hL hp hd0e hn2 hXu hXb he2r h
+    · have : i = r + L - 1 := by omega
+      rw [this]; exact upg_N2_xm1 hlen hL hp hd0e (by omega) hn2 he2r (hXu _)
+  have key := cons_agree (τ := ρ) (fun b i => r + L ≤ i ∨ D b i) hCN hRN
+  have hres := key (by
+    intro i hi hE
+    simp only [not_or] at hE
+    have hix : i < r + L := by omega
+    rw [(hC i (by omega)).1]
+    unfold oRhs
+    rw [children_N2 hlen hL hp hd0e (by omega) hn2 hix]
+    congr 3
+    apply List.map_congr_left
+    intro c hc
+    have hcl := (mem_children hc).2
+    have hcx : c < r + L := by
+      by_contra h'
+      have : c = r + L := by omega
+      have hpc := (mem_children_iff.mp hc).2
+      rw [this, hp] at hpc; cases hpc
+      exact hE.2 (DepS.seed ⟨rfl, rfl⟩)
+    exact (cnt_eq_of (counted_N2 hlen hL hp hd0e hn2 hXu hXb he2r hIU hix hcx) rfl).symm) (by
+    intro i hi hE
+    simp only [not_or] at hE
+    have hix : i < r + L := by omega
+    rw [(hC i (by omega)).2]
+    symm
+    apply vRhs_eq_of (entry_gexp_pre hlen (by omega) 1 hix) (entry_gexp_pre hlen (by omega) 2 hix)
+    · intro _; rw [par_gexp_pre hlen (by omega) 1 hix]
+    · intro _ _; rw [hupgN i hix]
+    · intro _ _
+      rw [children_N2 hlen hL hp hd0e (by omega) hn2 hix]
+      congr 2
+      apply List.map_congr_left
+      intro j hj
+      have hjl := (mem_children hj).2
+      apply bumpTerm_eq_of
+      · rcases Nat.lt_or_ge j (r + L) with h | h
+        · rw [col_gexp_pre hlen (by omega) h, hbumpN i hix]
+        · have : j = r + L := by omega
+          rw [this]
+          exact ⟨fun h' => absurd h' (hcolx i), fun h' => absurd h' (hXb i)⟩
+      · intro hjb
+        have hjx : j < r + L := by
+          by_contra h'
+          have : j = r + L := by omega
+          rw [this] at hjb; exact hXb i hjb
+        rw [children_N2 hlen hL hp hd0e (by omega) hn2 hjx]) (by
+    intro i hi hE
+    simp only [not_or] at hE
+    have hix : i < r + L := by omega
+    refine ⟨fun h => ?_, fun c hc hcnt h => ?_⟩
+    · rcases h with h | h
+      · omega
+      · exact hE.2 (DepS.ov h)
+    · rw [children_N2 hlen hL hp hd0e (by omega) hn2 hix] at hc
+      have hcl := (mem_children hc).2
+      have hcx : c < r + L := by
+        by_contra h'
+        have : c = r + L := by omega
+        have hpc := (mem_children_iff.mp hc).2
+        rw [this, hp] at hpc; cases hpc
+        exact hE.2 (DepS.seed ⟨rfl, rfl⟩)
+      rcases h with h | h
+      · omega
+      · have hcM := (counted_N2 hlen hL hp hd0e hn2 hXu hXb he2r hIU hix hcx).mp hcnt
+        exact hE.2 (DepS.ochild hc hcM.1 hcM.2 h)) (by
+    intro i hi hE he1
+    simp only [not_or] at hE
+    have hix : i < r + L := by omega
+    rw [entry_gexp_pre hlen (by omega) 1 hix] at he1
+    refine ⟨fun m hm h => ?_, fun he2 k hk h => ?_, fun he2 j hj hjb k hk h => ?_⟩
+    · rw [par_gexp_pre hlen (by omega) 1 hix] at hm
+      rcases h with h | h
+      · have := par_lt M 1 i m hm; omega
+      · exact hE.2 (DepS.vpar he1 hm h)
+    · rw [entry_gexp_pre hlen (by omega) 2 hix] at he2
+      rw [hupgN i hix] at hk
+      have hkl := upg_lt (by omega) hk
+      have hkx : k ≠ r + L := fun h' => hXu i (h' ▸ hk)
+      rcases h with h | h
+      · omega
+      · exact hE.2 (DepS.vupg he1 he2 hk h)
+    · rw [entry_gexp_pre hlen (by omega) 2 hix] at he2
+      rw [children_N2 hlen hL hp hd0e (by omega) hn2 hix] at hj
+      have hjl := (mem_children hj).2
+      have hjx : j < r + L := by
+        by_contra h'
+        have : j = r + L := by omega
+        rw [this] at hjb; exact hcolx i hjb
+      rw [col_gexp_pre hlen (by omega) hjx, hbumpN i hix] at hjb
+      rw [children_N2 hlen hL hp hd0e (by omega) hn2 hjx] at hk
+      have hkl := (mem_children hk).2
+      have hkx : k < r + L := by
+        by_contra h'
+        have : k = r + L := by omega
+        have hpk := (mem_children_iff.mp hk).2
+        rw [this, hp] at hpk; cases hpk
+        exact hrb i (mem_children_iff.mp hj).2 hjb
+      rcases h with h | h
+      · omega
+      · exact hE.2 (DepS.vbump he1 he2 hj hjb hk h))
+  intro i hi
+  have h := hres i (by rw [hlN]; omega)
+  exact ⟨fun hd => h.1 (by rintro (h' | h'); omega; exact hd h'),
+    fun hd => h.2 (by rintro (h' | h'); omega; exact hd h')⟩
+
+end
+
 end Ytosk
