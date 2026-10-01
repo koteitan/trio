@@ -4,7 +4,7 @@
 V3StructT1・V3VLocT1 の補題（`dep_exit`・`nodep_sib`・`nodep_v_q`・`p1_dep`・`uncnt_of_depv`・`hOS_t1`・
 `nodep_not_last`・`dv_shape`）は x の行 2 が 0 であること（hx2）を 3 か所でしか使わない:
 x へ上げる列がないこと（2 か所）と、x がのりしろの子でないこと（1 か所）。
-ここではこの 2 つ（hXu・hXb）を仮定にした写し（名前の末尾 X）を置く。証明は同じ。
+ここではこの 2 つ（hXu・hXb: x は親ののりしろの子でない）を仮定にした写し（名前の末尾 X）を置く。証明は同じ。
 -/
 import Ytosk.V3MainT1F
 
@@ -18,7 +18,7 @@ set_option linter.unusedSectionVars false
 section
 variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
-  (hXu : ∀ i, upg M i ≠ some x) (hXb : ∀ p, col M x ≠ bump M p)
+  (hXu : ∀ i, upg M i ≠ some x) (hXb : ∀ p, par M 0 x = some p → col M x ≠ bump M p)
 include hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXb
 
 /-- **The exit of `D` from a subtree** not containing `x`: an upgrade into the next column after the
@@ -123,7 +123,7 @@ theorem nodep_v_qX {q : Nat} (hq : par M 0 x = some q) : ¬ DepX M x false q := 
       · exfalso
         have : j = x := by omega
         subst this
-        exact hXb _ hjb
+        exact hXb _ (mem_children_iff.mp hj).2 hjb
     exact nodep_sibX hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXb hq (Anc0.refl x) (fun h => absurd h (lt_irrefl _))
       _ j (Nat.le_refl _) hj hjx true k hdk (Anc0.step (mem_children_iff.mp hk).2 (Anc0.refl j))
 
@@ -132,7 +132,7 @@ end
 section
 variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
-  (hXu : ∀ i, upg M i ≠ some x) (hXb : ∀ p, col M x ≠ bump M p) {q : Nat} (hq : par M 0 x = some q)
+  (hXu : ∀ i, upg M i ≠ some x) (hXb : ∀ p, par M 0 x = some p → col M x ≠ bump M p) {q : Nat} (hq : par M 0 x = some q)
 include hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXb hq
 
 /-- **(P1 in `M`)** After a child in `D`, no sibling counts. -/
@@ -219,7 +219,7 @@ end
 section
 variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
-  (hXu : ∀ i, upg M i ≠ some x) (hXb : ∀ p, col M x ≠ bump M p) {q : Nat} (hq : par M 0 x = some q)
+  (hXu : ∀ i, upg M i ≠ some x) (hXb : ∀ p, par M 0 x = some p → col M x ≠ bump M p) {q : Nat} (hq : par M 0 x = some q)
 include hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXb hq
 
 /-- No `o` in `D` below a child of `p` (a column with row 2 nonzero) that has a later child,
@@ -298,7 +298,7 @@ theorem dv_shapeX {i : Nat} (hi : i < x) (hv : DepX M x false i) :
         · exfalso
           have : j = x := by have := (mem_children hj).2; omega
           subst this
-          exact hXb _ hjb
+          exact hXb _ (mem_children_iff.mp hj).2 hjb
       have hej : e < j := by
         by_contra hge
         have hA := anc_between hAde j (by omega) (by omega)
@@ -312,10 +312,10 @@ end
 
 /-- A column with row 2 zero is neither a bump child nor an upgrade target. -/
 theorem ne_of_e2z {M : Mat} {d : Nat} (h : entry M 2 d = 0) :
-    ∀ p, ((∃ t, col M p = bump M t) ∨ isUpg M p = true) → p ≠ d := by
+    ∀ p, ((∃ t, par M 0 p = some t ∧ col M p = bump M t) ∨ isUpg M p = true) → p ≠ d := by
   intro p hp e
   subst e
-  rcases hp with ⟨t, hb⟩ | hu
+  rcases hp with ⟨t, _, hb⟩ | hu
   · have := e2_of_col (show col M p = (entry M 0 t + 1, entry M 1 t, 1) from hb); omega
   · unfold isUpg at hu
     rw [List.any_eq_true] at hu
@@ -329,7 +329,7 @@ include hUAT hZ2 hR12 hBE
 /-- **Up the path, `D` continues** (general start): if `o(d)` is in `D`, `d` is neither a bump child nor upgraded, and the subtree of every
 column strictly between `a` and `d` on the path ends at `d`, then `o(a)` is in `D`. -/
 theorem path_upG (n : Nat) : ∀ a d, d - a ≤ n → d < M.length → Anc0 M a d →
-    (∀ p, ((∃ t, col M p = bump M t) ∨ isUpg M p = true) → p ≠ d) →
+    (∀ p, ((∃ t, par M 0 p = some t ∧ col M p = bump M t) ∨ isUpg M p = true) → p ≠ d) →
     DepX M x true d → (∀ t, a < t → Anc0 M t d → ¬ Anc0 M t (d + 1)) → DepX M x true a := by
   induction n using Nat.strong_induction_on with
   | _ n ihn =>
@@ -354,7 +354,7 @@ theorem path_upG (n : Nat) : ∀ a d, d - a ≤ n → d < M.length → Anc0 M a 
     · rcases not_counted_iff hc with hb | ⟨hiu, htop⟩
       · -- a bump edge: `v(t)` reads the grandchild on the path
         have hp2 : entry M 2 p = 1 := e2_of_col (show col M p = (entry M 0 t + 1, entry M 1 t, 1) from hb)
-        have hpd' : p ≠ d := hd2 p (Or.inl ⟨t, hb⟩)
+        have hpd' : p ≠ d := hd2 p (Or.inl ⟨t, hpt, hb⟩)
         obtain ⟨p', hpp', hp'd⟩ := anc0_child hpd hpd'
         have hp'dl := hp'd.le
         have hp'M : p' ∈ children M p := mem_children_iff.mpr ⟨by omega, hpp'⟩
@@ -398,7 +398,7 @@ theorem path_upG (n : Nat) : ∀ a d, d - a ≤ n → d < M.length → Anc0 M a 
         have hb' : col M p' = bump M p := by simpa using htop
         have hp'2 : entry M 2 p' = 1 :=
           e2_of_col (show col M p' = (entry M 0 p + 1, entry M 1 p, 1) from hb')
-        have hp'd' : p' ≠ d := hd2 p' (Or.inl ⟨p, hb'⟩)
+        have hp'd' : p' ≠ d := hd2 p' (Or.inl ⟨p, hpp', hb'⟩)
         obtain ⟨p'', hpp'', hp''d⟩ := anc0_child hp'd hp'd'
         have hp''dl := hp''d.le
         have hpp''lt := par_lt M 0 p'' p' hpp''
@@ -423,7 +423,7 @@ theorem path_upG (n : Nat) : ∀ a d, d - a ≤ n → d < M.length → Anc0 M a 
 
 /-- **Every ancestor of `x` has its `o` in `D`** when `x` is neither a bump child nor upgraded. -/
 theorem dep_anc_xG (hx : x + 1 = M.length)
-    (hxn : ∀ p, ((∃ t, col M p = bump M t) ∨ isUpg M p = true) → p ≠ x) {a : Nat} (ha : Anc0 M a x) :
+    (hxn : ∀ p, ((∃ t, par M 0 p = some t ∧ col M p = bump M t) ∨ isUpg M p = true) → p ≠ x) {a : Nat} (ha : Anc0 M a x) :
     DepX M x true a :=
   path_upG hUAT hZ2 hR12 hBE (x - a) a x (Nat.le_refl _) (by omega) ha hxn DepX.leaf
     (fun t _ htx => not_anc_out (by omega) (by have := htx.le; omega))

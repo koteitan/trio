@@ -3,7 +3,7 @@
 
 主の場合（x へ上げる列がない、x と r はのりしろの子でない）では、種は o(r) だけ。
 - D = DepS M {o(r)} は x より前で DepX M x と同じ（`depS_iff_depX`）。
-- x より前の数え方は N と M で同じ（コピーの列から x より前への上げはない、を仮定 hIU に置く）。
+- x より前の数え方は N と M で同じ（x より前の isUpg が N と M で同じことを仮定 hIU に置く）。
 -/
 import Ytosk.V3T2S
 import Ytosk.V3DepLhd
@@ -17,7 +17,7 @@ set_option linter.unusedSectionVars false
 section
 variable {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r)
-  (hXu : ∀ i, upg M i ≠ some (r + L)) (hXb : ∀ p, col M (r + L) ≠ bump M p)
+  (hXu : ∀ i, upg M i ≠ some (r + L)) (hXb : col M (r + L) ≠ bump M r)
   (hrb : ∀ p, par M 0 r = some p → col M r ≠ bump M p)
 include hlen hL hp hXu hXb hrb
 
@@ -27,7 +27,7 @@ theorem isUpg_x_false : isUpg M (r + L) = false := by
 
 omit hrb in
 theorem counted_r_x : Counted M r (r + L) :=
-  ⟨hXb r, by rw [isUpg_x_false hXu]; simp⟩
+  ⟨hXb, by rw [isUpg_x_false hXu]; simp⟩
 
 omit hrb in
 theorem depS_sub_depX {b : Bool} {i : Nat} (h : DepS M (fun b i => b = true ∧ i = r) b i) :
@@ -35,7 +35,7 @@ theorem depS_sub_depX {b : Bool} {i : Nat} (h : DepS M (fun b i => b = true ∧ 
   induction h with
   | seed hs =>
     obtain ⟨rfl, rfl⟩ := hs
-    exact DepX.ochild (mem_children_iff.mpr ⟨by omega, hp⟩) (hXb _)
+    exact DepX.ochild (mem_children_iff.mpr ⟨by omega, hp⟩) hXb
       (by rw [isUpg_x_false hXu]; simp) DepX.leaf
   | ochild hc hcb hcu _ ih => exact DepX.ochild hc hcb hcu ih
   | ov _ ih => exact DepX.ov ih
@@ -87,9 +87,9 @@ end
 section
 variable {M : Mat} {r L d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r) (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (hn2 : 2 ≤ n)
-  (hXu : ∀ i, upg M i ≠ some (r + L)) (hXb : ∀ p, col M (r + L) ≠ bump M p)
+  (hXu : ∀ i, upg M i ≠ some (r + L)) (hXb : col M (r + L) ≠ bump M r)
   (he2r : entry M 2 r = 0)
-  (hIU : ∀ j c, r + L ≤ j → c < r + L → upg (TRIO.gexp M r L d0 d1 n) j ≠ some c)
+  (hIU : ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c)
 include hlen hL hp hd0e hn2 hXu hXb he2r hIU
 
 omit hIU in
@@ -97,41 +97,9 @@ theorem upg_N2_pre {j : Nat} (hj : j + 1 < r + L) :
     upg (TRIO.gexp M r L d0 d1 n) j = upg M j := by
   rw [← upg_take _ hj, gexp_take_x hlen (by omega), upg_take M hj]
 
-/-- **Upgrades into columns before `x`** are the same in `N` and `M`. -/
+/-- **Upgrades into columns before `x`** are the same in `N` and `M` (the hypothesis `hIU`). -/
 theorem isUpg_N2 {c : Nat} (hc : c < r + L) :
-    isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c := by
-  have hlN : (TRIO.gexp M r L d0 d1 n).length = r + n * L := TRIO.gexp_length hlen
-  have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn2
-  have hxm1 := upg_N2_xm1 (d1 := d1) hlen hL hp hd0e (by omega) hn2 he2r (hXu _)
-  apply Bool.eq_iff_iff.mpr
-  unfold isUpg
-  rw [List.any_eq_true, List.any_eq_true]
-  constructor
-  · rintro ⟨j, hj, hu⟩
-    have hu' : upg (TRIO.gexp M r L d0 d1 n) j = some c := by simpa using hu
-    have hj' := List.mem_range.mp hj
-    refine ⟨j, List.mem_range.mpr ?_, ?_⟩
-    · rcases Nat.lt_or_ge j (r + L) with h | h
-      · omega
-      · exact absurd hu' (hIU j c h hc)
-    · rcases Nat.lt_or_ge (j + 1) (r + L) with h | h
-      · rw [upg_N2_pre hlen hL hp hd0e hn2 hXu hXb he2r h] at hu'; simpa using hu'
-      · rcases Nat.lt_or_ge j (r + L) with h' | h'
-        · have : j = r + L - 1 := by omega
-          rw [this, hxm1] at hu'; rw [this]; simpa using hu'
-        · exact absurd hu' (hIU j c h' hc)
-  · rintro ⟨j, hj, hu⟩
-    have hu' : upg M j = some c := by simpa using hu
-    have hj' := List.mem_range.mp hj
-    have hjx : j < r + L := by
-      by_contra h
-      have : j + 1 = M.length := by omega
-      unfold upg at hu'; rw [if_pos (Or.inr (Or.inr this))] at hu'; cases hu'
-    refine ⟨j, List.mem_range.mpr (by rw [hlN]; omega), ?_⟩
-    rcases Nat.lt_or_ge (j + 1) (r + L) with h | h
-    · rw [upg_N2_pre hlen hL hp hd0e hn2 hXu hXb he2r h]; simpa using hu'
-    · have : j = r + L - 1 := by omega
-      rw [this, hxm1]; rw [this] at hu'; simpa using hu'
+    isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c := hIU c hc
 
 omit hIU in
 /-- **`topped` before `x`** is the same. -/
@@ -154,7 +122,10 @@ theorem topped_N2 {c : Nat} (hc : c < r + L) :
         intro h'
         have : entry (TRIO.gexp M r L d0 d1 n) 2 (r + L) = (col (TRIO.gexp M r L d0 d1 n) (r + L)).2.2 := rfl
         rw [h', (entry_xprime hlen hL hp hd0e (by omega) hn2).1, he2r] at this; simp [bump] at this
-      simp only [decide_eq_false h1, decide_eq_false (hXb c)]
+      have hcr : c = r := by
+        have h' := (mem_children_iff.mp hd).2; rw [hp] at h'; exact (Option.some.inj h').symm
+      have h2 : ¬ col M (r + L) = bump M c := by rw [hcr]; exact hXb
+      simp only [decide_eq_false h1, decide_eq_false h2]
 
 /-- **Counting before `x`** is the same. -/
 theorem counted_N2 {i c : Nat} (hi : i < r + L) (hc : c < r + L) :
@@ -178,7 +149,7 @@ theorem CL_N2 (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L)) {i : Nat} (hi
     have hpc := (mem_children_iff.mp hc).2
     rw [hcx, hp] at hpc; cases hpc
     rw [hcx]
-    have hM : Counted M r (r + L) := ⟨hXb r, by rw [isUpg_x_false hXu]; simp⟩
+    have hM : Counted M r (r + L) := ⟨hXb, by rw [isUpg_x_false hXu]; simp⟩
     simp only [decide_eq_true hxcN, decide_eq_true hM]
 
 end
@@ -186,10 +157,10 @@ end
 section
 variable {M : Mat} {r L d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r) (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (hn2 : 2 ≤ n)
-  (hXu : ∀ i, upg M i ≠ some (r + L)) (hXb : ∀ p, col M (r + L) ≠ bump M p)
+  (hXu : ∀ i, upg M i ≠ some (r + L)) (hXb : col M (r + L) ≠ bump M r)
   (hrb : ∀ p, par M 0 r = some p → col M r ≠ bump M p)
   (he2r : entry M 2 r = 0)
-  (hIU : ∀ j c, r + L ≤ j → c < r + L → upg (TRIO.gexp M r L d0 d1 n) j ≠ some c)
+  (hIU : ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c)
 include hlen hL hp hd0e hn2 hXu hXb hrb he2r hIU
 
 /-- **Outside `D`, `N` has the values of `M` before `x`.** -/
@@ -250,13 +221,16 @@ theorem t2_off {ρ σ : Valn} {rkN : Bool → Nat → Nat} (hC : Cons M ρ)
       · rcases Nat.lt_or_ge j (r + L) with h | h
         · rw [col_gexp_pre hlen (by omega) h, hbumpN i hix]
         · have : j = r + L := by omega
+          have hxi : col M (r + L) ≠ bump M i := by
+            have h' := (mem_children_iff.mp hj).2; rw [this, hp] at h'; cases h'; exact hXb
           rw [this]
-          exact ⟨fun h' => absurd h' (hcolx i), fun h' => absurd h' (hXb i)⟩
+          exact ⟨fun h' => absurd h' (hcolx i), fun h' => absurd h' hxi⟩
       · intro hjb
         have hjx : j < r + L := by
           by_contra h'
           have : j = r + L := by omega
-          rw [this] at hjb; exact hXb i hjb
+          have h' := (mem_children_iff.mp hj).2; rw [this, hp] at h'; cases h'
+          rw [this] at hjb; exact hXb hjb
         rw [children_N2 hlen hL hp hd0e (by omega) hn2 hjx]) (by
     intro i hi hE
     simp only [not_or] at hE
@@ -408,7 +382,7 @@ theorem root_N2 (hR0 : R0P M) (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 =
 
 /-- **`t = 2`, `q = r`, the main case** (no column upgrades to `x`): the value of `N = M[n]` (`n ≥ 2`) is
 standard and below that of `M`. Hypotheses beyond the structural invariants and `ValInv` of `M`:
-`N`'s evaluation (`Good3`), the copies do not upgrade into columns before `x` (`hIU`), `x′` counts at `r`,
+`N`'s evaluation (`Good3`), the columns before `x` are upgraded in `N` iff in `M` (`hIU`), `x′` counts at `r`,
 `VSmallNew` for `N`, and the seed at `r` (`o_N(r) = ψ_{v(r)}(X)` with `X` closed and below a term of the
 fundamental sequence of `o_M(r)`). -/
 theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M)
@@ -429,6 +403,8 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
     isOT (root (TRIO.gexp M r L d0 d1 n) σ) = true ∧ root (TRIO.gexp M r L d0 d1 n) σ < root M ρ := by
   set N := TRIO.gexp M r L d0 d1 n with hN
   set S : Bool → Nat → Prop := fun b i => b = true ∧ i = r with hS
+  have hXbD : ∀ p, par M 0 (r + L) = some p → col M (r + L) ≠ bump M p := by
+    intro p h'; rw [hp] at h'; cases h'; exact hXb
   have hx : r + L + 1 = M.length := hlen
   have hlN : N.length = r + n * L := TRIO.gexp_length hlen
   have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn2
@@ -470,13 +446,13 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
       unfold CL; rw [List.filter_eq_nil_iff]
       intro d hdc
       simp only [decide_eq_true_eq]
-      exact uncnt_of_depvX hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXb hp hc
+      exact uncnt_of_depvX hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXbD hp hc
         ((hiff false c hc).mp hd) hdc)
     (by intro c hc h; rw [hcl c hc]; exact h)
     (by
       intro i hi hns hD hv
       have hir : i ≠ r := fun h => hns ⟨rfl, h⟩
-      rcases hOS_t1X hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXb hp i hi ((hiff true i hi).mp hD) with
+      rcases hOS_t1X hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXbD hp i hi ((hiff true i hi).mp hD) with
         ⟨hvX, _⟩ | ⟨_, Lp, c0, R, hch, hcb0, hcu0, hR, hLnd⟩
       · exact absurd ((hiff false i hi).mpr hvX) hv
       · cases hD with
@@ -519,7 +495,7 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
     (by
       intro i hi _ hD
       have hDX := (hiff false i hi).mp hD
-      obtain ⟨he1, hpnd, hcase⟩ := dv_shapeX hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXb hp hi hDX
+      obtain ⟨he1, hpnd, hcase⟩ := dv_shapeX hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXbD hp hi hDX
       refine ⟨entry_gexp_pre hlen (by omega) 1 hi, entry_gexp_pre hlen (by omega) 2 hi,
         par_gexp_pre hlen (by omega) 1 hi,
         fun m hm h => hpnd m hm ((hiff false m (by have := par_lt M 1 i m hm; omega)).mp h),
@@ -534,7 +510,8 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
           have hjx : j < r + L := by
             by_contra h'
             have : j = r + L := by omega
-            rw [this] at hjb; exact hXb i hjb
+            have h' := (mem_children_iff.mp hj).2; rw [this, hp] at h'; cases h'
+            rw [this] at hjb; exact hXb hjb
           have hk : k ∈ children M j := by rw [hchj]; simp
           have hkl := (mem_children hk).2
           have hkx : k < r + L := by
@@ -577,11 +554,12 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
     · exact le_of_lt (hdl true i hd hi).1
     · rw [(hoff i hi).1 hd]
   · intro R hR hRA _
-    have hxn : ∀ p, ((∃ t, col M p = bump M t) ∨ isUpg M p = true) → p ≠ r + L := by
+    have hxn : ∀ p, ((∃ t, par M 0 p = some t ∧ col M p = bump M t) ∨ isUpg M p = true) →
+        p ≠ r + L := by
       intro p hp' e
       subst e
-      rcases hp' with ⟨t, hb⟩ | hu
-      · exact hXb t hb
+      rcases hp' with ⟨t, hpt, hb⟩ | hu
+      · rw [hp] at hpt; cases hpt; exact hXb hb
       · rw [isUpg_x_false hXu] at hu; cases hu
     exact (hdl true R ((hiff true R hR).mpr (dep_anc_xG hUAT hZ2 hR12 hBE hx hxn hRA)) hR).1
 
