@@ -150,6 +150,26 @@ theorem step_ot_of_closed {a B s y : T} (hBot : isOT (psi a B z) = true)
     isOT (psi a (step a B s y z) z) = true :=
   step_ot hBot hc hBc hsub (fun g hg => Or.inl (hcl a (lt_irrefl' a) g hg))
 
+/-- **The converse**: if `ψ_a(step a B s y)` is standard and `a ≤ s`, the components of `y` at the level `a`
+are below the result (they are components of the result: `c` is a summand of it, or the result is `y`). -/
+theorem comps_le_step_of_ot {a B s y : T} (hX : isOT (psi a (step a B s y z) z) = true)
+    (hc : isOT (psi s y z) = true) (hBc : ∀ q ∈ summands B, psi s y z ≤ q) (hsa : ¬ lt s a = true) :
+    ∀ g ∈ comps a y, g ≤ step a B s y z := by
+  intro g hg
+  apply le_of_lt
+  apply comps_lt hX
+  have hgc : g ∈ comps a (psi s y z) := by rw [comps_psi_z_of_ge hsa]; simp [hg]
+  unfold step
+  split_ifs with ht
+  · rw [H_eq hc]
+    by_cases hlo : (split y (psi (succ s) z z)).2 = z
+    · rw [if_pos hlo, app_z_right]
+      have e := split_app (psi (succ s) z z) y
+      rw [hlo, app_z_right] at e
+      rw [e]; exact hg
+    · rw [if_neg hlo, comps_app]; exact List.mem_append_right _ hgc
+  · rw [step_add hBc, comps_app]; exact List.mem_append_right _ hgc
+
 /-! ## y の仮定は外せない -/
 
 /-- **Counterexample without the hypothesis on `y`**: `a = 0`, `c = ψ_1(ψ_0(Ω_2))` (standard, `SubSmall 0 1`).
