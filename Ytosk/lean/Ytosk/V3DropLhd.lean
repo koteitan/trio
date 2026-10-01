@@ -212,4 +212,21 @@ theorem lhdE_step_tt_shape {a B s P R R' : T} (hc' : isOT (psi s (app P R') z) =
   · intro hl' _
     exact hmis_of_lhdE (isOT_arg hc) hy hl'
 
+/-- **A rewrite only in `M`, with a low part**: when `B = hi(y)` the two steps share the prefix `B`. -/
+theorem lhdE_step_tn {a B s' y' s y : T} (hc : isOT (psi s y z) = true)
+    (hX : LhdE (psi s' y' z) (psi s y z))
+    (hn' : ¬ (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true))
+    (ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true)
+    (hlo : (split y (psi (succ s) z z)).2 ≠ z) (hBhi : B = (split y (psi (succ s) z z)).1)
+    (hB : ∀ q ∈ summands B, psi s y z ≤ q) :
+    LhdE (step a B s' y' z) (step a B s y z) := by
+  unfold step
+  rw [if_neg hn', if_pos ht, H_eq hc, if_neg hlo, ← hBhi]
+  have hadd : add B (psi s' y' z) = app B (psi s' y' z) := by
+    have := add_app_drop (lo := z) (B := B) (s := s') (y := y')
+      (fun q hq hlt => lt_irrefl' _ (lt_of_lt_of_le (lt_of_lt_of_le hlt hX.le) (hB q hq))) (Or.inl rfl)
+    rwa [app_z_right] at this
+  rw [hadd]
+  exact lhdE_app B hX
+
 end Ytosk
