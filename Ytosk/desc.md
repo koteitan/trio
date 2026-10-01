@@ -1539,3 +1539,12 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - したがって吸収の仮定は強い枝に入る列だけに置けばよい（BumpAbsS、StrongG の形）。
 - 弱い閉包 Wk の外だけで吸収、という ρ だけの形（BumpAbsW）も真だが、今の証明の分岐（g_level の出力で決まる）と合わない。
 - Lean（step-ot）: BWS の k = x の枝に ¬ LhdE (v′ i) (v i)（650c8d59）、BumpAbsC の前件を StrongG ∨ XParNB ∨ v(x) = 0 にした（4908e9f0）。StrongG = M.take x の評価で i ののりしろの子すべてが BRelS。C′ でそれぞれ例外 0。
+
+### 現在の最上位 trio_terminates_main_T2 と、偽と分かっている欄（2026-10-02、V3Main）
+
+- trio_terminates_main_T2: 基底（V3BaseInd）と t = 2（V3T2Fin、strict-r）を差し込んだ形。残りの仮定は hLast・hExp・hR2（Res3T2）。
+- **注意: 今の Inv3・Res3A のまま hLast・hExp は証明できない。** 次の欄が標準形（C′）で偽:
+  - Inv3: VSmallF（84 枠）、FrameClosed（M[3] の例）。
+  - Res3A: fch（FrameClosedHi、252 枠）、seed（hcs）、drop.vst（VSmallNew、1 件）。
+  - 修理中: VSmall 系と seed は omega-lhd、FrameClosed・fch は t1-struct。修理後、これらの欄は弱い形に置き換えるか外す。
+- 結論（根の値の降下、落とす補題の関係）が C′ で成り立つかは step-ot が確認中。
