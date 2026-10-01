@@ -608,4 +608,67 @@ theorem t0_frame_trig {a bg v b : T} {n : Nat} (hn : 1 ≤ n)
     calc y = app hi lo := hbpl.symm
       _ < app hi (psi s y z) := (app_lt_app_left_iff hi).mpr hlt
 
+/-- **The `g` frame with a rewrite that swallows the first copy** (`t = 0`, `b_g < b`, no lower part):
+`[n − 1]`. -/
+theorem t0_frame_swallow {a bg v b : T} {n : Nat} (hn : 1 ≤ n)
+    (hc : isOT (psi v (app b one) z) = true) (hc' : isOT (psi v b z) = true)
+    (htr : lt bg (app b one) = true ∧ lt (psi a z z) (psi v (app b one) z) = true)
+    (hbb : lt bg b = true) (hlo0 : (split b (psi (succ v) z z)).2 = z) :
+    fs (psi a (spArg a bg (psi v (app b one) z)) z) (natT (n - 1)) =
+      psi a (spArg a bg (mulT (psi v b z) n)) z := by
+  have hcz : psi v (app b one) z ≠ z := by simp
+  have hne : app b one ≠ z := fun h => absurd (app_eq_z h).2 (by simp [one])
+  have hb0 : b ≠ z := by rintro rfl; simp [lt] at hbb
+  have hbot := isOT_arg hc'
+  have hbpl := split_app (psi (succ v) z z) b
+  rw [hlo0, app_z_right] at hbpl
+  have hpge := split_fst_ge (psi (succ v) z z) b
+  rw [hbpl] at hpge
+  have hone : one < psi (succ v) z z := by
+    show psi z z z < _; rw [psi_lt_psi_z_iff]; left
+    exact lt_of_le_of_lt (z_le v) (lt_succ_self v)
+  have hsp1 : split (app b one) (psi (succ v) z z) = (b, one) :=
+    split_app_of hpge (Or.inr hone)
+  have hH : spArg a bg (psi v (app b one) z) = app b (psi v (app b one) z) := by
+    rw [spArg_single]; unfold step; rw [if_pos htr, H_eq hc, hsp1]
+    simp only [show one ≠ z by simp [one], if_false]
+  have hs1 : isSucc (app b one) = true := isSucc_succ b
+  have hcof : cof (app b (psi v (app b one) z)) = .omega := by
+    rw [cof_app b hcz]; simp [cof, hne, hs1]
+  have hsX : isSucc (app b (psi v (app b one) z)) = false := by
+    rw [isSucc_app b hcz]; simp [isSucc, last, one]; exact fun _ h => hne h
+  rw [hH]
+  conv => lhs; unfold fs
+  rw [if_neg (fun h => hcz (app_eq_z h).2), if_neg (by rw [hsX]; simp), hcof]
+  simp only
+  rw [fs_app b hcz, fs_succ_arg]
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  show _ = psi a (spArg a bg (app (psi v b z) (mulT (psi v b z) m))) z
+  simp only [app_psi, app_z, Nat.add_sub_cancel]
+  rw [spArg_cons]
+  have hfirst : step a bg v b (mulT (psi v b z) m) = b := by
+    rw [step_rest a bg v b _ z]
+    unfold step
+    have htr' : lt bg b = true ∧ lt (psi a z z) (psi v b z) = true := by
+      refine ⟨hbb, ?_⟩; rw [trig_cond hb0 hne]; exact htr.2
+    rw [if_pos htr', H_eq hc', hlo0]
+    simp [hbpl]
+  rw [hfirst]
+  have hhi : ∀ q ∈ summands b, ¬ q < psi v b z := by
+    intro q hq h
+    exact hpge q hq (lt_trans h (by rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self v)))
+  have hR : isOT (app b (mulT (psi v b z) m)) = true := by
+    apply isOT_app_of hbot (isOT_mulT hc' ⟨_, _, rfl⟩ m)
+    intro q hq
+    cases m with
+    | zero => exact z_le _
+    | succ m => simp [mulT, head]; exact le_of_not_gt (hhi q hq)
+  rw [spArg_eq_app hR]
+  intro s y hq
+  have hq' := summands_mulT ⟨v, b, rfl⟩ m _ hq
+  simp only [psi.injEq] at hq'
+  obtain ⟨hs, hy, _⟩ := hq'
+  subst hs; subst hy
+  exact Or.inl (le_refl _)
+
 end Ytosk
