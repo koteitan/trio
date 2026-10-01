@@ -465,7 +465,7 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
     (hOc : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S true i → ¬ DepS M S false i →
       ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ DepS M S true c ∧ c < bnd ∧
         ∀ d ∈ Lc, ¬ DepS M S true d ∧ d < bnd)
-    (hVNN : ∀ i, i < bnd → ∀ (Lc : List Nat) (cs : Nat), CL M i = Lc ++ [cs] → σ.v cs ≠ ρ.v cs →
+    (hVNN : ∀ i, i < bnd → ∀ (Lc : List Nat) (cs : Nat), CL N i = Lc ++ [cs] → cs < bnd → σ.v cs ≠ ρ.v cs →
       ∀ s y, ρ.o cs = psi s y z →
         lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
         VSmallV (σ.v cs))
@@ -558,7 +558,7 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
               rw [hs'y'] at ho0; simp only [psi.injEq] at ho0
               rcases hrw with hn' | ho
               · exfalso; have := hn'.1; rw [ho0.2.1] at this; exact T.not_lt_z _ this
-              · rw [ho0.1]; exact (hVNN i hi Lc c hclM hvc s y hsy ho).subSmall _
+              · rw [ho0.1]; exact (hVNN i hi Lc c hclN hcb hvc s y hsy ho).subSmall _
           · intro s hs
             have hclc : CL M c = [] := by
               by_contra hne

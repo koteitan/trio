@@ -183,10 +183,33 @@ def VNNc (M : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
       lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
       VSmallV (σ.v cs)
 
-/-- The seed condition at `p`: `o_N(p) = ψ_{v(p)}(X)` with `X` closed and below a term of the
-fundamental sequence of `o_M(p)`. -/
-def SeedC (ρ σ : Valn) (p : Nat) : Prop :=
-  ∃ X K, σ.o p = psi (ρ.v p) X z ∧ Closed (ρ.v p) X ∧ psi (ρ.v p) X z ≤ fs (ρ.o p) (natT K)
+/-- The value hypothesis `hVNN` with the counted children of `N`. -/
+def VNNcN (M N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
+  ∀ i, i < bnd → ∀ (Lc : List Nat) (cs : Nat), CL N i = Lc ++ [cs] → cs < bnd → σ.v cs ≠ ρ.v cs →
+    ∀ s y, ρ.o cs = psi s y z →
+      lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
+      VSmallV (σ.v cs)
+
+/-- The seed at `p` in `M[n]` (`n ≥ 2`): `o_N(p) ◁ o_M(p)`. (The sufficient condition `SeedC`, closedness
+of the new argument and a bound by a term of the fundamental sequence, fails on 61 cases of C′; the
+`◁` itself has no exception there.) -/
+def SeedL (ρ σ : Valn) (p : Nat) : Prop := Lhd z (σ.o p) (ρ.o p)
+
+/-- **The seed of `M.take x` from the drop lemma**: `PO` at `p` with counted children in `M` and a
+changed value gives `◁`. -/
+theorem lhd_of_po {M : Mat} {ρ ρ' : Valn} {p : Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hpM : p < M.length) (hcl : CL M p ≠ []) (hPO : PO ρ ρ' p) (hne : ρ'.o p ≠ ρ.o p) :
+    Lhd z (ρ'.o p) (ρ.o p) := by
+  rcases hPO.1 with hE | ⟨_, w, hw⟩
+  · apply lhd_of_lhdE_lt hE
+    rcases (le_iff _ _).mp hE.le with h | h
+    · exact h
+    · exact absurd h hne
+  · exfalso
+    have hor := o_cl_eq hC hG hpM
+    have harg := arg_lt_of_cl hC hG hpM hcl
+    rw [hw] at hor; simp only [psi.injEq] at hor
+    rw [← hor.2.1] at harg; exact lt_irrefl' _ harg
 
 /-- The `o` shape of `D = DepS M S` (with weak calls `W`). -/
 def OShW (M : Mat) (S W : Bool → Nat → Prop) (bnd : Nat) : Prop :=
@@ -310,11 +333,11 @@ structure T2QN (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L qp pq : Na
   dv : ∀ c, c < r + L → DepS M (SQ (r + qp) pq) false c → CL M c = []
   os : OShW M (SQ (r + qp) pq) (WQ (r + qp)) (r + L)
   vsh : VSh M (SQ (r + qp) pq) (r + L)
-  vnn1 : VNNc M (r + L) ρ (drop1 M (r + L) rk)
-  seed1 : SeedC ρ (drop1 M (r + L) rk) pq
+  seed1 : (drop1 M (r + L) rk).o pq ≠ ρ.o pq
   big : ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ c, c < r + L → c ≠ r + qp → topped M c = true →
-      isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c) ∧ VNNc M (r + L) ρ σ ∧ SeedC ρ σ pq
+      isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c) ∧ VNNcN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
+      SeedL ρ σ pq
 
 /-- **`q = r`, `x − 1` upgrades to `x`.** -/
 structure T2SV (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Prop where
@@ -323,16 +346,14 @@ structure T2SV (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : P
   dv : ∀ c, c < r + L → DepS M (SV r (r + L - 1)) false c → CL M c = []
   os : OSh M (SV r (r + L - 1)) (r + L)
   vsh : VSh M (SV r (r + L - 1)) (r + L)
-  vnn1 : VNNc M (r + L) ρ (drop1 M (r + L) rk)
-  seed1 : SeedC ρ (drop1 M (r + L) rk) r
+  seed1 : (drop1 M (r + L) rk).o r ≠ ρ.o r
   big : ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ c, c < r + L → topped M c = true → isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c) ∧
-    VNNc M (r + L) ρ σ ∧ SeedC ρ σ r
+    VNNcN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ SeedL ρ σ r
 
 /-- **`q = r`, `x − 1` upgrades nowhere** (`n ≤ 1`). -/
 structure T2QR (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Prop where
-  vnn1 : VNNc M (r + L) ρ (drop1 M (r + L) rk)
-  seed1 : SeedC ρ (drop1 M (r + L) rk) r
+  seed1 : (drop1 M (r + L) rk).o r ≠ ρ.o r
 
 /-- **`q = r`, `x − 1` upgrades to `k < x`** (`n ≤ 1`). -/
 structure T2QU (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L k : Nat) : Prop where
@@ -342,8 +363,7 @@ structure T2QU (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L k : Nat) :
   vr : r ≠ r + L - 1 → ¬ DepS M (SV r (r + L - 1)) false r
   os : OSh M (SV r (r + L - 1)) (r + L)
   vsh : VSh M (SV r (r + L - 1)) (r + L)
-  vnn1 : VNNc M (r + L) ρ (drop1 M (r + L) rk)
-  seed1 : r ≠ r + L - 1 → SeedC ρ (drop1 M (r + L) rk) r
+  seed1 : r ≠ r + L - 1 → (drop1 M (r + L) rk).o r ≠ ρ.o r
 
 /-- **`q = r`.** -/
 structure T2R (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Prop where
@@ -352,7 +372,7 @@ structure T2R (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Pr
   up : ∀ k, upg M (r + L - 1) = some k → k < r + L → T2QU M ρ rk r L k
   big : upg M (r + L - 1) ≠ some (r + L) → ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c) ∧
-    Counted (TRIO.gexp M r L d0 d1 n) r (r + L) ∧ VNNc M (r + L) ρ σ ∧ SeedC ρ σ r
+    Counted (TRIO.gexp M r L d0 d1 n) r (r + L) ∧ VNNc M (r + L) ρ σ ∧ SeedL ρ σ r
 
 /-- **The remaining hypotheses of `t = 2`** (`x = r + L`, `r = P_2(x)`). -/
 structure Res3T2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
@@ -427,6 +447,15 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rk) :=
     good3_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
       ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr
+  have hdrop := drop_all (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs hdr.vst
+    I.fc I.fo hdr.argT
+    (bump_drop (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hdr.ab hdr.ws)
+    hdr.ua
+  have hseed1 : ∀ p, p < r + L → CL M p ≠ [] → (drop1 M (r + L) rk).o p ≠ ρ.o p →
+      Lhd z ((drop1 M (r + L) rk).o p) (ρ.o p) :=
+    fun p hp hcl hne => lhd_of_po I.cons I.good (by omega) hcl (hdrop p hp).1 hne
+  have hvnn1 : VNNcN M (M.take (r + L)) (r + L) ρ (drop1 M (r + L) rk) :=
+    fun i hi Lc cs hcl _ hne => (hdr.vst i hi Lc cs hcl hne).2
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
   have hrq : r ≤ q := (anc0_par hA (by omega) hq).le
   have hqx : q < r + L := par_lt M 0 _ q hq
@@ -443,7 +472,8 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         obtain ⟨hdv, hos, hvsh⟩ := qr_shapes hlen hL0 hq (hXu_of (by rw [hux]; simp)) hxbr hrb
           I.r0p I.z2 I.sd I.z1 I.uat I.uab
         exact t2_qr_take hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (hrcl_of hq (by rw [hux]; simp)) hrU hux
-          hdv hos hvsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs T'.vnn1 T'.seed1
+          hdv hos hvsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs hvnn1
+          (hseed1 r (by omega) (hrcl_of hq (by rw [hux]; simp)) T'.seed1)
       | some k =>
         have hkl := upg_lt (by omega) hux
         by_cases hkx : k = r + L
@@ -451,12 +481,13 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
           have T' := T.sv hux
           exact t2_sv_take hlen hL0 hq hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb T'.rcl hrU
             T'.p1 T'.dv T'.os T'.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs
-            T'.vnn1 T'.seed1
+            hvnn1 (hseed1 r (by omega) T'.rcl T'.seed1)
         · have hk : k < r + L := by omega
           have T' := T.up k hux hk
           exact t2_qu_take hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (hrcl_of hq (by rw [hux]; intro h; cases h; omega)) hrU hux hk
             T'.kT T'.p1 T'.dv T'.vr T'.os T'.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd
-            hdr.ua hAbs T'.vnn1 T'.seed1
+            hdr.ua hAbs hvnn1
+            (fun h => hseed1 r (by omega) (hrcl_of hq (by rw [hux]; intro h'; cases h'; omega)) (T'.seed1 h))
     · obtain ⟨pq, hpq⟩ := par0_of_anc (anc0_par hA (by omega) hq) (fun h => hqr h.symm)
       have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
       have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
@@ -464,7 +495,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact T.qb)
       exact t2_qn_take hlen hL0 hA hq' (by omega) T.xb I.be I.z2 I.uat I.r12 I.r01 I.e00 hpq' T.qb T.e2pq
         T.clq T.clpq T.un T.p1 T.qL T.dv T.os T.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd
-        hAbs T.vnn1 T.seed1
+        hAbs hvnn1 (hseed1 pq (by have := par_lt M 0 _ _ hpq; omega) T.clpq T.seed1)
   -- `n ≥ 2`
   have hbig : ∀ n, 2 ≤ n → ∀ σ rkN,
       Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →

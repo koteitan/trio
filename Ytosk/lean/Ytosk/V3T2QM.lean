@@ -146,12 +146,11 @@ theorem t2_qn_main (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hAbs : ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
       ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
-    (hVNN : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL M i = Lc ++ [cs] → σ.v cs ≠ ρ.v cs →
+    (hVNN : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (TRIO.gexp M r L d0 d1 n) i = Lc ++ [cs] → cs < r + L → σ.v cs ≠ ρ.v cs →
       ∀ s y, ρ.o cs = psi s y z →
         lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
         VSmallV (σ.v cs))
-    (hseed : ∃ X K, σ.o pq = psi (ρ.v pq) X z ∧ Closed (ρ.v pq) X ∧
-      psi (ρ.v pq) X z ≤ fs (ρ.o pq) (natT K)) :
+    (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
     isOT (root (TRIO.gexp M r L d0 d1 n) σ) = true ∧ root (TRIO.gexp M r L d0 d1 n) σ < root M ρ := by
   have hlN : (TRIO.gexp M r L d0 d1 n).length = r + n * L := TRIO.gexp_length hlen
   have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn2
@@ -303,13 +302,7 @@ theorem t2_qn_main (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
     · subst hb; rw [hi']; exact hvq
     · subst hb; rw [hi']
       show Lhd z (σ.o pq) (ρ.o pq)
-      obtain ⟨X, K, hXo, hcl', hle⟩ := hseed
-      have hpqM : pq < M.length := by omega
-      have hor := o_cl_eq hC hG hpqM
-      have harg := arg_lt_of_cl hC hG hpqM hpqCL
-      rw [hXo]
-      rw [hor] at hle ⊢
-      exact seed_closed (by rw [← hor]; exact hG.ot_o pq hpqM) (ne_of_gt harg) hcl' hle
+      exact hseed
   exact t2_assemble (S := SQ (r + qp) pq) (W := WQ (r + qp)) (bnd := r + L) hC hG hRM hCN hGN hRN
     hF hVS hTD hKD hR01 hR12 h00 hlen (by rw [hlN]; omega) (fun i hi _ => hchN i hi)
     (Or.inr ⟨rfl, rfl⟩) (Or.inr (Or.inl ⟨rfl, rfl⟩)) (fun i hq hb => by have h' := (mem_children_iff.mp hq).2; rw [hpq] at h'; cases h'; exact hqb hb)

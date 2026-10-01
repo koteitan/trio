@@ -398,8 +398,7 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
         lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
         VSmallV (σ.v cs))
     (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L))
-    (hseed : ∃ X K, σ.o r = psi (ρ.v r) X z ∧ Closed (ρ.v r) X ∧
-      psi (ρ.v r) X z ≤ fs (ρ.o r) (natT K)) :
+    (hseed : Lhd z (σ.o r) (ρ.o r)) :
     isOT (root (TRIO.gexp M r L d0 d1 n) σ) = true ∧ root (TRIO.gexp M r L d0 d1 n) σ < root M ρ := by
   set N := TRIO.gexp M r L d0 d1 n with hN
   set S : Bool → Nat → Prop := fun b i => b = true ∧ i = r with hS
@@ -427,20 +426,7 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
       subst hb
       rw [hi']
       show Lhd z (σ.o r) (ρ.o r)
-      obtain ⟨X, K, hXo, hcl', hle⟩ := hseed
-      have hrM : r < M.length := by omega
-      have hclr : CL M r ≠ [] := by
-        intro h
-        have : r + L ∈ CL M r := by
-          unfold CL; rw [List.mem_filter]
-          exact ⟨mem_children_iff.mpr ⟨by omega, hp⟩, by
-            simpa using counted_r_x hlen hL hp hXu hXb⟩
-        rw [h] at this; simp at this
-      have hor := o_cl_eq hC hG hrM
-      have harg := arg_lt_of_cl hC hG hrM hclr
-      rw [hXo]
-      rw [hor] at hle ⊢
-      exact seed_closed (by rw [← hor]; exact hG.ot_o r hrM) (ne_of_gt harg) hcl' hle)
+      exact hseed)
     (by
       intro c hc hd
       unfold CL; rw [List.filter_eq_nil_iff]
