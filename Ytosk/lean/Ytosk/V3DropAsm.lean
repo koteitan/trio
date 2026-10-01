@@ -247,4 +247,11 @@ theorem lhd_weak_child {a B c' X : T} (hdrop : Lhd z (psi a B z) (psi a X z)) (h
         exact hdrop.2 u (psi a C R) hBc h2 g hgB
   · simp at hg
 
+/-- `ψ_w(0)` above `ψ_0(Ω_1)` is a fixed point of `ω^`. -/
+theorem omega_psi_fix {w : T} (hw : isOT w = true) (hE : ¬ psi w z z < E0) : omega (psi w z z) = psi w z z := by
+  have hot : isOT (psi w z z) = true := by
+    rw [isOT_psi_iff]; exact ⟨hw, rfl, rfl, z_le _, fun g hg => by simp [comps] at hg⟩
+  rw [omega_big hot hE]
+  simp [split]
+
 end Ytosk
