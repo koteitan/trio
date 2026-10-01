@@ -571,4 +571,38 @@ theorem SuccPath.step {a b s y : T} (hc : isOT (psi s y z) = true) (hp : SuccPat
       exact lt_of_le_of_lt (z_le s) (lt_succ_self s)
     | arg _ _ hy => exact hy
 
+theorem mulT_lt_succ {x : T} (hx : ∃ s y, x = psi s y z) : ∀ k, mulT x k < mulT x (k + 1)
+  | 0 => by obtain ⟨s, y, rfl⟩ := hx; exact T.z_lt_psi _ _ _
+  | k + 1 => by
+    show app x (mulT x k) < app x (mulT x (k + 1))
+    exact (app_lt_app_left_iff x).mpr (mulT_lt_succ hx k)
+
+/-- **On a successor-type term, the fundamental sequence is increasing.** -/
+theorem SuccPath.fs_mono_nat {t : T} (h : SuccPath t) (k : Nat) :
+    fs t (natT k) < fs t (natT (k + 1)) := by
+  induction h with
+  | @base v b hb hs =>
+    conv => lhs; unfold fs
+    conv => rhs; unfold fs
+    rw [if_neg hb, if_neg hb, if_pos hs, if_pos hs, count_natT, count_natT]
+    exact mulT_lt_succ ⟨_, _, rfl⟩ k
+  | @rest a b c d e _ ih =>
+    show psi a b (fs (psi c d e) (natT k)) < psi a b (fs (psi c d e) (natT (k + 1)))
+    rw [T.psi_lt_psi]; exact Or.inr (Or.inr ⟨rfl, rfl, ih⟩)
+  | @arg a b hb hs hp ih =>
+    conv => lhs; unfold fs
+    conv => rhs; unfold fs
+    rw [if_neg hb, if_neg hb, if_neg (by rw [hs]; simp), if_neg (by rw [hs]; simp), hp.cof]
+    simp only
+    rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, ih⟩
+
+theorem SuccPath.fs_mono_nat' {t : T} (h : SuccPath t) : ∀ {k m : Nat}, k < m →
+    fs t (natT k) < fs t (natT m)
+  | k, 0, hkm => absurd hkm (Nat.not_lt_zero _)
+  | k, m + 1, hkm => by
+    rcases Nat.lt_or_ge k m with h1 | h1
+    · exact lt_trans (h.fs_mono_nat' h1) (h.fs_mono_nat m)
+    · have : k = m := by omega
+      subst this; exact h.fs_mono_nat k
+
 end Ytosk
