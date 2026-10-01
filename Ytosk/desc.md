@@ -1385,3 +1385,9 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - RootP（874d79fd）: M[n] の根は M の根で、下がるのは最後の根 Rt だけ。
 - V3Top: t = 1・n ≥ 2 で Pn := FrameOT ∧ RootP。M[n] の Good3・FrameOT・RootP が出る。
 - 次: BumpKidsDec・BumpTermDec、FrameClosed、TP1・TP1W・TrigOm。
+
+### Res3A.t0 は hU だけ（2026-10-02、omega-lhd、V3T0Res）
+
+- hVr（t0_vr）: g が M.take x でも r を数えるなら Res3A.drop の VSmallNew。数えないなら原因は次の列型の上げ upg M (r−1) = r だけで、g に前の数える子があり B ≠ 0、一方 y = o(x) = 1 なので書き換えは起きない（cnt_before_next_upg）。
+- VSmallNewN（t0_vsmallNewN）: N で v が変わる cs は M でも数える子を持たず y = 0 なので、書き換えは起きない。
+- Res3A の残り: drop（DropRes の 5 項目）、seed（hcs）、t0 の hU。
