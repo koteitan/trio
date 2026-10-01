@@ -21,9 +21,9 @@ include hlen hL hA hd0e hn
 /-- The contribution of a child of a copy column is the shifted one. -/
 theorem cnt_copy (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
       entry M 1 r < entry M 1 s) (hz2 : entry M 2 r ≤ 1)
-    {ρ ρP : Valn} {ζ : T} {a d : Nat} (ha : a < (n - 1) * L)
+    {ρ ρP : Valn} {Z : Nat → T} {a d : Nat} (ha : a < (n - 1) * L)
     (hd : d ∈ children (TRIO.gexp M r L d0 0 (n - 1)) (r + a)) :
-    cnt (TRIO.gexp M r L d0 0 n) (glue M (r + L) ρ (shiftV ρP L) ζ) (r + L + a) (d + L) =
+    cnt (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) (r + L + a) (d + L) =
       cnt (TRIO.gexp M r L d0 0 (n - 1)) ρP (r + a) d := by
   have hlP := len_P (d0 := d0) (n := n) hlen
   have hdc := mem_children hd
@@ -44,8 +44,8 @@ theorem cnt_copy (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
     rw [hd', isUpg_copy hlen hL hA hd0e hn hpath hz2 (by omega) hda, show r + (d - r) = d by omega]
   have htop : topped (TRIO.gexp M r L d0 0 n) (d + L) = topped (TRIO.gexp M r L d0 0 (n - 1)) d := by
     rw [hd', topped_copy hlen hL hA hd0e hn hda, show r + (d - r) = d by omega]
-  have hval : (glue M (r + L) ρ (shiftV ρP L) ζ).o (d + L) = ρP.o d := by
-    rw [glue_o_ge ρ (shiftV ρP L) ζ (by omega)]
+  have hval : (glueZ M (r + L) ρ (shiftV ρP L) Z).o (d + L) = ρP.o d := by
+    rw [glueZ_o_ge ρ (shiftV ρP L) Z (by omega)]
     show ρP.o (d + L - L) = ρP.o d
     rw [Nat.add_sub_cancel]
   by_cases h1 : col (TRIO.gexp M r L d0 0 (n - 1)) d = bump (TRIO.gexp M r L d0 0 (n - 1)) (r + a)
@@ -53,9 +53,9 @@ theorem cnt_copy (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
   · rw [if_neg (fun h => h1 (hcol.mp h)), if_neg h1, hup, htop, hval]
 
 /-- The bump term of a child of a copy column is the shifted one. -/
-theorem bumpTerm_copy {ρ ρP : Valn} {ζ : T} {a d : Nat} (ha : a < (n - 1) * L)
+theorem bumpTerm_copy {ρ ρP : Valn} {Z : Nat → T} {a d : Nat} (ha : a < (n - 1) * L)
     (hd : d ∈ children (TRIO.gexp M r L d0 0 (n - 1)) (r + a)) :
-    bumpTerm (TRIO.gexp M r L d0 0 n) (glue M (r + L) ρ (shiftV ρP L) ζ) (r + L + a) (d + L) =
+    bumpTerm (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) (r + L + a) (d + L) =
       bumpTerm (TRIO.gexp M r L d0 0 (n - 1)) ρP (r + a) d := by
   have hlP := len_P (d0 := d0) (n := n) hlen
   have hdc := mem_children hd
@@ -81,7 +81,7 @@ theorem bumpTerm_copy {ρ ρP : Valn} {ζ : T} {a d : Nat} (ha : a < (n - 1) * L
     simp only [Function.comp]
     have hkc := mem_children hk
     rw [hlP] at hkc
-    rw [glue_o_ge ρ (shiftV ρP L) ζ (by omega)]
+    rw [glueZ_o_ge ρ (shiftV ρP L) Z (by omega)]
     show ρP.o (k + L - L) = ρP.o k
     rw [Nat.add_sub_cancel]
   · rw [if_neg (fun h => h1 (hcol.mp h)), if_neg h1]
@@ -89,30 +89,30 @@ theorem bumpTerm_copy {ρ ρP : Valn} {ζ : T} {a d : Nat} (ha : a < (n - 1) * L
 /-- **The equations of the copy columns.** -/
 theorem cons_copy (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
       entry M 1 r < entry M 1 s) (hz2 : entry M 2 r ≤ 1)
-    {ρ ρP : Valn} {ζ : T} (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP)
+    {ρ ρP : Valn} {Z : Nat → T} (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP)
     (hagree : ∀ g, g ≤ r → ∀ a, a < (n - 1) * L →
       (par (TRIO.gexp M r L d0 0 (n - 1)) 1 (r + a) = some g ∨
         upg (TRIO.gexp M r L d0 0 (n - 1)) (r + a) = some g) →
-      (glue M (r + L) ρ (shiftV ρP L) ζ).v g = ρP.v g) :
+      (glueZ M (r + L) ρ (shiftV ρP L) Z).v g = ρP.v g) :
     ∀ a, a < (n - 1) * L →
-      (glue M (r + L) ρ (shiftV ρP L) ζ).o (r + L + a) =
-        oRhs (TRIO.gexp M r L d0 0 n) (glue M (r + L) ρ (shiftV ρP L) ζ) (r + L + a) ∧
-      (glue M (r + L) ρ (shiftV ρP L) ζ).v (r + L + a) =
-        vRhs (TRIO.gexp M r L d0 0 n) (glue M (r + L) ρ (shiftV ρP L) ζ) (r + L + a) := by
+      (glueZ M (r + L) ρ (shiftV ρP L) Z).o (r + L + a) =
+        oRhs (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) (r + L + a) ∧
+      (glueZ M (r + L) ρ (shiftV ρP L) Z).v (r + L + a) =
+        vRhs (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) (r + L + a) := by
   intro a ha
   have hlP := len_P (d0 := d0) (n := n) hlen
-  set ρ' := glue M (r + L) ρ (shiftV ρP L) ζ with hρ'
+  set ρ' := glueZ M (r + L) ρ (shiftV ρP L) Z with hρ'
   have hvo : ρ'.o (r + L + a) = ρP.o (r + a) := by
-    rw [hρ', glue_o_ge ρ (shiftV ρP L) ζ (by omega)]
+    rw [hρ', glueZ_o_ge ρ (shiftV ρP L) Z (by omega)]
     show ρP.o (r + L + a - L) = ρP.o (r + a)
     congr 1; omega
   have hvv : ρ'.v (r + L + a) = ρP.v (r + a) := by
-    rw [hρ', glue_v_ge ρ (shiftV ρP L) ζ (by omega)]
+    rw [hρ', glueZ_v_ge ρ (shiftV ρP L) Z (by omega)]
     show ρP.v (r + L + a - L) = ρP.v (r + a)
     congr 1; omega
   have hshv : ∀ t, r ≤ t → ρ'.v (t + L) = ρP.v t := by
     intro t ht
-    rw [hρ', glue_v_ge ρ (shiftV ρP L) ζ (by omega)]
+    rw [hρ', glueZ_v_ge ρ (shiftV ρP L) Z (by omega)]
     show ρP.v (t + L - L) = ρP.v t
     rw [Nat.add_sub_cancel]
   have hP := hCP (r + a) (by omega)

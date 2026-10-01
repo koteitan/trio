@@ -23,15 +23,15 @@ theorem cons_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
     (hqr : ∀ q, par M 0 (r + L) = some q → q ≠ r) (hz2 : entry M 2 r ≤ 1)
     (hiu : ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 0 n) c = isUpg M c)
     (hiux : isUpg (TRIO.gexp M r L d0 0 n) (r + L) = false)
-    {ρ ρP : Valn} {ζ : T} (hC : Cons M ρ) (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP)
+    {ρ ρP : Valn} {Z : Nat → T} (hC : Cons M ρ) (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP)
     (hagree : ∀ g, g ≤ r → ∀ a, a < (n - 1) * L →
       (par (TRIO.gexp M r L d0 0 (n - 1)) 1 (r + a) = some g ∨
         upg (TRIO.gexp M r L d0 0 (n - 1)) (r + a) = some g) →
-      (glue M (r + L) ρ (shiftV ρP L) ζ).v g = ρP.v g)
+      (glueZ M (r + L) ρ (shiftV ρP L) Z).v g = ρP.v g)
     (hF : ∀ i, i < r + L →
-      (DepX M (r + L) true i → oRhs M (glue M (r + L) ρ (shiftV ρP L) ζ) i = fsD (ρ.o i) ζ) ∧
-      (DepX M (r + L) false i → vRhs M (glue M (r + L) ρ (shiftV ρP L) ζ) i = fsD (ρ.v i) ζ)) :
-    Cons (TRIO.gexp M r L d0 0 n) (glue M (r + L) ρ (shiftV ρP L) ζ) := by
+      (DepX M (r + L) true i → oRhs M (glueZ M (r + L) ρ (shiftV ρP L) Z) i = fsD (ρ.o i) (Z i)) ∧
+      (DepX M (r + L) false i → vRhs M (glueZ M (r + L) ρ (shiftV ρP L) Z) i = fsD (ρ.v i) (Z i))) :
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) := by
   have hlN := len_N (d0 := d0) hlen hn
   intro i hi
   rcases Nat.lt_or_ge i (r + L) with h | h

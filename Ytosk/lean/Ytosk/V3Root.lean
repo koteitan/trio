@@ -162,13 +162,13 @@ theorem roots_N_t1 : roots (TRIO.gexp M r L d0 0 n) = roots M := by
   rw [col_gexp_pre hlen (by omega) (List.mem_range.mp hi)]
 
 /-- **The value of `M[n]` drops** (`t = 1`, `q ≠ r`), given the drop at the root `R` of `x`. -/
-theorem root_N_t1 {ρ ρN : Valn} {ζ : T} {Rt : Nat} (hRA : Anc0 M Rt (r + L))
+theorem root_N_t1 {ρ ρN : Valn} {Z : Nat → T} {Rt : Nat} (hRA : Anc0 M Rt (r + L))
     (hR0 : col M Rt = (0, 0, 0)) (hRlast : ∀ j, Rt < j → j ≤ r + L → entry M 0 j ≠ 0)
     (hRd : DepX M (r + L) true Rt)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
-    (hsR : Single (fsD (ρ.o Rt) ζ)) (hlt : fsD (ρ.o Rt) ζ < ρ.o Rt) :
-    isOT (root (TRIO.gexp M r L d0 0 n) (glue M (r + L) ρ ρN ζ)) = true ∧
-      root (TRIO.gexp M r L d0 0 n) (glue M (r + L) ρ ρN ζ) < root M ρ := by
+    (hsR : Single (fsD (ρ.o Rt) (Z Rt))) (hlt : fsD (ρ.o Rt) (Z Rt) < ρ.o Rt) :
+    isOT (root (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ ρN Z)) = true ∧
+      root (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ ρN Z) < root M ρ := by
   have hR0e : entry M 0 Rt = 0 := by unfold entry; unfold col at hR0; rw [hR0]; rfl
   have hRx := hRA.le
   have hsplit := roots_split hlen hRA hR0
@@ -179,8 +179,8 @@ theorem root_N_t1 {ρ ρN : Valn} {ζ : T} {Rt : Nat} (hRA : Anc0 M Rt (r + L))
     intro c hc hd
     have := depX_ge (by omega) hR0e hRx hRlast hd
     have := hpre_lt c hc; omega
-  have hglue : (roots M).map (glue M (r + L) ρ ρN ζ).o = pre.map ρ.o ++ [fsD (ρ.o Rt) ζ] := by
-    rw [hsplit, List.map_append, List.map_singleton, glue_o_dep ρ ρN ζ (by
+  have hglue : (roots M).map (glueZ M (r + L) ρ ρN Z).o = pre.map ρ.o ++ [fsD (ρ.o Rt) (Z Rt)] := by
+    rw [hsplit, List.map_append, List.map_singleton, glueZ_o_dep ρ ρN Z (by
       rcases Nat.eq_or_lt_of_le hRx with h | h
       · exfalso
         have h1 : entry M 0 (r + L) ≠ 0 := by
@@ -191,7 +191,7 @@ theorem root_N_t1 {ρ ρN : Valn} {ζ : T} {Rt : Nat} (hRA : Anc0 M Rt (r + L))
     congr 1
     apply List.map_congr_left
     intro c hc
-    exact glue_o_lt ρ ρN ζ (by have := hpre_lt c hc; omega) (hpre_nd c hc)
+    exact glueZ_o_lt ρ ρN Z (by have := hpre_lt c hc; omega) (hpre_nd c hc)
   have hMl : (roots M).map ρ.o = pre.map ρ.o ++ [ρ.o Rt] := by
     rw [hsplit, List.map_append, List.map_singleton]
   rw [hMl] at hpM
@@ -200,22 +200,22 @@ theorem root_N_t1 {ρ ρN : Valn} {ζ : T} {Rt : Nat} (hRA : Anc0 M Rt (r + L))
     rw [← hMl] at ht
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ht
     exact hsM i hi
-  have hsl' : ∀ t ∈ pre.map ρ.o ++ [fsD (ρ.o Rt) ζ], Single t := by
+  have hsl' : ∀ t ∈ pre.map ρ.o ++ [fsD (ρ.o Rt) (Z Rt)], Single t := by
     intro t ht
     rcases List.mem_append.mp ht with ht | ht
     · exact hsl t (List.mem_append_left _ ht)
     · rw [List.mem_singleton] at ht; subst ht; exact hsR
-  have hpl' : (pre.map ρ.o ++ [fsD (ρ.o Rt) ζ]).Pairwise (fun a b => b ≤ a) := by
+  have hpl' : (pre.map ρ.o ++ [fsD (ρ.o Rt) (Z Rt)]).Pairwise (fun a b => b ≤ a) := by
     rw [List.pairwise_append] at hpM ⊢
     refine ⟨hpM.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
     rw [List.mem_singleton] at hb; subst hb
     exact le_trans (le_of_lt hlt) (hpM.2.2 a ha _ (List.mem_singleton_self _))
-  have hrootN : root (TRIO.gexp M r L d0 0 n) (glue M (r + L) ρ ρN ζ) =
-      sumN (pre.map ρ.o ++ [fsD (ρ.o Rt) ζ]) := by
+  have hrootN : root (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ ρN Z) =
+      sumN (pre.map ρ.o ++ [fsD (ρ.o Rt) (Z Rt)]) := by
     rw [root_eq_roots, roots_N_t1 hlen hL hA hd0e hn, hglue]
     · intro i hi
       rw [roots_N_t1 hlen hL hA hd0e hn] at hi
-      have : (glue M (r + L) ρ ρN ζ).o i ∈ (roots M).map (glue M (r + L) ρ ρN ζ).o :=
+      have : (glueZ M (r + L) ρ ρN Z).o i ∈ (roots M).map (glueZ M (r + L) ρ ρN Z).o :=
         List.mem_map.mpr ⟨i, hi, rfl⟩
       rw [hglue] at this
       exact hsl' _ this

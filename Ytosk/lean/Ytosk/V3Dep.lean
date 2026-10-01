@@ -96,34 +96,63 @@ theorem sameAt_of {M N : Mat} {i : Nat} (e1 : entry N 1 i = entry M 1 i)
 /-! ## 貼り合わせ -/
 
 open Classical in
-/-- Below `x`: the value in `M`, or `fsD(·, ζ)` on `D`. From `x` on: `ρN`. -/
+/-- Below `x`: the value in `M`, or `fsD(·, Z i)` on `D` (the index may depend on the column).
+From `x` on: `ρN`. -/
+noncomputable def glueZ (M : Mat) (x : Nat) (ρ ρN : Valn) (Z : Nat → T) : Valn :=
+  ⟨fun i => if i < x then (if DepX M x true i then fsD (ρ.o i) (Z i) else ρ.o i) else ρN.o i,
+   fun i => if i < x then (if DepX M x false i then fsD (ρ.v i) (Z i) else ρ.v i) else ρN.v i⟩
+
+/-- The glued valuation with one index `ζ`. -/
 noncomputable def glue (M : Mat) (x : Nat) (ρ ρN : Valn) (ζ : T) : Valn :=
-  ⟨fun i => if i < x then (if DepX M x true i then fsD (ρ.o i) ζ else ρ.o i) else ρN.o i,
-   fun i => if i < x then (if DepX M x false i then fsD (ρ.v i) ζ else ρ.v i) else ρN.v i⟩
+  glueZ M x ρ ρN (fun _ => ζ)
+
+theorem glueZ_o_lt {M : Mat} {x i : Nat} (ρ ρN : Valn) (Z : Nat → T) (hi : i < x)
+    (hd : ¬ DepX M x true i) : (glueZ M x ρ ρN Z).o i = ρ.o i := by
+  simp only [glueZ, if_pos hi, if_neg hd]
+
+theorem glueZ_v_lt {M : Mat} {x i : Nat} (ρ ρN : Valn) (Z : Nat → T) (hi : i < x)
+    (hd : ¬ DepX M x false i) : (glueZ M x ρ ρN Z).v i = ρ.v i := by
+  simp only [glueZ, if_pos hi, if_neg hd]
+
+theorem glueZ_o_dep {M : Mat} {x i : Nat} (ρ ρN : Valn) (Z : Nat → T) (hi : i < x)
+    (hd : DepX M x true i) : (glueZ M x ρ ρN Z).o i = fsD (ρ.o i) (Z i) := by
+  simp only [glueZ, if_pos hi, if_pos hd]
+
+theorem glueZ_v_dep {M : Mat} {x i : Nat} (ρ ρN : Valn) (Z : Nat → T) (hi : i < x)
+    (hd : DepX M x false i) : (glueZ M x ρ ρN Z).v i = fsD (ρ.v i) (Z i) := by
+  simp only [glueZ, if_pos hi, if_pos hd]
+
+theorem glueZ_o_ge {M : Mat} {x i : Nat} (ρ ρN : Valn) (Z : Nat → T) (hi : x ≤ i) :
+    (glueZ M x ρ ρN Z).o i = ρN.o i := by
+  simp only [glueZ, if_neg (Nat.not_lt.mpr hi)]
+
+theorem glueZ_v_ge {M : Mat} {x i : Nat} (ρ ρN : Valn) (Z : Nat → T) (hi : x ≤ i) :
+    (glueZ M x ρ ρN Z).v i = ρN.v i := by
+  simp only [glueZ, if_neg (Nat.not_lt.mpr hi)]
 
 theorem glue_o_lt {M : Mat} {x i : Nat} (ρ ρN : Valn) (ζ : T) (hi : i < x) (hd : ¬ DepX M x true i) :
     (glue M x ρ ρN ζ).o i = ρ.o i := by
-  simp only [glue, if_pos hi, if_neg hd]
+  simp only [glue, glueZ, if_pos hi, if_neg hd]
 
 theorem glue_v_lt {M : Mat} {x i : Nat} (ρ ρN : Valn) (ζ : T) (hi : i < x) (hd : ¬ DepX M x false i) :
     (glue M x ρ ρN ζ).v i = ρ.v i := by
-  simp only [glue, if_pos hi, if_neg hd]
+  simp only [glue, glueZ, if_pos hi, if_neg hd]
 
 theorem glue_o_dep {M : Mat} {x i : Nat} (ρ ρN : Valn) (ζ : T) (hi : i < x) (hd : DepX M x true i) :
     (glue M x ρ ρN ζ).o i = fsD (ρ.o i) ζ := by
-  simp only [glue, if_pos hi, if_pos hd]
+  simp only [glue, glueZ, if_pos hi, if_pos hd]
 
 theorem glue_v_dep {M : Mat} {x i : Nat} (ρ ρN : Valn) (ζ : T) (hi : i < x) (hd : DepX M x false i) :
     (glue M x ρ ρN ζ).v i = fsD (ρ.v i) ζ := by
-  simp only [glue, if_pos hi, if_pos hd]
+  simp only [glue, glueZ, if_pos hi, if_pos hd]
 
 theorem glue_o_ge {M : Mat} {x i : Nat} (ρ ρN : Valn) (ζ : T) (hi : x ≤ i) :
     (glue M x ρ ρN ζ).o i = ρN.o i := by
-  simp only [glue, if_neg (Nat.not_lt.mpr hi)]
+  simp only [glue, glueZ, if_neg (Nat.not_lt.mpr hi)]
 
 theorem glue_v_ge {M : Mat} {x i : Nat} (ρ ρN : Valn) (ζ : T) (hi : x ≤ i) :
     (glue M x ρ ρN ζ).v i = ρN.v i := by
-  simp only [glue, if_neg (Nat.not_lt.mpr hi)]
+  simp only [glue, glueZ, if_neg (Nat.not_lt.mpr hi)]
 
 /-- A dependency of a call below the last column is below the last column, except the leaf. -/
 theorem nodep_lt_of_ge {M : Mat} {x i : Nat} (hx : x + 1 = M.length) (hi : i < M.length)
@@ -132,26 +161,26 @@ theorem nodep_lt_of_ge {M : Mat} {x i : Nat} (hx : x + 1 = M.length) (hi : i < M
 /-- **Gluing.** The glued valuation satisfies the equations of `N` below `x`, given the structure and
 the local exchange on `D`. (The calls outside `D` read only calls outside `D`, which keep `M`'s values;
 `v(x)` is never read below `x` by an outside call, since the reads of an outside call are outside `D`.) -/
-theorem cons_glue_lt {M N : Mat} {x : Nat} (hx : x + 1 = M.length) {ρ ρN : Valn} {ζ : T}
+theorem cons_glue_lt {M N : Mat} {x : Nat} (hx : x + 1 = M.length) {ρ ρN : Valn} {Z : Nat → T}
     (hC : Cons M ρ) (hS : ∀ i, i < x → SameAt M N i)
     (hvx : ∀ i, i < x → ¬ DepX M x false i → ∀ m, entry M 1 i ≠ 0 →
       (par M 1 i = some m ∨ (entry M 2 i = 0 ∧ upg M i = some m)) → m < x)
     (hF : ∀ i, i < x →
-      (DepX M x true i → oRhs M (glue M x ρ ρN ζ) i = fsD (ρ.o i) ζ) ∧
-      (DepX M x false i → vRhs M (glue M x ρ ρN ζ) i = fsD (ρ.v i) ζ)) :
-    ∀ i, i < x → (glue M x ρ ρN ζ).o i = oRhs N (glue M x ρ ρN ζ) i ∧
-      (glue M x ρ ρN ζ).v i = vRhs N (glue M x ρ ρN ζ) i := by
+      (DepX M x true i → oRhs M (glueZ M x ρ ρN Z) i = fsD (ρ.o i) (Z i)) ∧
+      (DepX M x false i → vRhs M (glueZ M x ρ ρN Z) i = fsD (ρ.v i) (Z i))) :
+    ∀ i, i < x → (glueZ M x ρ ρN Z).o i = oRhs N (glueZ M x ρ ρN Z) i ∧
+      (glueZ M x ρ ρN Z).v i = vRhs N (glueZ M x ρ ρN Z) i := by
   intro i hi
   have hiM : i < M.length := by omega
   rw [oRhs_same (hS i hi), vRhs_same (hS i hi)]
   -- the glued valuation agrees with `ρ` on the reads of an outside call
   refine ⟨?_, ?_⟩
   · by_cases hd : DepX M x true i
-    · rw [glue_o_dep ρ ρN ζ hi hd, (hF i hi).1 hd]
-    · rw [glue_o_lt ρ ρN ζ hi hd, (hC i hiM).1]
+    · rw [glueZ_o_dep ρ ρN Z hi hd, (hF i hi).1 hd]
+    · rw [glueZ_o_lt ρ ρN Z hi hd, (hC i hiM).1]
       apply oRhs_congr
       · have hv : ¬ DepX M x false i := fun hv => hd (DepX.ov hv)
-        rw [glue_v_lt ρ ρN ζ hi hv]
+        rw [glueZ_v_lt ρ ρN Z hi hv]
       · intro c hc hb hu
         have hcd : ¬ DepX M x true c := fun h => hd (DepX.ochild hc hb hu h)
         have hcl := (mem_children hc).2
@@ -160,17 +189,17 @@ theorem cons_glue_lt {M N : Mat} {x : Nat} (hx : x + 1 = M.length) {ρ ρN : Val
           · exact h
           · have : c = x := by omega
             subst this; exact absurd DepX.leaf hcd
-        rw [glue_o_lt ρ ρN ζ hcx hcd]
+        rw [glueZ_o_lt ρ ρN Z hcx hcd]
   · by_cases hd : DepX M x false i
-    · rw [glue_v_dep ρ ρN ζ hi hd, (hF i hi).2 hd]
-    · rw [glue_v_lt ρ ρN ζ hi hd, (hC i hiM).2]
+    · rw [glueZ_v_dep ρ ρN Z hi hd, (hF i hi).2 hd]
+    · rw [glueZ_v_lt ρ ρN Z hi hd, (hC i hiM).2]
       apply vRhs_congr
       · intro m h1 hm
         have hmd : ¬ DepX M x false m := fun h => hd (DepX.vpar h1 hm h)
-        rw [glue_v_lt ρ ρN ζ (hvx i hi hd m h1 (Or.inl hm)) hmd]
+        rw [glueZ_v_lt ρ ρN Z (hvx i hi hd m h1 (Or.inl hm)) hmd]
       · intro k h1 h2 hk
         have hkd : ¬ DepX M x false k := fun h => hd (DepX.vupg h1 h2 hk h)
-        rw [glue_v_lt ρ ρN ζ (hvx i hi hd k h1 (Or.inr ⟨h2, hk⟩)) hkd]
+        rw [glueZ_v_lt ρ ρN Z (hvx i hi hd k h1 (Or.inr ⟨h2, hk⟩)) hkd]
       · intro j hj h1 h2 hb k hk
         have hkd : ¬ DepX M x true k := fun h => hd (DepX.vbump h1 h2 hj hb hk h)
         have hkl := (mem_children hk).2
@@ -179,6 +208,6 @@ theorem cons_glue_lt {M N : Mat} {x : Nat} (hx : x + 1 = M.length) {ρ ρN : Val
           · exact h
           · have : k = x := by omega
             subst this; exact absurd DepX.leaf hkd
-        rw [glue_o_lt ρ ρN ζ hkx hkd]
+        rw [glueZ_o_lt ρ ρN Z hkx hkd]
 
 end Ytosk
