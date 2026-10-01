@@ -348,4 +348,40 @@ theorem fs_psi_diag {a X μ : T} (hX : X ≠ z) (hc : cof X = .big μ) (hμ : ¬
   | zero => rfl
   | succ k ih => simp only [gam]; rw [← ih]
 
+/-! ## 経路の文脈 -/
+
+/-- Fill a path context (frames `(a, b)` from the hole upwards: subscript and state of the left siblings)
+with the value `c` of the hole child. A missing child is the value `0` (`spArg a b z = b`). -/
+def fillC : List (T × T) → T → T
+  | [], c => c
+  | (a, b) :: fr, c => fillC fr (psi a (spArg a b c) z)
+
+/-- The commutation condition at one frame. -/
+def FrameOK (a b c μ η : T) : Prop :=
+  ∃ s y, c = psi s y z ∧ isOT c = true ∧ cof c = .big μ ∧ lt μ a = true ∧ isOT η = true ∧
+    η < psi (succ μ) z z ∧
+    (((y ≤ b ∨ s < a) ∧ isOT (app b c) = true) ∨
+     ((lt b y = true ∧ lt (psi a z z) c = true) ∧ (split y (psi (succ s) z z)).2 ≠ z ∧
+       fs (split y (psi (succ s) z z)).2 η ≠ z ∧ lt b (fs y η) = true))
+
+theorem frame_fs {a b c μ η : T} (h : FrameOK a b c μ η) :
+    fs (psi a (spArg a b c) z) η = psi a (spArg a b (fs c η)) z := by
+  obtain ⟨s, y, rfl, hc, hcof, hμ, hη, hηl, h⟩ := h
+  rcases h with ⟨hno, hbc⟩ | ⟨htr, hlo, hlo', hbη⟩
+  · exact spArg_fs_pass hc hcof hμ hη hηl hno hbc
+  · exact spArg_fs_trig hc hcof hμ hη hηl htr hlo hlo' hbη
+
+/-- The conditions along a whole context. -/
+def FramesOK : List (T × T) → T → T → T → Prop
+  | [], _, _, _ => True
+  | (a, b) :: fr, c, μ, η => FrameOK a b c μ η ∧ FramesOK fr (psi a (spArg a b c) z) μ η
+
+/-- **The fundamental sequence goes down a context.** -/
+theorem fillC_fs : ∀ (ctx : List (T × T)) {c μ η : T}, FramesOK ctx c μ η →
+    fs (fillC ctx c) η = fillC ctx (fs c η)
+  | [], _, _, _, _ => rfl
+  | (a, b) :: fr, c, μ, η, ⟨h1, h2⟩ => by
+    simp only [fillC]
+    rw [fillC_fs fr h2, frame_fs h1]
+
 end Ytosk
