@@ -290,10 +290,10 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     (hv : ρ'.v i = ρ.v i)
     (hclT : CL (M.take x) i = Lc ++ [cs]) (hcl : CL M i = Lc ++ [cs] ++ Tl)
     (hsame : ∀ d ∈ Lc, ρ'.o d = ρ.o d)
-    (hcs' : Single (ρ'.o cs)) (hrel : DRelO (ρ'.o cs) (ρ.o cs))
+    (hcs' : Single (ρ'.o cs))
+    (hrel : LhdE (ρ'.o cs) (ρ.o cs) ∨ (WkO (ρ'.o cs) (ρ.o cs) ∧ ∃ w, ρ.o cs = psi w z z))
     (hsub : ∀ s y, ρ.o cs = psi s y z → SubSmall (ρ.v i) s)
-    (hsub' : ∀ s y, ρ'.o cs = psi s y z → SubSmall (ρ.v i) s)
-    (hweak : WkO (ρ'.o cs) (ρ.o cs) → ∃ w, ρ.o cs = psi w z z) :
+    (hsub' : ∀ s y, ρ'.o cs = psi s y z → SubSmall (ρ.v i) s) :
     LhdE (ρ'.o i) (ρ.o i) := by
   set a := ρ.v i with ha
   obtain ⟨hsM, hpM⟩ := cl_vals hC hG hiM
@@ -329,7 +329,10 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     rw [hclT, List.map_append, List.map_singleton, hLv]
     congr 1
     exact List.map_congr_left hsame
-  have hle' := hrel.le
+  have hle' : ρ'.o cs ≤ ρ.o cs := by
+    rcases hrel with h | ⟨h, _⟩
+    · exact h.le
+    · exact DRelO.le (Or.inr h)
   have hs' : ∀ t ∈ Lv ++ [ρ'.o cs], Single t := by
     intro t ht; rcases List.mem_append.mp ht with ht | ht
     · exact hsL t ht
@@ -388,8 +391,7 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     rw [hsy] at hsM hpM
     exact o_frame_term (L := Lv) (Tl := Tv) hsM hpM hs' hp' hN hT
   · -- weak child
-    obtain ⟨w', w, X, hw', hw, hWk⟩ := hW
-    obtain ⟨w0, hw0⟩ := hweak ⟨w', w, X, hw', hw, hWk⟩
+    obtain ⟨⟨w', w, X, hw', hw, hWk⟩, w0, hw0⟩ := hW
     rw [hw] at hw0; simp only [psi.injEq] at hw0; obtain ⟨rfl, rfl, -⟩ := hw0
     have hF' : spArg a z (sumN (Lv ++ [ρ.o cs] ++ Tv)) = spArg a B (sumN (ρ.o cs :: Tv)) := by
       rw [List.append_assoc, show [ρ.o cs] ++ Tv = ρ.o cs :: Tv from rfl,
@@ -477,7 +479,7 @@ theorem last_add_single {s y : T} : ∀ V : T, last (add V (psi s y z)) = psi s 
 theorem v_upg_eq {M : Mat} {ρ : Valn} {i k : Nat} (hC : Cons M ρ) (hiM : i < M.length)
     (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i = 0) (hu : upg M i = some k)
     (hVot : isOT (vOpt ρ (par M 1 i)) = true)
-    (hoot : ∀ j ∈ children M k, ∀ k' ∈ children M j, isOT (ρ.o k') = true) :
+    (hoot : ∀ j ∈ children M k, col M j = bump M k → ∀ k' ∈ children M j, isOT (ρ.o k') = true) :
     ρ.v i = ρ.v k := by
   have hk := upg_lt hiM hu
   obtain ⟨m, hm1, hm2, hcol, _⟩ := upg_spec hu
@@ -497,10 +499,11 @@ theorem v_upg_eq {M : Mat} {ρ : Valn} {i k : Nat} (hC : Cons M ρ) (hiM : i < M
     · obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ht
       unfold bumpTerm
       split
-      · apply isOT_omega; apply isOT_sumN
+      · rename_i hjb
+        apply isOT_omega; apply isOT_sumN
         intro t' ht'
         obtain ⟨k', hk', rfl⟩ := List.mem_map.mp ht'
-        exact hoot j hj k' hk'
+        exact hoot j hj hjb k' hk'
       · rfl
   have hWot : isOT W = true := isOT_omega hY
   obtain ⟨sW, yW, hWf⟩ := (single_omega hY).2

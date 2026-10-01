@@ -27,12 +27,12 @@ theorem VSmallV.subSmall {t : T} (h : VSmallV t) (a : T) : SubSmall a t := fun u
 
 /-- The claim at an `o` call. -/
 def PO (ρ ρ' : Valn) (i : Nat) : Prop :=
-  DRelO (ρ'.o i) (ρ.o i) ∧ (WkO (ρ'.o i) (ρ.o i) → ∃ w, ρ.o i = psi w z z) ∧ Single (ρ'.o i)
+  (LhdE (ρ'.o i) (ρ.o i) ∨ (WkO (ρ'.o i) (ρ.o i) ∧ ∃ w, ρ.o i = psi w z z)) ∧ Single (ρ'.o i)
 
 /-- The claim at a `v` call. -/
 def PV (M : Mat) (ρ ρ' : Valn) (i : Nat) : Prop :=
-  DRelV (ρ'.v i) (ρ.v i) ∧ isOT (ρ'.v i) = true ∧ VSmallV (ρ'.v i) ∧
-    (WkV (ρ'.v i) (ρ.v i) → ∀ c ∈ children M i, ¬ Counted M i c)
+  (LhdE (ρ'.v i) (ρ.v i) ∨ (WkV (ρ'.v i) (ρ.v i) ∧ ∀ c ∈ children M i, ¬ Counted M i c)) ∧
+    isOT (ρ'.v i) = true ∧ VSmallV (ρ'.v i)
 
 /-- A changed `v` has row 1 nonzero. -/
 theorem chgx_e1 {M : Mat} {x i : Nat} (h : ChgX M x false i) : entry M 1 i ≠ 0 := by
