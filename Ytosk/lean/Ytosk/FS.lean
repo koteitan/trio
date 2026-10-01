@@ -361,6 +361,59 @@ theorem fs_lt : ∀ {t η : T}, ValidLt t η → fs t η < t
           simp only
           rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fs_lt h'⟩
 
+/-- A subscript is below the term. -/
+theorem sub_lt_psi : ∀ (s y c : T), s < psi s y c
+  | z, _, _ => T.z_lt_psi _ _ _
+  | psi s' y' c', y, c => by
+    rw [T.psi_lt_psi]; exact Or.inl (sub_lt_psi s' y' c')
+
+theorem lt_Om_self (x : T) : x < psi x z z := by
+  cases x with
+  | z => exact T.z_lt_psi _ _ _
+  | psi s y c => rw [T.psi_lt_psi]; exact Or.inl (sub_lt_psi s y c)
+
+/-- **Lemma 3.2(b)**: for cofinality `Ω_{μ+1}` the fundamental sequence is strictly increasing. -/
+theorem fs_mono : ∀ {t : T} {μ : T}, cof t = .big μ → ∀ {η η' : T}, η < η' → fs t η < fs t η'
+  | z, _, h, _, _, _ => by simp [cof] at h
+  | psi a b (psi c d e), μ, h, η, η', hl => by
+    have h' : cof (psi c d e) = .big μ := by simpa [cof] using h
+    show psi a b (fs (psi c d e) η) < psi a b (fs (psi c d e) η')
+    rw [T.psi_lt_psi]; exact Or.inr (Or.inr ⟨rfl, rfl, fs_mono h' hl⟩)
+  | psi a b z, μ, h, η, η', hl => by
+    unfold fs
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl, if_pos rfl]
+      by_cases ha : a = z
+      · subst ha; simp [cof] at h
+      · rw [if_neg ha, if_neg ha]
+        have hc : cof (psi a z z) = (if isSucc a then Cof.big (init a) else cof a) := by
+          simp [cof, ha]
+        rw [hc] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs, if_pos hs]; exact hl
+        · rw [if_neg hs, if_neg hs]; rw [if_neg hs] at h
+          rw [psi_lt_psi_z_iff]; exact Or.inl (fs_mono h hl)
+    · rw [if_neg hb, if_neg hb]
+      have hc0 : cof (psi a b z) = (if isSucc b then Cof.omega else match cof b with
+            | .big μ => if lt μ a = true then Cof.big μ else Cof.omega
+            | c => c) := by simp [cof, hb]
+      rw [hc0] at h
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; cases h
+      · rw [if_neg hs] at h
+        rw [if_neg hs, if_neg hs]
+        cases hcb : cof b with
+        | big ν =>
+          rw [hcb] at h; simp only at h ⊢
+          by_cases hν : lt ν a = true
+          · rw [if_pos hν] at h ⊢; rw [if_pos hν]
+            rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fs_mono hcb hl⟩
+          · rw [if_neg hν] at h; cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
 #eval [psi z (psi z one z) z, psi z (psi (psi one z z) z z) z].map fun t =>
   ((List.range 3).map fun n => str (fs t (natT n)))
 
