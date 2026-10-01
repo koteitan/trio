@@ -97,4 +97,31 @@ theorem o2r_expand_path_gen (hG : Good2 M) (Z : Nat → T)
 
 end
 
+/-! ## q = r の枠 (r, x) -/
+
+/-- If the copy-root value `ψ_μ(y)` has `y = b + lo` with `b` above `Ω_{μ+1}` and `lo` below it, then
+`sp` at `r` just appends it (with or without a rewrite). -/
+theorem spArg_rx {μ b y lo : T} (hc : isOT (psi μ y z) = true)
+    (hb : ∀ q ∈ summands b, ¬ q < psi (succ μ) z z)
+    (hy : y = app b lo) (hlo : lo = z ∨ head lo < psi (succ μ) z z) :
+    spArg μ b (psi μ y z) = app b (psi μ y z) := by
+  have hsp : split y (psi (succ μ) z z) = (b, lo) := by rw [hy]; exact split_app_of hb hlo
+  rw [spArg_single]
+  unfold step
+  by_cases htr : lt b y = true ∧ lt (psi μ z z) (psi μ y z) = true
+  · rw [if_pos htr, H_eq hc, hsp]
+    rcases hlo with rfl | _
+    · simp [app_z_right] at hy; subst hy; exact absurd htr.1 (lt_irrefl' _)
+    · have hloz : lo ≠ z := by rintro rfl; simp at hy; subst hy; exact lt_irrefl' _ htr.1
+      simp [hloz]
+  · rw [if_neg htr]
+    apply add_eq_app_of_ge ⟨μ, y, rfl⟩
+    intro q hq
+    apply le_of_lt
+    have := hb q hq
+    rcases lt_trichotomy' q (psi (succ μ) z z) with h1 | h1 | h1
+    · exact absurd h1 this
+    · rw [h1]; rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self μ)
+    · exact lt_trans (by rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self μ)) h1
+
 end Ytosk
