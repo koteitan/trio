@@ -455,4 +455,32 @@ theorem t0_frame_notrig {a bg v b : T} (n : Nat)
       · exact absurd h h3
     exact le_of_lt (lt_of_lt_of_le (lt_app_of (by simp [one])) this)
 
+/-- The lower part of `b` (below `Ω_{v+1}`) stays below `ψ_v(b)`. -/
+theorem lo_summands_lt {v b : T} (hc : isOT (psi v b z) = true) :
+    ∀ q ∈ summands (split b (psi (succ v) z z)).2, q < psi v b z := by
+  have hbot := isOT_arg hc
+  have hbpl := split_app (psi (succ v) z z) b
+  have hlo1 := split_snd_head (psi (succ v) z z) b
+  generalize hP : split b (psi (succ v) z z) = pr at hbpl hlo1 ⊢
+  obtain ⟨hi, lo⟩ := pr
+  simp only at hbpl hlo1 ⊢
+  intro q hq
+  have hloot : isOT lo = true := by rw [← hbpl] at hbot; exact isOT_app_right hbot
+  have hqb : q ∈ summands b := by rw [← hbpl, summands_app]; exact List.mem_append_right _ hq
+  obtain ⟨u, w, rfl⟩ := mem_summands hq
+  have hlo : lo ≠ z := by rintro rfl; simp [summands] at hq
+  have hqh : psi u w z < psi (succ v) z z := by
+    rcases hlo1 with h | h
+    · exact absurd h hlo
+    · exact lt_of_le_of_lt (summands_le_head hloot _ hq) h
+  rw [psi_lt_psi_z_iff] at hqh
+  rcases hqh with h | ⟨_, h⟩
+  · have huv : u ≤ v := lt_succ_iff.mp h
+    rcases (le_iff _ _).mp huv with h1 | h1
+    · rw [psi_lt_psi_z_iff]; exact Or.inl h1
+    · subst h1
+      have hw := comps_lt hc w (comps_of_summand hqb (lt_irrefl' _))
+      rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, hw⟩
+  · exact absurd h (by cases w <;> simp)
+
 end Ytosk
