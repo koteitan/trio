@@ -1171,3 +1171,6 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - BumpAbs → BumpAbsC（崩れを除く）。
   - 1 列落としで保たれる値の不変条件 ValInv: Good3・VSmallF・FrameClosed・FrameOT・BumpKidsDec・BumpTermDec。
   - 各段の仮定 DropRes: argT・VSmallNew・BumpWeakSrc・UpgAbsX・BumpAbsC。
+- DropRes の UpgAbsX・BumpAbsC・BumpWeakSrc も、構造からも保たれる自然な不変条件からも出ない（サブエージェント、到達可能な行列で実測）。
+  どれも標準形であること（順序数の側の事情）に依存する。外すには、展開と独立な「標準形の述語」が要る。
+  当面は argT・VSmallNew と同じく、1 段ごとの仮定として残す。
