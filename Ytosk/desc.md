@@ -1566,3 +1566,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - t = 2（strict-r、55c5c981）: SeedC を SeedL に弱めた版をコミット。Res3T2 は C′ で例外 0（SeedL は python の抜き取り検査）。
 - seed（omega-lhd、V3SeedLhd）: seedOK_of_lhd_below（種 ◁ o(r) から SeedOK、残りは comps_a）。
 - t = 1 の TrigOm（t1-struct、7fb2a29d・1454209e・5622b1fc）: q = r では ζ = 1 の端の場合が消え、残りの仮定なし（数える子の形 TrigOmC）。Inv3 の TrigOm・TP1・TP1W を数える子の形に替える（使う側はすべて数える子の前提を持つ）。これで NoTrigU とその保存は要らない。
+
+### DropRes の 2 項目を 1 行列の不変条件から、t = 2 の un は偽（2026-10-02）
+
+- step-ot（V3DropPres、d6b972b2・7b73ec7f）:
+  - argT_std: DropRes.argT を構造の不変条件と M・M.take x の Good3 から（M.take x は標準形の接頭辞なので Inv3 がある）。部品は comps_le_step_of_ot（step_ot_of_le の逆）、LocA（chg_none_before: i と最後の数える子 cs の間は何も変わらない、ChgX の導出の帰納法）。
+  - UpgAbsX ⟸ UpgAbsL（k = upg i が k < i か葉のときの UpgAbs、C′ で真）。
+- bump-frame: t = 2・q ≠ r の un（upg (x − 1) = none）は標準形で偽。
+  - 反例 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,1)（SRO から 29 回の展開、C′ に入っていない）。x = 9、r = 5、q = 6、upg 8 = 4。
+  - 残りの 5 項目（xb・qb・e2pq・clq・clpq）は SInvX と新しい不変条件 J（e2 c = 1 ∧ P_0 c = q ⇒ e1 q ≤ e1 c）から出す。J は C′ で例外 0、SInvX ∧ J は展開で閉じる（実測）。
+- 教訓: C′ でも標準形の形を見落とす。測定は方向づけで、信頼するのは構造の証明。
