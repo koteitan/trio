@@ -858,4 +858,59 @@ theorem o2r_gexp_g_t0 (hx1 : entry M 1 (j0 + Lb) = 0) :
 
 end
 
+/-- `o_M(r) = ψ_v(b + 1)` when the last column (value `1`) hangs on `r`. -/
+theorem o2r_r_succ {M : Mat} {j0 Lb : Nat} (hG : Good2 M) (hx : j0 + Lb + 1 = M.length)
+    (hx0 : par M 0 (j0 + Lb) = some j0) (hx1 : entry M 1 (j0 + Lb) = 0) :
+    o2r M j0 = psi (vr M j0) (app (bst M j0 (j0 + Lb)) one) z := by
+  have h1 := o2r_frame hG hx (Anc0.refl (j0 + Lb)) hx0
+  have hox : o2r M (j0 + Lb) = one := by
+    rw [o2r_leaf hx (isOT_vr hG.f1 _), vr_eq_nT hG.f1, hx1]; rfl
+  rw [h1, hox, show one = psi z z z from rfl, spArg_single]
+  unfold step
+  rw [if_neg (by simp [lt])]
+  congr 1
+  apply add_eq_app_of_ge ⟨_, _, rfl⟩
+  have := bst_summands_ge hG hx (Anc0.refl (j0 + Lb)) hx0
+  rw [hox] at this; exact this
+
+/-- **The value of `g` after a `t = 0` expansion is a fundamental sequence member** (`[n]` or `[n−1]`). -/
+theorem o2r_g_fs_t0 {M : Mat} {j0 Lb n g : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+    (hA : Anc0 M j0 (j0 + Lb)) (hg : par M 0 j0 = some g) (hn : 1 ≤ n)
+    (hx0 : par M 0 (j0 + Lb) = some j0)
+    (hpre : ∀ c, c < j0 + Lb → par (TRIO.gexp M j0 Lb 0 0 n) 0 c = par M 0 c)
+    (hF : F1 (TRIO.gexp M j0 Lb 0 0 n)) (hG : Good2 M) (hx1 : entry M 1 (j0 + Lb) = 0) :
+    o2r (TRIO.gexp M j0 Lb 0 0 n) g = fs (o2r M g) (natT n) ∨
+      o2r (TRIO.gexp M j0 Lb 0 0 n) g = fs (o2r M g) (natT (n - 1)) := by
+  have hgv := o2r_gexp_g_t0 hlen hLb hA hg hn hx0 hpre hF hG hx1
+  have hog := o2r_frame hG hlen hA hg
+  have hrj := o2r_r_succ hG hlen hx0 hx1
+  rw [hrj] at hog
+  have hgot := hG.ot g
+  rw [hog] at hgot
+  have hcot : isOT (psi (vr M j0) (app (bst M j0 (j0 + Lb)) one) z) = true := by
+    rw [← hrj]; exact hG.ot j0
+  have hc'ot : isOT (psi (vr M j0) (bst M j0 (j0 + Lb)) z) = true := by
+    have h1 := isOT_arg hcot
+    rw [isOT_psi_iff]; refine ⟨isOT_sub hcot, isOT_app_left h1, rfl, z_le _, ?_⟩
+    intro q hq
+    have h2 := comps_lt hcot q (by rw [comps_app]; exact List.mem_append_left _ hq)
+    exact comps_lt_prefix hq h2
+  rw [hgv, hog]
+  by_cases htr : lt (bst M g j0) (app (bst M j0 (j0 + Lb)) one) = true ∧
+      lt (psi (vr M g) z z) (psi (vr M j0) (app (bst M j0 (j0 + Lb)) one) z) = true
+  · by_cases hbad : lt (bst M g j0) (bst M j0 (j0 + Lb)) = true ∧
+        (split (bst M j0 (j0 + Lb)) (psi (succ (vr M j0)) z z)).2 = z
+    · right
+      exact (t0_frame_swallow hn hcot hc'ot htr hbad.1 hbad.2).symm
+    · left
+      exact (t0_frame_trig hn hgot hcot hc'ot htr hbad).symm
+  · left
+    have hbge := bst_summands_ge hG hlen hA hg
+    rw [hrj] at hbge
+    have hX : isOT (app (bst M g j0) (psi (vr M j0) (app (bst M j0 (j0 + Lb)) one) z)) = true := by
+      have h1 := isOT_arg hgot
+      rw [spArg_single] at h1; unfold step at h1; rw [if_neg htr, add_eq_app_of_ge ⟨_, _, rfl⟩ _ hbge] at h1
+      exact h1
+    exact (t0_frame_notrig n hX htr hbge).symm
+
 end Ytosk
