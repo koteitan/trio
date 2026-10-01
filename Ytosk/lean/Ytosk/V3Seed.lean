@@ -99,4 +99,173 @@ theorem seedOK_of_c2 {a b μ seed : T} (hot : isOT (psi a b z) = true) (hcb : co
       · exact ⟨y, List.mem_append_left _ (mem_comps_psi_arg hau hy), le_trans hgy hy0y⟩
       · exact ⟨y, List.mem_append_right _ hy, le_trans hgy hy0y⟩
 
+theorem comps_nil_of_lt : ∀ {c u : T}, isOT c = true → c < u → comps u c = []
+  | z, _, _, _ => rfl
+  | psi v x c, u, hot, h => by
+    have hv : lt v u = true := lt_trans (sub_lt v x c) h
+    have hc : c < u := lt_trans (rest_lt hot) h
+    simp only [comps, hv, if_true, List.nil_append]
+    exact comps_nil_of_lt (isOT_rest hot) hc
+
+theorem comps_self : ∀ {t : T}, isOT t = true → comps t t = []
+  | z, _ => rfl
+  | psi v x c, hot => by
+    have hv : lt v (psi v x c) = true := sub_lt v x c
+    simp only [comps, hv, if_true, List.nil_append]
+    exact comps_nil_of_lt (isOT_rest hot) (rest_lt hot)
+
+/-- A term of cofinality `Ω_{μ+1}` is above `μ`. -/
+theorem lt_of_cof_big : ∀ {t μ : T}, isOT t = true → cof t = .big μ → μ < t
+  | z, _, _, h => by simp [cof] at h
+  | psi a b (psi c d e), μ, hot, h => by
+    have h' : cof (psi c d e) = .big μ := by simpa [cof] using h
+    exact lt_trans (lt_of_cof_big (isOT_rest hot) h') (rest_lt hot)
+  | psi a b z, μ, hot, h => by
+    unfold cof at h
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl] at h
+      by_cases ha : a = z
+      · rw [if_pos ha] at h; cases h
+      · rw [if_neg ha] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs] at h
+          have hμ : init a = μ := by cases h; rfl
+          have hsa : succ μ = a := by rw [← hμ]; unfold succ; exact init_app_one hs
+          rw [← hsa]; exact lt_trans (lt_succ_self μ) (sub_lt _ _ _)
+        · rw [if_neg hs] at h
+          exact lt_trans (lt_of_cof_big (isOT_sub hot) h) (sub_lt _ _ _)
+    · rw [if_neg hb] at h
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; cases h
+      · rw [if_neg hs] at h
+        cases hcb : cof b with
+        | big ν =>
+          rw [hcb] at h; simp only at h
+          by_cases hν : lt ν a = true
+          · rw [if_pos hν] at h
+            have : ν = μ := by cases h; rfl
+            subst this
+            exact lt_trans hν (sub_lt _ _ _)
+          · rw [if_neg hν] at h; cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
+/-- **Below the diagonal**: if `σ < b` and every component of `σ` at level `μ` is below `ρ`, then
+`σ < b[ψ_μ(ρ)]`. With `ρ = σ` and `ψ_μ(σ)` standard this is `SeedOK.lt_next`. -/
+theorem lt_fs_psi {μ ρ : T} : ∀ {b : T}, isOT b = true → cof b = .big μ → ∀ {σ : T}, σ < b →
+    (∀ g ∈ comps μ σ, g < ρ) → σ < fs b (psi μ ρ z)
+  | z, _, h, _, _, _ => by simp [cof] at h
+  | psi a b (psi c d e), hot, h, σ, hσ, hc => by
+    have h' : cof (psi c d e) = .big μ := by simpa [cof] using h
+    show σ < psi a b (fs (psi c d e) (psi μ ρ z))
+    cases σ with
+    | z => exact T.z_lt_psi _ _ _
+    | psi s τ c' =>
+      rw [T.psi_lt_psi] at hσ ⊢
+      rcases hσ with h1 | ⟨h1, h2⟩ | ⟨h1, h2, h3⟩
+      · exact Or.inl h1
+      · exact Or.inr (Or.inl ⟨h1, h2⟩)
+      · refine Or.inr (Or.inr ⟨h1, h2, lt_fs_psi (isOT_rest hot) h' h3 ?_⟩)
+        intro g hg; apply hc; simp only [comps, List.mem_append]; exact Or.inr hg
+  | psi a b z, hot, h, σ, hσ, hc => by
+    unfold fs
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl]
+      by_cases ha : a = z
+      · subst ha; simp [cof] at h
+      · rw [if_neg ha]
+        have hcf : cof (psi a z z) = (if isSucc a then Cof.big (init a) else cof a) := by
+          simp [cof, ha]
+        rw [hcf] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs]
+          rw [if_pos hs] at h
+          have hμ : init a = μ := by cases h; rfl
+          have hsa : succ μ = a := by rw [← hμ]; unfold succ; exact init_app_one hs
+          cases σ with
+          | z => exact T.z_lt_psi _ _ _
+          | psi s τ c' =>
+            rw [T.psi_lt_psi] at hσ
+            have hsl : s < a := by
+              rcases hσ with h1 | ⟨_, h2⟩ | ⟨_, h2, _⟩
+              · exact h1
+              · exact absurd h2 (T.not_lt_z _)
+              · exact absurd h2 (by simp [lt] at *)
+            rw [← hsa] at hsl
+            rcases (le_iff _ _).mp (lt_succ_iff.mp hsl) with h1 | h1
+            · rw [psi_lt_psi_z_iff]; exact Or.inl h1
+            · subst h1
+              rw [psi_lt_psi_z_iff]
+              refine Or.inr ⟨rfl, hc τ ?_⟩
+              simp only [comps, List.mem_append]
+              left; rw [if_neg (show ¬ lt s s = true from lt_irrefl' s)]; exact List.mem_cons_self
+        · rw [if_neg hs]
+          rw [if_neg hs] at h
+          cases σ with
+          | z => exact T.z_lt_psi _ _ _
+          | psi s τ c' =>
+            rw [T.psi_lt_psi] at hσ
+            have hsl : s < a := by
+              rcases hσ with h1 | ⟨_, h2⟩ | ⟨_, h2, _⟩
+              · exact h1
+              · exact absurd h2 (T.not_lt_z _)
+              · exact absurd h2 (by simp [lt] at *)
+            rw [psi_lt_psi_z_iff]; left
+            by_cases hsμ : lt s μ = true
+            · -- `s < μ < a[ψ_μ(ρ)]`
+              exact lt_trans hsμ (lt_fs_psi (isOT_sub hot) h (lt_of_cof_big (isOT_sub hot) h)
+                (by rw [comps_self (isOT_cof_mu (isOT_sub hot) h)]; simp))
+            · apply lt_fs_psi (isOT_sub hot) h hsl
+              intro g hg; apply hc
+              simp only [comps, hsμ, Bool.false_eq_true, if_false, List.mem_append, List.mem_cons]
+              exact Or.inl (Or.inr (Or.inr hg))
+    · rw [if_neg hb]
+      unfold cof at h
+      rw [if_neg hb] at h
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; cases h
+      · rw [if_neg hs] at h
+        rw [if_neg hs]
+        cases hcb : cof b with
+        | big ν =>
+          rw [hcb] at h; simp only at h ⊢
+          by_cases hν : lt ν a = true
+          · rw [if_pos hν] at h ⊢
+            have hνμ : ν = μ := by cases h; rfl
+            subst hνμ
+            cases σ with
+            | z => exact T.z_lt_psi _ _ _
+            | psi s τ c' =>
+              rw [T.psi_lt_psi] at hσ
+              rw [psi_lt_psi_z_iff]
+              rcases hσ with h1 | ⟨h1, h2⟩ | ⟨_, _, h3⟩
+              · exact Or.inl h1
+              · subst h1
+                refine Or.inr ⟨rfl, lt_fs_psi (isOT_arg hot) hcb h2 ?_⟩
+                intro g hg; apply hc
+                have : ¬ lt s ν = true := by
+                  intro h'; exact lt_irrefl' _ (lt_trans h' hν)
+                simp only [comps, this, Bool.false_eq_true, if_false, List.mem_append, List.mem_cons]
+                exact Or.inl (Or.inr (Or.inl hg))
+              · exact absurd h3 (T.not_lt_z _)
+          · rw [if_neg hν] at h; cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
+/-- **The seed condition** for `ψ_μ(σ)` with `σ < b`: only C2 (the components) is left. -/
+theorem seedOK_of_lt_c2 {a b μ σ : T} (hot : isOT (psi a b z) = true) (hcb : cof b = .big μ)
+    (hμ : ¬ lt μ a = true) (hsot : isOT (psi μ σ z) = true) (hσb : σ < b)
+    (hC2 : ∀ u, ¬ lt a u = true → ∀ g ∈ comps u (psi μ σ z),
+      g < fs b (psi μ σ z) ∨ ∃ y ∈ comps u (fs b z), g ≤ y) :
+    SeedOK a b μ (psi μ σ z) := by
+  have hbot : isOT b = true := isOT_arg hot
+  refine seedOK_of_c2 hot hcb hμ hsot ?_ ?_ hC2
+  · rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self μ)
+  · rw [psi_lt_psi_z_iff]
+    exact Or.inr ⟨rfl, lt_fs_psi hbot hcb hσb (comps_lt hsot)⟩
+
 end Ytosk
