@@ -492,4 +492,35 @@ theorem omega_lhd_app {s b c₀ u' u : T} (hX' : isOT (app (psi s b c₀) u') = 
     exact omega_lhd_small (lhdE_app _ h) (hlt _) (hlt _)
   · exact omega_lhd_tail hX' hX hE (lhdE_app c₀ h)
 
+/-! ## o の枠の帳簿 -/
+
+/-- **The `o` frame, bookkeeping**: a common prefix `L`, the last counted child changing `c → c′`, and a
+tail `Tl` present only in `M`. The one-frame relation and the tail relation are hypotheses. -/
+theorem o_frame_term {a s' y' s y : T} {L Tl : List T}
+    (hs : ∀ t ∈ L ++ [psi s y z] ++ Tl, Single t)
+    (hp : (L ++ [psi s y z] ++ Tl).Pairwise (fun a b => b ≤ a))
+    (hs' : ∀ t ∈ L ++ [psi s' y' z], Single t)
+    (hp' : (L ++ [psi s' y' z]).Pairwise (fun a b => b ≤ a))
+    (hN : LhdE (psi a (step a (spArg a z (sumN L)) s' y' z) z) (psi a (step a (spArg a z (sumN L)) s y z) z))
+    (hT : LhdE (psi a (step a (spArg a z (sumN L)) s y z) z)
+      (psi a (spArg a (step a (spArg a z (sumN L)) s y z) (sumN Tl)) z)) :
+    LhdE (psi a (spArg a z (sumN (L ++ [psi s' y' z]))) z)
+      (psi a (spArg a z (sumN (L ++ [psi s y z] ++ Tl))) z) := by
+  have e1 : sumN (L ++ [psi s y z] ++ Tl) = app (app (sumN L) (psi s y z)) (sumN Tl) := by
+    rw [sumN_append_dec hs hp, sumN_append_dec (fun t ht => hs t (List.mem_append_left _ ht))
+      (List.pairwise_append.mp hp).1]
+    congr 2
+    show sumN [psi s y z] = psi s y z
+    have h1 : Single (psi s y z) := hs _ (by simp)
+    show sf (add z (psi s y z)) = psi s y z
+    rw [add_z_left]; exact sf_ot h1.1
+  have e2 : sumN (L ++ [psi s' y' z]) = app (sumN L) (psi s' y' z) := by
+    rw [sumN_append_dec hs' hp']
+    congr 1
+    have h1 : Single (psi s' y' z) := hs' _ (by simp)
+    show sf (add z (psi s' y' z)) = psi s' y' z
+    rw [add_z_left]; exact sf_ot h1.1
+  rw [e1, e2, spArg_app, spArg_app, spArg_app, spArg_single, spArg_single]
+  exact LhdE.trans hN hT
+
 end Ytosk
