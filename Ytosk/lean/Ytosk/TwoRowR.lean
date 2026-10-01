@@ -96,4 +96,38 @@ theorem L_gen {p : Nat} {ζ : T} (hp : Anc0 M p x) {s y : T}
 
 end
 
+/-! ## 本体 -/
+
+/-- `M[1]`'s value at `r` when `q = r`: `ψ_μ(b)` with `b` the state of the earlier siblings of `x`. -/
+theorem o2r_take_r_qr {M : Mat} {r : Nat} (hG : Good2 M) (hx1 : 2 ≤ M.length)
+    (hqr : par M 0 (M.length - 1) = some r) :
+    o2r (M.take (M.length - 1)) r = psi (vr M r) (bst M r (M.length - 1)) z := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hrx := par_lt M 0 _ r hqr
+  have hle := children_le_of_anc_last (Anc0.refl (M.length - 1)) hx hqr
+  have hcmem : M.length - 1 ∈ children M r := mem_children_iff.mpr ⟨by omega, hqr⟩
+  have hsplit := split_last_max _ (M.length - 1) (children_sorted M r) hcmem hle
+  set C := (children M r).filter (fun d => decide (d < M.length - 1)) with hCdef
+  have hch : children (M.take (M.length - 1)) r = C := by
+    rw [children_take, hsplit, List.filter_append]
+    simp [hCdef]
+  have hoff : ∀ d ∈ C, o2r (M.take (M.length - 1)) d = o2r M d := by
+    intro d hd
+    rw [hCdef, List.mem_filter] at hd
+    have hdc : d < M.length - 1 := by simpa using hd.2
+    have hdp := mem_children_iff.mp hd.1
+    apply o2r_take_off hx d hdc
+    intro hdA
+    rcases Nat.eq_or_lt_of_le hdA.le with h' | h'
+    · omega
+    · have := (anc0_par hdA (by omega) hqr).le; have := par_lt M 0 d r hdp.2; omega
+  have hdM := hG.dec r
+  simp only [hsplit, List.map_append, List.map_cons, List.map_nil] at hdM
+  have hS := sumN_dec (C.map (o2r M)) (fun t ht => by
+    obtain ⟨i, _, rfl⟩ := List.mem_map.mp ht; exact single_o2r hG i) (List.pairwise_append.mp hdM).1
+  rw [o2r_eq, hch, List.map_congr_left hoff, vr_take M r hrx]
+  show add (sp (sf (vr M r)) z (sf _)) (sf z) = _
+  rw [sf_ot (isOT_vr hG.f1 r), sf_ot hS.1, sp_eq_spArg]
+  rfl
+
 end Ytosk
