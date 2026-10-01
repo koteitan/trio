@@ -350,4 +350,57 @@ theorem twoRow_qr {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
         rw [hoh]
         exact (node_fsD hFD).symm
 
+/-- **The two-row `t = 1`, `q = r` expansion, for every `k ≥ 2`.** Remaining hypothesis: W2. -/
+theorem twoRow_qr_all {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
+    (hr1 : TRIO.r1ok M) (hz0 : TRIO.z0ok M)
+    (hqr : par M 0 (M.length - 1) = some r)
+    (hW2 : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
+      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true → bst M h p ≤ fsD y z) :
+    ∀ k, 2 ≤ k → ∀ h, Anc0 M h (M.length - 1) → ∃ j,
+      o2r (expand M k) h = fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j) ∧
+      isOT (fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j)) = true ∧
+      fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j) < o2r M h := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hrx := par_lt M 0 _ r hqr
+  have hA : Anc0 M r (M.length - 1) := Anc0.step hqr (Anc0.refl r)
+  have hr1' : par M 1 (M.length - 1) = some r := by have h := hr; rw [ht1] at h; exact h
+  obtain ⟨B, hrv, hBz, hcb, _, _⟩ := twoRow_shape hG hx hr1' hb1
+  -- copy shift at the copy root
+  have hgexp := fun k => expand_eq_gexp_t1 M k hM hz hr ht1
+  have hlen : r + (M.length - 1 - r) + 1 = M.length := by omega
+  have hL : 0 < M.length - 1 - r := by omega
+  have hA' : Anc0 M r (r + (M.length - 1 - r)) := by
+    rw [show r + (M.length - 1 - r) = M.length - 1 by omega]; exact hA
+  have hd0e : entry M 0 (r + (M.length - 1 - r)) =
+      entry M 0 r + (entry M 0 (M.length - 1) - entry M 0 r) := by
+    rw [show r + (M.length - 1 - r) = M.length - 1 by omega]
+    have := anc0_interval hA (M.length - 1) hrx (Nat.le_refl _); omega
+  have hshift : ∀ k, 2 ≤ k → o2r (expand M k) (M.length - 1) = o2r (expand M (k - 1)) r := by
+    intro k hk
+    have h1 := o2r_gexp_shift hlen hL hA' hd0e hk
+      (by rw [← hgexp]; exact F1_expand hr1 hz0 hM k)
+      (by rw [← hgexp]; exact F1_expand hr1 hz0 hM (k - 1)) 0
+      (by have := Nat.mul_le_mul_right (M.length - 1 - r) (show 1 ≤ k - 1 by omega); simp at this; omega)
+    rw [hgexp, hgexp]
+    simpa [show r + (M.length - 1 - r) = M.length - 1 by omega] using h1
+  -- the chain value at `r` after one more step
+  have hrstep : ∀ j, fsD (o2r M r) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j) =
+      gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) (j + 1) := by
+    intro j; rw [hrv, fsD_here hBz hcb]; show _ = psi (vr M r) (fs B _) z
+    rw [show argOf (psi (vr M r) B z) = B from rfl]
+  have main : ∀ k, 2 ≤ k → (∃ j, o2r (expand M k) (M.length - 1) =
+      gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j) := by
+    intro k hk
+    induction k, hk using Nat.le_induction with
+    | base => exact ⟨0, by rw [hshift 2 (Nat.le_refl _)]; rfl⟩
+    | succ k hk ih =>
+      obtain ⟨j, hj, _, _⟩ := twoRow_qr hM hz hr ht1 hG hb1 hqr hk ih hW2 r hA
+      exact ⟨j + 1, by rw [hshift (k + 1) (by omega), show k + 1 - 1 = k by omega, hj, hrstep]⟩
+  intro k hk
+  exact twoRow_qr hM hz hr ht1 hG hb1 hqr hk (main k hk) hW2
+
 end Ytosk
