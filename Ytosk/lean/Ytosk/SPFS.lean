@@ -269,4 +269,83 @@ theorem spArg_fs_trig {a b s y μ η : T} (hc : isOT (psi s y z) = true)
   rw [if_pos htr', H_eq hcη, hsp]
   simp [hlo']
 
+/-- **Commutation on the argument, non-rewriting case** (no condition on `ψ_a`). -/
+theorem spArg_fs_arg_notrig {a b s y η : T} (hc : isOT (psi s y z) = true) (hv : Valid (psi s y z) η)
+    (hno : y ≤ b ∨ s < a) (hbc : isOT (app b (psi s y z)) = true)
+    (hno' : ∀ s' y', psi s' y' z ∈ summands (fs (psi s y z) η) → y' ≤ b ∨ s' < a) :
+    fs (spArg a b (psi s y z)) η = spArg a b (fs (psi s y z) η) := by
+  obtain ⟨hfot, hflt⟩ := fs_ot_lt hc hv
+  have hcz : psi s y z ≠ z := by simp
+  have h1 : spArg a b (psi s y z) = app b (psi s y z) := by
+    apply spArg_eq_app hbc
+    intro s' y' hq
+    simp only [summands, List.mem_cons, List.mem_nil_iff, or_false, psi.injEq] at hq
+    obtain ⟨rfl, rfl, _⟩ := hq; exact hno
+  have hbot : isOT b = true := isOT_app_left hbc
+  have hbf : isOT (app b (fs (psi s y z) η)) = true := by
+    apply isOT_app_of hbot hfot
+    intro q hq
+    exact le_trans (head_le_of_lt hflt) (summand_ge_of_app hbc hq)
+  rw [h1, fs_app b hcz, spArg_eq_app hbf hno']
+
+/-- **Commutation on the argument, rewriting case.** -/
+theorem spArg_fs_arg_trig {a b s y μ η : T} (hc : isOT (psi s y z) = true)
+    (hcof : cof (psi s y z) = .big μ) (hη : isOT η = true) (hηl : η < psi (succ μ) z z)
+    (htr : lt b y = true ∧ lt (psi a z z) (psi s y z) = true)
+    (hlo : (split y (psi (succ s) z z)).2 ≠ z)
+    (hlo' : fs (split y (psi (succ s) z z)).2 η ≠ z)
+    (hbη : lt b (fs y η) = true) :
+    fs (spArg a b (psi s y z)) η = spArg a b (fs (psi s y z) η) := by
+  have hy : y ≠ z := by rintro rfl; simp [lt] at htr
+  obtain ⟨hcy, hμs⟩ := cof_psi_inv hy hcof
+  have hbpl := split_app (psi (succ s) z z) y
+  have hpge := split_fst_ge (psi (succ s) z z) y
+  have hlo1 := split_snd_head (psi (succ s) z z) y
+  generalize hP : (split y (psi (succ s) z z)) = pr at hbpl hpge hlo1 hlo hlo'
+  obtain ⟨p, lo⟩ := pr
+  simp only at hbpl hpge hlo1 hlo hlo'
+  have hloh : head lo < psi (succ s) z z := by rcases hlo1 with h | h; exact absurd h hlo; exact h
+  have hH : spArg a b (psi s y z) = app p (psi s y z) := by
+    rw [spArg_cons]; show step a b s y z = _
+    unfold step; rw [if_pos htr, H_eq hc, hP]; simp [hlo]
+  have hcz : psi s y z ≠ z := by simp
+  rw [hH, fs_app p hcz, fs_psi_pass hy hcy hμs]
+  have hfy : fs y η = app p (fs lo η) := by rw [← hbpl]; exact fs_app p hlo η
+  have hlocof : cof lo = .big μ := by rw [← hcy, ← hbpl, cof_app p hlo]
+  have hlolt : fs lo η < lo := fs_lt (by unfold ValidLt; rw [hlocof]; exact hηl)
+  have hsp : split (fs y η) (psi (succ s) z z) = (p, fs lo η) := by
+    rw [hfy]
+    apply split_app_of hpge
+    right; exact lt_of_le_of_lt (head_le_of_lt hlolt) hloh
+  have hcη : isOT (psi s (fs y η) z) = true := by
+    have := (fs_ot_lt hc ⟨hη, by rw [hcof]; exact hηl⟩).1
+    rwa [fs_psi_pass hy hcy hμs] at this
+  rw [spArg_cons]; show _ = step a b s (fs y η) z
+  unfold step
+  have hy' : fs y η ≠ z := by intro h; rw [h] at hbη; simp [lt] at hbη
+  have htr' : lt b (fs y η) = true ∧ lt (psi a z z) (psi s (fs y η) z) = true :=
+    ⟨hbη, by rw [← trig_cond hy hy']; exact htr.2⟩
+  rw [if_pos htr', H_eq hcη, hsp]
+  simp [hlo']
+
+theorem count_natT : ∀ n, count (natT n) = n
+  | 0 => rfl
+  | n + 1 => by simp [natT, count, count_natT n]
+
+/-- The diagonal chain of `X` at `μ`: `γ_0 = 0`, `γ_{k+1} = ψ_μ(X[γ_k])`. -/
+def gam (μ X : T) : Nat → T
+  | 0 => z
+  | k + 1 => psi μ (fs X (gam μ X k)) z
+
+/-- **The diagonal node.** -/
+theorem fs_psi_diag {a X μ : T} (hX : X ≠ z) (hc : cof X = .big μ) (hμ : ¬ lt μ a = true) (m : Nat) :
+    fs (psi a X z) (natT m) = psi a (fs X (gam μ X m)) z := by
+  conv => lhs; unfold fs
+  rw [if_neg hX, if_neg (by rw [not_succ_of_cof_big hc]; simp), hc]
+  simp only [if_neg hμ, count_natT]
+  congr 2
+  induction m with
+  | zero => rfl
+  | succ k ih => simp only [gam]; rw [← ih]
+
 end Ytosk
