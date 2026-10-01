@@ -1133,3 +1133,11 @@ i は k ののりしろの子の部分木に入らない。L8 の全接頭辞で
   - VLocal は `vlocal_t1` で示した。のりしろの場合は吸収されない一般形に直した。
   - seed の下界は `seed_arg_ge` で示した。
 - BumpWeakShape は BumpWeakSrc（実際に生じる弱い源だけについての仮定）に弱め、落とす補題の残りの仮定 DropRes に移した。
+- **再測定（SRO からの到達可能な行列: 直接 9030 個・乱択と接頭辞 70095 個、長さ 20 まで）**:
+  - 偽だった値の不変条件:
+    - VSmall: 5238 列で偽。v = ψ_0(大きい引数) の形で成分が Ω_v を超える。node_lhd の SubSmall・PV の VSmallV も偽になる。
+    - BumpAbs: 8 件で偽。
+    - UpgAbs の大域の形: 1 件で偽。x − 1 の形なら例外 0。
+  - 例外 0: 構造の不変条件すべて、Good3・FrameOT・FrameClosed・BumpKidsDec・BumpTermDec・TP1・TPL・argT・BumpWeakSrc。
+  - 落とす補題の結論の関係（o の変化 67 万件・v の変化 7 万件）は反例なし。壊れているのは証明の道筋だけ。
+  - 対処（サブエージェント）: UpgAbs を x − 1 の形に、PV から VSmallV を外し、node_lhd が本当に要る弱い条件を測って設計し直す。
