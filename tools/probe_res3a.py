@@ -11,6 +11,7 @@
              o(r) = ψ_s(y) が g の枠で書き換えるなら VSmallV s′。
 - t0.hG'   : 同じ r で、g = P_0(r)、col r = bump g、g の行 1・2 が 0 でないなら
              sumN (children (M.take x) r の o′) = sumN (同じ子の o)。
+- t0.hU    : hG' と同じ前件で r < x − 1 なら upg M (x − 1) = none（node-lhd の構造の仮定、8147c77f）。
 - t0.VSNN  : 同じ r で、n ≥ 2、σ = M[n]（= gexp M r L 0 0 n）の評価: i < r、CL M i = Lc ++ [cs]、σ.v cs ≠ v(cs)、
              cs が M の枠で書き換えるなら VSmallV (σ.v cs)。
 添字の範囲: どの欄も ρ'（M.take x の評価）を x 未満でしか読まない（cs ∈ CL(M.take x)、r < x、
@@ -86,6 +87,8 @@ def check(M):
             chT = T.ch(r)
             cnt[('index', "hG' children<x")] += all(c < x for c in chT)
             note("t0.hG'", sumN([T.o(c) for c in chT]) == sumN([C.o(c) for c in chT]), (r, g))
+            if r < x - 1:
+                note('t0.hU', C.upg(x - 1) is None, (r, g, C.upg(x - 1)))
         for n in NS:
             N = trio.expand(M, n)
             if not N or len(N) != r + n * L or N[:r] != M[:r]:
