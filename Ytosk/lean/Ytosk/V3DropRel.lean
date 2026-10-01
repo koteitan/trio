@@ -197,4 +197,52 @@ theorem drop_tail (a : T) : ∀ (Tl : List T) (X : T), (∀ u ∈ Tl, Single u) 
     have h2 := drop_tail a Tl (step a X s y z) hsT hTl.2 hX' (by simpa [spArg_single] using hcl.2)
     exact LhdE.trans h1 h2
 
+/-! ## 値の不変条件: 書き換える枠の状態は閉じている -/
+
+/-- **Value invariant**: in every frame of `M` where the counted child rewrites the state, the state is
+closed at the levels `≤ v(i)`. -/
+def FrameClosed (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i, i < M.length → ∀ (L : List Nat) (c : Nat) (R : List Nat), CL M i = L ++ c :: R → ∀ s y,
+    ρ.o c = psi s y z →
+    lt (spArg (ρ.v i) z (sumN (L.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
+    Closed (ρ.v i) (spArg (ρ.v i) z (sumN (L.map ρ.o)))
+
+theorem cl_mem_children {M : Mat} {i c : Nat} (h : c ∈ CL M i) : c ∈ children M i := by
+  unfold CL at h; exact (List.mem_filter.mp h).1
+
+/-- The counted values in order are single and non-increasing. -/
+theorem cl_vals {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) {i : Nat} (hi : i < M.length) :
+    (∀ t ∈ (CL M i).map ρ.o, Single t) ∧ ((CL M i).map ρ.o).Pairwise (fun a b => b ≤ a) := by
+  rw [← cvals_eq_map hC hG i]
+  exact ⟨cvals_single hC hG i, hG.dec i hi⟩
+
+/-- **The tail closedness from the invariant.** -/
+theorem tailcl_of_frame {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) (hF : FrameClosed M ρ)
+    {i : Nat} (hi : i < M.length) :
+    ∀ (Tl P : List Nat), CL M i = P ++ Tl →
+      TailCl (ρ.v i) (spArg (ρ.v i) z (sumN (P.map ρ.o))) (Tl.map ρ.o)
+  | [], _, _ => trivial
+  | c :: Tl, P, h => by
+    refine ⟨fun s y hc ht => hF i hi P c Tl h s y hc ht, ?_⟩
+    obtain ⟨hs, hp⟩ := cl_vals hC hG hi
+    rw [h] at hs hp
+    have hs' : ∀ t ∈ P.map ρ.o ++ [ρ.o c], Single t := fun t ht => hs t (by
+      simp only [List.map_append, List.map_cons, List.mem_append, List.mem_cons] at ht ⊢
+      rcases ht with ht | ht
+      · exact Or.inl ht
+      · simp at ht; exact Or.inr (Or.inl ht))
+    have hp' : (P.map ρ.o ++ [ρ.o c]).Pairwise (fun a b => b ≤ a) := by
+      rw [List.map_append, List.map_cons] at hp
+      have := List.pairwise_append.mp hp
+      refine List.pairwise_append.mpr ⟨this.1, by simp, fun a ha b hb => ?_⟩
+      simp at hb; rw [hb]; exact this.2.2 a ha _ List.mem_cons_self
+    have e : spArg (ρ.v i) (spArg (ρ.v i) z (sumN (P.map ρ.o))) (ρ.o c) =
+        spArg (ρ.v i) z (sumN ((P ++ [c]).map ρ.o)) := by
+      rw [List.map_append, List.map_singleton, sumN_append_dec hs' hp', spArg_app]
+      congr 1
+      show ρ.o c = sf (add z (ρ.o c))
+      rw [add_z_left]; exact (sf_ot (hs' _ (by simp)).1).symm
+    rw [e]
+    exact tailcl_of_frame hC hG hF hi Tl (P ++ [c]) (by rw [h]; simp)
+
 end Ytosk
