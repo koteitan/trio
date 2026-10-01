@@ -377,4 +377,82 @@ theorem children_gexp_g_t0 :
 
 end
 
+/-! ## g の枠（t = 0）: ψ_v(b + 1) が ψ_v(b) n 個に変わる -/
+
+theorem summands_mulT {x : T} (hx : ∃ s y, x = psi s y z) : ∀ n, ∀ q ∈ summands (mulT x n), q = x
+  | 0, q, hq => by simp [mulT, summands] at hq
+  | n + 1, q, hq => by
+    obtain ⟨s, y, rfl⟩ := hx
+    simp only [mulT, app_psi, app_z, summands, List.mem_cons] at hq
+    rcases hq with rfl | hq
+    · rfl
+    · exact summands_mulT ⟨s, y, rfl⟩ n q hq
+
+theorem fs_succ_arg (v b : T) (n : Nat) : fs (psi v (app b one) z) (natT n) = mulT (psi v b z) n := by
+  have hne : app b one ≠ z := fun h => by simp [one] at h; exact absurd (app_eq_z h).2 (by simp)
+  have hs : isSucc (app b one) = true := isSucc_succ b
+  unfold fs
+  rw [if_neg hne, if_pos hs, count_natT]
+  show mulT (psi v (init (succ b)) z) n = _
+  rw [init_succ]
+
+/-- **The `g` frame without a rewrite** (`t = 0`). -/
+theorem t0_frame_notrig {a bg v b : T} (n : Nat)
+    (hX : isOT (app bg (psi v (app b one) z)) = true)
+    (hno : ¬ (lt bg (app b one) = true ∧ lt (psi a z z) (psi v (app b one) z) = true))
+    (hbge : ∀ q ∈ summands bg, psi v (app b one) z ≤ q) :
+    fs (psi a (spArg a bg (psi v (app b one) z)) z) (natT n) =
+      psi a (spArg a bg (mulT (psi v b z) n)) z := by
+  have hcz : psi v (app b one) z ≠ z := by simp
+  have hne : app b one ≠ z := fun h => by simp [one] at h; exact absurd (app_eq_z h).2 (by simp)
+  have h1 : spArg a bg (psi v (app b one) z) = app bg (psi v (app b one) z) := by
+    rw [spArg_single]; unfold step; rw [if_neg hno]
+    exact add_eq_app_of_ge ⟨_, _, rfl⟩ bg hbge
+  have hs1 : isSucc (app b one) = true := isSucc_succ b
+  have hcof : cof (app bg (psi v (app b one) z)) = .omega := by
+    rw [cof_app bg hcz]; simp [cof, hne, hs1]
+  have hsX : isSucc (app bg (psi v (app b one) z)) = false := by
+    rw [isSucc_app bg hcz]; simp [isSucc, last, one]; exact fun _ h => hne h
+  rw [h1]
+  conv => lhs; unfold fs
+  rw [if_neg (fun h => hcz (app_eq_z h).2), if_neg (by rw [hsX]; simp), hcof]
+  simp only
+  rw [fs_app bg hcz, fs_succ_arg]
+  -- the right side: no copy rewrites
+  have hbot : isOT bg = true := isOT_app_left hX
+  have hcot : isOT (psi v (app b one) z) = true := isOT_app_right hX
+  have hc'ot : isOT (psi v b z) = true := by
+    have := isOT_arg hcot
+    rw [isOT_psi_iff]; refine ⟨isOT_sub hcot, isOT_app_left this, rfl, z_le _, ?_⟩
+    intro q hq
+    have h2 := comps_lt hcot q (by rw [comps_app]; exact List.mem_append_left _ hq)
+    exact comps_lt_prefix hq h2
+  have hc'lt : psi v b z < psi v (app b one) z := by
+    rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, lt_app_of (by simp [one])⟩
+  have hR : isOT (app bg (mulT (psi v b z) n)) = true := by
+    apply isOT_app_of hbot (isOT_mulT hc'ot ⟨_, _, rfl⟩ n)
+    intro q hq
+    exact le_trans (by
+      cases n with
+      | zero => exact z_le _
+      | succ n => simp [mulT, head]; exact le_of_lt hc'lt) (hbge q hq)
+  rw [spArg_eq_app hR]
+  intro s y hq
+  have hq' := summands_mulT ⟨v, b, rfl⟩ n _ hq
+  simp only [psi.injEq] at hq'
+  obtain ⟨hs, hy, _⟩ := hq'
+  subst hs; subst hy
+  by_cases h3 : lt bg (app y one) = true
+  · have h4 : ¬ lt (psi a z z) (psi s (app y one) z) = true := fun h4 => hno ⟨h3, h4⟩
+    rcases not_trig_cases h4 with h5 | h5
+    · exact Or.inr h5
+    · exact absurd h5 hne
+  · left
+    have : app y one ≤ bg := by
+      rcases lt_trichotomy' (app y one) bg with h | h | h
+      · exact le_of_lt h
+      · exact le_of_eq h
+      · exact absurd h h3
+    exact le_of_lt (lt_of_lt_of_le (lt_app_of (by simp [one])) this)
+
 end Ytosk
