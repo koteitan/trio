@@ -5,9 +5,13 @@ x = r + L が最後の列、r = P_1(x)、q = P_0(x) ≠ r、x の行 2 は 0。�
 - D の部分木からの出口は、部分木の直後の列への上げ（その列の v が D）だけ（`dep_exit`）。
 - 経路の子 p より前にある兄弟の部分木には D がない（`nodep_sib`）。とくに v(q) は D でない（`nodep_v_q`）。
 - これから o の呼び出しの形 OShape（`hOS_t1`）。
-- 経路を上ると D が続く（`path_up`）: r と根 Rt の o は D（`hrD_t1`・`hRd_t1`）。
-- hS2・hS3 は D によらず構造だけから（`hS2_t1`・`hS3_t1`）。
-新しい不変条件: 行 1 が 0 なら行 2 も 0（`R12`）、のりしろの子の親は行 2 が 1（`BumpE2`）。
+- 経路を上ると D が続く（`path_up`）: x の祖先の o はすべて D。r と根 Rt で hrD・hRd（`dep_anc_x`）。
+- hS2・hS3 は D によらず構造だけから（`hS2_t1`・`hS3_t1`。r の行 2 は 0: `e2_r_zero`）。
+- hxnb（`hxnb_t1`）、hcnt（`hcnt_t1`）、hnd は写しの数の帰納法（`nd_read`・`hnd_t1`）。
+- 根の存在（`root_t1`）。
+まとめ: 構造の仮定をすべて外した版 `t1_main_struct`。
+新しい不変条件: 行 1 が 0 なら行 2 も 0（`R12`）、のりしろの子の親は行 2 が 1（`BumpE2`）、
+行 0 が 0 なら行 1 も 0（`R01`）。SRO 以下 L ≤ 9 ほか 468881 行列で例外 0。
 -/
 import Ytosk.V3ChgS
 import Ytosk.V3BaseT1
@@ -638,5 +642,102 @@ theorem hnd_t1 : ∀ n, 2 ≤ n → ∀ g, g ≤ r → ∀ a, a < (n - 1) * L �
   fun n hn g hg a ha h =>
     nd_read hlen hL hA hd0e hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2 (n - 1) (by omega) g hg a ha h
 end
+
+/-! ## 根 -/
+
+/-- Row 0 zero forces row 1 zero. -/
+def R01 (M : Mat) : Prop := ∀ i, entry M 0 i = 0 → entry M 1 i = 0
+
+/-- **The last root above a column**: an ancestor with row 0 equal to `0`, after which row 0 is
+nonzero up to the column. -/
+theorem root_exists {M : Mat} (h00 : entry M 0 0 = 0) : ∀ b, ∃ Rt, Anc0 M Rt b ∧
+    entry M 0 Rt = 0 ∧ ∀ j, Rt < j → j ≤ b → entry M 0 j ≠ 0 := by
+  intro b
+  induction b using Nat.strong_induction_on with
+  | _ b ih =>
+  by_cases hb : entry M 0 b = 0
+  · exact ⟨b, Anc0.refl b, hb, fun j h1 h2 => by omega⟩
+  · have hb0 : 0 < b := by
+      rcases Nat.eq_zero_or_pos b with h | h
+      · subst h; exact absurd h00 hb
+      · exact h
+    obtain ⟨p, hp⟩ := par0_some_of (M := M) hb0 (by omega)
+    obtain ⟨hpb, _, hbet⟩ := (par0_spec M).mp hp
+    obtain ⟨Rt, hRA, hR0, hRl⟩ := ih p hpb
+    refine ⟨Rt, Anc0.step hp hRA, hR0, fun j h1 h2 => ?_⟩
+    rcases Nat.lt_or_ge p j with hpj | hjp
+    · rcases Nat.lt_or_ge j b with hjb | hjb
+      · have := hbet j hpj hjb; omega
+      · have : j = b := by omega
+        subst this; exact hb
+    · exact hRl j h1 hjp
+
+/-- **The root facts** (`hRA`, `hR0`, `hRlast`). -/
+theorem root_t1 {M : Mat} (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 = 0) (b : Nat) :
+    ∃ Rt, Anc0 M Rt b ∧ col M Rt = (0, 0, 0) ∧ ∀ j, Rt < j → j ≤ b → entry M 0 j ≠ 0 := by
+  obtain ⟨Rt, hRA, hR0, hRl⟩ := root_exists h00 b
+  have h1 := hR01 Rt hR0
+  have h2 := hR12 Rt h1
+  refine ⟨Rt, hRA, ?_, hRl⟩
+  rw [col_eq_entries, hR0, h1, h2]
+
+/-! ## まとめ: 構造の仮定を外した t1_main2 -/
+
+/-- **`t = 1`, `q ≠ r`, all `n ≥ 2`, with every structural hypothesis discharged** by the structural
+invariants (`R0P`, `Z2`, `SibDec`, `Z1C`, `UAT`, `UAB`, `R12`, `BumpE2`, `R01`, row 0 of the first
+column `0`) and the shape `P_1(x) = r`, row 2 of `x` zero, `P_0(x) ≠ r`. -/
+theorem t1_main_struct {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    {μ br vr : T}
+    (hrot : isOT (psi vr br z) = true) (hcb : cof br = .big μ) (hμr : μ = vr) (hbr : br ≠ z)
+    (hoxv : ρ.o (r + L) = psi (succ μ) z z) (hro : ρ.o r = psi vr br z)
+    (hF1 : ∀ i, r < i → i < r + L → DepX M (r + L) true i → ¬ DepX M (r + L) false i →
+      lt μ (ρ.v i) = true)
+    (hv1 : (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM)).v r = vr)
+    (hs1ot : isOT ((rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM)).o r) = true)
+    (hs1lhd : Lhd z ((rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM)).o r) (ρ.o r))
+    (hPv1 : ∀ g, g ≤ r → ∀ a, a < L →
+      (par (TRIO.gexp M r L d0 0 1) 1 (r + a) = some g ∨
+        upg (TRIO.gexp M r L d0 0 1) (r + a) = some g) →
+      ρ.v g = (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM)).v g)
+    (hV : ∀ m i, i < r + L → DepX M (r + L) false i →
+      VLocal M (r + L) ρ (gamS μ br ((rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM)).o r) m) μ i)
+    (hW : ∀ m i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+      DepX M (r + L) true c → ∀ s y, ρ.o c = psi s y z → lt (preState M ρ i L') y = true →
+      lt (psi (ρ.v i) z z) (psi s y z) = true →
+      lt (preState M ρ i L')
+        (fsD y (gamS μ br ((rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM)).o r) m)) = true)
+    (hLo : ∀ m i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+      DepX M (r + L) true c → ∀ s y, ρ.o c = psi s y z → lt (preState M ρ i L') y = true →
+      lt (psi (ρ.v i) z z) (psi s y z) = true →
+      ((split y (psi (succ s) z z)).2 ≠ z →
+        fsD (split y (psi (succ s) z z)).2
+          (gamS μ br ((rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM)).o r) m) ≠ z) ∧
+      ((split y (psi (succ s) z z)).2 = z →
+        (split (fsD y (gamS μ br ((rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM)).o r) m))
+          (psi (succ s) z z)).2 = z))
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hrx : r ≠ r + L := by omega
+  obtain ⟨q, hq⟩ := par0_of_anc hA hrx
+  have hpath := hpath_of_par1 h1 hA hrx
+  obtain ⟨Rt, hRA, hRt0, hRlast⟩ := root_t1 hR01 hR12 h00 (r + L)
+  exact t1_main2 hlen hL hA hd0e hpath hx2
+    (hxnb_t1 hlen hL hA hd0e hZ2 hZ1 h1) (hZ2 r)
+    (fun n hn => hiu_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn)
+    (fun n hn => hiux_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn)
+    (hnd_t1 hlen hL hA hd0e hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2) hqr hC hG hRM hrot hcb hμr hbr hoxv hro
+    (dep_anc_x hUAT hZ2 hR12 hBE hlen hx2 hA) hF1
+    (hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq)
+    (hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT) hv1 hs1ot hs1lhd hPv1 hV
+    (hS2_t1 hR0 hA hrx) (hS3_t1 h1 hA hrx hlen hR0 hZ2 hSD hZ1) hW hLo
+    hRA hRt0 hRlast (dep_anc_x hUAT hZ2 hR12 hBE hlen hx2 hRA) hsM hpM
 
 end Ytosk
