@@ -191,6 +191,11 @@ theorem PV.le {M : Mat} {ρ ρ' : Valn} {i : Nat} (h : PV M ρ ρ' i) : ρ'.v i 
   · exact h.le
   · exact le_of_lt h.1
 
+theorem forall2_map_le {f g : Nat → T} : ∀ {l : List Nat}, (∀ d ∈ l, f d ≤ g d) →
+    List.Forall₂ (· ≤ ·) (l.map f) (l.map g)
+  | [], _ => .nil
+  | d :: _, h => .cons (h d List.mem_cons_self) (forall2_map_le (fun d' hd' => h d' (List.mem_cons_of_mem _ hd')))
+
 /-- `ψ_{v′}(0) < ψ_v(X)` when `v′ ≤ v` and `X ≠ 0`. -/
 theorem psi_z_lt_of_le {v' v X : T} (hv : v' ≤ v) (hX : z < X) : psi v' z z < psi v X z := by
   rcases (le_iff _ _).mp hv with h | h
@@ -364,6 +369,254 @@ theorem o_strict_frame {i c : Nat} (hi : i < x) (hcCL : c ∈ CL M i) (hlast : �
     apply lt_spArg
     · exact isOT_sumN _ (fun t ht => (hsTv t ht).1)
     · exact sumN_ne_z hsTv hp1.2.1 hTvne
+
+/-- **The `v` frame of a bump column is strict**: the last child `k` of the bump child `j` (the last
+child of `i`) drops strictly or is `x`. -/
+theorem v_strict_bump {i j k : Nat} (hi : i < x) (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i ≠ 0)
+    {L K : List Nat} (hch : children M i = L ++ [j]) (hjb : col M j = bump M i)
+    (hchj : children M j = K ++ [k]) (hLx : ∀ d ∈ L, ∀ e ∈ children M d, e < x)
+    (hIH : k < x → ρ'.o k < ρ.o k) : ρ'.v i < ρ.v i := by
+  have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
+  have hiT : i < (M.take x).length := by omega
+  have hiM : i < M.length := by omega
+  have hoff := chg_off hx hC hG hC' hRk'
+  have hjM : j ∈ children M i := by rw [hch]; simp
+  have hkM : k ∈ children M j := by rw [hchj]; simp
+  have hij := (mem_children hjM).1
+  have hjk := (mem_children hkM).1
+  have hkl := (mem_children hkM).2
+  have hjx : j < x := by omega
+  -- the row-1 parent does not change
+  have hV : vOpt ρ' (par (M.take x) 1 i) = vOpt ρ (par M 1 i) := by
+    rw [par_take M 1 i hi]
+    cases hp : par M 1 i with
+    | none => rfl
+    | some m =>
+      show ρ'.v m = ρ.v m
+      have hm := par_lt M 1 i m hp
+      apply (hoff m (by omega)).2
+      intro hCm
+      exact (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCm).1 rfl (by omega) |>.2.2 i hi hp
+  have hVot : isOT (vOpt ρ (par M 1 i)) = true := by
+    cases hp : par M 1 i with
+    | none => rfl
+    | some m => exact hG.ot_v m (by have := par_lt M 1 i m hp; omega)
+  -- the children of `i` in `M.take x`
+  have hLj : ∀ d ∈ L, d < j := (sib_order (children_sorted M i) (R := []) (by rw [hch])).1
+  have hchT : children (M.take x) i = L ++ [j] := by
+    rw [children_take, hch, List.filter_eq_self]
+    intro d hd
+    rcases List.mem_append.mp hd with h | h
+    · have := hLj d h; simp only [decide_eq_true_eq]; omega
+    · simp at h; subst h; simp only [decide_eq_true_eq]; omega
+  have hjT : j ∈ children (M.take x) i := by rw [hchT]; simp
+  -- the earlier bump terms do not change
+  have hbtL : ∀ d ∈ L, bumpTerm (M.take x) ρ' i d = bumpTerm M ρ i d := by
+    intro d hd
+    have hdx : d < x := by have := hLj d hd; omega
+    have hdM : d ∈ children M i := by rw [hch]; simp [hd]
+    unfold bumpTerm
+    rw [col_take M hdx, bump_take M hi]
+    split
+    · have hchd : children (M.take x) d = children M d := by
+        rw [children_take, List.filter_eq_self]
+        intro e he; simp only [decide_eq_true_eq]; exact hLx d hd e he
+      rw [hchd]
+      congr 2
+      apply List.map_congr_left
+      intro e he
+      have hex := hLx d hd e he
+      apply (hoff e hex).1
+      intro hCe
+      exact chg_only_last hx hR0 hZ2 hSD hZ1 hUAT hUAB h2 hdM hjT (hLj d hd) hCe
+        (Anc0.step (mem_children_iff.mp he).2 (Anc0.refl d))
+    · rfl
+  -- the values
+  set G := sumN (K.map ρ.o ++ [ρ.o k]) with hGdef
+  have hKk : ∀ d ∈ K, d < k := (sib_order (children_sorted M j) (R := []) (by rw [hchj])).1
+  have hKx : ∀ d ∈ K, d < x := fun d hd => by have := hKk d hd; omega
+  have hKot : ∀ t ∈ K.map ρ.o, isOT t = true := by
+    intro t ht; obtain ⟨d, hd, rfl⟩ := List.mem_map.mp ht; exact hG.ot_o d (by have := hKx d hd; omega)
+  have hKot' : ∀ t ∈ K.map ρ'.o, isOT t = true := by
+    intro t ht; obtain ⟨d, hd, rfl⟩ := List.mem_map.mp ht; exact (hdrop d (hKx d hd)).1.2.1
+  have hKle : sumN (K.map ρ'.o) ≤ sumN (K.map ρ.o) := by
+    exact sumN_le2 (forall2_map_le (fun d hd => (hdrop d (hKx d hd)).1.le)) hKot' hKot
+  have hkot : isOT (ρ.o k) = true := hG.ot_o k hkl
+  have hGot : isOT G = true := isOT_sumN _ (fun t ht => by
+    rcases List.mem_append.mp ht with h | h
+    · exact hKot t h
+    · simp at h; rw [h]; exact hkot)
+  -- `G′ < G`
+  obtain ⟨G', hG'ot, hG'lt, hbtj⟩ : ∃ G', isOT G' = true ∧ G' < G ∧
+      bumpTerm (M.take x) ρ' i j = omega G' := by
+    have hbt : bumpTerm (M.take x) ρ' i j = omega (sumN ((children (M.take x) j).map ρ'.o)) := by
+      unfold bumpTerm; rw [col_take M hjx, bump_take M hi, if_pos hjb]
+    rw [hbt]
+    by_cases hkx : k < x
+    · have hchjT : children (M.take x) j = K ++ [k] := by
+        rw [children_take, hchj, List.filter_eq_self]
+        intro d hd
+        rcases List.mem_append.mp hd with h | h
+        · simp only [decide_eq_true_eq]; exact hKx d h
+        · simp at h; subst h; simp only [decide_eq_true_eq]; exact hkx
+      have hk' : isOT (ρ'.o k) = true := (hdrop k hkx).1.2.1
+      refine ⟨_, ?_, ?_, rfl⟩
+      · rw [hchjT, List.map_append, List.map_singleton]
+        exact isOT_sumN _ (fun t ht => by
+          rcases List.mem_append.mp ht with h | h
+          · exact hKot' t h
+          · simp at h; rw [h]; exact hk')
+      · rw [hchjT, List.map_append, List.map_singleton]
+        exact sumN_snoc_lt hKot' hKot hk' hkot hKle (hIH hkx)
+    · have hkx' : k = x := by omega
+      have hchjT : children (M.take x) j = K := by
+        rw [children_take, hchj, List.filter_append, List.filter_eq_self.mpr
+          (fun d hd => by simp only [decide_eq_true_eq]; exact hKx d hd)]
+        simp [hkx']
+      refine ⟨_, ?_, ?_, rfl⟩
+      · rw [hchjT]; exact isOT_sumN _ hKot'
+      · rw [hchjT]
+        exact sumN_lt_snoc hKot hkot hKle (by
+          obtain ⟨s0, y0, h0⟩ := o_psi_form hC hkl; rw [h0]; exact T.z_lt_psi _ _ _)
+  -- assemble
+  set Pl := one :: L.map (bumpTerm M ρ i) with hPl
+  have hPlot : ∀ t ∈ Pl, isOT t = true := by
+    intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · rfl
+    · obtain ⟨d, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm hG i d
+  have hbtjM : bumpTerm M ρ i j = omega G := by
+    unfold bumpTerm; rw [if_pos hjb, hchj, List.map_append, List.map_singleton]
+  have hvM : ρ.v i = sf (add (vOpt ρ (par M 1 i)) (omega (sumN (Pl ++ [omega G])))) := by
+    rw [(hC i hiM).2]; unfold vRhs
+    rw [if_neg h1, if_neg h2, hch, List.map_append, List.map_singleton, hbtjM, ← List.cons_append]
+  have hvT : ρ'.v i = sf (add (vOpt ρ (par M 1 i)) (omega (sumN (Pl ++ [omega G'])))) := by
+    rw [(hC' i hiT).2]; unfold vRhs
+    rw [entry_take M 1 hi, entry_take M 2 hi, if_neg h1, if_neg h2, hV, hchT, List.map_append,
+      List.map_singleton, hbtj, List.map_congr_left hbtL, ← List.cons_append]
+  have hP'ot : isOT (sumN (Pl ++ [omega G'])) = true := isOT_sumN _ (fun t ht => by
+    rcases List.mem_append.mp ht with h | h
+    · exact hPlot t h
+    · simp at h; rw [h]; exact isOT_omega hG'ot)
+  have hPot : isOT (sumN (Pl ++ [omega G])) = true := isOT_sumN _ (fun t ht => by
+    rcases List.mem_append.mp ht with h | h
+    · exact hPlot t h
+    · simp at h; rw [h]; exact isOT_omega hGot)
+  have hP : sumN (Pl ++ [omega G']) < sumN (Pl ++ [omega G]) :=
+    sumN_snoc_lt hPlot hPlot (isOT_omega hG'ot) (isOT_omega hGot) (le_refl _)
+      (omega_lt_omega hG'ot hGot hG'lt)
+  rw [hvM, hvT, sf_ot (isOT_add hVot (isOT_omega hP'ot)), sf_ot (isOT_add hVot (isOT_omega hPot))]
+  exact add_lt_add_left _ (omega_lt_omega hP'ot hPot hP)
+
+/-- **Every call of `D` drops strictly** in `M.take x` (`t = 1`: `x` has row 2 zero and `v(x) ∉ D`). -/
+theorem dep_strict {q : Nat} {ζ μ : T} (hx2 : entry M 2 x = 0) (hq : par M 0 x = some q)
+    (hnx : ¬ DepX M x false x) (hVL : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i) :
+    ∀ b i, DepX M x b i → i < x → valB ρ' b i < valB ρ b i := by
+  have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
+  intro b i hD
+  induction hD with
+  | leaf => intro h; exact absurd h (lt_irrefl _)
+  | @ochild i c hc hcb hcu hdc ih =>
+    intro hi
+    show ρ'.o i < ρ.o i
+    rcases hOS_t1 hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq i hi (DepX.ochild hc hcb hcu hdc) with
+      ⟨_, hnc⟩ | ⟨_, L, c0, R, hch, _, _, hR, hLnd⟩
+    · exfalso
+      rcases hnc c hc with h | h
+      · exact hcb h
+      · exact hcu h
+    · have hcnt : Counted M i c := ⟨hcb, hcu⟩
+      have hcR : ∀ d ∈ R, ¬ Counted M i d := fun d h hd => by
+        rcases hR d h with h' | h'
+        · exact hd.1 h'
+        · exact hd.2 h'
+      have hcCL : c ∈ CL M i := by
+        unfold CL; exact List.mem_filter.mpr ⟨hc, by simpa using hcnt⟩
+      obtain ⟨hL, hRo⟩ := sib_order (children_sorted M i) hch
+      have hcc0 : c = c0 := by
+        rw [hch] at hc
+        rcases List.mem_append.mp hc with h | h
+        · exact absurd hdc (hLnd c h hcnt)
+        · rcases List.mem_cons.mp h with h | h
+          · exact h
+          · exact absurd hcnt (hcR c h)
+      subst hcc0
+      apply o_strict_frame hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hi hcCL
+      · intro d hd
+        have hdc : d ∈ children M i := (List.mem_filter.mp hd).1
+        have hdcnt : Counted M i d := by simpa using (List.mem_filter.mp hd).2
+        rw [hch] at hdc
+        rcases List.mem_append.mp hdc with h | h
+        · exact le_of_lt (hL d h)
+        · rcases List.mem_cons.mp h with h | h
+          · rw [h]
+          · exact absurd hdcnt (hcR d h)
+      · exact ih
+  | @ov i hv ih =>
+    intro hi
+    show ρ'.o i < ρ.o i
+    have hiT : i < (M.take x).length := by omega
+    have hiM : i < M.length := by omega
+    have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depX_chgX hv)).1 rfl hi
+    have hvlt : ρ'.v i < ρ.v i := ih hi
+    rw [o_of_no_counted hC' hiT (hdrop i hi).2.2.1 hT.2.1, o_cl_eq hC hG hiM]
+    exact psi_lt_psi_z_iff.mpr (Or.inl hvlt)
+  | @vpar i m h1 hp hdm _ =>
+    intro hi
+    exfalso
+    have hm := par_lt M 1 i m hp
+    exact (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depX_chgX hdm)).1 rfl (by omega) |>.2.2 i hi hp
+  | @vupg i k h1 h2 hu hdk ih =>
+    intro hi
+    show ρ'.v i < ρ.v i
+    have hiM : i < M.length := by omega
+    have hiT : i < (M.take x).length := by omega
+    have hkl := upg_lt hiM hu
+    have hkx : k < x := by
+      rcases Nat.lt_or_ge k x with h | h
+      · exact h
+      · exfalso
+        have : k = x := by omega
+        subst this; exact hnx hdk
+    have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depX_chgX hdk)).1 rfl hkx
+    obtain ⟨m, hm1, _, _, hcase⟩ := upg_spec hu
+    have hik : k = i + 1 := by
+      rcases hcase with h | ⟨hA, hki⟩
+      · exact h
+      · exact (no_anc_upg hx hR0 hZ2 hSD hZ1 hUAT hUAB hT hkx hu hA hki).elim
+    have hi1 : i + 1 < x := by omega
+    have hmi := par_lt M 1 i m hm1
+    have huT : upg (M.take x) i = some k := by rw [upg_take M hi1]; exact hu
+    have hVot : isOT (vOpt ρ (par M 1 i)) = true := by
+      rw [hm1]; exact hG.ot_v m (by omega)
+    have ek : ρ.v i = ρ.v k :=
+      v_upg_eq hC hiM h1 h2 hu hVot (fun _ _ _ k' hk' => hG.ot_o k' (mem_children hk').2)
+    have ek' : ρ'.v i = ρ'.v k := v_upg_eq hC' hiT (by rw [entry_take M 1 hi]; exact h1)
+      (by rw [entry_take M 2 hi]; exact h2) huT
+      (by rw [par_take M 1 i hi, hm1]; exact (hdrop m (by omega)).2.2.1)
+      (fun _ _ _ k' hk' => (hdrop k' (by have := (mem_children hk').2; omega)).1.2.1)
+    rw [ek, ek']
+    exact ih hkx
+  | @vbump i j k h1 h2 hj hjb hk hdk ih =>
+    intro hi
+    show ρ'.v i < ρ.v i
+    obtain ⟨_, _, hcase⟩ := hVL i hi (DepX.vbump h1 h2 hj hjb hk hdk)
+    rcases hcase with ⟨_, h2', _⟩ | ⟨L, K, j', k', _, hch, _, hchj, hKnd, hLnd, _⟩
+    · exact absurd h2' h2
+    · have hjj : j = j' := by
+        rw [hch] at hj
+        rcases List.mem_append.mp hj with h | h
+        · exact absurd hdk (hLnd j h k hk).2
+        · exact List.mem_singleton.mp h
+      subst hjj
+      have hkk : k = k' := by
+        rw [hchj] at hk
+        rcases List.mem_append.mp hk with h | h
+        · exact absurd hdk (hKnd k h)
+        · exact List.mem_singleton.mp h
+      subst hkk
+      exact v_strict_bump hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hi h1 h2 hch hjb hchj
+        (fun d hd e he => (hLnd d hd e he).1) ih
 
 end
 
