@@ -188,4 +188,95 @@ theorem lo_z_keep {ζ θ y : T} (hy : y ≠ z) (hl : (split y θ).2 = z)
   · apply hyall; rw [← init_app_last y, summands_app]; exact List.mem_append_left _ hq
   · exact hlast q hq
 
+/-- The last summand of a term with a hole has a hole. -/
+theorem holeT_last {μ br vr : T} : ∀ {t : T}, HoleT μ br vr t → HoleT μ br vr (last t)
+  | z, h => absurd rfl (holeT_ne_z h)
+  | psi a b z, h => h
+  | psi a b (psi c d e), h => by
+    show HoleT μ br vr (last (psi c d e))
+    exact holeT_last (holeT_rest (by simp) h)
+
+/-- **(L)** at a frame, from the hole and a condition on a last summand `Ω_a` with `a` a limit. -/
+theorem hL_of_holeT {μ br vr ζ s y X : T} (hζ : ζ = psi μ X z) (hsμ : lt μ s = true)
+    (hy : y ≠ z) (hH : HoleT μ br vr (psi s y z)) (hbr : cof br = .big μ)
+    (hlim : ∀ a, last y = psi a z z → isSucc a = false → ¬ psi (fsD a ζ) z z < psi (succ s) z z) :
+    ((split y (psi (succ s) z z)).2 ≠ z → fsD (split y (psi (succ s) z z)).2 ζ ≠ z) ∧
+    ((split y (psi (succ s) z z)).2 = z → (split (fsD y ζ) (psi (succ s) z z)).2 = z) := by
+  have hHy := holeT_arg hy hH hbr
+  have hζz : ζ ≠ z := by rw [hζ]; simp
+  refine ⟨lo_ne_z_of_holeT hζz hHy, ?_⟩
+  intro hl
+  apply lo_z_keep hy hl
+  -- the last summand is high
+  have hyall : ∀ q ∈ summands y, ¬ q < psi (succ s) z z := by
+    intro q hq
+    have e := split_app (psi (succ s) z z) y
+    rw [hl, app_z_right] at e
+    rw [← e] at hq
+    exact split_fst_ge _ y q hq
+  have hHl := holeT_last hHy
+  have hlh := hyall _ (last_mem hy)
+  cases hlc : last y with
+  | z => exact absurd hlc (last_ne_z' hy)
+  | psi a b c =>
+    have hc0 : c = z := by
+      -- `last` is a single summand
+      have : ∀ t : T, t ≠ z → ∃ a b, last t = psi a b z := by
+        intro t
+        induction t with
+        | z => intro h; exact absurd rfl h
+        | psi a b c _ _ ihc =>
+          intro _
+          cases c with
+          | z => exact ⟨a, b, rfl⟩
+          | psi c1 c2 c3 => exact ihc (by simp)
+      obtain ⟨a', b', h'⟩ := this y hy
+      rw [hlc] at h'; cases h'; rfl
+    subst hc0
+    rw [hlc] at hlh hHl
+    by_cases hb : b = z
+    · subst hb
+      by_cases ha : isSucc a = true
+      · -- `Ω_{μ+1}` at the end would be below `Ω_{s+1}`: impossible since `μ < s`
+        exfalso
+        have haz : a ≠ z := by
+          intro h; subst h
+          have h0 : isSucc z = false := rfl
+          rw [h0] at ha; cases ha
+        have hcf : cof (psi a z z) = .big (init a) := by
+          unfold cof; rw [if_pos rfl, if_neg haz, if_pos ha]
+        have hia : init a = μ := by
+          rcases hHl with h | ⟨_, _, hD⟩
+          · rw [hcf] at h; cases h; rfl
+          · cases hD with
+            | here hb _ _ => exact absurd rfl hb
+            | arg hb _ _ => exact absurd rfl hb
+            | sub _ hs _ => rw [ha] at hs; cases hs
+        have hsa : succ μ = a := by rw [← hia]; unfold succ; exact init_app_one ha
+        apply hlh
+        rw [← hsa, psi_lt_psi_z_iff]
+        left
+        exact lt_of_le_of_lt (le_refl _) (show succ μ < succ s from by
+          rw [lt_succ_iff]; exact succ_le_of_lt (show μ < s from hsμ))
+      · have haz : a ≠ z := by
+          intro h; subst h
+          have := holeT_not_succ hHl
+          have h1 : isSucc (psi z z z) = true := rfl
+          rw [h1] at this; cases this
+        rw [fsD_sub haz (by simpa using ha)]
+        intro q hq
+        simp only [summands, List.mem_cons, List.mem_nil_iff, or_false] at hq
+        subst hq
+        exact hlim a hlc (by simpa using ha)
+    · rw [fsD_psi hb (not_succ_arg_of_holeT hb hHl)]
+      intro q hq
+      simp only [summands, List.mem_cons, List.mem_nil_iff, or_false] at hq
+      subst hq
+      intro hlt
+      apply hlh
+      rw [psi_lt_psi_z_iff] at hlt ⊢
+      rcases hlt with h | ⟨h, h'⟩
+      · exact Or.inl h
+      · exact absurd h' (T.not_lt_z _)
+
 end Ytosk
