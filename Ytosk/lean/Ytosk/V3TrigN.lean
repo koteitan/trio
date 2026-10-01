@@ -153,6 +153,21 @@ def NoTrigU (M : Mat) (ρ : Valn) : Prop :=
   ∀ i L c R, children M i = L ++ c :: R → ¬ Counted M i c → ∀ s y, ρ.o c = psi s y z →
     ¬ (lt (preState M ρ i L) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true)
 
+/-- **TrigOm at counted children** (what the frame lemmas use). -/
+def TrigOmC (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i L c R, children M i = L ++ c :: R → Counted M i c → ∀ s ν, ρ.o c = psi s (psi (succ ν) z z) z →
+    lt (preState M ρ i L) (psi (succ ν) z z) = true →
+    lt (psi (ρ.v i) z z) (psi s (psi (succ ν) z z) z) = true → preState M ρ i L = z
+
+theorem trigOmC_of {M : Mat} {ρ : Valn} (h : TrigOm M ρ) : TrigOmC M ρ :=
+  fun i L c R hch _ => h i L c R hch
+
+theorem trigOm_of_C {M : Mat} {ρ : Valn} (h : TrigOmC M ρ) (hNU : NoTrigU M ρ) : TrigOm M ρ := by
+  intro i L c R hch s ν hc ht1 ht2
+  by_cases hcn : Counted M i c
+  · exact h i L c R hch hcn s ν hc ht1 ht2
+  · exact absurd ⟨ht1, ht2⟩ (hNU i L c R hch hcn s _ hc)
+
 section
 variable {M : Mat} {r L d0 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hA : Anc0 M r (r + L)) (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (hn : 2 ≤ n)
@@ -236,9 +251,10 @@ theorem preState_lt {i : Nat} (h : i < r + L) {Lc : List Nat} {c : Nat} {R : Lis
 on the copies). A lowered child keeps an `Ω_{t+1}` argument (hypothesis `hShape`: from `hole_om_shape` when
 `Z c` is not a successor, or from the diagonal point for `q = r`),
 so the trigger goes back to `M` (`trig_back_fsD`). Remaining as hypotheses: the children whose old value is
-`Ω_{t+1}` itself (`x`, and `D` leaves) `hLeaf`, and no trigger at an uncounted child of `M[n]` (`hNU`). -/
+`Ω_{t+1}` itself (`x`, and `D` leaves) `hLeaf`. Stated for counted children (`TrigOmC`); with `NoTrigU` it gives
+`TrigOm` (`trigOm_of_C`). -/
 theorem trigOm_N_t1 (hC : Cons M ρ) (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP)
-    (hTO : TrigOm M ρ) (hTOP : TrigOm (TRIO.gexp M r L d0 0 (n - 1)) ρP)
+    (hTO : TrigOmC M ρ) (hTOP : TrigOmC (TRIO.gexp M r L d0 0 (n - 1)) ρP)
     (hShape : ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
       ∀ s ν, fsD (psi s0 y0 z) (Z c) = psi s (psi (succ ν) z z) z → ∃ t, y0 = psi (succ t) z z)
     (hle : ∀ c, c < r + L → DepX M (r + L) true c → fsD (ρ.o c) (Z c) ≤ ρ.o c)
@@ -247,17 +263,13 @@ theorem trigOm_N_t1 (hC : Cons M ρ) (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) 
       (glueZ M (r + L) ρ (shiftV ρP L) Z).o c = psi s (psi (succ ν) z z) z →
       lt (preState M ρ i Lc) (psi (succ ν) z z) = true →
       lt (psi (ρ.v i) z z) (psi s (psi (succ ν) z z) z) = true → preState M ρ i Lc = z)
-    (hNU : NoTrigU (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z))
     (hox : ∃ t, ρ.o (r + L) = psi (succ t) z z) :
-    TrigOm (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) := by
+    TrigOmC (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) := by
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
   have hlP := len_P (d0 := d0) (n := n) hlen
   have hSA := sameAt_lt hlen hL hA hd0e hn hpath hx2 hxnb hiu hiux
-  intro i Lc c R hch s ν hc ht1 ht2
-  by_cases hcN : Counted (TRIO.gexp M r L d0 0 n) i c
-  swap
-  · exact absurd ⟨ht1, ht2⟩ (hNU i Lc c R hch hcN s _ hc)
+  intro i Lc c R hch hcN s ν hc ht1 ht2
   have hcmem : c ∈ children (TRIO.gexp M r L d0 0 n) i := by rw [hch]; simp
   have hcl := mem_children hcmem
   rcases Nat.lt_or_ge i (r + L) with h | h
@@ -289,7 +301,7 @@ theorem trigOm_N_t1 (hC : Cons M ρ) (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) 
           rw [h0] at hl
           rcases trig_back_fsD hl hc ⟨ht1, ht2⟩ with htM | ⟨_, _, hy0z, _⟩
           · rw [ht] at htM
-            exact hTO i Lc c R hch s0 t (by rw [h0, ht]) htM.1 htM.2
+            exact hTO i Lc c R hch hcM s0 t (by rw [h0, ht]) htM.1 htM.2
           · exact absurd hy0z hy0
       · have hcx' : c = r + L := by omega
         obtain ⟨t, hto⟩ : ∃ t, ρ.o c = psi (succ t) z z := by rw [hcx']; exact hox
@@ -299,7 +311,7 @@ theorem trigOm_N_t1 (hC : Cons M ρ) (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) 
         · exact h'
         · exact absurd (show c = r + L by omega ▸ DepX.leaf) hd
       rw [hσ, glueZ_o_lt ρ (shiftV ρP L) Z hc' hd] at hc
-      exact hTO i Lc c R hch s ν hc ht1 ht2
+      exact hTO i Lc c R hch hcM s ν hc ht1 ht2
   · obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
     have ha : a < (n - 1) * L := by omega
     have hσo : ∀ b, σ.o (r + L + b) = ρP.o (r + b) := by
@@ -332,7 +344,14 @@ theorem trigOm_N_t1 (hC : Cons M ρ) (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) 
     rw [hpre] at ht1 ⊢
     rw [hσv] at ht2
     rw [hco] at hc
-    exact hTOP (r + a) Lc' c' R' hsplit s ν hc ht1 ht2
+    have hcntP : Counted (TRIO.gexp M r L d0 0 (n - 1)) (r + a) c' := by
+      have hcmN : c' + L ∈ children (TRIO.gexp M r L d0 0 n) (r + L + a) := by
+        rw [children_shift (d0 := d0) hlen hL hA hd0e hn ha]; exact List.mem_map_of_mem hc'm
+      refine (counted_iff_of_cnt1 (cnt_copy hlen hL hA hd0e hn hpath hz2 (ρ := ρ) (Z := Z) ha hc'm)
+        hco ?_).mp hcN
+      obtain ⟨s1, y1, he⟩ := o_psi_form hCP (i := c') (by rw [hlP]; omega)
+      rw [he]; simp
+    exact hTOP (r + a) Lc' c' R' hsplit hcntP s ν hc ht1 ht2
 
 end
 
