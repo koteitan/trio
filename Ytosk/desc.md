@@ -1562,3 +1562,6 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - (a) D の列の Z c ≠ 0 かつ後続でない。破れるのは ζ = 種 = 1（n = 2）だけ。C′ でそこから TrigOm の場面は出ないが、証明はまだない。
   - (b) 子の古い値が Ω_{t+1} の枠（x か D の葉）。q = r の x の場合は B = b_r = 0 と種の関係から、q ≠ r は F1 で書き換えなし。型ごとに最終層で外す。
   - (c) M[n] の NoTrigU（C′ で 0/91 万）。保存の補題を先に作り、Res3A の欄にするのは後でまとめて。
+- t = 0 の RootP N（node-lhd、V3T0Root、834c2396）: r に親があれば N と M の根は同じで、変わるのは x の祖先の最後の根だけ。r が根なら根の値は M の根 ++ omid×(n−1) ++ o′(r)。t0_core は Cons・Rk・Good3・FrameOT・RootP を出し、実質の残りは hOTD だけ。
+- t = 2（strict-r、55c5c981）: SeedC を SeedL に弱めた版をコミット。Res3T2 は C′ で例外 0（SeedL は python の抜き取り検査）。
+- seed（omega-lhd、V3SeedLhd）: seedOK_of_lhd_below（種 ◁ o(r) から SeedOK、残りは comps_a）。
