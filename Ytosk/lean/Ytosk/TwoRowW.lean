@@ -111,4 +111,48 @@ theorem twoRow_chain_W {M : Mat} {r q : Nat} (hM : 2 ≤ M.length)
     have hy : y ≠ z := by rintro rfl; simp [lt] at htr1
     exact L_path hG hx hq hvx hqμ hζne hp hc hy
 
+/-- **The two-row `t = 1`, `q ≠ r` chain from the invariant W2** (`b ≤ y⟨0⟩` at rewriting frames). -/
+theorem twoRow_chain_W2 {M : Mat} {r q : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
+    (hq : par M 0 (M.length - 1) = some q) (hqμ : lt (vr M r) (vr M q) = true)
+    (hF1 : ∀ k, 1 ≤ k → F1 (expand M k))
+    (hSa : ∀ a', ¬ lt (vr M r) a' = true →
+      SeedOK a' (argOf (o2r M r)) (vr M r) (o2r (expand M 1) r))
+    (hW2 : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
+      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true → bst M h p ≤ fsD y z) :
+    ∀ k, 2 ≤ k →
+      o2r (expand M k) r = gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) (k - 1) ∧
+      ∀ h, Anc0 M h (M.length - 1) →
+        o2r (expand M k) h =
+          fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) (k - 2)) := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hr1 : par M 1 (M.length - 1) = some r := by have h := hr; rw [ht1] at h; exact h
+  obtain ⟨b, hrv, hb, hcb, hbelow, habove⟩ := twoRow_shape hG hx hr1 hb1
+  have hbarg : argOf (o2r M r) = b := by rw [hrv]; rfl
+  apply twoRow_chain_W hM hz hr ht1 hG hb1 hq hqμ hF1 hSa
+  intro m h p s y hp hph hc htr1 htr2
+  have hy : y ≠ z := by rintro rfl; simp [lt] at htr1
+  have hζpos : z < gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) m := by
+    cases m with
+    | zero =>
+      obtain ⟨w, w', hw⟩ := o2r_psi_form (expand M 1) r
+      show z < o2r (expand M 1) r
+      rw [hw]; exact T.z_lt_psi _ _ _
+    | succ m => exact T.z_lt_psi _ _ _
+  have hmono : fsD y z < fsD y (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) m) := by
+    rcases Nat.lt_or_ge r p with h1 | h1
+    · have hcp := hbelow p hp h1
+      rw [hc] at hcp
+      exact fsD_mono_big (cof_psi_inv hy hcp).1 hζpos
+    · obtain ⟨a', _, hD⟩ := habove p hp h1
+      rw [hc] at hD
+      by_cases hne : s = a' ∧ y = b
+      · obtain ⟨_, rfl⟩ := hne
+        exact fsD_mono_big hcb hζpos
+      · exact (DiagAt.arg_inv hD hy hne).fsD_mono hζpos
+  exact lt_of_le_of_lt (hW2 h p s y hp hph hc htr1 htr2) hmono
+
 end Ytosk

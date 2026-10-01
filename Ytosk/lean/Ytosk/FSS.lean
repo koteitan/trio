@@ -367,4 +367,26 @@ theorem DiagAt.step {a0 b0 μ a b s y : T} (hc : isOT (psi s y z) = true)
     · right; exact ⟨hne.1, hne.2, by rw [hy, hne.2]⟩
     · left; rw [hy]; exact DiagAt.arg_inv hD hyz hne
 
+/-- **`fsD` is increasing in the index above a diagonal point.** -/
+theorem DiagAt.fsD_mono {a b μ : T} {t : T} (h : DiagAt a b μ t) {η η' : T} (hlt : η < η') :
+    fsD t η < fsD t η' := by
+  induction h with
+  | here hb hc _ =>
+    rw [fsD_here hb hc, fsD_here hb hc, psi_lt_psi_z_iff]
+    exact Or.inr ⟨rfl, fs_mono hc hlt⟩
+  | @rest a' b' c d e _ ih =>
+    show psi a' b' (fsD (psi c d e) η) < psi a' b' (fsD (psi c d e) η')
+    rw [T.psi_lt_psi]; exact Or.inr (Or.inr ⟨rfl, rfl, ih⟩)
+  | arg hb hs _ ih =>
+    rw [fsD_psi hb hs, fsD_psi hb hs, psi_lt_psi_z_iff]
+    exact Or.inr ⟨rfl, ih⟩
+  | sub ha hs _ ih =>
+    rw [fsD_sub ha hs, fsD_sub ha hs, psi_lt_psi_z_iff]
+    exact Or.inl ih
+
+/-- With a big cofinality, `fsD` is increasing in the index. -/
+theorem fsD_mono_big {t μ : T} (hc : cof t = .big μ) {η η' : T} (hlt : η < η') :
+    fsD t η < fsD t η' := by
+  rw [fsD_eq_fs hc, fsD_eq_fs hc]; exact fs_mono hc hlt
+
 end Ytosk
