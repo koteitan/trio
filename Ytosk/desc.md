@@ -1164,3 +1164,10 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 値と n の帰納法（V3QRVal・V3QRChainN）
   - 基底と構造
   - 持ち上げの枠での値の不変条件
+- 置き換え完了（サブエージェント、全体ビルド緑 611 ジョブ）。t = 1 の値の仮定は、すべて到達可能な行列（長さ 20 まで）で例外 0 の形になった。
+  - UpgAbs → UpgAbsX（x − 1 だけ）。
+  - VSmall → VSmallF（枠の形）と VSmallNew（1 段ごと）。PV から VSmallV を外した。
+    node_lhd の SubSmall は書き換える枠だけに弱めた。破れる枠は全件「どちらも書き換えない」場合だった。
+  - BumpAbs → BumpAbsC（崩れを除く）。
+  - 1 列落としで保たれる値の不変条件 ValInv: Good3・VSmallF・FrameClosed・FrameOT・BumpKidsDec・BumpTermDec。
+  - 各段の仮定 DropRes: argT・VSmallNew・BumpWeakSrc・UpgAbsX・BumpAbsC。
