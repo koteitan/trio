@@ -181,6 +181,63 @@ theorem roots_N_root (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 = 0) (hrn 
     rw [Nat.mul_comm] at *
     simpa [Nat.mul_comm] using hblk n (le_refl _)
 
+/-- **The root value when `r` is a root**: the root `r` of `M` (value `X`) becomes the copy roots
+`O × (n − 1)` and `X′ ≤ O`, with `O · n < X`. -/
+theorem root_N_B (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 = 0) (hrn : par M 0 r = none)
+    (hn2 : 2 ≤ n) {ρ σ : Valn} {O X' : T}
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    (hsN : ∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i))
+    (hpN : ((roots (TRIO.gexp M r L 0 0 n)).map σ.o).Pairwise (fun a b => b ≤ a))
+    (hσG : ∀ i, i < r → σ.o i = ρ.o i)
+    (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = O) (hσlast : σ.o (r + (n - 1) * L) = X')
+    (hOX : mulT O n < ρ.o r) :
+    isOT (root (TRIO.gexp M r L 0 0 n) σ) = true ∧ root (TRIO.gexp M r L 0 0 n) σ < root M ρ := by
+  rw [root_eq_roots hsN hpN, root_eq_roots hsM hpM]
+  refine ⟨isOT_sumN _ (fun t ht => by
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ht; exact (hsN i hi).1), ?_⟩
+  have hrM := roots_M_root hlen hL hp hn hR01 hR12 h00 hrn
+  have hrN := roots_N_root hlen hL hp hn hR01 hR12 h00 hrn
+  set RG := (List.range r).filter (fun i => decide (col M i = (0, 0, 0))) with hRG
+  have hRGv : RG.map σ.o = RG.map ρ.o := List.map_congr_left (fun i hi => by
+    have := List.mem_range.mp (List.mem_filter.mp hi).1; exact hσG i this)
+  have hcv : ((List.range n).map (fun k => r + k * L)).map σ.o = List.replicate (n - 1) O ++ [X'] := by
+    obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+    rw [Nat.add_sub_cancel] at hσlast
+    rw [List.range_succ, List.map_append, List.map_append, List.map_singleton, List.map_singleton,
+      Nat.add_sub_cancel, hσlast]
+    congr 1
+    rw [List.map_map, List.eq_replicate_iff]
+    refine ⟨by simp, fun b hb => ?_⟩
+    obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hb
+    exact hσmid k (by have := List.mem_range.mp hk; omega)
+  have hsN' : ∀ t ∈ RG.map ρ.o ++ (List.replicate (n - 1) O ++ [X']), Single t := by
+    intro t ht
+    have : t ∈ (RG ++ (List.range n).map (fun k => r + k * L)).map σ.o := by
+      rw [List.map_append, hRGv, hcv]; exact ht
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp this
+    exact hsN i (by rw [hrN]; exact hi)
+  have hsM' : ∀ t ∈ RG.map ρ.o ++ [ρ.o r], Single t := by
+    intro t ht
+    have : t ∈ (RG ++ [r]).map ρ.o := by rw [List.map_append, List.map_singleton]; exact ht
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp this
+    exact hsM i (by rw [hrM]; exact hi)
+  rw [hrN, List.map_append, hRGv, hcv] at hpN ⊢
+  rw [hrM, List.map_append, List.map_singleton] at hpM ⊢
+  rw [sumN_append_dec hsN' hpN, sumN_append_dec hsM' hpM, sumN_singleton (hsM' _ (by simp))]
+  apply app_lt_app_left
+  have hp2 := (List.pairwise_append.mp hpN).2.1
+  have hs2 : ∀ t ∈ List.replicate (n - 1) O ++ [X'], Single t := fun t ht => hsN' t (List.mem_append_right _ ht)
+  have hO : Single O := hs2 O (List.mem_append_left _ (List.mem_replicate.mpr ⟨by omega, rfl⟩))
+  rw [sumN_append_dec hs2 hp2, sumN_replicate hO, sumN_singleton (hs2 _ (by simp))]
+  have hX'O : X' ≤ O := (List.pairwise_append.mp hp2).2.2 O
+    (List.mem_replicate.mpr ⟨by omega, rfl⟩) X' (by simp)
+  have hle : app (mulT O (n - 1)) X' ≤ mulT O n := by
+    rw [show n = (n - 1) + 1 by omega, mulT_succ', Nat.add_sub_cancel]
+    rcases (le_iff _ _).mp hX'O with h | h
+    · exact le_of_lt (app_lt_app_left _ h)
+    · rw [h]
+  exact lt_of_le_of_lt hle hOX
+
 end
 
 end Ytosk
