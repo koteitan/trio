@@ -65,12 +65,15 @@ theorem par0_gexp_root {M : Mat} {j0 Lb d0 d1 n k qp : Nat} (hlen : j0 + Lb + 1 
 theorem par0_take (M : Mat) {l i : Nat} (hi : i < l) : par (M.take l) 0 i = par M 0 i :=
   par_take M 0 i hi
 
+/-- The expansion keeps the columns before the last one. -/
+theorem expand_take_prefix (M : Mat) {n : Nat} (hM : 2 ≤ M.length) (hn : 1 ≤ n) :
+    (expand M n).take (M.length - 1) = M.take (M.length - 1) := by
+  rw [expand_eq_oper M n hM]; exact TRIO.oper_take_prefix (by omega) hn (le_refl _)
+
 /-- Before the last column, the row-0 parents after expansion are those of `M`. -/
 theorem par0_expand_prefix (M : Mat) {n i : Nat} (hM : 2 ≤ M.length) (hn : 1 ≤ n)
     (hi : i < M.length - 1) : par (expand M n) 0 i = par M 0 i := by
-  have h1 : (expand M n).take (M.length - 1) = M.take (M.length - 1) := by
-    rw [expand_eq_oper M n hM]; exact TRIO.oper_take_prefix (by omega) hn (le_refl _)
-  rw [← par0_take (expand M n) hi, h1, par0_take M hi]
+  rw [← par0_take (expand M n) hi, expand_take_prefix M hM hn, par0_take M hi]
 
 /-! ## 展開の列の行 0 の親（コピーの領域） -/
 
