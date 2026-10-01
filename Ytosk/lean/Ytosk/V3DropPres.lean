@@ -625,4 +625,42 @@ theorem UpgAbsL.x {M : Mat} {ρ : Valn} (h : UpgAbsL M ρ) {x : Nat} (hx : x + 1
   · right; rw [hk, hix]; exact children_last hx
   · left; exact hk
 
+/-! ## argT を M.take x の Good3 と局所性から -/
+
+/-- **`argT` from the standardness of `M.take x`** (an `Inv3` field of a standard prefix) and the locality
+`LocA`: where `i` has a counted child in `M.take x`, its `v` and the earlier counted siblings' `o` do not change
+(SRO からの展開の接頭辞閉包 40 万個で LocA は例外 0). -/
+theorem argT_of_take {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+    {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
+    (hGT : Good3 (M.take x) ρ')
+    (hLoc : ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (M.take x) i = Lc ++ [cs] →
+      ¬ ChgX M x false i ∧ ∀ d ∈ Lc, ¬ ChgX M x true d) :
+    ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (M.take x) i = Lc ++ [cs] →
+      ∀ s y, ρ'.o cs = psi s y z → ¬ lt s (ρ.v i) = true →
+      ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z := by
+  intro i hi Lc cs hcl s y ho hsa
+  have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
+  have hoff := chg_off hx hC hG hC' hRk'
+  obtain ⟨hvi, hLc⟩ := hLoc i hi Lc cs hcl
+  have hv : ρ'.v i = ρ.v i := (hoff i hi).2 hvi
+  have hmem : ∀ d ∈ Lc ++ [cs], d < x := fun d hd => by
+    have h1 : d ∈ CL (M.take x) i := by rw [hcl]; exact hd
+    have := (mem_children (cl_mem_children h1)).2
+    omega
+  have hmap : Lc.map ρ.o = Lc.map ρ'.o := List.map_congr_left (fun d hd =>
+    ((hoff d (hmem d (List.mem_append_left _ hd))).1 (hLc d hd)).symm)
+  rw [← hv, hmap]
+  have hiT : i < (M.take x).length := by omega
+  have hoi := o_cl_eq hC' hGT hiT
+  obtain ⟨hs, hp⟩ := cl_vals hC' hGT hiT
+  rw [hcl] at hoi hs hp
+  rw [List.map_append, List.map_singleton] at hoi hs hp
+  rw [sumN_snoc_dec hs hp, spArg_app, ho, spArg_single] at hoi
+  have hX : isOT (psi (ρ'.v i) (step (ρ'.v i) (spArg (ρ'.v i) z (sumN (Lc.map ρ'.o))) s y z) z) = true := by
+    rw [← hoi]; exact hGT.ot_o i hiT
+  have hcs : isOT (psi s y z) = true := by
+    rw [← ho]; exact hGT.ot_o cs (by have := hmem cs (by simp); omega)
+  exact comps_le_step_of_ot hX hcs (by rw [hv]; exact hsa)
+
 end Ytosk

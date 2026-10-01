@@ -150,10 +150,20 @@ theorem step_ot_of_closed {a B s y : T} (hBot : isOT (psi a B z) = true)
     isOT (psi a (step a B s y z) z) = true :=
   step_ot hBot hc hBc hsub (fun g hg => Or.inl (hcl a (lt_irrefl' a) g hg))
 
+/-- Adding a single summand keeps it as the last summand. -/
+theorem add_single_eq_app (s y : T) : ∀ b : T, ∃ P, add b (psi s y z) = app P (psi s y z)
+  | z => ⟨z, by simp⟩
+  | psi a b c => by
+    obtain ⟨P, hP⟩ := add_single_eq_app s y c
+    rw [add_psi_psi]
+    split_ifs
+    · exact ⟨z, by simp⟩
+    · exact ⟨psi a b P, by rw [hP]; rfl⟩
+
 /-- **The converse**: if `ψ_a(step a B s y)` is standard and `a ≤ s`, the components of `y` at the level `a`
 are below the result (they are components of the result: `c` is a summand of it, or the result is `y`). -/
 theorem comps_le_step_of_ot {a B s y : T} (hX : isOT (psi a (step a B s y z) z) = true)
-    (hc : isOT (psi s y z) = true) (hBc : ∀ q ∈ summands B, psi s y z ≤ q) (hsa : ¬ lt s a = true) :
+    (hc : isOT (psi s y z) = true) (hsa : ¬ lt s a = true) :
     ∀ g ∈ comps a y, g ≤ step a B s y z := by
   intro g hg
   apply le_of_lt
@@ -168,7 +178,8 @@ theorem comps_le_step_of_ot {a B s y : T} (hX : isOT (psi a (step a B s y z) z) 
       rw [hlo, app_z_right] at e
       rw [e]; exact hg
     · rw [if_neg hlo, comps_app]; exact List.mem_append_right _ hgc
-  · rw [step_add hBc, comps_app]; exact List.mem_append_right _ hgc
+  · obtain ⟨P, hP⟩ := add_single_eq_app s y B
+    rw [hP, comps_app]; exact List.mem_append_right _ hgc
 
 /-! ## y の仮定は外せない -/
 
