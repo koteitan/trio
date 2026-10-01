@@ -1447,3 +1447,10 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
     残りは値の 11 項目（AbsD・AbsU・TP1・TPLo・TP1W・TPLoW・AbsUW・AbsDW・TrigOm・TPLoN・AbsDN）、x が根のときの rootP、M.take x の Res3A。
   - hExp: n ≥ 2 の展開の Inv3V ∧ Res3A（t = 1 は t1-struct の出力で Good3・FrameOT・RootP・BumpDec まで）。
   - hT2: t = 2 の降下（strict-r）。
+
+### Res3A から t0 の欄がなくなった（2026-10-02、node-lhd、V3T0W）
+
+- hWk を証明した: v_lhd_B「x の親を r とすると、r < d < x の列 d はすべて v′(d) ⊴ v(d)」（d の降順の帰納法）。
+  - d = x−1 で行 2 が 0: UpgAbsX から強い関係。行 2 が 0 で上げがなければ v′ = v。祖先への上げは起きない（no_anc_upg）。次の列への上げは v(d) = v(d+1)。
+  - bump 型: bump_rel_nw（弱い源がなければ強い関係だけ）。弱い源は d より右にあり帰納法で除ける。
+- Res3A に残る欄は drop と seed の 2 つ。seed は偽なので omega-lhd が組み直し中。
