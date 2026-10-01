@@ -111,4 +111,120 @@ theorem o2r_frame {M : Mat} {x : Nat} (hG : Good2 M) (hx : x + 1 = M.length) {h 
 
 theorem spArg_single (a b s y : T) : spArg a b (psi s y z) = step a b s y z := rfl
 
+/-! ## 経路の値の形 -/
+
+/-- **The shape of the path values (two rows, `t = 1`).** Below `r` the cofinality is `Ω_{μ+1}`
+(`μ = v(r)`), `o(r) = ψ_μ(b)`, and from `r` up the values have their diagonal point at `ψ_{a′}(b)`,
+`a′ ≤ μ`. -/
+theorem twoRow_shape {M : Mat} {x r : Nat} (hG : Good2 M) (hx : x + 1 = M.length)
+    (hr : par M 1 x = some r) (hb1 : 0 < entry M 1 x) :
+    ∃ b, o2r M r = psi (vr M r) b z ∧ b ≠ z ∧ cof b = .big (vr M r) ∧
+      (∀ p, Anc0 M p x → r < p → cof (o2r M p) = .big (vr M r)) ∧
+      (∀ p, Anc0 M p x → p ≤ r → ∃ a', ¬ lt (vr M r) a' = true ∧ DiagAt a' b (vr M r) (o2r M p)) := by
+  have hrx := par_lt M 1 x r hr
+  have hA := anc0_of_par M 1 r x hr
+  obtain ⟨m0, hm0, he⟩ := hG.f1 x hb1
+  rw [hr] at hm0; cases hm0
+  have hvx : vr M x = succ (vr M r) := by
+    rw [vr_eq_nT hG.f1, vr_eq_nT hG.f1, ← he, nT_succ]
+  have hlow : ∀ p, Anc0 M p x → r < p → lt (vr M r) (vr M p) = true := by
+    intro p hp hrp
+    have := par1_between hr p hp hrp
+    rw [vr_eq_nT hG.f1, vr_eq_nT hG.f1]
+    exact lt_nT (by omega)
+  -- below `r`
+  have partA : ∀ m p, x - p ≤ m → Anc0 M p x → r < p → cof (o2r M p) = .big (vr M r) := by
+    intro m
+    induction m with
+    | zero =>
+      intro p h1 hp _
+      have : p = x := by have := hp.le; omega
+      subst this
+      rw [o2r_leaf hx (isOT_vr hG.f1 p), hvx]; exact cof_leaf _
+    | succ m ih =>
+      intro p hm hp hrp
+      rcases Nat.eq_or_lt_of_le hp.le with heq | hlt
+      · subst heq
+        rw [o2r_leaf hx (isOT_vr hG.f1 p), hvx]; exact cof_leaf _
+      obtain ⟨c, hc, hcA⟩ := anc0_child hp (by omega)
+      have hpc := par_lt M 0 c p hc
+      have hcc := ih c (by omega) hcA (by omega)
+      obtain ⟨y, hy⟩ := o2r_sub hG c
+      rw [o2r_frame hG hx hcA hc, hy, spArg_single]
+      rw [hy] at hcc
+      have hcot : isOT (psi (vr M c) y z) = true := by rw [← hy]; exact hG.ot c
+      have hst := cof_step (a := vr M p) (b := bst M p c) hcot hcc
+      have hne : step (vr M p) (bst M p c) (vr M c) y z ≠ z := by
+        rcases step_cases (a := vr M p) (b := bst M p c) hcot with ⟨B, hB⟩ | ⟨h1, _, h3, _⟩
+        · rw [hB]; intro h; exact absurd (app_eq_z h).2 (by simp)
+        · rw [h1]; exact h3
+      exact cof_psi_pass hne hst (hlow p hp hrp)
+  -- at `r`
+  have hrne : r ≠ x := by omega
+  obtain ⟨c, hc, hcA⟩ := anc0_child hA hrne
+  have hrc := par_lt M 0 c r hc
+  have hcc := partA _ c (Nat.le_refl _) hcA hrc
+  obtain ⟨y, hy⟩ := o2r_sub hG c
+  have hcot : isOT (psi (vr M c) y z) = true := by rw [← hy]; exact hG.ot c
+  rw [hy] at hcc
+  refine ⟨step (vr M r) (bst M r c) (vr M c) y z, ?_, ?_, cof_step hcot hcc,
+    fun p hp hrp => partA _ p (Nat.le_refl _) hp hrp, ?_⟩
+  · rw [o2r_frame hG hx hcA hc, hy, spArg_single]
+  · rcases step_cases (a := vr M r) (b := bst M r c) hcot with ⟨B, hB⟩ | ⟨h1, _, h3, _⟩
+    · rw [hB]; intro h; exact absurd (app_eq_z h).2 (by simp)
+    · rw [h1]; exact h3
+  · -- from `r` up
+    generalize hbdef : step (vr M r) (bst M r c) (vr M c) y z = b
+    have hbne : b ≠ z := by
+      rw [← hbdef]
+      rcases step_cases (a := vr M r) (b := bst M r c) hcot with ⟨B, hB⟩ | ⟨h1, _, h3, _⟩
+      · rw [hB]; intro h; exact absurd (app_eq_z h).2 (by simp)
+      · rw [h1]; exact h3
+    have hbc : cof b = .big (vr M r) := by rw [← hbdef]; exact cof_step hcot hcc
+    have hro : o2r M r = psi (vr M r) b z := by rw [o2r_frame hG hx hcA hc, hy, spArg_single, hbdef]
+    have hμμ : ¬ lt (vr M r) (vr M r) = true := by simp [Bool.eq_false_iff.mpr (lt_irrefl' _)]
+    have partC : ∀ m p, r - p ≤ m → Anc0 M p x → p ≤ r →
+        ∃ a', ¬ lt (vr M r) a' = true ∧ DiagAt a' b (vr M r) (o2r M p) := by
+      intro m
+      induction m with
+      | zero =>
+        intro p h1 _ h3
+        have : p = r := by omega
+        subst this
+        exact ⟨vr M p, hμμ, by rw [hro]; exact DiagAt.here hbne hbc hμμ⟩
+      | succ m ih =>
+        intro p hm hp hpr
+        rcases Nat.eq_or_lt_of_le hpr with heq | hlt
+        · subst heq
+          exact ⟨vr M p, hμμ, by rw [hro]; exact DiagAt.here hbne hbc hμμ⟩
+        obtain ⟨c', hc', hc'A⟩ := anc0_child hp (by omega)
+        have hpc' := par_lt M 0 c' p hc'
+        have hc'r : c' ≤ r := by
+          rcases anc0_total hc'A hA with h' | h'
+          · exact h'.le
+          · rcases Nat.eq_or_lt_of_le h'.le with h2 | h2
+            · omega
+            · have := (anc0_par h' (by omega) hc').le; omega
+        obtain ⟨a', ha', hD⟩ := ih c' (by omega) hc'A hc'r
+        obtain ⟨y', hy'⟩ := o2r_sub hG c'
+        have hc'ot : isOT (psi (vr M c') y' z) = true := by rw [← hy']; exact hG.ot c'
+        rw [hy'] at hD
+        rw [o2r_frame hG hx hc'A hc', hy', spArg_single]
+        rcases step_cases (a := vr M p) (b := bst M p c') hc'ot with ⟨B, hB⟩ | ⟨h1, _, h3, htr⟩
+        · refine ⟨a', ha', ?_⟩
+          rw [hB]
+          have hD2 := DiagAt.append B (by simp) hD
+          exact DiagAt.arg (fun h => absurd (app_eq_z h).2 (by simp)) hD2.not_succ hD2
+        · rw [h1]
+          by_cases hne : vr M c' = a' ∧ y' = b
+          · obtain ⟨rfl, rfl⟩ := hne
+            have hvp : ¬ lt (vr M r) (vr M p) = true := by
+              intro hlt'
+              have h4 := not_lt_of_trig htr.2
+              exact ha' (lt_of_lt_of_le hlt' (le_of_not_gt h4))
+            exact ⟨vr M p, hvp, DiagAt.here hbne hbc hvp⟩
+          · have hDy := DiagAt.arg_inv hD h3 hne
+            exact ⟨a', ha', DiagAt.arg h3 hDy.not_succ hDy⟩
+    exact fun p hp hpr => partC _ p (Nat.le_refl _) hp hpr
+
 end Ytosk
