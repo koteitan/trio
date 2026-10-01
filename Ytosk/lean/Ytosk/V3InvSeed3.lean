@@ -210,4 +210,126 @@ theorem loc_t2 {M : Mat} {r x n : Nat} (hx : x + 1 = M.length) (hL : LocInv M) (
   · rw [seed_getD_x hx]; simp only; rw [← entry0_getD]; exact he0
   · rw [seed_getD_x hx]; simp only; rw [← entry1_getD]; exact he1
 
+/-! ## t = 0: x は r の親 g の子になる -/
+
+section
+variable {M : Mat} {r x : Nat} (hx : x + 1 = M.length) (hr : par M 0 x = some r)
+include hx hr
+
+theorem seed_par_x0 : par (seedOf M r 0 0) 0 x = par M 0 r := by
+  have hA : Anc0 M r x := Anc0.step hr (Anc0.refl r)
+  have hrx := par_lt M 0 x r hr
+  have hmid : ∀ j, r < j → j < x → entry M 0 r < entry M 0 j := fun j h1 h2 =>
+    anc0_e0_lt (anc_between hA j (by omega) (by omega)) (by omega)
+  have hex : entry (seedOf M r 0 0) 0 x = entry M 0 r := (seed_e0x hx).trans (Nat.add_zero _)
+  cases hg : par M 0 r with
+  | some g =>
+    obtain ⟨hgr, hlt, hbet⟩ := (par0_spec M).mp hg
+    rw [par0_spec]
+    refine ⟨by omega, by rw [hex, seed_entry_lt hx 0 (by omega)]; exact hlt, fun j h1 h2 => ?_⟩
+    rw [hex, seed_entry_lt hx 0 h2]
+    rcases Nat.lt_trichotomy j r with h | h | h
+    · exact hbet j h1 h
+    · rw [h]
+    · exact le_of_lt (hmid j h h2)
+  | none =>
+    by_contra hne
+    obtain ⟨a, ha⟩ := Option.ne_none_iff_exists'.mp hne
+    obtain ⟨hax, hlt, _⟩ := (par0_spec _).mp ha
+    rw [hex, seed_entry_lt hx 0 hax] at hlt
+    rcases Nat.lt_trichotomy a r with h | h | h
+    · obtain ⟨g, hg'⟩ := par0_some_of (M := M) h hlt
+      rw [hg] at hg'; cases hg'
+    · subst h; omega
+    · have := hmid a h hax; omega
+
+/-- Below `x`, the last child of `g = par r` is `r`. -/
+theorem last_child_r {g e : Nat} (hg : par M 0 r = some g) (he : par M 0 e = some g) (hex : e ≤ x) :
+    e ≤ r := by
+  have hA : Anc0 M r x := Anc0.step hr (Anc0.refl r)
+  have hgr := par_lt M 0 r g hg
+  by_contra hlt
+  have hAe := anc_between hA e (by omega) hex
+  have := (anc0_par hAe (by omega) he).le
+  omega
+
+theorem seed_seed0 : Seed (seedOf M r 0 0) r (x - r) 0 0 := by
+  have hA : Anc0 M r x := Anc0.step hr (Anc0.refl r)
+  have hrx := par_lt M 0 x r hr
+  have e : r + (x - r) = x := by omega
+  refine ⟨by rw [seed_len hx]; omega, by omega, fun q hq => ?_, ?_, ?_⟩
+  · exact (seed_anc0_lt hx (by omega)).mpr (anc_between hA (r + q) (by omega) (by omega))
+  · rw [e, seed_col_x hx, seed_entry_lt hx 0 hrx, seed_entry_lt hx 1 hrx, seed_entry_lt hx 2 hrx]
+  · right
+    refine ⟨rfl, rfl, ?_⟩
+    rw [e, seed_par_x0 hx hr, seed_par_lt hx 0 hrx]
+
+theorem seed_loc0 (hL : LocInv M) :
+    LocInv (seedOf M r 0 0) ∧
+    (∀ K J, J ∈ children (seedOf M r 0 0) K →
+      col (seedOf M r 0 0) J = bump (seedOf M r 0 0) K → x ∈ children (seedOf M r 0 0) J →
+      entry (seedOf M r 0 0) 1 K ≤ entry (seedOf M r 0 0) 1 x → False) := by
+  obtain ⟨hSD, hZ1, hBE, hBL⟩ := hL
+  have hpx := seed_par_x0 hx hr
+  have hxM : x < M.length := by omega
+  have hrx := par_lt M 0 x r hr
+  have hxr : x ∈ children M r := mem_children_iff.mpr ⟨hxM, hr⟩
+  have hcx : col (seedOf M r 0 0) x = col M r := by rw [seed_col_x hx, col_eq_entries]; rfl
+  have hgp : ∀ p, par (seedOf M r 0 0) 0 x = some p → par M 0 r = some p := fun p hp => by
+    rw [← hpx]; exact hp
+  have hrc : ∀ p, par (seedOf M r 0 0) 0 x = some p → r ∈ children M p := fun p hp =>
+    mem_children_iff.mpr ⟨by omega, hgp p hp⟩
+  have hnoS : ∀ K J, J ∈ children (seedOf M r 0 0) K →
+      col (seedOf M r 0 0) J = bump (seedOf M r 0 0) K → x ∈ children (seedOf M r 0 0) J →
+      entry (seedOf M r 0 0) 1 K ≤ entry (seedOf M r 0 0) 1 x → False := by
+    intro K J hJ hb hxJ h1
+    rw [seed_mem_x hx] at hxJ
+    have hrJ := hrc J hxJ
+    have hJr := (mem_children hrJ).1
+    have hKx : K < x := by have := (mem_children hJ).1; omega
+    rw [seed_mem_lt hx (by omega)] at hJ
+    rw [seed_col_lt hx (by omega), seed_bump_lt hx hKx] at hb
+    rw [seed_entry_lt hx 1 hKx, seed_e1x hx] at h1
+    have := (hBL K J r hJ hb hrJ h1).2.1
+    rw [this] at hxr; simp at hxr
+  refine ⟨⟨sibDec_seed hx hSD ?_, z1c_seed hx hZ1 ?_, bumpE2_seed hx hBE ?_,
+    bumpLeaf_seed hx hBL hnoS ?_⟩, hnoS⟩
+  · intro p a hp ha hax hno
+    have hrp := hrc p hp
+    have har : a ≤ r := last_child_r hx hr (hgp p hp) (mem_children_iff.mp ha).2 (by omega)
+    have hra : r ≤ a := by
+      by_contra h
+      exact hno r (by omega) hrx hrp
+    have : a = r := by omega
+    rw [this, hcx]; exact colLe_refl _
+  · intro p hp h2
+    rw [seed_e1x hx]; exact hZ1 p r h2 (hrc p hp)
+  · intro p hp hb
+    rw [hcx] at hb; exact hBE p r (hrc p hp) hb
+  · intro k j c hj hb hc h1 hcx'
+    obtain ⟨_, hleaf, hlj, hlk⟩ := hBL k j c hj hb hc h1
+    have hjc := (mem_children hc).1
+    refine ⟨fun h => ?_, fun h => ?_, fun h => ?_⟩
+    · have := hrc c h; rw [hleaf] at this; simp at this
+    · have h1' := last_le (children_sorted M j) hlj r (hrc j h)
+      have h2' := last_child_r hx hr (hgp j h) (mem_children_iff.mp hc).2 (by omega)
+      have : c = r := by omega
+      rw [this] at hleaf; rw [hleaf] at hxr; simp at hxr
+    · have h1' := last_le (children_sorted M k) hlk r (hrc k h)
+      have h2' := last_child_r hx hr (hgp k h) (mem_children_iff.mp hj).2 (by omega)
+      have : j = r := by omega
+      rw [this] at hlj
+      have := last_le (children_sorted M r) hlj x hxr
+      omega
+
+end
+
+theorem loc_t0 {M : Mat} {r x n : Nat} (hx : x + 1 = M.length) (hL : LocInv M)
+    (hr : par M 0 x = some r) (hn : 1 ≤ n) : LocInv (TRIO.gexp M r (x - r) 0 0 n) := by
+  have hrx := par_lt M 0 x r hr
+  have hS := seed_seed0 hx hr
+  obtain ⟨hLS, hnoS⟩ := seed_loc0 hx hr hL
+  exact loc_of_seed hx hrx hS hLS hnoS
+    (fun hA _ _ _ => hS.root_excl (by rw [show r + (x - r) = x by omega]; exact hA) rfl) hn
+
 end Ytosk
