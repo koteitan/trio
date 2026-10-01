@@ -163,4 +163,52 @@ theorem roots_expand_t1 {M : Mat} {r n : Nat} (hM : 2 ≤ M.length)
       Nat.mul_le_mul_right _ hk1
     omega
 
+/-- **From the path to the matrix value** (`t ≥ 1`, `n ≥ 2`). -/
+theorem ev2r_expand_t1 {M : Mat} {r n : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht : 0 < TRIO.srow M (M.length - 1)) (hn : 2 ≤ n) (hG : Good2 M) (hRD : RootsDec M)
+    (hz0 : TRIO.z0ok M) (h00 : entry M 0 0 = 0)
+    (hpath : ∀ h, Anc0 M h (M.length - 1) →
+      isOT (o2r (expand M n) h) = true ∧ o2r (expand M n) h < o2r M h) :
+    isOT (ev2r (expand M n)) = true ∧ ev2r (expand M n) < ev2r M := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hxr : col M (M.length - 1) ≠ (0, 0, 0) := by
+    intro h; apply hz; unfold col at h
+    rw [← entry_eq, ← entry_eq, ← entry_eq]; unfold entry; rw [h]; simp
+  obtain ⟨ρ, hρ, hρn⟩ := top_anc M (M.length - 1)
+  have hρ0 := col_zero_of_top hz0 h00 (by have := hρ.le; omega) hρn
+  apply ev2r_lt_of_top hx hG hRD hρ hρ0 (roots_expand_t1 hM hz hr ht (by omega) hxr)
+  · intro c hc hcρ
+    have hcl := (mem_roots.mp hc).1
+    apply o2r_expand_off hM hz hr ht hn c (by have := hρ.le; omega)
+    intro hcA
+    rcases anc0_total hcA hρ with h' | h'
+    · rcases Nat.eq_or_lt_of_le h'.le with h2 | h2
+      · omega
+      · cases h' with
+        | refl => omega
+        | step hp _ => rw [hp] at hρn; cases hρn
+    · have := h'.le; omega
+  · exact (hpath ρ hρ).1
+  · exact (hpath ρ hρ).2
+
+/-- **Two rows, `t = 1`, `q = r`: the matrix value drops and stays standard.** Remaining hypothesis: PRE. -/
+theorem twoRow_desc_qr {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
+    (hr1 : TRIO.r1ok M) (hz0 : TRIO.z0ok M) (hRD : RootsDec M) (h00 : entry M 0 0 = 0)
+    (hqr : par M 0 (M.length - 1) = some r)
+    (hPRE : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
+      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true →
+      bst M h p ≠ z → ∃ rest, y = app (bst M h p) rest ∧ rest ≠ z) {n : Nat} (hn : 2 ≤ n) :
+    isOT (ev2r (expand M n)) = true ∧ ev2r (expand M n) < ev2r M := by
+  apply ev2r_expand_t1 hM hz hr (by omega) hn hG hRD hz0 h00
+  intro h hh
+  obtain ⟨j, hj, hjot, hjlt⟩ := twoRow_qr_PRE hM hz hr ht1 hG hb1 hr1 hz0 hqr hPRE n hn h hh
+  rw [hj]; exact ⟨hjot, hjlt⟩
+
 end Ytosk
