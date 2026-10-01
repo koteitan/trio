@@ -541,4 +541,147 @@ theorem hLo_of_TPL {M : Mat} {x r : Nat} {ρ : Valn} {μ br vr seed ζ0 : T} (hx
   rw [hlev] at hTf
   exact lo_keep_of_TPL hTf hy hHc hcb hbrl (hζΩ m) hl
 
+/-! ## b_r の最後の項は Ω_{μ+1} でない -/
+
+theorem cof_of_isSucc : ∀ {t : T}, isSucc t = true → cof t = .succ
+  | z, h => by simp [isSucc, last, one] at h
+  | psi a b (psi c d e), h => by
+    show cof (psi c d e) = .succ
+    exact cof_of_isSucc (t := psi c d e) h
+  | psi a b z, h => by
+    have h' : psi a b z = one := by simpa [isSucc, last] using h
+    cases h'
+    rfl
+
+/-- **The last summand of `H s y`**: `ψ_s(y)`, or the last summand of `y` when `y` has no part below
+`Ω_{s+1}`. -/
+theorem last_H {s y : T} (hy : y ≠ z) (hot : isOT y = true) (hs : isOT s = true) :
+    last (H s y) = psi s y z ∨
+      (last (H s y) = last y ∧ (split y (psi (succ s) z z)).2 = z) := by
+  unfold H
+  have hcut : cut (add s one) y = (split y (psi (succ s) z z)).1 := by
+    rw [cut_eq_split _ hot, add_one_eq_succ hs]
+  rw [hcut]
+  have e := split_app (psi (succ s) z z) y
+  by_cases hlo : (split y (psi (succ s) z z)).2 = z
+  · right
+    rw [hlo, app_z_right] at e
+    rw [e]
+    have hsub : sub (psi s y z) (psi s y z) = z := by
+      simp only [sub]
+      rw [if_neg (show ¬ (lt (psi s y z) (psi s y z) = true) from lt_irrefl' _)]
+    rw [hsub, add_z_right]
+    exact ⟨rfl, hlo⟩
+  · left
+    have hlt : (split y (psi (succ s) z z)).1 < y := by
+      conv => rhs; rw [← e]
+      exact lt_app_of hlo
+    have hlt' : lt (psi s (split y (psi (succ s) z z)).1 z) (psi s y z) = true := by
+      show psi s _ z < psi s y z
+      rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, hlt⟩
+    have hsub : sub (psi s y z) (psi s (split y (psi (succ s) z z)).1 z) = psi s y z := by
+      simp only [sub, hlt', if_true]
+    rw [hsub]
+    exact last_add_single _
+
+section
+variable {M : Mat} {x r : Nat} {ρ : Valn} {μ ζ : T} (hx : x + 1 = M.length)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+  (hC : Cons M ρ) (hG : Good3 M ρ)
+  (hox : ρ.o x = psi (succ μ) z z)
+  (hF1 : ∀ i, r < i → i < x → DepX M x true i → ¬ DepX M x false i → lt μ (ρ.v i) = true)
+  (hOS : ∀ i, i < x → DepX M x true i → OShape M x i)
+  (hV : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i)
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hox hF1 hOS hV
+
+/-- **The argument of `o(r)` does not end with `Ω_{μ+1}`.** -/
+theorem last_br_t1 (h1 : par M 1 x = some r) (hx2 : entry M 2 x = 0) (hqr : par M 0 x ≠ some r)
+    (hR12 : R12 M) (hBE : BumpE2 M) {vr br : T} (hro : ρ.o r = psi vr br z) :
+    last br ≠ psi (succ μ) z z := by
+  have hAr := anc0_of_par M 1 r x h1
+  have hrx : r < x := par_lt M 1 x r h1
+  have hpath := hpath_of_par1 h1 hAr (by omega)
+  have hDr : DepX M x true r := dep_anc_x hUAT hZ2 hR12 hBE hx hx2 hAr
+  have hnv : ¬ DepX M x false r := fun h =>
+    v_r_not_chg hx hR0 hZ2 hSD hZ1 hUAT hUAB hAr (by omega) hqr hpath (depX_chgX h)
+  have hcof := t1_cof hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hox hF1 hOS hV
+  rcases hOS r hrx hDr with ⟨hv, _⟩ | ⟨_, L, c, R, hch, hcb2, hcu2, hR, hLnd⟩
+  · exact absurd hv hnv
+  · have hc : c ∈ children M r := by rw [hch]; simp
+    have hcD : DepX M x true c := by
+      cases hDr with
+      | leaf => omega
+      | @ochild _ c0 hc0 hcb0 hcu0 hdc0 =>
+        have : c0 = c := by
+          rw [hch] at hc0
+          rcases List.mem_append.mp hc0 with h | h
+          · exact absurd hdc0 (hLnd c0 h ⟨hcb0, hcu0⟩)
+          · rcases List.mem_cons.mp h with h | h
+            · exact h
+            · rcases hR c0 h with h' | h'
+              · exact absurd h' hcb0
+              · exact absurd h' hcu0
+        rw [← this]; exact hdc0
+      | ov h => exact absurd h hnv
+    have hcM := (mem_children hc).2
+    have hrc := (mem_children hc).1
+    have hpc : par M 0 c = some r := (mem_children_iff.mp hc).2
+    obtain ⟨s, y, hcv⟩ := o_psi_form hC hcM
+    have hcot : isOT (psi s y z) = true := by rw [← hcv]; exact hG.ot_o c hcM
+    have hframe := o_frame hC hG (by omega) hch hcb2 hcu2 hR hcM
+    rw [hcv, spArg_single] at hframe
+    have hcx : c < x := by
+      rcases Nat.lt_or_ge c x with h | h
+      · exact h
+      · exfalso
+        have : c = x := by omega
+        subst this; exact hqr hpc
+    have hcc := hcof true c hcD hrc (Or.inl hcx)
+    simp only [valB, cond_true] at hcc
+    rw [hcv] at hcc
+    rw [hro] at hframe
+    obtain ⟨_, hb, _⟩ := T.psi.inj hframe
+    rw [hb]
+    by_cases hy : y = z
+    · -- `o(c) = Ω_{μ+1}` is impossible
+      subst hy
+      unfold step
+      rw [if_neg (by intro h; exact T.not_lt_z _ h.1), last_add_single]
+      intro he
+      have hs : s = succ μ := (T.psi.inj he).1
+      cases hcD with
+      | leaf => omega
+      | @ochild _ d hd hdb hdu _ =>
+        obtain ⟨σ, hσ, hσz⟩ := o_arg_ne_z hC hcM hd ⟨hdb, hdu⟩
+        rw [hcv] at hσ; exact hσz (T.psi.inj hσ).2.1.symm
+      | ov hvc =>
+        have hvv := hcof false c hvc hrc (Or.inl hcx)
+        simp only [valB, cond_false] at hvv
+        obtain ⟨σ, hσ⟩ := o_psi_sub hC hcM
+        rw [hcv, sf_ot (hG.ot_v c hcM)] at hσ
+        have hsv : s = ρ.v c := (T.psi.inj hσ).1
+        rw [← hsv, hs, cof_of_isSucc (isSucc_succ μ)] at hvv
+        cases hvv
+    · have hμs := (cof_psi_inv hy hcc).2
+      have hyot : isOT y = true := isOT_arg hcot
+      unfold step
+      split
+      · rcases last_H (s := s) hy hyot (isOT_sub hcot) with h | ⟨h, hlo⟩
+        · rw [h]; intro he; exact hy (T.psi.inj he).2.1
+        · rw [h]
+          intro he
+          have hyall : ∀ q ∈ summands y, ¬ q < psi (succ s) z z := by
+            intro q hq
+            have e := split_app (psi (succ s) z z) y
+            rw [hlo, app_z_right] at e
+            rw [← e] at hq
+            exact split_fst_ge _ y q hq
+          apply hyall _ (last_mem hy)
+          rw [he, psi_lt_psi_z_iff]
+          left
+          rw [lt_succ_iff]; exact succ_le_of_lt (show μ < s from hμs)
+      · rw [last_add_single]; intro he; exact hy (T.psi.inj he).2.1
+
+end
+
 end Ytosk
