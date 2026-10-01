@@ -69,4 +69,57 @@ theorem drelO_of_v {v' v X : T} (h : DRelV v' v) : DRelO (psi v' z z) (psi v X z
   · exact Or.inl (lhdE_oq_v h)
   · exact Or.inr ⟨v', v, X, rfl, rfl, h⟩
 
+/-- A single summand is at most a sum ending with it, when the earlier summands are at least it. -/
+theorem le_app_of_ge {s y : T} : ∀ (B : T), (∀ q ∈ summands B, psi s y z ≤ q) → psi s y z ≤ app B (psi s y z)
+  | z, _ => by simp
+  | psi a b c, h => by
+    have hh := h (psi a b z) (by simp [summands])
+    rcases (le_iff _ _).mp hh with hlt | heq
+    · left
+      rw [psi_lt_psi_z_iff] at hlt
+      show psi s y z < psi a b (app c (psi s y z))
+      rw [T.psi_lt_psi]
+      rcases hlt with h1 | ⟨rfl, h1⟩
+      · exact Or.inl h1
+      · exact Or.inr (Or.inl ⟨rfl, h1⟩)
+    · simp only [psi.injEq] at heq
+      obtain ⟨rfl, rfl, -⟩ := heq
+      exact psi_le_psi_rest (z_le _)
+
+/-- **The `o` frame with a weak last child**: the new child is `ψ_{w′}(0)` (no rewrite), the relation
+of the old side to the state without the child (`hdrop`) is a hypothesis. -/
+theorem o_frame_weak {a w' w F : T} {L : List T}
+    (hs' : ∀ t ∈ L ++ [psi w' z z], Single t) (hp' : (L ++ [psi w' z z]).Pairwise (fun a b => b ≤ a))
+    (hW : WkV w' w) (hdrop : LhdE (psi a (spArg a z (sumN L)) z) (psi a F z))
+    (hlt : app (spArg a z (sumN L)) (psi w' z z) < F) :
+    LhdE (psi a (spArg a z (sumN (L ++ [psi w' z z]))) z) (psi a F z) := by
+  set B := spArg a z (sumN L) with hB
+  have hc : Single (psi w' z z) := hs' _ (by simp)
+  have e2 : sumN (L ++ [psi w' z z]) = app (sumN L) (psi w' z z) := by
+    rw [sumN_append_dec hs' hp']
+    congr 1
+    show sf (add z (psi w' z z)) = psi w' z z
+    rw [add_z_left]; exact sf_ot hc.1
+  have hL := sumN_dec L (fun t ht => hs' t (List.mem_append_left _ ht)) (List.pairwise_append.mp hp').1
+  have hBge : ∀ q ∈ summands B, psi w' z z ≤ q := by
+    apply spArg_summands_ge ⟨w', z, rfl⟩ (sumN L) z hL.1
+    · rw [hL.2]; intro q hq
+      exact (List.pairwise_append.mp hp').2.2 q hq _ (by simp)
+    · simp [summands]
+  have estep : spArg a z (sumN (L ++ [psi w' z z])) = app B (psi w' z z) := by
+    rw [e2, spArg_app, spArg_single, step_leaf, ← hB]
+    exact add_eq_app_of_ge ⟨w', z, rfl⟩ B hBge
+  have hBlt : B < app B (psi w' z z) := by
+    have := app_lt_app_left B (show z < psi w' z z from T.z_lt_psi _ _ _)
+    rwa [app_z_right] at this
+  rw [estep]
+  right
+  rcases hdrop with he | hl
+  · exfalso
+    simp only [psi.injEq] at he
+    have := lt_trans hBlt hlt
+    rw [he.2.1] at this; exact lt_irrefl' _ this
+  · exact lhd_weak_child hl (by simp)
+      (fun u g hg => le_trans (self_small_weak hW.2.1 hW.2.2.1 u g hg) (le_app_of_ge B hBge)) hlt
+
 end Ytosk
