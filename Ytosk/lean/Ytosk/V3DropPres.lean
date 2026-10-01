@@ -663,4 +663,17 @@ theorem argT_of_take {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     rw [← ho]; exact hGT.ot_o cs (by have := hmem cs (by simp); omega)
   exact comps_le_step_of_ot hX hcs (by rw [hv]; exact hsa)
 
+/-- **`LocA`, the `v` half**: a column with a counted child in `M.take x` keeps its `v` (a changed `v`
+sits on a topped column with no counted child, `chg_struct`). -/
+theorem locA_v {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    {i : Nat} (hi : i < x) {Lc : List Nat} {cs : Nat} (hcl : CL (M.take x) i = Lc ++ [cs]) :
+    ¬ ChgX M x false i := by
+  intro hCv
+  have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCv).1 rfl hi
+  have hcsT : cs ∈ CL (M.take x) i := by rw [hcl]; simp
+  unfold CL at hcsT
+  rw [List.mem_filter] at hcsT
+  exact hT.2.1 cs hcsT.1 (by simpa using hcsT.2)
+
 end Ytosk
