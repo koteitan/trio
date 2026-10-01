@@ -37,6 +37,23 @@ theorem map_range_pred_last (f : Nat → Nat) {m : Nat} (hm : 1 ≤ m) :
   obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
   simp [List.range_succ]
 
+/-- An ancestor-type upgrade lands on a column with row 0 below that of the next column. -/
+theorem upg_climb_e0 {M : Mat} {i k : Nat} (h : upg M i = some k) (hne : k ≠ i + 1) :
+    entry M 0 k < entry M 0 (i + 1) := by
+  unfold upg at h
+  split at h
+  · cases h
+  · split at h
+    · cases h
+    · rename_i m _
+      simp only at h
+      split at h
+      · cases h; exact absurd rfl hne
+      · rw [upgClimb_find] at h
+        have := List.find?_some h
+        simp only [decide_eq_true_eq] at this
+        exact this.2.2
+
 /-! ## 上げの移送 -/
 
 theorem option_map_inj {f : Nat → Nat} (hf : ∀ a b, f a = f b → a = b) {o : Option Nat} {m : Nat} :
@@ -798,6 +815,119 @@ theorem counted_lt0 (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) (hn
   unfold Counted
   rw [col_pre0 hlen hL hp hn (by omega), bump_pre0 hlen hL hp hn (by omega), isUpg_pre0 hlen hL hp hn hR0 hZ2 he2 hn2 hc,
     topped_lt0 hlen hL hp hn hn2 hc]
+
+/-- **An upgrade of `N` into a non-root column of a copy** comes from the same copy, as in `M`. -/
+theorem isUpg_copy0 (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) {k q : Nat} (hk : k < n)
+    (hq : q < L) (hq0 : 0 < q) :
+    isUpg (TRIO.gexp M r L 0 0 n) (r + (k * L + q)) = isUpg M (r + q) := by
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  have hkL : k * L + L ≤ n * L := by
+    have := Nat.mul_le_mul_right L (show k + 1 ≤ n by omega); rw [Nat.succ_mul] at this; exact this
+  apply Bool.eq_iff_iff.mpr
+  unfold isUpg
+  rw [List.any_eq_true, List.any_eq_true]
+  constructor
+  · rintro ⟨j, hj, hu⟩
+    have hj' := List.mem_range.mp hj
+    rw [hlN] at hj'
+    have hu' : upg (TRIO.gexp M r L 0 0 n) j = some (r + (k * L + q)) := by simpa using hu
+    have hjt := upg_lt (by rw [hlN]; exact hj') hu'
+    -- the source is in the same copy
+    obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu'
+    have hsrc : ∃ q', q' < L ∧ j = r + (k * L + q') := by
+      rcases hcase with h | ⟨hA, hlt⟩
+      · exact ⟨q - 1, by omega, by omega⟩
+      · -- an ancestor-type upgrade: the source is a descendant of a non-root copy column
+        rcases Nat.lt_or_ge j (r + n * L) with hjn | hjn
+        · obtain ⟨k', q', hk', hq', rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (Lb := L) (n := n) hL
+            (by omega) hjn
+          -- `j` and the target are in the same copy: the target is an ancestor of `j`
+          have hA' := ancL_copy0 hlen hL hp hn hk' q' hq'
+          have hmem : r + (k * L + q) ∈ ancL (TRIO.gexp M r L 0 0 n) (r + (k' * L + q')) :=
+            mem_ancL_of_anc hA (by omega)
+          rw [hA'] at hmem
+          obtain ⟨a, ha, hae⟩ := List.mem_map.mp hmem
+          have hal := mem_ancL_lt ha
+          unfold shk at hae
+          split at hae
+          · rename_i hra
+            obtain ⟨hkk, _⟩ := decomp_unique (L := L) (show a - r < L by omega) hq
+              (show k' * L + (a - r) = k * L + q by omega)
+            subst hkk; exact ⟨q', hq', rfl⟩
+          · omega
+        · omega
+    obtain ⟨q', hq', rfl⟩ := hsrc
+    by_cases hq1 : q' + 1 < L
+    · rw [upg_copy0 hlen hL hp hn hk hq1] at hu'
+      cases hU : upg M (r + q') with
+      | none => rw [hU] at hu'; cases hu'
+      | some t =>
+        rw [hU] at hu'
+        simp only [Option.map_some, Option.some.injEq] at hu'
+        have htq : t = r + q := by unfold shk at hu'; split at hu' <;> omega
+        exact ⟨r + q', List.mem_range.mpr (by omega), by rw [hU, htq]; simp⟩
+    · -- the last column of a copy upgrades only to `r`, the next root, or before `r`
+      have hq'L : q' = L - 1 := by omega
+      subst hq'L
+      by_cases hkn : k + 1 < n
+      · rw [upg_copy_last0 hlen hL hp hn hR0 hZ2 he2 hkn] at hu'
+        cases hU : upg M (r + (L - 1)) with
+        | none => rw [hU] at hu'; cases hu'
+        | some t =>
+          rw [hU] at hu'
+          simp only [Option.map_some, Option.some.injEq] at hu'
+          exfalso
+          split at hu'
+          · rw [Nat.succ_mul] at hu'; omega
+          · -- `t` is an ancestor of `x − 1` with row 0 at most that of `r`
+            have ht2 := upg_target_e2 hU
+            obtain ⟨_, _, _, _, hc2⟩ := upg_spec hU
+            have hR := hR0 _ _ hp
+            rcases hc2 with h | ⟨hA, hlt⟩
+            · rw [show r + (L - 1) + 1 = r + L by omega] at h
+              rw [h] at ht2; omega
+            · have he0 := upg_climb_e0 hU (by omega)
+              rw [show r + (L - 1) + 1 = r + L by omega] at he0
+              have hk0 : k = 0 := by
+                by_contra hk0
+                have : L ≤ k * L := Nat.le_mul_of_pos_left L (by omega)
+                omega
+              subst hk0
+              have := e0_B_gt hlen hL hp hq0 (by omega)
+              rw [hu'] at he0
+              simp at he0
+              omega
+      · have hk1 : k = n - 1 := by omega
+        rw [hk1, upg_none_last0 hlen hL hp hn] at hu'; cases hu'
+  · rintro ⟨j, hj, hu⟩
+    have hj' := List.mem_range.mp hj
+    have hu' : upg M j = some (r + q) := by simpa using hu
+    have hjx : j < r + L := by
+      by_contra h
+      have : j + 1 = M.length := by omega
+      unfold upg at hu'; rw [if_pos (Or.inr (Or.inr this))] at hu'; cases hu'
+    obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu'
+    -- the source is in `B`, not the last column
+    have hjr : r ≤ j := by
+      rcases hcase with h | ⟨hA, hlt⟩
+      · omega
+      · have := hA.le; omega
+    by_cases hj1 : j + 1 < r + L
+    · refine ⟨r + (k * L + (j - r)), List.mem_range.mpr (by rw [hlN]; omega), ?_⟩
+      rw [upg_copy0 hlen hL hp hn hk (q := j - r) (by omega), show r + (j - r) = j by omega, hu']
+      simp only [Option.map_some, decide_eq_true_eq, Option.some.injEq]
+      unfold shk; rw [if_pos (by omega)]; omega
+    · exfalso
+      have hjL : j = r + (L - 1) := by omega
+      rcases hcase with h | ⟨hA, hlt⟩
+      · omega
+      · -- an ancestor-type upgrade from `x − 1` lands at `r` or before
+        have he0 : entry M 0 (r + q) < entry M 0 (r + L) := by
+          have := upg_climb_e0 hu' (by omega)
+          rw [show j + 1 = r + L by omega] at this; exact this
+        have := e0_B_gt hlen hL hp hq0 (by omega)
+        have hR := hR0 _ _ hp
+        omega
 
 end
 
