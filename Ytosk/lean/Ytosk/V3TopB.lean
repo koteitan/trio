@@ -9,13 +9,16 @@ import Ytosk.V3Top
 import Ytosk.V3T0Res
 import Ytosk.V3ExpOne
 import Ytosk.TwoRowZ
+import Ytosk.V3FrameClN
 
 namespace Ytosk
 
 open T
 
-/-- `Res3` without `chain`. -/
+/-- `Res3` without `chain`, plus the extra invariants the induction carries (`fch`). -/
 structure Res3A (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
+  /-- Frames before a high child are closed (needed for `FrameClosed` of `M[n]`, t1-struct). -/
+  fch : FrameClosedHi M ρ
   drop : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
   seed : ∀ r, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
     lt (sf ((drop1 M (M.length - 1) rk).v r)) (ρ.v r) = true →
