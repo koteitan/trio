@@ -55,6 +55,32 @@ theorem o2r_congr {M M' : Mat} {n n' : Nat} (hv : vr M n = vr M' n')
     (hc : (children M n).map (o2r M) = (children M' n').map (o2r M')) : o2r M n = o2r M' n' := by
   rw [o2r_eq, o2r_eq, hv, hc]
 
+/-- `1 + ... + 1` built as `vr` builds it. -/
+def nT : Nat → T
+  | 0 => z
+  | k + 1 => sf (add (nT k) one)
+
+/-- Row 1 goes up by exactly one along the row-1 parent. -/
+def F1 (M : Mat) : Prop :=
+  ∀ j, 0 < entry M 1 j → ∃ m, par M 1 j = some m ∧ entry M 1 m + 1 = entry M 1 j
+
+/-- **Under `F1`, the subscript is the row-1 entry.** -/
+theorem vr_eq_nT {M : Mat} (hF : F1 M) : ∀ n, vr M n = nT (entry M 1 n) := by
+  intro n
+  induction n using Nat.strongRecOn with
+  | _ n ih =>
+    rw [vr]
+    by_cases h0 : entry M 1 n = 0
+    · rw [if_pos h0, h0]; rfl
+    · rw [if_neg h0]
+      obtain ⟨m, hm, he⟩ := hF n (Nat.pos_of_ne_zero h0)
+      split
+      · rename_i h; rw [h] at hm; cases hm
+      · rename_i m' h
+        rw [h] at hm; cases hm
+        rw [ih m (par_lt M 1 n m h), ← he]
+        rfl
+
 #eval [[(0,0,0), (1,1,0), (2,2,0)], [(0,0,0), (1,1,0), (2,2,0), (2,0,0)],
     [(0,0,0), (1,1,0), (2,1,0), (1,1,0), (2,1,0), (1,1,0), (2,0,0), (3,1,0), (4,1,0), (3,1,0), (4,1,0), (3,1,0)]].map
   fun (M : Mat) => (str (ev2r M), (eval2 M).map str)
