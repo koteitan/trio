@@ -6,6 +6,7 @@
 -/
 import Ytosk.V3Top
 import Ytosk.V3T2T
+import Ytosk.V3InvPer
 
 namespace Ytosk
 
@@ -117,6 +118,7 @@ theorem abs_of_absC {M : Mat} {x q : Nat} {ρ : Valn} (hAbsC : BumpAbsC M x ρ)
   rw [hpx] at hpx'; cases hpx'
   exact hqb i (mem_children_iff.mp hj).2 hjb
 
+
 /-! ## 残りの仮定の束（t = 2） -/
 
 /-- The value hypothesis `hVNN` (a changed last counted child is small). -/
@@ -150,6 +152,94 @@ def VSh (M : Mat) (S : Bool → Nat → Prop) (bnd : Nat) : Prop :=
     (entry M 2 i ≠ 0 → ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ col M j = bump M i ∧
       children M j = Kb ++ [k] ∧ (∀ d ∈ Kb, ¬ DepS M S true d) ∧
       (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepS M S true e))
+
+/-- **`r = P_2(x)`**: row 2 of `r` is `0` and row 1 of `r` is below that of `x`. -/
+theorem par2_facts {M : Mat} {x r : Nat} (hZ2 : Z2 M) (hxM : x < M.length) (h2 : par M 2 x = some r) :
+    entry M 2 r = 0 ∧ entry M 1 r < entry M 1 x := by
+  obtain ⟨_, _, hrx, he2, hle, _⟩ := (par2_iff M hxM).mp h2
+  have hA := anc0_of_par M 2 r x h2
+  have hx2 := hZ2 x
+  have he2' : entry M 2 r < entry M 2 x := he2
+  have h1lt : entry M 1 r < entry M 1 x :=
+    (le1_window hxM hA).mp hle x hA (Anc0.refl x) (by omega)
+  exact ⟨by omega, h1lt⟩
+
+/-- **The shape of `D = DepS M {o(r)}`** (`q = r`, no upgrade into `x`), from the structure of `M`. -/
+theorem qr_shapes {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hp : par M 0 (r + L) = some r) (hXu : ∀ i, upg M i ≠ some (r + L)) (hXb : col M (r + L) ≠ bump M r)
+    (hrb : ∀ p, par M 0 r = some p → col M r ≠ bump M p)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M) :
+    (∀ c, c < r + L → DepS M (SR r) false c → CL M c = []) ∧ OSh M (SR r) (r + L) ∧
+      VSh M (SR r) (r + L) := by
+  have hx : r + L + 1 = M.length := hlen
+  have hXbD : ∀ p, par M 0 (r + L) = some p → col M (r + L) ≠ bump M p := by
+    intro p h'; rw [hp] at h'; cases h'; exact hXb
+  have hiff : ∀ b i, i < r + L → (DepS M (SR r) b i ↔ DepX M (r + L) b i) :=
+    fun b i hi => depS_iff_depX hlen hL hp hXu hXb hrb hi
+  refine ⟨fun c hc hd => ?_, fun i hi hns hD hv => ?_, fun i hi _ hD => ?_⟩
+  · unfold CL; rw [List.filter_eq_nil_iff]
+    intro d hdc
+    simp only [decide_eq_true_eq]
+    exact uncnt_of_depvX hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXbD hp hc ((hiff false c hc).mp hd) hdc
+  · have hir : i ≠ r := fun h => hns ⟨rfl, h⟩
+    rcases hOS_t1X hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXbD hp i hi ((hiff true i hi).mp hD) with
+      ⟨hvX, _⟩ | ⟨_, Lp, c0, R, hch, hcb0, hcu0, hR, hLnd⟩
+    · exact absurd ((hiff false i hi).mpr hvX) hv
+    · cases hD with
+      | seed h => exact absurd h hns
+      | ov h => exact absurd h hv
+      | @ochild _ c hc hcb hcu hdc =>
+        have hcnt : Counted M i c := ⟨hcb, hcu⟩
+        have hcR : ∀ d ∈ R, ¬ Counted M i d := fun d h hd => by
+          rcases hR d h with h' | h'
+          · exact hd.1 h'
+          · exact hd.2 h'
+        have hcl' := (mem_children hc).2
+        have hxi : ∀ d ∈ children M i, d < r + L := by
+          intro d hd
+          have := (mem_children hd).2
+          by_contra h'
+          have hd' : d = r + L := by omega
+          have hpd := (mem_children_iff.mp hd).2
+          rw [hd', hp] at hpd; cases hpd; exact hir rfl
+        have hcx : c < r + L := hxi c hc
+        have hcc0 : c = c0 := by
+          have hc' := hc
+          rw [hch] at hc'
+          rcases List.mem_append.mp hc' with h | h
+          · exact absurd ((hiff true c hcx).mp hdc) (hLnd c h hcnt)
+          · rcases List.mem_cons.mp h with h | h
+            · exact h
+            · exact absurd hcnt (hcR c h)
+        rw [← hcc0] at hch
+        refine ⟨Lp, c, R, hch, hcnt, hdc, hcR, fun d hd hdc' h => ?_⟩
+        have hdM : d ∈ children M i := by rw [hch]; simp [hd]
+        exact hLnd d hd hdc' ((hiff true d (hxi d hdM)).mp h)
+  · have hDX := (hiff false i hi).mp hD
+    obtain ⟨_, hpnd, hcase⟩ := dv_shapeX hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXbD hp hi hDX
+    refine ⟨fun m hm h => hpnd m hm ((hiff false m (by have := par_lt M 1 i m hm; omega)).mp h),
+      fun h2 => ?_⟩
+    rcases hcase with ⟨h2', _⟩ | ⟨_, Lb, Kb, j, k, hch, hjb, hchj, _, hKnd, hLnd⟩
+    · exact absurd h2' h2
+    · have hj : j ∈ children M i := by rw [hch]; simp
+      have hjl := (mem_children hj).2
+      have hjx : j < r + L := by
+        by_contra h'
+        have : j = r + L := by omega
+        have h' := (mem_children_iff.mp hj).2; rw [this, hp] at h'; cases h'
+        rw [this] at hjb; exact hXb hjb
+      have hk : k ∈ children M j := by rw [hchj]; simp
+      have hkl := (mem_children hk).2
+      have hkx : k < r + L := by
+        by_contra h'
+        have : k = r + L := by omega
+        have hpk := (mem_children_iff.mp hk).2
+        rw [this, hp] at hpk; cases hpk
+        exact hrb i (mem_children_iff.mp hj).2 hjb
+      have hKk : ∀ d ∈ Kb, d < k := (sib_order (children_sorted M j) (R := []) (by rw [hchj])).1
+      exact ⟨Lb, Kb, j, k, hch, hjb, hchj,
+        fun d hd h => hKnd d hd ((hiff true d (by have := hKk d hd; omega)).mp h),
+        fun d hd e he h => (hLnd d hd e he).2 ((hiff true e (hLnd d hd e he).1).mp h)⟩
 
 /-- **`q ≠ r`** (`x` a bump child of `q = r + qp`, `P_0 q = pq`). -/
 structure T2QN (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L qp pq : Nat) : Prop where
@@ -185,9 +275,6 @@ structure T2SV (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : P
 
 /-- **`q = r`, `x − 1` upgrades nowhere** (`n ≤ 1`). -/
 structure T2QR (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Prop where
-  dv : ∀ c, c < r + L → DepS M (SR r) false c → CL M c = []
-  os : OSh M (SR r) (r + L)
-  vsh : VSh M (SR r) (r + L)
   vnn1 : VNNc M (r + L) ρ (drop1 M (r + L) rk)
   seed1 : SeedC ρ (drop1 M (r + L) rk) r
 
@@ -207,7 +294,6 @@ structure T2R (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Pr
   rb : ∀ p, par M 0 r = some p → col M r ≠ bump M p
   rcl : CL M r ≠ []
   rU : isUpg M r = false
-  xb : col M (r + L) ≠ bump M r
   sv : upg M (r + L - 1) = some (r + L) → T2SV M ρ rk r L
   nn : upg M (r + L - 1) = none → T2QR M ρ rk r L
   up : ∀ k, upg M (r + L - 1) = some k → k < r + L → T2QU M ρ rk r L k
@@ -217,7 +303,6 @@ structure T2R (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Pr
 
 /-- **The remaining hypotheses of `t = 2`** (`x = r + L`, `r = P_2(x)`). -/
 structure Res3T2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
-  e2r : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → entry M 2 r = 0
   qn : ∀ r L qp pq, r + L + 1 = M.length → par M 2 (r + L) = some r →
     par M 0 (r + L) = some (r + qp) → 0 < qp → par M 0 (r + qp) = some pq → T2QN M ρ rk r L qp pq
   qr : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
@@ -243,7 +328,18 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hA : Anc0 M r (r + L) := anc0_of_par M 2 r (r + L) hr
   have hd0e : entry M 0 (r + L) = entry M 0 r + (entry M 0 (r + L) - entry M 0 r) := by
     have := anc0_e0_lt hA (by omega); omega
-  have he2r := R2.e2r r L hlen hr
+  obtain ⟨he2r, h1lt⟩ := par2_facts I.z2 (by omega) hr
+  have hxbr : col M (r + L) ≠ bump M r := fun h => by
+    have := e1_of_col (show col M (r + L) = (entry M 0 r + 1, entry M 1 r, 1) from h); omega
+  have hXu_of : upg M (r + L - 1) ≠ some (r + L) → ∀ i, upg M i ≠ some (r + L) := by
+    intro hux i hu
+    obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu
+    have hi : i < M.length := by
+      by_contra h
+      exact (upg_e12 hu).1 (entry_out (by omega) 1)
+    rcases hcase with h | ⟨_, h⟩
+    · exact hux (by rw [show r + L - 1 = i by omega]; exact hu)
+    · omega
   have hexp : ∀ n, expand M n = TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
       (entry M 1 (r + L) - entry M 1 r) n := by
     intro n
@@ -273,8 +369,10 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       cases hux : upg M (r + L - 1) with
       | none =>
         have T' := T.nn hux
-        exact t2_qr_take hlen hL0 hq T.xb I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r T.rb T.rcl T.rU hux
-          T'.dv T'.os T'.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs T'.vnn1 T'.seed1
+        obtain ⟨hdv, hos, hvsh⟩ := qr_shapes hlen hL0 hq (hXu_of (by rw [hux]; simp)) hxbr T.rb
+          I.r0p I.z2 I.sd I.z1 I.uat I.uab
+        exact t2_qr_take hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r T.rb T.rcl T.rU hux
+          hdv hos hvsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs T'.vnn1 T'.seed1
       | some k =>
         have hkl := upg_lt (by omega) hux
         by_cases hkx : k = r + L
@@ -285,7 +383,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
             T'.vnn1 T'.seed1
         · have hk : k < r + L := by omega
           have T' := T.up k hux hk
-          exact t2_qu_take hlen hL0 hq T.xb I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r T.rb T.rcl T.rU hux hk
+          exact t2_qu_take hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r T.rb T.rcl T.rU hux hk
             T'.kT T'.p1 T'.dv T'.vr T'.os T'.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd
             hdr.ua hAbs T'.vnn1 T'.seed1
     · obtain ⟨pq, hpq⟩ := par0_of_anc (anc0_par hA (by omega) hq) (fun h => hqr h.symm)
@@ -316,16 +414,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         exact t2_sv_main hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r T.rb T.rcl hIUt
           T'.p1 T'.dv T'.os T'.vsh I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hAbs hVNN hseed
       · obtain ⟨hIU, hxcN, hVNN, hseed⟩ := T.big hux n _ _ σ hn hCN
-        have hXu : ∀ i, upg M i ≠ some (r + L) := by
-          intro i hu
-          obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu
-          have hi : i < M.length := by
-            by_contra h
-            exact (upg_e12 hu).1 (entry_out (by omega) 1)
-          rcases hcase with h | ⟨_, h⟩
-          · exact hux (by rw [show r + L - 1 = i by omega]; exact hu)
-          · omega
-        exact t2_qr_main hlen hL0 hq hd0e hn hXu T.xb T.rb he2r hIU I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
+        exact t2_qr_main hlen hL0 hq hd0e hn (hXu_of hux) hxbr T.rb he2r hIU I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
           I.be I.r01 I.e00 I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hdr.ab hVNN hxcN hseed
     · obtain ⟨pq, hpq⟩ := par0_of_anc (anc0_par hA (by omega) hq) (fun h => hqr h.symm)
       have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
