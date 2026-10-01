@@ -5,11 +5,13 @@
 FrameOT の証明と同じ）。枠の子 c の値が変わるのは D の列だけ:
 - c の値 ψ_s(y)（y ≠ 0）は fsD で ψ_s(y′)（y′ ≤ y）になる（`fsD_psi_shape`）。引き金は M の枠でも立つ（`trig_back_fsD`）。
 - c の値が Ω_{t+1}（x、または D の葉）なら新しい値は Ω_{t+1} 以下で、引き金が立つなら v(i) ≤ t（`trig_back_succ`）。
-  このとき頭が閉じているのは新しい不変条件 FrameClosedOm（Ω_{t+1} の子の前の頭は閉じている、v(i) ≤ t）から。
-  FrameClosedOm は到達可能な行列の 3.8 万枠（t = v(i) の場合だけ）で例外 0。
+  このとき頭が閉じているのは新しい不変条件 FrameClosedHi（高い子 o(c) ≥ Ω_{v(i)+1} の前の頭は閉じている）から
+  （その特別な場合 FrameClosedOm）。FrameClosedHi は到達可能な行列の高い枠 41 万で例外 0、崩れるのは低くて引き金の
+  ない枠だけ。値は下がるだけなので、FrameClosedHi は M[n] と M.take x に渡る（`frameClosedHi_N_t1`・`frameClosedHi_take`）。
 -/
 import Ytosk.V3FrameOTN
 import Ytosk.V3MainT1D
+import Ytosk.V3DropPres
 
 namespace Ytosk
 
@@ -94,6 +96,22 @@ theorem trig_back_fsD {a B s y ζ s' y' : T} (hle : fsD (psi s y z) ζ ≤ psi s
       · rw [h]
     exact ⟨lt_of_lt_of_le (show B < y' from ht.1) hyy,
       lt_of_lt_of_le (show psi a z z < psi s' y' z from ht.2) hpp⟩
+
+/-- **New invariant** (stronger, carried by monotonicity): the head before a high counted child
+(`o(c) ≥ Ω_{v(i)+1}`) is closed. 到達可能な行列の高い枠 41 万で例外 0（崩れるのは低くて引き金のない枠だけ）。 -/
+def FrameClosedHi (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i, i < M.length → ∀ (L : List Nat) (c : Nat) (R : List Nat), CL M i = L ++ c :: R →
+    psi (succ (ρ.v i)) z z ≤ ρ.o c → Closed (ρ.v i) (spArg (ρ.v i) z (sumN (L.map ρ.o)))
+
+theorem frameClosedOm_of_hi {M : Mat} {ρ : Valn} (h : FrameClosedHi M ρ) : FrameClosedOm M ρ := by
+  intro i hi L c R hCL t hc hnt
+  apply h i hi L c R hCL
+  rw [hc]
+  have hvt : ρ.v i ≤ t := not_lt.mp hnt
+  have hs : succ (ρ.v i) ≤ succ t := succ_le_of_lt (lt_succ_iff.mpr hvt)
+  rcases (le_iff _ _).mp hs with h' | h'
+  · exact le_of_lt (psi_lt_psi_z_iff.mpr (Or.inl h'))
+  · rw [h']
 
 section
 variable {M : Mat} {r L d0 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
@@ -307,6 +325,51 @@ theorem frameClosed_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s �
     rw [hco] at hc
     exact hFCP (r + a) (by rw [hlP]; omega) Lc' c' R' hsp s y hc ht
 
+
+/-- **FrameClosedHi passes to the glued valuation of `M[n]`** (`t = 1`): every value up to `x` only drops, so
+a high frame of `M[n]` is high in `M`. -/
+theorem frameClosedHi_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
+      entry M 1 r < entry M 1 s) (hx2 : entry M 2 (r + L) = 0)
+    (hxnb : ∀ c, par M 0 (r + L) = some c →
+      col (TRIO.gexp M r L d0 0 n) (r + L) ≠ bump (TRIO.gexp M r L d0 0 n) c)
+    (hz2 : entry M 2 r ≤ 1)
+    (hiu : ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 0 n) c = isUpg M c)
+    (hiux : isUpg (TRIO.gexp M r L d0 0 n) (r + L) = false)
+    {ρ ρP : Valn} {Z : Nat → T} (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP)
+    (hOS : ∀ i, i < r + L → DepX M (r + L) true i → OShape M (r + L) i)
+    (hFH : FrameClosedHi M ρ) (hFHP : FrameClosedHi (TRIO.gexp M r L d0 0 (n - 1)) ρP)
+    (hle : ∀ c, c < r + L → DepX M (r + L) true c → fsD (ρ.o c) (Z c) ≤ ρ.o c)
+    (hlex : ρP.o r ≤ ρ.o (r + L)) :
+    FrameClosedHi (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) := by
+  have hlN := len_N (d0 := d0) hlen hn
+  have hlP := len_P (d0 := d0) (n := n) hlen
+  intro i hi Lc c R hCL hhi
+  rcases Nat.lt_or_ge i (r + L) with h | h
+  · obtain ⟨hCLM, hv, hLo⟩ := frameHead_lt hlen hL hA hd0e hn hpath hx2 hxnb hz2 hiu hiux hCP hOS h hCL
+    rw [hv, hLo] at ⊢
+    rw [hv] at hhi
+    have hcCL : c ∈ CL M i := by rw [hCLM]; simp
+    have hcM := mem_children (List.mem_filter.mp hcCL).1
+    have hiM : i < M.length := by omega
+    have hcle : (glueZ M (r + L) ρ (shiftV ρP L) Z).o c ≤ ρ.o c := by
+      rcases Nat.lt_or_ge c (r + L) with hc | hc
+      · by_cases hd : DepX M (r + L) true c
+        · rw [glueZ_o_dep ρ (shiftV ρP L) Z hc hd]; exact hle c hc hd
+        · rw [glueZ_o_lt ρ (shiftV ρP L) Z hc hd]
+      · have : c = r + L := by omega
+        subst this
+        rw [glueZ_o_ge ρ (shiftV ρP L) Z (le_refl _)]
+        show ρP.o (r + L - L) ≤ _
+        rw [Nat.add_sub_cancel]; exact hlex
+    exact hFH i hiM Lc c R hCLM (le_trans hhi hcle)
+  · obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
+    have ha : a < (n - 1) * L := by omega
+    obtain ⟨Lc', c', R', hsp, hv, hLo, hco⟩ :=
+      frameHead_copy hlen hL hA hd0e hn hpath hx2 hxnb hz2 hiu hiux hCP hOS ha hCL
+    rw [hv, hLo] at ⊢
+    rw [hv, hco] at hhi
+    exact hFHP (r + a) (by rw [hlP]; omega) Lc' c' R' hsp hhi
+
 end
 
 end Ytosk
@@ -315,21 +378,51 @@ namespace Ytosk
 
 open T
 
-/-- **FrameClosed is carried** (`t = 1`), given FrameClosedOm of `M`. -/
+/-- **FrameClosed and FrameClosedHi are carried together** (`t = 1`). -/
 theorem expStep_frameClosed_t1 {M : Mat} {r L d0 q : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some q)
-    {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) (hFC : FrameClosed M ρ) (hFCO : FrameClosedOm M ρ) :
-    ExpStepT1 FrameClosed M r L d0 ρ := by
+    {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) (hFC : FrameClosed M ρ) (hFH : FrameClosedHi M ρ) :
+    ExpStepT1 (fun N σ => FrameClosed N σ ∧ FrameClosedHi N σ) M r L d0 ρ := by
+  have hFCO := frameClosedOm_of_hi hFH
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   have hpath := hpath_of_par1 h1 hA (by omega)
   have hox : ∃ t, ρ.o (r + L) = psi (succ t) z z :=
     ⟨_, o_last_t1 hlen hC hG h1 (by have := par1_entry_lt h1; omega) hx2⟩
   intro n hn ρP Z hCP _ hFCP _ _ _ _ hle hlex
-  exact frameClosed_N_t1 hlen hL hA hd0e hn hpath hx2 (hxnb_t1 hlen hL hA hd0e hZ2 hZ1 h1 n hn) (hZ2 r)
-    (hiu_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn) hCP
-    (hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq) hC hFC hFCO hFCP (fun c hc hd => (hle c hc hd).1)
-    hlex.1 hox
+  have hxnb := hxnb_t1 hlen hL hA hd0e hZ2 hZ1 h1 n hn
+  have hiu := hiu_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn
+  have hiux := hiux_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn
+  have hOS := hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq
+  exact ⟨frameClosed_N_t1 hlen hL hA hd0e hn hpath hx2 hxnb (hZ2 r) hiu hiux hCP hOS hC hFC hFCO hFCP.1
+      (fun c hc hd => (hle c hc hd).1) hlex.1 hox,
+    frameClosedHi_N_t1 hlen hL hA hd0e hn hpath hx2 hxnb (hZ2 r) hiu hiux hCP hOS hFH hFCP.2
+      (fun c hc hd => (hle c hc hd).1) hlex.1⟩
 
 end Ytosk
+
+namespace Ytosk
+
+open T
+
+/-- **FrameClosedHi passes to `M.take x`** with any valuation that lowers the values (the drop):
+the frames of `M.take x` extend those of `M` with the same head (`frame_take`). -/
+theorem frameClosedHi_take {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    {ρ ρ' : Valn} {rk : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk) (hle : ∀ i, i < x → ρ'.o i ≤ ρ.o i)
+    (hFH : FrameClosedHi M ρ) : FrameClosedHi (M.take x) ρ' := by
+  intro i hi L c R h hhi
+  have hlT : (M.take x).length = x := by rw [List.length_take]; omega
+  rw [hlT] at hi
+  obtain ⟨hv, hL, Tl, hM⟩ := frame_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hi h
+  rw [hv, hL]
+  rw [hv] at hhi
+  have hcT : c ∈ CL (M.take x) i := by rw [h]; simp
+  have hcx : c < x := by
+    have := (mem_children (List.mem_filter.mp hcT).1).2; rw [hlT] at this; exact this
+  exact hFH i (by omega) L c (R ++ Tl) hM (le_trans hhi (hle c hcx))
+
+end Ytosk
+
