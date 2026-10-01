@@ -18,6 +18,21 @@ set_option linter.unusedSectionVars false
 /-- The shift of a column of `M` into the `k`-th copy. -/
 def shk (r s : Nat) (p : Nat) : Nat := if r ≤ p then p + s else p
 
+/-- The column of `M` that a column of `N` copies. -/
+def phi0 (r L i : Nat) : Nat := if i < r then i else r + (i - r) % L
+
+theorem phi0_lt {r L i : Nat} (h : i < r) : phi0 r L i = i := by unfold phi0; rw [if_pos h]
+
+theorem phi0_copy {r L k q : Nat} (hq : q < L) : phi0 r L (r + (k * L + q)) = r + q := by
+  unfold phi0; rw [if_neg (by omega), show r + (k * L + q) - r = q + k * L by omega,
+    Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hq]
+
+theorem phi0_lt_x {r L t : Nat} (ht : t < r + L) : phi0 r L t = t := by
+  by_cases h : t < r
+  · exact phi0_lt h
+  · have := phi0_copy (r := r) (L := L) (k := 0) (q := t - r) (by omega)
+    rw [show r + (0 * L + (t - r)) = t by omega, show r + (t - r) = t by omega] at this; exact this
+
 theorem shk_inj (r s : Nat) : ∀ a b, shk r s a = shk r s b → a = b := by
   intro a b h
   unfold shk at h
@@ -1006,6 +1021,201 @@ theorem counted_root_imp (he2 : entry M 2 (r + L) = 0) {g k : Nat} (hk : k < n) 
   have := h.1
   rw [hc, bump_pre0 hlen hL hp hn (by omega)] at this
   exact this
+
+theorem phi0_shk {k t : Nat} (ht : t < r + L) : phi0 r L (shk r (k * L) t) = t := by
+  unfold shk
+  split
+  · rename_i h
+    rw [show t + k * L = r + (k * L + (t - r)) by omega, phi0_copy (by omega)]; omega
+  · exact phi0_lt (by omega)
+
+/-- **The ranking of `M` ranks `N`** through the copy map `phi0` (`n ≥ 2`). -/
+theorem rk_N0 (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
+    {rk : Bool → Nat → Nat} (hRM : Rk M rk) :
+    Rk (TRIO.gexp M r L 0 0 n) (fun b i => rk b (phi0 r L i)) := by
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  intro i hi
+  rw [hlN] at hi
+  simp only
+  by_cases hir : i < r
+  · -- a column before `r`
+    rw [phi0_lt hir]
+    obtain ⟨h1, h2, h3⟩ := hRM i (by omega)
+    refine ⟨h1, ?_, ?_⟩
+    · intro c hc hcb hcu
+      have hcN : Counted (TRIO.gexp M r L 0 0 n) i c := ⟨hcb, hcu⟩
+      by_cases hig : par M 0 r = some i
+      · rw [children_g0 hlen hL hp hn hig] at hc
+        rcases List.mem_append.mp hc with hc | hc
+        · have hcr := children_g_le hlen hL hp hig hc
+          rcases Nat.lt_or_ge c r with hcr' | hcr'
+          · have := (counted_lt0 hlen hL hp hn hR0 hZ2 he2 hn2 hir hcr').mp hcN
+            rw [phi0_lt hcr']; exact h2 c hc this.1 this.2
+          · have hc' : c = r := by omega
+            rw [hc'] at hcN hc ⊢
+            have := counted_root_imp hlen hL hp hn he2 (k := 0) (by omega)
+              (by rw [show r + 0 * L = r by omega]; exact hcN) hir
+            rw [phi0_lt_x (by omega)]; exact h2 r hc this.1 this.2
+        · obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hc
+          have hk' := List.mem_range.mp hk
+          have := counted_root_imp hlen hL hp hn he2 (k := k + 1) (by omega) hcN hir
+          have hrM : r ∈ children M i := mem_children_iff.mpr ⟨by omega, hig⟩
+          rw [show r + (k + 1) * L = r + ((k + 1) * L + 0) by omega, phi0_copy hL, Nat.add_zero]
+          exact h2 r hrM this.1 this.2
+      · rw [children_pre0 hlen hL hp hn hir hig] at hc
+        have hcr := children_lt_r hlen hL hp hir hig hc
+        have := (counted_lt0 hlen hL hp hn hR0 hZ2 he2 hn2 hir hcr).mp hcN
+        rw [phi0_lt hcr]; exact h2 c hc this.1 this.2
+    · intro he1N
+      rw [entry_pre0 hlen hn 1 (by omega)] at he1N
+      obtain ⟨p1, p2, p3⟩ := h3 he1N
+      refine ⟨fun m hm => ?_, fun he2N k hk => ?_, fun he2N j hj hjb k' hk' => ?_⟩
+      · rw [par_gexp_pre hlen hn 1 (by omega)] at hm
+        have := par_lt M 1 i m hm
+        rw [phi0_lt (by omega)]; exact p1 m hm
+      · rw [entry_pre0 hlen hn 2 (by omega)] at he2N
+        rw [upg_pre0 hlen hL hp hn (by omega)] at hk
+        have := upg_le hk
+        rw [phi0_lt_x (by omega)]; exact p2 he2N k hk
+      · rw [entry_pre0 hlen hn 2 (by omega)] at he2N
+        -- the bump child `j` and its child `k'`
+        have hjb' : ∀ j0, j0 < r + L → j = j0 → col M j0 = bump M i := by
+          intro j0 hj0 hjj
+          subst hjj
+          rw [← col_pre0 hlen hL hp hn hj0, ← bump_pre0 hlen hL hp hn (by omega)]; exact hjb
+        by_cases hig : par M 0 r = some i
+        · rw [children_g0 hlen hL hp hn hig] at hj
+          rcases List.mem_append.mp hj with hj | hj
+          · have hjr := children_g_le hlen hL hp hig hj
+            rcases Nat.lt_or_ge j r with hjr' | hjr'
+            · have hjg : par M 0 r ≠ some j := by
+                intro h; rw [hig] at h; have := (mem_children hj).1; cases h; omega
+              rw [children_pre0 hlen hL hp hn hjr' hjg] at hk'
+              have := children_lt_r hlen hL hp hjr' hjg hk'
+              rw [phi0_lt this]; exact p3 he2N j hj (hjb' j (by omega) rfl) k' hk'
+            · have hjr'' : j = r := by omega
+              rw [hjr''] at hj hk' hjb'
+              have hj0 := children_copy0 hlen hL hp hn (k := 0) (q := 0) (by omega) hL
+              simp only [Nat.zero_mul, Nat.add_zero] at hj0
+              rw [hj0] at hk'
+              obtain ⟨e, he, rfl⟩ := List.mem_map.mp hk'
+              have hex : e < r + L := by simpa using (List.mem_filter.mp he).2
+              have := phi0_shk hlen hL hp hn (k := 0) hex
+              simp only [Nat.zero_mul] at this
+              rw [this]
+              exact p3 he2N r hj (hjb' r (by omega) rfl) e (List.mem_filter.mp he).1
+          · obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hj
+            have hk1 := List.mem_range.mp hk
+            have hrM : r ∈ children M i := mem_children_iff.mpr ⟨by omega, hig⟩
+            have hcolr : col M r = bump M i := by
+              have := col_copy0 hlen (show k + 1 < n by omega) hL (M := M) (n := n) (q := 0)
+              simp only [Nat.add_zero] at this
+              rw [← this, ← bump_pre0 hlen hL hp hn (by omega)]
+              rw [show r + (k + 1) * L = r + (k + 1) * L from rfl] at hjb; exact hjb
+            have hj0 := children_copy0 hlen hL hp hn (k := k + 1) (q := 0) (by omega) hL
+            rw [Nat.add_zero, Nat.add_zero] at hj0
+            rw [hj0] at hk'
+            obtain ⟨e, he, rfl⟩ := List.mem_map.mp hk'
+            have hex : e < r + L := by simpa using (List.mem_filter.mp he).2
+            rw [phi0_shk hlen hL hp hn hex]
+            exact p3 he2N r hrM hcolr e (List.mem_filter.mp he).1
+        · rw [children_pre0 hlen hL hp hn hir hig] at hj
+          have hjr := children_lt_r hlen hL hp hir hig hj
+          by_cases hjg : par M 0 r = some j
+          · rw [children_g0 hlen hL hp hn hjg] at hk'
+            rcases List.mem_append.mp hk' with hk' | hk'
+            · rw [phi0_lt_x (by have := children_g_le hlen hL hp hjg hk'; omega)]
+              exact p3 he2N j hj (hjb' j (by omega) rfl) k' hk'
+            · obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hk'
+              rw [show r + (k + 1) * L = r + ((k + 1) * L + 0) by omega, phi0_copy hL, Nat.add_zero]
+              exact p3 he2N j hj (hjb' j (by omega) rfl) r (mem_children_iff.mpr ⟨by omega, hjg⟩)
+          · rw [children_pre0 hlen hL hp hn hjr hjg] at hk'
+            have := children_lt_r hlen hL hp hjr hjg hk'
+            rw [phi0_lt this]; exact p3 he2N j hj (hjb' j (by omega) rfl) k' hk'
+  · -- a copy column
+    obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (Lb := L) (n := n) hL (by omega) hi
+    rw [phi0_copy hq]
+    obtain ⟨h1, h2, h3⟩ := hRM (r + q) (by omega)
+    refine ⟨h1, ?_, ?_⟩
+    · intro c hc hcb hcu
+      rw [children_copy0 hlen hL hp hn hk hq] at hc
+      obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hc
+      obtain ⟨hdM, hdx⟩ := List.mem_filter.mp hd
+      have hdx' : d < r + L := by simpa using hdx
+      have hdq := (mem_children hdM).1
+      have hcd : shk r (k * L) d = r + (k * L + (d - r)) := by unfold shk; rw [if_pos (by omega)]; omega
+      rw [hcd] at hcb hcu
+      have := (counted_copy0 hlen hL hp hn hR0 hZ2 he2 hk hq (q' := d - r) (by omega) (by omega)).mp
+        ⟨hcb, hcu⟩
+      rw [show r + (d - r) = d by omega] at this
+      rw [hcd, phi0_copy (by omega), show r + (d - r) = d by omega]
+      exact h2 d hdM this.1 this.2
+    · intro he1N
+      rw [entry_copy0 hlen hk hq 1] at he1N
+      obtain ⟨p1, p2, p3⟩ := h3 he1N
+      refine ⟨fun m hm => ?_, fun he2N t ht => ?_, fun he2N j hj hjb k' hk' => ?_⟩
+      · rw [par1_copy0 hlen hL hp hn hk hq] at hm
+        cases hm1 : par M 1 (r + q) with
+        | none => rw [hm1] at hm; cases hm
+        | some m0 =>
+          rw [hm1] at hm
+          simp only [Option.map_some, Option.some.injEq] at hm
+          subst hm
+          have := par_lt M 1 _ m0 hm1
+          rw [phi0_shk hlen hL hp hn (by omega)]; exact p1 m0 hm1
+      · rw [entry_copy0 hlen hk hq 2] at he2N
+        by_cases hq1 : q + 1 < L
+        · rw [upg_copy0 hlen hL hp hn hk hq1] at ht
+          cases hU : upg M (r + q) with
+          | none => rw [hU] at ht; cases ht
+          | some t0 =>
+            rw [hU] at ht
+            simp only [Option.map_some, Option.some.injEq] at ht
+            subst ht
+            have := upg_le hU
+            rw [phi0_shk hlen hL hp hn (by omega)]; exact p2 he2N t0 hU
+        · have hqL : q = L - 1 := by omega
+          subst hqL
+          by_cases hkn : k + 1 < n
+          · rw [upg_copy_last0 hlen hL hp hn hR0 hZ2 he2 hkn] at ht
+            cases hU : upg M (r + (L - 1)) with
+            | none => rw [hU] at ht; cases ht
+            | some t0 =>
+              rw [hU] at ht
+              simp only [Option.map_some, Option.some.injEq] at ht
+              have ht0x : t0 < r + L := by
+                have := upg_le hU
+                by_contra h
+                have : t0 = r + L := by omega
+                subst this
+                have := upg_target_e2 hU; omega
+              split at ht
+              · rename_i htr
+                subst ht; subst htr
+                rw [show t0 + (k + 1) * L = t0 + ((k + 1) * L + 0) by omega, phi0_copy hL, Nat.add_zero]
+                exact p2 he2N t0 hU
+              · subst ht
+                rw [phi0_lt_x ht0x]; exact p2 he2N t0 hU
+          · have hk1 : k = n - 1 := by omega
+            subst hk1
+            rw [upg_none_last0 hlen hL hp hn] at ht; cases ht
+      · rw [entry_copy0 hlen hk hq 2] at he2N
+        rw [children_copy0 hlen hL hp hn hk hq] at hj
+        obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hj
+        obtain ⟨hdM, hdx⟩ := List.mem_filter.mp hd
+        have hdx' : d < r + L := by simpa using hdx
+        have hdq := (mem_children hdM).1
+        have hcd : shk r (k * L) d = r + (k * L + (d - r)) := by unfold shk; rw [if_pos (by omega)]; omega
+        have hjb' : col M d = bump M (r + q) := by
+          rw [← col_shk hlen hL hp hn hk hdx']
+          have hb : bump (TRIO.gexp M r L 0 0 n) (r + (k * L + q)) = bump M (r + q) := by
+            unfold bump; rw [entry_copy0 hlen hk hq 0, entry_copy0 hlen hk hq 1]
+          rw [← hb]; exact hjb
+        rw [hcd, children_copy0 hlen hL hp hn hk (q := d - r) (by omega), show r + (d - r) = d by omega] at hk'
+        obtain ⟨e, he, rfl⟩ := List.mem_map.mp hk'
+        have hex : e < r + L := by simpa using (List.mem_filter.mp he).2
+        rw [phi0_shk hlen hL hp hn hex]
+        exact p3 he2N d hdM hjb' e (List.mem_filter.mp he).1
 
 end
 
