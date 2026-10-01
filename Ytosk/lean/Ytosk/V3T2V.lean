@@ -282,7 +282,8 @@ theorem t2_sv_main (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
         show σ.v m = ρ.v m
         exact (hoff m (by have := par_lt M 1 _ m hm; omega)).2 (hP1 m hm)
   exact t2_assemble (S := SV r (r + L - 1)) (W := fun _ _ => False) (bnd := r + L) hC hG hRM hCN hGN hRN
-    hF hVS hTD hKD hR01 hR12 h00 hlen (by rw [hlN]; omega) hchN
+    hF hVS hTD hKD hR01 hR12 h00 hlen (by rw [hlN]; omega) (fun i hi _ => hchN i hi)
+    (Or.inl (Or.inl ⟨rfl, rfl⟩)) (Or.inl he2r) (fun i hr hb => hrb i (mem_children_iff.mp hr).2 hb)
     (fun y i hi => entry_gexp_pre hlen (by omega) y hi) (fun i hi => par_gexp_pre hlen (by omega) 1 hi)
     (fun i hi hs => by
       rcases Nat.lt_or_ge (i + 1) (r + L) with h | h

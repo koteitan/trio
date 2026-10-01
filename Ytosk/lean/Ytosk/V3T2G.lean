@@ -15,10 +15,12 @@ open T
 set_option linter.unusedSectionVars false
 
 /-- **Outside `D`, `N` has the values of `M` before `bnd`** (general form). -/
-theorem t2_off_gen {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ : Valn}
+theorem t2_off_gen {M N : Mat} {S : Bool → Nat → Prop} {bnd p : Nat} {ρ σ : Valn}
     {rkN : Bool → Nat → Nat} (hC : Cons M ρ) (hCN : Cons N σ) (hRN : Rk N rkN)
     (hbM : bnd < M.length) (hbN : bnd ≤ N.length)
-    (hch : ∀ i, i < bnd → children N i = children M i)
+    (hch : ∀ i, i < bnd → i ≠ p → children N i = children M i)
+    (hpD : DepS M S true p) (hpV : entry M 2 p = 0 ∨ DepS M S false p)
+    (hpb : ∀ i, p ∈ children M i → col M p ≠ bump M i)
     (he : ∀ y i, i < bnd → entry N y i = entry M y i)
     (hpar1 : ∀ i, i < bnd → par N 1 i = par M 1 i)
     (hupg : ∀ i, i < bnd → ¬ DepS M S false i → upg N i = upg M i)
@@ -43,7 +45,7 @@ theorem t2_off_gen {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ : 
     have hix : i < bnd := by omega
     rw [(hC i (by omega)).1]
     unfold oRhs
-    rw [hch i hix]
+    rw [hch i hix (by rintro rfl; exact hE.2 hpD)]
     congr 3
     apply List.map_congr_left
     intro c hc
@@ -58,20 +60,25 @@ theorem t2_off_gen {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ : 
     apply vRhs_eq_of (he 1 i hix) (he 2 i hix)
     · intro _; rw [hpar1 i hix]
     · intro _ _; rw [hupg i hix hE.2]
-    · intro _ _
-      rw [hch i hix]
+    · intro _ h2
+      have hip : i ≠ p := by
+        rintro rfl
+        rcases hpV with h | h
+        · exact h2 h
+        · exact hE.2 h
+      rw [hch i hix hip]
       congr 2
       apply List.map_congr_left
       intro j hj
       apply bumpTerm_eq_of
       · rcases Nat.lt_or_ge j bnd with h | h
         · rw [hcol j h, hbump i hix]
-        · exact ⟨fun h' => absurd h' (hbjN i j hix (by rw [hch i hix]; exact hj) h),
+        · exact ⟨fun h' => absurd h' (hbjN i j hix (by rw [hch i hix hip]; exact hj) h),
             fun h' => absurd (hbjD i j hix hj h h') hE.2⟩
       · intro hjb
         have hjx : j < bnd := by
           by_contra h'; exact hE.2 (hbjD i j hix hj (by omega) hjb)
-        have hchj := hch j hjx
+        have hchj := hch j hjx (by rintro rfl; exact hpb i hj hjb)
         rw [hchj]) (by
     intro i hi hE
     simp only [not_or] at hE
@@ -80,7 +87,7 @@ theorem t2_off_gen {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ : 
     · rcases h with h | h
       · omega
       · exact hE.2 (DepS.ov h)
-    · rw [hch i hix] at hc
+    · rw [hch i hix (by rintro rfl; exact hE.2 hpD)] at hc
       have hcx : c < bnd := by
         by_contra h'; exact hE.2 (hxD i c hix hc (by omega))
       rcases h with h | h
@@ -105,11 +112,16 @@ theorem t2_off_gen {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ : 
       · exact hE.2 (DepS.vupg he1 he2 hk h)
     · rw [he 2 i hix] at he2
       have hjN := hj
-      rw [hch i hix] at hj
+      have hip : i ≠ p := by
+        rintro rfl
+        rcases hpV with h | h
+        · exact he2 h
+        · exact hE.2 h
+      rw [hch i hix hip] at hj
       have hjx : j < bnd := by
         by_contra h'; exact hbjN i j hix hjN (by omega) hjb
       rw [hcol j hjx, hbump i hix] at hjb
-      rw [hch j hjx] at hk
+      rw [hch j hjx (by rintro rfl; exact hpb i hj hjb)] at hk
       have hkx : k < bnd := by
         by_contra h'; exact hE.2 (hbkD i j k hix hj hjx hjb hk (by omega))
       rcases h with h | h
@@ -195,15 +207,17 @@ theorem root_gen {M N : Mat} {bnd : Nat} (hlenM : bnd + 1 = M.length) (hbN : bnd
 /-- **`t = 2` assembly** (general form): from the structural agreement before `bnd`, the shape of
 `D = DepS M S` in `M`, the weak calls `W` read only by seeds, and the seeds, the root value of `N` is
 standard and below that of `M`. -/
-theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ : Valn}
+theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ σ : Valn}
     {rkM rkN : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
     (hCN : Cons N σ) (hGN : Good3 N σ) (hRN : Rk N rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 = 0)
     (hlenM : bnd + 1 = M.length) (hbN : bnd ≤ N.length)
-    -- structural agreement before `bnd`
-    (hch : ∀ i, i < bnd → children N i = children M i)
+    -- structural agreement before `bnd` (the children may differ only at `p`)
+    (hch : ∀ i, i < bnd → i ≠ p → children N i = children M i)
+    (hpS : S true p ∨ W true p) (hp2 : entry M 2 p = 0 ∨ S false p)
+    (hpb : ∀ i, p ∈ children M i → col M p ≠ bump M i)
     (he : ∀ y i, i < bnd → entry N y i = entry M y i)
     (hpar1 : ∀ i, i < bnd → par N 1 i = par M 1 i)
     (hupg : ∀ i, i < bnd → ¬ S false i → upg N i = upg M i)
@@ -250,7 +264,9 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ
     rw [col_eq_entries, col_eq_entries, he 0 i hi, he 1 i hi, he 2 i hi]
   have hbump : ∀ i, i < bnd → bump N i = bump M i := fun i hi => by
     unfold bump; rw [he 0 i hi, he 1 i hi]
-  have hoff := t2_off_gen (S := S) hC hCN hRN (by omega) hbN hch he hpar1
+  have hoff := t2_off_gen (S := S) hC hCN hRN (by omega) hbN hch
+    (by rcases hpS with h | h; exact DepS.seed h; exact hWD p h)
+    (by rcases hp2 with h | h; exact Or.inl h; exact Or.inr (DepS.seed h)) hpb he hpar1
     (fun i hi hd => hupg i hi (fun hs => hd (DepS.seed hs)))
     (fun i c hi hd hc hcx => hcnt i c hi (fun hs => hd (DepS.seed hs)) hc hcx)
     (fun i c hi hc hcx => by
@@ -280,7 +296,7 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ
         rw [this]
       have hclN : CL N i = CL M i := by
         unfold CL
-        rw [hch i hi]
+        rw [hch i hi (by rintro rfl; rcases hpS with h | h; exact hns h; exact hnw h)]
         apply List.filter_congr
         intro d hd
         simp only [hcnt i d hi hns hd (hall d hd)]
@@ -304,15 +320,18 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ
           by_contra h'; exact hns (hbkS i j k hi hj hjx hjb hk (by omega))
         have hKk : ∀ d ∈ Kb, d < k := (sib_order (children_sorted M j) (R := []) (by rw [hchj])).1
         have hLj : ∀ d ∈ Lb, d < j := (sib_order (children_sorted M i) (R := []) (by rw [hchi])).1
-        refine ⟨Lb, Kb, j, k, hchi, by rw [hch i hi, hchi], hjb,
-          by rw [hcol j hjx, hbump i hi]; exact hjb, hchj, by rw [hch j hjx, hchj], hkx, he 1 k hkx,
+        have hip : i ≠ p := by
+          rintro rfl; rcases hp2 with h | h; exact h2 h; exact hns h
+        refine ⟨Lb, Kb, j, k, hchi, by rw [hch i hi hip, hchi], hjb,
+          by rw [hcol j hjx, hbump i hi]; exact hjb, hchj,
+          by rw [hch j hjx (by rintro rfl; exact hpb i hj hjb), hchj], hkx, he 1 k hkx,
           fun d hd => ⟨hKnd d hd, by have := hKk d hd; omega⟩, hLnd, fun d hd => ?_⟩
         have hdj := hLj d hd
         have hdM : d ∈ children M i := by rw [hchi]; simp [hd]
         apply bumpTerm_eq_of
         · rw [hcol d (by omega), hbump i hi]
         · intro hdb
-          rw [hch d (by omega)]
+          rw [hch d (by omega) (by rintro rfl; exact hpb i hdM hdb)]
           apply List.map_congr_left
           intro e he'
           have hex : e < bnd := by

@@ -197,7 +197,9 @@ theorem t2_qn_main (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
       omega
     · rw [(mem_children_iff.mp hj).2] at hp'; cases hp'; omega
   have hoff := t2_off_gen (S := SQ (r + qp) pq) (bnd := r + L) hC hCN hRN (by omega) (by rw [hlN]; omega)
-    hchN (fun y i hi => entry_gexp_pre hlen (by omega) y hi) (fun i hi => par_gexp_pre hlen (by omega) 1 hi)
+    (fun i hi _ => hchN i hi) (DepS.ov (DepS.seed (Or.inl ⟨rfl, rfl⟩)))
+    (Or.inr (DepS.seed (Or.inl ⟨rfl, rfl⟩))) (fun i hq hb => by have h' := (mem_children_iff.mp hq).2; rw [hpq] at h'; cases h'; exact hqb hb)
+    (fun y i hi => entry_gexp_pre hlen (by omega) y hi) (fun i hi => par_gexp_pre hlen (by omega) 1 hi)
     (fun i hi _ => hupgN i hi)
     (fun i c hi hd hc hcx => hcntS i c hi (fun h => hd (DepS.seed (Or.inr ⟨rfl, h⟩))) hc hcx)
     (fun i c hi hc hcx => by
@@ -309,7 +311,8 @@ theorem t2_qn_main (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
       rw [hor] at hle ⊢
       exact seed_closed (by rw [← hor]; exact hG.ot_o pq hpqM) (ne_of_gt harg) hcl' hle
   exact t2_assemble (S := SQ (r + qp) pq) (W := WQ (r + qp)) (bnd := r + L) hC hG hRM hCN hGN hRN
-    hF hVS hTD hKD hR01 hR12 h00 hlen (by rw [hlN]; omega) hchN
+    hF hVS hTD hKD hR01 hR12 h00 hlen (by rw [hlN]; omega) (fun i hi _ => hchN i hi)
+    (Or.inr ⟨rfl, rfl⟩) (Or.inr (Or.inl ⟨rfl, rfl⟩)) (fun i hq hb => by have h' := (mem_children_iff.mp hq).2; rw [hpq] at h'; cases h'; exact hqb hb)
     (fun y i hi => entry_gexp_pre hlen (by omega) y hi) (fun i hi => par_gexp_pre hlen (by omega) 1 hi)
     (fun i hi _ => hupgN i hi)
     (fun i c hi hd hc hcx => hcntS i c hi (fun h => hd (Or.inr ⟨rfl, h⟩)) hc hcx)
