@@ -229,4 +229,74 @@ theorem lhdE_step_tn {a B s' y' s y : T} (hc : isOT (psi s y z) = true)
   rw [hadd]
   exact lhdE_app B hX
 
+theorem split_snd_head_lt {θ : T} : ∀ {y : T}, (split y θ).2 ≠ z → head (split y θ).2 < θ
+  | z, h => absurd rfl h
+  | psi a b c, h => by
+    simp only [split] at h ⊢
+    split
+    · rename_i hlt; simpa [head] using hlt
+    · rename_i hlt; rw [if_neg hlt] at h; exact split_snd_head_lt h
+
+theorem split_snd_suffix {θ : T} (y : T) : ∀ q ∈ summands (split y θ).2, q ∈ summands y := by
+  intro q hq
+  rw [← split_app θ y, summands_app]; exact List.mem_append_right _ hq
+
+theorem arg_mem_comps {s : T} : ∀ {y v r : T}, psi v r z ∈ summands y → ¬ lt v s = true →
+    r ∈ comps s y
+  | z, _, _, h, _ => by simp [summands] at h
+  | psi a b c, v, r, h, hv => by
+    simp only [summands, List.mem_cons] at h
+    rcases h with h | h
+    · simp only [psi.injEq] at h
+      obtain ⟨rfl, rfl, _⟩ := h
+      simp [comps, hv]
+    · simp only [comps, List.mem_append]; right; exact arg_mem_comps h hv
+
+theorem head_mem_summands : ∀ {t : T}, t ≠ z → head t ∈ summands t
+  | z, h => absurd rfl h
+  | psi a b c, _ => by simp [head, summands]
+
+/-- **`B = hi(y)`** in a frame where `M` rewrites with a low part and `hi(y) ≤ B`. -/
+theorem B_eq_hi {B s y : T} (hc : isOT (psi s y z) = true) (hlo : (split y (psi (succ s) z z)).2 ≠ z)
+    (hge : (split y (psi (succ s) z z)).1 ≤ B) (hlt : B < y)
+    (hB : ∀ q ∈ summands B, psi s y z ≤ q) : B = (split y (psi (succ s) z z)).1 := by
+  set hi := (split y (psi (succ s) z z)).1
+  set lo := (split y (psi (succ s) z z)).2
+  have e : app hi lo = y := split_app _ y
+  obtain ⟨w, hw, _, hwlo⟩ := le_between_app (x := z) (y := lo) (A := hi) (by simpa using hge)
+    (by rw [e]; exact le_of_lt hlt)
+  by_cases hwz : w = z
+  · rw [hw, hwz, app_z_right]
+  · exfalso
+    have hwlt : w < lo := by
+      rcases (le_iff _ _).mp hwlo with h | h
+      · exact h
+      · rw [hw, h, e] at hlt; exact absurd hlt (lt_irrefl' _)
+    have hmemw : head w ∈ summands B := by
+      rw [hw, summands_app]; exact List.mem_append_right _ (head_mem_summands hwz)
+    have hhw : psi s y z ≤ head w := hB _ hmemw
+    -- the head of the low part is below `ψ_s(y)`
+    have hlh : head lo < psi s y z := by
+      have h1 : head lo < psi (succ s) z z := split_snd_head_lt hlo
+      have hmem : head lo ∈ summands y :=
+        split_snd_suffix (θ := psi (succ s) z z) y (head lo) (head_mem_summands hlo)
+      cases hlc : lo with
+      | z => exact absurd hlc hlo
+      | psi v r c =>
+        rw [hlc] at h1 hmem
+        simp only [head] at h1 hmem ⊢
+        rw [psi_lt_psi_z_iff] at h1 ⊢
+        rcases h1 with h1 | ⟨_, h1⟩
+        · rcases (le_iff _ _).mp (lt_succ_iff.mp h1) with h2 | h2
+          · exact Or.inl h2
+          · subst h2
+            have hmem' : psi v r z ∈ summands y := by
+              have : psi v r c = psi v r c := rfl
+              -- the summand of `lo` is a summand of `y`
+              exact hmem
+            exact Or.inr ⟨rfl, comps_lt hc r (arg_mem_comps hmem' (lt_irrefl' v))⟩
+        · exact absurd h1 (T.not_lt_z _)
+    have := head_le_of_lt hwlt
+    exact lt_irrefl' _ (lt_of_le_of_lt hhw (lt_of_le_of_lt this hlh))
+
 end Ytosk
