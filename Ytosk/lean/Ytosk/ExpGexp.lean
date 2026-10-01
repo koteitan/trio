@@ -235,4 +235,14 @@ theorem children_expand_lt (M : Mat) (n : Nat) (hM : 2 ≤ M.length)
       exact this
     rw [show c = r + L by omega, heq, hroot', hq]
 
+/-- With `t = 1` the copies keep row 1 (`d1 = 0`). -/
+theorem expand_eq_gexp_t1 (M : Mat) (n : Nat) (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    {r : Nat} (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht : TRIO.srow M (M.length - 1) = 1) :
+    expand M n = TRIO.gexp M r (M.length - 1 - r) (entry M 0 (M.length - 1) - entry M 0 r) 0 n := by
+  rw [expand_eq_gexp M n hM hz hr, if_pos (by omega), if_neg (by omega)]
+  rfl
+
 end Ytosk
