@@ -348,6 +348,51 @@ theorem fs_psi_diag {a X μ : T} (hX : X ≠ z) (hc : cof X = .big μ) (hμ : ¬
   | zero => rfl
   | succ k ih => simp only [gam]; rw [← ih]
 
+/-- **Commutation on the argument, rewriting case with no lower part.** The last child `ψ_s(y)` rewrites to
+`H(s, y) = y` (all of `y` is at or above `Ω_{s+1}`), and the fundamental sequence keeps `y` there. -/
+theorem spArg_fs_arg_trig0 {a b s y μ η : T} (hc : isOT (psi s y z) = true)
+    (hcof : cof (psi s y z) = .big μ) (hη : isOT η = true) (hηl : η < psi (succ μ) z z)
+    (htr : lt b y = true ∧ lt (psi a z z) (psi s y z) = true)
+    (hlo : (split y (psi (succ s) z z)).2 = z)
+    (hlo' : (split (fs y η) (psi (succ s) z z)).2 = z)
+    (hbη : lt b (fs y η) = true) :
+    fs (spArg a b (psi s y z)) η = spArg a b (fs (psi s y z) η) := by
+  have hy : y ≠ z := by rintro rfl; simp [lt] at htr
+  obtain ⟨hcy, hμs⟩ := cof_psi_inv hy hcof
+  have hH : spArg a b (psi s y z) = y := by
+    rw [spArg_cons]; show step a b s y z = _
+    unfold step; rw [if_pos htr, H_eq hc, if_pos hlo, app_z_right]
+    have := split_app (psi (succ s) z z) y; rw [hlo, app_z_right] at this; exact this
+  rw [hH, fs_psi_pass hy hcy hμs]
+  have hcη : isOT (psi s (fs y η) z) = true := by
+    have := (fs_ot_lt hc ⟨hη, by rw [hcof]; exact hηl⟩).1
+    rwa [fs_psi_pass hy hcy hμs] at this
+  rw [spArg_cons]; show _ = step a b s (fs y η) z
+  unfold step
+  have hy' : fs y η ≠ z := by intro h; rw [h] at hbη; simp [lt] at hbη
+  have htr' : lt b (fs y η) = true ∧ lt (psi a z z) (psi s (fs y η) z) = true :=
+    ⟨hbη, by rw [← trig_cond hy hy']; exact htr.2⟩
+  rw [if_pos htr', H_eq hcη, if_pos hlo', app_z_right]
+  have := split_app (psi (succ s) z z) (fs y η); rw [hlo', app_z_right] at this; exact this.symm
+
+theorem spArg_fs_trig0 {a b s y μ η : T} (hc : isOT (psi s y z) = true)
+    (hcof : cof (psi s y z) = .big μ) (hμ : lt μ a = true) (hη : isOT η = true)
+    (hηl : η < psi (succ μ) z z)
+    (htr : lt b y = true ∧ lt (psi a z z) (psi s y z) = true)
+    (hlo : (split y (psi (succ s) z z)).2 = z)
+    (hlo' : (split (fs y η) (psi (succ s) z z)).2 = z)
+    (hbη : lt b (fs y η) = true) :
+    fs (psi a (spArg a b (psi s y z)) z) η = psi a (spArg a b (fs (psi s y z) η)) z := by
+  have hy : y ≠ z := by rintro rfl; simp [lt] at htr
+  obtain ⟨hcy, hμs⟩ := cof_psi_inv hy hcof
+  have hH : spArg a b (psi s y z) = y := by
+    rw [spArg_cons]; show step a b s y z = _
+    unfold step; rw [if_pos htr, H_eq hc, if_pos hlo, app_z_right]
+    have := split_app (psi (succ s) z z) y; rw [hlo, app_z_right] at this; exact this
+  have harg := spArg_fs_arg_trig0 (a := a) hc hcof hη hηl htr hlo hlo' hbη
+  rw [hH] at harg ⊢
+  rw [fs_psi_pass hy hcy hμ, harg]
+
 /-! ## 経路の文脈 -/
 
 /-- Fill a path context (frames `(a, b)` from the hole upwards: subscript and state of the left siblings)
@@ -362,14 +407,17 @@ def FrameOK (a b c μ η : T) : Prop :=
     η < psi (succ μ) z z ∧
     (((y ≤ b ∨ s < a) ∧ isOT (app b c) = true) ∨
      ((lt b y = true ∧ lt (psi a z z) c = true) ∧ (split y (psi (succ s) z z)).2 ≠ z ∧
-       fs (split y (psi (succ s) z z)).2 η ≠ z ∧ lt b (fs y η) = true))
+       fs (split y (psi (succ s) z z)).2 η ≠ z ∧ lt b (fs y η) = true) ∨
+     ((lt b y = true ∧ lt (psi a z z) c = true) ∧ (split y (psi (succ s) z z)).2 = z ∧
+       (split (fs y η) (psi (succ s) z z)).2 = z ∧ lt b (fs y η) = true))
 
 theorem frame_fs {a b c μ η : T} (h : FrameOK a b c μ η) :
     fs (psi a (spArg a b c) z) η = psi a (spArg a b (fs c η)) z := by
   obtain ⟨s, y, rfl, hc, hcof, hμ, hη, hηl, h⟩ := h
-  rcases h with ⟨hno, hbc⟩ | ⟨htr, hlo, hlo', hbη⟩
+  rcases h with ⟨hno, hbc⟩ | ⟨htr, hlo, hlo', hbη⟩ | ⟨htr, hlo, hlo', hbη⟩
   · exact spArg_fs_pass hc hcof hμ hη hηl hno hbc
   · exact spArg_fs_trig hc hcof hμ hη hηl htr hlo hlo' hbη
+  · exact spArg_fs_trig0 hc hcof hμ hη hηl htr hlo hlo' hbη
 
 /-- The conditions along a whole context. -/
 def FramesOK : List (T × T) → T → T → T → Prop
@@ -390,14 +438,17 @@ def ArgFrameOK (a b c μ η : T) : Prop :=
     (((y ≤ b ∨ s < a) ∧ isOT (app b c) = true ∧
        ∀ s' y', psi s' y' z ∈ summands (fs c η) → y' ≤ b ∨ s' < a) ∨
      ((lt b y = true ∧ lt (psi a z z) c = true) ∧ (split y (psi (succ s) z z)).2 ≠ z ∧
-       fs (split y (psi (succ s) z z)).2 η ≠ z ∧ lt b (fs y η) = true))
+       fs (split y (psi (succ s) z z)).2 η ≠ z ∧ lt b (fs y η) = true) ∨
+     ((lt b y = true ∧ lt (psi a z z) c = true) ∧ (split y (psi (succ s) z z)).2 = z ∧
+       (split (fs y η) (psi (succ s) z z)).2 = z ∧ lt b (fs y η) = true))
 
 theorem frame_arg_fs {a b c μ η : T} (h : ArgFrameOK a b c μ η) :
     fs (spArg a b c) η = spArg a b (fs c η) := by
   obtain ⟨s, y, rfl, hc, hcof, hη, hηl, h⟩ := h
-  rcases h with ⟨hno, hbc, hno'⟩ | ⟨htr, hlo, hlo', hbη⟩
+  rcases h with ⟨hno, hbc, hno'⟩ | ⟨htr, hlo, hlo', hbη⟩ | ⟨htr, hlo, hlo', hbη⟩
   · exact spArg_fs_arg_notrig hc ⟨hη, by rw [hcof]; exact hηl⟩ hno hbc hno'
   · exact spArg_fs_arg_trig hc hcof hη hηl htr hlo hlo' hbη
+  · exact spArg_fs_arg_trig0 hc hcof hη hηl htr hlo hlo' hbη
 
 theorem isSucc_succ (μ : T) : isSucc (succ μ) = true := by
   unfold succ isSucc
