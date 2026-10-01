@@ -112,4 +112,22 @@ theorem domle_step_tt {μ a B s y' y : T} (hc' : isOT (psi s y' z) = true)
     · rw [if_neg hl', hhi hl']
       exact domle_app (domle_psi hy) hot
 
+/-- **A collapsing frame on the reference side**: the low part `lo(y)` vanishes under `fsD(·, γ)`.
+Then the one-step evaluation `H s (fsD y γ) = hi(y)` is a prefix of `fsD (H s y) γ = hi(y) + ψ_s(fsD y γ)`. -/
+theorem domle_collapse {μ s y γ : T} (hc : isOT (psi s y z) = true)
+    (hl : (split y (psi (succ s) z z)).2 ≠ z) (hv : fsD (split y (psi (succ s) z z)).2 γ = z)
+    (hyz : y ≠ z) (hys : isSucc y = false)
+    (hc2 : isOT (psi s (fsD y γ) z) = true)
+    (hl2 : (split (fsD y γ) (psi (succ s) z z)).2 = z) :
+    DomLe μ (H s (fsD y γ)) (fsD (H s y) γ) := by
+  set hi := (split y (psi (succ s) z z)).1 with hhi
+  set lo := (split y (psi (succ s) z z)).2 with hlo
+  have hy : y = app hi lo := (split_app (psi (succ s) z z) y).symm
+  have hfy : fsD y γ = hi := by rw [hy, fsD_app hi hl γ, hv, app_z_right]
+  have hH2 : H s (fsD y γ) = fsD y γ := by
+    rw [H_eq hc2, if_pos hl2, app_z_right]
+    have := split_app (psi (succ s) z z) (fsD y γ); rw [hl2, app_z_right] at this; exact this
+  rw [hH2, H_eq hc, if_neg hl, fsD_app hi (by simp) γ, fsD_psi hyz hys, hfy]
+  exact domle_prefix μ hi _
+
 end Ytosk
