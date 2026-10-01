@@ -490,4 +490,85 @@ theorem seedOK_of_lhd {a b μ σ : T} (hot : isOT (psi a b z) = true) (hcb : cof
       exact ⟨g, List.mem_append_left _ (hin g this), le_refl _⟩
     · simp at hg
 
+/-! ## 自然数型の項（一番深い位置が後続） -/
+
+theorem last_mem_of : ∀ {t : T}, t ≠ z → last t ∈ summands t
+  | z, h => absurd rfl h
+  | psi a b z, _ => by simp [last, summands]
+  | psi a b (psi c d e), _ => by
+    show last (psi c d e) ∈ psi a b z :: summands (psi c d e)
+    exact List.mem_cons_of_mem _ (last_mem_of (by simp))
+
+/-- The deepest position of `t` is a successor argument. -/
+inductive SuccPath : T → Prop
+  | base {v b : T} : b ≠ z → isSucc b = true → SuccPath (psi v b z)
+  | rest {a b c d e : T} : SuccPath (psi c d e) → SuccPath (psi a b (psi c d e))
+  | arg {a b : T} : b ≠ z → isSucc b = false → SuccPath b → SuccPath (psi a b z)
+
+theorem SuccPath.cof {t : T} (h : SuccPath t) : cof t = .omega := by
+  induction h with
+  | base hb hs => simp [_root_.Ytosk.cof, hb, hs]
+  | rest _ ih => simp [_root_.Ytosk.cof] at *; exact ih
+  | arg hb hs _ ih => simp [_root_.Ytosk.cof, hb, hs, ih]
+
+/-- **On a successor-type term, `fsD` is `fs`.** -/
+theorem SuccPath.fsD_eq {t : T} (h : SuccPath t) (η : T) : fsD t η = fs t η := by
+  induction h with
+  | base hb hs =>
+    conv => lhs; unfold fsD
+    conv => rhs; unfold fs
+    rw [if_neg hb, if_neg hb, if_pos hs, if_pos hs]
+  | @rest a b c d e _ ih =>
+    show psi a b (fsD (psi c d e) η) = psi a b (fs (psi c d e) η)
+    rw [ih]
+  | @arg a b hb hs hp ih =>
+    rw [fsD_psi hb hs]
+    conv => rhs; unfold fs
+    rw [if_neg hb, if_neg (by rw [hs]; simp), hp.cof]
+    simp only
+    rw [ih]
+
+theorem SuccPath.append {t : T} : ∀ (B : T), SuccPath t → SuccPath (app B t)
+  | z, h => by simpa using h
+  | psi a1 b1 B', h => by
+    simp only [app_psi]
+    have hne : t ≠ z := by cases h <;> simp
+    cases hB : app B' t with
+    | z => exact absurd (app_eq_z hB).2 hne
+    | psi d e f =>
+      have := SuccPath.append B' h
+      rw [hB] at this
+      exact SuccPath.rest this
+
+theorem SuccPath.not_succ {t : T} (h : SuccPath t) : isSucc t = false := by
+  induction h with
+  | base hb _ =>
+    simp only [isSucc, last, beq_eq_false_iff_ne]
+    intro h; simp [one] at h; exact hb h.2
+  | rest _ ih => rw [isSucc_psi_rest _ _ _ (by simp)]; exact ih
+  | arg hb _ _ _ =>
+    simp only [isSucc, last, beq_eq_false_iff_ne]
+    intro h; simp [one] at h; exact hb h.2
+
+/-- **A successor-type child keeps the node successor-type after one step.** -/
+theorem SuccPath.step {a b s y : T} (hc : isOT (psi s y z) = true) (hp : SuccPath (psi s y z)) :
+    SuccPath (step a b s y z) := by
+  rcases step_cases (a := a) (b := b) hc with ⟨B, hB⟩ | ⟨h1, hlo, h3, _⟩
+  · rw [hB]; exact SuccPath.append B hp
+  · rw [h1]
+    cases hp with
+    | base _ hs =>
+      exfalso
+      -- a successor argument has a lower part (the final `1`)
+      have hge := split_fst_ge (psi (succ s) z z) y
+      have hbpl := split_app (psi (succ s) z z) y
+      rw [hlo, app_z_right] at hbpl
+      have h1y : last y = one := by unfold isSucc at hs; simpa using hs
+      have hmem : one ∈ summands y := by rw [← h1y]; exact last_mem_of h3
+      rw [← hbpl] at hmem
+      apply hge _ hmem
+      show psi z z z < _; rw [psi_lt_psi_z_iff]; left
+      exact lt_of_le_of_lt (z_le s) (lt_succ_self s)
+    | arg _ _ hy => exact hy
+
 end Ytosk
