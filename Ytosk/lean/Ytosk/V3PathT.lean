@@ -6,7 +6,7 @@ D の各列の局所条件（`OLocal`・`VLocal`: 列の形と枠の条件）か
 - 貼り合わせの値の等式（右辺 = fsD(M の値, ζ)）
 が成り立つ（`t1_path`）。ζ は始点つきの鎖の項 gamS μ b_r seed m。
 -/
-import Ytosk.V3StepV
+import Ytosk.V3StepVG
 
 namespace Ytosk
 
@@ -37,8 +37,9 @@ def OLocal (M : Mat) (x : Nat) (ρ : Valn) (ζ μ vr br : T) (i : Nat) : Prop :=
 frame or a bump frame (the last child is the bump child, its last child is the only one in `D`). -/
 def VLocal (M : Mat) (x : Nat) (ρ : Valn) (ζ μ : T) (i : Nat) : Prop :=
   entry M 1 i ≠ 0 ∧ (∀ m, par M 1 i = some m → ¬ DepX M x false m) ∧
-  ((∃ k, entry M 2 i = 0 ∧ upg M i = some k ∧ k < x ∧ Single (ρ.v k) ∧ Single (fsD (ρ.v k) ζ) ∧
-      (∀ q ∈ summands (vOpt ρ (par M 1 i)), q < ρ.v k → q < fsD (ρ.v k) ζ)) ∨
+  ((∃ k, entry M 2 i = 0 ∧ upg M i = some k ∧ k < x ∧ Single (last (ρ.v k)) ∧
+      Single (fsD (last (ρ.v k)) ζ) ∧
+      (∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) → q < fsD (last (ρ.v k)) ζ)) ∨
    (∃ L K j k, entry M 2 i ≠ 0 ∧ children M i = L ++ [j] ∧ col M j = bump M i ∧
       children M j = K ++ [k] ∧ (∀ d ∈ K, ¬ DepX M x true d) ∧
       (∀ d ∈ L, ∀ e ∈ children M d, e < x ∧ ¬ DepX M x true e) ∧
@@ -57,11 +58,10 @@ def VLocal (M : Mat) (x : Nat) (ρ : Valn) (ζ μ : T) (i : Nat) : Prop :=
           (omega (sumN (K.map ρ.o ++ [ρ.o k]))))) ζ =
         omega (app (sumN (nzs (L.map (bumpTerm M ρ i))))
           (omega (sumN (K.map ρ.o ++ [fsD (ρ.o k) ζ])))) ∧
-      (∀ X ∈ [omega (app (sumN (nzs (L.map (bumpTerm M ρ i))))
-            (omega (sumN (K.map ρ.o ++ [ρ.o k])))),
-          omega (app (sumN (nzs (L.map (bumpTerm M ρ i))))
-            (omega (sumN (K.map ρ.o ++ [fsD (ρ.o k) ζ]))))],
-        add (vOpt ρ (par M 1 i)) X = X) ∧
+      (∀ q ∈ summands (vOpt ρ (par M 1 i)), q < omega (app (sumN (nzs (L.map (bumpTerm M ρ i))))
+            (omega (sumN (K.map ρ.o ++ [ρ.o k])))) →
+        q < omega (app (sumN (nzs (L.map (bumpTerm M ρ i))))
+            (omega (sumN (K.map ρ.o ++ [fsD (ρ.o k) ζ]))))) ∧
       (∀ s b c, sumN (K.map ρ.o ++ [ρ.o k]) = psi s b c →
         cof (sumN (K.map ρ.o ++ [ρ.o k])) = .big μ → lt μ s = true) ∧
       (∀ s b c, app (sumN (nzs (L.map (bumpTerm M ρ i))))
@@ -183,8 +183,8 @@ theorem t1_path (hC : Cons M ρ) (hG : Good3 M ρ) (hx : x + 1 = M.length)
       subst hkk
       have ihk := (ih (Or.inl hk)).1
       simp only [valB, cond_false] at ihk
-      have hst := stepV_upgA (ρN := ρN) (ζ := ζ) hC hx hi hk h1 h2 hu hpd hdk hVs hVs'
-        (le_of_lt (hok _ (hG.ot_v k (by omega)) ihk).2) (vOpt_ot hG (by omega)) hAV ihk
+      have hst := stepV_upgL (ρN := ρN) (ζ := ζ) hC hx hi hk h1 h2 hu hpd hdk hVs hVs'
+        (le_of_lt (hok _ hVs.1 (holeT_last_g ihk)).2) (vOpt_ot hG (by omega)) hAV ihk
       exact ⟨hst.2, fun _ => hst.1⟩
     · exact absurd h2 h2'
   | @vbump i j k h1 h2 hj hjb hk hdk ih =>
@@ -230,9 +230,9 @@ theorem t1_path (hC : Cons M ρ) (hG : Good3 M ρ) (hx : x + 1 = M.length)
           intro e he
           exact glue_o_lt ρ ρN ζ (hLnd d hd e he).1 (hLnd d hd e he).2
         · rfl
-      have hst := stepV_bump (ρN := ρN) (ζ := ζ) hC hx hi h1 h2 hch hjb hchj (hgo k hkx hdk) hK hL
+      have hst := stepV_bumpG (ρN := ρN) (ζ := ζ) hC hx hi h1 h2 hch hjb hchj (hgo k hkx hdk) hK hL
         (vOpt_glue hx hi hpd) hsK hpK hsk' (le_of_lt (hok _ (hG.ot_o k hkM) ihk).2) hsL hpp hpp'
-        hgt hgt' hωp hAbs ihk hpassG hpassP
+        hgt hgt' hωp (vOpt_ot hG (by omega)) hAbs ihk hpassG hpassP
       exact ⟨hst.2, fun _ => hst.1⟩
 
 end

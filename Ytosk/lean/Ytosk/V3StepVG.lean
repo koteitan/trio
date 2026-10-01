@@ -341,4 +341,33 @@ theorem stepV_upgL {M : Mat} {x i k : Nat} {ρ ρN : Valn} {ζ μ br vr : T} (hC
     rw [hlast', sf_ot (isOT_add hAot hV'.1), h2B]
   · rw [hvi]; exact holeT_app B (single_ne_z hV) (holeT_last_g hHk)
 
+/-- The value of an upgrade-type subscript: `v(i) = B ++ last v(U i)`. -/
+theorem upg_valL {M : Mat} {ρ : Valn} {i k : Nat} (hC : Cons M ρ) (hiM : i < M.length)
+    (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i = 0) (hu : upg M i = some k) (hV : Single (last (ρ.v k)))
+    (hAot : isOT (vOpt ρ (par M 1 i)) = true) : ∃ B, ρ.v i = app B (last (ρ.v k)) := by
+  obtain ⟨hVot, s, y, hsy⟩ := hV
+  obtain ⟨B, X, _, _, hadd⟩ := add_prefix s y (vOpt ρ (par M 1 i))
+  refine ⟨B, ?_⟩
+  rw [(hC i hiM).2]
+  unfold vRhs
+  rw [if_neg h1, if_pos h2, hu]
+  simp only
+  rw [hsy, sf_ot (isOT_add hAot (by rw [← hsy]; exact hVot)), hadd]
+
+theorem DiagAt.last_g {a b μ : T} : ∀ {t : T}, DiagAt a b μ t → DiagAt a b μ (last t)
+  | z, h => by cases h
+  | psi _ _ z, h => h
+  | psi _ _ (psi c d e), h => by
+    show DiagAt a b μ (last (psi c d e))
+    cases h with
+    | rest h' => exact DiagAt.last_g h'
+
+/-- The cofinality is that of the last summand. -/
+theorem cof_last_g : ∀ (t : T), cof (last t) = cof t
+  | z => rfl
+  | psi _ _ z => rfl
+  | psi _ _ (psi c d e) => by
+    show cof (last (psi c d e)) = cof (psi c d e)
+    exact cof_last_g (psi c d e)
+
 end Ytosk

@@ -151,15 +151,15 @@ theorem t1_hole (hC : Cons M ρ) (hG : Good3 M ρ) (hx : x + 1 = M.length)
       subst hkk
       obtain ⟨ihH, ihD⟩ := ih (Or.inl hk)
       simp only [valB, cond_false] at ihH ihD
-      obtain ⟨B, hvi⟩ := upg_val hC (by omega) h1 h2 hu hVs (vOpt_ot hG (by omega))
-      have hkz := holeT_ne_z ihH
+      obtain ⟨B, hvi⟩ := upg_valL hC (by omega) h1 h2 hu hVs (vOpt_ot hG (by omega))
+      have hkz := single_ne_z hVs
       refine ⟨?_, ?_⟩
       · show HoleT μ br vr (ρ.v i)
-        rw [hvi]; exact holeT_app B hkz ihH
+        rw [hvi]; exact holeT_app B hkz (holeT_last_g ihH)
       · intro hir
         show ∃ a', ¬ lt vr a' = true ∧ DiagAt a' br μ (ρ.v i)
         obtain ⟨a', ha', hDk⟩ := ihD (hS2 i k hir (DepX.vupg h1 h2 hu hdk) h2 hu)
-        rw [hvi]; exact ⟨a', ha', DiagAt.append B hkz hDk⟩
+        rw [hvi]; exact ⟨a', ha', DiagAt.append B hkz hDk.last_g⟩
     · exact absurd h2 h2'
   | @vbump i j k h1 h2 hj hjb hk hdk ih =>
     intro hix
@@ -191,8 +191,7 @@ theorem t1_hole (hC : Cons M ρ) (hG : Good3 M ρ) (hx : x + 1 = M.length)
         · exact Or.inr ⟨by omega, rfl⟩
       obtain ⟨ihH, ihD⟩ := ih hkpos
       simp only [valB, cond_true] at ihH ihD
-      have hvi := v_bump_value hC hiM h1 h2 hch hjb hchj hsK hpK hsL hpp hgt
-        (hAbs _ List.mem_cons_self)
+      have hvi := v_bump_valueG hC hiM h1 h2 hch hjb hchj hsK hpK hsL hpp hgt (vOpt_ot hG (by omega))
       set P := nzs (L.map (bumpTerm M ρ i)) with hPdef
       set G := sumN (K.map ρ.o ++ [ρ.o k]) with hGdef
       have hGot : isOT G = true := (sumN_dec _ hsK hpK).1
@@ -209,17 +208,22 @@ theorem t1_hole (hC : Cons M ρ) (hG : Good3 M ρ) (hx : x + 1 = M.length)
       have hpot : isOT (app (sumN P) (omega G)) = true := by
         rw [← sumN_snoc_dec hsP hpp]; exact (sumN_dec _ hsP hpp).1
       have hωGz : omega G ≠ z := single_ne_z (single_omega hGot)
+      have hWz : omega (app (sumN P) (omega G)) ≠ z := single_ne_z (single_omega hpot)
+      obtain ⟨B, hvi2⟩ : ∃ B, ρ.v i = app B (omega (app (sumN P) (omega G))) := by
+        obtain ⟨_, s0, y0, hW0⟩ := single_omega hpot
+        obtain ⟨B, X, _, _, hadd⟩ := add_prefix s0 y0 (vOpt ρ (par M 1 i))
+        exact ⟨B, by rw [hvi, hW0, hadd]⟩
       refine ⟨?_, ?_⟩
       · show HoleT μ br vr (ρ.v i)
-        rw [hvi]
+        rw [hvi2]
         have hHG : HoleT μ br vr G := by rw [hG]; exact holeT_app _ (single_ne_z hkS) ihH
-        exact holeT_omega hpot (holeT_app _ hωGz (holeT_omega hGot hHG hpassG)) hpassP
+        exact holeT_app B hWz (holeT_omega hpot (holeT_app _ hωGz (holeT_omega hGot hHG hpassG)) hpassP)
       · intro hir
         show ∃ a', ¬ lt vr a' = true ∧ DiagAt a' br μ (ρ.v i)
         obtain ⟨a', ha', hDk⟩ := ihD (hS3 i j k hir hj hjb hk hdk)
-        rw [hvi]
+        rw [hvi2]
         have hDG : DiagAt a' br μ G := by rw [hG]; exact DiagAt.append _ (single_ne_z hkS) hDk
-        exact ⟨a', ha', diag_omega hpot (DiagAt.append _ hωGz (diag_omega hGot hDG))⟩
+        exact ⟨a', ha', DiagAt.append B hWz (diag_omega hpot (DiagAt.append _ hωGz (diag_omega hGot hDG)))⟩
 
 end
 

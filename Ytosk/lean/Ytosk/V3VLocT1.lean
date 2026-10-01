@@ -34,19 +34,20 @@ theorem TPL_of_TPLo {M : Mat} {ρ : Valn} (h : TPLo M ρ) : TPL M ρ := by
   have hc : c ∈ children M i := by rw [hch]; simp
   exact h c (mem_children hc).2 s y hcv hl a hla hs hOa
 
-/-- **Value invariant AbsD**: at a bump frame whose bump term `W` has a hole, `v(P_1 i)` is absorbed by
-`W` and by `fsD(W, ψ_μ(Ω_{μ+1}))` (SRO より下の L9 網羅で 4861 枠、例外 0。SRO より上では崩れる例がある). -/
+/-- **Value invariant AbsD**: at a bump frame whose bump term `W` has a hole, the summands of `v(P_1 i)`
+absorbed by `W` are also absorbed by `fsD(W, ψ_μ(Ω_{μ+1}))` (`v(P_1 i)` itself need not be absorbed)
+(SRO より下の L9 網羅と、構造の不変条件を満たす L8 の標準形で 5853 枠、例外 0). -/
 def AbsD (M : Mat) (ρ : Valn) : Prop :=
   ∀ i, i < M.length → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → OHole (bumpW M ρ i) →
-    add (vOpt ρ (par M 1 i)) (bumpW M ρ i) = bumpW M ρ i ∧
-    add (vOpt ρ (par M 1 i)) (fsD (bumpW M ρ i) (etaOm (holeLev (bumpW M ρ i)))) =
-      fsD (bumpW M ρ i) (etaOm (holeLev (bumpW M ρ i)))
+    ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+      q < fsD (bumpW M ρ i) (etaOm (holeLev (bumpW M ρ i)))
 
-/-- **Value invariant AbsU**: at an upgrade `i → k` with a hole in `v(k)`, the summands of `v(P_1 i)` below
-`v(k)` stay below `fsD(v(k), ψ_μ(Ω_{μ+1}))` (SRO より下の L9 網羅で 161 件、例外 0). -/
+/-- **Value invariant AbsU**: at an upgrade `i → k` with a hole in the last summand of `v(k)`, the summands of
+`v(P_1 i)` below it stay below `fsD(last v(k), ψ_μ(Ω_{μ+1}))` (SRO より下の L9 網羅と、構造の不変条件を満たす
+L8 の標準形で 173 件、例外 0). -/
 def AbsU (M : Mat) (ρ : Valn) : Prop :=
-  ∀ i k, upg M i = some k → OHole (ρ.v k) → ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < ρ.v k →
-    q < fsD (ρ.v k) (etaOm (holeLev (ρ.v k)))
+  ∀ i k, upg M i = some k → OHole (last (ρ.v k)) → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
+    q < last (ρ.v k) → q < fsD (last (ρ.v k)) (etaOm (holeLev (last (ρ.v k))))
 
 /-! ## D の v の列の形 -/
 
@@ -296,19 +297,29 @@ variable {M : Mat} {x r : Nat} {ρ : Valn} {μ br vr : T} (hx : x + 1 = M.length
   (hC : Cons M ρ) (hG : Good3 M ρ) (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAD : AbsD M ρ)
 include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD
 
-/-- **At a bump frame of `D`, `v(i)` is the bump term** (given the hole of `o(k)`). -/
+/-- **At a bump frame of `D`, `v(i) = B ++ W`** with the bump term `W` (given the hole of `o(k)`). -/
 theorem v_bump_D {i j k : Nat} {L K : List Nat} (hi : i < x) (h1 : entry M 1 i ≠ 0)
     (h2 : entry M 2 i ≠ 0) (hch : children M i = L ++ [j]) (hjb : col M j = bump M i)
     (hchj : children M j = K ++ [k]) (hHk : HoleT μ br vr (ρ.o k)) :
     BumpData M ρ μ i L K j k ∧
-    ρ.v i = omega (app (sumN (nzs (L.map (bumpTerm M ρ i)))) (omega (sumN (K.map ρ.o ++ [ρ.o k])))) ∧
-    HoleT μ br vr (ρ.v i) := by
+    (∃ B, ρ.v i = app B (omega (app (sumN (nzs (L.map (bumpTerm M ρ i))))
+      (omega (sumN (K.map ρ.o ++ [ρ.o k])))))) ∧
+    HoleT μ br vr (ρ.v i) ∧ Single (last (ρ.v i)) := by
   have hBD : BumpData M ρ μ i L K j k := bump_data hC hG hKD hTD h1 h2 hch hjb hchj
   have hHW := holeT_bumpW hBD hHk
-  have hAbs := (hAD i (by omega) h1 h2 (by rw [hBD.W]; exact ohole_of_holeT hHW)).1
-  rw [hBD.W] at hAbs
-  have hvi := v_bump_value hC (by omega) h1 h2 hch hjb hchj hBD.sK hBD.pK hBD.sL hBD.pp hBD.gt hAbs
-  exact ⟨hBD, hvi, by rw [hvi]; exact hHW⟩
+  have hvi := v_bump_valueG hC (by omega) h1 h2 hch hjb hchj hBD.sK hBD.pK hBD.sL hBD.pp hBD.gt
+    (vOpt_ot hG (by omega))
+  have hsW := single_omega hBD.potW
+  obtain ⟨_, s0, y0, hW0⟩ := single_omega hBD.potW
+  obtain ⟨B, X, _, _, hadd⟩ := add_prefix s0 y0 (vOpt ρ (par M 1 i))
+  have hvi2 : ρ.v i = app B (omega (app (sumN (nzs (L.map (bumpTerm M ρ i))))
+      (omega (sumN (K.map ρ.o ++ [ρ.o k]))))) := by rw [hvi, hW0, hadd]
+  refine ⟨hBD, ⟨B, hvi2⟩, by rw [hvi2]; exact holeT_app B (single_ne_z hsW) hHW, ?_⟩
+  rw [hvi2, last_app B (single_ne_z hsW)]
+  have hl : last (omega (app (sumN (nzs (L.map (bumpTerm M ρ i)))) (omega (sumN (K.map ρ.o ++ [ρ.o k]))))) =
+      omega (app (sumN (nzs (L.map (bumpTerm M ρ i)))) (omega (sumN (K.map ρ.o ++ [ρ.o k])))) := by
+    rw [hW0]; rfl
+  rw [hl]; exact hsW
 
 variable (hrx : r < x) (hAr : Anc0 M r x) (hro : ρ.o r = psi vr br z)
   (hcb : cof br = .big μ) (hμr : μ = vr) (hbr : br ≠ z)
@@ -324,7 +335,7 @@ include hrx hAr hro hcb hμr hbr hHx hF1 hOS hS2 hS3
 theorem t1_hole0 :
     ∀ b i, DepX M x b i → (i < x ∨ (i = x ∧ b = true)) →
       HoleT μ br vr (valB ρ b i) ∧ DiagLe μ br vr r i (valB ρ b i) ∧
-      (b = false → entry M 2 i ≠ 0 → Single (ρ.v i)) := by
+      (b = false → entry M 2 i ≠ 0 → Single (last (ρ.v i))) := by
   have hμ : ¬ lt μ vr = true := by rw [hμr]; exact lt_irrefl' _
   intro b i hD
   induction hD with
@@ -438,15 +449,15 @@ theorem t1_hole0 :
       simp only [valB, cond_false] at ihH ihD
       have hk2 : entry M 2 k ≠ 0 := by have := upg_target_e2 hu; omega
       have hVs := ihS rfl hk2
-      obtain ⟨B, hvi⟩ := upg_val hC (by omega) h1 h2 hu hVs (vOpt_ot hG (by omega))
-      have hkz := holeT_ne_z ihH
+      obtain ⟨B, hvi⟩ := upg_valL hC (by omega) h1 h2 hu hVs (vOpt_ot hG (by omega))
+      have hkz := single_ne_z hVs
       refine ⟨?_, ?_, fun _ h => absurd h2 h⟩
       · show HoleT μ br vr (ρ.v i)
-        rw [hvi]; exact holeT_app B hkz ihH
+        rw [hvi]; exact holeT_app B hkz (holeT_last_g ihH)
       · intro hir
         show ∃ a', ¬ lt vr a' = true ∧ DiagAt a' br μ (ρ.v i)
         obtain ⟨a', ha', hDk⟩ := ihD (hS2 i k hir (DepX.vupg h1 h2 hu hdk) h2 hu)
-        rw [hvi]; exact ⟨a', ha', DiagAt.append B hkz hDk⟩
+        rw [hvi]; exact ⟨a', ha', DiagAt.append B hkz hDk.last_g⟩
     · exact absurd h2 h2'
   | @vbump i j k h1 h2 hj hjb hk hdk ih =>
     intro hix
@@ -476,9 +487,9 @@ theorem t1_hole0 :
         · exact Or.inr ⟨by omega, rfl⟩
       obtain ⟨ihH, ihD, _⟩ := ih hkpos
       simp only [valB, cond_true] at ihH ihD
-      obtain ⟨hBD, hvi, hHv⟩ := v_bump_D hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hi h1 h2
-        hch hjb hchj ihH
-      refine ⟨hHv, ?_, fun _ _ => by rw [hvi]; exact single_omega hBD.potW⟩
+      obtain ⟨hBD, ⟨B, hvi⟩, hHv, hSl⟩ := v_bump_D hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hi
+        h1 h2 hch hjb hchj ihH
+      refine ⟨hHv, ?_, fun _ _ => hSl⟩
       intro hir
       show ∃ a', ¬ lt vr a' = true ∧ DiagAt a' br μ (ρ.v i)
       obtain ⟨a', ha', hDk⟩ := ihD (hS3 i j k hir hj hjb hk hdk)
@@ -488,7 +499,8 @@ theorem t1_hole0 :
       have hDG : DiagAt a' br μ (sumN (K.map ρ.o ++ [ρ.o k])) := by
         rw [sumN_snoc_dec hBD.sK hBD.pK]; exact DiagAt.append _ (single_ne_z hkS) hDk
       have hωGz : omega (sumN (K.map ρ.o ++ [ρ.o k])) ≠ z := single_ne_z (single_omega hGot)
-      exact ⟨a', ha', diag_omega hBD.potW (DiagAt.append _ hωGz (diag_omega hGot hDG))⟩
+      exact ⟨a', ha', DiagAt.append B (single_ne_z (single_omega hBD.potW))
+        (diag_omega hBD.potW (DiagAt.append _ hωGz (diag_omega hGot hDG)))⟩
 
 end
 
@@ -873,14 +885,15 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
     have hk2 : entry M 2 (i + 1) ≠ 0 := by have := upg_target_e2 hu; omega
     have hVs := hSk rfl hk2
     have hkM : i + 1 < M.length := by omega
+    have hHl := holeT_last_g hHk
     refine ⟨i + 1, h2, hu, hk, hVs, ?_, ?_⟩
-    · apply single_fsD hVs.2 (holeT_not_succ hHk)
-        (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hHk)) ⟨μ, X, hζ⟩
-      exact (hok _ (hG.ot_v _ hkM) hHk).1
+    · apply single_fsD hVs.2 (holeT_not_succ hHl)
+        (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hHl)) ⟨μ, X, hζ⟩
+      exact (hok _ hVs.1 hHl).1
     · intro t ht hlt
-      have hOk := ohole_of_holeT hHk
+      have hOk := ohole_of_holeT hHl
       have h0 := hAU i (i + 1) hu hOk t ht hlt
-      rw [holeLev_holeT hHk] at h0
+      rw [holeLev_holeT hHl] at h0
       exact lt_of_lt_of_le h0 (fsD_mono_eta hOk hζΩ)
   · -- the bump frame
     right
@@ -892,7 +905,7 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
       · exact Or.inl h
       · exact Or.inr ⟨by omega, rfl⟩)
     simp only [valB, cond_true] at hHk
-    obtain ⟨hBD, _, _⟩ := v_bump_D hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hi h1 h2
+    obtain ⟨hBD, _, _, _⟩ := v_bump_D hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hi h1 h2
       hch hjb hchj hHk
     set P := nzs (L.map (bumpTerm M ρ i)) with hPdef
     set G := sumN (K.map ρ.o ++ [ρ.o k]) with hGdef
@@ -958,10 +971,9 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
         fsD_app _ hωGz ζ, hωGfs]
     -- absorption
     have hOW : OHole (bumpW M ρ i) := by rw [hBD.W]; exact ohole_of_holeT hHW
-    obtain ⟨hA1, hA2⟩ := hAD i (by omega) h1 h2 hOW
-    rw [hBD.W] at hA1 hA2
+    have hA2 := hAD i (by omega) h1 h2 hOW
+    rw [hBD.W] at hA2
     rw [holeLev_holeT hHW] at hA2
-    have hsW' : ∃ s y, omega (app (sumN P) (omega G')) = psi s y z := omega_single _
     refine ⟨L, K, j, k, h2, hch, hjb, hchj, hKnd, hLnd, hfkS, hBD.sK, hBD.pK, hBD.sL, hBD.pp, ?_,
       hBD.gt, ?_, hωp, ?_, hBD.passG, hBD.passP⟩
     · -- pairwise with `ω^{G'}`
@@ -975,14 +987,9 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
       · exact hBD.gt t (List.mem_append_left _ ht)
       · rw [List.mem_singleton] at ht; rw [ht, ← omega_z]
         exact omega_lt_omega rfl hG'ot (lt_of_le_of_ne (z_le _) (Ne.symm hG'z))
-    · intro Y hY
-      simp only [List.mem_cons, List.mem_nil_iff, or_false] at hY
-      rcases hY with rfl | rfl
-      · exact hA1
-      · rw [← hωp]
-        exact add_absorb_mono hA2 (fsD_mono_eta (ohole_of_holeT hHW) hζΩ)
-          (fsD_single_of_holeT hHW (omega_single _) ⟨μ, _, rfl⟩)
-          (by rw [hωp]; exact hsW')
+    · intro t ht hlt
+      rw [← hωp]
+      exact lt_of_lt_of_le (hA2 t ht hlt) (fsD_mono_eta (ohole_of_holeT hHW) hζΩ)
 
 end
 
@@ -1247,7 +1254,7 @@ include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hox hF1 hOS
 
 /-- **After `r`, the values on `D` have cofinality `Ω_{μ+1}`** (without `VLocal`). -/
 theorem t1_cof0 : ∀ b i, DepX M x b i → r < i → (i < x ∨ (i = x ∧ b = true)) →
-    cof (valB ρ b i) = .big μ ∧ (b = false → entry M 2 i ≠ 0 → Single (ρ.v i)) := by
+    cof (valB ρ b i) = .big μ ∧ (b = false → entry M 2 i ≠ 0 → Single (last (ρ.v i))) := by
   intro b i hD
   induction hD with
   | leaf =>
@@ -1333,10 +1340,10 @@ theorem t1_cof0 : ∀ b i, DepX M x b i → r < i → (i < x ∨ (i = x ∧ b = 
       simp only [valB, cond_false] at ihk
       have hk2 : entry M 2 k ≠ 0 := by have := upg_target_e2 hu; omega
       have hVs := ihS rfl hk2
-      obtain ⟨B, hvi⟩ := upg_val hC (by omega) h1 h2 hu hVs (vOpt_ot hG (by omega))
+      obtain ⟨B, hvi⟩ := upg_valL hC (by omega) h1 h2 hu hVs (vOpt_ot hG (by omega))
       refine ⟨?_, fun _ h => absurd h2 h⟩
       show cof (ρ.v i) = _
-      rw [hvi, cof_app B (cof_big_ne_z ihk), ihk]
+      rw [hvi, cof_app B (single_ne_z hVs), cof_last_g, ihk]
     · exact absurd h2 h2'
   | @vbump i j k h1 h2 hj hjb hk hdk ih =>
     intro hri hix
@@ -1369,17 +1376,17 @@ theorem t1_cof0 : ∀ b i, DepX M x b i → r < i → (i < x ∨ (i = x ∧ b = 
         · exact Or.inr ⟨by omega, rfl⟩
       obtain ⟨ihk, _⟩ := ih (by omega) hkpos
       simp only [valB, cond_true] at ihk
-      obtain ⟨hBD, hvi, _⟩ := v_bump_D (br := z) (vr := z) hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD
-        hTD hAD hi h1 h2 hch hjb hchj (Or.inl ihk)
+      obtain ⟨hBD, ⟨B, hvi⟩, _, hSl⟩ := v_bump_D (br := z) (vr := z) hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC
+        hG hKD hTD hAD hi h1 h2 hch hjb hchj (Or.inl ihk)
       have hGot := (sumN_dec _ hBD.sK hBD.pK).1
       have hkS : Single (ρ.o k) := hBD.sK _ (List.mem_append_right _ (List.mem_singleton_self _))
       have hcG : cof (sumN (K.map ρ.o ++ [ρ.o k])) = .big μ := by
         rw [sumN_snoc_dec hBD.sK hBD.pK, cof_app _ (single_ne_z hkS)]; exact ihk
       have hcω := cof_omega_pass hGot hcG hBD.passG
       have hωGz := cof_big_ne_z hcω
-      refine ⟨?_, fun _ _ => by rw [hvi]; exact single_omega hBD.potW⟩
+      refine ⟨?_, fun _ _ => hSl⟩
       show cof (ρ.v i) = _
-      rw [hvi]
+      rw [hvi, cof_app B (single_ne_z (single_omega hBD.potW))]
       exact cof_omega_pass hBD.potW (by rw [cof_app _ hωGz]; exact hcω) hBD.passP
 
 end

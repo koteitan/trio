@@ -331,9 +331,9 @@ theorem t1_cof : ∀ b i, DepX M x b i → r < i → (i < x ∨ (i = x ∧ b = t
             ((chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depX_chgX hdk)).1 rfl hk) hk hu hA hki).elim
       have ihk := ih hrk (Or.inl hk)
       simp only [valB, cond_false] at ihk
-      obtain ⟨B, hvi⟩ := upg_val hC (by omega) h1 h2 hu hVs (vOpt_ot hG (by omega))
+      obtain ⟨B, hvi⟩ := upg_valL hC (by omega) h1 h2 hu hVs (vOpt_ot hG (by omega))
       show cof (ρ.v i) = _
-      rw [hvi, cof_app B (cof_big_ne_z ihk), ihk]
+      rw [hvi, cof_app B (single_ne_z hVs), cof_last_g, ihk]
     · exact absurd h2 h2'
   | @vbump i j k h1 h2 hj hjb hk hdk ih =>
     intro hri hix
@@ -367,8 +367,7 @@ theorem t1_cof : ∀ b i, DepX M x b i → r < i → (i < x ∨ (i = x ∧ b = t
         · exact Or.inr ⟨by omega, rfl⟩
       have ihk := ih (by omega) hkpos
       simp only [valB, cond_true] at ihk
-      have hvi := v_bump_value hC hiM h1 h2 hch hjb hchj hsK hpK hsL hpp hgt
-        (hAbs _ List.mem_cons_self)
+      have hvi := v_bump_valueG hC hiM h1 h2 hch hjb hchj hsK hpK hsL hpp hgt (vOpt_ot hG (by omega))
       set P := nzs (L.map (bumpTerm M ρ i)) with hPdef
       set G := sumN (K.map ρ.o ++ [ρ.o k]) with hGdef
       have hGot : isOT G = true := (sumN_dec _ hsK hpK).1
@@ -386,7 +385,11 @@ theorem t1_cof : ∀ b i, DepX M x b i → r < i → (i < x ∨ (i = x ∧ b = t
         rw [← sumN_snoc_dec hsP hpp]; exact (sumN_dec _ hsP hpp).1
       have hωGz : omega G ≠ z := single_ne_z (single_omega hGot)
       show cof (ρ.v i) = _
-      rw [hvi]
+      obtain ⟨B, hvi2⟩ : ∃ B, ρ.v i = app B (omega (app (sumN P) (omega G))) := by
+        obtain ⟨_, s0, y0, hW0⟩ := single_omega hpot
+        obtain ⟨B, X, _, _, hadd⟩ := add_prefix s0 y0 (vOpt ρ (par M 1 i))
+        exact ⟨B, by rw [hvi, hW0, hadd]⟩
+      rw [hvi2, cof_app B (single_ne_z (single_omega hpot))]
       have hcG : cof G = .big μ := by rw [hG, cof_app _ (single_ne_z hkS)]; exact ihk
       have hcω := cof_omega_pass hGot hcG hpassG
       exact cof_omega_pass hpot (by rw [cof_app _ hωGz]; exact hcω) hpassP
