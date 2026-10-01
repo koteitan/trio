@@ -1484,3 +1484,11 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - DropRes: argT・UpgAbsX は例外 0。VSmallNew 1 件、BWS′ 3 件（k = x の唯一の子の枝）、BumpAbsC 4 件（崩れが弱く上へ伝わる場合）、seed 1 件、hG′・hU 2 件。
 - どの例でも落とす補題の結論は成り立つ。崩れているのは証明の道筋（VSmall 型の仮定、弱い枝に入る条件）。
 - 修理: VSmall 系（po_of/pv_of の VSmallF・VSmallNew と seed）は omega-lhd、のりしろ系（BWS′ の k = x の枝、BumpAbsC を弱い閉包 Wk で除く）は bump-frame。
+
+### t = 2 の段 1 が hT2 の形に（2026-10-02、strict-r、V3T2Top `t2_drops`、緑）
+
+- t2_drops: Inv3・Res3・Res3T2 と、n ≥ 2 の M[n] の評価の存在から ∀ n, DropsAt M ρ n。
+  - n = 1（M.take x）: 4 つの場合（q ≠ r、x − 1 が x へ上げる、上げない、k < x へ上げる）。n = 0: drop_n0_gen。n ≥ 2: 前からの 3 つの主定理。
+  - 吸収は Res3.drop の UpgAbsX・BumpAbsC から。
+- 残り: Res3T2（構造と D の形の事実、drop1 の値の事実、N の事実。A・B で例外 0、C′ では未測定）。
+- M[n] の評価の存在は HInvE から（V3IndV、01b21cc6）: expand_ne_SRO（標準形の展開は SRO でない。SInvX は展開で保たれ UAB を与えるが、SRO は UAB を満たさない）と inv_expand_of_E。
