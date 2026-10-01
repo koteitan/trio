@@ -745,4 +745,117 @@ theorem summands_mulT_eq {x : T} (hx : ∃ s y, x = psi s y z) :
     simp only [mulT, app_psi, app_z, summands, List.replicate_succ]
     rw [summands_mulT_eq ⟨s, y, rfl⟩ n]
 
+section
+variable {M : Mat} {j0 Lb n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+  (hA : Anc0 M j0 (j0 + Lb)) {g : Nat} (hg : par M 0 j0 = some g) (hn : 1 ≤ n)
+  (hx0 : par M 0 (j0 + Lb) = some j0)
+  (hpre : ∀ c, c < j0 + Lb → par (TRIO.gexp M j0 Lb 0 0 n) 0 c = par M 0 c)
+  (hF : F1 (TRIO.gexp M j0 Lb 0 0 n)) (hG : Good2 M)
+include hlen hLb hA hg hn hx0 hpre hF hG
+
+theorem vr_gexp_pre_t0 {j : Nat} (hj : j < j0 + Lb) :
+    vr (TRIO.gexp M j0 Lb 0 0 n) j = vr M j := by
+  rw [vr_eq_nT hF, vr_eq_nT hG.f1]
+  congr 1
+  rcases Nat.lt_or_ge j j0 with h | h
+  · unfold entry; rw [TRIO.gexp_getD_low hlen h]
+  · have := entry1_gexp_d1z (d0 := 0) hlen (k := 0) (q := j - j0) (show 0 < n by omega) (by omega)
+    simpa [show j0 + (j - j0) = j by omega] using this
+
+/-- **The value of `g` after a `t = 0` expansion**: `n` copies of `ψ_v(b)` after the earlier children. -/
+theorem o2r_gexp_g_t0 (hx1 : entry M 1 (j0 + Lb) = 0) :
+    o2r (TRIO.gexp M j0 Lb 0 0 n) g =
+      psi (vr M g) (spArg (vr M g) (bst M g j0) (mulT (psi (vr M j0) (bst M j0 (j0 + Lb)) z) n)) z := by
+  have hx : j0 + Lb + 1 = M.length := hlen
+  have hgj := par_lt M 0 j0 g hg
+  have hle := children_le_of_anc_last hA hx hg
+  have hcmem : j0 ∈ children M g := mem_children_iff.mpr ⟨by omega, hg⟩
+  have hsplit := split_last_max _ j0 (children_sorted M g) hcmem hle
+  set C := (children M g).filter (fun d => decide (d < j0)) with hCdef
+  set c' := psi (vr M j0) (bst M j0 (j0 + Lb)) z with hc'def
+  -- values
+  have hA1 : ∀ j, j < j0 + Lb → vr (TRIO.gexp M j0 Lb 0 0 n) j = vr M j := fun j hj =>
+    vr_gexp_pre_t0 hlen hLb hA hg hn hx0 hpre hF hG hj
+  have hA2 : ∀ h, h < j0 + Lb → ¬ Anc0 M h (j0 + Lb) →
+      children (TRIO.gexp M j0 Lb 0 0 n) h = children M h := fun h hh hnA =>
+    children_gexp_off_t0 hlen hLb hA hg hn hx0 hpre hh hnA
+  have hoff : ∀ d ∈ C, o2r (TRIO.gexp M j0 Lb 0 0 n) d = o2r M d := by
+    intro d hd
+    rw [hCdef, List.mem_filter] at hd
+    have hdc : d < j0 := by simpa using hd.2
+    have hdp := mem_children_iff.mp hd.1
+    apply o2r_off_gen' hx hA1 hA2 d (by omega)
+    intro hdA
+    rcases anc0_total hdA hA with h' | h'
+    · have := (anc0_par h' (by omega) hg).le; have := par_lt M 0 d g hdp.2; omega
+    · have := h'.le; omega
+  have hr : o2r (TRIO.gexp M j0 Lb 0 0 n) j0 = c' := by
+    have := o2r_gexp_r_t0 hlen hLb hA hg hF hG hn hx0
+    simpa using this
+  have hroots : ∀ k, k < n - 1 → o2r (TRIO.gexp M j0 Lb 0 0 n) (j0 + ((k + 1) * Lb + 0)) = c' := by
+    intro k hk
+    rw [o2r_gexp_copy_t0 hlen hLb hA hg hF (k := k + 1) (by omega) 0 hLb]
+    simpa using hr
+  have hvals : (children (TRIO.gexp M j0 Lb 0 0 n) g).map (o2r (TRIO.gexp M j0 Lb 0 0 n)) =
+      C.map (o2r M) ++ List.replicate n c' := by
+    rw [children_gexp_g_t0 hlen hLb hA hg hn hx0 hpre, hsplit, List.map_append, List.map_append,
+      List.map_congr_left hoff, List.map_cons, List.map_nil, hr, List.map_map]
+    have : (List.range (n - 1)).map ((o2r (TRIO.gexp M j0 Lb 0 0 n)) ∘ fun k => j0 + ((k + 1) * Lb + 0)) =
+        List.replicate (n - 1) c' := by
+      rw [List.map_congr_left (fun k hk => by
+        simp only [Function.comp]; exact hroots k (List.mem_range.mp hk))]
+      simp
+    rw [this, List.append_assoc]
+    congr 1
+    rw [show n = (n - 1) + 1 by omega, List.replicate_succ]
+    rfl
+  -- `o_M(r) = ψ_v(b + 1) > c'`
+  have hoj0 : o2r M j0 = psi (vr M j0) (app (bst M j0 (j0 + Lb)) one) z := by
+    have h1 := o2r_frame hG hx (Anc0.refl (j0 + Lb)) hx0
+    have hox : o2r M (j0 + Lb) = one := by
+      rw [o2r_leaf hx (isOT_vr hG.f1 _), vr_eq_nT hG.f1]
+      rw [hx1]; rfl
+    rw [h1, hox, show one = psi z z z from rfl, spArg_single]
+    unfold step
+    rw [if_neg (by simp [lt])]
+    congr 1
+    apply add_eq_app_of_ge ⟨_, _, rfl⟩
+    have := bst_summands_ge hG hx (Anc0.refl (j0 + Lb)) hx0
+    rw [hox] at this; exact this
+  have hcot : isOT (psi (vr M j0) (app (bst M j0 (j0 + Lb)) one) z) = true := by
+    rw [← hoj0]; exact hG.ot j0
+  have hc'ot : isOT c' = true := by
+    have h1 := isOT_arg hcot
+    rw [hc'def, isOT_psi_iff]; refine ⟨isOT_sub hcot, isOT_app_left h1, rfl, z_le _, ?_⟩
+    intro q hq
+    have h2 := comps_lt hcot q (by rw [comps_app]; exact List.mem_append_left _ hq)
+    exact comps_lt_prefix hq h2
+  have hc'lt : c' < o2r M j0 := by
+    rw [hoj0, hc'def, psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, lt_app_of (by simp [one])⟩
+  have hdM := hG.dec g
+  simp only [hsplit, List.map_append, List.map_cons, List.map_nil] at hdM
+  have hdM' := List.pairwise_append.mp hdM
+  have hdec : (C.map (o2r M) ++ List.replicate n c').Pairwise (fun a b => b ≤ a) := by
+    rw [List.pairwise_append]
+    refine ⟨hdM'.1, List.pairwise_replicate.mpr (Or.inr (le_refl _)), ?_⟩
+    intro a ha b hb
+    rw [List.eq_of_mem_replicate hb]
+    exact le_of_lt (lt_of_lt_of_le hc'lt (hdM'.2.2 a ha _ (List.mem_singleton_self _)))
+  have hsing : ∀ t ∈ C.map (o2r M) ++ List.replicate n c', Single t := by
+    intro t ht
+    rcases List.mem_append.mp ht with ht | ht
+    · obtain ⟨i, _, rfl⟩ := List.mem_map.mp ht; exact single_o2r hG i
+    · rw [List.eq_of_mem_replicate ht]; exact ⟨hc'ot, _, _, rfl⟩
+  obtain ⟨hSot, hSsum⟩ := sumN_dec _ hsing hdec
+  have hS1 := sumN_dec (C.map (o2r M)) (fun t ht => hsing t (List.mem_append_left _ ht)) hdM'.1
+  have heq : sumN (C.map (o2r M) ++ List.replicate n c') =
+      app (sumN (C.map (o2r M))) (mulT c' n) :=
+    eq_of_summands (by rw [hSsum, summands_app, hS1.2, summands_mulT_eq ⟨_, _, rfl⟩])
+  rw [o2r_eq, hvals, hA1 g (by omega)]
+  show add (sp (sf (vr M g)) z (sf _)) (sf z) = _
+  rw [sf_ot (isOT_vr hG.f1 g), sf_ot hSot, sp_eq_spArg, heq, spArg_app]
+  rfl
+
+end
+
 end Ytosk
