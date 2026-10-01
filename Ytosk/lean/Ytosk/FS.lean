@@ -741,13 +741,13 @@ theorem comps_mu {u : T} : ∀ {b μ g c0 : T}, isOT b = true → cof b = .big �
         | omega => rw [hcb] at h; cases h
 
 /-- **Lemma 3.6.** -/
-theorem lhd_fs : ∀ {t η : T}, ValidLt t η → Lhd η (fs t η) t
-  | z, η, h => by simp [ValidLt, cof] at h
-  | psi a b (psi c d e), η, h => by
+theorem lhd_fs : ∀ {t η : T}, isOT t = true → ValidLt t η → Lhd η (fs t η) t
+  | z, η, _, h => by simp [ValidLt, cof] at h
+  | psi a b (psi c d e), η, hot, h => by
     have h' : ValidLt (psi c d e) η := by simpa [ValidLt, cof] using h
-    have := lhd_app (psi a b z) (lhd_fs h')
+    have := lhd_app (psi a b z) (lhd_fs (isOT_rest hot) h')
     simpa using this
-  | psi a b z, η, h => by
+  | psi a b z, η, hot, h => by
     unfold ValidLt at h
     unfold fs
     by_cases hb : b = z
@@ -768,7 +768,7 @@ theorem lhd_fs : ∀ {t η : T}, ValidLt t η → Lhd η (fs t η) t
           refine ⟨h', fun u c _ _ x hx => ⟨x, List.mem_append_right _ (List.mem_cons_of_mem _ hx), le_refl _⟩⟩
         · rw [if_neg hs]
           rw [if_neg hs] at h
-          have ih := lhd_fs (t := a) h
+          have ih := lhd_fs (t := a) (isOT_sub hot) h
           refine ⟨by rw [psi_lt_psi_z_iff]; exact Or.inl ih.1, fun u c h1 h2 => ?_⟩
           obtain ⟨v, c0, c1, rfl, hv1, hv2⟩ := between_sub h1 h2
           intro x hx
@@ -807,19 +807,106 @@ theorem lhd_fs : ∀ {t η : T}, ValidLt t η → Lhd η (fs t η) t
           by_cases hμ : lt μ a = true
           · rw [if_pos hμ]; rw [if_pos hμ] at h
             have h' : ValidLt b η := by unfold ValidLt; rw [hcb]; exact h
-            exact lhd_psi a (lhd_fs h')
+            exact lhd_psi a (lhd_fs (isOT_arg hot) h')
           · rw [if_neg hμ]
-            sorry
+            let γ : Nat → T := fun k => Nat.rec (motive := fun _ => T) z (fun _ g => psi μ (fs b g) z) k
+            show Lhd η (psi a (fs b (γ (count η))) z) (psi a b z)
+            have hbot := isOT_arg hot
+            have hγs : ∀ k, γ (k + 1) = psi μ (fs b (γ k)) z := fun k => rfl
+            have F1 : ∀ k, γ k < psi (succ μ) z z := by
+              intro k; cases k with
+              | zero => exact T.z_lt_psi _ _ _
+              | succ k => rw [hγs]; rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self μ)
+            have F2 : ∀ k, ValidLt b (γ k) := fun k => by unfold ValidLt; rw [hcb]; exact F1 k
+            have F3 : ∀ k, γ k < γ (k + 1) := by
+              intro k; induction k with
+              | zero => rw [hγs]; exact T.z_lt_psi _ _ _
+              | succ k ih =>
+                rw [hγs, hγs (k + 1)]; rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fs_mono hcb ih⟩
+            have F4 : ∀ j k, j ≤ k → fs b (γ j) ≤ fs b (γ k) := by
+              intro j k hjk
+              induction hjk with
+              | refl => exact le_refl _
+              | step _ ih => exact le_trans ih (le_of_lt (fs_mono hcb (F3 _)))
+            have F5 : ∀ k, psi μ z z ≤ γ (k + 1) := by
+              intro k; rw [hγs, le_iff]
+              rcases (le_iff _ _).mp (z_le (fs b (γ k))) with h4 | h4
+              · left; rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, h4⟩
+              · right; rw [← h4]
+            have IH : ∀ k, Lhd (γ k) (fs b (γ k)) b := fun k => lhd_fs hbot (F2 k)
+            refine ⟨by rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fs_lt (F2 _)⟩, fun u c h1 h2 => ?_⟩
+            obtain ⟨c0, c1, rfl, hc1, hc2⟩ := between_psi h1 h2
+            intro x hx
+            simp only [comps, List.mem_append] at hx
+            rcases hx with hx | hx
+            · split at hx
+              · simp at hx
+              · rename_i hau
+                have hin : ∀ w ∈ comps u c0, w ∈ comps u (psi a c0 c1) := fun w hw =>
+                  mem_comps_psi_arg hau hw
+                have hc0in : c0 ∈ comps u (psi a c0 c1) := by simp [comps, hau]
+                simp only [List.mem_cons, List.mem_append] at hx
+                rcases hx with rfl | hx | hx
+                · exact ⟨c0, List.mem_append_left _ hc0in, hc1⟩
+                · rcases (le_iff _ _).mp hc1 with hlt | heq
+                  · have D : ∀ k, k ≤ count η → ∀ x ∈ comps u (fs b (γ k)),
+                        ∃ y ∈ comps u (psi a c0 c1) ++ Gc u η, x ≤ y := by
+                      intro k
+                      induction k with
+                      | zero =>
+                        intro _ x hx
+                        have hk : fs b (γ 0) < c0 := lt_of_le_of_lt (F4 _ _ (Nat.zero_le _)) hlt
+                        obtain ⟨y, hy, hxy⟩ := (IH 0).2 u c0 hk hc2 x hx
+                        rcases List.mem_append.mp hy with hy | hy
+                        · exact ⟨y, List.mem_append_left _ (hin y hy), hxy⟩
+                        · simp only [Gc, List.mem_cons] at hy
+                          rcases hy with rfl | hy
+                          · exact ⟨z, List.mem_append_right _ (by simp [Gc]), hxy⟩
+                          · have h0 : γ 0 = z := rfl
+                            rw [h0] at hy; simp [comps] at hy
+                      | succ j ihj =>
+                        intro hj x hx
+                        have hk : fs b (γ (j + 1)) < c0 := lt_of_le_of_lt (F4 _ _ hj) hlt
+                        obtain ⟨y, hy, hxy⟩ := (IH (j + 1)).2 u c0 hk hc2 x hx
+                        rcases List.mem_append.mp hy with hy | hy
+                        · exact ⟨y, List.mem_append_left _ (hin y hy), hxy⟩
+                        · simp only [Gc, List.mem_cons] at hy
+                          rcases hy with rfl | hy
+                          · exact ⟨z, List.mem_append_right _ (by simp [Gc]), hxy⟩
+                          · rw [hγs] at hy
+                            simp only [comps, List.mem_append] at hy
+                            rcases hy with hy | hy
+                            · split at hy
+                              · simp at hy
+                              · rename_i hμu
+                                simp only [List.mem_cons, List.mem_append] at hy
+                                rcases hy with rfl | hy | hy
+                                · have : fs b (γ j) < c0 :=
+                                    lt_of_le_of_lt (F4 _ _ (by omega)) hlt
+                                  exact ⟨c0, List.mem_append_left _ hc0in, le_trans hxy (le_of_lt this)⟩
+                                · obtain ⟨y', hy', hyy'⟩ := ihj (by omega) y hy
+                                  exact ⟨y', hy', le_trans hxy hyy'⟩
+                                · have hn : 1 ≤ count η := by omega
+                                  obtain ⟨m, hm⟩ : ∃ m, count η = m + 1 := ⟨count η - 1, by omega⟩
+                                  have hg1 : psi μ z z ≤ γ (count η) := by rw [hm]; exact F5 m
+                                  have := comps_mu hbot hcb hg1 (F1 _) hc1 hc2 hμu y hy
+                                  exact ⟨y, List.mem_append_left _ (hin y this), hxy⟩
+                            · simp at hy
+                    exact D (count η) (Nat.le_refl _) x hx
+                  · rw [heq] at hx
+                    exact ⟨x, List.mem_append_left _ (hin x hx), le_refl _⟩
+                · exact ⟨x, List.mem_append_left _ (by simp [comps, hau, hx]), le_refl _⟩
+            · simp at hx
         | zero =>
           rw [hcb] at h; exact absurd h (by simp)
         | succ =>
           have h' : ValidLt b η := by unfold ValidLt; rw [hcb]; rw [hcb] at h; exact h
           simp only
-          exact lhd_psi a (lhd_fs h')
+          exact lhd_psi a (lhd_fs (isOT_arg hot) h')
         | omega =>
           have h' : ValidLt b η := by unfold ValidLt; rw [hcb]; trivial
           simp only
-          exact lhd_psi a (lhd_fs h')
+          exact lhd_psi a (lhd_fs (isOT_arg hot) h')
 
 #eval [psi z (psi z one z) z, psi z (psi (psi one z z) z z) z].map fun t =>
   ((List.range 3).map fun n => str (fs t (natT n)))
