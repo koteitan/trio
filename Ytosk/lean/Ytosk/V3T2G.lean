@@ -235,7 +235,8 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ 
     (hWo : ∀ i c, c ∈ children M i → Counted M i c → W true c → S true i)
     (hWb : ∀ i j c, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → j ∈ children M i → col M j = bump M i →
       c ∈ children M j → W true c → S false i)
-    (hDvNil : ∀ c, c < bnd → ¬ W true c → DepS M S false c → CL M c = [])
+    (hDvNil : ∀ c, c < bnd → ¬ W true c → ¬ S true c → DepS M S false c → CL M c = [])
+    (hDvNilS : ∀ c, c < bnd → ¬ W true c → S true c → DepS M S false c → CL N c = [])
     (hCLnil : ∀ c, c < bnd → ¬ W true c → CL M c = [] → CL N c = [])
     (hOS : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S true i → ¬ DepS M S false i →
       ∃ L c R, children M i = L ++ c :: R ∧ Counted M i c ∧ DepS M S true c ∧
@@ -277,7 +278,11 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ 
     (fun i j hi hj hjx hjb => DepS.seed (hbjS i j hi hj hjx hjb))
     (fun i j k hi hj hjx hjb hk hkx => DepS.seed (hbkS i j k hi hj hjx hjb hk hkx))
   have hdl := deps_lhd_genW (S := S) (W := W) (bnd := bnd) hC hG hCN hGN hRM (by omega) hbN
-    hF hVS hTD hKD hoff hWv hWo hWb (fun b i hs hi hd ih => hSeed b i hs hi hd hoff ih) hDvNil hCLnil
+    hF hVS hTD hKD hoff hWv hWo hWb (fun b i hs hi hd ih => hSeed b i hs hi hd hoff ih) hDvNil
+    (fun c hc hw hd => by
+      by_cases hs : S true c
+      · exact hDvNilS c hc hw hs hd
+      · exact hCLnil c hc hw (hDvNil c hc hw hs hd)) hCLnil
     (by
       intro i hi hns hnw hD hv
       obtain ⟨Lp, c, R, hch', hcnt', hdc, hR, hL⟩ := hOS i hi hns hnw hD hv

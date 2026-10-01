@@ -320,7 +320,7 @@ theorem t2_qn_take (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (hR01 : R01 M)
       have h' := (mem_children_iff.mp hc).2; rw [hc', hpq] at h'; cases h'
       have := e2_of_col (show col M _ = (entry M 0 i + 1, entry M 1 i, 1) from hjb)
       omega)
-    (fun c hc _ hd => hDvNil c hc hd)
+    (fun c hc _ _ hd => hDvNil c hc hd) (fun c hc hw _ hd => hCLnil c hc hw (hDvNil c hc hd))
     hCLnil hOS hVSh hRD hWle hAbs hVNN hSeed
 
 end
@@ -463,7 +463,7 @@ theorem t2_sv_take (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
     (fun j hj0 hj => by rw [hlT] at hj; omega)
     (by have := anc0_e0_lt hA (by omega); omega)
     (fun i h => h.elim) (fun i h => h) (fun i c _ _ h => h.elim) (fun i j c _ _ _ _ _ h => h.elim)
-    (fun c hc _ hd => hDvNil c hc hd)
+    (fun c hc _ _ hd => hDvNil c hc hd) (fun c hc hw _ hd => hCLnil c hc hw (hDvNil c hc hd))
     hCLnil (fun i hi hns _ hD hv => hOS i hi hns hD hv) hVSh hRD (fun i _ h => h.elim) hAbs hVNN hSeed
 
 end
@@ -656,7 +656,7 @@ theorem t2_qr_take (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
     (fun j hj0 hj => by rw [hlT] at hj; omega)
     (by have := anc0_e0_lt hA (by omega); omega)
     (fun i h => h.elim) (fun i h => h) (fun i c _ _ h => h.elim) (fun i j c _ _ _ _ _ h => h.elim)
-    (fun c hc _ hd => hDvNil c hc hd)
+    (fun c hc _ _ hd => hDvNil c hc hd) (fun c hc hw _ hd => hCLnil c hc hw (hDvNil c hc hd))
     hCLnil (fun i hi hns _ hD hv => hOS i hi hns hD hv) hVSh hRD (fun i _ h => h.elim) hAbs hVNN hSeed
 
 /-- **`t = 2`, `q = r`, `x − 1` upgrades to `k < x`, `n ≤ 1`** (`M[n] = M.take x`): the seeds are `o(r)`
@@ -668,7 +668,8 @@ theorem t2_qu_take (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
     (hkT : topped M k = false)
     -- the shape of `D` in `M`
     (hP1 : ∀ m, par M 1 (r + L - 1) = some m → ¬ DepS M (SV r (r + L - 1)) false m)
-    (hDvNil : ∀ c, c < r + L → DepS M (SV r (r + L - 1)) false c → CL M c = [])
+    (hDvNil : ∀ c, c < r + L → c ≠ r → DepS M (SV r (r + L - 1)) false c → CL M c = [])
+    (hvr : r ≠ r + L - 1 → ¬ DepS M (SV r (r + L - 1)) false r)
     (hOS : ∀ i, i < r + L → ¬ SV r (r + L - 1) true i →
       DepS M (SV r (r + L - 1)) true i → ¬ DepS M (SV r (r + L - 1)) false i →
       ∃ Lp c R, children M i = Lp ++ c :: R ∧ Counted M i c ∧ DepS M (SV r (r + L - 1)) true c ∧
@@ -809,7 +810,17 @@ theorem t2_qu_take (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
     (fun j hj0 hj => by rw [hlT] at hj; omega)
     (by have := anc0_e0_lt hA (by omega); omega)
     (fun i h => h.elim) (fun i h => h) (fun i c _ _ h => h.elim) (fun i j c _ _ _ _ _ h => h.elim)
-    (fun c hc _ hd => hDvNil c hc hd)
+    (fun c hc _ hs hd => hDvNil c hc (fun h => hs (Or.inl ⟨rfl, h⟩)) hd)
+    (fun c hc _ hs hd => by
+      have hcr : c = r := by
+        rcases hs with ⟨_, h⟩ | ⟨h, _⟩
+        · exact h
+        · cases h
+      rw [hcr] at hd ⊢
+      by_cases hrx : r = r + L - 1
+      · unfold CL; rw [List.filter_eq_nil_iff]; intro d hd'
+        have := (mem_children hd').1; have := (mem_children hd').2; rw [hlT] at this; omega
+      · exact absurd hd (hvr hrx))
     hCLnil (fun i hi hns _ hD hv => hOS i hi hns hD hv) hVSh hRD (fun i _ h => h.elim) hAbs hVNN hSeed
 
 end

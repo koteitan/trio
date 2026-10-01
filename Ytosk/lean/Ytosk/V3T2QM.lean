@@ -338,7 +338,7 @@ theorem t2_qn_main (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
       have h' := (mem_children_iff.mp hc).2; rw [hc', hpq] at h'; cases h'
       have := e2_of_col (show col M _ = (entry M 0 i + 1, entry M 1 i, 1) from hjb)
       omega)
-    (fun c hc _ hd => hDvNil c hc hd)
+    (fun c hc _ _ hd => hDvNil c hc hd) (fun c hc hw _ hd => hCLnil c hc hw (hDvNil c hc hd))
     hCLnil hOS hVSh hRD hWle hAbs hVNN hSeed
 
 end

@@ -459,7 +459,8 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
       (∀ b' i', rk b' i' < rk b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →
         Lhd z (valB σ b' i') (valB ρ b' i')) →
       Lhd z (valB σ b i) (valB ρ b i))
-    (hDvNil : ∀ c, c < bnd → ¬ W true c → DepS M S false c → CL M c = [])
+    (hDvNil : ∀ c, c < bnd → ¬ W true c → ¬ S true c → DepS M S false c → CL M c = [])
+    (hDvNilN : ∀ c, c < bnd → ¬ W true c → DepS M S false c → CL N c = [])
     (hCLnil : ∀ c, c < bnd → ¬ W true c → CL M c = [] → CL N c = [])
     (hOc : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S true i → ¬ DepS M S false i →
       ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ DepS M S true c ∧ c < bnd ∧
@@ -485,7 +486,7 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
   have hnoc : ∀ c, c < bnd → ¬ W true c → DepS M S false c → σ.o c = psi (σ.v c) z z := by
     intro c hc hw hd
     exact o_of_no_counted hCN (by omega) (hGN.ot_v c (by omega))
-      (no_cnt_of_cl_nil (hCLnil c hc hw (hDvNil c hc hw hd)))
+      (no_cnt_of_cl_nil (hDvNilN c hc hw hd))
   have key : ∀ K, ∀ b i, rk b i ≤ K → DepS M S b i → i < bnd → ¬ W b i →
       Lhd z (valB σ b i) (valB ρ b i) := by
     intro K
@@ -503,7 +504,7 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
         by_cases hv : DepS M S false i
         · -- through `v`
           have hIH : Lhd z (σ.v i) (ρ.v i) := ih _ (by omega) false i (le_refl _) hv hi (hWv i)
-          have hclM := hDvNil i hi hWi hv
+          have hclM := hDvNil i hi hWi hs hv
           rw [hnoc i hi hWi hv, o_of_no_counted hC hiM (hG.ot_v i hiM) (no_cnt_of_cl_nil hclM)]
           exact lhd_of_lhdE_lt (lhdE_oq_v (Or.inr hIH)) (psi_lt_psi_z_iff.mpr (Or.inl hIH.1))
         · obtain ⟨Lc, c, hclM, hclN, hdc, hcb, hLc⟩ := hOc i hi hs hWi hD hv

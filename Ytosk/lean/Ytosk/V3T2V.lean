@@ -314,7 +314,7 @@ theorem t2_sv_main (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
       omega)
     (by have := anc0_e0_lt hA (by omega); omega)
     (fun i h => h.elim) (fun i h => h) (fun i c _ _ h => h.elim) (fun i j c _ _ _ _ _ h => h.elim)
-    (fun c hc _ hd => hDvNil c hc hd)
+    (fun c hc _ _ hd => hDvNil c hc hd) (fun c hc hw _ hd => hCLnil c hc hw (hDvNil c hc hd))
     hCLnil (fun i hi hns _ hD hv => hOS i hi hns hD hv) hVSh hRD (fun i _ h => h.elim) hAbs hVNN hSeed
 
 end
