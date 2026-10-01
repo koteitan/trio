@@ -99,4 +99,33 @@ theorem ev2r_lt_of_top {M N : Mat} {x ρ : Nat} (hx : x + 1 = M.length) (hG : Go
     rw [eN, ← sumN_snoc_dec hsN hdN]; exact this
   · rw [eN, eM]; exact (app_lt_app_left_iff _).mpr hlt
 
+/-- Every column has a top row-0 ancestor. -/
+theorem top_anc (M : Mat) : ∀ x, ∃ ρ, Anc0 M ρ x ∧ par M 0 ρ = none := by
+  intro x
+  induction x using Nat.strongRecOn with
+  | _ x ih =>
+    cases hp : par M 0 x with
+    | none => exact ⟨x, Anc0.refl x, hp⟩
+    | some p =>
+      obtain ⟨ρ, hρ, hρn⟩ := ih p (par_lt M 0 x p hp)
+      exact ⟨ρ, hρ.trans (Anc0.step hp (Anc0.refl p)), hρn⟩
+
+/-- A top column is a root `(0,0,0)` (first column zero, `z0ok`). -/
+theorem col_zero_of_top {M : Mat} (hz0 : TRIO.z0ok M) (h00 : entry M 0 0 = 0) {ρ : Nat}
+    (hl : ρ < M.length) (hρ : par M 0 ρ = none) : col M ρ = (0, 0, 0) := by
+  have he : entry M 0 ρ = 0 := by
+    rcases Nat.eq_zero_or_pos ρ with h | h
+    · subst h; exact h00
+    · by_contra hne
+      obtain ⟨p, hp⟩ := par0_some_of (M := M) (show 0 < ρ from h) (by omega)
+      rw [hp] at hρ; cases hρ
+  have := hz0 ρ hl he
+  unfold col
+  change (M.getD ρ (0, 0, 0)).1 = 0 at he
+  obtain ⟨h1, h2⟩ := this
+  rcases hc : M.getD ρ (0, 0, 0) with ⟨a, b, c⟩
+  rw [hc] at he h1 h2
+  simp at he h1 h2
+  rw [he, h1, h2]
+
 end Ytosk
