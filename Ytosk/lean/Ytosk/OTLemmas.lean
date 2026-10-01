@@ -196,4 +196,36 @@ theorem size_sub_lt (a b c : T) : size a < size (psi a b c) := by simp [size]; o
 theorem size_arg_lt (a b c : T) : size b < size (psi a b c) := by simp [size]; omega
 theorem size_rest_lt (a b c : T) : size c < size (psi a b c) := by simp [size]; omega
 
+/-! ## 連結の分け方 -/
+
+theorem app_assoc : ∀ x m y : T, app (app x m) y = app x (app m y)
+  | z, _, _ => rfl
+  | psi a b c, m, y => by simp [app_assoc c m y]
+
+/-- Two ways of cutting the same list. -/
+theorem app_split : ∀ {x1 y1 x y : T}, app x1 y1 = app x y →
+    (∃ m, x1 = app x m ∧ y = app m y1) ∨ (∃ m, x = app x1 m ∧ y1 = app m y)
+  | z, y1, x, y, h => Or.inr ⟨x, rfl, by simpa using h⟩
+  | psi a b c, y1, z, y, h => Or.inl ⟨psi a b c, rfl, by simpa using h.symm⟩
+  | psi a b c, y1, psi a' b' c', y, h => by
+    simp only [app_psi, psi.injEq] at h
+    obtain ⟨rfl, rfl, h⟩ := h
+    rcases app_split h with ⟨m, rfl, rfl⟩ | ⟨m, rfl, rfl⟩
+    · exact Or.inl ⟨m, by simp, rfl⟩
+    · exact Or.inr ⟨m, by simp, rfl⟩
+
+theorem app_eq_z {x y : T} (h : app x y = z) : x = z ∧ y = z := by
+  cases x with
+  | z => exact ⟨rfl, by simpa using h⟩
+  | psi => simp at h
+
+/-- A proper sum is not a principal term. -/
+theorem app_ne_principal {x y : T} (hx : x ≠ z) (hy : y ≠ z) (a b : T) : app x y ≠ psi a b z := by
+  cases x with
+  | z => exact absurd rfl hx
+  | psi a' b' c' =>
+    intro h
+    simp only [app_psi, psi.injEq] at h
+    exact hy (app_eq_z h.2.2).2
+
 end Ytosk
