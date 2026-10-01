@@ -262,7 +262,7 @@ variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
   (he1 : entry M 1 (r + L) = 0) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
   {ρ σ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ)
-  (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : Good3 (TRIO.gexp M r L 0 0 n) σ)
+  (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : GoodOT (TRIO.gexp M r L 0 0 n) σ)
 include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
 
 /-- **`o(x) = 1`** and `x` counts at `r`. -/
@@ -379,12 +379,36 @@ theorem t0_S1 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted M
     exact p1_dep hx hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp (by omega) hdM hrg hdr hD hcnt
   -- the values
   obtain ⟨hsM, hpM⟩ := cl_vals hC hG hgM
-  obtain ⟨hsN, hpN⟩ := cl_vals hCN hGN hgN
+  have hsN := cl_valsT hCN hGN (i := g)
   rw [hclM] at hsM hpM
-  rw [hclN] at hsN hpN
-  simp only [List.map_append, List.map_singleton] at hsM hpM hsN hpN
-  rw [hLcv, hCmv, hσlast] at hsN hpN
+  rw [hclN] at hsN
+  simp only [List.map_append, List.map_singleton] at hsM hpM hsN
+  rw [hLcv, hCmv, hσlast] at hsN
   obtain ⟨hor, hom⟩ := o_r_omid hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
+  -- the decrease at `g` in `N`
+  have hpN : (Lc.map ρ.o ++ List.replicate Cm.length (omid M r L ρ) ++ [ρ'.o r]).Pairwise
+      (fun a b => b ≤ a) := by
+    have hOr : omid M r L ρ < ρ.o r := by
+      rw [hom, hor]; exact psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_app_one _⟩)
+    have hlo : ρ'.o r ≤ omid M r L ρ := by
+      obtain ⟨_, s', y', hs'⟩ := hsN (ρ'.o r) (by simp)
+      have h := hl.1
+      rw [hs', hor] at h
+      rw [hs', hom]
+      rcases psi_lt_psi_z_iff.mp h with h1 | ⟨rfl, h2⟩
+      · exact le_of_lt (psi_lt_psi_z_iff.mpr (Or.inl h1))
+      · exact psi_le_psi_arg ((lt_succ_iff (x := _)).mp h2)
+    have hp1 := List.pairwise_append.mp hpM
+    refine List.pairwise_append.mpr ⟨List.pairwise_append.mpr ⟨hp1.1,
+      List.pairwise_replicate.mpr (Or.inr (le_refl _)), fun a ha b hb => ?_⟩, by simp, fun a ha b hb => ?_⟩
+    · rw [(List.mem_replicate.mp hb).2]
+      exact le_trans (le_of_lt hOr) (hp1.2.2 a ha _ (by simp))
+    · simp at hb; rw [hb]
+      rcases List.mem_append.mp ha with ha | ha
+      · exact le_trans hlo (le_trans (le_of_lt hOr) (hp1.2.2 a ha _ (by simp)))
+      · rw [(List.mem_replicate.mp ha).2]; exact hlo
+  have hpN0 : ((CL (TRIO.gexp M r L 0 0 n) g).map σ.o).Pairwise (fun a b => b ≤ a) := by
+    rw [hclN]; simp only [List.map_append, List.map_singleton]; rw [hLcv, hCmv, hσlast]; exact hpN
   set Y0 := spArg (ρ.v r) z (sumN (((children M r).filter (fun c => decide (c < r + L))).map
     (cnt M ρ r))) with hY0
   set v := ρ.v r with hv
@@ -394,7 +418,7 @@ theorem t0_S1 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted M
   have hOv : omid M r L ρ = psi v Y0 z := hom
   -- the sums
   have hsO : Single (omid M r L ρ) := by
-    rw [← hσmid 0 (by omega)]; simpa using single_o hCN hGN (show r + 0 * L < _ by rw [hlN]; omega)
+    rw [← hσmid 0 (by omega)]; simpa using single_oT hCN hGN (show r + 0 * L < _ by rw [hlN]; omega)
   have hsumN : sumN (Lv ++ List.replicate m (omid M r L ρ) ++ [ρ'.o r]) =
       app (app (sumN Lv) (mulT (omid M r L ρ) m)) (ρ'.o r) := by
     have hp1 := List.pairwise_append.mp hpN
@@ -404,7 +428,7 @@ theorem t0_S1 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted M
     rw [sumN_append_dec hsM hpM, sumN_singleton (hsM _ (by simp))]
   have hoN : σ.o g = psi a (spArg a (spArg a (spArg a z (sumN Lv)) (mulT (omid M r L ρ) m))
       (ρ'.o r)) z := by
-    rw [o_cl_eq hCN hGN hgN, hclN]
+    rw [o_cl_eqT hCN hGN hgN hpN0, hclN]
     simp only [List.map_append, List.map_singleton]
     rw [hLcv, hCmv, hσlast, hsumN, spArg_app, spArg_app, hσvg]
   have hoM : ρ.o g = psi a (spArg a (spArg a z (sumN Lv)) (ρ.o r)) z := by
@@ -426,7 +450,7 @@ theorem t0_S1 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted M
     · simp [summands]
   · have hnl : (n - 1) * L + L = n * L := by
       rw [← Nat.succ_mul]; congr 1; omega
-    rw [← hσlast]; exact single_o hCN hGN (by rw [hlN]; omega)
+    rw [← hσlast]; exact single_oT hCN hGN (by rw [hlN]; omega)
   · exact hl
   · intro hm1
     have hp1 := List.pairwise_append.mp hpN

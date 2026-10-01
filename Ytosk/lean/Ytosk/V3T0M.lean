@@ -22,7 +22,7 @@ include hlen hL hp hn
 /-- **The root value when `r` has a parent**: only the columns before `r` are roots, in both. -/
 theorem root_N_A (hR0 : R0P M) (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 = 0)
     {g : Nat} (hg : par M 0 r = some g) {ρ σ : Valn} (hG : Good3 M ρ)
-    (hGN : Good3 (TRIO.gexp M r L 0 0 n) σ)
+    (hGN : GoodOT (TRIO.gexp M r L 0 0 n) σ)
     (hle : ∀ i, i < r → σ.o i ≤ ρ.o i)
     (hstrict : ∀ R, R < r → Anc0 M R (r + L) → col M R = (0, 0, 0) → σ.o R < ρ.o R) :
     isOT (root (TRIO.gexp M r L 0 0 n) σ) = true ∧ root (TRIO.gexp M r L 0 0 n) σ < root M ρ := by
@@ -323,7 +323,8 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
   set rkN : Bool → Nat → Nat := fun b i => rkM b (phi0 r L i) with hrkN
   set σ := rhsIt N (rkBound N rkN) with hσ
   have hCN : Cons N σ := cons_of_rk hRN
-  obtain ⟨hGN, hVNN, hsN, hpN⟩ := hN n hn2 σ hCN
+  obtain ⟨hGN3, hVNN, hsN, hpN⟩ := hN n hn2 σ hCN
+  have hGN := hGN3.toOT
   refine ⟨σ, rkN, hCN, hRN, ?_⟩
   -- the values of `N`
   have hvC := t0_vals hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hn2 (depLike_chgX M (r + L))

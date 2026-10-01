@@ -17,6 +17,65 @@ open T
 
 set_option linter.unusedSectionVars false
 
+/-! ## 値が標準形であること（減少を含まない Good3 の半分） -/
+
+/-- The values are standard (the part of `Good3` without the decrease of the counted children). -/
+structure GoodOT (M : Mat) (ρ : Valn) : Prop where
+  ot_o : ∀ i, i < M.length → isOT (ρ.o i) = true
+  ot_v : ∀ i, i < M.length → isOT (ρ.v i) = true
+
+theorem Good3.toOT {M : Mat} {ρ : Valn} (h : Good3 M ρ) : GoodOT M ρ := ⟨h.ot_o, h.ot_v⟩
+
+theorem single_oT {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hO : GoodOT M ρ) {i : Nat}
+    (hi : i < M.length) : Single (ρ.o i) :=
+  ⟨hO.ot_o i hi, o_psi_form hC hi⟩
+
+theorem cnt_singleT {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hO : GoodOT M ρ) (i : Nat) :
+    ∀ t ∈ (children M i).map (cnt M ρ i), t = z ∨ Single t := by
+  intro t ht
+  obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+  unfold cnt
+  split
+  · exact Or.inl rfl
+  · split
+    · exact Or.inl rfl
+    · exact Or.inr (single_oT hC hO (mem_children hc).2)
+
+theorem cvals_eq_mapT {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hO : GoodOT M ρ) (i : Nat) :
+    cvals M ρ i = (CL M i).map ρ.o := by
+  unfold cvals CL
+  have : (children M i).map (cnt M ρ i) = (children M i).map (fun c => if Counted M i c then ρ.o c else z) := by
+    apply List.map_congr_left; intro c _; exact cnt_eq_ite M ρ i c
+  rw [this]
+  apply nzs_map_ite
+  intro c hc _
+  exact single_ne_z (single_oT hC hO (mem_children hc).2)
+
+theorem pairwise_snoc_le {l : List T} {a b : T} (h : (l ++ [a]).Pairwise (fun u v => v ≤ u))
+    (hba : b ≤ a) : (l ++ [b]).Pairwise (fun u v => v ≤ u) := by
+  rw [List.pairwise_append] at h ⊢
+  refine ⟨h.1, List.pairwise_singleton _ _, fun u hu v hv => ?_⟩
+  rw [List.mem_singleton] at hv; subst hv
+  exact le_trans hba (h.2.2 u hu _ (List.mem_singleton_self _))
+
+/-- `Good3` from standard values and the decrease of the counted children. -/
+theorem good3_of_OT {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hO : GoodOT M ρ)
+    (hdec : ∀ i, i < M.length → ((CL M i).map ρ.o).Pairwise (fun a b => b ≤ a)) : Good3 M ρ :=
+  ⟨hO.ot_o, hO.ot_v, fun i hi => by rw [cvals_eq_mapT hC hO i]; exact hdec i hi⟩
+
+/-- `o` through the counted children, with the decrease at `i` only. -/
+theorem o_cl_eqT {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hO : GoodOT M ρ) {i : Nat} (hi : i < M.length)
+    (hdec : ((CL M i).map ρ.o).Pairwise (fun a b => b ≤ a)) :
+    ρ.o i = psi (ρ.v i) (spArg (ρ.v i) z (sumN ((CL M i).map ρ.o))) z := by
+  rw [← cvals_eq_mapT hC hO i]
+  exact o_spArg_loc hC hi (hO.ot_v i hi) (cnt_singleT hC hO i) (by rw [cvals_eq_mapT hC hO i]; exact hdec)
+
+theorem cl_valsT {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hO : GoodOT M ρ) {i : Nat} :
+    ∀ t ∈ (CL M i).map ρ.o, Single t := by
+  intro t ht
+  obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+  exact single_oT hC hO (mem_children (cl_mem_children hc)).2
+
 
 /-- **The `o` frame where `v` does not change**: the counted children of a matrix `M′` are those of `M`
 up to a tail, and only the last one changes. -/
@@ -190,8 +249,8 @@ theorem lhd_of_lhdE_lt {a b : T} (h : LhdE a b) (hlt : a < b) : Lhd z a b := by
 
 /-- **The `o` frame of two matrices with the same counted children at `i`**, where only the last one
 changes by `◁`: the parent changes by `◁`. -/
-theorem o_frame_lhd {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
-    (hC : Cons M ρ) (hG : Good3 M ρ) (hF : FrameClosed M ρ) (hCN : Cons N σ) (hGN : Good3 N σ)
+theorem o_frame_lhdT {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hF : FrameClosed M ρ) (hCN : Cons N σ) (hGN : GoodOT N σ)
     (hiM : i < M.length) (hiN : i < N.length) (hv : σ.v i = ρ.v i)
     (hclN : CL N i = Lc ++ [c]) (hclM : CL M i = Lc ++ [c])
     (hsame : ∀ d ∈ Lc, σ.o d = ρ.o d)
@@ -204,11 +263,12 @@ theorem o_frame_lhd {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
       (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
       SubSmall (ρ.v i) s')
     (hy : ∀ s, ρ.o c = psi s z z → ∃ s', σ.o c = psi s' z z)
-    (hss : ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z → y' ≠ z → s' = s) :
+    (hss : ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z → y' ≠ z → s' = s)
+    (hpN0 : ((CL N i).map σ.o).Pairwise (fun a b => b ≤ a)) :
     Lhd z (σ.o i) (ρ.o i) := by
   have hcN : c < N.length := (mem_children (cl_mem_children (show c ∈ CL N i by rw [hclN]; simp))).2
   have hcM : c < M.length := (mem_children (cl_mem_children (show c ∈ CL M i by rw [hclM]; simp))).2
-  have hcs' := single_o hCN hGN hcN
+  have hcs' := single_oT hCN hGN hcN
   have hE := o_frame_evalG hC hG hF hCN hiN hiM hv hclN (Tl := []) (by rw [hclM, List.append_nil]) hsame
     hcs' (Or.inl (Or.inr hl)) hsub hsub'
   apply lhd_of_lhdE_lt hE
@@ -216,7 +276,8 @@ theorem o_frame_lhd {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
   have hvot : isOT (ρ.v i) = true := hG.ot_v i hiM
   set a := ρ.v i with ha
   obtain ⟨hsM, hpM⟩ := cl_vals hC hG hiM
-  obtain ⟨hsN, hpN⟩ := cl_vals hCN hGN hiN
+  have hsN := cl_valsT hCN hGN (i := i)
+  have hpN := hpN0
   rw [hclM] at hsM hpM
   have hpM' := hpM
   simp only [List.map_append, List.map_cons, List.map_nil] at hpM'
@@ -224,7 +285,7 @@ theorem o_frame_lhd {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
   obtain ⟨s', y', hs'y'⟩ := hcs'.2
   have hformM := o_last_form hC hiM hvot hclM (fun d hd => single_o hC hG
     (mem_children (cl_mem_children hd)).2) (by rw [hclM]; exact hpM) hsy
-  have hformN := o_last_form hCN hiN (by rw [hv]; exact hvot) hclN (fun d hd => single_o hCN hGN
+  have hformN := o_last_form hCN hiN (by rw [hv]; exact hvot) hclN (fun d hd => single_oT hCN hGN
     (mem_children (cl_mem_children hd)).2) hpN hs'y'
   have hLm : Lc.map σ.o = Lc.map ρ.o := List.map_congr_left hsame
   rw [hLm, hv] at hformN
@@ -250,6 +311,24 @@ theorem o_frame_lhd {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
     rw [hyz] at hsy
     obtain ⟨s'', h''⟩ := hy s hsy
     rw [hs'y'] at h''; simp only [psi.injEq] at h''; exact h''.2.1
+
+theorem o_frame_lhd {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hF : FrameClosed M ρ) (hCN : Cons N σ) (hGN : Good3 N σ)
+    (hiM : i < M.length) (hiN : i < N.length) (hv : σ.v i = ρ.v i)
+    (hclN : CL N i = Lc ++ [c]) (hclM : CL M i = Lc ++ [c])
+    (hsame : ∀ d ∈ Lc, σ.o d = ρ.o d)
+    (hl : Lhd z (σ.o c) (ρ.o c))
+    (hsub : ∀ s y, ρ.o c = psi s y z →
+      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+      SubSmall (ρ.v i) s)
+    (hsub' : ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z →
+      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true) ∨
+      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+      SubSmall (ρ.v i) s')
+    (hy : ∀ s, ρ.o c = psi s z z → ∃ s', σ.o c = psi s' z z)
+    (hss : ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z → y' ≠ z → s' = s) :
+    Lhd z (σ.o i) (ρ.o i) :=
+  o_frame_lhdT hC hG hF hCN hGN.toOT hiM hiN hv hclN hclM hsame hl hsub hsub' hy hss (cl_vals hCN hGN hiN).2
 
 theorem foldl_nzs : ∀ (l : List T) (acc : T), isOT acc = true → (∀ t ∈ l, isOT t = true) →
     l.foldl (fun a b => sf (add a b)) acc = (nzs l).foldl (fun a b => sf (add a b)) acc
@@ -542,7 +621,7 @@ variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
   (he1 : entry M 1 (r + L) = 0) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
   {ρ σ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ)
-  (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : Good3 (TRIO.gexp M r L 0 0 n) σ)
+  (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : GoodOT (TRIO.gexp M r L 0 0 n) σ)
 include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
 
 theorem cl_nil_of_depv {c : Nat} (hc : c < r) (hv : DepX M (r + L) false c) : CL M c = [] := by
@@ -682,7 +761,13 @@ theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
               obtain ⟨y0, hy0⟩ := o_psi_sub hC (show c < M.length by omega)
               rw [h] at hy0; simp only [psi.injEq] at hy0
               rw [hy0.1, sf_ot (hG.ot_v c (by omega))]
-            apply o_frame_lhd hC hG hF hCN hGN hiM (hiN i hi) hv' hclN hclM hsame hIH
+            have hpN0 : ((CL (TRIO.gexp M r L 0 0 n) i).map σ.o).Pairwise (fun a b => b ≤ a) := by
+              have hpM := (cl_vals hC hG hiM).2
+              rw [hclM] at hpM
+              rw [hclN, List.map_append, List.map_singleton, List.map_congr_left hsame]
+              rw [List.map_append, List.map_singleton] at hpM
+              exact pairwise_snoc_le hpM (le_of_lt hIH.1)
+            apply o_frame_lhdT (hpN0 := hpN0) hC hG hF hCN hGN hiM (hiN i hi) hv' hclN hclM hsame hIH
             · intro s y hsy hrw
               rw [hvM s y hsy]; exact (hfr.2 s y hsy hrw).subSmall _
             · intro s y s' y' hsy hs'y' hrw
@@ -886,7 +971,7 @@ theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                   (by rw [entry_pre0 hlen hn 1 (by omega)]; exact he1k)
                 exact Or.inr ⟨_, _, _, ho0, hy1, Or.inr hvIH, one_le_of_ne_z hv0⟩
             obtain ⟨hS, hlt, hG'ot⟩ := g_brel hsK hdec (single_o hC hG (by omega))
-              (single_o hCN hGN (hiN k hkr')) hIH hform
+              (single_oT hCN hGN (hiN k hkr')) hIH hform
             have hGot : isOT (sumN (Kb.map ρ.o ++ [ρ.o k])) = true := isOT_sumN _ (fun u hu => by
               rcases List.mem_append.mp hu with h | h
               · exact (hsK u h).1

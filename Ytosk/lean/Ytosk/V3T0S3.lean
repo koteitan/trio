@@ -105,7 +105,7 @@ variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
   (he1 : entry M 1 (r + L) = 0) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
   {ρ σ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ)
-  (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : Good3 (TRIO.gexp M r L 0 0 n) σ)
+  (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : GoodOT (TRIO.gexp M r L 0 0 n) σ)
 include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
 
 /-- **Seed S3**: when `g = P_0(r)` is a bump child of its parent `p` (rows 1 and 2 of `p` nonzero),
@@ -141,7 +141,7 @@ theorem t0_S3 {g p : Nat} (hg : par M 0 r = some g) (hpg : par M 0 g = some p)
   have hrN : r < (TRIO.gexp M r L 0 0 n).length := by rw [hlN]; omega
   have hO : Single O := by
     rw [← show σ.o (r + 0 * L) = O from hσmid 0 (by omega)]
-    exact single_o hCN hGN (by rw [hlN]; omega)
+    exact single_oT hCN hGN (by rw [hlN]; omega)
   have hmapN : (r :: (List.range (n - 1)).map (fun k => r + (k + 1) * L)).map σ.o =
       List.replicate (n - 1) O ++ [σ.o (r + (n - 1) * L)] := by
     obtain ⟨m, hm⟩ : ∃ m, n - 1 = m + 1 := ⟨n - 2, by omega⟩
@@ -178,7 +178,7 @@ theorem t0_S3 {g p : Nat} (hg : par M 0 r = some g) (hpg : par M 0 g = some p)
   have hnl : (n - 1) * L + L ≤ n * L := by
     rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right L (by omega)
   have hlastN : r + (n - 1) * L < (TRIO.gexp M r L 0 0 n).length := by rw [hlN]; omega
-  obtain ⟨hS, hlt, hG'ot⟩ := g3_brel hn2 hsK hdec hX hO (single_o hCN hGN hlastN) hσlast
+  obtain ⟨hS, hlt, hG'ot⟩ := g3_brel hn2 hsK hdec hX hO (single_oT hCN hGN hlastN) hσlast
   have hGot : isOT (sumN (F.map ρ.o ++ [psi (ρ.v r) (app B0 one) z])) = true := isOT_sumN _ (fun u hu => by
     rcases List.mem_append.mp hu with h | h
     · exact (hsK u h).1
