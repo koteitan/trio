@@ -150,4 +150,22 @@ theorem hLast_of
   exact ⟨_, rk, ⟨hC1, V.g, hRk1, V.vs, V.fc, V.fo, V.kd, V.td, had, hau, htp1, htplo, htp1w, htplow,
     hauw, hadw, htrig, htplon, hadn, rootS_of_good hC1 V.g, hRP⟩, R'⟩
 
+/-- **An expansion of a standard matrix is not SRO** (SRO breaks `UAB`, which `SInvX` gives after an
+expansion; and `SRO[n]` has length `1 + 3n`). -/
+theorem expand_ne_SRO {M : Mat} (hM : Std M) (n : Nat) : expand M n ≠ SRO := by
+  intro h
+  rcases sInvX_std' hM with rfl | hX
+  · have := congrArg List.length h
+    rw [expand_SRO_length] at this
+    simp [SRO] at this
+    omega
+  · have := (sInvX_expand hX n).toSInv.uab
+    rw [h] at this
+    exact sro_not_uab this
+
+/-- **The valuation of `M[n]` from `HInvE`** (for the cases whose engine does not build one). -/
+theorem inv_expand_of_E (h : HInvE) {M : Mat} (hM : Std M) {n : Nat} (hE : expand M n ≠ []) :
+    ∃ σ rk, Inv3 (expand M n) σ rk ∧ Res3A (expand M n) σ rk :=
+  h _ (Std.exp n hM) (expand_ne_SRO hM n) hE
+
 end Ytosk
