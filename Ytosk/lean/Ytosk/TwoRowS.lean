@@ -227,4 +227,39 @@ theorem twoRow_shape {M : Mat} {x r : Nat} (hG : Good2 M) (hx : x + 1 = M.length
             exact ⟨a', ha', DiagAt.arg h3 hDy.not_succ hDy⟩
     exact fun p hp hpr => partC _ p (Nat.le_refl _) hp hpr
 
+/-- The argument of a collapse. -/
+def argOf : T → T
+  | z => z
+  | psi _ b _ => b
+
+/-- **The two-row `t = 1` chain with the path shape built in.** -/
+theorem twoRow_chain' {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
+    (hF1 : ∀ k, 1 ≤ k → F1 (expand M k))
+    (hSa : ∀ a', ¬ lt (vr M r) a' = true →
+      SeedOK a' (argOf (o2r M r)) (vr M r) (o2r (expand M 1) r))
+    (hFr : ∀ m h p, Anc0 M p (M.length - 1) → par M 0 p = some h →
+      FrameD (vr M h) (bst M h p) (o2r M p)
+        (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) m)) :
+    ∀ k, 2 ≤ k →
+      o2r (expand M k) r = gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) (k - 1) ∧
+      ∀ h, Anc0 M h (M.length - 1) →
+        o2r (expand M k) h =
+          fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) (k - 2)) := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hr1 : par M 1 (M.length - 1) = some r := by have h := hr; rw [ht1] at h; exact h
+  obtain ⟨b, hrv, hb, hcb, hbelow, habove⟩ := twoRow_shape hG hx hr1 hb1
+  have hbarg : argOf (o2r M r) = b := by rw [hrv]; rfl
+  rw [hbarg] at hSa hFr ⊢
+  have hμμ : ¬ lt (vr M r) (vr M r) = true := by simp [Bool.eq_false_iff.mpr (lt_irrefl' _)]
+  apply twoRow_chain hM hz hr ht1 hG hb1 hrv hb hcb (hSa _ hμμ) hF1 _ hFr
+  intro p hp
+  rcases Nat.lt_or_ge r p with h1 | h1
+  · exact Or.inl (hbelow p hp h1)
+  · obtain ⟨a', ha', hD⟩ := habove p hp h1
+    exact Or.inr ⟨a', hSa a' ha', hD⟩
+
 end Ytosk

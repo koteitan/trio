@@ -20,7 +20,8 @@ theorem twoRow_chain {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
     {μ b : T} (hrv : o2r M r = psi μ b z) (hb : b ≠ z) (hcb : cof b = .big μ)
     (hS : SeedOK μ b μ (o2r (expand M 1) r))
     (hF1 : ∀ k, 1 ≤ k → F1 (expand M k))
-    (hclass : ∀ p, Anc0 M p (M.length - 1) → cof (o2r M p) = .big μ ∨ DiagAt μ b μ (o2r M p))
+    (hclass : ∀ p, Anc0 M p (M.length - 1) → cof (o2r M p) = .big μ ∨
+      ∃ a', SeedOK a' b μ (o2r (expand M 1) r) ∧ DiagAt a' b μ (o2r M p))
     (hFr : ∀ m h p, Anc0 M p (M.length - 1) → par M 0 p = some h →
       FrameD (vr M h) (bst M h p) (o2r M p) (gamS μ b (o2r (expand M 1) r) m)) :
     ∀ k, 2 ≤ k →
@@ -30,7 +31,7 @@ theorem twoRow_chain {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
   have hrx := par_lt M _ _ _ hr
   have hA := anc0_of_par M _ _ _ hr
   have ht : 0 < TRIO.srow M (M.length - 1) := by omega
-  generalize hc1 : o2r (expand M 1) r = c1 at hS hFr
+  generalize hc1 : o2r (expand M 1) r = c1 at hS hFr hclass
   have hot : isOT (psi μ b z) = true := by rw [← hrv]; exact hG.ot r
   have hμ : ¬ lt μ μ = true := by simp [Bool.eq_false_iff.mpr (lt_irrefl' μ)]
   -- the gexp form
@@ -62,7 +63,8 @@ theorem twoRow_chain {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
         rcases hclass p hp with hc | hD
         · rw [fsD_eq_fs hc]
           exact fs_ot_lt (hG.ot p) ⟨gamS_ot hot hcb hμ hS m, by rw [hc]; exact gamS_lt_om hot hcb hμ hS m⟩
-        · obtain ⟨h1, h2⟩ := fsD_seed hS hD (hG.ot p) m
+        · obtain ⟨a', hSa, hD⟩ := hD
+          obtain ⟨h1, h2⟩ := fsD_seed hSa hD (hG.ot p) m
           exact ⟨h1, h2.1⟩)
       (by intro h p hp hph; rw [hY]; exact hFr m h p hp hph)
     rw [hY] at hpath
