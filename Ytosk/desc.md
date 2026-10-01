@@ -477,3 +477,8 @@ x の行 1 が 0（値 1 = ψ_0(0)）、r = P_0(x)、コピーは r の兄弟（
 - 追加（2026-10-02）: 経路にない列の子は不変（`children_gexp_off_t0`）、g の値（`o2r_gexp_g_t0`:
   o_{M[n]}(g) = ψ_a(spArg(a, b_g, ψ_v(b)·n))）。次は g の値を `t0_frame_notrig`・`t0_frame_trig`・`t0_frame_swallow` で
   o_M(g)[m] に結びつけ、g より上を `o2r_path_from` で（自然数の添字の枠）。
+- 追加: g の値は o_M(g)[n] か [n−1]（`o2r_g_fs_t0`）。自然数型の項（`SuccPath`、一番深い位置が後続）では fsD = fs
+  （`SuccPath.fsD_eq`）、枠を上っても保たれる（`SuccPath.step`）。
+- t = 0 の残り（g より上）: `o2r_path_from` に Z j = natT j で流す。各枠: 標準形と大小は `fs_ot_lt`（Valid は natT）、
+  書き換えの持続は PRE と自然数の基本列の単調性（fs t (natT k) < fs t (natT (k+1))、要補題）、(L) は SuccPath の構造から。
+  g での添字 m（n か n−1）は枠ごとに同じまま上へ伝わる。
