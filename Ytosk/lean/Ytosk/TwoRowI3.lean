@@ -317,4 +317,132 @@ theorem good2_expand_t1 {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
           intro c hc; have := mem_children hc; rw [hlenN] at this; omega
         rw [this]; exact List.Pairwise.nil
 
+/-- The state before a column `≤ x` is unchanged by a `t ≥ 1` expansion (`n ≥ 2`). -/
+theorem bst_expand_le {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht : 0 < TRIO.srow M (M.length - 1)) {n : Nat} (hn : 2 ≤ n) {h c : Nat}
+    (hc : par M 0 c = some h) (hcx : c ≤ M.length - 1) :
+    bst (expand M n) h c = bst M h c := by
+  have hhc := par_lt M 0 c h hc
+  unfold bst
+  rw [vr_expand_lt hM hn (show h < M.length - 1 by omega),
+    children_expand_lt M n hM hz hr ht hn (show h < M.length - 1 by omega)]
+  congr 2
+  apply List.map_congr_left
+  intro d hd
+  rw [List.mem_filter] at hd
+  have hdc : d < c := by simpa using hd.2
+  have hdp := mem_children_iff.mp hd.1
+  exact o2r_expand_off hM hz hr ht hn d (by omega) (not_anc_of_earlier hdp.2 hc hdc hcx)
+
+/-- The new value of `x` is `r`'s value in `M[n−1]`, below `Ω_{μ+1}`. -/
+theorem o2r_x_t1 {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hI : Inv2 M) {n : Nat} (hn : 2 ≤ n)
+    (hIP : Inv2 (expand M (n - 1))) :
+    o2r (expand M n) (M.length - 1) = o2r (expand M (n - 1)) r := by
+  obtain ⟨d1, heqd, hlen, hL, hA, hd0e⟩ := expand_gexp_data M n hM hz hr (by omega)
+  have hN := expand_eq_gexp_t1 M n hM hz hr ht1
+  have hP := expand_eq_gexp_t1 M (n - 1) hM hz hr ht1
+  have hrx := par_lt M _ _ _ hr
+  have hF1n := F1_expand hI.r1 hI.z0 hM n
+  have hF1p := hIP.g2.f1
+  rw [hN] at hF1n ⊢; rw [hP] at hF1p ⊢
+  have := o2r_gexp_shift hlen hL hA hd0e hn hF1n hF1p 0 (by
+    have : 1 ≤ n - 1 := by omega
+    have : M.length - 1 - r ≤ (n - 1) * (M.length - 1 - r) := Nat.le_mul_of_pos_left _ (by omega)
+    omega)
+  simpa [show r + (M.length - 1 - r) = M.length - 1 by omega] using this
+
+/-- **Shared case split for the frames of a `t = 1` expansion.** -/
+theorem frames_t1 {M : Mat} {r q : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hI : Inv2 M) {n : Nat} (hn : 2 ≤ n)
+    (hIP : Inv2 (expand M (n - 1))) (hq : par M 0 (M.length - 1) = some q)
+    (Pred : T → T → T → T → Prop)
+    (hlow : ∀ h c s y y', c < M.length - 1 → par M 0 c = some h → o2r M c = psi s y z →
+      o2r (expand M n) c = psi s y' z → y' ≤ y →
+      Pred (vr M h) (bst M h c) s y → Pred (vr M h) (bst M h c) s y')
+    (hjoin : ∀ s y, o2r (expand M (n - 1)) r = psi s y z →
+      Pred (vr M q) (bst M q (M.length - 1)) s y)
+    (hPP : ∀ h p s y, p < (expand M (n - 1)).length → par (expand M (n - 1)) 0 p = some h →
+      o2r (expand M (n - 1)) p = psi s y z →
+      Pred (vr (expand M (n - 1)) h) (bst (expand M (n - 1)) h p) s y)
+    (hMP : ∀ h p s y, p < M.length → par M 0 p = some h → o2r M p = psi s y z →
+      Pred (vr M h) (bst M h p) s y) :
+    ∀ h c s y, c < (expand M n).length → par (expand M n) 0 c = some h →
+      o2r (expand M n) c = psi s y z → Pred (vr (expand M n) h) (bst (expand M n) h c) s y := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  obtain ⟨d1, heqd, hlen, hL, hA, hd0e⟩ := expand_gexp_data M n hM hz hr (by omega)
+  have hN := expand_eq_gexp_t1 M n hM hz hr ht1
+  have hP := expand_eq_gexp_t1 M (n - 1) hM hz hr ht1
+  have hrx := par_lt M _ _ _ hr
+  have hG2 := good2_expand_t1 hM hz hr ht1 hI hn hIP
+  have hpath := path_lt_t1 hM hz hr ht1 hI hn
+  intro h c s y hcl hp hc
+  rcases Nat.lt_or_ge c (M.length - 1) with h1 | h1
+  · -- before `x`
+    have hp' : par M 0 c = some h := by rw [← par0_expand_prefix M hM (show 1 ≤ n by omega) h1]; exact hp
+    have hhc := par_lt M 0 c h hp'
+    rw [bst_expand_le hM hz hr (by omega) hn hp' (by omega), vr_expand_lt hM hn (show h < M.length - 1 by omega)]
+    obtain ⟨yM, hyM⟩ := o2r_sub hI.g2 c
+    obtain ⟨yN, hyN⟩ := o2r_sub hG2 c
+    rw [vr_expand_lt hM hn h1] at hyN
+    rw [hyN] at hc
+    obtain ⟨rfl, rfl, _⟩ := psi.inj hc
+    have hle : yN ≤ yM := by
+      by_cases hcA : Anc0 M c (M.length - 1)
+      · have hlt := (hpath c hcA).2
+        rw [hyN, hyM, psi_lt_psi_z_iff] at hlt
+        rcases hlt with h' | ⟨_, h'⟩
+        · exact absurd h' (lt_irrefl' _)
+        · exact le_of_lt h'
+      · rw [o2r_expand_off hM hz hr (by omega) hn c h1 hcA, hyM] at hyN
+        rw [(psi.inj hyN).2.1]
+    exact hlow h c (vr M c) yM yN h1 hp' hyM hyN hle (hMP h c (vr M c) yM (by omega) hp' hyM)
+  rcases Nat.eq_or_lt_of_le h1 with h2 | h2
+  · -- `x`: the join frame under `q`
+    subst h2
+    have hpx : par (expand M n) 0 (M.length - 1) = par M 0 (M.length - 1) := by
+      apply par0_congr
+      intro j hj
+      rcases Nat.lt_or_ge j (M.length - 1) with h3 | h3
+      · rw [← entry_take (expand M n) 0 h3, expand_take_prefix M hM (by omega), entry_take M 0 h3]
+      · have hjx : j = M.length - 1 := by omega
+        subst hjx
+        rw [hN]
+        have := entry0_gexp_mir (M := M) (j0 := r) (Lb := M.length - 1 - r)
+          (d0 := entry M 0 (M.length - 1) - entry M 0 r) (d1 := 0) (n := n) (k := 1) (q := 0)
+          (by omega) (by omega) (by omega)
+        simp only [Nat.one_mul, Nat.add_zero] at this
+        rw [show r + (M.length - 1 - r) = M.length - 1 by omega] at this
+        rw [this]
+        have := anc0_interval hA (r + (M.length - 1 - r)) (by omega) (le_refl _)
+        rw [show r + (M.length - 1 - r) = M.length - 1 by omega] at this
+        omega
+    rw [hpx, hq] at hp
+    cases hp
+    rw [bst_expand_le hM hz hr (by omega) hn hq (le_refl _), vr_expand_lt hM hn (par_lt M 0 _ _ hq)]
+    rw [o2r_x_t1 hM hz hr ht1 hI hn hIP] at hc
+    exact hjoin s y hc
+  · -- the copies: shifted frames of `M[n−1]`
+    have hF1n : F1 (TRIO.gexp M r (M.length - 1 - r) (entry M 0 (M.length - 1) - entry M 0 r) 0 n) := by
+      rw [← hN]; exact F1_expand hI.r1 hI.z0 hM n
+    have hF1p : F1 (TRIO.gexp M r (M.length - 1 - r) (entry M 0 (M.length - 1) - entry M 0 r) 0 (n - 1)) := by
+      rw [← hP]; exact hIP.g2.f1
+    have hlenN := lenN_t1 hlen hL hA hd0e hn
+    rw [hN] at hcl hp hc ⊢
+    rw [hlenN] at hcl
+    rw [show c = r + (M.length - 1 - r) + (c - (r + (M.length - 1 - r))) by omega] at hp hc ⊢
+    apply frames_shift hlen hL hA hd0e hn Pred hF1n hF1p _ (by omega) (by omega) hp hc
+    intro h' p' s' y' hpl' hp' hc'
+    rw [← hP] at hpl' hp' hc' ⊢
+    exact hPP h' p' s' y' hpl' hp' hc'
+
 end Ytosk
