@@ -32,6 +32,11 @@ theorem decomp_unique {L k q k' q' : Nat} (hq : q < L) (hq' : q' < L) (h : k * L
   subst hk
   exact ⟨rfl, by omega⟩
 
+theorem map_range_pred_last (f : Nat → Nat) {m : Nat} (hm : 1 ≤ m) :
+    (List.range m).map f = (List.range (m - 1)).map f ++ [f (m - 1)] := by
+  obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
+  simp [List.range_succ]
+
 /-! ## 上げの移送 -/
 
 theorem option_map_inj {f : Nat → Nat} (hf : ∀ a b, f a = f b → a = b) {o : Option Nat} {m : Nat} :
@@ -648,6 +653,151 @@ theorem children_copy0 {k q : Nat} (hk : k < n) (hq : q < L) :
     · unfold shk; rw [if_pos hrd]; omega
     · unfold shk; rw [if_pos hrd, show d + k * L = r + (k * L + (d - r)) by omega, this]
       congr 1; omega
+
+theorem upg_none_last0 : upg (TRIO.gexp M r L 0 0 n) (r + ((n - 1) * L + (L - 1))) = none := by
+  unfold upg
+  rw [if_pos (Or.inr (Or.inr (by
+    rw [lenN0 hlen hn]
+    have : (n - 1) * L + L = n * L := by
+      rw [← Nat.succ_mul, show (n - 1).succ = n by omega]
+    omega)))]
+
+/-- **Upgrades into a column before `r`** are those of `M` (`n ≥ 2`, so the first copy is not the last). -/
+theorem isUpg_pre0 (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n) {c : Nat}
+    (hc : c < r) : isUpg (TRIO.gexp M r L 0 0 n) c = isUpg M c := by
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  have hnL : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn2
+  have hxm : r + (0 * L + (L - 1)) = r + L - 1 := by omega
+  apply Bool.eq_iff_iff.mpr
+  unfold isUpg
+  rw [List.any_eq_true, List.any_eq_true]
+  constructor
+  · rintro ⟨j, hj, hu⟩
+    have hj' := List.mem_range.mp hj
+    rw [hlN] at hj'
+    have hu' : upg (TRIO.gexp M r L 0 0 n) j = some c := by simpa using hu
+    have key : ∃ j', j' < M.length ∧ upg M j' = some c := by
+      rcases Nat.lt_or_ge (j + 1) (r + L) with h | h
+      · rw [upg_pre0 hlen hL hp hn h] at hu'; exact ⟨j, by omega, hu'⟩
+      · obtain ⟨k, q, hk, hq, hjkq⟩ := TRIO.gexp_pos_decomp (j0 := r) (Lb := L) (n := n) hL (by omega) hj'
+        by_cases hq1 : q + 1 < L
+        · rw [hjkq, upg_copy0 hlen hL hp hn hk hq1] at hu'
+          cases hU : upg M (r + q) with
+          | none => rw [hU] at hu'; cases hu'
+          | some t =>
+            rw [hU] at hu'
+            simp only [Option.map_some, Option.some.injEq] at hu'
+            have htc : t = c := by unfold shk at hu'; split at hu' <;> omega
+            exact ⟨r + q, by omega, by rw [hU, htc]⟩
+        · have hqL : q = L - 1 := by omega
+          rw [hqL] at hjkq
+          by_cases hkn : k + 1 < n
+          · rw [hjkq, upg_copy_last0 hlen hL hp hn hR0 hZ2 he2 hkn] at hu'
+            cases hU : upg M (r + (L - 1)) with
+            | none => rw [hU] at hu'; cases hu'
+            | some t =>
+              rw [hU] at hu'
+              simp only [Option.map_some, Option.some.injEq] at hu'
+              have htc : t = c := by split at hu' <;> omega
+              exact ⟨r + (L - 1), by omega, by rw [hU, htc]⟩
+          · have hk1 : k = n - 1 := by omega
+            rw [hjkq, hk1, upg_none_last0 hlen hL hp hn] at hu'; cases hu'
+    obtain ⟨j', hj'M, hj'u⟩ := key
+    exact ⟨j', List.mem_range.mpr hj'M, by simpa using hj'u⟩
+  · rintro ⟨j, hj, hu⟩
+    have hj' := List.mem_range.mp hj
+    have hu' : upg M j = some c := by simpa using hu
+    have hjx : j < r + L := by
+      by_contra h
+      have : j + 1 = M.length := by omega
+      unfold upg at hu'; rw [if_pos (Or.inr (Or.inr this))] at hu'; cases hu'
+    rcases Nat.lt_or_ge (j + 1) (r + L) with h | h
+    · refine ⟨j, List.mem_range.mpr (by rw [hlN]; omega), ?_⟩
+      rw [upg_pre0 hlen hL hp hn h, hu']; simp
+    · have hjL : j = r + (0 * L + (L - 1)) := by omega
+      refine ⟨j, List.mem_range.mpr (by rw [hlN]; omega), ?_⟩
+      have := upg_copy_last0 hlen hL hp hn hR0 hZ2 he2 (k := 0) (by omega)
+      rw [← hjL, show r + (L - 1) = j by omega, hu'] at this
+      rw [this]
+      simp only [Option.map_some, decide_eq_true_eq, Option.some.injEq]
+      rw [if_neg (by omega)]
+
+omit hn in
+/-- The children of the parent of `r` in `M` are at most `r`. -/
+theorem children_g_le {g c : Nat} (hg : par M 0 r = some g) (hc : c ∈ children M g) : c ≤ r := by
+  have hpc := (mem_children_iff.mp hc).2
+  have hgr := par_lt M 0 r g hg
+  by_contra h
+  have hcl := (mem_children hc).2
+  rcases Nat.lt_or_ge c (r + L) with h' | h'
+  · have hA := anc_B hlen hL hp (q := c - r) (by omega)
+    rw [show r + (c - r) = c by omega] at hA
+    have := (anc0_par hA (by omega) hpc).le; omega
+  · have : c = r + L := by omega
+    subst this; rw [hp] at hpc; cases hpc; omega
+
+omit hn in
+theorem children_g_last {g : Nat} (hg : par M 0 r = some g) :
+    children M g = (children M g).filter (fun d => decide (d < r)) ++ [r] :=
+  split_last_max _ _ (children_sorted M g)
+    (mem_children_iff.mpr ⟨by omega, hg⟩) (fun d hd => children_g_le hlen hL hp hg hd)
+
+omit hn in
+/-- The children of a column before `r` other than its parent are before `r`. -/
+theorem children_lt_r {i c : Nat} (hi : i < r) (hig : par M 0 r ≠ some i) (hc : c ∈ children M i) :
+    c < r := by
+  have hpc := (mem_children_iff.mp hc).2
+  have hic := (mem_children hc).1
+  by_contra h
+  have hcl := (mem_children hc).2
+  rcases Nat.lt_or_ge c (r + L) with h' | h'
+  · have hA := anc_B hlen hL hp (q := c - r) (by omega)
+    rw [show r + (c - r) = c by omega] at hA
+    by_cases hcr : c = r
+    · subst hcr; exact hig hpc
+    · have := (anc0_par hA (by omega) hpc).le; omega
+  · have : c = r + L := by omega
+    subst this; rw [hp] at hpc; cases hpc; omega
+
+theorem bump_pre0 {i : Nat} (hi : i < r + L) :
+    bump (TRIO.gexp M r L 0 0 n) i = bump M i := by
+  unfold bump; rw [entry_pre0 hlen hn 0 hi, entry_pre0 hlen hn 1 hi]
+
+theorem col_pre0 {i : Nat} (hi : i < r + L) : col (TRIO.gexp M r L 0 0 n) i = col M i := by
+  rw [col_eq_entries, col_eq_entries, entry_pre0 hlen hn 0 hi, entry_pre0 hlen hn 1 hi,
+    entry_pre0 hlen hn 2 hi]
+
+/-- **`topped` before `r`** is that of `M` (`n ≥ 2`). -/
+theorem topped_lt0 (hn2 : 2 ≤ n) {c : Nat} (hc : c < r) :
+    topped (TRIO.gexp M r L 0 0 n) c = topped M c := by
+  by_cases hcg : par M 0 r = some c
+  · -- `c` is the parent of `r`: the last child is a copy root
+    unfold topped
+    rw [children_g0 hlen hL hp hn hcg, children_g_last hlen hL hp hcg]
+    have hne := map_range_pred_last (fun k => r + (k + 1) * L) (m := n - 1) (by omega)
+    simp only [show n - 1 - 1 + 1 = n - 1 by omega] at hne
+    rw [hne, ← List.append_assoc]
+    simp only [List.getLast?_append, List.getLast?_singleton, Option.some_or]
+    have h1 := col_copy0 hlen (show n - 1 < n by omega) hL (M := M) (n := n) (k := n - 1) (q := 0)
+    rw [Nat.add_zero, Nat.add_zero] at h1
+    rw [h1, bump_pre0 hlen hL hp hn (by omega)]
+  · unfold topped
+    rw [children_pre0 hlen hL hp hn hc hcg]
+    cases hl : (children M c).getLast? with
+    | none => rfl
+    | some d =>
+      have hd := List.mem_of_getLast? hl
+      have := children_lt_r hlen hL hp hc hcg hd
+      simp only
+      rw [col_pre0 hlen hL hp hn (by omega), bump_pre0 hlen hL hp hn (by omega)]
+
+/-- **Counting before `r`** is that of `M`. -/
+theorem counted_lt0 (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
+    {i c : Nat} (hi : i < r) (hc : c < r) :
+    Counted (TRIO.gexp M r L 0 0 n) i c ↔ Counted M i c := by
+  unfold Counted
+  rw [col_pre0 hlen hL hp hn (by omega), bump_pre0 hlen hL hp hn (by omega), isUpg_pre0 hlen hL hp hn hR0 hZ2 he2 hn2 hc,
+    topped_lt0 hlen hL hp hn hn2 hc]
 
 end
 
