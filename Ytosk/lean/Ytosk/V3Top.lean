@@ -4,7 +4,7 @@
 - n = 0・n = 1 の型によらない形（`drop_n1`・`drop_n0`・`drop_n0r`）: x の行 2 が 0 で、v(x) が D に入らなければ、
   落とす補題と D の狭義性 `dep_strict0` から（t = 0、t = 1 の q ≠ r・q = r に共通）。
 - 最後の列が 0 の列（`zero_last_desc`）: M[n] = M.take x、根の列の前で切る（`root_take_root`）。
-- 不変条件の束 `Inv3`（構造・評価・値の不変条件）と残りの仮定の束 `Res3`（x の親、落とす補題の残り DropRes、
+- 不変条件の束 `Inv3`（構造・評価・値の不変条件）と残りの仮定の束 `Res3`（落とす補題の残り DropRes、
   q = r の始点の条件 hcs）。1 つの行列での段 1（`desc_step`）: 型（0 の列、t = 0、t = 1 の q ≠ r・q = r、t = 2）と
   n（0、1、≥ 2）で場合分け。t = 0 の n ≥ 2 と t = 2 は仮定。
 - 段 3（`terminates_of_desc3`）: **BMS.lean の `WellFounded Step` は偽**（`not_wf_Step`）。
@@ -223,6 +223,104 @@ theorem zero_last_desc {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : 
   obtain ⟨hot, hlt⟩ := root_take_root hz hkl (fun j h1 h2 => absurd h2 (by omega)) hC hG hC' hR'
   exact ⟨_, ⟨_, rk, hC', hR', rfl⟩, hot, hlt⟩
 
+/-! ## 最後の列の親（構造から） -/
+
+section
+variable {M : Mat} (h00 : entry M 0 0 = 0) (hR01 : R01 M) (hR12 : R12 M) (hZ2 : Z2 M)
+
+include h00 hR01 in
+/-- Going up row 0 from `c`, some ancestor has row 1 below `e`, when `e > 0`. -/
+theorem anc_e1_below {e : Nat} (he : 0 < e) :
+    ∀ c, ∃ a, Relation.ReflTransGen (StepRel (par M 0)) a c ∧ entry M 1 a < e := by
+  intro c
+  induction c using Nat.strong_induction_on with
+  | _ c ih =>
+    rcases Nat.eq_zero_or_pos (entry M 0 c) with h0 | h0
+    · exact ⟨c, Relation.ReflTransGen.refl, by rw [hR01 c h0]; exact he⟩
+    · have hc : 0 < c := by
+        rcases Nat.eq_zero_or_pos c with hc | hc
+        · subst hc; omega
+        · exact hc
+      obtain ⟨k, hk⟩ := par0_some_of hc (by rw [h00]; exact h0)
+      obtain ⟨a, ha, hae⟩ := ih k (par_lt M 0 c k hk)
+      exact ⟨a, Relation.ReflTransGen.tail ha hk, hae⟩
+
+include h00 hR01 in
+/-- **A column with row 1 positive has a row-1 parent.** -/
+theorem par1_exists {j : Nat} (h1 : 0 < entry M 1 j) : ∃ m, par M 1 j = some m := by
+  have h0 : 0 < entry M 0 j := by
+    rcases Nat.eq_zero_or_pos (entry M 0 j) with h | h
+    · rw [hR01 j h] at h1; omega
+    · exact h
+  have hj : 0 < j := by
+    rcases Nat.eq_zero_or_pos j with hj | hj
+    · subst hj; omega
+    · exact hj
+  obtain ⟨k, hk⟩ := par0_some_of hj (by rw [h00]; exact h0)
+  have hkj := par_lt M 0 j k hk
+  obtain ⟨a, ha, hae⟩ := anc_e1_below h00 hR01 h1 k
+  have hpar : par M 1 j = climb (par M 0) (fun q => decide (entry M 1 q < entry M 1 j)) (j + 1)
+      (par M 0 j) := rfl
+  have hne : par M 1 j ≠ none := by
+    rw [hpar, hk]
+    exact climb_ne_none (par_lt M 0) (j + 1) k (by omega) ⟨a, ha, by simpa using hae⟩
+  exact Option.ne_none_iff_exists'.mp hne
+
+include h00 hR01 hR12 in
+/-- Going up row 1 from `c`, some ancestor has row 2 equal to `0`. -/
+theorem anc1_e2_zero : ∀ c, ∃ a, Relation.ReflTransGen (StepRel (par M 1)) a c ∧ entry M 2 a = 0 := by
+  intro c
+  induction c using Nat.strong_induction_on with
+  | _ c ih =>
+    rcases Nat.eq_zero_or_pos (entry M 2 c) with h2 | h2
+    · exact ⟨c, Relation.ReflTransGen.refl, h2⟩
+    · have h1 : 0 < entry M 1 c := by
+        rcases Nat.eq_zero_or_pos (entry M 1 c) with h | h
+        · rw [hR12 c h] at h2; omega
+        · exact h
+      obtain ⟨k, hk⟩ := par1_exists h00 hR01 h1
+      obtain ⟨a, ha, hae⟩ := ih k (par_lt M 1 c k hk)
+      exact ⟨a, Relation.ReflTransGen.tail ha hk, hae⟩
+
+include h00 hR01 hR12 in
+/-- **A column with row 2 positive has a row-2 parent.** -/
+theorem par2_exists {j : Nat} (h2 : 0 < entry M 2 j) : ∃ m, par M 2 j = some m := by
+  have h1 : 0 < entry M 1 j := by
+    rcases Nat.eq_zero_or_pos (entry M 1 j) with h | h
+    · rw [hR12 j h] at h2; omega
+    · exact h
+  obtain ⟨k, hk⟩ := par1_exists h00 hR01 h1
+  have hkj := par_lt M 1 j k hk
+  obtain ⟨a, ha, hae⟩ := anc1_e2_zero h00 hR01 hR12 k
+  have hpar : par M 2 j = climb (par M 1) (fun q => decide (entry M 2 q < entry M 2 j)) (j + 1)
+      (par M 1 j) := rfl
+  have hne : par M 2 j ≠ none := by
+    rw [hpar, hk]
+    exact climb_ne_none (par_lt M 1) (j + 1) k (by omega) ⟨a, ha, by simp [hae]; omega⟩
+  exact Option.ne_none_iff_exists'.mp hne
+
+include h00 hR01 hR12 in
+/-- **The last column (not a root column) has its parent in the row `srow`.** -/
+theorem parLast_of {j : Nat} (hz : col M j ≠ (0, 0, 0)) : ∃ r, par M (TRIO.srow M j) j = some r := by
+  unfold TRIO.srow
+  by_cases h2 : 0 < TRIO.entry M 2 j
+  · rw [if_pos h2]; exact par2_exists h00 hR01 hR12 h2
+  rw [if_neg h2]
+  by_cases h1 : 0 < TRIO.entry M 1 j
+  · rw [if_pos h1]; exact par1_exists h00 hR01 h1
+  rw [if_neg h1]
+  have h0 : 0 < entry M 0 j := by
+    rcases Nat.eq_zero_or_pos (entry M 0 j) with h | h
+    · exact absurd ((col_zero_iff M j).mpr ⟨h, by omega, by omega⟩) hz
+    · exact h
+  have hj : 0 < j := by
+    rcases Nat.eq_zero_or_pos j with hj | hj
+    · subst hj; omega
+    · exact hj
+  exact par0_some_of hj (by rw [h00]; exact h0)
+
+end
+
 /-! ## 不変条件の束と、残りの仮定の束 -/
 
 /-- **The invariants of a 3-row matrix** with its valuation `ρ` and ranking `rk`: structural invariants,
@@ -260,12 +358,10 @@ structure Inv3 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   rootS : ∀ i ∈ roots M, Single (ρ.o i)
   rootP : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)
 
-/-- **The remaining per-matrix hypotheses**: the parent of the last column exists, the drop lemma's
+/-- **The remaining per-matrix hypotheses**: the drop lemma's
 remaining hypotheses (`DropRes`) for `M → M.take x` and for every prefix drop, and the seed condition
 `hcs` of `t = 1`, `q = r`. -/
 structure Res3 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
-  parLast : col M (M.length - 1) ≠ (0, 0, 0) →
-    ∃ r, par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r
   drop : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
   chain : ∀ j, j + 1 < M.length → DropRes (M.take (j + 1)) j (drop1 M (j + 1) rk) (drop1 M j rk)
   seed : ∀ r, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
@@ -295,7 +391,7 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
   have hpos : 0 < M.length := List.length_pos_of_ne_nil hne
   by_cases hz : col M (M.length - 1) = (0, 0, 0)
   · exact zero_last_desc hne I.cons I.good I.rank hz n
-  obtain ⟨r, hr⟩ := R.parLast hz
+  obtain ⟨r, hr⟩ := parLast_of I.e00 I.r01 I.r12 hz
   have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
       TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
   have hlen2 : 2 ≤ M.length := by
@@ -476,7 +572,7 @@ theorem terminates_of_desc3 (hD : Desc3) : WellFounded Step' := by
 
 /-- **Termination of the 3-row BMS from SRO**, with exactly the remaining work as hypotheses:
 - `hInv`: every nonempty `Std` matrix other than SRO has a valuation with the invariants `Inv3` and the
-  remaining per-matrix hypotheses `Res3` (drop-lemma residuals, the parent of the last column, the seed
+  remaining per-matrix hypotheses `Res3` (drop-lemma residuals, the seed
   condition `hcs` of `t = 1`, `q = r`);
 - `hT0`: the case `t = 0`, `n ≥ 2`;
 - `hT2`: the case `t = 2`. -/
