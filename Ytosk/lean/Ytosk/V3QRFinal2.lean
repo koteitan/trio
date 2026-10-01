@@ -39,6 +39,11 @@ theorem qr_final2 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
         ((drop1 M (r + L) rkM).o r))
     (hsp0 : spArg (ρ.v r) (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r) =
       app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
+    (hADs0 : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z → ∀ i, i < r + L →
+      DepX M (r + L) false i → entry M 2 i ≠ 0 →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+        q < fsD (bumpW M ρ i) ((drop1 M (r + L) rkM).o r))
     (hLs : ∀ c, c < r + L → DepX M (r + L) true c →
       dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c = 0 →
       ∀ s y, ρ.o c = psi s y z → y ≠ app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z) →
@@ -50,6 +55,6 @@ theorem qr_final2 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
   have hbq : b = qrB M ρ r (r + L) := hbe
   subst hbq
   exact qr_final hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hKD hTD
-    hAD hTP hTPL hAU' hAD' hsM hpM hro hb rfl hYB hS hsp0 hLs
+    hAD hTP hTPL hAU' hAD' hsM hpM hro hb rfl hYB hS hsp0 hADs0 hLs
 
 end Ytosk

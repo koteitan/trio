@@ -8,7 +8,8 @@
 - 始点の (L)(ii): seed ≥ ψ_μ(1) なら TPLoW から。そうでない場合（b = 0、r = x − 1 のときだけ）は仮定 hLs0。
 - y = b_r の書き換えの枠の (W)（B < b + ζ）: 鎖の 2 項目以降は TP1（t1 の不変条件、η = ψ_μ(1)）から。
 残る仮定（q = r に固有、どれも始点が ψ_μ(1) より小さい場合（b = 0）か添字が μ より小さい場合だけ）:
-hYBs（始点で B < b + seed）、hcs（始点の成分は始点より小さい）、hLs0（始点での (L)(ii)）。
+hYBs（始点で B < b + seed）、hcs（始点の成分は始点より小さい）、hLs0（始点での (L)(ii)）、
+hADs0（添字 0 ののりしろの枠の吸収を始点で）。
 -/
 import Ytosk.V3QRSeed
 import Ytosk.V3MainT1F
@@ -47,6 +48,11 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       lt (preState M ρ i L') (app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r)) = true)
     (hcs : lt (sf ((drop1 M (r + L) rkM).v r)) (ρ.v r) = true →
       ∀ u g, g ∈ comps u ((drop1 M (r + L) rkM).o r) → g < (drop1 M (r + L) rkM).o r)
+    (hADs0 : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z → ∀ i, i < r + L →
+      DepX M (r + L) false i → entry M 2 i ≠ 0 →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+        q < fsD (bumpW M ρ i) ((drop1 M (r + L) rkM).o r))
     (hLs0 : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z → ∀ c, c < r + L → DepX M (r + L) true c →
       dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c = 0 →
       ∀ s y, ρ.o c = psi s y z → y ≠ app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z) →
@@ -185,6 +191,6 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
           · exact absurd (le_of_lt h) h1s
         exact hYBs hlt1 i L' c R hi hd hch hdc s hcv htr1 htr2
   exact qr_final2 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hKD hTD
-    hAD hTP hTPL hAU' hAD' hsM hpM hYB hS hsp0 hLs
+    hAD hTP hTPL hAU' hAD' hsM hpM hYB hS hsp0 hADs0 hLs
 
 end Ytosk

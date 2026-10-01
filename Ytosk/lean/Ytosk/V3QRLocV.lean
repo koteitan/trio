@@ -3,7 +3,8 @@
 
 値の不変条件（大域、cof ω の穴に限る）:
 - **AbsUW**: 上げ i → k で、v(P_1 i) の加数で last v(k) より小さいものは fsD(last v(k), 1) より小さい。
-- **AbsDW**: のりしろの項 W について同じ（fsD(W, 1)）。
+- **AbsDW**: のりしろの項 W について同じ（fsD(W, ψ_μ(1))、μ は穴の段）。添字 0 で始点が ψ_μ(1) より小さいときは
+  始点での条件（仮定 hADs0）。
 補題:
 - `qr_lkeep`: D の列 c（c < x、o(c) ≠ A）の (L)(ii) を鎖の添字 gamS(m + d_c) で（y = b_r なら引き上げの数 ≥ 1、
   y ≠ b_r なら TPLoW か始点の仮定 hLs）。
@@ -20,11 +21,12 @@ def AbsUW (M : Mat) (ρ : Valn) : Prop :=
   ∀ i k, upg M i = some k → OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
     ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) → q < fsD (last (ρ.v k)) one
 
-/-- **Value invariant AbsDW** (`η = 1`, holes with cofinality `ω`). -/
+/-- **Value invariant AbsDW** (`η = ψ_μ(1)` with `μ` the hole level, holes with cofinality `ω`). -/
 def AbsDW (M : Mat) (ρ : Valn) : Prop :=
   ∀ i, i < M.length → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → OHole (bumpW M ρ i) →
     cof (bumpW M ρ i) = .omega →
-    ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i → q < fsD (bumpW M ρ i) one
+    ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+      q < fsD (bumpW M ρ i) (psi (holeLev (bumpW M ρ i)) one z)
 
 /-- In a standard `P ++ X`, every summand of `P` is at least the head of `X`. -/
 theorem summands_ge_of_app : ∀ {P X : T}, isOT (app P X) = true → ∀ q ∈ summands P, head X ≤ q
@@ -162,7 +164,10 @@ theorem qr_lkeep (m : Nat) {c : Nat} (hc : c < x) (hdc : DepX M x true c) {s y :
 variable (hS : ∀ a', ¬ lt μ a' = true → isOT (psi a' (app b (psi (succ μ) z z)) z) = true →
     SeedOK a' (app b (psi (succ μ) z z)) μ seed)
   (hAU' : AbsUW M ρ) (hAD' : AbsDW M ρ)
-include hS hAU' hAD'
+  (hADs0 : seed < psi μ one z → ∀ i, i < x → DepX M x false i → entry M 2 i ≠ 0 →
+    dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) i = 0 →
+    ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i → q < fsD (bumpW M ρ i) seed)
+include hS hAU' hAD' hADs0
 
 /-- **`VLocZ` on all `v` calls of `D`** (`t = 1`, `q = r`). -/
 theorem qr_vloc (m : Nat) : ∀ i, i < x → DepX M x false i →
@@ -355,8 +360,26 @@ theorem qr_vloc (m : Nat) : ∀ i, i < x → DepX M x false i →
       have hOW : OHole (bumpW M ρ i) := by rw [hBD.W]; exact ohole_of_diag hDW
       have hcW : cof (bumpW M ρ i) = .omega := by rw [hBD.W]; exact DiagAt.cof_omega hDW
       have h0 := hAD' i hiM h1' h2 hOW hcW q hq (by rw [hBD.W]; exact hlt)
-      rw [hBD.W] at h0
-      exact lt_of_lt_of_le h0 (fsD_mono_eta (ohole_of_diag hDW) (one_le_of_ne_z (hgz _)))
+      rw [hBD.W, DiagAt.holeLev_eq hDW] at h0
+      unfold zfQ
+      by_cases h1s : psi μ one z ≤ gamS μ br seed (m + dOf M x lo lb i)
+      · exact lt_of_lt_of_le h0 (fsD_mono_eta (ohole_of_diag hDW) h1s)
+      · have hidx : m + dOf M x lo lb i = 0 := by
+          rcases Nat.eq_zero_or_pos (m + dOf M x lo lb i) with h | h
+          · exact h
+          · exfalso
+            obtain ⟨k', hk'⟩ : ∃ k', m + dOf M x lo lb i = k' + 1 :=
+              ⟨m + dOf M x lo lb i - 1, by omega⟩
+            rw [hk'] at h1s; exact h1s (gamS_ge_psi1 hseedz k')
+        rw [hidx] at h1s ⊢
+        have hlt1 : seed < psi μ one z := by
+          rcases lt_trichotomy' seed (psi μ one z) with h | h | h
+          · exact h
+          · exact absurd (le_of_eq h.symm) h1s
+          · exact absurd (le_of_lt h) h1s
+        have h2' := hADs0 hlt1 i hi hv h2 (by omega) q hq (by rw [hBD.W]; exact hlt)
+        rw [hBD.W] at h2'
+        exact h2'
 
 end
 

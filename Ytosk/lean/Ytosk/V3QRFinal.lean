@@ -43,6 +43,11 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       isOT (psi a' (app b (psi (succ (ρ.v r)) z z)) z) = true →
       SeedOK a' (app b (psi (succ (ρ.v r)) z z)) (ρ.v r) ((drop1 M (r + L) rkM).o r))
     (hsp0 : spArg (ρ.v r) b ((drop1 M (r + L) rkM).o r) = app b ((drop1 M (r + L) rkM).o r))
+    (hADs0 : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z → ∀ i, i < r + L →
+      DepX M (r + L) false i → entry M 2 i ≠ 0 →
+      dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) i = 0 →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+        q < fsD (bumpW M ρ i) ((drop1 M (r + L) rkM).o r))
     (hLs : ∀ c, c < r + L → DepX M (r + L) true c →
       dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) c = 0 →
       ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ (ρ.v r)) z z) →
@@ -143,7 +148,7 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       (fun m => qr_oloc hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro rfl hb hpre hox
         hOS hVS hBk hxv hS hseedS hsp0 hTP hTPL hYB hLs m)
       (fun m => qr_vloc hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS hb hVS
-        hBk hxv hseedS hTPL hLs hS hAU' hAD' m)
+        hBk hxv hseedS hTPL hLs hS hAU' hAD' hADs0 m)
       hRt (ρ1 := drop1 M (r + L) rkM) (rk1 := rkM) (by rw [gexp_one_eq hlen]; exact hC1)
       (by rw [gexp_one_eq hlen]; exact hRk1) rfl
       (fun g hg a ha h => by
