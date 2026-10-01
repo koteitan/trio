@@ -210,4 +210,41 @@ theorem chg_only_last {i j j' d : Nat} {b : Bool} (h2 : entry M 2 i ≠ 0) (hj :
 
 end
 
+/-! ## 弱い子での回復 -/
+
+/-- **Recovery at a parent of a weak child**: if dropping the child gives `ψ_a(B) ◁ ψ_a(X)` and the new
+child `c′` dominates its own components, then `ψ_a(B + c′) ◁ ψ_a(X)`. -/
+theorem lhd_weak_child {a B c' X : T} (hdrop : Lhd z (psi a B z) (psi a X z)) (hc : c' ≠ z)
+    (hsmall : ∀ u, ∀ g ∈ comps u c', g ≤ app B c') (hlt : app B c' < X) :
+    Lhd z (psi a (app B c') z) (psi a X z) := by
+  refine ⟨by rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, hlt⟩, fun u c h1 h2 => ?_⟩
+  obtain ⟨C, R, rfl, hC1, hC2⟩ := between_psi h1 h2
+  have hBc : psi a B z < psi a C R := by
+    apply lt_of_lt_of_le _ (le_of_lt h1)
+    rw [psi_lt_psi_z_iff]; right; refine ⟨rfl, ?_⟩
+    have := app_lt_app_left B (show z < c' by cases c' with | z => exact absurd rfl hc | psi _ _ _ => exact T.z_lt_psi _ _ _)
+    rwa [app_z_right] at this
+  intro g hg
+  simp only [comps, List.mem_append] at hg
+  rcases hg with hg | hg
+  · split at hg
+    · simp at hg
+    · rename_i hau
+      simp only [List.mem_cons, List.mem_append] at hg
+      have hCmem : C ∈ comps u (psi a C R) := by
+        simp only [comps, List.mem_append]; left; rw [if_neg hau]; simp
+      rcases hg with rfl | (hg | hg)
+      · exact ⟨C, List.mem_append_left _ hCmem, hC1⟩
+      · rw [comps_app] at hg
+        rcases List.mem_append.mp hg with hg | hg
+        · -- a component of `B`: from the drop
+          have hgB : g ∈ comps u (psi a B z) := by
+            simp only [comps, List.mem_append]; left; rw [if_neg hau]; simp [hg]
+          exact hdrop.2 u (psi a C R) hBc h2 g hgB
+        · exact ⟨C, List.mem_append_left _ hCmem, le_trans (hsmall u g hg) hC1⟩
+      · have hgB : g ∈ comps u (psi a B z) := by
+          simp only [comps, List.mem_append]; left; rw [if_neg hau]; simp [hg]
+        exact hdrop.2 u (psi a C R) hBc h2 g hgB
+  · simp at hg
+
 end Ytosk
