@@ -54,4 +54,49 @@ theorem roots_eq {M N : Mat} {x : Nat} (hx : x + 1 = M.length) (hNl : x ≤ N.le
     · have : c = x := by omega
       subst this; exact absurd hc0 hxr
 
+/-- **The matrix value drops with the top of the path.** -/
+theorem ev2r_lt_of_top {M N : Mat} {x ρ : Nat} (hx : x + 1 = M.length) (hG : Good2 M)
+    (hRD : RootsDec M) (hρ : Anc0 M ρ x) (hρ0 : col M ρ = (0, 0, 0)) (hroots : roots N = roots M)
+    (hoff : ∀ c ∈ roots M, c < ρ → o2r N c = o2r M c)
+    (hot : isOT (o2r N ρ) = true) (hlt : o2r N ρ < o2r M ρ) :
+    isOT (ev2r N) = true ∧ ev2r N < ev2r M := by
+  have hsplit := roots_split hx hρ hρ0
+  set R := (roots M).filter (fun c => decide (c < ρ)) with hRdef
+  have hRv : R.map (o2r N) = R.map (o2r M) := by
+    apply List.map_congr_left
+    intro c hc
+    rw [hRdef, List.mem_filter] at hc
+    exact hoff c hc.1 (by simpa using hc.2)
+  have hdM : (R.map (o2r M) ++ [o2r M ρ]).Pairwise (fun a b => b ≤ a) := by
+    have := hRD; unfold RootsDec at this
+    rw [hsplit, List.map_append] at this; exact this
+  have hdM' := List.pairwise_append.mp hdM
+  have hsing : ∀ t ∈ R.map (o2r M), Single t := by
+    intro t ht; obtain ⟨i, _, rfl⟩ := List.mem_map.mp ht; exact single_o2r hG i
+  have hdN : (R.map (o2r M) ++ [o2r N ρ]).Pairwise (fun a b => b ≤ a) := by
+    rw [List.pairwise_append]
+    refine ⟨hdM'.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
+    rw [List.mem_singleton] at hb; subst hb
+    exact le_trans (le_of_lt hlt) (hdM'.2.2 a ha _ (List.mem_singleton_self _))
+  have hsN : ∀ t ∈ R.map (o2r M) ++ [o2r N ρ], Single t := by
+    intro t ht
+    rcases List.mem_append.mp ht with ht | ht
+    · exact hsing t ht
+    · rw [List.mem_singleton] at ht; subst ht; exact ⟨hot, o2r_psi_form _ _⟩
+  have hsM : ∀ t ∈ R.map (o2r M) ++ [o2r M ρ], Single t := by
+    intro t ht
+    rcases List.mem_append.mp ht with ht | ht
+    · exact hsing t ht
+    · rw [List.mem_singleton] at ht; subst ht; exact single_o2r hG ρ
+  have eN : ev2r N = app (sumN (R.map (o2r M))) (o2r N ρ) := by
+    rw [ev2r_roots, hroots, hsplit, List.map_append, hRv]
+    exact sumN_snoc_dec hsN hdN
+  have eM : ev2r M = app (sumN (R.map (o2r M))) (o2r M ρ) := by
+    rw [ev2r_roots, hsplit, List.map_append]
+    exact sumN_snoc_dec hsM hdM
+  refine ⟨?_, ?_⟩
+  · have := (sumN_dec _ hsN hdN).1
+    rw [eN, ← sumN_snoc_dec hsN hdN]; exact this
+  · rw [eN, eM]; exact (app_lt_app_left_iff _).mpr hlt
+
 end Ytosk
