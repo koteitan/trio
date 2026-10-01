@@ -671,4 +671,60 @@ theorem t0_frame_swallow {a bg v b : T} {n : Nat} (hn : 1 ≤ n)
   subst hs; subst hy
   exact Or.inl (le_refl _)
 
+section
+variable {M : Mat} {j0 Lb n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+  (hA : Anc0 M j0 (j0 + Lb)) {g : Nat} (hg : par M 0 j0 = some g) (hn : 1 ≤ n)
+  (hx0 : par M 0 (j0 + Lb) = some j0)
+  (hpre : ∀ c, c < j0 + Lb → par (TRIO.gexp M j0 Lb 0 0 n) 0 c = par M 0 c)
+include hlen hLb hA hg hn hx0 hpre
+
+/-- **Off the path, children are unchanged by a `t = 0` expansion.** -/
+theorem children_gexp_off_t0 {h : Nat} (hh : h < j0 + Lb) (hnA : ¬ Anc0 M h (j0 + Lb)) :
+    children (TRIO.gexp M j0 Lb 0 0 n) h = children M h := by
+  have hlen' := TRIO.gexp_length (d0 := 0) (d1 := 0) (n := n) hlen
+  have hgA : Anc0 M g (j0 + Lb) := anc0_up hg hA
+  have hhg : h ≠ g := fun e => hnA (e ▸ hgA)
+  have hhj : h ≠ j0 := fun e => hnA (e ▸ hA)
+  rcases Nat.lt_or_ge h j0 with h1 | h1
+  · apply eq_of_sorted_mem _ _ (children_sorted _ _) (children_sorted _ _)
+    intro c
+    rw [mem_children_iff, mem_children_iff]
+    constructor
+    · rintro ⟨hcl, hcp⟩
+      rcases Nat.lt_or_ge c (j0 + Lb) with h2 | h2
+      · rw [hpre c h2] at hcp; exact ⟨by omega, hcp⟩
+      · exfalso
+        obtain ⟨k', q'', hk', hq'', rfl⟩ := TRIO.gexp_pos_decomp (j0 := j0) (n := n) (p := c) hLb
+          (by omega) (by rw [hlen'] at hcl; exact hcl)
+        rcases Nat.eq_zero_or_pos q'' with h0 | h0
+        · subst h0
+          rw [par0_gexp_root_t0 hlen hLb hk' hA hg] at hcp
+          exact hhg (Option.some.inj hcp).symm
+        · obtain ⟨pa, hpa⟩ := par0_some_of (show j0 < j0 + q'' by omega)
+            (anc0_interval hA (j0 + q'') (by omega) (by omega))
+          have hge := par0_ge_of_anc hA (show j0 < j0 + q'' by omega) (by omega) hpa
+          have hpa' : par M 0 (j0 + q'') = some (j0 + (pa - j0)) := by rw [hpa]; congr 1; omega
+          rw [par0_gexp_mir hlen hk' hq'' hpa'] at hcp
+          have := Option.some.inj hcp; omega
+    · rintro ⟨hcl, hcp⟩
+      have hcx : c < j0 + Lb := by
+        rcases Nat.lt_or_ge c (j0 + Lb) with h2 | h2
+        · exact h2
+        · exfalso
+          have : c = j0 + Lb := by omega
+          subst this; rw [hx0] at hcp; exact hhj (Option.some.inj hcp).symm
+      have hLn : Lb ≤ n * Lb := by
+        have := Nat.mul_le_mul_right Lb hn; simpa using this
+      refine ⟨by rw [hlen']; omega, by rw [hpre c hcx]; exact hcp⟩
+  · have hq : h - j0 < Lb := by omega
+    have e1 := children_gexp_t0 (d1 := 0) hlen hLb hA hg (show 0 < n by omega) hq
+    have e2 := children_block (q := h - j0) hlen (M := M)
+    rw [show j0 + (h - j0) = h by omega] at e2
+    rw [show j0 + (0 * Lb + (h - j0)) = h by omega] at e1
+    rw [e1, e2, if_neg (by rw [hx0]; intro e; exact hhj (Option.some.inj e).symm), List.append_nil]
+    rw [show j0 + (h - j0) = h by omega]
+    simp
+
+end
+
 end Ytosk
