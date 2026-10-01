@@ -20,7 +20,9 @@ theorem node_ot_hard {a B s' y' s y : T}
     (hc : isOT (psi s y z) = true) (hc' : isOT (psi s' y' z) = true)
     (hrel : LhdE (psi s' y' z) (psi s y z))
     (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
-    (hsub : SubSmall a s) (hsub' : SubSmall a s')
+    (hsub : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → SubSmall a s)
+    (hsub' : (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) ∨
+      (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → SubSmall a s')
     (hBcl : ¬ (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) →
       (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → Closed a B)
     (hy : s' = s → lt a s = true → (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) →
@@ -38,7 +40,7 @@ theorem node_ot_hard {a B s' y' s y : T}
       have hst : step a B s y z = H s y := by unfold step; rw [if_pos ht]
       have hst' : step a B s' y' z = H s' y' := by unfold step; rw [if_pos ht']
       rcases psi_lt_psi_z_iff.mp hl.1 with hss | ⟨hs, hyy⟩
-      · obtain ⟨hcomp, hyle⟩ := comps_le_of_sub_lt hl hss hsub'
+      · obtain ⟨hcomp, hyle⟩ := comps_le_of_sub_lt hl hss (hsub' (Or.inl ht'))
         rw [hst', H_of_le_om hc' (ne_z_of_lt ht'.1) hyle] at hX'ot ⊢
         exact ot_parent_small ha hX'ot (closed_of_le_om hcomp a (lt_irrefl' a))
       · subst s'
@@ -77,7 +79,7 @@ theorem node_ot_hard {a B s' y' s y : T}
               · exact y_le_step (B := B) hc' (fun q hq => le_trans (le_of_lt hl.1) (hBc q hq))
                   (not_lt.mpr has) |>.trans (le_of_eq hst')
               · exact hcy g hg
-              · exact le_trans (hsub a (lt_irrefl' a) g hg) hOm
+              · exact le_trans ((hsub ht) a (lt_irrefl' a) g hg) hOm
         · -- same high part: argument-level `◁`
           have hlo0 : (split y (psi (succ s) z z)).2 ≠ z := by
             intro h; rw [h] at hlo; exact T.not_lt_z _ hlo
@@ -90,7 +92,7 @@ theorem node_ot_hard {a B s' y' s y : T}
       have hac : psi a z z < psi s y z := lt_trans (show psi a z z < psi s' y' z from ht'.2) hl.1
       have hyB : ¬ B < y := fun h => ht ⟨h, hac⟩
       rcases psi_lt_psi_z_iff.mp hl.1 with hss | ⟨rfl, hyy⟩
-      · obtain ⟨_, hyle⟩ := comps_le_of_sub_lt hl hss hsub'
+      · obtain ⟨_, hyle⟩ := comps_le_of_sub_lt hl hss (hsub' (Or.inl ht'))
         by_cases hBz : B = z
         · subst hBz
           have hyz : y = z := by
@@ -114,7 +116,7 @@ theorem node_ot_hard {a B s' y' s y : T}
         unfold step; rw [if_neg ht', step_add (fun q hq => le_trans (le_of_lt hl.1) (hBc q hq))]
       rw [hst'] at hX'ot ⊢
       exact ot_parent_small ha hX'ot
-        (closed_tn hl ht' ht hBc (hBcl ht' ht) hsub hsub' a (lt_irrefl' a))
+        (closed_tn hl ht' ht hBc (hBcl ht' ht) (hsub ht) (hsub' (Or.inr ht)) a (lt_irrefl' a))
     · -- no rewrite
       exact ot_parent_lhd hot hX'ot (lhdE_step_nn' (Or.inr hl) ht' ht hBc)
 
@@ -135,9 +137,9 @@ variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
   {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
   (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
-  (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+  (hVS : VSmallF M ρ) (hVN : VSmallNew M x ρ ρ') (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
   (hHard : HardArg M x ρ ρ')
-include hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hHard
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hVN hF hFO hHard
 
 /-- **One `o` step of the drop.** -/
 theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
@@ -155,8 +157,8 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
   by_cases hCv : ChgX M x false i
   · -- `v(i)` changes: no counted child in `M.take x`
     have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCv).1 rfl hi
-    have ho' := o_of_no_counted hC' hiT hv.2.1 hT.2.1
-    refine ⟨?_, by rw [ho']; exact ⟨by rw [isOT_psi_iff]; exact ⟨hv.2.1, rfl, rfl, z_le _,
+    have ho' := o_of_no_counted hC' hiT hv.2 hT.2.1
+    refine ⟨?_, by rw [ho']; exact ⟨by rw [isOT_psi_iff]; exact ⟨hv.2, rfl, rfl, z_le _,
       fun g hg => by simp [comps] at hg⟩, _, _, rfl⟩⟩
     rcases hv.1 with h | ⟨hW, hnc⟩
     · rw [ho', o_spArg hC hG hiM]; exact Or.inl (lhdE_oq_v h)
@@ -199,21 +201,66 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
           by_contra hn; exact hne ((hoff d hdx).1 hn)
         exact chg_last hx hR0 hZ2 hSD hZ1 hUAT hUAB hdc hCd cs hcsT.1 hdcs hcsT.2
       have hclM : CL M i = Lc ++ [cs] ++ Tl := by rw [hTl, hcl]
+      have hcsM0 : cs < M.length := by
+        have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega
+      have hcsx0 : cs < (M.take x).length := (mem_children hcsT.1).2
+      have hvM : ∀ s y, ρ.o cs = psi s y z → s = ρ.v cs := by
+        intro s y h
+        obtain ⟨y0, hy0⟩ := o_psi_sub hC hcsM0
+        rw [h] at hy0; simp only [psi.injEq] at hy0
+        rw [hy0.1, sf_ot (hG.ot_v cs hcsM0)]
+      have hvT : ∀ s y, ρ'.o cs = psi s y z → s = ρ'.v cs := by
+        intro s y h
+        obtain ⟨y0, hy0⟩ := o_psi_sub hC' hcsx0
+        rw [h] at hy0; simp only [psi.injEq] at hy0
+        rw [hy0.1, sf_ot hPVc.2]
+      have hfr := hVS i hiM Lc cs Tl (by rw [hclM]; simp)
+      have hchgv : ρ'.v cs ≠ ρ.v cs → ρ'.o cs = psi (ρ'.v cs) z z := by
+        intro hvs
+        have hCv : ChgX M x false cs := by
+          by_contra hn; exact hvs ((hoff cs (by rw [hlenT] at hcsx0; exact hcsx0)).2 hn)
+        have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCv).1 rfl (by rw [hlenT] at hcsx0; exact hcsx0)
+        exact o_of_no_counted hC' hcsx0 hPVc.2 hT.2.1
+      -- the smallness of the subscripts where a frame rewrites
+      have hsubM : ∀ s y, ρ.o cs = psi s y z →
+          (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+          SubSmall (ρ.v i) s := fun s y h hrw => by rw [hvM s y h]; exact (hfr.2 s y h hrw).subSmall _
+      have hsubT : ∀ s y s' y', ρ.o cs = psi s y z → ρ'.o cs = psi s' y' z →
+          (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true) ∨
+          (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+          SubSmall (ρ.v i) s' := by
+        intro s y s' y' h h' hrw
+        rw [hvT s' y' h']
+        by_cases hvs : ρ'.v cs = ρ.v cs
+        · have hle : psi s' y' z ≤ psi s y z := by
+            have := hPOc.1.elim (fun h => h.le) (fun h => DRelO.le (Or.inr h.1)); rw [h, h'] at this; exact this
+          have hss : s' = s := by rw [hvT s' y' h', hvs, ← hvM s y h]
+          have hold : lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
+              lt (psi (ρ.v i) z z) (psi s y z) = true := by
+            rcases hrw with hn | ho
+            · have hyy : y' ≤ y := by
+                rw [hss] at hle
+                rcases (le_iff _ _).mp hle with hl | hl
+                · rcases psi_lt_psi_z_iff.mp hl with hl | ⟨_, hl⟩
+                  · exact absurd hl (lt_irrefl' _)
+                  · exact le_of_lt hl
+                · simp only [psi.injEq] at hl; rw [hl.2.1]
+              exact ⟨lt_of_lt_of_le hn.1 hyy, lt_of_lt_of_le hn.2 hle⟩
+            · exact ho
+          rw [hvs]; exact (hfr.2 s y h hold).subSmall _
+        · rcases hrw with hn | ho
+          · exfalso
+            rw [hchgv hvs] at h'; simp only [psi.injEq] at h'
+            have := hn.1; rw [← h'.2.1] at this; exact T.not_lt_z _ this
+          · exact ((hVN i hi Lc cs hcl hvs).2 s y h ho).subSmall _
+      have hsubA : ∀ s' y', ρ'.o cs = psi s' y' z → ∀ g ∈ comps (ρ.v i) s', g ≤ psi s' z z := by
+        intro s' y' h'
+        rw [hvT s' y' h']
+        by_cases hvs : ρ'.v cs = ρ.v cs
+        · rw [hvs]; exact hfr.1
+        · exact (hVN i hi Lc cs hcl hvs).1
       refine ⟨Or.inl (o_frame_eval hC hG hF hC' hiT hiM hv' hcl hclM hsame hPOc.2 hPOc.1
-        (fun s y h => by
-          have hs : s = ρ.v cs := by
-            obtain ⟨y0, hy0⟩ := o_psi_sub hC (show cs < M.length by
-              have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega)
-            rw [h] at hy0; simp only [psi.injEq] at hy0
-            rw [hy0.1, sf_ot (hG.ot_v cs (by
-              have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega))]
-          rw [hs]; exact (hVS cs (by
-            have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega)).subSmall _)
-        (fun s y h => by
-          have hcsx : cs < (M.take x).length := (mem_children hcsT.1).2
-          obtain ⟨y0, hy0⟩ := o_psi_sub hC' hcsx
-          rw [h] at hy0; simp only [psi.injEq] at hy0
-          rw [hy0.1, sf_ot hPVc.2.1]; exact hPVc.2.2.subSmall _)), ?_⟩
+        hsubM hsubT), ?_⟩
       -- `o′(i)` is standard
       have hcsM : cs < M.length := by
         have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega
@@ -247,11 +294,6 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
       refine ⟨?_, _, _, rfl⟩
       have hBot := hFO i hiM Lc cs Tl (by rw [hclM]; simp)
       have hLs := sumN_dec (Lc.map ρ.o) (fun t ht => hsM t (by simp [ht])) (List.pairwise_append.mp hp1.1).1
-      have hsub' : SubSmall (ρ.v i) s' := by
-        have hcsx : cs < (M.take x).length := (mem_children hcsT.1).2
-        obtain ⟨y0, hy0⟩ := o_psi_sub hC' hcsx
-        rw [hs'y'] at hy0; simp only [psi.injEq] at hy0
-        rw [hy0.1, sf_ot hPVc.2.1]; exact hPVc.2.2.subSmall _
       have hBge : ∀ t, Single t → t ≤ ρ.o cs →
           ∀ q ∈ summands (spArg (ρ.v i) z (sumN (Lc.map ρ.o))), t ≤ q := by
         intro t ht htc
@@ -265,10 +307,6 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
         have hcsS := single_o hC hG hcsM
         rw [hsy] at hcsS
         rw [hs'y', hsy] at hrelL
-        have hsub : SubSmall (ρ.v i) s := by
-          obtain ⟨y0, hy0⟩ := o_psi_sub hC hcsM
-          rw [hsy] at hy0; simp only [psi.injEq] at hy0
-          rw [hy0.1, sf_ot (hG.ot_v cs hcsM)]; exact (hVS cs hcsM).subSmall _
         have hCL : CL M i = Lc ++ cs :: Tl := by rw [hclM]; simp
         have hsLc : ∀ t ∈ Lc.map ρ.o ++ [ρ.o cs], Single t := fun t ht => hsM t (by
           rcases List.mem_append.mp ht with h | h
@@ -290,16 +328,16 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
           | cons c0 Tl' => exact hFO i hiM (Lc ++ [cs]) c0 Tl' (by rw [hclM])
         exact node_ot_hard hcsS.1 (by rw [← hs'y']; exact hPOc.2.1) hrelL
           (hBge _ (single_o hC hG hcsM) (le_refl _) |> fun h => by rw [hsy] at h; exact h)
-          hsub hsub' (fun _ hr => hF i hiM Lc cs Tl hCL s y hsy hr)
+          (hsubM s y hsy) (hsubT s y s' y' hsy hs'y') (fun _ hr => hF i hiM Lc cs Tl hCL s y hsy hr)
           (fun hss has ht' ht hhi => by
             subst hss
             exact hHard i hi Lc cs hcl s' y' y hs'y' hsy has ht' ht hhi)
           hot hBot
       · -- a weak child `ψ_{w′}(0)`: the argument is `0`
         rw [hs'y'] at e1; simp only [psi.injEq] at e1
-        apply step_ot_of_le hBot (by rw [← hs'y']; exact hPOc.2.1)
+        apply step_ot_of_le' hBot (by rw [← hs'y']; exact hPOc.2.1)
         · exact hBge _ hPOc.2 hle' |> fun h => by rw [hs'y'] at h; exact h
-        · exact hsub'
+        · exact hsubA s' y' hs'y'
         · intro _ g hg; rw [e1.2.1] at hg; simp [comps] at hg
 
 /-- **One `v` step of the drop.** The bump-type frame (`hBump`) and the absorption at `x − 1` (`hX1`)
@@ -319,7 +357,7 @@ theorem pv_of_hard {i : Nat} (hi : i < x)
   by_cases hCv : ChgX M x false i
   swap
   · rw [PV, (hoff i hi).2 hCv]
-    exact ⟨Or.inl (Or.inl rfl), hG.ot_v i hiM, hVS i hiM⟩
+    exact ⟨Or.inl (Or.inl rfl), hG.ot_v i hiM⟩
   have h1 := chgx_e1 hCv
   by_cases h2 : entry M 2 i = 0
   swap
@@ -339,10 +377,6 @@ theorem pv_of_hard {i : Nat} (hi : i < x)
     cases hp : par M 1 i with
     | none => rfl
     | some m => exact hG.ot_v m (by have := par_lt M 1 i m hp; omega)
-  have hVs : VSmallV (vOpt ρ (par M 1 i)) := by
-    cases hp : par M 1 i with
-    | none => intro u g hg; simp [vOpt, comps] at hg
-    | some m => exact hVS m (by have := par_lt M 1 i m hp; omega)
   have hoot : ∀ k, ∀ j ∈ children M k, col M j = bump M k → ∀ k' ∈ children M j, isOT (ρ.o k') = true :=
     fun k j _ _ k' hk' => hG.ot_o k' (mem_children hk').2
   -- `v′(i)` when the upgrade is gone or absent
@@ -358,7 +392,7 @@ theorem pv_of_hard {i : Nat} (hi : i < x)
       have e2 : ρ.v i = sf (add (vOpt ρ (par M 1 i)) one) := by
         rw [(hC i hiM).2]; unfold vRhs; rw [if_neg h1, if_pos h2, hu]
       rw [PV, e1, ← e2]
-      exact ⟨Or.inl (Or.inl rfl), hG.ot_v i hiM, hVS i hiM⟩
+      exact ⟨Or.inl (Or.inl rfl), hG.ot_v i hiM⟩
     | some k =>
       have huT : upg (M.take x) i = some k := by rw [hupT, hu]
       obtain ⟨hPVk, hook⟩ := hup k huT
@@ -368,7 +402,7 @@ theorem pv_of_hard {i : Nat} (hi : i < x)
         (fun j hj hjb k' hk' => (hook j hj hjb k' hk').1)
       unfold PV
       rw [ek, ek']
-      refine ⟨?_, hPVk.2.1, hPVk.2.2⟩
+      refine ⟨?_, hPVk.2⟩
       rcases hPVk.1 with h | ⟨hW, _⟩
       · exact Or.inl h
       · right
@@ -395,7 +429,7 @@ theorem pv_of_hard {i : Nat} (hi : i < x)
     have hot1 : isOT (add (vOpt ρ (par M 1 i)) one) = true := isOT_add hVot rfl
     unfold PV
     rw [e1, sf_ot hot1]
-    refine ⟨?_, hot1, vsmall_add_one hVot hVs⟩
+    refine ⟨?_, hot1⟩
     cases hu : upg M i with
     | none =>
       have e2 : ρ.v i = sf (add (vOpt ρ (par M 1 i)) one) := by
@@ -436,7 +470,7 @@ theorem drop_all_hard
       have hPV : ∀ i, i < x → rk false i ≤ N → PV M ρ ρ' i := by
         intro i hi hN
         obtain ⟨_, _, hR⟩ := hRk' i (by omega)
-        apply pv_of_hard hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hHard hi
+        apply pv_of_hard hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hVN hF hFO hHard hi
         · intro hCv h1 h2
           apply hBump i hi _ hCv h1 h2
           intro j hj hjb k hk hkx
@@ -479,7 +513,7 @@ theorem drop_all_hard
           exact ((ih _ (by omega) k' hk'x).1 (Nat.le_refl _)).2
       refine fun i hi => ⟨fun hN => ?_, hPV i hi⟩
       obtain ⟨hvo, hc, _⟩ := hRk' i (by omega)
-      apply po_of_hard hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hHard hi
+      apply po_of_hard hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hVN hF hFO hHard hi
       · exact hPV i hi (by omega)
       · intro c hcT hcnt
         have hlt := hc c hcT hcnt.1 hcnt.2
@@ -499,11 +533,11 @@ theorem t1_main_drop_hard {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
     -- the remaining hypotheses of the drop lemma
     (hHard : HardArg M (r + L) ρ (drop1 M (r + L) rkM))
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
     (hUA : UpgAbsX M (r + L) ρ)
     (hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r)
     {μ br vr : T}
@@ -533,8 +567,8 @@ theorem t1_main_drop_hard {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
   have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
   have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
   have hpath := hpath_of_par1 h1 hA hrx
-  have hdrop := drop_all_hard (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hF hFO hHard
-    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hKD hTD hAbs hWS hVSt)
+  have hdrop := drop_all_hard (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hVSt hF hFO hHard
+    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hTD hAbs hWS)
     hUA
   have hv : (drop1 M (r + L) rkM).v r = ρ.v r :=
     base_v_r hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hA hrx hqr hpath

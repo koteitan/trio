@@ -48,7 +48,9 @@ argument `0`), its subscript is small, and an old child with argument `0` has a 
 argument `0`. -/
 theorem step_lt {a B s' y' s y : T} (hc : isOT (psi s y z) = true) (hc' : isOT (psi s' y' z) = true)
     (hrel : Lhd z (psi s' y' z) (psi s y z) ∨ (y' = z ∧ psi s' y' z < psi s y z))
-    (hBc : ∀ q ∈ summands B, psi s y z ≤ q) (hsub' : SubSmall a s') (hy : y = z → y' = z) :
+    (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
+    (hsub' : (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) → s' < s → SubSmall a s')
+    (hy : y = z → y' = z) :
     step a B s' y' z < step a B s y z := by
   have hl : psi s' y' z < psi s y z := by
     rcases hrel with h | h
@@ -64,7 +66,7 @@ theorem step_lt {a B s' y' s y : T} (hc : isOT (psi s y z) = true) (hc' : isOT (
     · unfold step
       rw [if_pos ht', if_pos ht]
       rcases psi_lt_psi_z_iff.mp hl with hss | ⟨rfl, hyy⟩
-      · obtain ⟨_, hyle⟩ := comps_le_of_sub_lt hLhd hss hsub'
+      · obtain ⟨_, hyle⟩ := comps_le_of_sub_lt hLhd hss (hsub' ht' hss)
         rw [H_of_le_om hc' (ne_z_of_lt ht'.1) hyle]
         have h1 : psi s' y' z < psi (succ s') z z :=
           psi_lt_psi_z_iff.mpr (Or.inl (lt_succ_self s'))
@@ -74,7 +76,7 @@ theorem step_lt {a B s' y' s y : T} (hc : isOT (psi s y z) = true) (hc' : isOT (
     · exfalso
       have hyB : ¬ B < y := fun h => ht ⟨h, hac⟩
       rcases psi_lt_psi_z_iff.mp hl with hss | ⟨rfl, hyy⟩
-      · obtain ⟨_, hyle⟩ := comps_le_of_sub_lt hLhd hss hsub'
+      · obtain ⟨_, hyle⟩ := comps_le_of_sub_lt hLhd hss (hsub' ht' hss)
         by_cases hBz : B = z
         · subst hBz
           have hyz : y = z := by
@@ -210,6 +212,17 @@ variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
   (hdrop : ∀ i, i < x → PO ρ ρ' i ∧ PV M ρ ρ' i)
 include hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop
 
+/-- A child of `M.take x` with a nonzero argument keeps its `v`. -/
+theorem new_rewrite_same_v {d : Nat} (hd : d < x) {s y : T} (h : ρ'.o d = psi s y z) (hy : y ≠ z) :
+    ρ'.v d = ρ.v d := by
+  by_contra hvs
+  have hdT : d < (M.take x).length := by rw [List.length_take]; omega
+  have hCv : ChgX M x false d := by
+    by_contra hn; exact hvs ((chg_off hx hC hG hC' hRk' d hd).2 hn)
+  have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCv).1 rfl hd
+  have := o_of_no_counted hC' hdT (hdrop d hd).2.2 hT.2.1
+  rw [h] at this; simp only [psi.injEq] at this; exact hy this.2.1
+
 omit hRk' hUAB in
 /-- **An argument `0` stays `0`** in `M.take x`. -/
 theorem arg0_take {d : Nat} (hd : d < x) {s : T} (h : ρ.o d = psi s z z) : ∃ s', ρ'.o d = psi s' z z := by
@@ -224,7 +237,7 @@ theorem arg0_take {d : Nat} (hd : d < x) {s : T} (h : ρ.o d = psi s z z) : ∃ 
   obtain ⟨Tl, hTl⟩ := cl_prefix hx hR0 hZ2 hSD hZ1 hUAT hd
   have hT : CL (M.take x) d = [] := by
     rw [hnil] at hTl; exact (List.append_eq_nil_iff.mp hTl.symm).1
-  exact ⟨ρ'.v d, o_of_no_counted hC' hdT (hdrop d hd).2.2.1 (no_cnt_of_cl_nil hT)⟩
+  exact ⟨ρ'.v d, o_of_no_counted hC' hdT (hdrop d hd).2.2 (no_cnt_of_cl_nil hT)⟩
 
 /-- **The `o` frame is strict**: `c` is the last counted child of `i` in `M`, and it drops strictly
 when it stays in `M.take x`. -/
@@ -237,7 +250,7 @@ theorem o_strict_frame {i c : Nat} (hi : i < x) (hcCL : c ∈ CL M i) (hlast : �
   obtain ⟨Tl, hTl⟩ := cl_prefix hx hR0 hZ2 hSD hZ1 hUAT hi
   have hvot : isOT (ρ.v i) = true := hG.ot_v i hiM
   rcases List.eq_nil_or_concat (CL (M.take x) i) with hnil | ⟨Lc, cs, hcl⟩
-  · rw [o_of_no_counted hC' hiT (hdrop i hi).2.2.1 (no_cnt_of_cl_nil hnil), o_cl_eq hC hG hiM]
+  · rw [o_of_no_counted hC' hiT (hdrop i hi).2.2 (no_cnt_of_cl_nil hnil), o_cl_eq hC hG hiM]
     exact psi_z_lt_of_le (hdrop i hi).2.le (arg_lt_of_cl hC hG hiM (List.ne_nil_of_mem hcCL))
   rw [List.concat_eq_append] at hcl
   have hcsT : cs ∈ children (M.take x) i ∧ Counted (M.take x) i cs := by
@@ -335,9 +348,16 @@ theorem o_strict_frame {i c : Nat} (hi : i < x) (hcCL : c ∈ CL M i) (hlast : �
       · rw [hLs.2]; intro q hq; rw [← hsy]; exact hLc q hq
       · simp [summands]
       · exact hq
-    · obtain ⟨y0, hy0⟩ := o_psi_sub hC' (show cs < (M.take x).length by omega)
+    · intro ht' hss
+      exfalso
+      have hvs := new_rewrite_same_v hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hcsx hs'y'
+        (ne_z_of_lt ht'.1)
+      obtain ⟨y0, hy0⟩ := o_psi_sub hC' (show cs < (M.take x).length by omega)
       rw [hs'y'] at hy0; simp only [psi.injEq] at hy0
-      rw [hy0.1, sf_ot hPVc.2.1]; exact hPVc.2.2.subSmall _
+      obtain ⟨y1, hy1⟩ := o_psi_sub hC (show cs < M.length by omega)
+      rw [hsy] at hy1; simp only [psi.injEq] at hy1
+      rw [hy0.1, hy1.1, hvs] at hss
+      exact lt_irrefl' _ hss
     · intro hy
       rw [hy] at hsy
       obtain ⟨s'', h''⟩ := arg0_take hx hR0 hZ2 hSD hZ1 hUAT hC hG hC' hdrop hcsx hsy
@@ -559,7 +579,7 @@ theorem dep_strict {q : Nat} {ζ μ : T} (hx2 : entry M 2 x = 0) (hq : par M 0 x
     have hiM : i < M.length := by omega
     have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depX_chgX hv)).1 rfl hi
     have hvlt : ρ'.v i < ρ.v i := ih hi
-    rw [o_of_no_counted hC' hiT (hdrop i hi).2.2.1 hT.2.1, o_cl_eq hC hG hiM]
+    rw [o_of_no_counted hC' hiT (hdrop i hi).2.2 hT.2.1, o_cl_eq hC hG hiM]
     exact psi_lt_psi_z_iff.mpr (Or.inl hvlt)
   | @vpar i m h1 hp hdm _ =>
     intro hi
@@ -593,7 +613,7 @@ theorem dep_strict {q : Nat} {ζ μ : T} (hx2 : entry M 2 x = 0) (hq : par M 0 x
       v_upg_eq hC hiM h1 h2 hu hVot (fun _ _ _ k' hk' => hG.ot_o k' (mem_children hk').2)
     have ek' : ρ'.v i = ρ'.v k := v_upg_eq hC' hiT (by rw [entry_take M 1 hi]; exact h1)
       (by rw [entry_take M 2 hi]; exact h2) huT
-      (by rw [par_take M 1 i hi, hm1]; exact (hdrop m (by omega)).2.2.1)
+      (by rw [par_take M 1 i hi, hm1]; exact (hdrop m (by omega)).2.2)
       (fun _ _ _ k' hk' => (hdrop k' (by have := (mem_children hk').2; omega)).1.2.1)
     rw [ek, ek']
     exact ih hkx
@@ -656,12 +676,12 @@ theorem t1_main_strict {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
     (hUA : UpgAbsX M (r + L) ρ)
     {μ br vr : T} (hμr : μ = vr) (hro : ρ.o r = psi vr br z)
     (hV : ∀ m i, i < r + L → DepX M (r + L) false i →
@@ -683,8 +703,8 @@ theorem t1_main_strict {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h
   have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
   have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
   have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
-  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hF hFO hArgT
-    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hKD hTD hAbs hWS hVSt)
+  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hVSt hF hFO hArgT
+    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hTD hAbs hWS)
     hUA
   have hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r :=
     ne_of_lt (o_r_strict (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE h1 hx2 hqr hC hG hC1 hRk1

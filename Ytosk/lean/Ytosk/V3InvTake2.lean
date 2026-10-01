@@ -103,7 +103,7 @@ theorem e00_take {M : Mat} (h : entry M 0 0 = 0) (k : Nat) : entry (M.take k) 0 
 /-- The value hypotheses of the drop lemma for dropping the last column `x` of `N`. -/
 structure DropHypV (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
   g : Good3 N σ
-  vs : VSmall N σ
+  vs : VSmallF N σ
   fc : FrameClosed N σ
   fo : FrameOT N σ
   argT : ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (N.take x) i = Lc ++ [cs] →
@@ -113,7 +113,7 @@ structure DropHypV (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
   td : BumpTermDec N σ
   ab : BumpAbs N σ
   ws : BumpWeakSrc N x σ σ'
-  vst : BumpVSmallTake N x σ σ'
+  vst : VSmallNew N x σ σ'
   ua : UpgAbsX N x σ
 
 theorem DropHypV.toDropHyp {N : Mat} {x : Nat} {σ σ' : Valn} (h : DropHypV N x σ σ')
@@ -128,12 +128,12 @@ theorem t1_n0v {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
     (hUA : UpgAbsX M (r + L) ρ)
     {ζ μ : T} (hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
     (hstep : ∀ j, r ≤ j → j < r + L →

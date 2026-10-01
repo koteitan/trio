@@ -71,7 +71,7 @@ theorem dep_strict0 {q : Nat} (hx2 : entry M 2 x = 0) (hq : par M 0 x = some q)
     have hiM : i < M.length := by omega
     have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depX_chgX hv)).1 rfl hi
     have hvlt : ρ'.v i < ρ.v i := ih hi
-    rw [o_of_no_counted hC' hiT (hdrop i hi).2.2.1 hT.2.1, o_cl_eq hC hG hiM]
+    rw [o_of_no_counted hC' hiT (hdrop i hi).2.2 hT.2.1, o_cl_eq hC hG hiM]
     exact psi_lt_psi_z_iff.mpr (Or.inl hvlt)
   | @vpar i m h1 hp hdm _ =>
     intro hi
@@ -105,7 +105,7 @@ theorem dep_strict0 {q : Nat} (hx2 : entry M 2 x = 0) (hq : par M 0 x = some q)
       v_upg_eq hC hiM h1 h2 hu hVot (fun _ _ _ k' hk' => hG.ot_o k' (mem_children hk').2)
     have ek' : ρ'.v i = ρ'.v k := v_upg_eq hC' hiT (by rw [entry_take M 1 hi]; exact h1)
       (by rw [entry_take M 2 hi]; exact h2) huT
-      (by rw [par_take M 1 i hi, hm1]; exact (hdrop m (by omega)).2.2.1)
+      (by rw [par_take M 1 i hi, hm1]; exact (hdrop m (by omega)).2.2)
       (fun _ _ _ k' hk' => (hdrop k' (by have := (mem_children hk').2; omega)).1.2.1)
     rw [ek, ek']
     exact ih hkx
@@ -166,12 +166,12 @@ theorem t1_main_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1 M ρ) (hTPLo : TPLo M ρ) (hAD : AbsD M ρ) (hAU : AbsU M ρ)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1 M ρ) (hTPLo : TPLo M ρ) (hAD : AbsD M ρ) (hAU : AbsU M ρ)
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
     (hUA : UpgAbsX M (r + L) ρ)
     {μ br vr : T} (hμr : μ = vr) (hro : ρ.o r = psi vr br z)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)) :
@@ -180,8 +180,8 @@ theorem t1_main_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL
   have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
   have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
   have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
-  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hF hFO hArgT
-    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hKD hTD hAbs hWS hVSt)
+  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hVSt hF hFO hArgT
+    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hTD hAbs hWS)
     hUA
   have hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r :=
     ne_of_lt (o_r_strict0 (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE h1 hx2 hqr hC hG hC1 hRk1 hdrop)

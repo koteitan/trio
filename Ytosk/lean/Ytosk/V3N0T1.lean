@@ -236,7 +236,7 @@ structure DropHyp (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
   uat : UAT N
   uab : UAB N
   g : Good3 N σ
-  vs : VSmall N σ
+  vs : VSmallF N σ
   fc : FrameClosed N σ
   fo : FrameOT N σ
   argT : ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (N.take x) i = Lc ++ [cs] →
@@ -246,7 +246,7 @@ structure DropHyp (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
   td : BumpTermDec N σ
   ab : BumpAbs N σ
   ws : BumpWeakSrc N x σ σ'
-  vst : BumpVSmallTake N x σ σ'
+  vst : VSmallNew N x σ σ'
   ua : UpgAbsX N x σ
 
 /-- **Dropping the last column does not raise the root value** (weak form of `root_take_lt`). -/
@@ -297,8 +297,8 @@ theorem drop_root_le {N : Mat} {x : Nat} (hx : x + 1 = N.length)
     {σ σ' : Valn} {rk : Bool → Nat → Nat} (hD : DropHyp N x σ σ')
     (hC : Cons N σ) (hC' : Cons (N.take x) σ') (hRk' : Rk (N.take x) rk) :
     isOT (root (N.take x) σ') = true ∧ root (N.take x) σ' ≤ root N σ := by
-  have hdrop := drop_all hx hR0 hZ2 hSD hZ1 hD.uat hD.uab hC hD.g hC' hRk' hD.vs hD.fc hD.fo hD.argT
-    (bump_drop hx hR0 hZ2 hSD hZ1 hD.uat hD.uab hC hD.g hC' hRk' hD.vs hD.kd hD.td hD.ab hD.ws hD.vst)
+  have hdrop := drop_all hx hR0 hZ2 hSD hZ1 hD.uat hD.uab hC hD.g hC' hRk' hD.vs hD.vst hD.fc hD.fo hD.argT
+    (bump_drop hx hR0 hZ2 hSD hZ1 hD.uat hD.uab hC hD.g hC' hRk' hD.kd hD.td hD.ab hD.ws)
     hD.ua
   exact root_take_le hx hD.g (fun i hi => (hdrop i hi).1.2.1) (fun i hi => (hdrop i hi).1.le)
 
@@ -321,12 +321,12 @@ theorem t1_n0 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
     (hUA : UpgAbsX M (r + L) ρ)
     {ζ μ : T} (hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
     (hstep : ∀ j, r ≤ j → j < r + L →

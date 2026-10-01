@@ -141,17 +141,13 @@ theorem cl_take_vals {i : Nat} (hi : i < x) :
 /-- **Good3 passes to `M.take x`.** -/
 theorem good3_take : Good3 (M.take x) ρ' where
   ot_o := fun i hi => (hdrop i (by rw [lenT hx] at hi; exact hi)).1.2.1
-  ot_v := fun i hi => (hdrop i (by rw [lenT hx] at hi; exact hi)).2.2.1
+  ot_v := fun i hi => (hdrop i (by rw [lenT hx] at hi; exact hi)).2.2
   dec := by
     intro i hi
     rw [lenT hx] at hi
     rw [cvals_eq_map' i (fun c hc => single_ne_z (hdrop c (by
       have := (mem_children hc).2; rw [lenT hx] at this; exact this)).1.2)]
     exact (cl_take_vals hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hi).2
-
-/-- **VSmall passes to `M.take x`** (it is part of the drop lemma's conclusion). -/
-theorem vsmall_take : VSmall (M.take x) ρ' :=
-  fun i hi => (hdrop i (by rw [lenT hx] at hi; exact hi)).2.2.2
 
 /-! ## FrameOT・FrameClosed -/
 
@@ -185,23 +181,21 @@ theorem frameOT_take (hFO : FrameOT M ρ) : FrameOT (M.take x) ρ' := by
   rw [hv, hL]
   exact hFO i (by omega) L c (R ++ Tl) hM
 
-/-- **FrameClosed passes to `M.take x`**: a rewrite in `M.take x` is a rewrite in `M` (the child drops
-by `◁`, or has argument `0` and cannot rewrite). -/
-theorem frameClosed_take (hF : FrameClosed M ρ) : FrameClosed (M.take x) ρ' := by
-  intro i hi L c R h s' y' hc' ht'
-  rw [lenT hx] at hi
+/-- **A rewrite in `M.take x` is a rewrite in `M`** (the child drops by `◁`, or has argument `0` and
+cannot rewrite; a rewriting new child keeps its `v`). -/
+theorem rewrite_take {i : Nat} (hi : i < x) {L : List Nat} {c : Nat} {R : List Nat}
+    (h : CL (M.take x) i = L ++ c :: R) {s' y' : T} (hc' : ρ'.o c = psi s' y' z)
+    (ht' : lt (spArg (ρ.v i) z (sumN (L.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true)
+    {s y : T} (hsy : ρ.o c = psi s y z) :
+    lt (spArg (ρ.v i) z (sumN (L.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true := by
   have hiM : i < M.length := by omega
-  obtain ⟨hv, hL, Tl, hM⟩ := frame_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hi h
-  rw [hv, hL] at ht' ⊢
+  obtain ⟨_, _, Tl, hM⟩ := frame_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hi h
   have hcT : c ∈ CL (M.take x) i := by rw [h]; simp
   have hcx : c < x := by have := (mem_children (cl_mem_children hcT)).2; rw [lenT hx] at this; exact this
   set a := ρ.v i
   set B := spArg a z (sumN (L.map ρ.o)) with hB
   obtain ⟨hsM, hpM⟩ := cl_vals hC hG hiM
   rw [hM] at hsM hpM
-  have hcS : Single (ρ.o c) := hsM _ (by simp)
-  obtain ⟨s, y, hsy⟩ := hcS.2
-  apply hF i hiM L c (R ++ Tl) hM s y hsy
   -- the rewrite in `M`
   by_cases heq : ρ'.o c = ρ.o c
   · rw [heq, hsy] at hc'; simp only [psi.injEq] at hc'; obtain ⟨rfl, rfl, -⟩ := hc'; exact ht'
@@ -229,32 +223,71 @@ theorem frameClosed_take (hF : FrameClosed M ρ) : FrameClosed (M.take x) ρ' :=
     rw [hc', hsy] at hl
     refine ⟨?_, lt_trans ht'.2 hlt⟩
     rcases psi_lt_psi_z_iff.mp hlt with hss | ⟨rfl, hyy⟩
-    · have hsub' : SubSmall a s' := by
-        obtain ⟨y0, hy0⟩ := o_psi_sub hC' (show c < (M.take x).length by rw [lenT hx]; exact hcx)
-        rw [hc'] at hy0; simp only [psi.injEq] at hy0
-        rw [hy0.1, sf_ot (hdrop c hcx).2.2.1]; exact (hdrop c hcx).2.2.2.subSmall _
-      obtain ⟨_, hyle⟩ := comps_le_of_sub_lt hl hss hsub'
-      by_cases hBz : B = z
-      · show B < y
-        rw [hBz]
-        by_contra hy
-        have hyz : y = z := by
-          rcases (le_iff _ _).mp (z_le y) with h' | h'
-          · exact absurd h' hy
-          · exact h'.symm
-        rw [hyz] at hsy
-        obtain ⟨s'', h''⟩ := arg0_take hx hR0 hZ2 hSD hZ1 hUAT hC hG hC' hdrop hcx hsy
-        rw [hc'] at h''; simp only [psi.injEq] at h''
-        have := ht'.1; rw [hBz, h''.2.1] at this; exact T.not_lt_z _ this
-      · exfalso
-        have hcB : psi s y z ≤ B := le_trans (hBc _ (head_mem_summands hBz)) (head_le_self B)
-        have hy'c : y' ≤ psi s y z :=
-          le_trans hyle (le_trans (psi_le_psi_arg (z_le y')) (le_of_lt hlt))
-        exact lt_irrefl' B (lt_of_lt_of_le (show B < y' from ht'.1) (le_trans hy'c hcB))
+    · -- a rewriting new child keeps its `v`, so the subscripts are equal
+      exfalso
+      have hvs := new_rewrite_same_v hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hcx hc'
+        (ne_z_of_lt ht'.1)
+      obtain ⟨y0, hy0⟩ := o_psi_sub hC' (show c < (M.take x).length by rw [lenT hx]; exact hcx)
+      rw [hc'] at hy0; simp only [psi.injEq] at hy0
+      obtain ⟨y1, hy1⟩ := o_psi_sub hC (show c < M.length by omega)
+      rw [hsy] at hy1; simp only [psi.injEq] at hy1
+      rw [hy0.1, hy1.1, hvs] at hss
+      exact lt_irrefl' _ hss
     · exact lt_trans ht'.1 hyy
   · exfalso
     rw [hc'] at hw'; simp only [psi.injEq] at hw'
     have := ht'.1; rw [hw'.2.1] at this; exact T.not_lt_z _ this
+
+/-- **FrameClosed passes to `M.take x`.** -/
+theorem frameClosed_take (hF : FrameClosed M ρ) : FrameClosed (M.take x) ρ' := by
+  intro i hi L c R h s' y' hc' ht'
+  rw [lenT hx] at hi
+  have hiM : i < M.length := by omega
+  obtain ⟨hv, hL, Tl, hM⟩ := frame_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hi h
+  rw [hv, hL] at ht' ⊢
+  obtain ⟨hsM, _⟩ := cl_vals hC hG hiM
+  rw [hM] at hsM
+  obtain ⟨s, y, hsy⟩ := (hsM (ρ.o c) (by simp)).2
+  exact hF i hiM L c (R ++ Tl) hM s y hsy
+    (rewrite_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hi h hc' ht' hsy)
+
+/-- **VSmallF passes to `M.take x`**, given the new subscripts of the drop (`VSmallNew`). -/
+theorem vsmallF_take (hVF : VSmallF M ρ) (hVN : VSmallNew M x ρ ρ') : VSmallF (M.take x) ρ' := by
+  intro i hi L c R h
+  rw [lenT hx] at hi
+  have hiM : i < M.length := by omega
+  obtain ⟨hv, hL, Tl, hM⟩ := frame_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hi h
+  have hfr := hVF i hiM L c (R ++ Tl) hM
+  have hcT : c ∈ CL (M.take x) i := by rw [h]; simp
+  have hcc := cl_mem_children hcT
+  have hcx : c < x := by have := (mem_children hcc).2; rw [lenT hx] at this; exact this
+  rw [hv, hL]
+  refine ⟨?_, fun s' y' hc' ht' => ?_⟩
+  · by_cases hvc : ρ'.v c = ρ.v c
+    · rw [hvc]; exact hfr.1
+    · -- `c` changes, so it is the last counted child
+      have hR : R = [] := by
+        rcases R with _ | ⟨d, R'⟩
+        · rfl
+        · exfalso
+          have hdT : d ∈ CL (M.take x) i := by rw [h]; simp
+          have hcd : c < d := by
+            have hs := cl_sorted (M.take x) i
+            rw [h] at hs
+            exact (List.pairwise_cons.mp (List.pairwise_append.mp hs).2.1).1 d (by simp)
+          have hCc : ChgX M x true c := by
+            apply ChgX.ov; by_contra hn; exact hvc ((chg_off hx hC hG hC' hRk' c hcx).2 hn)
+          exact chg_last hx hR0 hZ2 hSD hZ1 hUAT hUAB hcc hCc d (cl_mem_children hdT) hcd
+            (by unfold CL at hdT; simpa using (List.mem_filter.mp hdT).2)
+      subst hR
+      exact (hVN i hi L c h hvc).1
+  · have hvs := new_rewrite_same_v hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hcx hc'
+      (ne_z_of_lt ht'.1)
+    obtain ⟨hsM, _⟩ := cl_vals hC hG hiM
+    rw [hM] at hsM
+    obtain ⟨s, y, hsy⟩ := (hsM (ρ.o c) (by simp)).2
+    rw [hvs]
+    exact hfr.2 s y hsy (rewrite_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hi h hc' ht' hsy)
 
 /-! ## のりしろの枠 -/
 
@@ -463,7 +496,7 @@ end
 /-- The value invariants carried along the drops. -/
 structure ValInv (N : Mat) (σ : Valn) : Prop where
   g : Good3 N σ
-  vs : VSmall N σ
+  vs : VSmallF N σ
   fc : FrameClosed N σ
   fo : FrameOT N σ
   kd : BumpKidsDec N σ
@@ -476,7 +509,7 @@ structure DropRes (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
   argT : ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (N.take x) i = Lc ++ [cs] →
     ∀ s y, σ'.o cs = psi s y z → ¬ lt s (σ.v i) = true →
     ∀ g ∈ comps (σ.v i) y, g ≤ step (σ.v i) (spArg (σ.v i) z (sumN (Lc.map σ.o))) s y z
-  vst : BumpVSmallTake N x σ σ'
+  vst : VSmallNew N x σ σ'
   ws : BumpWeakSrc N x σ σ'
   ua : UpgAbsX N x σ
 
@@ -489,11 +522,11 @@ theorem drop_pres {N : Mat} {x : Nat} (hx : x + 1 = N.length)
     (hR0 : R0P N) (hZ2 : Z2 N) (hSD : SibDec N) (hZ1 : Z1C N) (hUAT : UAT N) (hUAB : UAB N)
     {σ σ' : Valn} {rk : Bool → Nat → Nat} (hC : Cons N σ) (hI : ValInv N σ) (hD : DropRes N x σ σ')
     (hC' : Cons (N.take x) σ') (hRk' : Rk (N.take x) rk) : ValInv (N.take x) σ' := by
-  have hdrop := drop_all hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.vs hI.fc hI.fo hD.argT
-    (bump_drop hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.vs hI.kd hI.td hI.ab hD.ws hD.vst)
+  have hdrop := drop_all hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.vs hD.vst hI.fc hI.fo hD.argT
+    (bump_drop hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.kd hI.td hI.ab hD.ws)
     hD.ua
   exact ⟨good3_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop,
-    vsmall_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop,
+    vsmallF_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.vs hD.vst,
     frameClosed_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.fc,
     frameOT_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.fo,
     bumpKidsDec_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.kd,
@@ -509,12 +542,12 @@ theorem t1_n0r {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
     (hUA : UpgAbsX M (r + L) ρ)
     {ζ μ : T} (hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
     (hres : ∀ j, r ≤ j → j < r + L →

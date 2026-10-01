@@ -16,8 +16,27 @@ open T
 /-- The components of a subscript are at most `Ω_v`. -/
 def VSmallV (t : T) : Prop := ∀ u, ∀ g ∈ comps u t, g ≤ psi t z z
 
-/-- **Value invariant**: every `v` is small in this sense. -/
+/-- **Value invariant**: every `v` is small in this sense. (False on matrices reachable from SRO, e.g.
+`v = ψ_0(Ω_{Ω_1} + …)`; the drop lemma uses `VSmallF` and `VSmallNew` instead.) -/
 def VSmall (M : Mat) (ρ : Valn) : Prop := ∀ i, i < M.length → VSmallV (ρ.v i)
+
+/-- **Value invariant** (frame form): for every counted child `c` of `i`, the components of `v(c)` at the
+level `v(i)` are at most `Ω_{v(c)}`, and when `c` rewrites the state, all components are. -/
+def VSmallF (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i, i < M.length → ∀ (L : List Nat) (c : Nat) (R : List Nat), CL M i = L ++ c :: R →
+    (∀ g ∈ comps (ρ.v i) (ρ.v c), g ≤ psi (ρ.v c) z z) ∧
+    (∀ s y, ρ.o c = psi s y z →
+      lt (spArg (ρ.v i) z (sumN (L.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
+      VSmallV (ρ.v c))
+
+/-- **Hypothesis on the drop**: the same for a last counted child of `M.take x` whose `v` changes
+(the rewriting condition is that of the frame of `M`). -/
+def VSmallNew (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
+  ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (M.take x) i = Lc ++ [cs] → ρ'.v cs ≠ ρ.v cs →
+    (∀ g ∈ comps (ρ.v i) (ρ'.v cs), g ≤ psi (ρ'.v cs) z z) ∧
+    (∀ s y, ρ.o cs = psi s y z →
+      lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
+      VSmallV (ρ'.v cs))
 
 /-- **Value invariant**: every state of every frame gives a standard `ψ`. -/
 def FrameOT (M : Mat) (ρ : Valn) : Prop :=
@@ -33,7 +52,7 @@ def PO (ρ ρ' : Valn) (i : Nat) : Prop :=
 /-- The claim at a `v` call. -/
 def PV (M : Mat) (ρ ρ' : Valn) (i : Nat) : Prop :=
   (LhdE (ρ'.v i) (ρ.v i) ∨ (WkV (ρ'.v i) (ρ.v i) ∧ ∀ c ∈ children M i, ¬ Counted M i c)) ∧
-    isOT (ρ'.v i) = true ∧ VSmallV (ρ'.v i)
+    isOT (ρ'.v i) = true
 
 /-- A changed `v` has row 1 nonzero. -/
 theorem chgx_e1 {M : Mat} {x i : Nat} (h : ChgX M x false i) : entry M 1 i ≠ 0 := by
@@ -120,11 +139,11 @@ variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
   {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
   (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
-  (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+  (hVS : VSmallF M ρ) (hVN : VSmallNew M x ρ ρ') (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
   (hArgT : ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (M.take x) i = Lc ++ [cs] → ∀ s y,
     ρ'.o cs = psi s y z → ¬ lt s (ρ.v i) = true →
     ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
-include hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hArgT
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hVN hF hFO hArgT
 
 /-- **One `o` step of the drop.** -/
 theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
@@ -142,8 +161,8 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
   by_cases hCv : ChgX M x false i
   · -- `v(i)` changes: no counted child in `M.take x`
     have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCv).1 rfl hi
-    have ho' := o_of_no_counted hC' hiT hv.2.1 hT.2.1
-    refine ⟨?_, by rw [ho']; exact ⟨by rw [isOT_psi_iff]; exact ⟨hv.2.1, rfl, rfl, z_le _,
+    have ho' := o_of_no_counted hC' hiT hv.2 hT.2.1
+    refine ⟨?_, by rw [ho']; exact ⟨by rw [isOT_psi_iff]; exact ⟨hv.2, rfl, rfl, z_le _,
       fun g hg => by simp [comps] at hg⟩, _, _, rfl⟩⟩
     rcases hv.1 with h | ⟨hW, hnc⟩
     · rw [ho', o_spArg hC hG hiM]; exact Or.inl (lhdE_oq_v h)
@@ -186,21 +205,53 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
           by_contra hn; exact hne ((hoff d hdx).1 hn)
         exact chg_last hx hR0 hZ2 hSD hZ1 hUAT hUAB hdc hCd cs hcsT.1 hdcs hcsT.2
       have hclM : CL M i = Lc ++ [cs] ++ Tl := by rw [hTl, hcl]
+      have hcsM0 : cs < M.length := by
+        have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega
+      have hcsx0 : cs < (M.take x).length := (mem_children hcsT.1).2
+      have hvM : ∀ s y, ρ.o cs = psi s y z → s = ρ.v cs := by
+        intro s y h
+        obtain ⟨y0, hy0⟩ := o_psi_sub hC hcsM0
+        rw [h] at hy0; simp only [psi.injEq] at hy0
+        rw [hy0.1, sf_ot (hG.ot_v cs hcsM0)]
+      have hvT : ∀ s y, ρ'.o cs = psi s y z → s = ρ'.v cs := by
+        intro s y h
+        obtain ⟨y0, hy0⟩ := o_psi_sub hC' hcsx0
+        rw [h] at hy0; simp only [psi.injEq] at hy0
+        rw [hy0.1, sf_ot hPVc.2]
+      have hfr := hVS i hiM Lc cs Tl (by rw [hclM]; simp)
+      -- a changed `v(cs)`: `cs` has no counted child in `M.take x`
+      have hchgv : ρ'.v cs ≠ ρ.v cs → ρ'.o cs = psi (ρ'.v cs) z z := by
+        intro hvs
+        have hCv : ChgX M x false cs := by
+          by_contra hn; exact hvs ((hoff cs (by rw [hlenT] at hcsx0; exact hcsx0)).2 hn)
+        have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCv).1 rfl (by rw [hlenT] at hcsx0; exact hcsx0)
+        exact o_of_no_counted hC' hcsx0 hPVc.2 hT.2.1
       refine ⟨Or.inl (o_frame_eval hC hG hF hC' hiT hiM hv' hcl hclM hsame hPOc.2 hPOc.1
-        (fun s y h => by
-          have hs : s = ρ.v cs := by
-            obtain ⟨y0, hy0⟩ := o_psi_sub hC (show cs < M.length by
-              have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega)
-            rw [h] at hy0; simp only [psi.injEq] at hy0
-            rw [hy0.1, sf_ot (hG.ot_v cs (by
-              have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega))]
-          rw [hs]; exact (hVS cs (by
-            have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega)).subSmall _)
-        (fun s y h => by
-          have hcsx : cs < (M.take x).length := (mem_children hcsT.1).2
-          obtain ⟨y0, hy0⟩ := o_psi_sub hC' hcsx
-          rw [h] at hy0; simp only [psi.injEq] at hy0
-          rw [hy0.1, sf_ot hPVc.2.1]; exact hPVc.2.2.subSmall _)), ?_⟩
+        (fun s y h hrw => by rw [hvM s y h]; exact (hfr.2 s y h hrw).subSmall _)
+        (fun s y s' y' h h' hrw => by
+          rw [hvT s' y' h']
+          by_cases hvs : ρ'.v cs = ρ.v cs
+          · have hle : psi s' y' z ≤ psi s y z := by
+              have := hPOc.1.elim (fun h => h.le) (fun h => DRelO.le (Or.inr h.1)); rw [h, h'] at this; exact this
+            have hss : s' = s := by rw [hvT s' y' h', hvs, ← hvM s y h]
+            have hold : lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
+                lt (psi (ρ.v i) z z) (psi s y z) = true := by
+              rcases hrw with hn | ho
+              · have hyy : y' ≤ y := by
+                  rw [hss] at hle
+                  rcases (le_iff _ _).mp hle with hl | hl
+                  · rcases psi_lt_psi_z_iff.mp hl with hl | ⟨_, hl⟩
+                    · exact absurd hl (lt_irrefl' _)
+                    · exact le_of_lt hl
+                  · simp only [psi.injEq] at hl; rw [hl.2.1]
+                exact ⟨lt_of_lt_of_le hn.1 hyy, lt_of_lt_of_le hn.2 hle⟩
+              · exact ho
+            rw [hvs]; exact (hfr.2 s y h hold).subSmall _
+          · rcases hrw with hn | ho
+            · exfalso
+              rw [hchgv hvs] at h'; simp only [psi.injEq] at h'
+              have := hn.1; rw [← h'.2.1] at this; exact T.not_lt_z _ this
+            · exact ((hVN i hi Lc cs hcl hvs).2 s y h ho).subSmall _)), ?_⟩
       -- `o′(i)` is standard
       have hcsM : cs < M.length := by
         have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega
@@ -234,14 +285,14 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
       refine ⟨?_, _, _, rfl⟩
       have hBot := hFO i hiM Lc cs Tl (by rw [hclM]; simp)
       have hLs := sumN_dec (Lc.map ρ.o) (fun t ht => hsM t (by simp [ht])) (List.pairwise_append.mp hp1.1).1
-      apply step_ot_of_le hBot (by rw [← hs'y']; exact hPOc.2.1)
+      apply step_ot_of_le' hBot (by rw [← hs'y']; exact hPOc.2.1)
       · apply spArg_summands_ge ⟨s', y', rfl⟩ _ z hLs.1
         · rw [hLs.2]; intro q hq; rw [← hs'y']; exact le_trans hle' (hLc q hq)
         · simp [summands]
-      · have hcsx : cs < (M.take x).length := (mem_children hcsT.1).2
-        obtain ⟨y0, hy0⟩ := o_psi_sub hC' hcsx
-        rw [hs'y'] at hy0; simp only [psi.injEq] at hy0
-        rw [hy0.1, sf_ot hPVc.2.1]; exact hPVc.2.2.subSmall _
+      · rw [hvT s' y' hs'y']
+        by_cases hvs : ρ'.v cs = ρ.v cs
+        · rw [hvs]; exact hfr.1
+        · exact (hVN i hi Lc cs hcl hvs).1
       · intro hsa g hg
         exact hArgT i hi Lc cs hcl s' y' hs'y' hsa g hg
 
@@ -262,7 +313,7 @@ theorem pv_of {i : Nat} (hi : i < x)
   by_cases hCv : ChgX M x false i
   swap
   · rw [PV, (hoff i hi).2 hCv]
-    exact ⟨Or.inl (Or.inl rfl), hG.ot_v i hiM, hVS i hiM⟩
+    exact ⟨Or.inl (Or.inl rfl), hG.ot_v i hiM⟩
   have h1 := chgx_e1 hCv
   by_cases h2 : entry M 2 i = 0
   swap
@@ -282,10 +333,6 @@ theorem pv_of {i : Nat} (hi : i < x)
     cases hp : par M 1 i with
     | none => rfl
     | some m => exact hG.ot_v m (by have := par_lt M 1 i m hp; omega)
-  have hVs : VSmallV (vOpt ρ (par M 1 i)) := by
-    cases hp : par M 1 i with
-    | none => intro u g hg; simp [vOpt, comps] at hg
-    | some m => exact hVS m (by have := par_lt M 1 i m hp; omega)
   have hoot : ∀ k, ∀ j ∈ children M k, col M j = bump M k → ∀ k' ∈ children M j, isOT (ρ.o k') = true :=
     fun k j _ _ k' hk' => hG.ot_o k' (mem_children hk').2
   -- `v′(i)` when the upgrade is gone or absent
@@ -301,7 +348,7 @@ theorem pv_of {i : Nat} (hi : i < x)
       have e2 : ρ.v i = sf (add (vOpt ρ (par M 1 i)) one) := by
         rw [(hC i hiM).2]; unfold vRhs; rw [if_neg h1, if_pos h2, hu]
       rw [PV, e1, ← e2]
-      exact ⟨Or.inl (Or.inl rfl), hG.ot_v i hiM, hVS i hiM⟩
+      exact ⟨Or.inl (Or.inl rfl), hG.ot_v i hiM⟩
     | some k =>
       have huT : upg (M.take x) i = some k := by rw [hupT, hu]
       obtain ⟨hPVk, hook⟩ := hup k huT
@@ -311,7 +358,7 @@ theorem pv_of {i : Nat} (hi : i < x)
         (fun j hj hjb k' hk' => (hook j hj hjb k' hk').1)
       unfold PV
       rw [ek, ek']
-      refine ⟨?_, hPVk.2.1, hPVk.2.2⟩
+      refine ⟨?_, hPVk.2⟩
       rcases hPVk.1 with h | ⟨hW, _⟩
       · exact Or.inl h
       · right
@@ -338,7 +385,7 @@ theorem pv_of {i : Nat} (hi : i < x)
     have hot1 : isOT (add (vOpt ρ (par M 1 i)) one) = true := isOT_add hVot rfl
     unfold PV
     rw [e1, sf_ot hot1]
-    refine ⟨?_, hot1, vsmall_add_one hVot hVs⟩
+    refine ⟨?_, hot1⟩
     cases hu : upg M i with
     | none =>
       have e2 : ρ.v i = sf (add (vOpt ρ (par M 1 i)) one) := by
@@ -379,7 +426,7 @@ theorem drop_all
       have hPV : ∀ i, i < x → rk false i ≤ N → PV M ρ ρ' i := by
         intro i hi hN
         obtain ⟨_, _, hR⟩ := hRk' i (by omega)
-        apply pv_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hArgT hi
+        apply pv_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hVN hF hFO hArgT hi
         · intro hCv h1 h2
           apply hBump i hi _ hCv h1 h2
           intro j hj hjb k hk hkx
@@ -422,7 +469,7 @@ theorem drop_all
           exact ((ih _ (by omega) k' hk'x).1 (Nat.le_refl _)).2
       refine fun i hi => ⟨fun hN => ?_, hPV i hi⟩
       obtain ⟨hvo, hc, _⟩ := hRk' i (by omega)
-      apply po_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hArgT hi
+      apply po_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hVN hF hFO hArgT hi
       · exact hPV i hi (by omega)
       · intro c hcT hcnt
         have hlt := hc c hcT hcnt.1 hcnt.2

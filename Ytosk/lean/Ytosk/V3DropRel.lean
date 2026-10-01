@@ -292,8 +292,13 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     (hsame : ∀ d ∈ Lc, ρ'.o d = ρ.o d)
     (hcs' : Single (ρ'.o cs))
     (hrel : LhdE (ρ'.o cs) (ρ.o cs) ∨ (WkO (ρ'.o cs) (ρ.o cs) ∧ ∃ w, ρ.o cs = psi w z z))
-    (hsub : ∀ s y, ρ.o cs = psi s y z → SubSmall (ρ.v i) s)
-    (hsub' : ∀ s y, ρ'.o cs = psi s y z → SubSmall (ρ.v i) s) :
+    (hsub : ∀ s y, ρ.o cs = psi s y z →
+      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+      SubSmall (ρ.v i) s)
+    (hsub' : ∀ s y s' y', ρ.o cs = psi s y z → ρ'.o cs = psi s' y' z →
+      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true) ∨
+      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+      SubSmall (ρ.v i) s') :
     LhdE (ρ'.o i) (ρ.o i) := by
   set a := ρ.v i with ha
   obtain ⟨hsM, hpM⟩ := cl_vals hC hG hiM
@@ -371,7 +376,7 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     have hc := hcsS.1; rw [hsy] at hc
     have hc' := hcs'.1; rw [hs'y'] at hc'
     have hN := node_lhd (a := a) (B := B) hc hc' hrel (hBge _ hcsS (le_refl _) |> fun h => by
-        rw [hsy] at h; exact h) (hsub s y hsy) (hsub' s' y' hs'y')
+        rw [hsy] at h; exact h) (hsub s y hsy) (hsub' s y s' y' hsy hs'y')
       (fun _ hr => hF i hiM Lc cs Tl hCL s y hsy hr)
     have hstate : spArg a z (sumN ((Lc ++ [cs]).map ρ.o)) = step a B s y z := by
       rw [List.map_append, List.map_singleton, ← hLv, sumN_append_dec hsLc hpLc,

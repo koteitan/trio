@@ -434,7 +434,9 @@ theorem node_lhd {a B s' y' s y : T}
     (hc : isOT (psi s y z) = true) (hc' : isOT (psi s' y' z) = true)
     (hrel : LhdE (psi s' y' z) (psi s y z))
     (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
-    (hsub : SubSmall a s) (hsub' : SubSmall a s')
+    (hsub : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → SubSmall a s)
+    (hsub' : (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) ∨
+      (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → SubSmall a s')
     (hBcl : ¬ (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) →
       (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → Closed a B) :
     LhdE (psi a (step a B s' y' z) z) (psi a (step a B s y z) z) := by
@@ -444,19 +446,19 @@ theorem node_lhd {a B s' y' s y : T}
   · by_cases ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true
     · -- both rewrite
       rcases psi_lt_psi_z_iff.mp hl.1 with hss | ⟨rfl, _⟩
-      · obtain ⟨hcomp, hyle⟩ := comps_le_of_sub_lt hl hss hsub'
+      · obtain ⟨hcomp, hyle⟩ := comps_le_of_sub_lt hl hss (hsub' (Or.inl ht'))
         unfold step
         rw [if_pos ht', if_pos ht, H_of_le_om hc' (ne_z_of_lt ht'.1) hyle]
         apply lhdE_psi_closed _ (closed_of_le_om hcomp)
         have h1 : psi s' y' z < psi (succ s') z z := psi_lt_psi_z_iff.mpr (Or.inl (lt_succ_self s'))
         exact le_trans (le_of_lt (lt_of_lt_of_le h1 (psi_le_psi_z (succ_le_of_lt hss))))
           (om_le_H hc (ne_z_of_lt ht.1))
-      · exact lhdE_tt_same hc' hc hl ht' ht hsub
+      · exact lhdE_tt_same hc' hc hl ht' ht (hsub ht)
     · -- only the new child rewrites: `B = 0` and `c = Ω_s`, or impossible
       have hac : psi a z z < psi s y z := lt_trans (show psi a z z < psi s' y' z from ht'.2) hl.1
       have hyB : ¬ B < y := fun h => ht ⟨h, hac⟩
       rcases psi_lt_psi_z_iff.mp hl.1 with hss | ⟨rfl, hyy⟩
-      · obtain ⟨_, hyle⟩ := comps_le_of_sub_lt hl hss hsub'
+      · obtain ⟨_, hyle⟩ := comps_le_of_sub_lt hl hss (hsub' (Or.inl ht'))
         by_cases hBz : B = z
         · subst hBz
           have hy : y = z := by
@@ -480,7 +482,7 @@ theorem node_lhd {a B s' y' s y : T}
           (fun q hq hlt => lt_irrefl' _ (lt_of_lt_of_le (lt_trans hlt hl.1) (hBc q hq))) (Or.inl rfl)
         rwa [app_z_right] at this
       rw [hadd]
-      exact lhdE_psi_closed (le_tn hc hl.1 ht hBc) (closed_tn hl ht' ht hBc (hBcl ht' ht) hsub hsub')
+      exact lhdE_psi_closed (le_tn hc hl.1 ht hBc) (closed_tn hl ht' ht hBc (hBcl ht' ht) (hsub ht) (hsub' (Or.inr ht)))
     · -- no rewrite
       exact lhdE_psi a (lhdE_step_nn' (Or.inr hl) ht' ht hBc)
 

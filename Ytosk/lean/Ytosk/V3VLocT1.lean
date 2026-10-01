@@ -1546,12 +1546,12 @@ theorem t1_main_vloc {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1 M ρ) (hTPLo : TPLo M ρ) (hAD : AbsD M ρ) (hAU : AbsU M ρ)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1 M ρ) (hTPLo : TPLo M ρ) (hAD : AbsD M ρ) (hAU : AbsU M ρ)
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
     (hUA : UpgAbsX M (r + L) ρ)
     (hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r)
     {μ br vr : T} (hμr : μ = vr) (hro : ρ.o r = psi vr br z)
@@ -1582,11 +1582,11 @@ theorem t1_main_vloc {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
   have hv1r : (drop1 M (r + L) rkM).v r = ρ.v r :=
     base_v_r hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hA (by omega) hqr hpath
   have hv1 : (drop1 M (r + L) rkM).v r = μ := by rw [hv1r, hvr, hμr]
-  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hF hFO hArgT
-    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hKD hTD hAbs hWS hVSt)
+  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hVSt hF hFO hArgT
+    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hTD hAbs hWS)
     hUA
   have hotv : ∀ i, i < r + L → isOT ((drop1 M (r + L) rkM).v i) = true :=
-    fun i hi => (hdrop i hi).2.2.1
+    fun i hi => (hdrop i hi).2.2
   have hoto : ∀ i, i < r + L → isOT ((drop1 M (r + L) rkM).o i) = true :=
     fun i hi => (hdrop i hi).1.2.1
   -- the seed

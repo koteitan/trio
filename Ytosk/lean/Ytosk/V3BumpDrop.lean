@@ -697,7 +697,7 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       simp only [app_psi, app_z]
       by_cases hv : ρ'.v kl = ρ.v kl
       · obtain ⟨y1, hy1⟩ := o_psi_sub hC' hklLT
-        rw [sf_ot hPV.2.1, hv] at hy1
+        rw [sf_ot hPV.2, hv] at hy1
         rcases hPO.1 with hl | ⟨⟨w1, w2, X, e1, e2, hWk⟩, _⟩
         · left
           rw [hy1, hy0] at hl
@@ -711,7 +711,7 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       · have hCk : ChgX M x false kl := by
           by_contra hn; exact hv ((hoff kl hklx).2 hn)
         have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCk).1 rfl hklx
-        have ho' : ρ'.o kl = psi (ρ'.v kl) z z := o_of_no_counted hC' hklLT hPV.2.1 hT.2.1
+        have ho' : ρ'.o kl = psi (ρ'.v kl) z z := o_of_no_counted hC' hklLT hPV.2 hT.2.1
         have he1 : entry M 1 kl ≠ 0 := by
           intro he; apply hv
           rw [v_z_of_e1 hC hklL he, v_z_of_e1 hC' hklLT (by rw [entry_take M 1 hklx]; exact he)]
@@ -1053,19 +1053,13 @@ theorem bump_drop {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
-    (hVS : VSmall M ρ)
-    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M x ρ ρ')
-    (hVSt : BumpVSmallTake M x ρ ρ') :
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M x ρ ρ') :
     ∀ i, i < x → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
         PO ρ ρ' k ∧ PV M ρ ρ' k) → ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
       PV M ρ ρ' i := by
   intro i hi hIH hCv h1 h2
   obtain ⟨hot, hrel⟩ := bump_rel hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hKD hTD hAbs hWS hi hIH
     hCv h1 h2
-  refine ⟨hrel, hot, ?_⟩
-  rcases hrel with (heq | hl) | ⟨hW, _⟩
-  · rw [heq]; exact hVS i (by omega)
-  · exact hVSt i hi h1 h2 hl
-  · exact vsmall_of_cs hW.2.1 hW.2.2.1
+  exact ⟨hrel, hot⟩
 
 end Ytosk

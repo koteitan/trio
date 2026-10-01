@@ -82,8 +82,8 @@ theorem app_le_step {a B s y : T} (hc : isOT (psi s y z) = true)
 
 /-- **One frame keeps the parent standard**: `ψ_a(step a B s y)` is standard when `ψ_a(B)` is, the
 subscript is small, and (for `a ≤ s`) the components of `y` at the level `a` are at most the result. -/
-theorem step_ot_of_le {a B s y : T} (hBot : isOT (psi a B z) = true) (hc : isOT (psi s y z) = true)
-    (hBc : ∀ q ∈ summands B, psi s y z ≤ q) (hsub : SubSmall a s)
+theorem step_ot_of_le' {a B s y : T} (hBot : isOT (psi a B z) = true) (hc : isOT (psi s y z) = true)
+    (hBc : ∀ q ∈ summands B, psi s y z ≤ q) (hsub : ∀ g ∈ comps a s, g ≤ psi s z z)
     (hy : ¬ lt s a = true → ∀ g ∈ comps a y, g ≤ step a B s y z) :
     isOT (psi a (step a B s y z) z) = true := by
   apply ot_parent_small (isOT_sub hBot) (isOT_step (isOT_arg hBot) hc)
@@ -97,7 +97,7 @@ theorem step_ot_of_le {a B s y : T} (hBot : isOT (psi a B z) = true) (hc : isOT 
       rcases hg with rfl | hg | hg
       · exact y_le_step hc hBc hsa
       · exact hy hsa g hg
-      · exact le_trans (hsub a (lt_irrefl' a) g hg) (om_le_step hc hBc)
+      · exact le_trans (hsub g hg) (om_le_step hc hBc)
   by_cases ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true
   · have hst : step a B s y z = H s y := by unfold step; rw [if_pos ht]
     rw [hst] at hcs ⊢
@@ -124,6 +124,13 @@ theorem step_ot_of_le {a B s y : T} (hBot : isOT (psi a B z) = true) (hc : isOT 
     rcases List.mem_append.mp hg with hg | hg
     · exact le_trans (le_of_lt (comps_lt hBot g hg)) (le_app_self _ _)
     · exact hcs g hg
+
+/-- `step_ot_of_le'` with the components of the subscript at all levels `≤ a` bounded. -/
+theorem step_ot_of_le {a B s y : T} (hBot : isOT (psi a B z) = true) (hc : isOT (psi s y z) = true)
+    (hBc : ∀ q ∈ summands B, psi s y z ≤ q) (hsub : SubSmall a s)
+    (hy : ¬ lt s a = true → ∀ g ∈ comps a y, g ≤ step a B s y z) :
+    isOT (psi a (step a B s y z) z) = true :=
+  step_ot_of_le' hBot hc hBc (hsub a (lt_irrefl' a)) hy
 
 /-- **One frame keeps the parent standard** (natural form): every component of `y` at the level `a` is
 at most `y` or at most the plain sum `B + c`. -/
