@@ -658,6 +658,88 @@ theorem le_between_sub {a' a c : T} (h1 : psi a' z z ≤ c) (h2 : c ≤ psi a z 
       · exact absurd h2 (T.not_lt_z _)
     · simp only [psi.injEq] at h2; rw [h2.1]
 
+theorem mem_comps_psi_of {u v w r y : T} (hv : ¬ lt v u = true) (hy : y ∈ comps u v) :
+    y ∈ comps u (psi v w r) := by
+  simp [comps, hv, hy]
+
+theorem mem_comps_psi_arg {u v w r y : T} (hv : ¬ lt v u = true) (hy : y ∈ comps u w) :
+    y ∈ comps u (psi v w r) := by
+  simp [comps, hv, hy]
+
+/-- **The subscript of the cofinality** stays among the components between `b[g]` and `b`. -/
+theorem comps_mu {u : T} : ∀ {b μ g c0 : T}, isOT b = true → cof b = .big μ →
+    psi μ z z ≤ g → g < psi (succ μ) z z → fs b g ≤ c0 → c0 ≤ b → ¬ lt μ u = true →
+    ∀ y ∈ comps u μ, y ∈ comps u c0
+  | z, _, _, _, _, h, _, _, _, _, _ => by simp [cof] at h
+  | psi a b (psi c d e), μ, g, c0, hot, h, hg1, hg2, hfs, hc0, hμ => by
+    have h' : cof (psi c d e) = .big μ := by simpa [cof] using h
+    have hfs' : app (psi a b z) (fs (psi c d e) g) ≤ c0 := by simpa [fs] using hfs
+    have hc0' : c0 ≤ app (psi a b z) (psi c d e) := by simpa using hc0
+    obtain ⟨c0', rfl, h1, h2⟩ := le_between_app hfs' hc0'
+    intro y hy
+    have := comps_mu (isOT_rest hot) h' hg1 hg2 h1 h2 hμ y hy
+    rw [comps_app]; exact List.mem_append_right _ this
+  | psi a b z, μ, g, c0, hot, h, hg1, hg2, hfs, hc0, hμ => by
+    unfold fs at hfs
+    have hμg : μ < g := lt_of_lt_of_le (lt_Om_self μ) hg1
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl] at hfs
+      by_cases ha : a = z
+      · subst ha; simp [cof] at h
+      · rw [if_neg ha] at hfs
+        have hc : cof (psi a z z) = (if isSucc a then Cof.big (init a) else cof a) := by
+          simp [cof, ha]
+        rw [hc] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs] at hfs h; cases h
+          have hsa : app (init a) one = a := init_app_one hs
+          obtain ⟨v, w, r, rfl, hv1, hv2⟩ := le_between_sub (le_trans hg1 hfs) hc0
+          have hvu : ¬ lt v u = true := fun hv => hμ (lt_of_le_of_lt hv1 hv)
+          have hv : v = init a ∨ v = a := by
+            rcases (le_iff _ _).mp hv1 with hv1 | hv1
+            · rcases (le_iff _ _).mp hv2 with hv2 | hv2
+              · exfalso
+                rw [← hsa] at hv2
+                obtain ⟨c0', rfl, h3, h4⟩ := between_app (A := init a) (x := z) (y := one)
+                  (by simpa using hv1) (le_of_lt hv2)
+                have h5 : c0' < one := (app_lt_app_left_iff _).mp hv2
+                rw [lt_one_iff] at h5; subst h5; exact absurd h3 (lt_irrefl _)
+              · exact Or.inr hv2
+            · exact Or.inl hv1.symm
+          intro y hy
+          apply mem_comps_psi_of hvu
+          rcases hv with rfl | rfl
+          · exact hy
+          · rw [← hsa, comps_app]; exact List.mem_append_left _ hy
+        · rw [if_neg hs] at hfs h
+          obtain ⟨v, w, r, rfl, hv1, hv2⟩ := le_between_sub hfs hc0
+          have hgv : g ≤ v := le_trans (le_fs (isOT_sub hot) h hg2) hv1
+          have hvu : ¬ lt v u = true := fun hv => hμ (lt_trans (lt_of_lt_of_le hμg hgv) hv)
+          intro y hy
+          exact mem_comps_psi_of hvu (comps_mu (isOT_sub hot) h hg1 hg2 hv1 hv2 hμ y hy)
+    · rw [if_neg hb] at hfs
+      have hc0' : cof (psi a b z) = (if isSucc b then Cof.omega else match cof b with
+            | .big μ => if lt μ a = true then Cof.big μ else Cof.omega
+            | c => c) := by simp [cof, hb]
+      rw [hc0'] at h
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; cases h
+      · rw [if_neg hs] at h hfs
+        cases hcb : cof b with
+        | big ν =>
+          rw [hcb] at h hfs; simp only at h hfs
+          by_cases hν : lt ν a = true
+          · rw [if_pos hν] at h hfs; cases h
+            obtain ⟨w, r, rfl, hw1, hw2⟩ := le_between_psi hfs hc0
+            have hau : ¬ lt a u = true := fun hau => hμ (show μ < u from lt_trans (show μ < a from hν) hau)
+            intro y hy
+            exact mem_comps_psi_arg hau (comps_mu (isOT_arg hot) hcb hg1 hg2 hw1 hw2 hμ y hy)
+          · rw [if_neg hν] at h; cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
 /-- **Lemma 3.6.** -/
 theorem lhd_fs : ∀ {t η : T}, ValidLt t η → Lhd η (fs t η) t
   | z, η, h => by simp [ValidLt, cof] at h
