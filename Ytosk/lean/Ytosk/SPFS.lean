@@ -384,4 +384,64 @@ theorem fillC_fs : ∀ (ctx : List (T × T)) {c μ η : T}, FramesOK ctx c μ η
     simp only [fillC]
     rw [fillC_fs fr h2, frame_fs h1]
 
+/-- The commutation condition on the argument at the top (diagonal) frame. -/
+def ArgFrameOK (a b c μ η : T) : Prop :=
+  ∃ s y, c = psi s y z ∧ isOT c = true ∧ cof c = .big μ ∧ isOT η = true ∧ η < psi (succ μ) z z ∧
+    (((y ≤ b ∨ s < a) ∧ isOT (app b c) = true ∧
+       ∀ s' y', psi s' y' z ∈ summands (fs c η) → y' ≤ b ∨ s' < a) ∨
+     ((lt b y = true ∧ lt (psi a z z) c = true) ∧ (split y (psi (succ s) z z)).2 ≠ z ∧
+       fs (split y (psi (succ s) z z)).2 η ≠ z ∧ lt b (fs y η) = true))
+
+theorem frame_arg_fs {a b c μ η : T} (h : ArgFrameOK a b c μ η) :
+    fs (spArg a b c) η = spArg a b (fs c η) := by
+  obtain ⟨s, y, rfl, hc, hcof, hη, hηl, h⟩ := h
+  rcases h with ⟨hno, hbc, hno'⟩ | ⟨htr, hlo, hlo', hbη⟩
+  · exact spArg_fs_arg_notrig hc ⟨hη, by rw [hcof]; exact hηl⟩ hno hbc hno'
+  · exact spArg_fs_arg_trig hc hcof hη hηl htr hlo hlo' hbη
+
+theorem isSucc_succ (μ : T) : isSucc (succ μ) = true := by
+  unfold succ isSucc
+  induction μ with
+  | z => rfl
+  | psi a b c _ _ ihc =>
+    cases c with
+    | z => rfl
+    | psi => simpa [app_psi, last] using ihc
+
+theorem fs_Om_succ (μ η : T) : fs (psi (succ μ) z z) η = η := by
+  unfold fs
+  rw [if_pos rfl, if_neg (by unfold succ; intro h; exact absurd (app_eq_z h).2 (by simp [one])),
+    if_pos (isSucc_succ μ)]
+
+/-- The values of the nested copies of the bad root: `cp 0 = 0` (no copy), `cp (k+1) = ψ_a(b + ctx[cp k])`. -/
+def cpv (a b : T) (ctx : List (T × T)) : Nat → T
+  | 0 => z
+  | k + 1 => psi a (spArg a b (fillC ctx (cpv a b ctx k))) z
+
+/-- **The copies of the bad root are the diagonal chain.** If the hole holds `Ω_{a+1}` and the context and
+the top frame commute with the fundamental sequence at every member of the chain, then the `k`-th copy value is
+`γ_k`. -/
+theorem cpv_eq_gam {a b : T} {ctx : List (T × T)}
+    (hctx : ∀ k, FramesOK ctx (psi (succ a) z z) a (gam a (spArg a b (fillC ctx (psi (succ a) z z))) k))
+    (htop : ∀ k, ArgFrameOK a b (fillC ctx (psi (succ a) z z)) a
+      (gam a (spArg a b (fillC ctx (psi (succ a) z z))) k)) :
+    ∀ k, cpv a b ctx k = gam a (spArg a b (fillC ctx (psi (succ a) z z))) k
+  | 0 => rfl
+  | k + 1 => by
+    simp only [cpv, gam]
+    rw [frame_arg_fs (htop k), fillC_fs ctx (hctx k), fs_Om_succ, cpv_eq_gam hctx htop k]
+
+/-- **The diagonal node after expansion.** With the nested copies `cp (n-1)` in the hole, the node value is
+the `(n-1)`-th member of the fundamental sequence. -/
+theorem diag_node_fs {a b : T} {ctx : List (T × T)} (n : Nat)
+    (hX : spArg a b (fillC ctx (psi (succ a) z z)) ≠ z)
+    (hc : cof (spArg a b (fillC ctx (psi (succ a) z z))) = .big a)
+    (hctx : ∀ k, FramesOK ctx (psi (succ a) z z) a (gam a (spArg a b (fillC ctx (psi (succ a) z z))) k))
+    (htop : ∀ k, ArgFrameOK a b (fillC ctx (psi (succ a) z z)) a
+      (gam a (spArg a b (fillC ctx (psi (succ a) z z))) k)) :
+    psi a (spArg a b (fillC ctx (cpv a b ctx n))) z =
+      fs (psi a (spArg a b (fillC ctx (psi (succ a) z z))) z) (natT n) := by
+  rw [fs_psi_diag hX hc (by simp [Bool.eq_false_iff.mpr (lt_irrefl' a)]) n, frame_arg_fs (htop n),
+    fillC_fs ctx (hctx n), fs_Om_succ, cpv_eq_gam hctx htop n]
+
 end Ytosk
