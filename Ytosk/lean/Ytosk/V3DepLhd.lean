@@ -461,7 +461,7 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
       Lhd z (valB σ b i) (valB ρ b i))
     (hDvNil : ∀ c, c < bnd → ¬ W true c → DepS M S false c → CL M c = [])
     (hCLnil : ∀ c, c < bnd → ¬ W true c → CL M c = [] → CL N c = [])
-    (hOc : ∀ i, i < bnd → ¬ S true i → DepS M S true i → ¬ DepS M S false i →
+    (hOc : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S true i → ¬ DepS M S false i →
       ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ DepS M S true c ∧ c < bnd ∧
         ∀ d ∈ Lc, ¬ DepS M S true d ∧ d < bnd)
     (hVNN : ∀ i, i < bnd → ∀ (Lc : List Nat) (cs : Nat), CL M i = Lc ++ [cs] → σ.v cs ≠ ρ.v cs →
@@ -506,7 +506,7 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
           have hclM := hDvNil i hi hWi hv
           rw [hnoc i hi hWi hv, o_of_no_counted hC hiM (hG.ot_v i hiM) (no_cnt_of_cl_nil hclM)]
           exact lhd_of_lhdE_lt (lhdE_oq_v (Or.inr hIH)) (psi_lt_psi_z_iff.mpr (Or.inl hIH.1))
-        · obtain ⟨Lc, c, hclM, hclN, hdc, hcb, hLc⟩ := hOc i hi hs hD hv
+        · obtain ⟨Lc, c, hclM, hclN, hdc, hcb, hLc⟩ := hOc i hi hs hWi hD hv
           have hv' := (hoff i hi).2 hv
           have hcCL : c ∈ CL M i := by rw [hclM]; simp
           have hcch := cl_mem_children hcCL
