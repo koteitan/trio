@@ -99,4 +99,29 @@ theorem lhdE_step_tt {a B s y' y : T} (hc' : isOT (psi s y' z) = true)
     · rw [if_neg hl', hhi hl']
       exact lhdE_app _ (lhdE_psi s hy)
 
+/-- **`ψ_v` of a smaller argument whose components are at most itself** is below. -/
+theorem lhd_psi_small {η b0 b : T} (v : T) (hlt : b0 < b)
+    (hsm : ∀ u, ¬ lt v u = true → ∀ g ∈ comps u b0, g ≤ b0) : Lhd η (psi v b0 z) (psi v b z) := by
+  refine ⟨by rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, hlt⟩, fun u c h1 h2 => ?_⟩
+  obtain ⟨c0, c1, rfl, hc1, hc2⟩ := between_psi h1 h2
+  intro x hx
+  simp only [comps, List.mem_append] at hx
+  rcases hx with hx | hx
+  · split at hx
+    · simp at hx
+    · rename_i hvu
+      have hc0 : c0 ∈ comps u (psi v c0 c1) := by simp [comps, hvu]
+      simp only [List.mem_cons, List.mem_append] at hx
+      rcases hx with rfl | hx | hx
+      · exact ⟨c0, List.mem_append_left _ hc0, hc1⟩
+      · exact ⟨c0, List.mem_append_left _ hc0, le_trans (hsm u hvu x hx) hc1⟩
+      · exact ⟨x, List.mem_append_left _ (by simp [comps, hvu, hx]), le_refl _⟩
+  · simp [comps] at hx
+
+theorem lhdE_psi_small {b0 b : T} (v : T) (hle : b0 ≤ b)
+    (hsm : ∀ u, ¬ lt v u = true → ∀ g ∈ comps u b0, g ≤ b0) : LhdE (psi v b0 z) (psi v b z) := by
+  rcases (le_iff _ _).mp hle with h | h
+  · exact Or.inr (lhd_psi_small v h hsm)
+  · left; rw [h]
+
 end Ytosk
