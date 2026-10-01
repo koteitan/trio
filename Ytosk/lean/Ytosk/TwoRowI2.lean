@@ -603,4 +603,142 @@ theorem preFC_gexp_t0 : PreFC (TRIO.gexp M j0 Lb 0 0 n) := by
 
 end
 
+/-! ## 展開の形での組み立て -/
+
+/-- The trio invariants, the top-left zero and the zero row 2 survive an expansion. -/
+theorem basic_expand {M : Mat} (hI : Inv2 M) (hM : 2 ≤ M.length) {n : Nat} (hn : 1 ≤ n) :
+    TRIO.z0ok (expand M n) ∧ TRIO.r1ok (expand M n) ∧ entry (expand M n) 0 0 = 0 ∧
+      ∀ j, entry (expand M n) 2 j = 0 := by
+  refine ⟨by rw [expand_eq_oper M n hM]; exact TRIO.z0ok_oper hI.z0,
+    by rw [expand_eq_oper M n hM]; exact TRIO.r1ok_oper hI.r1, ?_, ?_⟩
+  · have h1 := expand_take_prefix M hM hn
+    rw [← entry_take (expand M n) 0 (show 0 < M.length - 1 by omega), h1,
+      entry_take M 0 (show 0 < M.length - 1 by omega)]
+    exact hI.e00
+  · intro j
+    by_cases hcol : col M (M.length - 1) = (0, 0, 0)
+    · rw [expand_zero_col (by omega) hcol n]
+      by_cases hj : j < M.length - 1
+      · rw [entry_take M 2 hj]; exact hI.row2 j
+      · unfold entry; rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by simp; omega)]; rfl
+    · have hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+          TRIO.entry M 2 (M.length - 1) = 0) := by
+        rintro ⟨e0, e1, e2⟩; apply hcol; unfold col
+        have e0' : (M.getD (M.length - 1) (0, 0, 0)).1 = 0 := e0
+        have e1' : (M.getD (M.length - 1) (0, 0, 0)).2.1 = 0 := e1
+        have e2' : (M.getD (M.length - 1) (0, 0, 0)).2.2 = 0 := e2
+        rcases hc : M.getD (M.length - 1) (0, 0, 0) with ⟨a, b, c⟩
+        rw [hc] at e0' e1' e2'; simp at e0' e1' e2'; rw [e0', e1', e2']
+      by_cases hj : j < M.length - 1
+      · rw [← entry_take (expand M n) 2 hj, expand_take_prefix M hM hn, entry_take M 2 hj]
+        exact hI.row2 j
+      · have hx0 : 0 < entry M 0 (M.length - 1) := by
+          rcases Nat.eq_zero_or_pos (entry M 0 (M.length - 1)) with h | h
+          · exfalso; obtain ⟨e1, e2⟩ := hI.z0 (M.length - 1) (by omega) h; exact hz ⟨h, e1, e2⟩
+          · exact h
+        have hsrow : ∃ r, par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r := by
+          unfold TRIO.srow; rw [← entry_eq, ← entry_eq, hI.row2]
+          simp only [Nat.lt_irrefl, if_false]
+          split_ifs with hb
+          · obtain ⟨m, hm, _⟩ := hI.g2.f1 _ hb; exact ⟨m, hm⟩
+          · exact par0_some_of (show 0 < M.length - 1 by omega) (by rw [hI.e00]; exact hx0)
+        obtain ⟨r, hr⟩ := hsrow
+        have hrx := par_lt M _ _ r hr
+        rw [expand_eq_gexp M n hM hz hr]
+        unfold entry
+        rcases Nat.lt_or_ge j (r + n * (M.length - 1 - r)) with h2 | h2
+        · obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (n := n) (p := j)
+            (show 0 < M.length - 1 - r by omega) (by omega) h2
+          rw [TRIO.gexp_getD_mir (by omega) hk hq]
+          simp only [if_neg (show (2 : Nat) ≠ 0 by omega), if_neg (show (2 : Nat) ≠ 1 by omega)]
+          exact hI.row2 (r + q)
+        · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by
+            rw [TRIO.gexp_length (by omega)]; omega)]; rfl
+
+/-- **(I2), `t = 0`, `r` not a root.** -/
+theorem inv2_expand_t0_g {M : Mat} {r g n : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht0 : TRIO.srow M (M.length - 1) = 0) (hI : Inv2 M) (hg : par M 0 r = some g) (hn : 2 ≤ n) :
+    Inv2 (expand M n) := by
+  obtain ⟨hz0', hr1', he00, hrow⟩ := basic_expand hI hM (show 1 ≤ n by omega)
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hr0 : par M 0 (M.length - 1) = some r := by have h := hr; rw [ht0] at h; exact h
+  have hrx := par_lt M 0 _ r hr0
+  have hxr : col M (M.length - 1) ≠ (0, 0, 0) := by
+    intro h; apply hz; unfold col at h
+    rw [← entry_eq, ← entry_eq, ← entry_eq]; unfold entry; rw [h]; simp
+  have hroots := roots_expand_t0 hM hz hr ht0 hg (show 1 ≤ n by omega) hxr
+  have hgexp := expand_eq_gexp_t0 M n hM hz hr ht0
+  have hF : F1 (TRIO.gexp M r (M.length - 1 - r) 0 0 n) := by
+    rw [← hgexp]; exact F1_expand hI.r1 hI.z0 hM n
+  have hpre0 : ∀ c, c < M.length - 1 →
+      par (TRIO.gexp M r (M.length - 1 - r) 0 0 n) 0 c = par M 0 c := by
+    intro c hc; rw [← hgexp]; exact par0_expand_prefix M hM (by omega) hc
+  obtain ⟨Lb, hLbd⟩ : ∃ Lb, Lb = M.length - 1 - r := ⟨_, rfl⟩
+  rw [← hLbd] at hF hgexp hpre0
+  have hlen : r + Lb + 1 = M.length := by omega
+  have hLb : 0 < Lb := by omega
+  have hxe : r + Lb = M.length - 1 := by omega
+  have hA : Anc0 M r (r + Lb) := by rw [hxe]; exact Anc0.step hr0 (Anc0.refl r)
+  have hx0 : par M 0 (r + Lb) = some r := by rw [hxe]; exact hr0
+  have hx1 : entry M 1 (r + Lb) = 0 := by
+    rw [hxe]
+    unfold TRIO.srow at ht0
+    split_ifs at ht0 with h1 h2
+    change ¬ 0 < (M.getD (M.length - 1) (0, 0, 0)).2.1 at h2
+    show (M.getD (M.length - 1) (0, 0, 0)).2.1 = 0
+    omega
+  have hpre : ∀ c, c < r + Lb → par (TRIO.gexp M r Lb 0 0 n) 0 c = par M 0 c := by
+    intro c hc; exact hpre0 c (by omega)
+  -- the matrix value pieces in `gexp` form
+  have hG2 := good2_gexp_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre
+  have hH2 := preHi_gexp_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre
+  have hFC2 := preFC_gexp_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre
+  refine ⟨by rw [hgexp]; exact hG2, by rw [hgexp]; exact hH2, by rw [hgexp]; exact hFC2, ?_,
+    hz0', hr1', he00, hrow⟩
+  -- RootsDec: only the top root drops
+  unfold RootsDec
+  rw [hroots]
+  obtain ⟨ρ, hρ, hρn⟩ := top_anc M (M.length - 1)
+  have hρ0 := col_zero_of_top hI.z0 hI.e00 (by have := hρ.le; omega) hρn
+  have hsplit := roots_split hx hρ hρ0
+  have hρr : ρ < r := by
+    rcases anc0_total hρ (Anc0.step hr0 (Anc0.refl r)) with h' | h'
+    · rcases Nat.eq_or_lt_of_le h'.le with h2 | h2
+      · rw [h2, hg] at hρn; cases hρn
+      · exact h2
+    · cases h' with
+      | refl => rw [hg] at hρn; cases hρn
+      | step hp _ => rw [hp] at hρn; cases hρn
+  set R := (roots M).filter (fun c => decide (c < ρ)) with hRd
+  have hRv : R.map (o2r (expand M n)) = R.map (o2r M) := by
+    apply List.map_congr_left
+    intro c hc
+    rw [hRd, List.mem_filter] at hc
+    have hcρ : c < ρ := by simpa using hc.2
+    rw [hgexp]
+    apply low_off_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre c (by omega)
+    intro hcA
+    rw [hxe] at hcA
+    rcases anc0_total hcA hρ with h' | h'
+    · cases h' with
+      | refl => omega
+      | step hp _ => rw [hp] at hρn; cases hρn
+    · have := h'.le; omega
+  have hρlt : o2r (expand M n) ρ < o2r M ρ := by
+    rw [hgexp]
+    refine (low_path_t0 hlen hLb hA hg hF hI hn hx0 hx1 hpre ρ ?_).2
+    exact anc_g_of_lt hlen hLb hA hg hF hI hn hx0 hx1 hpre (by rw [hxe]; exact hρ) hρr
+  have hRD := hI.rd
+  unfold RootsDec at hRD
+  rw [hsplit, List.map_append] at hRD ⊢
+  rw [hRv]
+  have hRD' := List.pairwise_append.mp hRD
+  rw [List.pairwise_append]
+  refine ⟨hRD'.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
+  simp only [List.map_cons, List.map_nil, List.mem_singleton] at hb; subst hb
+  exact le_trans (le_of_lt hρlt) (hRD'.2.2 a ha _ (by simp))
+
 end Ytosk
