@@ -165,4 +165,33 @@ theorem hmis_of_lhdE {s y' y : T} (hot : isOT y = true) (hy : LhdE y' y)
         rw [split_app] at this; exact this))
   · exact Or.inl heq
 
+/-- Splitting `P ++ R` when the head of `R` is low. -/
+theorem split_app_low {θ : T} : ∀ {P R : T}, (R = z ∨ head R < θ) →
+    split (app P R) θ = ((split P θ).1, app (split P θ).2 R)
+  | z, R, hR => by
+    rcases hR with rfl | hR
+    · rfl
+    · cases R with
+      | z => rfl
+      | psi a b c =>
+        simp only [app_z, split]
+        rw [if_pos (by simpa [head] using hR)]
+  | psi a b c, R, hR => by
+    simp only [app_psi, split]
+    split
+    · rfl
+    · rw [split_app_low hR]
+
+/-- **`hhi` from the shape**: the change is in the low part on both sides. -/
+theorem hi_eq_of_low_change {θ P R R' : T} (hR : R = z ∨ head R < θ) (hR' : R' = z ∨ head R' < θ) :
+    (split (app P R') θ).1 = (split (app P R) θ).1 := by
+  rw [split_app_low hR, split_app_low hR']
+
+/-- **`hlo` from the shape**: a nonzero low change makes a low part. -/
+theorem lo_ne_of_low_change {θ P R : T} (hRz : R ≠ z) (hR : head R < θ) :
+    (split (app P R) θ).2 ≠ z := by
+  rw [split_app_low (Or.inr hR)]
+  intro h
+  exact hRz (app_eq_z h).2
+
 end Ytosk
