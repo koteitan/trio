@@ -508,6 +508,65 @@ theorem lhd_mulT {η a b' : T} : ∀ n, Lhd η (mulT (psi a b' z) n) (psi a (app
         · exact ⟨x, List.mem_append_left _ (by simp [comps, hau, hx']), le_refl _⟩
     · simp at hx'
 
+/-! ### 対角化のための補題 -/
+
+theorem prin_le_head {s y : T} (h : psi s z z ≤ y) : psi s z z ≤ head y := by
+  cases y with
+  | z => exact absurd (lt_of_lt_of_le (T.z_lt_psi s z z) h) (lt_irrefl _)
+  | psi s' y' c' =>
+    simp only [head]
+    rcases (le_iff _ _).mp h with h1 | h1
+    · rw [T.psi_lt_psi] at h1
+      rw [le_iff, psi_lt_psi_z_iff]
+      rcases h1 with h2 | ⟨rfl, h2⟩ | ⟨rfl, rfl, _⟩
+      · exact Or.inl (Or.inl h2)
+      · exact Or.inl (Or.inr ⟨rfl, h2⟩)
+      · exact Or.inr rfl
+    · simp only [psi.injEq] at h1; rw [h1.1, ← h1.2.1]
+
+/-- A term of cofinality `Ω_{μ+1}` is at least `Ω_{μ+1}`. -/
+theorem om_le : ∀ {t μ : T}, isOT t = true → cof t = .big μ → psi (succ μ) z z ≤ t
+  | z, _, _, h => by simp [cof] at h
+  | psi a b (psi c d e), μ, hot, h => by
+    have h' : cof (psi c d e) = .big μ := by simpa [cof] using h
+    exact le_of_lt (lt_of_le_of_lt (om_le (isOT_rest hot) h') (rest_lt hot))
+  | psi a b z, μ, hot, h => by
+    by_cases hb : b = z
+    · subst hb
+      by_cases ha : a = z
+      · subst ha; simp [cof] at h
+      · have hc : cof (psi a z z) = (if isSucc a then Cof.big (init a) else cof a) := by
+          simp [cof, ha]
+        rw [hc] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs] at h; cases h
+          unfold succ; rw [init_app_one hs]
+        · rw [if_neg hs] at h
+          have ih := om_le (isOT_sub hot) h
+          have h1 : succ μ < a := lt_of_lt_of_le (lt_Om_self _) ih
+          exact le_of_lt (by rw [psi_lt_psi_z_iff]; exact Or.inl h1)
+    · have hc0 : cof (psi a b z) = (if isSucc b then Cof.omega else match cof b with
+            | .big μ => if lt μ a = true then Cof.big μ else Cof.omega
+            | c => c) := by simp [cof, hb]
+      rw [hc0] at h
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; cases h
+      · rw [if_neg hs] at h
+        cases hcb : cof b with
+        | big ν =>
+          rw [hcb] at h; simp only at h
+          by_cases hν : lt ν a = true
+          · rw [if_pos hν] at h; cases h
+            have h1 := succ_le_of_lt hν
+            rcases (le_iff _ _).mp h1 with h1 | h1
+            · exact le_of_lt (by rw [psi_lt_psi_z_iff]; exact Or.inl h1)
+            · rw [h1, le_iff]; left; rw [psi_lt_psi_z_iff]
+              exact Or.inr ⟨rfl, lt_of_le_of_ne (z_le b) (Ne.symm hb)⟩
+          · rw [if_neg hν] at h; cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
 /-- **Lemma 3.6.** -/
 theorem lhd_fs : ∀ {t η : T}, ValidLt t η → Lhd η (fs t η) t
   | z, η, h => by simp [ValidLt, cof] at h
