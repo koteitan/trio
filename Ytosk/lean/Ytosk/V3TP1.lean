@@ -5,6 +5,8 @@ TP1（書き換えありの枠で B < fsD(y, ψ_μ(1))）があれば、穴の�
 （`hW_of_tp1`）。穴 `HoleT` なら `OHole`（`ohole_of_holeT`）、鎖の項はどれも ψ_μ(1) 以上（`gamS_ge_one`）。
 -/
 import Ytosk.V3HoleT1
+import Ytosk.TwoRowV
+import Ytosk.TwoRowL
 
 namespace Ytosk
 
@@ -124,5 +126,66 @@ theorem hW_of_tp1 {B y μ br seed : T} (hy : OHole y) (hcb : cof br = .big μ)
     (hseed : psi μ one z ≤ seed) (h : B < fsD y (psi μ one z)) :
     ∀ m, lt B (fsD y (gamS μ br seed m)) = true :=
   fun m => persist_of_tp1 hy (gamS_ge_one hcb hseed m) h
+
+/-- The hole survives in a nonzero tail. -/
+theorem holeT_app_inv {μ br vr : T} : ∀ {P c : T}, c ≠ z → HoleT μ br vr (app P c) → HoleT μ br vr c
+  | z, c, _, h => by simpa using h
+  | psi a b P, c, hc, h => by
+    simp only [app_psi] at h
+    have hPc : app P c ≠ z := fun he => hc (app_eq_z he).2
+    exact holeT_app_inv hc (holeT_rest hPc h)
+
+/-- **`fsD` of a term with a hole is nonzero** (for a nonzero index). -/
+theorem fsD_ne_z_of_holeT {μ br vr ζ : T} (hζ : ζ ≠ z) :
+    ∀ {t : T}, HoleT μ br vr t → fsD t ζ ≠ z
+  | z, h => absurd rfl (holeT_ne_z h)
+  | psi a b (psi c d e), _ => by simp [fsD]
+  | psi a b z, h => by
+    by_cases hb : b = z
+    · subst hb
+      by_cases ha : a = z
+      · subst ha
+        have := holeT_not_succ h
+        have h1 : isSucc (psi z z z) = true := rfl
+        rw [h1] at this; cases this
+      · by_cases hs : isSucc a = true
+        · rw [fsD_leaf hs ha]; exact hζ
+        · rw [fsD_sub ha (by simpa using hs)]; simp
+    · rw [fsD_psi hb (not_succ_arg_of_holeT hb h)]; simp
+
+/-- **(L)(i)**: a nonzero low part stays nonzero. -/
+theorem lo_ne_z_of_holeT {μ br vr ζ s y : T} (hζ : ζ ≠ z) (hy : HoleT μ br vr y)
+    (hl : (split y (psi (succ s) z z)).2 ≠ z) :
+    fsD (split y (psi (succ s) z z)).2 ζ ≠ z := by
+  have e := split_app (psi (succ s) z z) y
+  have hlo : HoleT μ br vr (split y (psi (succ s) z z)).2 := by
+    rw [← e] at hy; exact holeT_app_inv hl hy
+  exact fsD_ne_z_of_holeT hζ hlo
+
+theorem last_ne_z' : ∀ {t : T}, t ≠ z → last t ≠ z
+  | z, h => absurd rfl h
+  | psi a b z, _ => by simp [last]
+  | psi a b (psi c d e), _ => by
+    show last (psi c d e) ≠ z
+    exact last_ne_z' (by simp)
+
+/-- **(L)(ii)**: with no low part, `fsD` keeps no low part when the new last summand stays high. -/
+theorem lo_z_keep {ζ θ y : T} (hy : y ≠ z) (hl : (split y θ).2 = z)
+    (hlast : ∀ q ∈ summands (fsD (last y) ζ), ¬ q < θ) :
+    (split (fsD y ζ) θ).2 = z := by
+  have hyall : ∀ q ∈ summands y, ¬ q < θ := by
+    intro q hq
+    have e := split_app θ y
+    rw [hl, app_z_right] at e
+    rw [← e] at hq
+    exact split_fst_ge θ y q hq
+  have hlz : last y ≠ z := last_ne_z' hy
+  rw [← init_app_last y, fsD_app _ hlz]
+  apply split_snd_z_of_ge
+  intro q hq
+  rw [summands_app] at hq
+  rcases List.mem_append.mp hq with hq | hq
+  · apply hyall; rw [← init_app_last y, summands_app]; exact List.mem_append_left _ hq
+  · exact hlast q hq
 
 end Ytosk
