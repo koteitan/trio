@@ -514,4 +514,41 @@ theorem node_lhd_needs_closed :
     unfold Dom at this
     revert this; decide
 
+/-! ## 最後の子を落とす -/
+
+/-- **Dropping the last appended child**: `ψ_a(B) ◁ ψ_a(step a B c)`. In a rewriting frame `B` must be
+closed at the levels `≤ a` (`drop_child_needs_closed`). -/
+theorem drop_child_lhd {a B s y : T} (hc : isOT (psi s y z) = true)
+    (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
+    (hBcl : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → Closed a B) :
+    LhdE (psi a B z) (psi a (step a B s y z) z) := by
+  unfold step
+  split_ifs with ht
+  · have hle : B ≤ H s y := by
+      rw [H_eq hc]; exact le_trans (B_le_hi hc ht.1 hBc) (le_app_self _ _)
+    exact lhdE_psi_closed hle (hBcl ht)
+  · have hadd : add B (psi s y z) = app B (psi s y z) := by
+      have := add_app_drop (lo := z) (B := B) (s := s) (y := y)
+        (fun q hq hlt => lt_irrefl' _ (lt_of_lt_of_le hlt (hBc q hq))) (Or.inl rfl)
+      rwa [app_z_right] at this
+    rw [hadd]
+    exact lhdE_psi a (lhdE_prefix _ _)
+
+/-- **Counterexample without the closedness of `B`** (the same real frame as `node_lhd_needs_closed`):
+`ψ_ω(B)` is not below `ψ_ω(step ω B c) = ψ_ω(Ω_{ω·2})` by `◁`. -/
+theorem drop_child_needs_closed :
+    let ω : T := psi z one z
+    let y : T := psi (psi z one (psi z one z)) z z
+    let B : T := psi (psi z one one) (psi ω y z) z
+    isOT B = true ∧ isOT (psi ω y z) = true ∧ (∀ q ∈ summands B, psi ω y z ≤ q) ∧
+    isOT (psi ω (step ω B ω y z) z) = true ∧
+    ¬ LhdE (psi ω B z) (psi ω (step ω B ω y z) z) := by
+  intro ω y B
+  refine ⟨by decide, by decide, by decide, by decide, ?_⟩
+  rintro (h | h)
+  · revert h; decide
+  · have := h.2 z (psi ω (psi (psi z one (psi z z one)) z z) z) (by decide) (by decide)
+    unfold Dom at this
+    revert this; decide
+
 end Ytosk
