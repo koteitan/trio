@@ -3,10 +3,11 @@
 
 `t1_main_struct`（構造の仮定なし）の基底の仮定（hv1・hs1ot・hs1lhd・hPv1）を、落とす補題 `drop_all` と
 `V3BaseDrop` から与える。残る仮定は値についてのものだけ（値の不変条件、r と x の値、枠の値の条件、
-落とす補題の残りの仮定、o(r) が実際に変わること）。
+落とす補題の残りの仮定（M′ の値の小ささ・枠の引数の条件）、o(r) が実際に変わること）。
 -/
 import Ytosk.V3StructT1
 import Ytosk.V3BaseDrop
+import Ytosk.V3BumpDrop
 
 namespace Ytosk
 
@@ -29,9 +30,8 @@ theorem t1_main_drop {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
-    (hBump : ∀ i, i < r + L → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j,
-        k < r + L → PO ρ (drop1 M (r + L) rkM) k ∧ PV M ρ (drop1 M (r + L) rkM) k) →
-      ChgX M (r + L) false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → PV M ρ (drop1 M (r + L) rkM) i)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakShape M ρ)
+    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
     (hX1 : ∀ i k W, i + 1 = r + L → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
       ∀ r' ∈ summands (vOpt ρ (par M 1 i)), r' < W → Lhd z r' W)
     (hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r)
@@ -63,7 +63,8 @@ theorem t1_main_drop {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
   have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
   have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
   have hpath := hpath_of_par1 h1 hA hrx
-  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hF hFO hArgT hBump hX1
+  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hF hFO hArgT
+    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hKD hTD hAbs hWS hVSt) hX1
   have hv : (drop1 M (r + L) rkM).v r = ρ.v r :=
     base_v_r hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hA hrx hqr hpath
   have hrM : r < M.length := by omega
