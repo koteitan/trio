@@ -1554,3 +1554,11 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - t = 0（node-lhd、V3T0FO、ef62ef8e）: frameOT_N_t0。r より前の列は M の枠（枠の頭の子は D に入らない）、コピーは中間が M・最後が M.take x の枠。g で r が数えられる場合は σ.o g の標準形から。残る仮定は hOTD だけ。
 - t = 2（strict-r）: C′ の 10 万個の t = 2 の行列で Res3T2 は SeedC（X が閉じている）以外は例外 0。SeedC は 61 件偽だが、種の結論 o_N(p) ◁ o_M(p) は全件成り立つ。
   - n ≥ 2 の種を SeedL := Lhd z (σ.o p) (ρ.o p) に弱めた。n ≤ 1 の種は落とす補題の PO から（lhd_of_po）。n ≤ 1 の hVNN は Res3.drop.vst から。
+
+### t = 1 の M[n] の TrigOm（2026-10-02、t1-struct、V3TrigN）
+
+- 順序数の補題: hole_om_shape（HoleT のもとで fsD(ψ_s(y), ζ) の引数が Ω_{ν+1}、ζ ≠ 0 かつ後続でないなら y = Ω_{t+1}）、diag_fsD_not_om など。
+- trigOm_N_t1: TrigOm M ∧ TrigOm M[n−1] ⇒ 貼り合わせの M[n] の TrigOm。明示的な仮定:
+  - (a) D の列の Z c ≠ 0 かつ後続でない。破れるのは ζ = 種 = 1（n = 2）だけ。C′ でそこから TrigOm の場面は出ないが、証明はまだない。
+  - (b) 子の古い値が Ω_{t+1} の枠（x か D の葉）。q = r の x の場合は B = b_r = 0 と種の関係から、q ≠ r は F1 で書き換えなし。型ごとに最終層で外す。
+  - (c) M[n] の NoTrigU（C′ で 0/91 万）。保存の補題を先に作り、Res3A の欄にするのは後でまとめて。
