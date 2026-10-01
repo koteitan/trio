@@ -1,10 +1,12 @@
 /-
-**3 行・t = 1・q = r: TrigOm の hLeaf（古い値が Ω_{t+1} の子）を外す。**
+**3 行・t = 1・q = r: TrigOm の hLeaf（古い値が Ω_{t+1} の子）と hShape（下がった値の形）を外す。**
 
 - x より前の D の値は対角点を持つ（`qr_holeD`）。Ω_{t+1} は対角点の位置にならないので、そのような子はない。
 - x の枠 (r, L, x) の頭は b_r。新しい値 gamS k の引数が Ω_{ν+1} の形なら b_r = 0:
   k ≥ 1 では引数は b_r ++ γ（γ ≠ 0）で、b_r ≠ 0 なら 1 項にならない。k = 0（種）では SeedOK から添字は μ、
   Ω_{ν+1} < b_r ++ seed、一方 引き金から b_r < Ω_{ν+1} で、b_r ++ seed < Ω_{ν+1} となって矛盾。
+- 下がった値の形（hShape）は対角点から: 節点 b_r ++ Ω_{μ+1} では fs が b_r ++ ζ で、1 項になるのは b_r = 0
+  のときだけ（そのとき y = Ω_{μ+1}）。節点より下では fsD は Ω の形にならない。ζ = 1（種 ψ_0(0)）でもよい。
 -/
 import Ytosk.V3TrigN
 import Ytosk.V3QRLocV
@@ -25,6 +27,35 @@ theorem not_diag_om {a b μ t : T} (hb : b ≠ z) (h : DiagAt a b μ (psi (succ 
   | sub _ hs _ =>
     have := (T.psi.inj hT).1
     rw [← this, isSucc_succ] at hs; cases hs
+
+/-- **The shape at a diagonal point of `b ++ Ω_{μ+1}`** (no condition on `ζ` other than `ζ ≠ 0`). -/
+theorem shape_of_diag_br {a' b μ s0 y0 ζ s ν : T}
+    (hD : DiagAt a' (app b (psi (succ μ) z z)) μ (psi s0 y0 z)) (hζ : ζ ≠ z) (hy0 : y0 ≠ z)
+    (h : fsD (psi s0 y0 z) ζ = psi s (psi (succ ν) z z) z) : ∃ t, y0 = psi (succ t) z z := by
+  generalize hT : psi s0 y0 z = U at hD
+  cases hD with
+  | here hb hc _ =>
+    obtain ⟨rfl, rfl, _⟩ := T.psi.inj hT
+    rw [fsD_here hb hc, fs_app b (by simp) ζ, fs_Om_succ] at h
+    have h2 := (T.psi.inj h).2.1
+    cases b with
+    | z => exact ⟨μ, rfl⟩
+    | psi p q c' =>
+      exfalso
+      simp only [app] at h2
+      exact hζ (app_eq_z (T.psi.inj h2).2.2).2
+  | rest _ => exact absurd (T.psi.inj hT).2.2 (by simp)
+  | arg hb hs h' =>
+    obtain ⟨rfl, rfl, _⟩ := T.psi.inj hT
+    rw [fsD_psi hb hs] at h
+    exact absurd (T.psi.inj h).2.1 ((diag_fsD_not_om hζ h').1 ν)
+  | sub _ _ _ => exact absurd (T.psi.inj hT).2.1 hy0
+
+/-- The shape from a hole when the index is not a successor (any type). -/
+theorem shape_of_hole {μ br vr s0 y0 ζ s ν : T} (hH : HoleT μ br vr (psi s0 y0 z)) (hζ : ζ ≠ z)
+    (hζs : isSucc ζ = false) (hy0 : y0 ≠ z)
+    (h : fsD (psi s0 y0 z) ζ = psi s (psi (succ ν) z z) z) : ∃ t, y0 = psi (succ t) z z :=
+  hole_om_shape hH hy0 hζ hζs h
 
 section
 variable {M : Mat} {x r : Nat} {ρ : Valn} {μ b : T} (hx : x + 1 = M.length)
@@ -126,6 +157,17 @@ theorem qr_hLeaf (hμ : ρ.v r = μ) {seed : T} (hSr : SeedOK μ (app b (psi (su
         exact psi_lt_psi_z_iff.mpr (Or.inl hp)
       exact absurd (lt_trans h4 h5) (lt_irrefl _)
 
+
+/-- **hShape for `q = r`**: every `D` value below `x` has a diagonal point of `b ++ Ω_{μ+1}`. -/
+theorem qr_hShape {Z : Nat → T} (hZ : ∀ c, Z c ≠ z) :
+    ∀ c, c < x → DepX M x true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
+      ∀ s ν, fsD (psi s0 y0 z) (Z c) = psi s (psi (succ ν) z z) z → ∃ t, y0 = psi (succ t) z z := by
+  intro c hc hd s0 y0 h0 hy0 s ν h
+  obtain ⟨_, a', _, hD⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS
+    true c hd hc
+  simp only [valB, cond_true] at hD
+  rw [h0] at hD
+  exact shape_of_diag_br hD (hZ c) hy0 h
 end
 
 end Ytosk

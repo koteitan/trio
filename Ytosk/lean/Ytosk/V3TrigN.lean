@@ -233,13 +233,14 @@ theorem preState_lt {i : Nat} (h : i < r + L) {Lc : List Nat} {c : Nat} {R : Lis
 
 
 /-- **TrigOm passes to the glued valuation of `M[n]`** (`t = 1`): the head is that of `M` (or of `M[n − 1]`
-on the copies). A lowered child keeps an `Ω_{t+1}` argument (`hole_om_shape`, needs `Z c` not a successor),
+on the copies). A lowered child keeps an `Ω_{t+1}` argument (hypothesis `hShape`: from `hole_om_shape` when
+`Z c` is not a successor, or from the diagonal point for `q = r`),
 so the trigger goes back to `M` (`trig_back_fsD`). Remaining as hypotheses: the children whose old value is
 `Ω_{t+1}` itself (`x`, and `D` leaves) `hLeaf`, and no trigger at an uncounted child of `M[n]` (`hNU`). -/
 theorem trigOm_N_t1 (hC : Cons M ρ) (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP)
     (hTO : TrigOm M ρ) (hTOP : TrigOm (TRIO.gexp M r L d0 0 (n - 1)) ρP)
-    {μ br vr : T} (hHole : ∀ c, c < r + L → DepX M (r + L) true c → HoleT μ br vr (ρ.o c))
-    (hZ : ∀ c, c < r + L → DepX M (r + L) true c → Z c ≠ z ∧ isSucc (Z c) = false)
+    (hShape : ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
+      ∀ s ν, fsD (psi s0 y0 z) (Z c) = psi s (psi (succ ν) z z) z → ∃ t, y0 = psi (succ t) z z)
     (hle : ∀ c, c < r + L → DepX M (r + L) true c → fsD (ρ.o c) (Z c) ≤ ρ.o c)
     (hLeaf : ∀ i Lc c R, i < r + L → children M i = Lc ++ c :: R → Counted M i c → c ≤ r + L →
       DepX M (r + L) true c → ∀ t, ρ.o c = psi (succ t) z z → ∀ s ν,
@@ -283,10 +284,7 @@ theorem trigOm_N_t1 (hC : Cons M ρ) (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) 
             rw [hσ, glueZ_o_dep ρ (shiftV ρP L) Z hc' hd, h0]; exact hc
           · rw [fsD_sub hs0 (by simpa using hss)] at hc
             exact absurd (T.psi.inj hc).2.1 (by simp)
-        · obtain ⟨hZz, hZs⟩ := hZ c hc' hd
-          have hH := hHole c hc' hd
-          rw [h0] at hH
-          obtain ⟨t, ht⟩ := hole_om_shape hH hy0 hZz hZs hc
+        · obtain ⟨t, ht⟩ := hShape c hc' hd s0 y0 h0 hy0 s ν hc
           have hl := hle c hc' hd
           rw [h0] at hl
           rcases trig_back_fsD hl hc ⟨ht1, ht2⟩ with htM | ⟨_, _, hy0z, _⟩
