@@ -68,6 +68,79 @@ def fs : T → T → T
         else psi a (fs b (Nat.rec z (fun _ g => psi μ (fs b g) z) (count η))) z
       | _ => psi a (fs b η) z
 
+/-! ## Buchholz の関係 ◁ -/
+
+/-- Every element of `X` is at most some element of `Y`. -/
+def Dom (X Y : List T) : Prop := ∀ x ∈ X, ∃ y ∈ Y, x ≤ y
+
+/-- `G°_u η`: the index and its components. -/
+def Gc (u η : T) : List T := η :: comps u η
+
+/-- `b ◁_η a` (Buchholz 1986, before Lemma 3.4). -/
+def Lhd (η b a : T) : Prop :=
+  b < a ∧ ∀ u c, b < c → c ≤ a → Dom (comps u b) (comps u c ++ Gc u η)
+
+theorem size_comps : ∀ {u t g : T}, g ∈ comps u t → size g < size t
+  | _, z, _, h => by simp [comps] at h
+  | u, psi v x c, g, h => by
+    simp only [comps, List.mem_append] at h
+    rcases h with h | h
+    · split at h
+      · simp at h
+      · simp only [List.mem_cons, List.mem_append] at h
+        rcases h with rfl | h | h
+        · exact size_arg_lt _ _ _
+        · exact Nat.lt_trans (size_comps h) (size_arg_lt _ _ _)
+        · exact Nat.lt_trans (size_comps h) (size_sub_lt _ _ _)
+    · exact Nat.lt_trans (size_comps h) (size_rest_lt _ _ _)
+
+/-- Components of a component are components. -/
+theorem comps_trans : ∀ {u t g : T}, g ∈ comps u t → ∀ h ∈ comps u g, h ∈ comps u t
+  | _, z, _, hg => by simp [comps] at hg
+  | u, psi v x c, g, hg => by
+    intro h hh
+    simp only [comps, List.mem_append] at hg ⊢
+    rcases hg with hg | hg
+    · left
+      split at hg
+      · simp at hg
+      · rename_i hvu
+        rw [if_neg hvu]
+        simp only [List.mem_cons, List.mem_append] at hg ⊢
+        rcases hg with rfl | hg | hg
+        · exact Or.inr (Or.inl hh)
+        · exact Or.inr (Or.inl (comps_trans hg h hh))
+        · exact Or.inr (Or.inr (comps_trans hg h hh))
+    · exact Or.inr (comps_trans hg h hh)
+
+/-- **Lemma 3.4.** -/
+theorem lhd_comps {η b a u : T} (hl : Lhd η b a) (ha : ∀ g ∈ comps u a, g < a)
+    (hη : ∀ g ∈ Gc u η, g < b) : ∀ g ∈ comps u b, g < b := by
+  have key : ∀ n, ∀ g, size g = n → g ∈ comps u b → g < b := by
+    intro n
+    induction n using Nat.strongRecOn with
+    | _ n ih =>
+      intro g hgn hg
+      rcases lt_or_ge g b with hlt | hge
+      · exact hlt
+      · exfalso
+        have hga : g < a := by
+          obtain ⟨y, hy, hgy⟩ := hl.2 u a hl.1 (le_refl _) g hg
+          rcases List.mem_append.mp hy with hy | hy
+          · exact lt_of_le_of_lt hgy (ha y hy)
+          · exact lt_of_le_of_lt hgy (lt_trans (hη y hy) hl.1)
+        have hne : g ≠ b := by
+          intro h; have := size_comps hg; rw [h] at this; exact Nat.lt_irrefl _ this
+        have hbg : b < g := lt_of_le_of_ne hge (Ne.symm hne)
+        obtain ⟨y, hy, hgy⟩ := hl.2 u g hbg (le_of_lt hga) g hg
+        rcases List.mem_append.mp hy with hy | hy
+        · have hsz : size y < n := hgn ▸ size_comps hy
+          have := ih (size y) hsz y rfl (comps_trans hg y hy)
+          exact absurd (lt_of_le_of_lt hgy this) (not_lt_of_ge hge)
+        · exact absurd (lt_of_le_of_lt hgy (hη y hy)) (not_lt_of_ge hge)
+  intro g hg
+  exact key (size g) g rfl hg
+
 #eval [psi z (psi z one z) z, psi z (psi (psi one z z) z z) z].map fun t =>
   ((List.range 3).map fun n => str (fs t (natT n)))
 
