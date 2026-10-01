@@ -277,4 +277,59 @@ theorem spArg_frame_prefix {a b s yw Rw : T} (hw : isOT (psi s yw z) = true)
   rw [spArg_cons, hNw]
   exact frame_prefix hw
 
+
+/-! ## 書き換えが起きない残り -/
+
+/-- The step does not depend on the rest: the comparison with `Ω_a` matters only when `b < y`, and then
+`y ≠ 0`. -/
+theorem step_rest (a b s y c c' : T) : step a b s y c = step a b s y c' := by
+  unfold step
+  by_cases h1 : lt b y = true
+  · have hy : y ≠ z := by rintro rfl; exact absurd h1 (by simp [lt])
+    have key : ∀ d, lt (psi a z z) (psi s y d) = (if a = s then lt z y else lt a s) := by
+      intro d; simp only [lt]
+      split
+      · rename_i h; rw [if_neg (Ne.symm hy)]
+      · rfl
+    rw [key c, key c']
+  · simp [h1]
+
+/-- `sp` over a concatenation: first the prefix, then the rest. -/
+theorem spArg_app (a : T) : ∀ b P c : T, spArg a b (app P c) = spArg a (spArg a b P) c
+  | b, z, c => rfl
+  | b, psi s y P, c => by
+    simp only [app_psi, spArg_cons]
+    rw [step_rest a b s y (app P c) P]
+    exact spArg_app a _ P c
+
+/-- **No rewriting in the rest.** If every summand `ψ_s(y)` of `R` has `y ≤ b` or `s < a`, and `b ++ R` is
+standard, then `sp` only appends `R`. -/
+theorem spArg_eq_app {a : T} : ∀ {b R : T}, isOT (app b R) = true →
+    (∀ s y, psi s y z ∈ summands R → y ≤ b ∨ s < a) → spArg a b R = app b R
+  | b, z, _, _ => by simp [spArg]
+  | b, psi s y R, hot, hR => by
+    rw [spArg_cons]
+    have hst : step a b s y R = app b (psi s y z) := by
+      unfold step
+      have hno : ¬ (lt b y = true ∧ lt (psi a z z) (psi s y R) = true) := by
+        rintro ⟨h1, h2⟩
+        rcases hR s y (by simp [summands]) with h | h
+        · exact absurd (show b < y from h1) (not_lt_of_ge h)
+        · have h2' : psi a z z < psi s y R := h2
+          rw [T.psi_lt_psi] at h2'
+          rcases h2' with h3 | ⟨h3, _⟩ | ⟨h3, _, _⟩
+          · exact lt_asymm h3 h
+          · subst h3; exact lt_irrefl _ h
+          · subst h3; exact lt_irrefl _ h
+      rw [if_neg hno]
+      have hb' : isOT (app b (psi s y z)) = true := by
+        have : app b (psi s y R) = app (app b (psi s y z)) R := by rw [app_assoc]; simp
+        rw [this] at hot; exact isOT_app_left hot
+      exact add_eq_app hb'
+    rw [hst]
+    have hassoc : app (app b (psi s y z)) R = app b (psi s y R) := by rw [app_assoc]; simp
+    have hot' : isOT (app (app b (psi s y z)) R) = true := by rw [hassoc]; exact hot
+    rw [spArg_eq_app hot' (fun s' y' h => (hR s' y' (by simp [summands, h])).imp_left
+      (fun h' => le_trans h' (le_app_self _ _))), hassoc]
+
 end Ytosk
