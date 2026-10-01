@@ -132,4 +132,67 @@ theorem stepV_bump {M : Mat} {x i j k : Nat} {ρ ρN : Valn} {ζ μ br vr : T} (
   have hpot : isOT (app (sumN P) (omega G)) = true := by
     rw [← sumN_snoc_dec hsP hpp]; exact (sumN_dec _ hsP hpp).1
   exact holeT_omega hpot (holeT_app _ hωGz hHωG) hpassP
+/-- **One upgrade frame, general form**: `v(i) = v(P_1 i) + v(U i)` where the summands of `v(P_1 i)`
+absorbed by `v(U i)` are also absorbed by `fsD(v(U i), ζ)`. -/
+theorem stepV_upgA {M : Mat} {x i k : Nat} {ρ ρN : Valn} {ζ μ br vr : T} (hC : Cons M ρ)
+    (hx : x + 1 = M.length) (hi : i < x) (hk : k < x)
+    (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i = 0) (hu : upg M i = some k)
+    (hpd : ∀ m, par M 1 i = some m → ¬ DepX M x false m)
+    (hkd : DepX M x false k) (hV : Single (ρ.v k)) (hV' : Single (fsD (ρ.v k) ζ))
+    (hle : fsD (ρ.v k) ζ ≤ ρ.v k)
+    (hAot : isOT (vOpt ρ (par M 1 i)) = true)
+    (hAV : ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < ρ.v k → q < fsD (ρ.v k) ζ)
+    (hHk : HoleT μ br vr (ρ.v k)) :
+    vRhs M (glue M x ρ ρN ζ) i = fsD (ρ.v i) ζ ∧ HoleT μ br vr (ρ.v i) := by
+  have hiM : i < M.length := by omega
+  have hA : vOpt (glue M x ρ ρN ζ) (par M 1 i) = vOpt ρ (par M 1 i) := by
+    cases hp : par M 1 i with
+    | none => rfl
+    | some m =>
+      have hm : m < i := par_lt M 1 i m hp
+      exact glue_v_lt ρ ρN ζ (by omega) (hpd m hp)
+  set A := vOpt ρ (par M 1 i) with hAdef
+  obtain ⟨hVot, s, y, hsy⟩ := hV
+  obtain ⟨hV'ot, s', y', hsy'⟩ := hV'
+  obtain ⟨B, X, hAB, hX, hadd⟩ := add_prefix s y A
+  have hvi : ρ.v i = app B (ρ.v k) := by
+    rw [(hC i hiM).2]
+    unfold vRhs
+    rw [if_neg h1, if_pos h2, hu]
+    simp only
+    rw [← hAdef, hsy]; simp only [last]
+    rw [sf_ot (isOT_add hAot (by rw [← hsy]; exact hVot)), hadd]
+  -- the summands of `B` are not below `v(k)`
+  have hBge : ∀ q ∈ summands B, ¬ q < psi s y z := by
+    intro q hq hlt
+    have hq' : q ∈ summands (add A (psi s y z)) := by
+      rw [hadd, summands_app]; exact List.mem_append_left _ hq
+    exact lt_irrefl' _ (lt_of_le_of_lt (add_summands_ge A q hq') hlt)
+  refine ⟨?_, ?_⟩
+  · have hfsd : fsD (ρ.v i) ζ = app B (psi s' y' z) := by
+      rw [hvi, fsD_app B (by rw [hsy]; simp) ζ, hsy']
+    rw [hfsd]
+    unfold vRhs
+    rw [if_neg h1, if_pos h2, hu, hA]
+    simp only
+    rw [glue_v_dep ρ ρN ζ hk hkd, hsy']
+    simp only [last]
+    rw [sf_ot (isOT_add hAot (by rw [← hsy']; exact hV'ot)), hAB]
+    apply add_app_drop
+    · intro q hq hlt
+      apply hBge q hq
+      have : psi s' y' z ≤ psi s y z := by rw [← hsy, ← hsy']; exact hle
+      exact lt_of_lt_of_le hlt this
+    · cases hXc : X with
+      | z => exact Or.inl rfl
+      | psi a b c =>
+        right
+        have hhX : head X ∈ summands A := by
+          rw [hAB, summands_app, hXc]; apply List.mem_append_right; simp [summands, head]
+        have h3 : head X < ρ.v k := by
+          rw [hsy]; exact lt_of_le_of_lt (head_le_self X) hX
+        have := hAV _ hhX h3
+        rw [hsy', hXc] at this; exact this
+  · rw [hvi]; exact holeT_app B (by rw [hsy]; simp) hHk
+
 end Ytosk
