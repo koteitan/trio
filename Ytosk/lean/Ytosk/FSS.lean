@@ -326,4 +326,45 @@ theorem DiagAt.arg_inv {a b μ a' y : T} (h : DiagAt a b μ (psi a' y z)) (hy : 
   | arg _ _ h' => exact h'
   | sub => exact absurd rfl hy
 
+/-! ## 正規化の 1 段の形 -/
+
+/-- One step of `sp` either ends with the summand (no rewrite, or a rewrite with a lower part), or is
+`y` itself (a rewrite with no lower part). -/
+theorem step_cases {a b s y : T} (hc : isOT (psi s y z) = true) :
+    (∃ B, step a b s y z = app B (psi s y z)) ∨
+      (step a b s y z = y ∧ (split y (psi (succ s) z z)).2 = z ∧ y ≠ z ∧
+        lt b y = true ∧ lt (psi a z z) (psi s y z) = true) := by
+  unfold step
+  by_cases htr : lt b y = true ∧ lt (psi a z z) (psi s y z) = true
+  · rw [if_pos htr, H_eq hc]
+    by_cases hlo : (split y (psi (succ s) z z)).2 = z
+    · right
+      rw [if_pos hlo, app_z_right]
+      have := split_app (psi (succ s) z z) y; rw [hlo, app_z_right] at this
+      refine ⟨this, hlo, ?_, htr⟩
+      rintro rfl; simp [lt] at htr
+    · left; rw [if_neg hlo]; exact ⟨_, rfl⟩
+  · rw [if_neg htr]
+    left
+    obtain ⟨B, _, _, _, he⟩ := add_prefix s y b
+    exact ⟨B, he⟩
+
+/-- **The cofinality `Ω_{μ+1}` survives one step** (when it passes `ψ_s`). -/
+theorem cof_step {a b s y μ : T} (hc : isOT (psi s y z) = true) (hcof : cof (psi s y z) = .big μ) :
+    cof (step a b s y z) = .big μ := by
+  rcases step_cases (a := a) (b := b) hc with ⟨B, hB⟩ | ⟨hy, _, hyz, _⟩
+  · rw [hB, cof_app B (by simp), hcof]
+  · rw [hy]; exact (cof_psi_inv hyz hcof).1
+
+/-- **The diagonal point stays below after one step**, unless the step rewrites the diagonal node
+itself away (then the argument of the diagonal node is the result). -/
+theorem DiagAt.step {a0 b0 μ a b s y : T} (hc : isOT (psi s y z) = true)
+    (hD : DiagAt a0 b0 μ (psi s y z)) :
+    DiagAt a0 b0 μ (step a b s y z) ∨ (s = a0 ∧ y = b0 ∧ step a b s y z = b0) := by
+  rcases step_cases (a := a) (b := b) hc with ⟨B, hB⟩ | ⟨hy, _, hyz, _⟩
+  · left; rw [hB]; exact DiagAt.append B (by simp) hD
+  · by_cases hne : s = a0 ∧ y = b0
+    · right; exact ⟨hne.1, hne.2, by rw [hy, hne.2]⟩
+    · left; rw [hy]; exact DiagAt.arg_inv hD hyz hne
+
 end Ytosk
