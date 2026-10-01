@@ -23,6 +23,15 @@ theorem shk_inj (r s : Nat) : ∀ a b, shk r s a = shk r s b → a = b := by
   unfold shk at h
   split at h <;> split at h <;> omega
 
+theorem decomp_unique {L k q k' q' : Nat} (hq : q < L) (hq' : q' < L) (h : k * L + q = k' * L + q') :
+    k = k' ∧ q = q' := by
+  have hL : 0 < L := by omega
+  have h1 : (k * L + q) / L = k := by rw [Nat.add_comm, Nat.add_mul_div_right _ _ hL, Nat.div_eq_of_lt hq]; simp
+  have h2 : (k' * L + q') / L = k' := by rw [Nat.add_comm, Nat.add_mul_div_right _ _ hL, Nat.div_eq_of_lt hq']; simp
+  have hk : k = k' := by rw [← h1, ← h2, h]
+  subst hk
+  exact ⟨rfl, by omega⟩
+
 /-! ## 上げの移送 -/
 
 theorem option_map_inj {f : Nat → Nat} (hf : ∀ a b, f a = f b → a = b) {o : Option Nat} {m : Nat} :
@@ -477,6 +486,168 @@ theorem upg_copy_last0 (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) 
         · exact absurd ⟨hFp.1, hFp.2.1⟩ hfr
         · omega
         · unfold shk; rw [if_neg (by omega), if_neg (by omega)]
+
+/-- **The parent of a column after `x`**: a copy root has the parent of `r`, any other column has its
+parent in the same copy (after `x`). -/
+theorem par0_tail {c : Nat} (hc0 : r + L ≤ c) (hc : c < r + n * L) :
+    (∃ k, 1 ≤ k ∧ k < n ∧ c = r + k * L ∧ par (TRIO.gexp M r L 0 0 n) 0 c = par M 0 r) ∨
+    (∃ p, par (TRIO.gexp M r L 0 0 n) 0 c = some p ∧ r + L ≤ p ∧ p < c) := by
+  obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (Lb := L) (n := n) hL (by omega) hc
+  have hk1 : 1 ≤ k := by
+    by_contra h
+    have : k = 0 := by omega
+    subst this; omega
+  rcases Nat.eq_zero_or_pos q with h0 | hq0
+  · subst h0
+    left
+    exact ⟨k, hk1, hk, by omega, by rw [show r + (k * L + 0) = r + k * L by omega]; exact par0_root0 hlen hL hp hn hk⟩
+  · right
+    have hA := anc_B hlen hL hp (show q ≤ L by omega)
+    obtain ⟨p', hp'⟩ := par0_of_anc hA (by omega)
+    have hpr : r ≤ p' := (anc0_par hA (by omega) hp').le
+    have hp'q := par_lt M 0 _ p' hp'
+    refine ⟨_, par0_copy0 hlen hL hp hn hk hq hq0 hp', ?_, by omega⟩
+    have : L ≤ k * L := Nat.le_mul_of_pos_left L hk1
+    omega
+
+/-- **The children of a column before `r`** other than the parent of `r` are those in `M`. -/
+theorem children_pre0 {i : Nat} (hi : i < r) (hig : par M 0 r ≠ some i) :
+    children (TRIO.gexp M r L 0 0 n) i = children M i := by
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
+  apply eq_of_sorted_mem _ _ (children_sorted _ i) (children_sorted M i)
+  intro c
+  rw [mem_children_iff, mem_children_iff, hlN, ← hlen]
+  constructor
+  · rintro ⟨hc, hpc⟩
+    rcases Nat.lt_or_ge c (r + L) with h | h
+    · rw [par_gexp_pre hlen hn 0 h] at hpc; exact ⟨by omega, hpc⟩
+    · rcases par0_tail hlen hL hp hn h hc with ⟨k, _, _, _, hpk⟩ | ⟨p', hp', hp'1, _⟩
+      · rw [hpc] at hpk; exact absurd hpk.symm hig
+      · rw [hpc] at hp'; cases hp'; omega
+  · rintro ⟨hc, hpc⟩
+    rcases Nat.lt_or_ge c (r + L) with h | h
+    · rw [par_gexp_pre hlen hn 0 h]; exact ⟨by omega, hpc⟩
+    · have : c = r + L := by omega
+      subst this; rw [hp] at hpc; cases hpc; omega
+
+/-- **The children of the parent of `r`**: those in `M` (ending with `r`), then the other copy roots. -/
+theorem children_g0 {g : Nat} (hg : par M 0 r = some g) :
+    children (TRIO.gexp M r L 0 0 n) g =
+      children M g ++ (List.range (n - 1)).map (fun k => r + (k + 1) * L) := by
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
+  have hgr := par_lt M 0 r g hg
+  -- the children of `g` in `M` are at most `r`
+  have hle : ∀ c ∈ children M g, c ≤ r := by
+    intro c hc
+    have hpc := (mem_children_iff.mp hc).2
+    by_contra h
+    have hcl := (mem_children hc).2
+    rcases Nat.lt_or_ge c (r + L) with h' | h'
+    · have hA := anc_B hlen hL hp (q := c - r) (by omega)
+      rw [show r + (c - r) = c by omega] at hA
+      have := (anc0_par hA (by omega) hpc).le; omega
+    · have : c = r + L := by omega
+      subst this; rw [hp] at hpc; cases hpc; omega
+  apply eq_of_sorted_mem _ _ (children_sorted _ g)
+  · apply List.pairwise_append.mpr
+    refine ⟨children_sorted M g, ?_, ?_⟩
+    · rw [List.pairwise_map]
+      exact List.pairwise_lt_range.imp (fun {a b} h => by
+        have := Nat.mul_lt_mul_of_pos_right (show a + 1 < b + 1 by omega) hL; omega)
+    · intro a ha b hb
+      obtain ⟨k, _, rfl⟩ := List.mem_map.mp hb
+      have := hle a ha
+      have : L ≤ (k + 1) * L := Nat.le_mul_of_pos_left L (by omega)
+      omega
+  intro c
+  rw [List.mem_append, mem_children_iff, mem_children_iff, hlN, ← hlen, List.mem_map]
+  constructor
+  · rintro ⟨hc, hpc⟩
+    rcases Nat.lt_or_ge c (r + L) with h | h
+    · rw [par_gexp_pre hlen hn 0 h] at hpc; exact Or.inl ⟨by omega, hpc⟩
+    · rcases par0_tail hlen hL hp hn h hc with ⟨k, hk1, hk, hck, _⟩ | ⟨p', hp', hp'1, _⟩
+      · right; exact ⟨k - 1, List.mem_range.mpr (by omega), by rw [hck, show k - 1 + 1 = k by omega]⟩
+      · rw [hpc] at hp'; cases hp'; omega
+  · rintro (⟨hc, hpc⟩ | ⟨k, hk, rfl⟩)
+    · rcases Nat.lt_or_ge c (r + L) with h | h
+      · rw [par_gexp_pre hlen hn 0 h]; exact ⟨by omega, hpc⟩
+      · have : c = r + L := by omega
+        subst this; rw [hp] at hpc; cases hpc; omega
+    · have hk' := List.mem_range.mp hk
+      have hkn : k + 1 < n := by omega
+      refine ⟨?_, ?_⟩
+      · have := Nat.mul_lt_mul_of_pos_right (show k + 1 < n by omega) hL; omega
+      · have := par0_root0 hlen hL hp hn hkn
+        rw [hg] at this; exact this
+
+/-- **The children of a copy column**: those of the column of `B` (without `x`), shifted. -/
+theorem children_copy0 {k q : Nat} (hk : k < n) (hq : q < L) :
+    children (TRIO.gexp M r L 0 0 n) (r + (k * L + q)) =
+      ((children M (r + q)).filter (fun c => decide (c < r + L))).map (shk r (k * L)) := by
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  have hkL : k * L + L ≤ n * L := by
+    have := Nat.mul_le_mul_right L (show k + 1 ≤ n by omega); rw [Nat.succ_mul] at this; exact this
+  apply eq_of_sorted_mem _ _ (children_sorted _ _)
+  · rw [List.pairwise_map]
+    exact ((children_sorted M (r + q)).filter _).imp_of_mem (fun {a b} ha hb h => by
+      have ha' := (mem_children (List.mem_filter.mp ha).1).1
+      have hb' := (mem_children (List.mem_filter.mp hb).1).1
+      unfold shk; rw [if_pos (by omega), if_pos (by omega)]; omega)
+  intro c
+  rw [mem_children_iff, hlN, List.mem_map]
+  constructor
+  · rintro ⟨hc, hpc⟩
+    have hci := par_lt _ 0 c _ hpc
+    rcases Nat.lt_or_ge c (r + L) with h | h
+    · -- `k = 0`
+      rw [par_gexp_pre hlen hn 0 h] at hpc
+      have hk0 : k = 0 := by
+        by_contra hk0
+        have : L ≤ k * L := Nat.le_mul_of_pos_left L (by omega)
+        omega
+      subst hk0
+      refine ⟨c, List.mem_filter.mpr ⟨mem_children_iff.mpr ⟨by omega, by simpa using hpc⟩,
+        by simpa using h⟩, ?_⟩
+      unfold shk; split <;> simp
+    · rcases par0_tail hlen hL hp hn h hc with ⟨k', _, _, hck, hpk⟩ | ⟨p', hp', hp'1, hp'2⟩
+      · rw [hpc] at hpk
+        have := par_lt M 0 r _ hpk.symm; omega
+      · obtain ⟨k', q', hk', hq', rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (Lb := L) (n := n) hL (by omega) hc
+        have hq'0 : 0 < q' := by
+          by_contra h0
+          have : q' = 0 := by omega
+          subst this
+          rcases par0_tail hlen hL hp hn h hc with ⟨k2, _, _, _, hpk⟩ | _
+          · rw [hpc] at hpk; have := par_lt M 0 r _ hpk.symm; omega
+          · have := par0_root0 hlen hL hp hn hk'
+            rw [show r + (k' * L + 0) = r + k' * L by omega, this] at hpc
+            have := par_lt M 0 r _ hpc; omega
+        have hA := anc_B hlen hL hp (show q' ≤ L by omega)
+        obtain ⟨p2, hp2⟩ := par0_of_anc hA (by omega)
+        have hp2r : r ≤ p2 := (anc0_par hA (by omega) hp2).le
+        have hp2q := par_lt M 0 _ p2 hp2
+        rw [par0_copy0 hlen hL hp hn hk' hq' hq'0 hp2] at hpc
+        simp only [Option.some.injEq] at hpc
+        obtain ⟨hkk, hqq⟩ := decomp_unique (L := L) (by omega) hq (show k' * L + (p2 - r) = k * L + q by omega)
+        subst hkk
+        refine ⟨r + q', List.mem_filter.mpr ⟨mem_children_iff.mpr ⟨by omega, ?_⟩, by simpa using hq'⟩, ?_⟩
+        · rw [hp2]; congr 1; omega
+        · unfold shk; rw [if_pos (by omega)]; omega
+  · rintro ⟨d, hd, rfl⟩
+    obtain ⟨hdM, hdx⟩ := List.mem_filter.mp hd
+    have hdx' : d < r + L := by simpa using hdx
+    have hpd := (mem_children_iff.mp hdM).2
+    have hdq := par_lt M 0 d _ hpd
+    have hrd : r ≤ d := by have := (mem_children hdM).1; omega
+    have hq'0 : 0 < d - r := by omega
+    have := par0_copy0 hlen hL hp hn hk (q := d - r) (by omega) hq'0
+      (by rw [show r + (d - r) = d by omega]; exact hpd)
+    refine ⟨?_, ?_⟩
+    · unfold shk; rw [if_pos hrd]; omega
+    · unfold shk; rw [if_pos hrd, show d + k * L = r + (k * L + (d - r)) by omega, this]
+      congr 1; omega
 
 end
 
