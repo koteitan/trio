@@ -929,6 +929,84 @@ theorem isUpg_copy0 (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) {k 
         have hR := hR0 _ _ hp
         omega
 
+/-- **`topped` of a copy column** is that of the column of `B` in `M.take x`. -/
+theorem topped_copy0 {k q : Nat} (hk : k < n) (hq : q < L) :
+    topped (TRIO.gexp M r L 0 0 n) (r + (k * L + q)) = topped (M.take (r + L)) (r + q) := by
+  unfold topped
+  rw [children_copy0 hlen hL hp hn hk hq, children_take, List.getLast?_map]
+  cases hl : ((children M (r + q)).filter (fun c => decide (c < r + L))).getLast? with
+  | none => rfl
+  | some d =>
+    have hd := List.mem_of_getLast? hl
+    have hdx : d < r + L := by simpa using (List.mem_filter.mp hd).2
+    simp only [Option.map_some]
+    rw [col_shk hlen hL hp hn hk hdx, col_take M hdx, bump_take M (show r + q < r + L by omega)]
+    unfold bump
+    rw [entry_copy0 hlen hk hq 0, entry_copy0 hlen hk hq 1]
+
+omit hn in
+/-- In `M.take x`, a column of `B` other than `r` has the same `topped` as in `M`. -/
+theorem topped_take_B {q : Nat} (hq : q < L) (hq0 : 0 < q) :
+    topped (M.take (r + L)) (r + q) = topped M (r + q) := by
+  unfold topped
+  rw [children_take, List.filter_eq_self.mpr]
+  · cases hl : (children M (r + q)).getLast? with
+    | none => rfl
+    | some d =>
+      have hd := List.mem_of_getLast? hl
+      have hdx : d < r + L := by
+        have := (mem_children hd).2
+        by_contra h
+        have : d = r + L := by omega
+        subst this
+        have := (mem_children_iff.mp hd).2; rw [hp] at this
+        have := Option.some.inj this; omega
+      simp only
+      rw [col_take M hdx, bump_take M (show r + q < r + L by omega)]
+  · intro d hd
+    have := (mem_children hd).2
+    simp only [decide_eq_true_eq]
+    by_contra h
+    have : d = r + L := by omega
+    subst this
+    have := (mem_children_iff.mp hd).2; rw [hp] at this
+    have := Option.some.inj this; omega
+
+/-- **Counting inside a copy** is that of `M`. -/
+theorem counted_copy0 (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) {k q q' : Nat}
+    (hk : k < n) (hq : q < L) (hq' : q' < L) (hq'0 : 0 < q') :
+    Counted (TRIO.gexp M r L 0 0 n) (r + (k * L + q)) (r + (k * L + q')) ↔
+      Counted M (r + q) (r + q') := by
+  unfold Counted
+  have hb : bump (TRIO.gexp M r L 0 0 n) (r + (k * L + q)) = bump M (r + q) := by
+    unfold bump; rw [entry_copy0 hlen hk hq 0, entry_copy0 hlen hk hq 1]
+  rw [col_copy0 hlen hk hq', hb, isUpg_copy0 hlen hL hp hn hR0 hZ2 he2 hk hq' hq'0,
+    topped_copy0 hlen hL hp hn hk hq', topped_take_B hlen hL hp hq' hq'0]
+
+omit hn in
+/-- `r` is not `topped` in `M` (its last child `x` is not a bump column). -/
+theorem not_topped_r (he2 : entry M 2 (r + L) = 0) : topped M r = false := by
+  unfold topped
+  have hxr : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hp⟩
+  rw [split_last_max _ _ (children_sorted M r) hxr (fun d hd => by have := (mem_children hd).2; omega)]
+  simp only [List.getLast?_append, List.getLast?_singleton, Option.some_or, decide_eq_false_iff_not]
+  intro h
+  have : entry M 2 (r + L) = 1 := by
+    have := congrArg (fun t => t.2.2) h
+    simpa [col_eq_entries, bump] using this
+  omega
+
+/-- **A counted copy root makes `r` counted in `M`.** -/
+theorem counted_root_imp (he2 : entry M 2 (r + L) = 0) {g k : Nat} (hk : k < n) :
+    Counted (TRIO.gexp M r L 0 0 n) g (r + k * L) → g < r → Counted M g r := by
+  intro h hg
+  have hc := col_copy0 hlen hk hL (M := M) (n := n) (q := 0)
+  rw [Nat.add_zero, Nat.add_zero] at hc
+  refine ⟨?_, fun h' => by rw [not_topped_r hlen hL hp he2] at h'; exact absurd h'.2 (by simp)⟩
+  have := h.1
+  rw [hc, bump_pre0 hlen hL hp hn (by omega)] at this
+  exact this
+
 end
 
 end Ytosk
