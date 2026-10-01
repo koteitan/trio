@@ -132,7 +132,7 @@ theorem o2r_take_r_qr {M : Mat} {r : Nat} (hG : Good2 M) (hx1 : 2 ≤ M.length)
 
 /-- **The two-row `t = 1`, `q = r` expansion.** Every path value after expansion is
 `fsD(o_M(h), Z_j)` for a member `Z_j` of the chain with seed `γ_1 = ψ_μ(b)` (the index moves up the chain
-where a hoisting happens). Remaining hypothesis: W2. -/
+where a hoisting happens). Remaining hypothesis: rewriting persists (from W2 or PRE). -/
 theorem twoRow_qr {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
     (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
       TRIO.entry M 2 (M.length - 1) = 0))
@@ -141,8 +141,9 @@ theorem twoRow_qr {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
     (hqr : par M 0 (M.length - 1) = some r) (hn : 2 ≤ n)
     (hY : ∃ j, o2r (expand M n) (M.length - 1) =
       gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j)
-    (hW2 : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
-      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true → bst M h p ≤ fsD y z) :
+    (hP : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
+      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true →
+      ∀ ζ, fsD y z < fsD y ζ → lt (bst M h p) (fsD y ζ) = true) :
     ∀ h, Anc0 M h (M.length - 1) → ∃ j,
       o2r (expand M n) h = fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j) ∧
       isOT (fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j)) = true ∧
@@ -257,10 +258,10 @@ theorem twoRow_qr {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
           (lt (bst M h p) y = true ∧ lt (psi (vr M h) z z) (psi (vr M p) y z) = true)
       · -- the shift: the index moves one step up the chain
         obtain ⟨hyB, hvp, htr⟩ := hsh
-        have h1 := hW2 h p (vr M p) y hp hph hy htr.1 htr.2
-        rw [hyB, fsD_eq_fs hcb, hfsB, app_z_right] at h1
-        have hbη : lt (bst M h p) (app b (gamS μ B γ1 j)) = true :=
-          lt_of_le_of_lt h1 (lt_app_of (hZne j))
+        have hbη : lt (bst M h p) (app b (gamS μ B γ1 j)) = true := by
+          have h1 := hP h p (vr M p) y hp hph hy htr.1 htr.2 (gamS μ B γ1 j) (by
+            rw [hyB, fsD_eq_fs hcb, fsD_eq_fs hcb, hfsB, hfsB, app_z_right]; exact lt_app_of (hZne j))
+          rw [hyB, fsD_eq_fs hcb, hfsB] at h1; exact h1
         rw [hyB, hvp] at htr hpot hoh
         refine ⟨j + 1, ?_, hOKpar (j + 1)⟩
         rw [hyB, hvp, hfsDr, ← hZs, hoh]
@@ -311,13 +312,12 @@ theorem twoRow_qr {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
           · intro s' hc'; exfalso; rw [hy] at hc'; cases hc'; exact hyne rfl
           · intro s' y' hc' ht1' ht2'
             rw [hy] at hc'; cases hc'
-            have h1 := hW2 h p (vr M p) y hp hph hy ht1' ht2'
+            apply hP h p (vr M p) y hp hph hy ht1' ht2'
             by_cases hyB : y = B
-            · rw [hyB, fsD_eq_fs hcb, hfsB, app_z_right] at h1
-              rw [hyB, fsD_eq_fs hcb, hfsB]
-              exact lt_of_le_of_lt h1 (lt_app_of (hZne j))
+            · rw [hyB, fsD_eq_fs hcb, fsD_eq_fs hcb, hfsB, hfsB, app_z_right]
+              exact lt_app_of (hZne j)
             · have hDy := DiagAt.arg_inv hD hyne (fun h' => hyB h'.2)
-              exact lt_of_le_of_lt h1 (hDy.fsD_mono hzZ)
+              exact hDy.fsD_mono hzZ
           · intro s' y' hc' ht1' ht2'
             rw [hy] at hc'; cases hc'
             by_cases hyB : y = B
@@ -350,7 +350,8 @@ theorem twoRow_qr {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
         rw [hoh]
         exact (node_fsD hFD).symm
 
-/-- **The two-row `t = 1`, `q = r` expansion, for every `k ≥ 2`.** Remaining hypothesis: W2. -/
+/-- **The two-row `t = 1`, `q = r` expansion, for every `k ≥ 2`.** Remaining hypothesis: rewriting
+persists (from W2 or PRE). -/
 theorem twoRow_qr_all {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
     (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
       TRIO.entry M 2 (M.length - 1) = 0))
@@ -358,8 +359,9 @@ theorem twoRow_qr_all {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
     (ht1 : TRIO.srow M (M.length - 1) = 1) (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
     (hr1 : TRIO.r1ok M) (hz0 : TRIO.z0ok M)
     (hqr : par M 0 (M.length - 1) = some r)
-    (hW2 : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
-      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true → bst M h p ≤ fsD y z) :
+    (hP : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
+      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true →
+      ∀ ζ, fsD y z < fsD y ζ → lt (bst M h p) (fsD y ζ) = true) :
     ∀ k, 2 ≤ k → ∀ h, Anc0 M h (M.length - 1) → ∃ j,
       o2r (expand M k) h = fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j) ∧
       isOT (fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j)) = true ∧
@@ -398,9 +400,27 @@ theorem twoRow_qr_all {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
     induction k, hk using Nat.le_induction with
     | base => exact ⟨0, by rw [hshift 2 (Nat.le_refl _)]; rfl⟩
     | succ k hk ih =>
-      obtain ⟨j, hj, _, _⟩ := twoRow_qr hM hz hr ht1 hG hb1 hqr hk ih hW2 r hA
+      obtain ⟨j, hj, _, _⟩ := twoRow_qr hM hz hr ht1 hG hb1 hqr hk ih hP r hA
       exact ⟨j + 1, by rw [hshift (k + 1) (by omega), show k + 1 - 1 = k by omega, hj, hrstep]⟩
   intro k hk
-  exact twoRow_qr hM hz hr ht1 hG hb1 hqr hk (main k hk) hW2
+  exact twoRow_qr hM hz hr ht1 hG hb1 hqr hk (main k hk) hP
+
+/-- **The two-row `t = 1`, `q = r` expansion from the invariant PRE.** -/
+theorem twoRow_qr_PRE {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
+    (hr1 : TRIO.r1ok M) (hz0 : TRIO.z0ok M)
+    (hqr : par M 0 (M.length - 1) = some r)
+    (hPRE : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
+      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true →
+      bst M h p ≠ z → ∃ rest, y = app (bst M h p) rest ∧ rest ≠ z) :
+    ∀ k, 2 ≤ k → ∀ h, Anc0 M h (M.length - 1) → ∃ j,
+      o2r (expand M k) h = fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j) ∧
+      isOT (fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j)) = true ∧
+      fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) j) < o2r M h :=
+  twoRow_qr_all hM hz hr ht1 hG hb1 hr1 hz0 hqr (fun h p s y hp hph hc ht1' ht2' ζ hmono =>
+    trig_persist_of_pre hmono (hPRE h p s y hp hph hc ht1' ht2'))
 
 end Ytosk
