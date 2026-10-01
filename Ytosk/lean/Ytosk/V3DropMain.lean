@@ -358,6 +358,75 @@ theorem pv_of {i : Nat} (hi : i < x)
       rw [sf_ot hot1] at this
       exact Or.inl this
 
+/-- **The drop lemma** (modulo the bump-type frames and the absorption at `x − 1`): at every column of
+`M.take x`, `o` and `v` are `⊴` the values in `M` or weakly below them, and standard. -/
+theorem drop_all
+    (hBump : ∀ i, i < x → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
+        PO ρ ρ' k ∧ PV M ρ ρ' k) → ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → PV M ρ ρ' i)
+    (hX1 : ∀ i k W, i + 1 = x → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
+      ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) :
+    ∀ i, i < x → PO ρ ρ' i ∧ PV M ρ ρ' i := by
+  have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
+  have key : ∀ N, ∀ i, i < x → (rk true i ≤ N → PO ρ ρ' i) ∧ (rk false i ≤ N → PV M ρ ρ' i) := by
+    intro N
+    induction N using Nat.strongRecOn with
+    | _ N ih =>
+      have hPV : ∀ i, i < x → rk false i ≤ N → PV M ρ ρ' i := by
+        intro i hi hN
+        obtain ⟨_, _, hR⟩ := hRk' i (by omega)
+        apply pv_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hStep hi
+        · intro hCv h1 h2
+          apply hBump i hi _ hCv h1 h2
+          intro j hj hjb k hk hkx
+          have hjx : j < x := by have := (mem_children hk).1; omega
+          have hjT : j ∈ children (M.take x) i := by
+            rw [children_take, List.mem_filter]; exact ⟨hj, by simpa using hjx⟩
+          have hkT : k ∈ children (M.take x) j := by
+            rw [children_take, List.mem_filter]; exact ⟨hk, by simpa using hkx⟩
+          have hlt := (hR (by rw [entry_take M 1 hi]; exact h1)).2.2 (by rw [entry_take M 2 hi]; exact h2)
+            j hjT (by rw [col_take M hjx, bump_take M hi]; exact hjb) k hkT
+          have hlt2 := (hRk' k (by omega)).1
+          exact ⟨(ih _ (by omega) k hkx).1 (Nat.le_refl _), (ih _ (by omega) k hkx).2 (Nat.le_refl _)⟩
+        · exact fun k W => hX1 i k W
+        · intro k hk
+          have h1 : entry (M.take x) 1 i ≠ 0 := by
+            intro he; unfold upg at hk; rw [if_pos (Or.inl he)] at hk; cases hk
+          have h2 : entry (M.take x) 2 i = 0 := by
+            by_contra he
+            have := upg_target_e2 hk
+            unfold upg at hk
+            split at hk
+            · cases hk
+            · rename_i hc
+              have hz := hZ2 i
+              rw [entry_take M 2 hi] at he hc
+              exact hc (Or.inr (Or.inl (by omega)))
+          have hlt := (hR h1).2.1 h2 k hk
+          have hkx : k < x := by have := upg_lt (show i < (M.take x).length by omega) hk; omega
+          refine ⟨(ih _ (by omega) k hkx).2 (Nat.le_refl _), fun j hj hjb k' hk' => ?_⟩
+          have hk'x : k' < x := by have := (mem_children hk').2; omega
+          have hk1 : entry (M.take x) 1 k ≠ 0 := by
+            obtain ⟨m, _, _, hcol, _⟩ := upg_spec hk
+            have : entry (M.take x) 1 k = (col (M.take x) k).2.1 := rfl
+            rw [this, hcol]; exact h1
+          have hk2 : entry (M.take x) 2 k ≠ 0 := by
+            obtain ⟨m, _, _, hcol, _⟩ := upg_spec hk
+            have : entry (M.take x) 2 k = (col (M.take x) k).2.2 := rfl
+            rw [this, hcol]; simp
+          have hlt2 := (hRk' k (by omega)).2.2 hk1 |>.2.2 hk2 j hj hjb k' hk'
+          exact ((ih _ (by omega) k' hk'x).1 (Nat.le_refl _)).2
+      refine fun i hi => ⟨fun hN => ?_, hPV i hi⟩
+      obtain ⟨hvo, hc, _⟩ := hRk' i (by omega)
+      apply po_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hStep hi
+      · exact hPV i hi (by omega)
+      · intro c hcT hcnt
+        have hlt := hc c hcT hcnt.1 hcnt.2
+        have hcx : c < x := by have := (mem_children hcT).2; omega
+        have hlt2 := (hRk' c (by omega)).1
+        exact ⟨(ih _ (by omega) c hcx).1 (Nat.le_refl _), (ih _ (by omega) c hcx).2 (Nat.le_refl _)⟩
+  intro i hi
+  exact ⟨(key _ i hi).1 (Nat.le_refl _), (key _ i hi).2 (Nat.le_refl _)⟩
+
 end
 
 end Ytosk
