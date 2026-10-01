@@ -504,7 +504,7 @@ theorem t1_main_drop_hard {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
     (hHard : HardArg M (r + L) ρ (drop1 M (r + L) rkM))
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
-    (hUA : UpgAbs M ρ)
+    (hUA : UpgAbsX M (r + L) ρ)
     (hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r)
     {μ br vr : T}
     (hcb : cof br = .big μ) (hμr : μ = vr) (hbr : br ≠ z) (hro : ρ.o r = psi vr br z)
@@ -535,7 +535,7 @@ theorem t1_main_drop_hard {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
   have hpath := hpath_of_par1 h1 hA hrx
   have hdrop := drop_all_hard (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hF hFO hHard
     (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hKD hTD hAbs hWS hVSt)
-    (fun i k W _ hu hv hW => hUA i k W hu hv hW)
+    hUA
   have hv : (drop1 M (r + L) rkM).v r = ρ.v r :=
     base_v_r hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hA hrx hqr hpath
   have hrM : r < M.length := by omega

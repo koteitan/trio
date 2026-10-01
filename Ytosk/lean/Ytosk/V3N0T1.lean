@@ -247,7 +247,7 @@ structure DropHyp (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
   ab : BumpAbs N σ
   ws : BumpWeakSrc N x σ σ'
   vst : BumpVSmallTake N x σ σ'
-  ua : UpgAbs N σ
+  ua : UpgAbsX N x σ
 
 /-- **Dropping the last column does not raise the root value** (weak form of `root_take_lt`). -/
 theorem root_take_le {N : Mat} {x : Nat} (hx : x + 1 = N.length) {σ σ' : Valn} (hG : Good3 N σ)
@@ -299,7 +299,7 @@ theorem drop_root_le {N : Mat} {x : Nat} (hx : x + 1 = N.length)
     isOT (root (N.take x) σ') = true ∧ root (N.take x) σ' ≤ root N σ := by
   have hdrop := drop_all hx hR0 hZ2 hSD hZ1 hD.uat hD.uab hC hD.g hC' hRk' hD.vs hD.fc hD.fo hD.argT
     (bump_drop hx hR0 hZ2 hSD hZ1 hD.uat hD.uab hC hD.g hC' hRk' hD.vs hD.kd hD.td hD.ab hD.ws hD.vst)
-    (fun i k W _ hu hv hW => hD.ua i k W hu hv hW)
+    hD.ua
   exact root_take_le hx hD.g (fun i hi => (hdrop i hi).1.2.1) (fun i hi => (hdrop i hi).1.le)
 
 theorem root_congr {N : Mat} {σ₁ σ₂ : Valn} (h : ∀ i, i < N.length → σ₁.o i = σ₂.o i) :
@@ -327,7 +327,7 @@ theorem t1_n0 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
-    (hUA : UpgAbs M ρ)
+    (hUA : UpgAbsX M (r + L) ρ)
     {ζ μ : T} (hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
     (hstep : ∀ j, r ≤ j → j < r + L →
       DropHyp (M.take (j + 1)) j (drop1 M (j + 1) rkM) (drop1 M j rkM)) :

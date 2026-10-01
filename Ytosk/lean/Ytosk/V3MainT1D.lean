@@ -40,6 +40,16 @@ def UpgAbs (M : Mat) (ρ : Valn) : Prop :=
   ∀ i k W, upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
     ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W
 
+/-- **Value hypothesis on the drop**: `UpgAbs` at `x − 1` only (the only place the drop lemma uses it;
+the global `UpgAbs` is false on a matrix reachable from SRO, while this form has no exception in the
+random expansions from SRO up to length 20). -/
+def UpgAbsX (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
+  ∀ i k W, i + 1 = x → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
+    ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W
+
+theorem UpgAbs.x {M : Mat} {ρ : Valn} (h : UpgAbs M ρ) (x : Nat) : UpgAbsX M x ρ :=
+  fun i k W _ hu hv hW => h i k W hu hv hW
+
 /-- **`t = 1`, `q ≠ r`, all `n ≥ 2`**, with the base from the drop lemma. -/
 theorem t1_main_drop {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
@@ -55,7 +65,7 @@ theorem t1_main_drop {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
-    (hUA : UpgAbs M ρ)
+    (hUA : UpgAbsX M (r + L) ρ)
     (hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r)
     {μ br vr : T}
     (hcb : cof br = .big μ) (hμr : μ = vr) (hbr : br ≠ z) (hro : ρ.o r = psi vr br z)
@@ -86,7 +96,7 @@ theorem t1_main_drop {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
   have hpath := hpath_of_par1 h1 hA hrx
   have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hF hFO hArgT
     (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hKD hTD hAbs hWS hVSt)
-    (fun i k W _ hu hv hW => hUA i k W hu hv hW)
+    hUA
   have hv : (drop1 M (r + L) rkM).v r = ρ.v r :=
     base_v_r hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hA hrx hqr hpath
   have hrM : r < M.length := by omega
