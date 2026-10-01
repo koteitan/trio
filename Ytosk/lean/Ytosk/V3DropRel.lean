@@ -458,4 +458,63 @@ theorem o_frame_empty {M : Mat} {x : Nat} {ρ ρ' : Valn} {i : Nat}
     (fun u _ q hq => by simp [sumN, spArg, summands] at hq) hTcl
   simpa [sumN, spArg] using h
 
+/-! ## v の枠 (1): 上げ -/
+
+theorem last_add_single {s y : T} : ∀ V : T, last (add V (psi s y z)) = psi s y z
+  | z => by simp [last]
+  | psi a b c => by
+    rw [add_psi_psi]
+    split
+    · simp [last]
+    · have ih := last_add_single (s := s) (y := y) c
+      have hne : add c (psi s y z) ≠ z := by
+        intro h; rw [h] at ih; simp [last] at ih
+      cases hc : add c (psi s y z) with
+      | z => exact absurd hc hne
+      | psi a' b' c' => simp only [last]; rw [← hc]; exact ih
+
+/-- **An upgraded column has the value of its target**: `v(i) = v(k)` when `upg(i) = k`. -/
+theorem v_upg_eq {M : Mat} {ρ : Valn} {i k : Nat} (hC : Cons M ρ) (hiM : i < M.length)
+    (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i = 0) (hu : upg M i = some k)
+    (hvot : ∀ j, j < M.length → isOT (ρ.v j) = true) (hoot : ∀ j, j < M.length → isOT (ρ.o j) = true) :
+    ρ.v i = ρ.v k := by
+  have hk := upg_lt hiM hu
+  obtain ⟨m, hm1, hm2, hcol, _⟩ := upg_spec hu
+  have hk1 : entry M 1 k ≠ 0 := by
+    have : entry M 1 k = (col M k).2.1 := rfl
+    rw [this, hcol]; exact h1
+  have hk2 : entry M 2 k ≠ 0 := by
+    have : entry M 2 k = (col M k).2.2 := rfl
+    rw [this, hcol]; simp
+  have hV : vOpt ρ (par M 1 k) = vOpt ρ (par M 1 i) := by rw [hm1, hm2]
+  have hVot : isOT (vOpt ρ (par M 1 i)) = true := by
+    rw [hm1]; exact hvot m (by have := par_lt M 1 i m hm1; omega)
+  set W := omega (sumN (one :: (children M k).map (bumpTerm M ρ k))) with hW
+  have hY : isOT (sumN (one :: (children M k).map (bumpTerm M ρ k))) = true := by
+    apply isOT_sumN
+    intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · rfl
+    · obtain ⟨j, _, rfl⟩ := List.mem_map.mp ht
+      unfold bumpTerm
+      split
+      · apply isOT_omega; apply isOT_sumN
+        intro t' ht'
+        obtain ⟨k', hk', rfl⟩ := List.mem_map.mp ht'
+        exact hoot k' (mem_children hk').2
+      · rfl
+  have hWot : isOT W = true := isOT_omega hY
+  obtain ⟨sW, yW, hWf⟩ := (single_omega hY).2
+  have hvk : ρ.v k = add (vOpt ρ (par M 1 i)) W := by
+    rw [(hC k hk).2]; unfold vRhs
+    rw [if_neg hk1, if_neg hk2, hV, ← hW, sf_ot (isOT_add hVot hWot)]
+  rw [(hC i hiM).2]; unfold vRhs
+  rw [if_neg h1, if_pos h2, hu]
+  simp only
+  rw [hvk]
+  have hl : last (add (vOpt ρ (par M 1 i)) W) = W := by
+    have hWf' : W = psi sW yW z := hWf
+    rw [hWf']; exact last_add_single _
+  rw [hl, sf_ot (isOT_add hVot hWot)]
+
 end Ytosk
