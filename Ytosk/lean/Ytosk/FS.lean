@@ -73,8 +73,8 @@ def fs : T → T → T
 /-- Every element of `X` is at most some element of `Y`. -/
 def Dom (X Y : List T) : Prop := ∀ x ∈ X, ∃ y ∈ Y, x ≤ y
 
-/-- `G°_u η`: the index and its components. -/
-def Gc (u η : T) : List T := η :: comps u η
+/-- `G°_u η`: `0` and the components of the index. -/
+def Gc (u η : T) : List T := z :: comps u η
 
 /-- `b ◁_η a` (Buchholz 1986, before Lemma 3.4). -/
 def Lhd (η b a : T) : Prop :=
@@ -254,6 +254,112 @@ theorem lhd_psi {η b0 b : T} (v : T) (h : Lhd η b0 b) : Lhd η (psi v b0 z) (p
         · exact ⟨x, List.mem_append_left _ (by simp [comps, hvu, hx]), le_refl _⟩
     · simp [comps] at hx
   · exact ⟨x, List.mem_append_left _ (hsub x hx), le_refl _⟩
+
+/-! ## 補題 3.2: t[η] < t -/
+
+theorem init_app_one : ∀ {a : T}, isSucc a = true → app (init a) one = a
+  | z, h => by simp [isSucc, last, one] at h
+  | psi x y z, h => by
+    simp only [isSucc, last, beq_iff_eq] at h
+    rw [h]; rfl
+  | psi x y (psi c d e), h => by
+    have h' : isSucc (psi c d e) = true := by simpa [isSucc, last] using h
+    show psi x y (app (init (psi c d e)) one) = _
+    rw [init_app_one h']
+
+theorem init_lt : ∀ {b : T}, b ≠ z → init b < b
+  | z, h => absurd rfl h
+  | psi x y z, _ => T.z_lt_psi _ _ _
+  | psi x y (psi c d e), _ => by
+    show psi x y (init (psi c d e)) < psi x y (psi c d e)
+    rw [T.psi_lt_psi]; exact Or.inr (Or.inr ⟨rfl, rfl, init_lt (by simp)⟩)
+
+theorem mulT_lt {x w : T} (h : head x < head w) (hx : ∃ s y, x = psi s y z) (hw : w ≠ z) :
+    ∀ n, mulT x n < w
+  | 0 => by cases w with | z => exact absurd rfl hw | psi => exact T.z_lt_psi _ _ _
+  | n + 1 => by
+    obtain ⟨s, y, rfl⟩ := hx
+    cases w with
+    | z => exact absurd rfl hw
+    | psi a b c =>
+      simp only [mulT, app_psi, app_z]
+      have h' : psi s y z < psi a b z := by simpa [head] using h
+      exact lt_of_head_lt (r := psi s y (mulT (psi s y z) n)) h'
+
+/-- The index is in range, without the standard form. -/
+def ValidLt (t η : T) : Prop :=
+  match cof t with
+  | .zero => False
+  | .succ => η = z
+  | .omega => True
+  | .big μ => η < psi (succ μ) z z
+
+theorem fs_lt : ∀ {t η : T}, ValidLt t η → fs t η < t
+  | z, η, h => by simp [ValidLt, cof] at h
+  | psi a b (psi c d e), η, h => by
+    have h' : ValidLt (psi c d e) η := by simpa [ValidLt, cof] using h
+    show psi a b (fs (psi c d e) η) < psi a b (psi c d e)
+    rw [T.psi_lt_psi]; exact Or.inr (Or.inr ⟨rfl, rfl, fs_lt h'⟩)
+  | psi a b z, η, h => by
+    unfold ValidLt at h
+    unfold fs
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl]
+      by_cases ha : a = z
+      · subst ha; exact T.z_lt_psi _ _ _
+      · rw [if_neg ha]
+        have hc : cof (psi a z z) = (if isSucc a then Cof.big (init a) else cof a) := by
+          simp [cof, ha]
+        rw [hc] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs]
+          rw [if_pos hs] at h
+          have h' : η < psi (succ (init a)) z z := h
+          unfold succ at h'
+          rwa [init_app_one hs] at h'
+        · rw [if_neg hs]
+          rw [if_neg hs] at h
+          rw [psi_lt_psi_z_iff]; exact Or.inl (fs_lt (t := a) h)
+    · rw [if_neg hb]
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs]
+        apply mulT_lt _ ⟨a, init b, rfl⟩ (by simp)
+        simp only [head]
+        rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, init_lt hb⟩
+      · rw [if_neg hs]
+        have hc : cof (psi a b z) = (match cof b with
+            | .big μ => if lt μ a = true then Cof.big μ else Cof.omega
+            | c => c) := by simp [cof, hb, hs]
+        rw [hc] at h
+        cases hcb : cof b with
+        | big μ =>
+          rw [hcb] at h
+          simp only at h ⊢
+          by_cases hμ : lt μ a = true
+          · rw [if_pos hμ]; rw [if_pos hμ] at h
+            have h' : ValidLt b η := by unfold ValidLt; rw [hcb]; exact h
+            rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fs_lt h'⟩
+          · rw [if_neg hμ]
+            have h' : ValidLt b (Nat.rec z (fun _ g => psi μ (fs b g) z) (count η)) := by
+              unfold ValidLt; rw [hcb]
+              show _ < psi (succ μ) z z
+              cases count η with
+              | zero => exact T.z_lt_psi _ _ _
+              | succ k =>
+                show psi μ _ z < _
+                rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self μ)
+            rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fs_lt h'⟩
+        | zero =>
+          rw [hcb] at h; exact absurd h (by simp)
+        | succ =>
+          have h' : ValidLt b η := by unfold ValidLt; rw [hcb]; rw [hcb] at h; exact h
+          simp only
+          rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fs_lt h'⟩
+        | omega =>
+          have h' : ValidLt b η := by unfold ValidLt; rw [hcb]; trivial
+          simp only
+          rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fs_lt h'⟩
 
 #eval [psi z (psi z one z) z, psi z (psi (psi one z z) z z) z].map fun t =>
   ((List.range 3).map fun n => str (fs t (natT n)))
