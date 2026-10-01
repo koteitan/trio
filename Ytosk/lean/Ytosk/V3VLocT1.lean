@@ -981,4 +981,132 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
 
 end
 
+/-! ## 始点: 引数の加数はどれも Ω_{μ+1} 以上 -/
+
+/-- Every summand is at least `θ`. -/
+def AllGeT (θ t : T) : Prop := ∀ q ∈ summands t, ¬ q < θ
+
+theorem allGeT_z (θ : T) : AllGeT θ z := fun q hq => by simp [summands] at hq
+
+theorem allGeT_add {θ : T} : ∀ {a b : T}, AllGeT θ a → AllGeT θ b → AllGeT θ (add a b)
+  | z, b, _, hb => by simpa using hb
+  | psi a1 b1 c1, b, ha, hb => by
+    cases b with
+    | z => simpa [add] using ha
+    | psi d e f =>
+      simp only [add]
+      split
+      · exact hb
+      · intro q hq
+        simp only [summands, List.mem_cons] at hq
+        rcases hq with rfl | hq
+        · exact ha _ (by simp [summands])
+        · exact allGeT_add (a := c1) (fun q' hq' => ha q' (by simp [summands, hq'])) hb q hq
+
+theorem allGeT_foldl {θ : T} : ∀ (l : List T) (acc : T), isOT acc = true → AllGeT θ acc →
+    (∀ t ∈ l, isOT t = true ∧ AllGeT θ t) → AllGeT θ (l.foldl (fun a b => sf (add a b)) acc)
+  | [], _, _, h, _ => h
+  | t :: l, acc, hot, h, hl => by
+    simp only [List.foldl_cons]
+    have ht := hl t List.mem_cons_self
+    have hot' : isOT (add acc t) = true := isOT_add hot ht.1
+    apply allGeT_foldl l _ (by rw [sf_ot hot']; exact hot') (by rw [sf_ot hot']; exact allGeT_add h ht.2)
+    exact fun u hu => hl u (List.mem_cons_of_mem _ hu)
+
+theorem allGeT_cut {θ w y : T} (hot : isOT y = true) (hw : ¬ psi w z z < θ) :
+    AllGeT θ (cut w y) := by
+  rw [cut_eq_split w hot]
+  intro q hq hlt
+  exact split_fst_ge (psi w z z) y q hq (lt_of_lt_of_le hlt (le_of_not_gt hw))
+
+
+theorem allGeT_H {θ s y : T} (hy : isOT y = true) (hsθ : ¬ psi s y z < θ) (hθ : ∃ m, θ = psi m z z) :
+    AllGeT θ (H s y) := by
+  unfold H
+  obtain ⟨m, rfl⟩ := hθ
+  have hs : ¬ s < m := by
+    intro h; apply hsθ; rw [psi_lt_psi_z_iff]; exact Or.inl h
+  have hw : ¬ psi (add s one) z z < psi m z z := by
+    rw [psi_lt_psi_z_iff]
+    rintro (h | ⟨h, _⟩)
+    · exact hs (lt_trans (lt_add_principal z z s) h)
+    · rw [← h] at hs; exact hs (lt_add_principal z z s)
+  apply allGeT_add (allGeT_cut hy hw)
+  simp only [sub]
+  split
+  · intro q hq
+    simp only [summands, List.mem_cons, List.mem_nil_iff, or_false] at hq
+    rw [hq]; exact hsθ
+  · exact allGeT_z _
+
+theorem allGeT_step {θ a b s y c : T} (hb : AllGeT θ b) (hy : isOT y = true)
+    (hsθ : ¬ psi s y z < θ) (hθ : ∃ m, θ = psi m z z) : AllGeT θ (step a b s y c) := by
+  unfold step
+  split
+  · exact allGeT_H hy hsθ hθ
+  · apply allGeT_add hb
+    intro q hq
+    simp only [summands, List.mem_cons, List.mem_nil_iff, or_false] at hq
+    rw [hq]; exact hsθ
+
+theorem allGeT_spArg {θ a : T} (hθ : ∃ m, θ = psi m z z) : ∀ (c b : T), isOT c = true →
+    AllGeT θ c → AllGeT θ b → AllGeT θ (spArg a b c)
+  | z, b, _, _, hb => hb
+  | psi s y c, b, hot, hc, hb => by
+    rw [spArg_cons]
+    apply allGeT_spArg hθ c _ (isOT_rest hot) (fun q hq => hc q (by simp [summands, hq]))
+    exact allGeT_step hb (isOT_arg hot) (hc _ (by simp [summands])) hθ
+
+theorem isOT_bumpTerm_of {M : Mat} {ρ : Valn} (hG : ∀ i, i < M.length → isOT (ρ.o i) = true)
+    (i j : Nat) : isOT (bumpTerm M ρ i j) = true := by
+  unfold bumpTerm
+  split
+  · apply isOT_omega; apply isOT_sumN
+    intro t ht
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+    exact hG c (mem_children hc).2
+  · rfl
+
+/-- `v` grows along `P_1` (standardness given only for the values). -/
+theorem v_par1_lt_ot {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hC : Cons M ρ)
+    (hot : ∀ i, i < M.length → isOT (ρ.v i) = true) (hG : ∀ i, i < M.length → isOT (ρ.o i) = true)
+    (hR : Rk M rk) : ∀ n i m, rk false i ≤ n → i < M.length → entry M 1 i ≠ 0 →
+      par M 1 i = some m → ρ.v m < ρ.v i := by
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+  intro i m hn hi h1 hp
+  have hmi := par_lt M 1 i m hp
+  have hvm := hot m (by omega)
+  rw [(hC i hi).2]
+  unfold vRhs
+  rw [if_neg h1, hp]
+  show ρ.v m < (if entry M 2 i = 0 then _ else _)
+  split
+  · rename_i h2
+    cases hu : upg M i with
+    | none => exact lt_sf_add_single hvm rfl ⟨z, z, rfl⟩
+    | some k =>
+      simp only
+      obtain ⟨m', hm1, hm2, hcol, _⟩ := upg_spec hu
+      rw [hp] at hm1
+      cases hm1
+      have hk := upg_lt_len hu
+      have hkl : k < M.length := by have := upg_le hu; omega
+      have he1 : entry M 1 k ≠ 0 := by rw [e1_of_col hcol]; exact h1
+      have hrk := ((hR i hi).2.2 h1).2.1 h2 k hu
+      have hvk := ih (rk false k) (by omega) k m (Nat.le_refl _) hkl he1 hm2
+      have hkz : ρ.v k ≠ z := by
+        intro h; rw [h] at hvk; exact T.not_lt_z _ hvk
+      obtain ⟨s, y, hl⟩ := last_psi_form hkz
+      exact lt_sf_add_single hvm (isOT_last (hot k hkl)) ⟨s, y, hl⟩
+  · exact lt_sf_add_single hvm
+      (isOT_omega (isOT_sumN _ (by
+        intro t ht
+        rcases List.mem_cons.mp ht with rfl | ht
+        · rfl
+        · obtain ⟨c, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm_of hG i c)))
+      (omega_single _)
+
+
 end Ytosk
