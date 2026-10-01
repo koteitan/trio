@@ -172,7 +172,7 @@ theorem t1_main_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
-    (hUA : UpgAbs M ρ)
+    (hUA : UpgAbsX M (r + L) ρ)
     {μ br vr : T} (hμr : μ = vr) (hro : ρ.o r = psi vr br z)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
@@ -182,7 +182,7 @@ theorem t1_main_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL
   have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
   have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hF hFO hArgT
     (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hKD hTD hAbs hWS hVSt)
-    (fun i k W _ hu hv hW => hUA i k W hu hv hW)
+    hUA
   have hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r :=
     ne_of_lt (o_r_strict0 (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE h1 hx2 hqr hC hG hC1 hRk1 hdrop)
   exact t1_main_vloc hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
