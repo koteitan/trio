@@ -267,4 +267,159 @@ theorem frame_drop {a B s y y' : T} (han : isOT a = true)
     exact ⟨ot_of_lhd_frame han hP happ' hl', hl', B, s, y, psi s y' z, rfl, rfl,
       Or.inr (Or.inl ⟨y', rfl⟩)⟩
 
+/-! ## 行列の段: 経路を下から上へ -/
+
+theorem F1_take {M : Mat} (hF : F1 M) (k : Nat) : F1 (M.take k) := by
+  intro j hj
+  by_cases hjk : j < k
+  · rw [entry_take M 1 hjk] at hj
+    obtain ⟨m, hm, he⟩ := hF j hj
+    refine ⟨m, by rw [par_take M 1 j hjk]; exact hm, ?_⟩
+    have := par_lt M 1 j m hm
+    rw [entry_take M 1 (by omega), entry_take M 1 hjk]; exact he
+  · exfalso
+    have : entry (M.take k) 1 j = 0 := by
+      unfold entry
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by simp; omega)]
+      rfl
+    omega
+
+/-- The state followed by the path child is standard. -/
+theorem happ_frame {M : Mat} {x : Nat} (hG : Good2 M) (hx : x + 1 = M.length) (hH : PreHi M)
+    {h p : Nat} (hpA : Anc0 M p x) (hp : par M 0 p = some h) {s y : T} (hc : o2r M p = psi s y z) :
+    isOT (app (bst M h p) (psi s y z)) = true := by
+  have hfr := o2r_frame hG hx hpA hp
+  have hot := hG.ot h
+  rw [hfr, hc, spArg_single] at hot
+  have hge := bst_summands_ge hG hx hpA hp
+  rw [hc] at hge
+  have hcot : isOT (psi s y z) = true := by rw [← hc]; exact hG.ot p
+  by_cases hB : bst M h p = z
+  · rw [hB]; simpa using hcot
+  have hpl : p < M.length := by have := hpA.le; omega
+  unfold step at hot
+  split_ifs at hot with htr
+  · obtain ⟨h1, h2⟩ := hH h p s y hpl hp hc hB htr.1 htr.2
+    rw [H_eq hcot] at hot
+    unfold hiP at h1; unfold loP at h2
+    rw [if_neg h2, h1] at hot
+    exact isOT_arg hot
+  · rw [add_eq_app_of_ge ⟨s, y, rfl⟩ _ hge] at hot
+    exact isOT_arg hot
+
+/-- **The dropped path.** Along the path of the last column, the values of `M.take x` are standard,
+their arguments are below those of `M` in Buchholz's sense, and differ only in the last summand. -/
+theorem drop_path {M : Mat} (hM : 2 ≤ M.length) (hG : Good2 M) (hH : PreHi M) (hFC : PreFC M) :
+    ∀ p, Anc0 M p (M.length - 1) → p < M.length - 1 →
+      ∃ y y', o2r M p = psi (vr M p) y z ∧ o2r (M.take (M.length - 1)) p = psi (vr M p) y' z ∧
+        isOT (psi (vr M p) y' z) = true ∧ Lhd z y' y ∧ Shape (vr M p) y y' := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  set x := M.length - 1 with hxdef
+  set N := M.take x with hNdef
+  have hFN : F1 N := F1_take hG.f1 x
+  have key : ∀ m p, x - p ≤ m → Anc0 M p x → p < x →
+      ∃ y y', o2r M p = psi (vr M p) y z ∧ o2r N p = psi (vr M p) y' z ∧
+        isOT (psi (vr M p) y' z) = true ∧ Lhd z y' y ∧ Shape (vr M p) y y' := by
+    intro m
+    induction m with
+    | zero => intro p h1 _ h3; omega
+    | succ m ih =>
+      intro p hm hpA hpx
+      obtain ⟨c, hc, hcA⟩ := anc0_child hpA (by omega)
+      have hpc := par_lt M 0 c p hc
+      have hcx := hcA.le
+      have hle := children_le_of_anc_last hcA hx hc
+      have hcmem : c ∈ children M p := mem_children_iff.mpr ⟨by omega, hc⟩
+      have hsplit := split_last_max _ c (children_sorted M p) hcmem hle
+      have hvp : vr N p = vr M p := vr_take M p hpx
+      have hvot := isOT_vr hG.f1 p
+      have hfr := o2r_frame hG hx hcA hc
+      -- the earlier children keep their values
+      have hoff : ∀ d ∈ (children M p).filter (fun d => decide (d < c)), o2r N d = o2r M d := by
+        intro d hd
+        rw [List.mem_filter] at hd
+        have hdc : d < c := by simpa using hd.2
+        have hdp := mem_children_iff.mp hd.1
+        exact o2r_take_off hx d (by omega) (not_anc_of_earlier hdp.2 hc hdc hcx)
+      rcases Nat.eq_or_lt_of_le hcx with hcx' | hcx'
+      · -- `p = q`: the last column is removed
+        rw [hcx'] at hfr hc
+        have hleaf := o2r_leaf hx (isOT_vr hG.f1 x)
+        rw [hleaf, spArg_single] at hfr
+        have hnotrig : ¬ (lt (bst M p x) z = true ∧
+            lt (psi (vr M p) z z) (psi (vr M x) z z) = true) := by simp [lt]
+        unfold step at hfr
+        rw [if_neg hnotrig] at hfr
+        have hge := bst_summands_ge hG hx (Anc0.refl x) hc
+        rw [hleaf] at hge
+        rw [add_eq_app_of_ge ⟨_, _, rfl⟩ _ hge] at hfr
+        -- the value in `N`
+        have hchN : children N p = (children M p).filter (fun d => decide (d < x)) := children_take M x p
+        have hsplit' : (children M p).filter (fun d => decide (d < x)) =
+            (children M p).filter (fun d => decide (d < c)) := by rw [hcx']
+        have hvN : (children N p).map (o2r N) =
+            ((children M p).filter (fun d => decide (d < x))).map (o2r M) := by
+          rw [hchN]; apply List.map_congr_left; intro d hd; rw [hsplit'] at hd; exact hoff d hd
+        have hdecC : (((children M p).filter (fun d => decide (d < x))).map (o2r M)).Pairwise
+            (fun a b => b ≤ a) := List.Pairwise.sublist (List.Sublist.map _ List.filter_sublist) (hG.dec p)
+        have hSC := sumN_dec _ (fun t ht => by
+          obtain ⟨i, _, rfl⟩ := List.mem_map.mp ht; exact single_o2r hG i) hdecC
+        have hoN : o2r N p = psi (vr M p) (bst M p x) z := by
+          rw [o2r_spArg (by rw [hvp]; exact hvot) (by rw [hvN]; exact hSC.1), hvN, hvp]; rfl
+        have hotp := hG.ot p
+        rw [hfr] at hotp
+        refine ⟨_, _, hfr, hoN, ot_prefix hotp, lhd_prefix (by simp), bst M p x, vr M x, z, z,
+          rfl, by rw [app_z_right], Or.inl rfl⟩
+      · -- `p` above another path node
+        obtain ⟨yc, yc', hoc, hoc', hotc', hlc, hshc⟩ := ih c (by omega) hcA hcx'
+        have hcot : isOT (psi (vr M c) yc z) = true := by rw [← hoc]; exact hG.ot c
+        rw [hoc, spArg_single] at hfr
+        -- the frame in `N`
+        have hall : ∀ d ∈ children M p, d < x := fun d hd => lt_of_le_of_lt (hle d hd) hcx'
+        have hchNM : children N p = children M p := by
+          rw [children_take M x p]
+          exact List.filter_eq_self.mpr (fun d hd => by simpa using hall d hd)
+        have hchN : children N p = (children N p).filter (fun d => decide (d < c)) ++ [c] := by
+          rw [hchNM]; exact hsplit
+        have hBN : bst N p c = bst M p c := bst_take hx hc hcx'
+        -- the values of the children in `N`
+        have hvalsN : (children N p).map (o2r N) =
+            ((children M p).filter (fun d => decide (d < c))).map (o2r M) ++ [o2r N c] := by
+          rw [hchN, List.map_append, hchNM]
+          simp only [List.map_cons, List.map_nil]
+          congr 1
+          exact List.map_congr_left hoff
+        have hcN_lt : o2r N c < o2r M c := by
+          rw [hoc', hoc, psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, hlc.1⟩
+        have hdM := hG.dec p
+        rw [hsplit, List.map_append] at hdM
+        have hsingN : ∀ t ∈ (children N p).map (o2r N), Single t := by
+          intro t ht
+          rw [hvalsN] at ht
+          rcases List.mem_append.mp ht with ht | ht
+          · obtain ⟨i, _, rfl⟩ := List.mem_map.mp ht; exact single_o2r hG i
+          · rw [List.mem_singleton] at ht; subst ht
+            exact ⟨by rw [hoc']; exact hotc', _, _, hoc'⟩
+        have hdecN : ((children N p).map (o2r N)).Pairwise (fun a b => b ≤ a) := by
+          rw [hvalsN, List.pairwise_append]
+          have hdM' := List.pairwise_append.mp hdM
+          refine ⟨hdM'.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
+          rw [List.mem_singleton] at hb; subst hb
+          exact le_trans (le_of_lt hcN_lt) (hdM'.2.2 a ha _ (by simp))
+        have hfrN := o2r_frame' hFN hchN hsingN hdecN
+        rw [hBN, hvp, hoc', spArg_single] at hfrN
+        -- one frame up
+        have hpl : c < M.length := by omega
+        have hsn : ∀ v, ∀ g ∈ comps v (vr M c), g = z := by
+          rw [vr_eq_nT hG.f1]; exact comps_nT _
+        have hotp := hG.ot p
+        rw [hfr] at hotp
+        obtain ⟨h1, h2, h3⟩ := frame_drop hvot hcot (by rw [← hoc']; exact (hsingN _ (by
+            rw [hvalsN]; simp)).1) hotp
+          (happ_frame hG hx hH hcA hc hoc) hlc hshc
+          (fun hB t1 t2 => hH p c (vr M c) yc hpl hc hoc hB t1 t2)
+          (fun hB t1 t2 hav => hFC p c (vr M c) yc hpl hc hoc hB t1 t2 hav) hsn
+        exact ⟨_, _, hfr, hfrN, h1, h2, h3⟩
+  exact fun p => key _ p (Nat.le_refl _)
+
 end Ytosk
