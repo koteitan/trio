@@ -487,4 +487,101 @@ theorem t1_hole0 :
 
 end
 
+/-! ## ζ の鎖は ω 冪の不動点 -/
+
+theorem summ_ge_of_cof : ∀ {t μ : T}, isOT t = true → cof t = .big μ →
+    ∀ q ∈ summands t, ¬ q < psi (succ μ) z z
+  | z, _, _, h => by simp [cof] at h
+  | psi a b (psi c d e), μ, hot, h => by
+    intro q hq
+    simp only [summands, List.mem_cons] at hq
+    rcases hq with rfl | hq
+    · exact not_lt_of_ge (om_le_head_of_cof hot h)
+    · exact summ_ge_of_cof (isOT_rest hot) (by simpa [cof] using h) q (by simpa [summands] using hq)
+  | psi a b z, μ, hot, h => by
+    intro q hq
+    simp only [summands, List.mem_cons, List.mem_nil_iff, or_false] at hq
+    subst hq
+    exact not_lt_of_ge (om_le_head_of_cof hot h)
+
+/-- **Every summand of `fs t η` is at least `Ω_{μ+1}`** (unless `t` ends with `Ω_{μ+1}`). -/
+theorem summ_fs_ge : ∀ {t μ η : T}, isOT t = true → cof t = .big μ → last t ≠ psi (succ μ) z z →
+    μ < η → ∀ q ∈ summands (fs t η), ¬ q < psi (succ μ) z z
+  | z, _, _, _, h, _, _ => by simp [cof] at h
+  | psi a b (psi c d e), μ, η, hot, h, hl, hη => by
+    intro q hq
+    have hfs : fs (psi a b (psi c d e)) η = psi a b (fs (psi c d e) η) := rfl
+    rw [hfs] at hq
+    simp only [summands, List.mem_cons] at hq
+    rcases hq with rfl | hq
+    · exact not_lt_of_ge (om_le_head_of_cof hot h)
+    · exact summ_fs_ge (isOT_rest hot) (by simpa [cof] using h) hl hη q hq
+  | psi a b z, μ, η, hot, h, hl, hη => by
+    have hge := om_le_fs hot h hl hη
+    have hsingle : ∃ s y, fs (psi a b z) η = psi s y z := by
+      unfold cof at h
+      by_cases hb : b = z
+      · subst hb
+        rw [if_pos rfl] at h
+        by_cases ha : a = z
+        · rw [if_pos ha] at h; cases h
+        · rw [if_neg ha] at h
+          by_cases hs : isSucc a = true
+          · rw [if_pos hs] at h; cases h
+            exfalso; apply hl
+            show psi a z z = _
+            have : succ (init a) = a := by unfold succ; exact init_app_one hs
+            rw [this]
+          · unfold fs; rw [if_pos rfl, if_neg ha, if_neg hs]; exact ⟨_, _, rfl⟩
+      · rw [if_neg hb] at h
+        by_cases hs : isSucc b = true
+        · rw [if_pos hs] at h; cases h
+        · rw [if_neg hs] at h
+          cases hcb : cof b with
+          | big μ' =>
+            rw [hcb] at h; simp only at h
+            split at h
+            · rename_i hlt
+              unfold fs; rw [if_neg hb, if_neg hs, hcb]; simp only; rw [if_pos hlt]; exact ⟨_, _, rfl⟩
+            · cases h
+          | zero => rw [hcb] at h; cases h
+          | succ => rw [hcb] at h; cases h
+          | omega => rw [hcb] at h; cases h
+    obtain ⟨s', y', he⟩ := hsingle
+    intro q hq
+    rw [he] at hq hge
+    simp only [summands, List.mem_cons, List.mem_nil_iff, or_false] at hq
+    subst hq
+    exact not_lt_of_ge hge
+
+/-- **The terms of the chain are fixed points of `ω`** (given the seed is). -/
+theorem gamS_fix {μ br vr seed : T} (hrot : isOT (psi vr br z) = true) (hcb : cof br = .big μ)
+    (hμ : ¬ lt μ vr = true) (hS : SeedOK vr br μ seed) (hbrl : last br ≠ psi (succ μ) z z)
+    (hseedfix : omega seed = seed) (hseedΩ : etaOm μ ≤ seed) :
+    ∀ m, omega (gamS μ br seed m) = gamS μ br seed m
+  | 0 => hseedfix
+  | m + 1 => by
+    have hot := gamS_ot hrot hcb hμ hS (m + 1)
+    have hΩ := gamS_ge_omfix (isOT_arg hrot) hcb hbrl hseedΩ (m + 1)
+    have hlt : μ < gamS μ br seed m :=
+      lt_of_lt_of_le (sub_lt μ _ z) (gamS_ge_omfix (isOT_arg hrot) hcb hbrl hseedΩ m)
+    show omega (psi μ (fs br (gamS μ br seed m)) z) = psi μ (fs br (gamS μ br seed m)) z
+    apply omega_fix_nolo hot
+    · intro hE
+      have h1 : psi μ (psi (succ μ) z z) z ≤ psi μ (fs br (gamS μ br seed m)) z := hΩ
+      have h2 : psi (succ μ) z z ≤ fs br (gamS μ br seed m) := by
+        rcases (le_iff _ _).mp h1 with h | h
+        · rw [psi_lt_psi_z_iff] at h
+          rcases h with h | ⟨_, h⟩
+          · exact absurd h (lt_irrefl' _)
+          · exact le_of_lt h
+        · rw [(T.psi.inj h).2.1]
+      obtain ⟨hμz, hX⟩ := below_E0 hE
+      have h3 : psi (succ μ) z z = Om one := by rw [hμz]; rfl
+      rw [h3] at h2
+      exact lt_irrefl' _ (lt_of_le_of_lt h2 hX)
+    · unfold loOf
+      apply split_snd_z_of_ge
+      exact summ_fs_ge (isOT_arg hrot) hcb hbrl hlt
+
 end Ytosk
