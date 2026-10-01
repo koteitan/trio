@@ -60,6 +60,60 @@ theorem o_last_form {N : Mat} {σ : Valn} {i cs : Nat} {Lc : List Nat} {s y : T}
     · simp at ht; rw [ht]; exact hs cs (by rw [hcl]; simp)
   rw [sumN_append_dec hs' hp, sumN_singleton (hs' _ (by simp)), spArg_app, hcs, spArg_single]
 
+/-- **A bump-type `v` is `V + W`** with `W = ω^p` a single summand at least `1`. -/
+theorem v_bump_form {N : Mat} {σ : Valn} {k : Nat} (hC : Cons N σ) (hk : k < N.length)
+    (h1 : entry N 1 k ≠ 0) (h2 : entry N 2 k ≠ 0) (hVot : isOT (vOpt σ (par N 1 k)) = true)
+    (hoot : ∀ j ∈ children N k, col N j = bump N k → ∀ k' ∈ children N j, isOT (σ.o k') = true) :
+    ∃ sW yW, σ.v k = add (vOpt σ (par N 1 k)) (psi sW yW z) ∧ isOT (psi sW yW z) = true ∧
+      one ≤ psi sW yW z := by
+  have hY : isOT (sumN (one :: (children N k).map (bumpTerm N σ k))) = true := by
+    apply isOT_sumN
+    intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · rfl
+    · obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ht
+      unfold bumpTerm
+      split
+      · rename_i hjb
+        apply isOT_omega; apply isOT_sumN
+        intro t' ht'
+        obtain ⟨k', hk', rfl⟩ := List.mem_map.mp ht'
+        exact hoot j hj hjb k' hk'
+      · rfl
+  obtain ⟨sW, yW, hWf⟩ := (single_omega hY).2
+  refine ⟨sW, yW, ?_, by rw [← hWf]; exact isOT_omega hY, by rw [← hWf]; exact one_le_omega hY⟩
+  rw [(hC k hk).2]; unfold vRhs
+  rw [if_neg h1, if_neg h2, hWf, sf_ot (isOT_add hVot (by rw [← hWf]; exact isOT_omega hY))]
+
+theorem vsmall_add_one {V : T} (hV : isOT V = true) (hs : VSmallV V) : VSmallV (add V one) := by
+  have hge : ∀ q ∈ summands V, one ≤ q := by
+    intro q hq
+    obtain ⟨a, b, rfl⟩ : ∃ a b, q = psi a b z := by
+      clear hs hV
+      induction V with
+      | z => simp [summands] at hq
+      | psi a b c _ _ ih =>
+        simp only [summands, List.mem_cons] at hq
+        rcases hq with rfl | hq
+        · exact ⟨a, b, rfl⟩
+        · exact ih hq
+    exact one_le_of_ne_z (by simp)
+  have he : add V one = app V one := add_eq_app_of_ge (c := one) ⟨z, z, rfl⟩ V hge
+  rw [he]
+  have hlt : V < app V one := by
+    have := app_lt_app_left V (show z < one from T.z_lt_psi _ _ _)
+    rwa [app_z_right] at this
+  intro u g hg
+  rw [comps_app] at hg
+  rcases List.mem_append.mp hg with hg | hg
+  · exact le_trans (hs u g hg) (le_of_lt (by rw [psi_lt_psi_z_iff]; exact Or.inl hlt))
+  · have : g = z := by
+      simp only [one, comps, List.mem_append] at hg
+      split at hg
+      · simp at hg
+      · simp at hg; exact hg
+    rw [this]; exact z_le _
+
 section
 variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
