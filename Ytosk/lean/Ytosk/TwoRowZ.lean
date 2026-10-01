@@ -727,4 +727,22 @@ theorem children_gexp_off_t0 {h : Nat} (hh : h < j0 + Lb) (hnA : ¬ Anc0 M h (j0
 
 end
 
+/-- A term is determined by its summands. -/
+theorem eq_of_summands : ∀ {t u : T}, summands t = summands u → t = u
+  | z, z, _ => rfl
+  | z, psi _ _ _, h => by simp [summands] at h
+  | psi _ _ _, z, h => by simp [summands] at h
+  | psi a b c, psi a' b' c', h => by
+    simp only [summands, List.cons.injEq, psi.injEq, and_true] at h
+    obtain ⟨⟨rfl, rfl⟩, h2⟩ := h
+    rw [eq_of_summands h2]
+
+theorem summands_mulT_eq {x : T} (hx : ∃ s y, x = psi s y z) :
+    ∀ n, summands (mulT x n) = List.replicate n x
+  | 0 => rfl
+  | n + 1 => by
+    obtain ⟨s, y, rfl⟩ := hx
+    simp only [mulT, app_psi, app_z, summands, List.replicate_succ]
+    rw [summands_mulT_eq ⟨s, y, rfl⟩ n]
+
 end Ytosk
