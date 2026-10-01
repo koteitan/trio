@@ -66,4 +66,37 @@ theorem seedOK_of_lhd_gam {a b μ σ : T} (hot : isOT (psi a b z) = true) (hcb :
     · simp at hg
 
 
+/-- **The seed condition from the components** (3 行で実測で常に成立する形): every component of the seed at
+a level `u ≤ a` is below `b[seed]` or at most a component of `b[0]`. The `dom` field goes through
+`b[0] ◁ b` (`lhd_fs` with index `0`). -/
+theorem seedOK_of_c2 {a b μ seed : T} (hot : isOT (psi a b z) = true) (hcb : cof b = .big μ)
+    (hμ : ¬ lt μ a = true) (hsot : isOT seed = true) (hslt : seed < psi (succ μ) z z)
+    (hnext : seed < psi μ (fs b seed) z)
+    (hC2 : ∀ u, ¬ lt a u = true → ∀ g ∈ comps u seed, g < fs b seed ∨ ∃ y ∈ comps u (fs b z), g ≤ y) :
+    SeedOK a b μ seed := by
+  have hbot : isOT b = true := isOT_arg hot
+  have hS0 := seedOK_z a b μ
+  have hd0 : isOT (psi a (fs b z) z) = true := isOT_diag_seed hot hcb hμ hS0 0
+  have hcd0 := comps_lt hd0
+  have hV0 : ValidLt b z := by unfold ValidLt; rw [hcb]; exact T.z_lt_psi _ _ _
+  have hl0 : Lhd z (fs b z) b := lhd_fs hbot hV0
+  -- `b[0] ≤ b[seed]`
+  have hle : fs b z ≤ fs b seed := by
+    rcases (le_iff _ _).mp (z_le seed) with h | h
+    · exact le_of_lt (fs_mono hcb h)
+    · rw [← h]
+  refine ⟨hsot, hslt, hnext, ?_, ?_⟩
+  · intro g hg
+    rcases hC2 a (lt_irrefl' a) g hg with h | ⟨y, hy, hgy⟩
+    · exact h
+    · exact lt_of_le_of_lt hgy (lt_of_lt_of_le (hcd0 y hy) hle)
+  · intro u c0 c1 h1 h2 hau g hg
+    have hc0in : c0 ∈ comps u (psi a c0 c1) := by simp [comps, hau]
+    rcases hC2 u hau g hg with h | ⟨y0, hy0, hgy⟩
+    · exact ⟨c0, List.mem_append_left _ hc0in, le_of_lt (lt_trans h h1)⟩
+    · obtain ⟨y, hy, hy0y⟩ := hl0.2 u c0 (lt_of_le_of_lt hle h1) h2 y0 hy0
+      rcases List.mem_append.mp hy with hy | hy
+      · exact ⟨y, List.mem_append_left _ (mem_comps_psi_arg hau hy), le_trans hgy hy0y⟩
+      · exact ⟨y, List.mem_append_right _ hy, le_trans hgy hy0y⟩
+
 end Ytosk
