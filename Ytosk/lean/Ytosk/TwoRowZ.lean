@@ -89,10 +89,22 @@ theorem expand_eq_gexp_t0 (M : Mat) (n : Nat) (hM : 2 ≤ M.length)
     expand M n = TRIO.gexp M r (M.length - 1 - r) 0 0 n := by
   rw [expand_eq_gexp M n hM hz hr, if_neg (by omega), if_neg (by omega)]
 
+/-- The copy roots hang below `j0` (or nowhere). -/
+def CopyRootsLow (N : Mat) (j0 Lb n : Nat) : Prop :=
+  ∀ k, k < n → ∀ p, par N 0 (j0 + (k * Lb + 0)) = some p → p < j0
+
+theorem copyRootsLow_of_g {M : Mat} {j0 Lb d1 n g : Nat} (hlen : j0 + Lb + 1 = M.length)
+    (hLb : 0 < Lb) (hA : Anc0 M j0 (j0 + Lb)) (hg : par M 0 j0 = some g) :
+    CopyRootsLow (TRIO.gexp M j0 Lb 0 d1 n) j0 Lb n := by
+  intro k hk p hp
+  rw [par0_gexp_root_t0 hlen hLb hk hA hg] at hp
+  have := Option.some.inj hp
+  have := par_lt M 0 j0 g hg; omega
+
 section
 variable {M : Mat} {j0 Lb d1 n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
-  (hA : Anc0 M j0 (j0 + Lb)) {g : Nat} (hg : par M 0 j0 = some g)
-include hlen hLb hA hg
+  (hA : Anc0 M j0 (j0 + Lb)) (hR : CopyRootsLow (TRIO.gexp M j0 Lb 0 d1 n) j0 Lb n)
+include hlen hLb hA hR
 
 /-- **Children inside a copy (`d0 = 0`)**: the mirror of the children inside the block. -/
 theorem children_gexp_t0 {k q : Nat} (hk : k < n) (hq : q < Lb) :
@@ -113,9 +125,7 @@ theorem children_gexp_t0 {k q : Nat} (hk : k < n) (hq : q < Lb) :
         (by omega) (by rw [hlen'] at hcl; exact hcl)
       rcases Nat.eq_zero_or_pos q'' with h0 | h0
       · subst h0
-        have hgj := par_lt M 0 j0 g hg
-        rw [par0_gexp_root_t0 hlen hLb hk' hA hg] at hcp
-        have := Option.some.inj hcp; omega
+        have := hR k' hk' _ hcp; omega
       · obtain ⟨pa, hpa⟩ := par0_some_of (show j0 < j0 + q'' by omega)
           (anc0_interval hA (j0 + q'') (by omega) (by omega))
         have hge := par0_ge_of_anc hA (show j0 < j0 + q'' by omega) (by omega) hpa
@@ -188,9 +198,9 @@ theorem children_block {M : Mat} {j0 Lb q : Nat} (hlen : j0 + Lb + 1 = M.length)
 
 section
 variable {M : Mat} {j0 Lb n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
-  (hA : Anc0 M j0 (j0 + Lb)) {g : Nat} (hg : par M 0 j0 = some g)
+  (hA : Anc0 M j0 (j0 + Lb)) (hR : CopyRootsLow (TRIO.gexp M j0 Lb 0 0 n) j0 Lb n)
   (hF : F1 (TRIO.gexp M j0 Lb 0 0 n))
-include hlen hLb hA hg hF
+include hlen hLb hA hR hF
 
 /-- **Copies have the values of the first copy** (`t = 0`). -/
 theorem o2r_gexp_copy_t0 {k : Nat} (hk : k < n) :
@@ -206,7 +216,7 @@ theorem o2r_gexp_copy_t0 {k : Nat} (hk : k < n) :
       intro q hm hq
       apply o2r_congr
       · rw [vr_eq_nT hF, vr_eq_nT hF, entry1_gexp_d1z hlen hk hq, entry1_gexp_d1z hlen hn0 hq]
-      · rw [children_gexp_t0 hlen hLb hA hg hk hq, children_gexp_t0 hlen hLb hA hg hn0 hq,
+      · rw [children_gexp_t0 hlen hLb hA hR hk hq, children_gexp_t0 hlen hLb hA hR hn0 hq,
           List.map_map, List.map_map]
         apply List.map_congr_left
         intro q' hq'
@@ -220,10 +230,10 @@ end
 
 section
 variable {M : Mat} {j0 Lb n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
-  (hA : Anc0 M j0 (j0 + Lb)) {g : Nat} (hg : par M 0 j0 = some g)
+  (hA : Anc0 M j0 (j0 + Lb)) (hR : CopyRootsLow (TRIO.gexp M j0 Lb 0 0 n) j0 Lb n)
   (hF : F1 (TRIO.gexp M j0 Lb 0 0 n)) (hFM : F1 M) (hn : 1 ≤ n)
   (hx0 : par M 0 (j0 + Lb) = some j0)
-include hlen hLb hA hg hF hFM hn hx0
+include hlen hLb hA hR hF hFM hn hx0
 
 theorem vr_gexp_block {q : Nat} (hq : q < Lb) :
     vr (TRIO.gexp M j0 Lb 0 0 n) (j0 + (0 * Lb + q)) = vr M (j0 + q) := by
@@ -239,8 +249,8 @@ theorem o2r_gexp_block_t0 : ∀ q, 0 < q → q < Lb →
     | zero => intro q h1 _ h2; omega
     | succ m ih =>
       intro q hm hq0 hq
-      apply o2r_congr (vr_gexp_block hlen hLb hA hg hF hFM hn hx0 hq)
-      rw [children_gexp_t0 hlen hLb hA hg (show 0 < n by omega) hq, children_block hlen,
+      apply o2r_congr (vr_gexp_block hlen hLb hA hR hF hFM hn hx0 hq)
+      rw [children_gexp_t0 hlen hLb hA hR (show 0 < n by omega) hq, children_block hlen,
         if_neg (by rw [hx0]; intro h; have := Option.some.inj h; omega), List.append_nil,
         List.map_map, List.map_map]
       apply List.map_congr_left
@@ -255,10 +265,10 @@ end
 
 section
 variable {M : Mat} {j0 Lb n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
-  (hA : Anc0 M j0 (j0 + Lb)) {g : Nat} (hg : par M 0 j0 = some g)
+  (hA : Anc0 M j0 (j0 + Lb)) (hR : CopyRootsLow (TRIO.gexp M j0 Lb 0 0 n) j0 Lb n)
   (hF : F1 (TRIO.gexp M j0 Lb 0 0 n)) (hG : Good2 M) (hn : 1 ≤ n)
   (hx0 : par M 0 (j0 + Lb) = some j0)
-include hlen hLb hA hg hF hG hn hx0
+include hlen hLb hA hR hF hG hn hx0
 
 /-- **The value of `r` after a `t = 0` expansion**: `ψ_v(b)` with `b` the state of the siblings before
 `x`. -/
@@ -268,7 +278,7 @@ theorem o2r_gexp_r_t0 :
   set F0 := (List.range Lb).filter (fun q' => decide (0 < q' ∧ par M 0 (j0 + q') = some (j0 + 0)))
     with hF0
   have hch : children (TRIO.gexp M j0 Lb 0 0 n) (j0 + (0 * Lb + 0)) =
-      F0.map (fun q' => j0 + (0 * Lb + q')) := children_gexp_t0 hlen hLb hA hg (by omega) hLb
+      F0.map (fun q' => j0 + (0 * Lb + q')) := children_gexp_t0 hlen hLb hA hR (by omega) hLb
   have hvals : (children (TRIO.gexp M j0 Lb 0 0 n) (j0 + (0 * Lb + 0))).map
       (o2r (TRIO.gexp M j0 Lb 0 0 n)) = (F0.map (fun q' => j0 + q')).map (o2r M) := by
     rw [hch, List.map_map, List.map_map]
@@ -276,7 +286,7 @@ theorem o2r_gexp_r_t0 :
     intro q' hq'
     rw [hF0, List.mem_filter, List.mem_range] at hq'
     simp only [decide_eq_true_eq] at hq'
-    exact o2r_gexp_block_t0 hlen hLb hA hg hF hFM hn hx0 q' hq'.2.1 hq'.1
+    exact o2r_gexp_block_t0 hlen hLb hA hR hF hFM hn hx0 q' hq'.2.1 hq'.1
   have hC : (children M j0).filter (fun d => decide (d < j0 + Lb)) = F0.map (fun q' => j0 + q') := by
     have hb : children M j0 = F0.map (fun q' => j0 + q') ++ [j0 + Lb] := by
       have := children_block (q := 0) hlen (M := M)
@@ -295,7 +305,7 @@ theorem o2r_gexp_r_t0 :
     exact List.Pairwise.sublist (List.Sublist.map _ List.filter_sublist) (hG.dec j0)
   obtain ⟨hSot, _⟩ := sumN_dec _ (fun t ht => by
     obtain ⟨i, _, rfl⟩ := List.mem_map.mp ht; exact single_o2r hG i) hsub
-  rw [o2r_eq, hvals, vr_gexp_block hlen hLb hA hg hF hFM hn hx0 hLb]
+  rw [o2r_eq, hvals, vr_gexp_block hlen hLb hA hR hF hFM hn hx0 hLb]
   show add (sp (sf (vr M (j0 + 0))) z (sf _)) (sf z) = _
   rw [sf_ot (isOT_vr hFM _), sf_ot hSot, sp_eq_spArg]
   unfold bst
@@ -717,7 +727,7 @@ theorem children_gexp_off_t0 {h : Nat} (hh : h < j0 + Lb) (hnA : ¬ Anc0 M h (j0
         have := Nat.mul_le_mul_right Lb hn; simpa using this
       refine ⟨by rw [hlen']; omega, by rw [hpre c hcx]; exact hcp⟩
   · have hq : h - j0 < Lb := by omega
-    have e1 := children_gexp_t0 (d1 := 0) hlen hLb hA hg (show 0 < n by omega) hq
+    have e1 := children_gexp_t0 (d1 := 0) hlen hLb hA (copyRootsLow_of_g hlen hLb hA hg) (show 0 < n by omega) hq
     have e2 := children_block (q := h - j0) hlen (M := M)
     rw [show j0 + (h - j0) = h by omega] at e2
     rw [show j0 + (0 * Lb + (h - j0)) = h by omega] at e1
@@ -790,11 +800,11 @@ theorem o2r_gexp_g_t0 (hx1 : entry M 1 (j0 + Lb) = 0) :
     · have := (anc0_par h' (by omega) hg).le; have := par_lt M 0 d g hdp.2; omega
     · have := h'.le; omega
   have hr : o2r (TRIO.gexp M j0 Lb 0 0 n) j0 = c' := by
-    have := o2r_gexp_r_t0 hlen hLb hA hg hF hG hn hx0
+    have := o2r_gexp_r_t0 hlen hLb hA (copyRootsLow_of_g hlen hLb hA hg) hF hG hn hx0
     simpa using this
   have hroots : ∀ k, k < n - 1 → o2r (TRIO.gexp M j0 Lb 0 0 n) (j0 + ((k + 1) * Lb + 0)) = c' := by
     intro k hk
-    rw [o2r_gexp_copy_t0 hlen hLb hA hg hF (k := k + 1) (by omega) 0 hLb]
+    rw [o2r_gexp_copy_t0 hlen hLb hA (copyRootsLow_of_g hlen hLb hA hg) hF (k := k + 1) (by omega) 0 hLb]
     simpa using hr
   have hvals : (children (TRIO.gexp M j0 Lb 0 0 n) g).map (o2r (TRIO.gexp M j0 Lb 0 0 n)) =
       C.map (o2r M) ++ List.replicate n c' := by
