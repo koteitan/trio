@@ -1507,3 +1507,10 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - good3_N_t0: GoodOT N（N の値がすべて標準形）→ Good3 N。減少は、コピーの列（中間は M の値、最後は M.take x の値）、r より前の列（D の子は最後だけで ◁ で下がる）、g で r が数えられる場合に分けて示した。
 - t0_core: GoodOT を仮定して Cons・Rk・Good3・根の標準形と減少を出す。
 - 残り: GoodOT のうち「r より前の D の列の o が標準形」（step_ot 型）。落とす補題の po_of の修理（omega-lhd）と同じ問題なので共通の補題にする。
+
+### t = 2 を最上位につないだ（2026-10-02、strict-r、V3T2Top `trio_terminates_T2`、07324ec8）
+
+- M[n] ≠ SRO は gexp_ne_SRO（位置 x の列は行 2 が 0・行 1 が正で SRO では (3,1,0) だけ、x 以後の行 0 は e0 x 以上）。
+- Res3T2 から構造の事実を外した: e2 r = 0、e1 r < e1 x、x・r がのりしろの子でない、r へ上げる列がない、CL r ≠ []、q = r で上げないときの D の形（qr_shapes）。
+- 残り（A・B で例外 0、C′ は未測定）: q ≠ r の構造と D の形、drop1 の hVNN・SeedC、n ≥ 2 の N の事実。
+- 今は HInvA の形につないでいる。最終形 trio_terminates_final（HInvE）につなぎ直す。
