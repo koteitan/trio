@@ -122,4 +122,38 @@ theorem o_frame_weak {a w' w F : T} {L : List T}
   · exact lhd_weak_child hl (by simp)
       (fun u g hg => le_trans (self_small_weak hW.2.1 hW.2.2.1 u g hg) (le_app_of_ge B hBge)) hlt
 
+/-! ## 評価器の段の o の枠 (1): v が変わる列 -/
+
+theorem sumN_all_z : ∀ (l : List T), (∀ t ∈ l, t = z) → sumN l = z := by
+  intro l h
+  unfold sumN
+  suffices ∀ acc, acc = z → l.foldl (fun a b => sf (add a b)) acc = z by exact this z rfl
+  induction l with
+  | nil => intro acc h0; simpa using h0
+  | cons t l ih =>
+    intro acc h0
+    simp only [List.foldl_cons]
+    apply ih (fun t' ht' => h t' (List.mem_cons_of_mem _ ht'))
+    rw [h0, h t List.mem_cons_self]; rfl
+
+/-- **A column with no counted child**: `o = ψ_v(0)`. -/
+theorem o_of_no_counted {M : Mat} {ρ : Valn} {i : Nat} (hC : Cons M ρ) (hi : i < M.length)
+    (hv : isOT (ρ.v i) = true) (hn : ∀ c ∈ children M i, ¬ Counted M i c) : ρ.o i = psi (ρ.v i) z z := by
+  classical
+  rw [(hC i hi).1]
+  unfold oRhs
+  rw [sumN_all_z _ (fun t ht => by
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+    rw [cnt_eq_ite, if_neg (hn c hc)])]
+  rw [sf_psi_spArg hv rfl]
+  rfl
+
+/-- **The `o` frame where `v` changes**: no counted child in `M.take x`, so `o′ = ψ_{v′}(0)`. -/
+theorem o_frame_vchg {M : Mat} {x : Nat} {ρ ρ' : Valn} {i : Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hC' : Cons (M.take x) ρ') (hix : i < (M.take x).length) (hiM : i < M.length)
+    (hv' : isOT (ρ'.v i) = true) (hT : ∀ c ∈ children (M.take x) i, ¬ Counted (M.take x) i c)
+    (hrel : DRelV (ρ'.v i) (ρ.v i)) : DRelO (ρ'.o i) (ρ.o i) := by
+  rw [o_of_no_counted hC' hix hv' hT, o_spArg hC hG hiM]
+  exact drelO_of_v hrel
+
 end Ytosk
