@@ -57,37 +57,41 @@ theorem vRhs_nodep {M : Mat} {x i : Nat} {ρ₁ ρ₂ : Valn} (h : AgreeOff M x 
 structure SameAt (M N : Mat) (i : Nat) : Prop where
   e1 : entry N 1 i = entry M 1 i
   e2 : entry N 2 i = entry M 2 i
-  bump : bump N i = bump M i
   par1 : par N 1 i = par M 1 i
   upg : upg N i = upg M i
   ch : children N i = children M i
-  chcol : ∀ c ∈ children M i, col N c = col M c
-  chupg : ∀ c ∈ children M i, isUpg N c = isUpg M c
-  chtop : ∀ c ∈ children M i, topped N c = topped M c
-  chch : ∀ c ∈ children M i, children N c = children M c
-
-theorem cnt_same {M N : Mat} {i : Nat} (h : SameAt M N i) (ρ : Valn) :
-    ∀ c ∈ children M i, cnt N ρ i c = cnt M ρ i c := by
-  intro c hc
-  unfold cnt
-  rw [h.chcol c hc, h.bump, h.chupg c hc, h.chtop c hc]
+  cnt : ∀ c ∈ children M i, ∀ ρ : Valn, cnt N ρ i c = cnt M ρ i c
+  bt : ∀ c ∈ children M i, ∀ ρ : Valn, bumpTerm N ρ i c = bumpTerm M ρ i c
 
 theorem oRhs_same {M N : Mat} {i : Nat} (h : SameAt M N i) (ρ : Valn) :
     oRhs N ρ i = oRhs M ρ i := by
   unfold oRhs
   rw [h.ch]
   congr 3
-  exact List.map_congr_left (cnt_same h ρ)
+  exact List.map_congr_left (fun c hc => h.cnt c hc ρ)
 
 theorem vRhs_same {M N : Mat} {i : Nat} (h : SameAt M N i) (ρ : Valn) :
     vRhs N ρ i = vRhs M ρ i := by
   unfold vRhs
-  have hb : (children M i).map (bumpTerm N ρ i) = (children M i).map (bumpTerm M ρ i) := by
-    apply List.map_congr_left
-    intro j hj
-    unfold bumpTerm
-    rw [h.chcol j hj, h.bump, h.chch j hj]
+  have hb : (children M i).map (bumpTerm N ρ i) = (children M i).map (bumpTerm M ρ i) :=
+    List.map_congr_left (fun c hc => h.bt c hc ρ)
   rw [h.e1, h.e2, h.par1, h.upg, h.ch, hb]
+
+/-- `SameAt` from the structure of the children. -/
+theorem sameAt_of {M N : Mat} {i : Nat} (e1 : entry N 1 i = entry M 1 i)
+    (e2 : entry N 2 i = entry M 2 i) (hb : bump N i = bump M i) (hp : par N 1 i = par M 1 i)
+    (hu : upg N i = upg M i) (hch : children N i = children M i)
+    (hcol : ∀ c ∈ children M i, col N c = col M c)
+    (hiu : ∀ c ∈ children M i, isUpg N c = isUpg M c)
+    (htop : ∀ c ∈ children M i, topped N c = topped M c)
+    (hchch : ∀ c ∈ children M i, children N c = children M c) : SameAt M N i where
+  e1 := e1
+  e2 := e2
+  par1 := hp
+  upg := hu
+  ch := hch
+  cnt := fun c hc ρ => by unfold cnt; rw [hcol c hc, hb, hiu c hc, htop c hc]
+  bt := fun c hc ρ => by unfold bumpTerm; rw [hcol c hc, hb, hchch c hc]
 
 /-! ## 貼り合わせ -/
 
