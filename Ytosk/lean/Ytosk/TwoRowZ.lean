@@ -46,4 +46,99 @@ theorem par0_gexp_root_t0 {M : Mat} {j0 Lb d1 n k g : Nat} (hlen : j0 + Lb + 1 =
       · subst hq0; exact Nat.le_refl _
       · exact Nat.le_of_lt (anc0_interval hA (j0 + q') (by omega) (by omega))
 
+/-- Strictly increasing lists with the same members are equal. -/
+theorem eq_of_sorted_mem : ∀ (l1 l2 : List Nat), l1.Pairwise (· < ·) → l2.Pairwise (· < ·) →
+    (∀ a, a ∈ l1 ↔ a ∈ l2) → l1 = l2
+  | [], [], _, _, _ => rfl
+  | [], b :: _, _, _, h => absurd ((h b).mpr List.mem_cons_self) (by simp)
+  | a :: _, [], _, _, h => absurd ((h a).mp List.mem_cons_self) (by simp)
+  | a :: l1, b :: l2, h1, h2, h => by
+    rw [List.pairwise_cons] at h1 h2
+    have hab : a = b := by
+      have ha := (h a).mp List.mem_cons_self
+      have hb := (h b).mpr List.mem_cons_self
+      rcases List.mem_cons.mp ha with ha | ha
+      · exact ha
+      · rcases List.mem_cons.mp hb with hb | hb
+        · exact hb.symm
+        · have := h2.1 a ha; have := h1.1 b hb; omega
+    subst hab
+    congr 1
+    apply eq_of_sorted_mem l1 l2 h1.2 h2.2
+    intro c
+    constructor
+    · intro hc
+      have := (h c).mp (List.mem_cons_of_mem _ hc)
+      rcases List.mem_cons.mp this with h' | h'
+      · have := h1.1 c hc; omega
+      · exact h'
+    · intro hc
+      have := (h c).mpr (List.mem_cons_of_mem _ hc)
+      rcases List.mem_cons.mp this with h' | h'
+      · have := h2.1 c hc; omega
+      · exact h'
+
+/-- The expansion with `t = 0` (no ascent). -/
+theorem expand_eq_gexp_t0 (M : Mat) (n : Nat) (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    {r : Nat} (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht : TRIO.srow M (M.length - 1) = 0) :
+    expand M n = TRIO.gexp M r (M.length - 1 - r) 0 0 n := by
+  rw [expand_eq_gexp M n hM hz hr, if_neg (by omega), if_neg (by omega)]
+
+section
+variable {M : Mat} {j0 Lb d1 n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+  (hA : Anc0 M j0 (j0 + Lb)) {g : Nat} (hg : par M 0 j0 = some g)
+include hlen hLb hA hg
+
+/-- **Children inside a copy (`d0 = 0`)**: the mirror of the children inside the block. -/
+theorem children_gexp_t0 {k q : Nat} (hk : k < n) (hq : q < Lb) :
+    children (TRIO.gexp M j0 Lb 0 d1 n) (j0 + (k * Lb + q)) =
+      ((List.range Lb).filter (fun q' => decide (0 < q' ∧ par M 0 (j0 + q') = some (j0 + q)))).map
+        (fun q' => j0 + (k * Lb + q')) := by
+  have hlen' := TRIO.gexp_length (d0 := 0) (d1 := d1) (n := n) hlen
+  apply eq_of_sorted_mem _ _ (children_sorted _ _)
+  · apply List.Pairwise.map _ _ (List.Pairwise.filter _ List.pairwise_lt_range)
+    intro a b hab; omega
+  · intro c
+    rw [mem_children_iff, List.mem_map]
+    constructor
+    · rintro ⟨hcl, hcp⟩
+      have hidx := par_lt _ 0 c _ hcp
+      have hkn : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+      obtain ⟨k', q'', hk', hq'', rfl⟩ := TRIO.gexp_pos_decomp (j0 := j0) (n := n) (p := c) hLb
+        (by omega) (by rw [hlen'] at hcl; exact hcl)
+      rcases Nat.eq_zero_or_pos q'' with h0 | h0
+      · subst h0
+        have hgj := par_lt M 0 j0 g hg
+        rw [par0_gexp_root_t0 hlen hLb hk' hA hg] at hcp
+        have := Option.some.inj hcp; omega
+      · obtain ⟨pa, hpa⟩ := par0_some_of (show j0 < j0 + q'' by omega)
+          (anc0_interval hA (j0 + q'') (by omega) (by omega))
+        have hge := par0_ge_of_anc hA (show j0 < j0 + q'' by omega) (by omega) hpa
+        have hplt := par_lt M 0 _ _ hpa
+        have hpa' : par M 0 (j0 + q'') = some (j0 + (pa - j0)) := by rw [hpa]; congr 1; omega
+        rw [par0_gexp_mir hlen hk' hq'' hpa'] at hcp
+        have hcp' := Option.some.inj hcp
+        have hu := TRIO.mir_decomp_unique (j0 := j0) (Lb := Lb) (show pa - j0 < Lb by omega) hq
+          (show j0 + (k' * Lb + (pa - j0)) = j0 + (k * Lb + q) from hcp')
+        obtain ⟨rfl, hq2⟩ := hu
+        refine ⟨q'', ?_, rfl⟩
+        rw [List.mem_filter, List.mem_range]
+        refine ⟨hq'', ?_⟩
+        simp only [decide_eq_true_eq]
+        exact ⟨h0, by rw [hpa]; congr 1; omega⟩
+    · rintro ⟨q', hq', rfl⟩
+      rw [List.mem_filter, List.mem_range] at hq'
+      obtain ⟨hq'L, hq'd⟩ := hq'
+      simp only [decide_eq_true_eq] at hq'd
+      refine ⟨?_, par0_gexp_mir hlen hk hq'L hq'd.2⟩
+      rw [hlen']
+      have : (k + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+      have h2 : (k + 1) * Lb = k * Lb + Lb := Nat.succ_mul k Lb
+      omega
+
+end
+
 end Ytosk
