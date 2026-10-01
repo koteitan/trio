@@ -141,6 +141,120 @@ theorem lhd_comps {η b a u : T} (hl : Lhd η b a) (ha : ∀ g ∈ comps u a, g 
   intro g hg
   exact key (size g) g rfl hg
 
+theorem app_lt_app_left_iff : ∀ (p : T) {y y' : T}, app p y < app p y' ↔ y < y'
+  | z, _, _ => by simp
+  | psi a b c, y, y' => by
+    simp only [app_psi]
+    rw [T.psi_lt_psi, app_lt_app_left_iff c]
+    constructor
+    · rintro (h | ⟨_, h⟩ | ⟨_, _, h⟩)
+      · exact absurd h (lt_irrefl _)
+      · exact absurd h (lt_irrefl _)
+      · exact h
+    · intro h; exact Or.inr (Or.inr ⟨rfl, rfl, h⟩)
+
+/-- A term between `A ++ x` and `A ++ y` starts with `A`. -/
+theorem between_app : ∀ {A x y c : T}, app A x < c → c ≤ app A y →
+    ∃ c0, c = app A c0 ∧ x < c0 ∧ c0 ≤ y
+  | z, x, y, c, h1, h2 => ⟨c, by simp, by simpa using h1, by simpa using h2⟩
+  | psi a1 b1 A', x, y, c, h1, h2 => by
+    simp only [app_psi] at h1 h2
+    cases c with
+    | z => exact absurd h1 (T.not_lt_z _)
+    | psi a2 b2 c' =>
+      rw [T.psi_lt_psi] at h1
+      rcases (le_iff _ _).mp h2 with h2 | h2
+      · rw [T.psi_lt_psi] at h2
+        rcases h1 with h1 | ⟨rfl, h1⟩ | ⟨rfl, rfl, h1⟩
+        · rcases h2 with h2 | ⟨rfl, _⟩ | ⟨rfl, _, _⟩
+          · exact absurd (lt_trans h1 h2) (lt_irrefl _)
+          · exact absurd h1 (lt_irrefl _)
+          · exact absurd h1 (lt_irrefl _)
+        · rcases h2 with h2 | ⟨_, h2⟩ | ⟨_, rfl, _⟩
+          · exact absurd h2 (lt_irrefl _)
+          · exact absurd (lt_trans h1 h2) (lt_irrefl _)
+          · exact absurd h1 (lt_irrefl _)
+        · rcases h2 with h2 | ⟨_, h2⟩ | ⟨_, _, h2⟩
+          · exact absurd h2 (lt_irrefl _)
+          · exact absurd h2 (lt_irrefl _)
+          · obtain ⟨c0, hc, hx, hy⟩ := between_app h1 (le_of_lt h2)
+            exact ⟨c0, by rw [hc]; rfl, hx, hy⟩
+      · simp only [psi.injEq] at h2
+        obtain ⟨rfl, rfl, rfl⟩ := h2
+        exact ⟨y, rfl, by
+          rcases h1 with h1 | ⟨_, h1⟩ | ⟨_, _, h1⟩
+          · exact absurd h1 (lt_irrefl _)
+          · exact absurd h1 (lt_irrefl _)
+          · exact (app_lt_app_left_iff A').mp h1, le_refl _⟩
+
+theorem between_psi {v b0 b c : T} (h1 : psi v b0 z < c) (h2 : c ≤ psi v b z) :
+    ∃ c0 c1, c = psi v c0 c1 ∧ b0 ≤ c0 ∧ c0 ≤ b := by
+  cases c with
+  | z => exact absurd h1 (T.not_lt_z _)
+  | psi a2 b2 c' =>
+    rw [T.psi_lt_psi] at h1
+    rcases (le_iff _ _).mp h2 with h2 | h2
+    · rw [T.psi_lt_psi] at h2
+      rcases h1 with h1 | ⟨rfl, h1⟩ | ⟨rfl, rfl, _⟩
+      · rcases h2 with h2 | ⟨rfl, _⟩ | ⟨rfl, _, _⟩
+        · exact absurd (lt_trans h1 h2) (lt_irrefl _)
+        · exact absurd h1 (lt_irrefl _)
+        · exact absurd h1 (lt_irrefl _)
+      · rcases h2 with h2 | ⟨_, h2⟩ | ⟨_, rfl, _⟩
+        · exact absurd h2 (lt_irrefl _)
+        · exact ⟨b2, c', rfl, le_of_lt h1, le_of_lt h2⟩
+        · exact ⟨_, c', rfl, le_of_lt h1, le_refl _⟩
+      · rcases h2 with h2 | ⟨_, h2⟩ | ⟨_, _, h2⟩
+        · exact absurd h2 (lt_irrefl _)
+        · exact ⟨b0, c', rfl, le_refl _, le_of_lt h2⟩
+        · exact absurd h2 (T.not_lt_z _)
+    · simp only [psi.injEq] at h2
+      obtain ⟨rfl, rfl, rfl⟩ := h2
+      exact ⟨_, z, rfl, by
+        rcases h1 with h1 | ⟨_, h1⟩ | ⟨_, _, h1⟩
+        · exact absurd h1 (lt_irrefl _)
+        · exact le_of_lt h1
+        · exact absurd h1 (T.not_lt_z _), le_refl _⟩
+
+/-- **Lemma 3.5** (sum). -/
+theorem lhd_app {η b0 b : T} (A : T) (h : Lhd η b0 b) : Lhd η (app A b0) (app A b) := by
+  refine ⟨app_lt_app_left A h.1, fun u c h1 h2 => ?_⟩
+  obtain ⟨c0, rfl, hc1, hc2⟩ := between_app h1 h2
+  intro x hx
+  rw [comps_app] at hx
+  rcases List.mem_append.mp hx with hx | hx
+  · exact ⟨x, List.mem_append_left _ (by rw [comps_app]; exact List.mem_append_left _ hx), le_refl _⟩
+  · obtain ⟨y, hy, hxy⟩ := h.2 u c0 hc1 hc2 x hx
+    refine ⟨y, ?_, hxy⟩
+    rcases List.mem_append.mp hy with hy | hy
+    · exact List.mem_append_left _ (by rw [comps_app]; exact List.mem_append_right _ hy)
+    · exact List.mem_append_right _ hy
+
+/-- **Lemma 3.5** (collapse). -/
+theorem lhd_psi {η b0 b : T} (v : T) (h : Lhd η b0 b) : Lhd η (psi v b0 z) (psi v b z) := by
+  refine ⟨by rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, h.1⟩, fun u c h1 h2 => ?_⟩
+  obtain ⟨c0, c1, rfl, hc1, hc2⟩ := between_psi h1 h2
+  intro x hx
+  have hsub : ∀ w ∈ comps u (psi v c0 z), w ∈ comps u (psi v c0 c1) := by
+    intro w hw; simp only [comps, List.mem_append] at hw ⊢; left; simpa using hw
+  rcases (le_iff _ _).mp hc1 with hc1 | rfl
+  · simp only [comps, List.mem_append] at hx
+    rcases hx with hx | hx
+    · split at hx
+      · simp at hx
+      · rename_i hvu
+        simp only [List.mem_cons, List.mem_append] at hx
+        rcases hx with rfl | hx | hx
+        · exact ⟨c0, List.mem_append_left _ (by simp [comps, hvu]), le_of_lt hc1⟩
+        · obtain ⟨y, hy, hxy⟩ := h.2 u c0 hc1 hc2 x hx
+          refine ⟨y, ?_, hxy⟩
+          rcases List.mem_append.mp hy with hy | hy
+          · exact List.mem_append_left _ (by simp [comps, hvu, hy])
+          · exact List.mem_append_right _ hy
+        · exact ⟨x, List.mem_append_left _ (by simp [comps, hvu, hx]), le_refl _⟩
+    · simp [comps] at hx
+  · exact ⟨x, List.mem_append_left _ (hsub x hx), le_refl _⟩
+
 #eval [psi z (psi z one z) z, psi z (psi (psi one z z) z z) z].map fun t =>
   ((List.range 3).map fun n => str (fs t (natT n)))
 
