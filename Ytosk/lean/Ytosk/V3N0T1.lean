@@ -310,4 +310,83 @@ theorem root_congr {N : Mat} {σ₁ σ₂ : Valn} (h : ∀ i, i < N.length → �
   intro i hi
   rw [h i (List.mem_range.mp hi)]
 
+theorem take_take_succ (M : Mat) (j : Nat) : (M.take (j + 1)).take j = M.take j := by
+  rw [List.take_take, Nat.min_eq_left (by omega)]
+
+/-- **`t = 1`, `q ≠ r`, `n = 0`**, given the drop lemma's hypotheses on the prefixes
+`M.take (j + 1)` (`r ≤ j < x`): `root(M.take r) ≤ … ≤ root(M.take x) < root(M)`. -/
+theorem t1_n0 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+    (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
+      ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
+      ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakShape M ρ)
+    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
+    (hUA : UpgAbs M ρ)
+    {ζ μ : T} (hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
+    (hstep : ∀ j, r ≤ j → j < r + L →
+      DropHyp (M.take (j + 1)) j (drop1 M (j + 1) rkM) (drop1 M j rkM)) :
+    ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 0) ρN ∧ Rk (TRIO.gexp M r L d0 0 0) rkN ∧
+      isOT (root (TRIO.gexp M r L d0 0 0) ρN) = true ∧ root (TRIO.gexp M r L d0 0 0) ρN < root M ρ := by
+  have hr : r < r + L := par_lt M 1 (r + L) r h1
+  have hlj : ∀ j, j ≤ r + L → (M.take (j + 1)).length = j + 1 := by
+    intro j hj; rw [List.length_take]; omega
+  -- the ranking of every prefix
+  have hRkj : ∀ m j, r + L - j ≤ m → r ≤ j → j ≤ r + L → Rk (M.take j) rkM := by
+    intro m
+    induction m with
+    | zero =>
+      intro j hm _ hj
+      have hjx : j = r + L := by omega
+      subst hjx
+      exact rk_take (by omega) hRM (hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT)
+    | succ m ih =>
+      intro j hm hrj hj
+      rcases Nat.eq_or_lt_of_le hj with hjx | hjx
+      · subst hjx; exact rk_take (by omega) hRM (hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT)
+      · have hN := ih (j + 1) (by omega) (by omega) hjx
+        have hcnt := counted_take_last (M := M.take (j + 1)) (by rw [hlj j (by omega)]; omega)
+          (R0P_take hR0 _) (Z2_take hZ2 _) (SibDec_take hSD _) (Z1C_take hZ1 _) (hstep j hrj hjx).uat
+        rw [hlj j (by omega), show j + 1 - 1 = j by omega] at hcnt
+        have := rk_take (by rw [hlj j (by omega)]; omega) hN hcnt
+        rwa [take_take_succ] at this
+  have hRk : ∀ j, r ≤ j → j ≤ r + L → Rk (M.take j) rkM := fun j h1 h2 => hRkj _ j (le_refl _) h1 h2
+  have hCj : ∀ j, r ≤ j → j ≤ r + L → Cons (M.take j) (drop1 M j rkM) :=
+    fun j h1 h2 => cons_of_rk (hRk j h1 h2)
+  -- one step
+  have hone : ∀ j, r ≤ j → j < r + L →
+      isOT (root (M.take j) (drop1 M j rkM)) = true ∧
+        root (M.take j) (drop1 M j rkM) ≤ root (M.take (j + 1)) (drop1 M (j + 1) rkM) := by
+    intro j hrj hjx
+    have h := drop_root_le (N := M.take (j + 1)) (x := j) (hlj j (by omega)).symm
+      (R0P_take hR0 _) (Z2_take hZ2 _) (SibDec_take hSD _) (Z1C_take hZ1 _) (hstep j hrj hjx)
+      (hCj (j + 1) (by omega) (by omega))
+      (by rw [take_take_succ]; exact hCj j hrj (by omega))
+      (by rw [take_take_succ]; exact hRk j hrj (by omega))
+    rwa [take_take_succ] at h
+  -- the chain
+  have hchain : ∀ m, r + m ≤ r + L →
+      root (M.take r) (drop1 M r rkM) ≤ root (M.take (r + m)) (drop1 M (r + m) rkM) := by
+    intro m
+    induction m with
+    | zero => intro _; exact le_refl _
+    | succ m ih =>
+      intro hm
+      exact le_trans (ih (by omega)) (hone (r + m) (by omega) (by omega)).2
+  -- the last step is strict
+  obtain ⟨ρ1, rk1, hC1, hR1, _, hlt1⟩ := t1_n1 (d0 := d0) hlen hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00
+    h1 hx2 hqr hC hG hRM hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hVL
+  rw [gexp_one_eq hlen] at hC1 hR1 hlt1
+  have heq : root (M.take (r + L)) ρ1 = root (M.take (r + L)) (drop1 M (r + L) rkM) :=
+    root_congr (fun i hi => (cons_unique hC1 (hCj (r + L) (by omega) (le_refl _)) hR1 i hi).1)
+  rw [heq] at hlt1
+  rw [gexp_zero_eq]
+  refine ⟨drop1 M r rkM, rkM, hCj r (le_refl _) (by omega), hRk r (le_refl _) (by omega),
+    (hone r (le_refl _) hr).1, lt_of_le_of_lt (hchain L (le_refl _)) hlt1⟩
+
 end Ytosk
