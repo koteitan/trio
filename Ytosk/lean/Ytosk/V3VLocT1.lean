@@ -755,4 +755,230 @@ theorem omega_fsD_hole {μ br vr Y ζ X : T} (hY : isOT Y = true) (hH : HoleT μ
       exact omega_fsD_rest hY hE hc (holeT_not_succ hHc) hYot' (fsD_ne_z_of_holeT hζz hHc)
         (fsD_not_succ_of_holeT hcb hζ hXz hHc)
 
+/-! ## 組み立ての部品 -/
+
+theorem add_absorb_mono {v Y Y' : T} (h : add v Y = Y) (hle : Y ≤ Y') (hY : ∃ s y, Y = psi s y z)
+    (hY' : ∃ s y, Y' = psi s y z) : add v Y' = Y' := by
+  obtain ⟨s, y, rfl⟩ := hY
+  obtain ⟨s', y', rfl⟩ := hY'
+  cases v with
+  | z => rfl
+  | psi a b c =>
+    simp only [add] at h ⊢
+    split at h
+    · rename_i hlt
+      have : lt (psi a b z) (psi s' y' z) = true := lt_of_lt_of_le hlt hle
+      rw [if_pos this]
+    · exfalso
+      have h3 := (T.psi.inj h).2.2
+      exact add_ne_z_right c (by simp) h3
+
+theorem app_single_ne {P c s b : T} (hP : P ≠ z) (hc : c ≠ z) : app P c ≠ psi s b z := by
+  cases P with
+  | z => exact absurd rfl hP
+  | psi a b' c' =>
+    rw [app_psi]; intro h
+    exact hc (app_eq_z (T.psi.inj h).2.2).2
+
+/-- **A single `ω^G` with no low part is `G` itself.** -/
+theorem omega_single_nolo {G s b : T} (hG : isOT G = true) (hGz : G ≠ z) (h : omega G = psi s b z)
+    (hl : (split b (psi (succ s) z z)).2 = z) : omega G = G := by
+  by_cases hE : G < E0
+  · exfalso
+    rw [omega_small hE] at h
+    obtain ⟨rfl, rfl, _⟩ := T.psi.inj h
+    have hlt : head G < psi (succ z) z z := by
+      have h1 := lt_of_le_of_lt (head_le_self G) hE
+      exact lt_trans h1 (by unfold E0; rw [T.psi_lt_psi]; exact Or.inl (T.z_lt_psi _ _ _))
+    have := split_app_of (t := psi (succ z) z z) (B := z) (X := G)
+      (fun q hq => by simp [summands] at hq) (Or.inr hlt)
+    simp only [app] at this
+    rw [this] at hl; exact hGz hl
+  · cases G with
+    | z => exact absurd rfl hGz
+    | psi s0 b0 c0 =>
+      have hθ : head (psi s0 b0 c0) < psi (succ s0) z z := by
+        show psi s0 b0 z < psi (succ s0) z z
+        rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self s0)
+      rw [omega_big' hG hE] at h
+      obtain ⟨rfl, rfl, _⟩ := T.psi.inj h
+      by_cases hlo : loOf s0 b0 = z
+      · rw [if_pos hlo] at hl
+        by_cases hc : c0 = z
+        · subst hc; exact omega_fix_nolo hG hE hlo
+        · exfalso
+          have hc0 : head c0 < psi (succ s0) z z := by
+            have h4 : head c0 ≤ psi s0 b0 z := (isOT_psi_iff.mp hG).2.2.2.1
+            exact lt_of_le_of_lt h4 hθ
+          have := split_app_of (t := psi (succ s0) z z) (split_fst_ge _ b0) (Or.inr hc0)
+          unfold hiOf at hl; rw [this] at hl; exact hc hl
+      · exfalso
+        rw [if_neg hlo] at hl
+        have := split_app_of (t := psi (succ s0) z z) (split_fst_ge _ b0) (Or.inr hθ)
+        unfold hiOf at hl; rw [this] at hl; cases hl
+
+/-- `fsD` of a single term with a hole is single (for a single index). -/
+theorem fsD_single_of_holeT {μ br vr t η : T} (hH : HoleT μ br vr t) (ht : ∃ s y, t = psi s y z)
+    (hη : ∃ s y, η = psi s y z) : ∃ s y, fsD t η = psi s y z := by
+  obtain ⟨a, b, rfl⟩ := ht
+  by_cases hb : b = z
+  · subst hb
+    have haz : a ≠ z := by
+      intro he; subst he
+      have := holeT_not_succ hH; rw [show isSucc (psi z z z) = true from rfl] at this; cases this
+    by_cases hs : isSucc a = true
+    · rw [fsD_leaf hs haz]; exact hη
+    · rw [fsD_sub haz (by simpa using hs)]; exact ⟨_, _, rfl⟩
+  · rw [fsD_psi hb (not_succ_arg_of_holeT hb hH)]; exact ⟨_, _, rfl⟩
+
+/-! ## VLocal -/
+
+section
+variable {M : Mat} {x r : Nat} {ρ : Valn} {μ br vr ζ X : T} (hx : x + 1 = M.length)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+  (hx2 : entry M 2 x = 0) {q : Nat} (hq : par M 0 x = some q)
+  (hC : Cons M ρ) (hG : Good3 M ρ) (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAD : AbsD M ρ)
+  (hrx : r < x) (hAr : Anc0 M r x) (hro : ρ.o r = psi vr br z)
+  (hcb : cof br = .big μ) (hμr : μ = vr) (hbr : br ≠ z)
+  (hHx : HoleT μ br vr (ρ.o x))
+  (hF1 : ∀ i, r < i → i < x → DepX M x true i → ¬ DepX M x false i → lt μ (ρ.v i) = true)
+  (hOS : ∀ i, i < x → DepX M x true i → OShape M x i)
+  (hS2 : ∀ i k, i ≤ r → DepX M x false i → entry M 2 i = 0 → upg M i = some k → k ≤ r)
+  (hS3 : ∀ i j k, i ≤ r → j ∈ children M i → col M j = bump M i → k ∈ children M j →
+    DepX M x true k → k ≤ r)
+  (hTPLo : TPLo M ρ) (hAU : AbsU M ρ) (hbrl : last br ≠ psi (succ μ) z z)
+  (hζ : ζ = psi μ X z) (hXz : X ≠ z) (hζfix : omega ζ = ζ) (hζΩ : etaOm μ ≤ ζ)
+  (hok : ∀ t, isOT t = true → HoleT μ br vr t → isOT (fsD t ζ) = true ∧ fsD t ζ < t)
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hrx hAr hro hcb hμr hbr hHx hF1 hOS hS2 hS3
+  hTPLo hAU hbrl hζ hXz hζfix hζΩ hok
+
+/-- **`VLocal` on `D`** from the invariants. -/
+theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i := by
+  have hH := t1_hole0 hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hrx hAr hro hcb hμr hbr hHx
+    hF1 hOS hS2 hS3
+  have hζz : ζ ≠ z := by rw [hζ]; simp
+  intro i hi hv
+  obtain ⟨h1, hpd, hcase⟩ := dv_shape hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hi hv
+  refine ⟨h1, hpd, ?_⟩
+  rcases hcase with ⟨h2, hu, hk, hdk⟩ | ⟨h2, L, K, j, k, hch, hjb, hchj, hdk, hKnd, hLnd⟩
+  · -- the upgrade frame
+    left
+    obtain ⟨hHk, _, hSk⟩ := hH false (i + 1) hdk (Or.inl hk)
+    simp only [valB, cond_false] at hHk
+    have hk2 : entry M 2 (i + 1) ≠ 0 := by have := upg_target_e2 hu; omega
+    have hVs := hSk rfl hk2
+    have hkM : i + 1 < M.length := by omega
+    refine ⟨i + 1, h2, hu, hk, hVs, ?_, ?_⟩
+    · apply single_fsD hVs.2 (holeT_not_succ hHk)
+        (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hHk)) ⟨μ, X, hζ⟩
+      exact (hok _ (hG.ot_v _ hkM) hHk).1
+    · intro t ht hlt
+      have hOk := ohole_of_holeT hHk
+      have h0 := hAU i (i + 1) hu hOk t ht hlt
+      rw [holeLev_holeT hHk] at h0
+      exact lt_of_lt_of_le h0 (fsD_mono_eta hOk hζΩ)
+  · -- the bump frame
+    right
+    have hkM : k < M.length := by
+      have : k ∈ children M j := by rw [hchj]; simp
+      exact (mem_children this).2
+    obtain ⟨hHk, _, _⟩ := hH true k hdk (by
+      rcases Nat.lt_or_ge k x with h | h
+      · exact Or.inl h
+      · exact Or.inr ⟨by omega, rfl⟩)
+    simp only [valB, cond_true] at hHk
+    obtain ⟨hBD, _, _⟩ := v_bump_D hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hi h1 h2
+      hch hjb hchj hHk
+    set P := nzs (L.map (bumpTerm M ρ i)) with hPdef
+    set G := sumN (K.map ρ.o ++ [ρ.o k]) with hGdef
+    have hkS : Single (ρ.o k) := hBD.sK _ (List.mem_append_right _ (List.mem_singleton_self _))
+    have hGot : isOT G = true := (sumN_dec _ hBD.sK hBD.pK).1
+    have hGe : G = app (sumN (K.map ρ.o)) (ρ.o k) := sumN_snoc_dec hBD.sK hBD.pK
+    have hHG : HoleT μ br vr G := by rw [hGe]; exact holeT_app _ (single_ne_z hkS) hHk
+    have hHωG := holeT_omega hGot hHG hBD.passG
+    have hωGz : omega G ≠ z := holeT_ne_z hHωG
+    have hHY2 : HoleT μ br vr (app (sumN P) (omega G)) := holeT_app _ hωGz hHωG
+    have hHW := holeT_omega hBD.potW hHY2 hBD.passP
+    -- `fsD(o(k), ζ)`
+    obtain ⟨hfkot, hfklt⟩ := hok _ (hG.ot_o k hkM) hHk
+    have hfkS : Single (fsD (ρ.o k) ζ) := by
+      apply single_fsD (o_psi_form hC hkM) (holeT_not_succ hHk)
+        (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hHk)) ⟨μ, X, hζ⟩ hfkot
+    have hfkz : fsD (ρ.o k) ζ ≠ z := single_ne_z hfkS
+    set G' := sumN (K.map ρ.o ++ [fsD (ρ.o k) ζ]) with hG'def
+    have hsK' : ∀ t ∈ K.map ρ.o ++ [fsD (ρ.o k) ζ], Single t := by
+      intro t ht
+      rcases List.mem_append.mp ht with ht | ht
+      · exact hBD.sK t (List.mem_append_left _ ht)
+      · rw [List.mem_singleton] at ht; rw [ht]; exact hfkS
+    have hpK' : (K.map ρ.o ++ [fsD (ρ.o k) ζ]).Pairwise (fun a b => b ≤ a) := by
+      have hpK := hBD.pK
+      rw [List.pairwise_append] at hpK ⊢
+      refine ⟨hpK.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
+      rw [List.mem_singleton] at hb; rw [hb]
+      exact le_trans (le_of_lt hfklt) (hpK.2.2 a ha _ (List.mem_singleton_self _))
+    have hG'ot : isOT G' = true := (sumN_dec _ hsK' hpK').1
+    have hG'e : G' = app (sumN (K.map ρ.o)) (fsD (ρ.o k) ζ) := sumN_snoc_dec hsK' hpK'
+    have hG'z : G' ≠ z := by rw [hG'e]; intro he; exact hfkz (app_eq_z he).2
+    have hG'lt : G' < G := by rw [hG'e, hGe]; exact app_lt_app_left _ hfklt
+    have hωle : omega G' ≤ omega G := le_of_lt (omega_lt_omega hG'ot hGot hG'lt)
+    have hfG : fsD G ζ = G' := by rw [hGe, hG'e]; exact fsD_app _ (single_ne_z hkS) ζ
+    -- TPL for `G` and for `P + ω^G`
+    have hTG : ∀ s b, G = psi s b z → (split b (psi (succ s) z z)).2 = z → ∀ a, last b = psi a z z →
+        isSucc a = false → OHole a → ¬ psi (fsD a (etaOm μ)) z z < psi (succ s) z z := by
+      intro s b hGsb hl a hla has hOa
+      have hK0 : sumN (K.map ρ.o) = z := by
+        by_contra hK
+        exact app_single_ne hK (single_ne_z hkS) (by rw [← hGe]; exact hGsb)
+      have hok' : ρ.o k = psi s b z := by rw [← hGsb, hGe, hK0]; rfl
+      have hb : b ≠ z := by
+        intro hb0; rw [hb0] at hla; simp [last] at hla
+      have hHb := holeT_arg hb (by rw [← hok']; exact hHk) hcb
+      have := hTPLo k hkM s b hok' hl a hla has hOa
+      rwa [holeLev_holeT hHb] at this
+    have hTY2 : ∀ s b, app (sumN P) (omega G) = psi s b z → (split b (psi (succ s) z z)).2 = z →
+        ∀ a, last b = psi a z z → isSucc a = false → OHole a →
+        ¬ psi (fsD a (etaOm μ)) z z < psi (succ s) z z := by
+      intro s b hY hl
+      have hP0 : sumN P = z := by
+        by_contra hP; exact app_single_ne hP hωGz hY
+      rw [hP0] at hY
+      have hY' : omega G = psi s b z := hY
+      have hfix := omega_single_nolo hGot (holeT_ne_z hHG) hY' hl
+      exact hTG s b (by rw [← hfix]; exact hY') hl
+    have hωGfs : fsD (omega G) ζ = omega G' := by
+      rw [omega_fsD_hole hGot hHG hcb hbrl hζ hXz hζfix hζΩ hok hTG, hfG]
+    have hωp : fsD (omega (app (sumN P) (omega G))) ζ = omega (app (sumN P) (omega G')) := by
+      rw [omega_fsD_hole hBD.potW hHY2 hcb hbrl hζ hXz hζfix hζΩ hok hTY2,
+        fsD_app _ hωGz ζ, hωGfs]
+    -- absorption
+    have hOW : OHole (bumpW M ρ i) := by rw [hBD.W]; exact ohole_of_holeT hHW
+    obtain ⟨hA1, hA2⟩ := hAD i (by omega) h1 h2 hOW
+    rw [hBD.W] at hA1 hA2
+    rw [holeLev_holeT hHW] at hA2
+    have hsW' : ∃ s y, omega (app (sumN P) (omega G')) = psi s y z := omega_single _
+    refine ⟨L, K, j, k, h2, hch, hjb, hchj, hKnd, hLnd, hfkS, hBD.sK, hBD.pK, hBD.sL, hBD.pp, ?_,
+      hBD.gt, ?_, hωp, ?_, hBD.passG, hBD.passP⟩
+    · -- pairwise with `ω^{G'}`
+      have hpp := hBD.pp
+      rw [List.pairwise_append] at hpp ⊢
+      refine ⟨hpp.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
+      rw [List.mem_singleton] at hb; rw [hb]
+      exact le_trans hωle (hpp.2.2 a ha _ (List.mem_singleton_self _))
+    · intro t ht
+      rcases List.mem_append.mp ht with ht | ht
+      · exact hBD.gt t (List.mem_append_left _ ht)
+      · rw [List.mem_singleton] at ht; rw [ht, ← omega_z]
+        exact omega_lt_omega rfl hG'ot (lt_of_le_of_ne (z_le _) (Ne.symm hG'z))
+    · intro Y hY
+      simp only [List.mem_cons, List.mem_nil_iff, or_false] at hY
+      rcases hY with rfl | rfl
+      · exact hA1
+      · rw [← hωp]
+        exact add_absorb_mono hA2 (fsD_mono_eta (ohole_of_holeT hHW) hζΩ)
+          (fsD_single_of_holeT hHW (omega_single _) ⟨μ, _, rfl⟩)
+          (by rw [hωp]; exact hsW')
+
+end
+
 end Ytosk
