@@ -6,7 +6,9 @@
 - spArg(μ, b, seed) = b + seed（`spArg_seed`）。
 - SeedOK: seed の添字が μ なら `seedOK_of_lhd_top`、μ より小さいなら成分の条件 hcs から `seedOK_of_c2`。
 - 始点の (L)(ii): seed ≥ ψ_μ(1) なら TPLoW から。そうでない場合（b = 0、r = x − 1 のときだけ）は仮定 hLs0。
-残る仮定（q = r に固有）: hYB、hcs（添字が μ より小さい始点の成分は始点より小さい）、hLs0。
+- y = b_r の書き換えの枠の (W)（B < b + ζ）: 鎖の 2 項目以降は TP1（t1 の不変条件、η = ψ_μ(1)）から。
+残る仮定（q = r に固有、どれも始点が ψ_μ(1) より小さい場合（b = 0）か添字が μ より小さい場合だけ）:
+hYBs（始点で B < b + seed）、hcs（始点の成分は始点より小さい）、hLs0（始点での (L)(ii)）。
 -/
 import Ytosk.V3QRSeed
 import Ytosk.V3MainT1F
@@ -35,12 +37,14 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     (hAD : AbsD M ρ) (hTP : TP1W M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUW M ρ) (hAD' : AbsDW M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- `q = r`
-    (hYB : ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+    (hTP1 : TP1 M ρ)
+    (hYBs : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z →
+      ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
       DepX M (r + L) true c → ∀ s,
       ρ.o c = psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z →
       lt (preState M ρ i L') (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) = true →
       lt (psi (ρ.v i) z z) (psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
-      preState M ρ i L' ≤ qrB M ρ r (r + L))
+      lt (preState M ρ i L') (app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r)) = true)
     (hcs : lt (sf ((drop1 M (r + L) rkM).v r)) (ρ.v r) = true →
       ∀ u g, g ∈ comps u ((drop1 M (r + L) rkM).o r) → g < (drop1 M (r + L) rkM).o r)
     (hLs0 : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z → ∀ c, c < r + L → DepX M (r + L) true c →
@@ -157,6 +161,29 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
         · exact absurd (le_of_eq h.symm) h1s
         · exact absurd (le_of_lt h) h1s
       exact hLs0 hlt1 c hc hdc hd0 s y hcv hyb hl
+  -- (W) at the frames with the child `ψ_s(b_r)`: TP1 for the chain from the second term, `hYBs` at the seed
+  have hYB : ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+      DepX M (r + L) true c → ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →
+      lt (preState M ρ i L') (app b (psi (succ μ) z z)) = true →
+      lt (psi (ρ.v i) z z) (psi s (app b (psi (succ μ) z z)) z) = true →
+      ∀ m', lt (preState M ρ i L') (app b (gamS μ (app b (psi (succ μ) z z)) seed m')) = true := by
+    intro i L' c R hi hd hch hdc s hcv htr1 htr2 m'
+    have h0 := hTP1 i L' c R hch s _ hcv htr1 htr2 (ohole_of_cof_big cof_br)
+    rw [holeLev_cof cof_br, fsD_eq_fs cof_br, fs_br] at h0
+    by_cases h1s : psi μ one z ≤ gamS μ (app b (psi (succ μ) z z)) seed m'
+    · refine lt_of_lt_of_le (show preState M ρ i L' < app b (psi μ one z) from h0) ?_
+      rcases (le_iff _ _).mp h1s with h | h
+      · exact le_of_lt (app_lt_app_left b h)
+      · rw [h]
+    · cases m' with
+      | succ k => exact absurd (gamS_ge_psi1 hseedz k) h1s
+      | zero =>
+        have hlt1 : seed < psi μ one z := by
+          rcases lt_trichotomy' seed (psi μ one z) with h | h | h
+          · exact h
+          · exact absurd (le_of_eq h.symm) h1s
+          · exact absurd (le_of_lt h) h1s
+        exact hYBs hlt1 i L' c R hi hd hch hdc s hcv htr1 htr2
   exact qr_final2 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hKD hTD
     hAD hTP hTPL hAU' hAD' hsM hpM hYB hS hsp0 hLs
 

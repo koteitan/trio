@@ -7,7 +7,7 @@
 - 子 c < x（c ≤ r、対角化の点の下）: 引き上げ（`qr_frame_lift`、B ≤ b から (W)）か、引き上げなし
   （`qr_frame_nolift`: (W) は TP1W か B ≤ b、(L)(ii) は y ≠ b_r なら TPLoW（添字 ≥ 1）か始点の仮定 hLs、
   y = b_r なら引き上げの数 ≥ 1（`qr_d_pos`）で ζ = ψ_μ(…)）。
-残る仮定: TP1W・TPLoW（大域の値の不変条件）、y = b_r の枠で B ≤ b（hYB）、始点の (L)(ii)（hLs）、
+残る仮定: TP1W・TPLoW（大域の値の不変条件）、y = b_r の書き換えの枠で B < b + ζ（鎖のすべての項、hYB）、始点の (L)(ii)（hLs）、
 r の枠の始点の条件 spArg(μ, b, seed) = b + seed（hsp0）。
 -/
 import Ytosk.V3QRKeep
@@ -48,7 +48,8 @@ variable {M : Mat} {x r : Nat} {ρ : Valn} {μ b seed : T} (hx : x + 1 = M.lengt
   (hYB : ∀ i L c R, i < x → DepX M x true i → children M i = L ++ c :: R → DepX M x true c →
     ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →
     lt (preState M ρ i L) (app b (psi (succ μ) z z)) = true →
-    lt (psi (ρ.v i) z z) (psi s (app b (psi (succ μ) z z)) z) = true → preState M ρ i L ≤ b)
+    lt (psi (ρ.v i) z z) (psi s (app b (psi (succ μ) z z)) z) = true →
+    ∀ m', lt (preState M ρ i L) (app b (gamS μ (app b (psi (succ μ) z z)) seed m')) = true)
   (hLs : ∀ c, c < x → DepX M x true c → dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
     ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) →
     (split y (psi (succ s) z z)).2 = z → (split (fsD y seed) (psi (succ s) z z)).2 = z)
@@ -137,12 +138,11 @@ theorem qr_oloc (m : Nat) : ∀ i, i < x → DepX M x true i →
       · rename_i hcond
         obtain ⟨hcA, htr1, htr2⟩ := hcond
         rw [hfl] at htr1
-        have hBb := hYB i L c R hi hd hch hdc μ hcA htr1 htr2
         rw [hdO, hlo1, show m + (dOf M x lo lb c + 1) = k + 1 by omega, gamS_succ_q]
         exact qr_frame_lift hC hG hiM hch hcb hcu hR hcM hb hcA
           (by rw [← gamS_succ_q]; exact gamS_ot hrot cof_br hμ (hS μ hμ hrot) (k + 1))
           ⟨htr1, htr2⟩ (gamS_lt_om hrot cof_br hμ (hS μ hμ hrot) k) hζz
-          (lt_of_le_of_lt hBb (lt_app_of hζz))
+          (hYB i L c R hi hd hch hdc μ hcA htr1 htr2 k)
       · exact absurd hl (by omega)
     · -- no lift
       have hlo0 : lo i c = 0 := by
@@ -154,7 +154,8 @@ theorem qr_oloc (m : Nat) : ∀ i, i < x → DepX M x true i →
         intro s y hcv htr1 htr2
         by_cases hyb : y = br
         · subst hyb
-          exact hW_br (hYB i L c R hi hd hch hdc s hcv htr1 htr2) hζz
+          rw [fsD_eq_fs cof_br, fs_br]
+          exact hYB i L c R hi hd hch hdc s hcv htr1 htr2 k
         · have hyz : y ≠ z := by intro h; subst h; simp [lt] at htr1
           have hDy : DiagAt a' br μ y := DiagAt.arg_inv (by rw [← hcv]; exact hDc) hyz
             (fun h => hyb h.2)

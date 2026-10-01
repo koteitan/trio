@@ -6,7 +6,7 @@
 （`drop1`、`base_v_read`）を入れる（`qr_final`）。
 残る仮定:
 - 値の不変条件: BumpKidsDec・BumpTermDec・AbsD（t1 と共通）、TP1W・TPLoW・AbsUW・AbsDW（η = 1 版）。
-- y = b_r の書き換えの枠で B ≤ b（hYB）。
+- y = b_r の書き換えの枠で B < b + ζ（鎖のすべての項、hYB）。
 - 始点 seed = o_{M[1]}(r) の条件: SeedOK（hS）、spArg(μ, b, seed) = b + seed（hsp0）、引き上げのない列の
   (L)(ii)（hLs）。
 -/
@@ -35,7 +35,9 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
     (hYB : ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
       DepX M (r + L) true c → ∀ s, ρ.o c = psi s (app b (psi (succ (ρ.v r)) z z)) z →
       lt (preState M ρ i L') (app b (psi (succ (ρ.v r)) z z)) = true →
-      lt (psi (ρ.v i) z z) (psi s (app b (psi (succ (ρ.v r)) z z)) z) = true → preState M ρ i L' ≤ b)
+      lt (psi (ρ.v i) z z) (psi s (app b (psi (succ (ρ.v r)) z z)) z) = true →
+      ∀ m', lt (preState M ρ i L')
+        (app b (gamS (ρ.v r) (app b (psi (succ (ρ.v r)) z z)) ((drop1 M (r + L) rkM).o r) m')) = true)
     -- the seed `o_{M[1]}(r)`
     (hS : ∀ a', ¬ lt (ρ.v r) a' = true →
       isOT (psi a' (app b (psi (succ (ρ.v r)) z z)) z) = true →

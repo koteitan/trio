@@ -30,7 +30,9 @@ theorem qr_final2 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       ρ.o c = psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z →
       lt (preState M ρ i L') (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) = true →
       lt (psi (ρ.v i) z z) (psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
-      preState M ρ i L' ≤ qrB M ρ r (r + L))
+      ∀ m', lt (preState M ρ i L') (app (qrB M ρ r (r + L))
+        (gamS (ρ.v r) (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) ((drop1 M (r + L) rkM).o r) m'))
+        = true)
     (hS : ∀ a', ¬ lt (ρ.v r) a' = true →
       isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
       SeedOK a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) (ρ.v r)
