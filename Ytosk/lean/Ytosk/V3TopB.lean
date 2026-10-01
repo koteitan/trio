@@ -22,7 +22,8 @@ structure Res3A (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
     ∀ u g, g ∈ comps u ((drop1 M (M.length - 1) rk).o r) → g < (drop1 M (M.length - 1) rk).o r
   t0 : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     ∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
-      r < r + L - 1 → upg M (r + L - 1) = none
+      ∀ k ∈ children M r, k < r + L → (drop1 M (r + L) rk).o k ≠ ρ.o k →
+        LhdE ((drop1 M (r + L) rk).v k) (ρ.v k)
 
 /-- **The top hypothesis, for every valuation**: every nonempty standard matrix other than SRO has a
 ranking, and every valuation and ranking of it satisfy `Inv3` and `Res3A`. -/

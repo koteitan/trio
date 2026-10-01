@@ -271,8 +271,9 @@ end
 Hypotheses: those of the drop lemma (as `t0_n1`, without `hVL`: the shape of `D` is `dv_shape` and the
 strictness of the drop is `dep_strict0`), and for `N = M[n]`: its valuation satisfies `Good3`,
 `VSmallNewN` and the root values do not increase; the last copy root counts at `g` when `r` does;
-`hVr` (a changed `v(r)` in `M.take x` is small in a rewriting frame of `g`); `hU` (in the bump case
-`x − 1` has no upgrade, so the children of `r` keep their values in `M.take x`: `children_r_take_same`). -/
+`hVr` (a changed `v(r)` in `M.take x` is small in a rewriting frame of `g`); `hWk` (in the bump case,
+a child of `r` whose `o` changes in `M.take x` has `v′ ⊴ v`: the last copy's sum then drops in the strong
+relation, `g0_drop_rel`, and seed S2 is `t0_S2G`). -/
 theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
@@ -294,8 +295,9 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
       par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
       lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
       VSmallV s')
-    (hU : ∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
-      r < r + L - 1 → upg M (r + L - 1) = none)
+    (hWk : ∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
+      ∀ k ∈ children M r, k < r + L → (drop1 M (r + L) rkM).o k ≠ ρ.o k →
+        LhdE ((drop1 M (r + L) rkM).v k) (ρ.v k))
     (hN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
       (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
@@ -401,8 +403,30 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
           have := congrArg List.getLast? (hch.symm.trans hchM)
           simpa using this
         subst hjr
-        apply t0_S2 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hjb h1 h2
-          hTD hAbs
+        -- the children of `r` in `M.take x` and the last copy
+        have hdropR : isOT (sumN ((children (M.take (j' + L)) j').map ρ'.o)) = true ∧
+            BRelS (sumN ((children (M.take (j' + L)) j').map ρ'.o))
+              (sumN ((children (M.take (j' + L)) j').map ρ.o)) :=
+          g0_drop_rel (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hWS
+            h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN)
+            (fun k _ hk => hdrop k hk) (hWk g hg hjb h1 h2)
+        have hG0ot : isOT (sumN ((children (M.take (j' + L)) j').map ρ.o)) = true := isOT_sumN _ (fun t ht => by
+          obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+          rw [children_take, List.mem_filter] at hc
+          exact hG.ot_o c (mem_children hc.1).2)
+        have hcopy : ∀ k, k < n → bumpTerm N σ g (j' + k * L) =
+            omega (sumN (((children M j').filter (fun c => decide (c < j' + L))).map
+              (σ.o ∘ shk j' (k * L)))) := by
+          intro k hk
+          have hcolk : col N (j' + k * L) = bump N g := by
+            rw [col_root0 hlen hL hp hn hk, bump_pre0 hlen hL hp hn (by omega)]; exact hjb
+          unfold bumpTerm
+          rw [if_pos hcolk]
+          have hch0 := children_copy0 hlen hL hp hn (k := k) (q := 0) hk hL
+          rw [Nat.add_zero, Nat.add_zero] at hch0
+          rw [hch0, List.map_map]
+        apply t0_S2G (O' := omega (sumN ((children (M.take (j' + L)) j').map ρ'.o))) hlen hL hp hn hR0 hZ2
+          hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hjb h1 h2 hTD hAbs
         · intro d hd hdr
           have hdL : d ∈ Lb := by
             rw [hch] at hd
@@ -419,46 +443,33 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
             intro e he
             have her := children_lt_r hlen hL hp hdr hdg he
             exact (hoffD e her).1 (hLnd d hdL e he).2
-        · intro k hk
-          have hcolk : col N (j' + k * L) = bump N g := by
-            rw [col_root0 hlen hL hp hn hk, bump_pre0 hlen hL hp hn (by omega)]; exact hjb
-          unfold bumpTerm
-          rw [if_pos hcolk]
-          congr 1
-          have hch0 := children_copy0 hlen hL hp hn (k := k) (q := 0) hk hL
-          rw [Nat.add_zero, Nat.add_zero] at hch0
-          rw [hch0, List.map_map, children_take]
-          by_cases hkn : k + 1 < n
-          · congr 1
-            apply List.map_congr_left
-            intro c hc
-            rw [List.mem_filter] at hc
-            have hcgt := (mem_children hc.1).1
-            have hcx : c < j' + L := by simpa using hc.2
-            obtain ⟨q', rfl⟩ : ∃ q', c = j' + q' := ⟨c - j', by omega⟩
-            simp only [Function.comp]
-            rw [shk_B, hσB _ (by omega) (by
-              rw [hlN]; have : k * L + L ≤ n * L := by
-                have := Nat.mul_le_mul_right L (show k + 1 ≤ n by omega); rw [Nat.succ_mul] at this
-                exact this
-              omega), tau_o_mid hkn (by omega) (by omega)]
-          · have hk' : k = n - 1 := by omega
-            subst hk'
-            have hG'' : sumN ((children (M.take (j' + L)) j').map ρ'.o) =
-                sumN ((children (M.take (j' + L)) j').map ρ.o) := by
-              rw [children_r_take_same (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
-                he1 (by simpa using hU g hg hjb h1 h2) hC hG hC1 hRk1]
-            rw [children_take] at hG''
-            rw [← hG'']
-            congr 1
-            apply List.map_congr_left
-            intro c hc
-            rw [List.mem_filter] at hc
-            have hcgt := (mem_children hc.1).1
-            have hcx : c < j' + L := by simpa using hc.2
-            obtain ⟨q', rfl⟩ : ∃ q', c = j' + q' := ⟨c - j', by omega⟩
-            simp only [Function.comp]
-            rw [shk_B, hσB _ (by omega) (by rw [hlN]; omega), tau_o_last (by omega)]
+        · intro k hkn
+          rw [hcopy k (by omega), children_take]
+          congr 1; congr 1
+          apply List.map_congr_left
+          intro c hc
+          rw [List.mem_filter] at hc
+          have hcgt := (mem_children hc.1).1
+          have hcx : c < j' + L := by simpa using hc.2
+          obtain ⟨q', rfl⟩ : ∃ q', c = j' + q' := ⟨c - j', by omega⟩
+          simp only [Function.comp]
+          rw [shk_B, hσB _ (by omega) (by
+            rw [hlN]; have : k * L + L ≤ n * L := by
+              have := Nat.mul_le_mul_right L (show k + 1 ≤ n by omega); rw [Nat.succ_mul] at this
+              exact this
+            omega), tau_o_mid hkn (by omega) (by omega)]
+        · rw [hcopy (n - 1) (by omega), children_take]
+          congr 1; congr 1
+          apply List.map_congr_left
+          intro c hc
+          rw [List.mem_filter] at hc
+          have hcgt := (mem_children hc.1).1
+          have hcx : c < j' + L := by simpa using hc.2
+          obtain ⟨q', rfl⟩ : ∃ q', c = j' + q' := ⟨c - j', by omega⟩
+          simp only [Function.comp]
+          rw [shk_B, hσB _ (by omega) (by rw [hlN]; omega), tau_o_last (by omega)]
+        · exact single_omega hdropR.1
+        · exact brelS_lhdE (brelS_omega hdropR.1 hG0ot hdropR.2)
         · rw [par1_pre0 hlen hL hp hn hgr]
           cases hpp : par M 1 g with
           | none => rfl
@@ -564,8 +575,9 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
       lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
       VSmallV s')
-    (hU : ∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
-      r < r + L - 1 → upg M (r + L - 1) = none)
+    (hWk : ∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
+      ∀ k ∈ children M r, k < r + L → (drop1 M (r + L) rkM).o k ≠ ρ.o k →
+        LhdE ((drop1 M (r + L) rkM).v k) (ρ.v k))
     (hN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
       (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
@@ -573,6 +585,6 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ :=
   t0_main' hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM hVS hF hFO hArgT hKD hTD
-    hAbs hWS hVSt hUA hsM hpM hLast hVr hU hN
+    hAbs hWS hVSt hUA hsM hpM hLast hVr hWk hN
 
 end Ytosk

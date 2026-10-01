@@ -377,7 +377,8 @@ structure Res3 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
       lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
       VSmallV s') ∧
     (∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
-      r < r + L - 1 → upg M (r + L - 1) = none) ∧
+      ∀ k ∈ children M r, k < r + L → (drop1 M (r + L) rk).o k ≠ ρ.o k →
+        LhdE ((drop1 M (r + L) rk).v k) (ρ.v k)) ∧
     (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
       (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
