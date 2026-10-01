@@ -17,6 +17,23 @@ open T
 noncomputable def drop1 (M : Mat) (x : Nat) (rk : Bool → Nat → Nat) : Valn :=
   rhsIt (M.take x) (rkBound (M.take x) rk)
 
+/-- **The value of the last column** (`t = 1`): `o(x) = ψ_{v(r)+1}(0)`. -/
+theorem o_last_t1 {M : Mat} {x r : Nat} {ρ : Valn} (hx : x + 1 = M.length) (hC : Cons M ρ)
+    (hG : Good3 M ρ) (h1 : par M 1 x = some r) (hx1 : entry M 1 x ≠ 0) (hx2 : entry M 2 x = 0) :
+    ρ.o x = psi (succ (ρ.v r)) z z := by
+  have hxM : x < M.length := by omega
+  have hrM : r < M.length := by have := par_lt M 1 x r h1; omega
+  have hvr := hG.ot_v r hrM
+  have hup : upg M x = none := by unfold upg; rw [if_pos (Or.inr (Or.inr hx))]
+  have hvx : ρ.v x = succ (ρ.v r) := by
+    rw [(hC x hxM).2]; unfold vRhs
+    rw [if_neg hx1, if_pos hx2, hup, h1]
+    show sf (add (ρ.v r) one) = succ (ρ.v r)
+    rw [add_one_eq_succ hvr, sf_ot (by rw [← add_one_eq_succ hvr]; exact isOT_add hvr rfl)]
+  have hnc : ∀ c ∈ children M x, ¬ Counted M x c := by
+    intro c hc; have := (mem_children hc).1; have := (mem_children hc).2; omega
+  rw [o_of_no_counted hC hxM (by rw [hvx, ← add_one_eq_succ hvr]; exact isOT_add hvr rfl) hnc, hvx]
+
 /-- **Value invariant**: at an upgrade `i → k`, the summands of `v(P_1 i)` absorbed by the bump term `W` of
 `v(k) = v(P_1 i) + W` are `◁ W` (measured: they are `1`). -/
 def UpgAbs (M : Mat) (ρ : Valn) : Prop :=
@@ -41,8 +58,7 @@ theorem t1_main_drop {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
     (hUA : UpgAbs M ρ)
     (hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r)
     {μ br vr : T}
-    (hrot : isOT (psi vr br z) = true) (hcb : cof br = .big μ) (hμr : μ = vr) (hbr : br ≠ z)
-    (hoxv : ρ.o (r + L) = psi (succ μ) z z) (hro : ρ.o r = psi vr br z)
+    (hcb : cof br = .big μ) (hμr : μ = vr) (hbr : br ≠ z) (hro : ρ.o r = psi vr br z)
     (hF1 : ∀ i, r < i → i < r + L → DepX M (r + L) true i → ¬ DepX M (r + L) false i →
       lt μ (ρ.v i) = true)
     (hV : ∀ m i, i < r + L → DepX M (r + L) false i →
@@ -78,6 +94,9 @@ theorem t1_main_drop {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
     obtain ⟨y0, hy0⟩ := o_psi_sub hC hrM
     rw [hro] at hy0; simp only [psi.injEq] at hy0
     rw [hy0.1, sf_ot (hG.ot_v r hrM)]
+  have hrot : isOT (psi vr br z) = true := by rw [← hro]; exact hG.ot_o r hrM
+  have hoxv : ρ.o (r + L) = psi (succ μ) z z := by
+    rw [o_last_t1 hlen hC hG h1 (by have := par1_entry_lt h1; omega) hx2, hvr, hμr]
   obtain ⟨hlhd, hot⟩ := base_seed hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hr (hdrop r hr).1 hv hne
   apply t1_main_struct hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
     hrot hcb hμr hbr hoxv hro hF1 (by rw [← hvr]; exact hv) hot hlhd _ hV hW hLo hsM hpM
