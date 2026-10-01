@@ -547,13 +547,15 @@ def BumpWeakShape (M : Mat) (ρ : Valn) : Prop :=
       children M i = [j] ∧ (children M j).head? = some k ∧ CS (vOpt ρ (par M 1 i))
 
 /-- **Hypothesis on the drop** (the shape of the weak sources that actually occur): the condition of
-`BumpWeakShape` only for a child `k` that is `x` or whose `o` changes in `M.take x`.
+`BumpWeakShape` only for a child `k` that is `x` as the only child of `j`, or whose `o` changes in
+`M.take x`.
 `BumpWeakShape` itself is false on matrices reachable from SRO: in
 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,1,0)(3,2,1) the column 5 has two bump children and
-the leaf 7 under the first has `o = ψ_1(0)`. This form: SRO からの乱択の展開（長さ 14 まで）で例外 0. -/
+the leaf 7 under the first has `o = ψ_1(0)`. This form: SRO からの乱択の展開（長さ 20 まで、接頭辞込み 7 万個、8648 件）で例外 0. -/
 def BumpWeakSrc (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
   ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
-    ∀ k ∈ children M j, (∃ w, w ≠ z ∧ ρ.o k = psi w z z) → (k = x ∨ ρ'.o k ≠ ρ.o k) →
+    ∀ k ∈ children M j, (∃ w, w ≠ z ∧ ρ.o k = psi w z z) →
+      ((k = x ∧ children M j = [x]) ∨ ρ'.o k ≠ ρ.o k) →
       children M i = [j] ∧ (children M j).head? = some k ∧ CS (vOpt ρ (par M 1 i))
 
 theorem BumpWeakShape.src {M : Mat} {ρ : Valn} (h : BumpWeakShape M ρ) (x : Nat) (ρ' : Valn) :
@@ -614,7 +616,8 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     (∀ t ∈ (children (M.take x) jl).map ρ'.o, Single t) ∧
     (BRelS (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∨
       (BWk (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∧
-        ∃ k ∈ children M jl, ∃ w, w ≠ z ∧ ρ.o k = psi w z z ∧ (k = x ∨ ρ'.o k ≠ ρ.o k))) := by
+        ∃ k ∈ children M jl, ∃ w, w ≠ z ∧ ρ.o k = psi w z z ∧
+          ((k = x ∧ children M jl = [x]) ∨ ρ'.o k ≠ ρ.o k))) := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have he2jl : entry M 2 jl ≠ 0 := by rw [e2_of_bump hjlb]; simp
   have hoff := chg_off hx hC hG hC' hRk'
@@ -636,7 +639,7 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       by_cases hvx : ρ.v x = z
       · left; rw [hvx]
         exact Or.inl ⟨Or.inr (lhd_zero (by simp)), one_lt_E0⟩
-      · right; exact ⟨⟨z_le _, Or.inl (T.z_lt_psi _ _ _)⟩, x, by simp, _, hvx, hox, Or.inl rfl⟩
+      · right; exact ⟨⟨z_le _, Or.inl (T.z_lt_psi _ _ _)⟩, x, by simp, _, hvx, hox, Or.inl ⟨rfl, by simp⟩⟩
   · rw [List.concat_eq_append] at hKT
     have hklT : kl ∈ children (M.take x) jl := by rw [hKT]; simp
     obtain ⟨hklx, hklM⟩ := mem_children_take hklT
