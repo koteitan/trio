@@ -108,4 +108,48 @@ theorem cl_prefix {i : Nat} (hi : i < x) : ∃ Tl, CL M i = CL (M.take x) i ++ T
 
 end
 
+/-! ## t = 1・q ≠ r の基底: r とその下の v は変わらない -/
+
+/-- The row-1 parent of a child with a larger row 1 is its parent. -/
+theorem par1_of_child {M : Mat} {p r : Nat} (hp : par M 0 p = some r) (h1 : entry M 1 r < entry M 1 p) :
+    par M 1 p = some r := by
+  show climb (par M 0) (fun q => decide (entry M 1 q < entry M 1 p)) (p + 1) (par M 0 p) = some r
+  rw [hp]
+  simp [climb, h1]
+
+section
+variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB
+
+/-- **`v(r)` does not change** (`t = 1`, `q ≠ r`). -/
+theorem v_r_not_chg {r : Nat} (hA : Anc0 M r x) (hrx : r ≠ x) (hqr : par M 0 x ≠ some r)
+    (hpath : ∀ s, Anc0 M r s → Anc0 M s x → s ≠ r → s ≠ x → entry M 1 r < entry M 1 s) :
+    ¬ ChgX M x false r := by
+  intro hC
+  have hr : r < x := lt_of_le_of_ne hA.le hrx
+  obtain ⟨p, hpr, hpx⟩ := anc0_child hA hrx
+  have hpne : p ≠ x := fun e => hqr (e ▸ hpr)
+  have hpx' : p < x := lt_of_le_of_ne hpx.le hpne
+  have h1 := hpath p (Anc0.step hpr (Anc0.refl r)) hpx (by have := par_lt M 0 p r hpr; omega) hpne
+  exact (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hC).1 rfl hr |>.2.2 p hpx' (par1_of_child hpr h1)
+
+/-- **A `v` read through `P_1` or an ancestor-type upgrade from a column before `x` does not change.** -/
+theorem v_read_not_chg {g d : Nat} (hd : d < x)
+    (h : par M 1 d = some g ∨ (upg M d = some g ∧ g < d)) : ¬ ChgX M x false g := by
+  intro hC
+  have hgd : g < d := by
+    rcases h with h | h
+    · exact par_lt M 1 d g h
+    · exact h.2
+  have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hC).1 rfl (by omega)
+  rcases h with h | ⟨hu, _⟩
+  · exact hT.2.2 d hd h
+  · obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu
+    rcases hcase with h' | ⟨hAg, _⟩
+    · omega
+    · exact no_anc_upg hx hR0 hZ2 hSD hZ1 hUAT hUAB hT (by omega) hu hAg hgd
+
+end
+
 end Ytosk
