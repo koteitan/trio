@@ -389,4 +389,47 @@ theorem fsD_mono_big {t μ : T} (hc : cof t = .big μ) {η η' : T} (hlt : η < 
     fsD t η < fsD t η' := by
   rw [fsD_eq_fs hc, fsD_eq_fs hc]; exact fs_mono hc hlt
 
+/-- The diagonal node is standard when the term is. -/
+theorem DiagAt.ot_node {a b μ : T} {t : T} (h : DiagAt a b μ t) (hot : isOT t = true) :
+    isOT (psi a b z) = true := by
+  induction h with
+  | here => exact hot
+  | rest _ ih => exact ih (isOT_rest hot)
+  | arg _ _ _ ih => exact ih (isOT_arg hot)
+  | sub _ _ _ ih => exact ih (isOT_sub hot)
+
+/-- The seed `0` is always good. -/
+theorem seedOK_z (a b μ : T) : SeedOK a b μ z where
+  ot := rfl
+  lt_om := T.z_lt_psi _ _ _
+  lt_next := T.z_lt_psi _ _ _
+  comps_a := by intro g hg; simp [comps] at hg
+  dom := by intro u c0 c1 _ _ _ g hg; simp [comps] at hg
+
+/-- **Denis's `γ_1 = ψ_μ(b[0])` is a good seed.** -/
+theorem seedOK_gam1 {a b μ : T} (hot : isOT (psi a b z) = true) (hcb : cof b = .big μ)
+    (hμ : ¬ lt μ a = true) : SeedOK a b μ (psi μ (fs b z) z) := by
+  have hS0 := seedOK_z a b μ
+  have hbot : isOT b = true := isOT_arg hot
+  refine ⟨gamS_ot hot hcb hμ hS0 1, gamS_lt_om hot hcb hμ hS0 1, gamS_mono hot hcb hμ hS0 1,
+    gamS_comps hot hcb hμ hS0 1, ?_⟩
+  intro u c0 c1 h1 h2 hau g hg
+  have hμu : ¬ lt μ u = true := fun h => hau (show a < u from lt_of_le_of_lt (le_of_not_gt hμ) h)
+  have hin : ∀ w ∈ comps u c0, w ∈ comps u (psi a c0 c1) := fun w hw => mem_comps_psi_arg hau hw
+  have hc0in : c0 ∈ comps u (psi a c0 c1) := by simp [comps, hau]
+  have hg1 : fs b z < fs b (psi μ (fs b z) z) := fs_mono hcb (T.z_lt_psi _ _ _)
+  simp only [comps, hμu, Bool.false_eq_true, if_false, List.mem_append, List.mem_cons] at hg
+  rcases hg with (rfl | hg | hg) | hg
+  · exact ⟨c0, List.mem_append_left _ hc0in, le_of_lt (lt_trans hg1 h1)⟩
+  · have hl := lhd_fs hbot (show ValidLt b z by unfold ValidLt; rw [hcb]; exact T.z_lt_psi _ _ _)
+    obtain ⟨y, hy, hgy⟩ := hl.2 u c0 (lt_trans hg1 h1) h2 g hg
+    rcases List.mem_append.mp hy with hy | hy
+    · exact ⟨y, List.mem_append_left _ (hin y hy), hgy⟩
+    · exact ⟨y, List.mem_append_right _ (by simpa [Gc, comps] using hy), hgy⟩
+  · have hge : psi μ z z ≤ psi μ (fs b z) z := gamS_ge hot hcb hμ hS0 0
+    have hlt : psi μ (fs b z) z < psi (succ μ) z z := gamS_lt_om hot hcb hμ hS0 1
+    have := comps_mu hbot hcb hge hlt (le_of_lt h1) h2 hμu g hg
+    exact ⟨g, List.mem_append_left _ (hin g this), le_refl _⟩
+  · simp at hg
+
 end Ytosk

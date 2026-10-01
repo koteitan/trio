@@ -30,7 +30,7 @@ theorem twoRow_chain_W {M : Mat} {r q : Nat} (hM : 2 ≤ M.length)
     (ht1 : TRIO.srow M (M.length - 1) = 1) (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
     (hq : par M 0 (M.length - 1) = some q) (hqμ : lt (vr M r) (vr M q) = true)
     (hF1 : ∀ k, 1 ≤ k → F1 (expand M k))
-    (hSa : ∀ a', ¬ lt (vr M r) a' = true →
+    (hSa : ∀ a', ¬ lt (vr M r) a' = true → isOT (psi a' (argOf (o2r M r)) z) = true →
       SeedOK a' (argOf (o2r M r)) (vr M r) (o2r (expand M 1) r))
     (hW : ∀ m h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
       lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true →
@@ -51,7 +51,7 @@ theorem twoRow_chain_W {M : Mat} {r q : Nat} (hM : 2 ≤ M.length)
   have hbarg : argOf (o2r M r) = b := by rw [hrv]; rfl
   have hμμ : ¬ lt (vr M r) (vr M r) = true := by simp [Bool.eq_false_iff.mpr (lt_irrefl' _)]
   have hot : isOT (psi (vr M r) b z) = true := by rw [← hrv]; exact hG.ot r
-  have hS := hSa _ hμμ
+  have hS := hSa _ hμμ (by rw [hbarg]; exact hot)
   rw [hbarg] at hS
   -- the seed has subscript `μ`
   have hc1 : ∃ y1, o2r (expand M 1) r = psi (vr M r) y1 z := by
@@ -75,7 +75,7 @@ theorem twoRow_chain_W {M : Mat} {r q : Nat} (hM : 2 ≤ M.length)
       rw [fsD_eq_fs hc]
       exact fs_ot_lt (hG.ot p) ⟨gamS_ot hot hcb hμμ hS m, by rw [hc]; exact gamS_lt_om hot hcb hμμ hS m⟩
     · obtain ⟨a', ha', hD⟩ := habove p hp h1
-      have hSa' := hSa a' ha'
+      have hSa' := hSa a' ha' (by rw [hbarg]; exact DiagAt.ot_node hD (hG.ot p))
       rw [hbarg] at hSa'
       obtain ⟨h2, h3⟩ := fsD_seed hSa' hD (hG.ot p) m
       exact ⟨h2, h3.1⟩
@@ -119,7 +119,7 @@ theorem twoRow_chain_W2 {M : Mat} {r q : Nat} (hM : 2 ≤ M.length)
     (ht1 : TRIO.srow M (M.length - 1) = 1) (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
     (hq : par M 0 (M.length - 1) = some q) (hqμ : lt (vr M r) (vr M q) = true)
     (hF1 : ∀ k, 1 ≤ k → F1 (expand M k))
-    (hSa : ∀ a', ¬ lt (vr M r) a' = true →
+    (hSa : ∀ a', ¬ lt (vr M r) a' = true → isOT (psi a' (argOf (o2r M r)) z) = true →
       SeedOK a' (argOf (o2r M r)) (vr M r) (o2r (expand M 1) r))
     (hW2 : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
       lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true → bst M h p ≤ fsD y z) :
@@ -154,5 +154,30 @@ theorem twoRow_chain_W2 {M : Mat} {r q : Nat} (hM : 2 ≤ M.length)
         exact fsD_mono_big hcb hζpos
       · exact (DiagAt.arg_inv hD hy hne).fsD_mono hζpos
   exact lt_of_le_of_lt (hW2 h p s y hp hph hc htr1 htr2) hmono
+
+/-- **The two-row `t = 1`, `q ≠ r` chain when the seed is Denis's `γ_1`.** -/
+theorem twoRow_chain_gam {M : Mat} {r q : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht1 : TRIO.srow M (M.length - 1) = 1) (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
+    (hq : par M 0 (M.length - 1) = some q) (hqμ : lt (vr M r) (vr M q) = true)
+    (hF1 : ∀ k, 1 ≤ k → F1 (expand M k))
+    (hc1 : o2r (expand M 1) r = psi (vr M r) (fs (argOf (o2r M r)) z) z)
+    (hW2 : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
+      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true → bst M h p ≤ fsD y z) :
+    ∀ k, 2 ≤ k →
+      o2r (expand M k) r = gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) (k - 1) ∧
+      ∀ h, Anc0 M h (M.length - 1) →
+        o2r (expand M k) h =
+          fsD (o2r M h) (gamS (vr M r) (argOf (o2r M r)) (o2r (expand M 1) r) (k - 2)) := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hr1 : par M 1 (M.length - 1) = some r := by have h := hr; rw [ht1] at h; exact h
+  obtain ⟨b, hrv, _, hcb, _, _⟩ := twoRow_shape hG hx hr1 hb1
+  have hbarg : argOf (o2r M r) = b := by rw [hrv]; rfl
+  apply twoRow_chain_W2 hM hz hr ht1 hG hb1 hq hqμ hF1 _ hW2
+  intro a' ha' hot'
+  rw [hc1, hbarg] at *
+  exact seedOK_gam1 hot' hcb ha'
 
 end Ytosk

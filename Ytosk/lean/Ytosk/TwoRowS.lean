@@ -239,7 +239,7 @@ theorem twoRow_chain' {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
     (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
     (ht1 : TRIO.srow M (M.length - 1) = 1) (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
     (hF1 : ∀ k, 1 ≤ k → F1 (expand M k))
-    (hSa : ∀ a', ¬ lt (vr M r) a' = true →
+    (hSa : ∀ a', ¬ lt (vr M r) a' = true → isOT (psi a' (argOf (o2r M r)) z) = true →
       SeedOK a' (argOf (o2r M r)) (vr M r) (o2r (expand M 1) r))
     (hFr : ∀ m h p, Anc0 M p (M.length - 1) → par M 0 p = some h →
       FrameD (vr M h) (bst M h p) (o2r M p)
@@ -255,11 +255,12 @@ theorem twoRow_chain' {M : Mat} {r : Nat} (hM : 2 ≤ M.length)
   have hbarg : argOf (o2r M r) = b := by rw [hrv]; rfl
   rw [hbarg] at hSa hFr ⊢
   have hμμ : ¬ lt (vr M r) (vr M r) = true := by simp [Bool.eq_false_iff.mpr (lt_irrefl' _)]
-  apply twoRow_chain hM hz hr ht1 hG hb1 hrv hb hcb (hSa _ hμμ) hF1 _ hFr
+  have hot : isOT (psi (vr M r) b z) = true := by rw [← hrv]; exact hG.ot r
+  apply twoRow_chain hM hz hr ht1 hG hb1 hrv hb hcb (hSa _ hμμ hot) hF1 _ hFr
   intro p hp
   rcases Nat.lt_or_ge r p with h1 | h1
   · exact Or.inl (hbelow p hp h1)
   · obtain ⟨a', ha', hD⟩ := habove p hp h1
-    exact Or.inr ⟨a', hSa a' ha', hD⟩
+    exact Or.inr ⟨a', hSa a' ha' (DiagAt.ot_node hD (hG.ot p)), hD⟩
 
 end Ytosk
