@@ -124,4 +124,12 @@ theorem lhdE_psi_small {b0 b : T} (v : T) (hle : b0 ≤ b)
   · exact Or.inr (lhd_psi_small v h hsm)
   · left; rw [h]
 
+/-- **No rewrite on either side, with the state above the child** (`hBm` is then vacuous). -/
+theorem lhdE_step_nn' {a B s' y' s y : T} (hX : LhdE (psi s' y' z) (psi s y z))
+    (hn' : ¬ (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true))
+    (hn : ¬ (lt B y = true ∧ lt (psi a z z) (psi s y z) = true))
+    (hB : ∀ q ∈ summands B, psi s y z ≤ q) :
+    LhdE (step a B s' y' z) (step a B s y z) :=
+  lhdE_step_nn hX hn' hn (fun q hq hlt => absurd (lt_of_le_of_lt (hB q hq) hlt) (lt_irrefl' _))
+
 end Ytosk
