@@ -5,6 +5,7 @@
 fs(ψ_a(spArg(a, b, c)), η) = ψ_a(spArg(a, b, c[η]))。ここでは c が書き換えを起こさない通過の場合（`spArg_fs_pass`）。
 -/
 import Ytosk.FS
+import Ytosk.Chain
 
 namespace Ytosk
 
@@ -182,5 +183,90 @@ theorem spArg_fs_pass {a b s y μ η : T} (hc : isOT (psi s y z) = true)
     intro q hq
     exact le_trans (head_le_of_lt hflt) (summand_ge_of_app hbc hq)
   rw [spArg_eq_app hbf (notrig_fs hc hcof hμ hη hηl hno)]
+
+/-- The comparison with `Ω_a` in a step does not depend on a nonzero argument. -/
+theorem trig_cond {a s y y' : T} (hy : y ≠ z) (hy' : y' ≠ z) :
+    lt (psi a z z) (psi s y z) = lt (psi a z z) (psi s y' z) := by
+  cases y with
+  | z => exact absurd rfl hy
+  | psi =>
+    cases y' with
+    | z => exact absurd rfl hy'
+    | psi => simp [lt]
+
+/-- Inverting the cofinality of a collapse: `cof (ψ_s(y)) = Ω_{μ+1}` with `y ≠ 0` passes through `ψ_s`. -/
+theorem cof_psi_inv {s y μ : T} (hy : y ≠ z) (h : cof (psi s y z) = .big μ) :
+    cof y = .big μ ∧ lt μ s = true := by
+  have hys : isSucc y = false := by
+    cases h' : isSucc y with
+    | false => rfl
+    | true =>
+      exfalso
+      have : cof (psi s y z) = .omega := by simp [cof, hy, h']
+      rw [this] at h; cases h
+  have hc0 : cof (psi s y z) = (match cof y with
+      | .big μ => if lt μ s = true then Cof.big μ else Cof.omega
+      | c => c) := by
+    show (if y = z then _ else if isSucc y then Cof.omega else _) = _
+    rw [if_neg hy, hys]; rfl
+  rw [hc0] at h
+  cases hcy : cof y with
+  | big ν =>
+    rw [hcy] at h; simp only at h
+    by_cases hν : lt ν s = true
+    · rw [if_pos hν] at h; cases h; exact ⟨rfl, hν⟩
+    · rw [if_neg hν] at h; cases h
+  | zero => rw [hcy] at h; cases h
+  | succ => rw [hcy] at h; cases h
+  | omega => rw [hcy] at h; cases h
+
+/-- **Commutation, rewriting case.** The last child `ψ_s(y)` rewrites to `H(s, y)` (with a lower part), the
+fundamental sequence acts on the lower part of `y` and leaves it nonzero, and the state is still below the new
+argument. -/
+theorem spArg_fs_trig {a b s y μ η : T} (hc : isOT (psi s y z) = true)
+    (hcof : cof (psi s y z) = .big μ) (hμ : lt μ a = true) (hη : isOT η = true)
+    (hηl : η < psi (succ μ) z z)
+    (htr : lt b y = true ∧ lt (psi a z z) (psi s y z) = true)
+    (hlo : (split y (psi (succ s) z z)).2 ≠ z)
+    (hlo' : fs (split y (psi (succ s) z z)).2 η ≠ z)
+    (hbη : lt b (fs y η) = true) :
+    fs (psi a (spArg a b (psi s y z)) z) η = psi a (spArg a b (fs (psi s y z) η)) z := by
+  have hy : y ≠ z := by rintro rfl; simp [lt] at htr
+  obtain ⟨hcy, hμs⟩ := cof_psi_inv hy hcof
+  have hyot := isOT_arg hc
+  -- y = p ++ lo
+  have hbpl := split_app (psi (succ s) z z) y
+  have hpge := split_fst_ge (psi (succ s) z z) y
+  have hlo1 := split_snd_head (psi (succ s) z z) y
+  generalize hP : (split y (psi (succ s) z z)) = pr at hbpl hpge hlo1 hlo hlo'
+  obtain ⟨p, lo⟩ := pr
+  simp only at hbpl hpge hlo1 hlo hlo'
+  have hloh : head lo < psi (succ s) z z := by rcases hlo1 with h | h; exact absurd h hlo; exact h
+  -- the left side
+  have hH : spArg a b (psi s y z) = app p (psi s y z) := by
+    rw [spArg_cons]; show step a b s y z = _
+    unfold step; rw [if_pos htr, H_eq hc, hP]; simp [hlo]
+  have hcz : psi s y z ≠ z := by simp
+  have hXz : app p (psi s y z) ≠ z := fun h => hcz (app_eq_z h).2
+  rw [hH, fs_psi_pass hXz (by rw [cof_app p hcz]; exact hcof) hμ, fs_app p hcz,
+    fs_psi_pass hy hcy hμs]
+  -- the right side: `y[η] = p ++ lo[η]`, which splits at `p`
+  have hfy : fs y η = app p (fs lo η) := by rw [← hbpl]; exact fs_app p hlo η
+  have hlocof : cof lo = .big μ := by rw [← hcy, ← hbpl, cof_app p hlo]
+  have hlolt : fs lo η < lo := fs_lt (by unfold ValidLt; rw [hlocof]; exact hηl)
+  have hsp : split (fs y η) (psi (succ s) z z) = (p, fs lo η) := by
+    rw [hfy]
+    apply split_app_of hpge
+    right; exact lt_of_le_of_lt (head_le_of_lt hlolt) hloh
+  have hcη : isOT (psi s (fs y η) z) = true := by
+    have := (fs_ot_lt hc ⟨hη, by rw [hcof]; exact hηl⟩).1
+    rwa [fs_psi_pass hy hcy hμs] at this
+  rw [spArg_cons]; show _ = psi a (step a b s (fs y η) z) z
+  unfold step
+  have hy' : fs y η ≠ z := by intro h; rw [h] at hbη; simp [lt] at hbη
+  have htr' : lt b (fs y η) = true ∧ lt (psi a z z) (psi s (fs y η) z) = true :=
+    ⟨hbη, by rw [← trig_cond hy hy']; exact htr.2⟩
+  rw [if_pos htr', H_eq hcη, hsp]
+  simp [hlo']
 
 end Ytosk
