@@ -78,8 +78,10 @@ theorem t1_main2 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
     {Rt : Nat} (hRA : Anc0 M Rt (r + L))
     (hR0 : col M Rt = (0, 0, 0)) (hRlast : ∀ j, Rt < j → j ≤ r + L → entry M 0 j ≠ 0)
     (hRd : DepX M (r + L) true Rt)
-    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)) :
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    (hG1 : Good3 (M.take (r + L)) (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM))) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   set M1 := M.take (r + L) with hM1
   set ρ1 := rhsIt M1 (rkBound M1 rkM) with hρ1
@@ -107,12 +109,12 @@ theorem t1_main2 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
     rw [hs1]
     exact seedOK_of_lhd_top hot' hcb (by rw [hμr]; exact ha') hsot hσb hlhd
   intro n hn
-  obtain ⟨ρN, rkN, hCN, hRN, _, _, hot, hlt⟩ :=
+  obtain ⟨ρN, rkN, hCN, hRN, hGN, _, _, hot, hlt⟩ :=
     t1_main hlen hL hA hd0e hpath hx2 hxnb hz2 hiu hiux hnd hqr hC hG hRM hrot hcb hμr hbr
       hS ⟨σ, hs1⟩ hoxv hro hrD hF1 hOS hV hS2 hS3 hW hLo hRA hR0 hRlast hRd hsM hpM
       (ρ1 := ρ1) (rk1 := rkM) (by rw [hg1]; exact hC1) (by rw [hg1]; exact hR1) rfl
-      (fun g hg a ha h => hPv1 g hg a ha h) n hn
-  exact ⟨ρN, rkN, hCN, hRN, hot, hlt⟩
+      (fun g hg a ha h => hPv1 g hg a ha h) (by rw [hg1]; exact hG1) n hn
+  exact ⟨ρN, rkN, hCN, hRN, hGN, hot, hlt⟩
 
 end
 

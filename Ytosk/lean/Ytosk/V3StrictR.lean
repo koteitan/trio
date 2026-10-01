@@ -697,8 +697,10 @@ theorem t1_main_strict {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h
         fsD (split y (psi (succ s) z z)).2 (gamS μ br ((drop1 M (r + L) rkM).o r) m) ≠ z) ∧
       ((split y (psi (succ s) z z)).2 = z →
         (split (fsD y (gamS μ br ((drop1 M (r + L) rkM).o r) m)) (psi (succ s) z z)).2 = z))
-    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)) :
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM)) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
   have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
@@ -710,6 +712,6 @@ theorem t1_main_strict {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h
     ne_of_lt (o_r_strict (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE h1 hx2 hqr hC hG hC1 hRk1
       hdrop (hV 0))
   exact t1_main_val hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
-    hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hV hW hLo hsM hpM
+    hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hV hW hLo hsM hpM hG1
 
 end Ytosk

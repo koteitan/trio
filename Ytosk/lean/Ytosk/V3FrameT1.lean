@@ -349,8 +349,10 @@ theorem t1_main_tp1 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL :
         fsD (split y (psi (succ s) z z)).2 (gamS μ br ((drop1 M (r + L) rkM).o r) m) ≠ z) ∧
       ((split y (psi (succ s) z z)).2 = z →
         (split (fsD y (gamS μ br ((drop1 M (r + L) rkM).o r) m)) (psi (succ s) z z)).2 = z))
-    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)) :
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM)) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   have hrx : r < r + L := by omega
@@ -382,7 +384,7 @@ theorem t1_main_tp1 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL :
   have hW := hW_of_TP1 hlen hC hG hrx hA hro hcb hμr hbr hox hF1 hOS (hV 0)
     (hS2_t1 hR0 hA (by omega)) (hS3_t1 h1 hA (by omega) hlen hR0 hZ2 hSD hZ1) hTP hseed
   exact t1_main_val hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
-    hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hV hW hLo hsM hpM
+    hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hV hW hLo hsM hpM hG1
 
 /-! ## (L) -/
 
@@ -844,8 +846,10 @@ theorem t1_main_tpl {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL :
     (hseedΩ : psi μ (psi (succ μ) z z) z ≤ (drop1 M (r + L) rkM).o r)
     (hV : ∀ m i, i < r + L → DepX M (r + L) false i →
       VLocal M (r + L) ρ (gamS μ br ((drop1 M (r + L) rkM).o r) m) μ i)
-    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)) :
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM)) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   have hrx : r < r + L := by omega
@@ -872,6 +876,6 @@ theorem t1_main_tpl {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL :
   have hLo := hLo_of_TPL hlen hC hG hrx hA hro hcb hμr hbr hox hF1 hOS (hV 0)
     (hS2_t1 hR0 hA (by omega)) (hS3_t1 h1 hA (by omega) hlen hR0 hZ2 hSD hZ1) hTPL hbrl hζΩ
   exact t1_main_tp1 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
-    hVS hF hFO hTP hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hV hLo hsM hpM
+    hVS hF hFO hTP hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hV hLo hsM hpM hG1
 
 end Ytosk

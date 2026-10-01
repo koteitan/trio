@@ -1555,8 +1555,10 @@ theorem t1_main_vloc {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
     (hUA : UpgAbsX M (r + L) ρ)
     (hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r)
     {μ br vr : T} (hμr : μ = vr) (hro : ρ.o r = psi vr br z)
-    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)) :
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM)) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   have hrx : r < r + L := by omega
@@ -1643,6 +1645,6 @@ theorem t1_main_vloc {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
         hUAB hx2 hq hC hG hKD hTD hAD hrx hA hro hcb hμr hbr hHx hF1 hOS hS2 hS3 hTPLo hAU hbrl rfl
         (fs_ne_z_big hcb hne') hζfix hζΩ hok
   exact t1_main_tpl hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
-    hVS hF hFO hTP (TPL_of_TPLo hTPLo) hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hseedΩ hV hsM hpM
+    hVS hF hFO hTP (TPL_of_TPLo hTPLo) hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hseedΩ hV hsM hpM hG1
 
 end Ytosk
