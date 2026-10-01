@@ -265,7 +265,7 @@ theorem t0_S2G {g : Nat} (hg : par M 0 r = some g) (hjb : col M r = bump M g)
     rw [if_pos hjb]
     have hxr : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hp⟩
     rw [children_split_x (x := r + L) hlen hxr, List.map_append, List.map_singleton,
-      o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN, sumN_snoc,
+      o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG, sumN_snoc,
       ← children_take, ← hG0, sf_ot (isOT_add hG0ot rfl), add_one_eq_app]
   -- the children of `g`
   set F := (children M g).filter (fun d => decide (d < r)) with hFdef

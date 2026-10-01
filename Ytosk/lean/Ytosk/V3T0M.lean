@@ -295,7 +295,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
       VSmallV s')
     (hN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-      GoodOT (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
+      (∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true) ∧ VSmallNewN M r ρ σ ∧
       (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
       ((roots (TRIO.gexp M r L 0 0 n)).map σ.o).Pairwise (fun a b => b ≤ a)) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
@@ -324,7 +324,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   set rkN : Bool → Nat → Nat := fun b i => rkM b (phi0 r L i) with hrkN
   set σ := rhsIt N (rkBound N rkN) with hσ
   have hCN : Cons N σ := cons_of_rk hRN
-  obtain ⟨hGN, hVNN, hsN, hpN⟩ := hN n hn2 σ hCN
+  obtain ⟨hOTD, hVNN, hsN, hpN⟩ := hN n hn2 σ hCN
   refine ⟨σ, rkN, hCN, hRN, ?_⟩
   -- the values of `N`
   have hvC := t0_vals hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hn2 (depLike_chgX M (r + L))
@@ -351,7 +351,10 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     rw [hσB _ (by omega) (by rw [hlN]; omega)]
     have := tau_o_last (r := r) (L := L) (n := n) (ρ := ρ) (ρ' := ρ') (oMid := omid M r L ρ) hL
     rwa [Nat.add_zero, Nat.add_zero] at this
-  obtain ⟨hor, hom⟩ := o_r_omid hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN
+  have hGT := good3_take (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop
+  have hGN : GoodOT N σ := goodOT_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN
+    hRN hGT hσB (fun i hi hd => (hoffD i hi).1 hd) hOTD
+  obtain ⟨hor, hom⟩ := o_r_omid hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG
   by_cases hrg : ∃ g, par M 0 r = some g
   · obtain ⟨g, hg⟩ := hrg
     have hgr : g < r := par_lt M 0 r g hg
@@ -405,7 +408,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
             BRelS (sumN ((children (M.take (j' + L)) j').map ρ'.o))
               (sumN ((children (M.take (j' + L)) j').map ρ.o)) :=
           g0_drop_rel (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hWS
-            h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN)
+            h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG)
             (fun k _ hk => hdrop k hk)
             (fun k hk hkx _ => v_lhd_B (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
               hC hG hC1 hRk1 hKD hTD hAbs hWS hUA hdrop k (mem_children hk).1 hkx)
@@ -536,7 +539,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     have hdl := t0_dep_lhd hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hRM
       hoffD hF hVS hTD hKD hAbs hVNN hS3 hS1 hS2
     refine ⟨good3_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hC1
-      (good3_take (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop)
+      hGT
       hσB (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => le_of_lt (hdl true d hD hd).1) hσmid hσlast
       (hLast n hn2) (fun _ _ _ => hl), ?_⟩
     apply root_N_A hlen hL hp hn hR0 hR01 hR12 h00 hg hG hGN
@@ -554,7 +557,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true i hd; omega)
     have hOX : mulT (omid M r L ρ) n < ρ.o r := by rw [hor, hom]; exact (lhd_mulT (η := z) n).1
     refine ⟨good3_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hC1
-      (good3_take (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop)
+      hGT
       hσB (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => absurd hd (by
         have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true d hD; omega))
       hσmid hσlast (hLast n hn2) (fun g hg => absurd hg (by rw [hrn]; simp)), ?_⟩
@@ -597,7 +600,8 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
   intro n hn2
   obtain ⟨ρN, rkN, hCN, hRN, _, h⟩ := t0_core hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM
     hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hsM hpM hLast hVr
-    (fun n hn σ hCN => let h := hN n hn σ hCN; ⟨h.1.toOT, h.2⟩) n hn2
+    (fun n hn σ hCN => let h := hN n hn σ hCN;
+      ⟨fun i hi _ => h.1.ot_o i (by rw [lenN0 hlen (by omega)]; omega), h.2⟩) n hn2
   exact ⟨ρN, rkN, hCN, hRN, h⟩
 
 /-- `t0_main′` with the unused hypothesis `hVL` (kept for the existing callers). -/

@@ -57,6 +57,55 @@ theorem pairwise_lower_last {l : List Nat} {f g : Nat → T} {P : Nat → Prop}
     rw [heq a (by simp) hPa]
     exact le_trans (hge e he) (hp.1 _ (List.mem_map_of_mem he))
 
+/-! ## 値の標準形: v は o から -/
+
+/-- **The `v` values are standard when the `o` values are** (by the ranking of the `v` calls). -/
+theorem ot_v_of_o {N : Mat} {σ : Valn} {rk : Bool → Nat → Nat} (hC : Cons N σ) (hR : Rk N rk)
+    (hO : ∀ i, i < N.length → isOT (σ.o i) = true) : ∀ i, i < N.length → isOT (σ.v i) = true := by
+  have key : ∀ K, ∀ i, rk false i ≤ K → i < N.length → isOT (σ.v i) = true := by
+    intro K
+    induction K using Nat.strongRecOn with
+    | _ K ih =>
+      intro i hK hi
+      obtain ⟨_, _, hRr⟩ := hR i hi
+      have hV : entry N 1 i ≠ 0 → isOT (vOpt σ (par N 1 i)) = true := by
+        intro h1
+        cases hpm : par N 1 i with
+        | none => rfl
+        | some m =>
+          exact ih _ (by have := (hRr h1).1 m hpm; omega) m (le_refl _)
+            (by have := par_lt N 1 i m hpm; omega)
+      rw [(hC i hi).2]; unfold vRhs
+      split_ifs with h1 h2
+      · rfl
+      · cases hu : upg N i with
+        | none =>
+          have h' : isOT (add (vOpt σ (par N 1 i)) one) = true := isOT_add (hV h1) rfl
+          show isOT (sf (add (vOpt σ (par N 1 i)) one)) = true
+          rw [sf_ot h']; exact h'
+        | some k =>
+          have hk : isOT (last (σ.v k)) = true :=
+            isOT_last (ih _ (by have := (hRr h1).2.1 h2 k hu; omega) k (le_refl _) (upg_lt hi hu))
+          have h' : isOT (add (vOpt σ (par N 1 i)) (last (σ.v k))) = true := isOT_add (hV h1) hk
+          show isOT (sf (add (vOpt σ (par N 1 i)) (last (σ.v k)))) = true
+          rw [sf_ot h']; exact h'
+      · have hB : isOT (omega (sumN (one :: (children N i).map (bumpTerm N σ i)))) = true := by
+          apply isOT_omega; apply isOT_sumN
+          intro t ht
+          rcases List.mem_cons.mp ht with rfl | ht
+          · rfl
+          · obtain ⟨j, _, rfl⟩ := List.mem_map.mp ht
+            unfold bumpTerm
+            split
+            · apply isOT_omega; apply isOT_sumN
+              intro t' ht'
+              obtain ⟨k, hk, rfl⟩ := List.mem_map.mp ht'
+              exact hO k (mem_children hk).2
+            · rfl
+        rw [sf_ot (isOT_add (hV h1) hB)]; exact isOT_add (hV h1) hB
+  exact fun i hi => key _ i (le_refl _) hi
+
+
 section
 variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)
@@ -233,7 +282,7 @@ theorem dec_g0 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted 
   rw [hclN] at hsN
   simp only [List.map_append, List.map_singleton] at hsM hpM hsN
   rw [hLcv, hCmv, hσlast] at hsN
-  obtain ⟨hor, hom⟩ := o_r_omid hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
+  obtain ⟨hor, hom⟩ := o_r_omid hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG
   -- the decrease at `g` in `N`
   have hpN : (Lc.map ρ.o ++ List.replicate Cm.length (omid M r L ρ) ++ [ρ'.o r]).Pairwise
       (fun a b => b ≤ a) := by
@@ -259,6 +308,50 @@ theorem dec_g0 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted 
   have hpN0 : ((CL (TRIO.gexp M r L 0 0 n) g).map σ.o).Pairwise (fun a b => b ≤ a) := by
     rw [hclN]; simp only [List.map_append, List.map_singleton]; rw [hLcv, hCmv, hσlast]; exact hpN
   exact hpN0
+
+omit hGN in
+/-- `omid` is standard. -/
+theorem isOT_omid : isOT (omid M r L ρ) = true := by
+  obtain ⟨hor, hom⟩ := o_r_omid hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG
+  have hot := hG.ot_o r (by omega)
+  rw [hor] at hot
+  rw [hom]
+  set Y0 := spArg (ρ.v r) z (sumN (((children M r).filter (fun c => decide (c < r + L))).map (cnt M ρ r)))
+  rw [isOT_psi_iff] at hot ⊢
+  obtain ⟨hv, hY, _, _, hc⟩ := hot
+  refine ⟨hv, isOT_app_left hY, rfl, z_le _, fun g hg => ?_⟩
+  have hg' : g ∈ comps (ρ.v r) (app Y0 one) := by rw [comps_app]; exact List.mem_append_left _ hg
+  have hle : g ≤ Y0 := (lt_succ_iff (x := Y0)).mp (hc g hg')
+  rcases (le_iff _ _).mp hle with h | h
+  · exact h
+  · exfalso; have := size_comps hg; rw [h] at this; exact Nat.lt_irrefl _ this
+
+omit hGN in
+/-- **`GoodOT` of `N`** from the standard values at the `D` columns before `r`. -/
+theorem goodOT_N_t0 {ρ' : Valn} {rkN : Bool → Nat → Nat} (hRN : Rk (TRIO.gexp M r L 0 0 n) rkN)
+    (hGT : Good3 (M.take (r + L)) ρ')
+    (hσB : ∀ i, r ≤ i → i < (TRIO.gexp M r L 0 0 n).length →
+      σ.o i = (tauN r L n ρ ρ' (omid M r L ρ)).o i)
+    (hoffD : ∀ i, i < r → ¬ DepX M (r + L) true i → σ.o i = ρ.o i)
+    (hOTD : ∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true) :
+    GoodOT (TRIO.gexp M r L 0 0 n) σ := by
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  have ho : ∀ i, i < (TRIO.gexp M r L 0 0 n).length → isOT (σ.o i) = true := by
+    intro i hi
+    rcases Nat.lt_or_ge i r with h | h
+    · by_cases hd : DepX M (r + L) true i
+      · exact hOTD i h hd
+      · rw [hoffD i h hd]; exact hG.ot_o i (by omega)
+    · rw [hσB i h hi]
+      have hph : phi0 r L i < r + L := by
+        unfold phi0; rw [if_neg (by omega)]; have := Nat.mod_lt (i - r) hL; omega
+      unfold tauN
+      simp only [if_neg (show ¬ i < r by omega)]
+      split_ifs
+      · exact isOT_omid hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN
+      · exact hG.ot_o _ (by omega)
+      · exact hGT.ot_o _ (by rw [List.length_take]; omega)
+  exact ⟨ho, ot_v_of_o hCN hRN ho⟩
 
 /-- **`Good3` of the valuation of `N = M[n]`** (`t = 0`) from its standard values. -/
 theorem good3_N_t0 {ρ' : Valn} (hC' : Cons (M.take (r + L)) ρ') (hGT : Good3 (M.take (r + L)) ρ')
@@ -294,5 +387,6 @@ theorem good3_N_t0 {ρ' : Valn} (hC' : Cons (M.take (r + L)) ρ') (hGT : Good3 (
     exact dec_copy0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN hC' hGT hσB hk hq
 
 end
+
 
 end Ytosk
