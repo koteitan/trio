@@ -6,6 +6,7 @@ SRO 以外の標準形は構造の不変条件 `SInv` を満たす（`sInv_std`�
 -/
 import Ytosk.V3Ind
 import Ytosk.V3InvExpand
+import Ytosk.V3InvDerive
 
 namespace Ytosk
 
@@ -117,5 +118,36 @@ theorem trio_terminates_final
       TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n) :
     WellFounded Step' :=
   trio_terminates_indV hBase (hTake_of_last hLast) hExp hT2
+
+/-- **The one-column drop from its residual**: the drop lemma (`drop_pres` through `valInv_drop1`) gives the
+valuation `drop1 M x rk` of `M.take x` with `Cons`, `Rk`, `Good3`, `VSmallF`, `FrameClosed`, `FrameOT`,
+`BumpKidsDec`, `BumpTermDec`, `rootS`, and `rootP` when `x` is not a root. The residual is the other 11
+value fields, `rootP` when `x` is a root, and `Res3A` of `M.take x`. -/
+theorem hLast_of
+    (hRest : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
+      let x := M.length - 1
+      let σ := drop1 M x rk
+      AbsD (M.take x) σ ∧ AbsU (M.take x) σ ∧ TP1 (M.take x) σ ∧ TPLo (M.take x) σ ∧
+      TP1W (M.take x) σ ∧ TPLoW (M.take x) σ ∧ AbsUW (M.take x) σ ∧ AbsDW (M.take x) σ ∧
+      TrigOm (M.take x) σ ∧ TPLoN (M.take x) σ ∧ AbsDN (M.take x) σ ∧
+      (entry M 0 x = 0 → RootP (M.take x) σ) ∧ Res3A (M.take x) σ rk) :
+    ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
+      ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk' := by
+  intro M ρ rk hM hS hl I R
+  obtain ⟨had, hau, htp1, htplo, htp1w, htplow, hauw, hadw, htrig, htplon, hadn, hrp, R'⟩ :=
+    hRest M ρ rk hM hS hl I R
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 := cons_of_rk hRk1
+  have hVI : ValInv M ρ := ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩
+  have V := valInv_drop1 hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank hVI R.drop
+  have hRP : RootP (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) := by
+    by_cases h0 : entry M 0 (M.length - 1) = 0
+    · exact hrp h0
+    · exact rootP_drop1 hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r01 I.r12 I.e00 h0 I.cons I.rank hVI R.drop
+        I.rootP
+  exact ⟨_, rk, ⟨hC1, V.g, hRk1, V.vs, V.fc, V.fo, V.kd, V.td, had, hau, htp1, htplo, htp1w, htplow,
+    hauw, hadw, htrig, htplon, hadn, rootS_of_good hC1 V.g, hRP⟩, R'⟩
 
 end Ytosk
