@@ -267,4 +267,110 @@ theorem o2r_path_abs {M N : Mat} {x : Nat} (hx : x + 1 = M.length) (hG : Good2 M
       exact ⟨j', by rw [hM2, hIH, hj'], hj'ot, hj'lt⟩
   exact fun h hA => key _ h (Nat.le_refl _) hA
 
+/-- `o2r_off_gen` with children agreeing only off the path. -/
+theorem o2r_off_gen' {M N : Mat} {x : Nat} (hx : x + 1 = M.length)
+    (hA1 : ∀ j, j < x → vr N j = vr M j)
+    (hA2 : ∀ h, h < x → ¬ Anc0 M h x → children N h = children M h) :
+    ∀ j, j < x → ¬ Anc0 M j x → o2r N j = o2r M j := by
+  have key : ∀ m j, x - j ≤ m → j < x → ¬ Anc0 M j x → o2r N j = o2r M j := by
+    intro m
+    induction m with
+    | zero => intro j h1 h2; omega
+    | succ m ih =>
+      intro j hm hj hA
+      apply o2r_congr (hA1 j hj)
+      rw [hA2 j hj hA]
+      apply List.map_congr_left
+      intro c hc
+      have hpc : par M 0 c = some j := (mem_children_iff.mp hc).2
+      have hcl := (mem_children hc).2
+      have hjc := (mem_children hc).1
+      have hcA : ¬ Anc0 M c x := fun hcA => hA (anc0_up hpc hcA)
+      have hcx : c < x := by
+        rcases Nat.lt_or_ge c x with h | h
+        · exact h
+        · have : c = x := by omega
+          subst this; exact absurd (Anc0.refl _) hcA
+      exact ih c (by omega) hcx hcA
+  exact fun j => key _ j (Nat.le_refl _)
+
+/-- **The path theorem from a path node `ℓ` upward.** Children agree off the path and strictly above
+`ℓ`; the new value at `ℓ` is given. -/
+theorem o2r_path_from {M N : Mat} {x ℓ : Nat} (hx : x + 1 = M.length) (hG : Good2 M) (Z : Nat → T)
+    (hℓ : Anc0 M ℓ x)
+    (hA1 : ∀ j, j < x → vr N j = vr M j)
+    (hA2 : ∀ h, h < x → (¬ Anc0 M h x ∨ h < ℓ) → children N h = children M h)
+    (hleaf : ∃ j, o2r N ℓ = fsD (o2r M ℓ) (Z j) ∧
+      isOT (fsD (o2r M ℓ) (Z j)) = true ∧ fsD (o2r M ℓ) (Z j) < o2r M ℓ)
+    (hstep : ∀ h p j, Anc0 M p ℓ → par M 0 p = some h →
+      isOT (fsD (o2r M p) (Z j)) = true → fsD (o2r M p) (Z j) < o2r M p →
+      ∃ j', psi (vr M h) (spArg (vr M h) (bst M h p) (fsD (o2r M p) (Z j))) z =
+          fsD (o2r M h) (Z j') ∧
+        isOT (fsD (o2r M h) (Z j')) = true ∧ fsD (o2r M h) (Z j') < o2r M h) :
+    ∀ h, Anc0 M h ℓ → ∃ j, o2r N h = fsD (o2r M h) (Z j) ∧
+      isOT (fsD (o2r M h) (Z j)) = true ∧ fsD (o2r M h) (Z j) < o2r M h := by
+  have hℓx := hℓ.le
+  have key : ∀ m h, ℓ - h ≤ m → Anc0 M h ℓ →
+      ∃ j, o2r N h = fsD (o2r M h) (Z j) ∧
+        isOT (fsD (o2r M h) (Z j)) = true ∧ fsD (o2r M h) (Z j) < o2r M h := by
+    intro m
+    induction m with
+    | zero =>
+      intro h h1 hA
+      have := hA.le
+      rw [show h = ℓ by omega]; exact hleaf
+    | succ m ih =>
+      intro h hm hA
+      rcases Nat.eq_or_lt_of_le hA.le with heq | hlt
+      · rw [heq]; exact hleaf
+      have hAx : Anc0 M h x := hA.trans hℓ
+      obtain ⟨c, hc, hcA⟩ := anc0_child hA (by omega)
+      have hcAx : Anc0 M c x := hcA.trans hℓ
+      have hpc := par_lt M 0 c h hc
+      have hle := children_le_of_anc_last hcAx hx hc
+      have hcmem : c ∈ children M h := mem_children_iff.mpr ⟨by have := hcAx.le; omega, hc⟩
+      have hsplit := split_last_max _ c (children_sorted M h) hcmem hle
+      have hoff : ∀ d ∈ (children M h).filter (fun d => decide (d < c)), o2r N d = o2r M d := by
+        intro d hd
+        rw [List.mem_filter] at hd
+        have hdc : d < c := by simpa using hd.2
+        have hdp := mem_children_iff.mp hd.1
+        apply o2r_off_gen' hx hA1 (fun h' hh' hn => hA2 h' hh' (Or.inl hn)) d
+          (by have := hcAx.le; omega)
+        intro hdA
+        rcases anc0_total hdA hcAx with h' | h'
+        · have := (anc0_par h' (by omega) hc).le; have := par_lt M 0 d h hdp.2; omega
+        · have := h'.le; omega
+      obtain ⟨j, hIH, hjot, hjlt⟩ := ih c (by omega) hcA
+      set C := (children M h).filter (fun d => decide (d < c)) with hCdef
+      have hCv : C.map (o2r N) = C.map (o2r M) := List.map_congr_left hoff
+      have hsing : ∀ t ∈ C.map (o2r M), Single t := by
+        intro t ht'
+        obtain ⟨i, _, rfl⟩ := List.mem_map.mp ht'; exact single_o2r hG i
+      have hdM := hG.dec h
+      simp only [hsplit, List.map_append, List.map_cons, List.map_nil] at hdM
+      have hc'ot : isOT (o2r N c) = true := by rw [hIH]; exact hjot
+      have hc'le : o2r N c ≤ o2r M c := by rw [hIH]; exact le_of_lt hjlt
+      have hdM' : (C.map (o2r M) ++ [o2r N c]).Pairwise (fun a b => b ≤ a) := by
+        rw [List.pairwise_append] at hdM ⊢
+        refine ⟨hdM.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
+        rw [List.mem_singleton] at hb; subst hb
+        exact le_trans hc'le (hdM.2.2 a ha _ (List.mem_singleton_self _))
+      have hsing' : ∀ t ∈ C.map (o2r M) ++ [o2r N c], Single t := by
+        intro t ht'
+        rcases List.mem_append.mp ht' with ht' | ht'
+        · exact hsing t ht'
+        · rw [List.mem_singleton] at ht'; subst ht'; exact ⟨hc'ot, o2r_psi_form _ c⟩
+      have hch' : (children N h).map (o2r N) = C.map (o2r M) ++ [o2r N c] := by
+        rw [hA2 h (by omega) (Or.inr hlt), hsplit, List.map_append, hCv]; rfl
+      have hS' := sumN_dec _ hsing' hdM'
+      have hv' : vr N h = vr M h := hA1 h (by omega)
+      have hvM := isOT_vr hG.f1 h
+      have hM2 : o2r N h = psi (vr M h) (spArg (vr M h) (bst M h c) (o2r N c)) z := by
+        rw [o2r_spArg (by rw [hv']; exact hvM) (by rw [hch']; exact hS'.1), hch', hv',
+          sumN_snoc_dec hsing' hdM', spArg_app]; rfl
+      obtain ⟨j', hj', hj'ot, hj'lt⟩ := hstep h c j hcA hc hjot hjlt
+      exact ⟨j', by rw [hM2, hIH, hj'], hj'ot, hj'lt⟩
+  exact fun h hA => key _ h (Nat.le_refl _) hA
+
 end Ytosk
