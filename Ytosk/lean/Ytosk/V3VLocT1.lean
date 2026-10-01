@@ -584,4 +584,175 @@ theorem gamS_fix {μ br vr seed : T} (hrot : isOT (psi vr br z) = true) (hcb : c
       apply split_snd_z_of_ge
       exact summ_fs_ge (isOT_arg hrot) hcb hbrl hlt
 
+/-! ## ω 冪と fsD の交換 -/
+
+theorem isSucc_psi_z {u v : T} (h : u ≠ z ∨ v ≠ z) : isSucc (psi u v z) = false := by
+  unfold isSucc last one
+  rcases h with h | h
+  · simp [h]
+  · simp [h]
+
+theorem holeT_sub_inv {μ br vr a : T} (ha : isSucc a = false) (h : HoleT μ br vr (psi a z z)) :
+    HoleT μ br vr a := by
+  rcases h with h | ⟨a', ha', hD⟩
+  · left
+    have haz : a ≠ z := by intro he; subst he; simp [cof] at h
+    unfold cof at h; rw [if_pos rfl, if_neg haz, if_neg (by rw [ha]; simp)] at h; exact h
+  · right; refine ⟨a', ha', ?_⟩
+    cases hD with
+    | here hb _ _ => exact absurd rfl hb
+    | arg hb _ _ => exact absurd rfl hb
+    | sub _ _ h => exact h
+
+/-- **`fsD` of a term with a hole is not a successor** (for `ζ = ψ_μ(X)`, `X ≠ 0`). -/
+theorem fsD_not_succ_of_holeT {μ br vr ζ X : T} (hcb : cof br = .big μ) (hζ : ζ = psi μ X z)
+    (hX : X ≠ z) : ∀ {t : T}, HoleT μ br vr t → isSucc (fsD t ζ) = false
+  | z, h => absurd rfl (holeT_ne_z h)
+  | psi a b (psi c d e), h => by
+    have hr := holeT_rest (by simp) h
+    show isSucc (psi a b (fsD (psi c d e) ζ)) = false
+    have hζz : ζ ≠ z := by rw [hζ]; simp
+    rw [isSucc_psi_rest _ _ _ (fsD_ne_z_of_holeT hζz hr)]
+    exact fsD_not_succ_of_holeT hcb hζ hX hr
+  | psi a b z, h => by
+    have hζz : ζ ≠ z := by rw [hζ]; simp
+    by_cases hb : b = z
+    · subst hb
+      have haz : a ≠ z := by
+        intro he; subst he
+        have := holeT_not_succ h; rw [show isSucc (psi z z z) = true from rfl] at this; cases this
+      by_cases hs : isSucc a = true
+      · rw [fsD_leaf hs haz, hζ]; exact isSucc_psi_z (Or.inr hX)
+      · have hns : isSucc a = false := by simpa using hs
+        rw [fsD_sub haz hns]
+        exact isSucc_psi_z (Or.inl (fsD_ne_z_of_holeT hζz (holeT_sub_inv hns h)))
+    · rw [fsD_psi hb (not_succ_arg_of_holeT hb h)]
+      exact isSucc_psi_z (Or.inr (fsD_ne_z_of_holeT hζz (holeT_arg hb h hcb)))
+
+/-- A nonzero term with no part below the single `θ` is not below `θ`. -/
+theorem not_lt_of_lo_z {t θ : T} (ht : t ≠ z) (hl : (split t θ).2 = z) : ¬ t < θ := by
+  have e := split_app θ t
+  rw [hl, app_z_right] at e
+  have hh : head t ∈ summands (split t θ).1 := by
+    rw [e]; cases t with
+    | z => exact absurd rfl ht
+    | psi a b c => simp [head, summands]
+  have h1 := split_fst_ge θ t _ hh
+  intro hlt
+  exact h1 (lt_of_le_of_lt (head_le_self t) hlt)
+
+/-- **`ω` commutes with `fsD`** for a standard term with a hole, when `ζ` is a fixed point of `ω` at
+least `ψ_μ(Ω_{μ+1})` and the low part of a single term stays empty (TPL). -/
+theorem omega_fsD_hole {μ br vr Y ζ X : T} (hY : isOT Y = true) (hH : HoleT μ br vr Y)
+    (hcb : cof br = .big μ) (hbrl : last br ≠ psi (succ μ) z z)
+    (hζ : ζ = psi μ X z) (hXz : X ≠ z) (hζfix : omega ζ = ζ) (hζΩ : etaOm μ ≤ ζ)
+    (hok : ∀ t, isOT t = true → HoleT μ br vr t → isOT (fsD t ζ) = true ∧ fsD t ζ < t)
+    (hTPLY : ∀ s b, Y = psi s b z → (split b (psi (succ s) z z)).2 = z → ∀ a, last b = psi a z z →
+      isSucc a = false → OHole a → ¬ psi (fsD a (etaOm μ)) z z < psi (succ s) z z) :
+    fsD (omega Y) ζ = omega (fsD Y ζ) := by
+  have hζz : ζ ≠ z := by rw [hζ]; simp
+  have hYz := holeT_ne_z hH
+  have hYs := holeT_not_succ hH
+  obtain ⟨hYot', hYlt⟩ := hok Y hY hH
+  by_cases hE : Y < E0
+  · rw [omega_small hE, fsD_psi hYz hYs, omega_small (lt_trans hYlt hE)]
+  cases Y with
+  | z => exact absurd rfl hYz
+  | psi s b c =>
+    by_cases hc : c = z
+    · subst hc
+      have hθ : psi (succ s) z z = psi (succ s) z z := rfl
+      by_cases hlo : loOf s b = z
+      · rw [omega_fix_nolo hY hE hlo]
+        symm
+        by_cases hb : b = z
+        · subst hb
+          have hsz : s ≠ z := by
+            intro he; subst he; rw [show isSucc (psi z z z) = true from rfl] at hYs; cases hYs
+          by_cases hs : isSucc s = true
+          · rw [fsD_leaf hs hsz]; exact hζfix
+          · have hns : isSucc s = false := by simpa using hs
+            have hHs := holeT_sub_inv hns hH
+            rw [fsD_sub hsz hns] at hYot' ⊢
+            apply omega_fix_nolo hYot'
+            · intro hE'; exact fsD_ne_z_of_holeT hζz hHs (below_E0 hE').1
+            · rfl
+        · have hHb := holeT_arg hb hH hcb
+          have hbs := not_succ_arg_of_holeT hb hH
+          rw [fsD_psi hb hbs] at hYot' ⊢
+          have hlo' := lo_keep_of_TPL (hTPLY s b rfl) hb hH hcb hbrl hζΩ hlo
+          apply omega_fix_nolo hYot'
+          · intro hE'
+            obtain ⟨hsz, hlt⟩ := below_E0 hE'
+            subst hsz
+            exact not_lt_of_lo_z (fsD_ne_z_of_holeT hζz hHb) hlo' hlt
+          · exact hlo'
+      · -- the low part survives
+        have hb : b ≠ z := by intro he; subst he; exact hlo rfl
+        have hHb := holeT_arg hb hH hcb
+        have hbs := not_succ_arg_of_holeT hb hH
+        have hfx : fsD (psi s b z) ζ = psi s (fsD b ζ) z := fsD_psi hb hbs ζ
+        have e := split_app (psi (succ s) z z) b
+        set hi := (split b (psi (succ s) z z)).1 with hhi
+        set lo := (split b (psi (succ s) z z)).2 with hlodef
+        have hlo0 : lo ≠ z := hlo
+        have hbot : isOT b = true := isOT_arg hY
+        have hloot : isOT lo = true := isOT_app_right (by rw [e]; exact hbot)
+        have hHlo : HoleT μ br vr lo := holeT_app_inv hlo0 (by rw [e]; exact hHb)
+        have hfb : fsD b ζ = app hi (fsD lo ζ) := by
+          conv => lhs; rw [← e]
+          exact fsD_app hi hlo0 ζ
+        have hflt : head (fsD lo ζ) < psi (succ s) z z := by
+          have h1 := (hok lo hloot hHlo).2
+          have h2 : head lo < psi (succ s) z z := split_snd_head_lt hlo0
+          have h3 : lo < psi (succ s) z z := by
+            cases hlc : lo with
+            | z => exact absurd hlc hlo0
+            | psi a' b' c' =>
+              rw [hlc] at h2
+              exact lt_of_head_lt h2
+          exact lt_of_le_of_lt (head_le_self _) (lt_trans h1 h3)
+        have hsplit : split (fsD b ζ) (psi (succ s) z z) = (hi, fsD lo ζ) := by
+          rw [hfb]; exact split_app_of (split_fst_ge _ b) (Or.inr hflt)
+        apply omega_fsD_lo hY hE hlo hfx (by rw [← hfx]; exact hYot')
+        · intro hE'
+          obtain ⟨hsz, hlt⟩ := below_E0 hE'
+          subst hsz
+          apply hE
+          -- `Y ≥ E0` forces a summand of `b` at least `Ω_1`, which `fsD b ζ` keeps
+          exfalso
+          have hhiz : hi ≠ z := by
+            intro hz
+            rw [hz] at e
+            simp only [app] at e
+            have h3 : b < psi (succ z) z z := by
+              rw [← e]
+              cases hlc : lo with
+              | z => exact absurd hlc hlo0
+              | psi a' b' c' =>
+                have h2 : head lo < psi (succ z) z z := split_snd_head_lt hlo0
+                rw [hlc] at h2
+                exact lt_of_head_lt h2
+            apply hE
+            unfold E0; rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, h3⟩
+          have hhi1 : ¬ hi < psi (succ z) z z := not_lt_of_lo_z hhiz (by
+            rw [hhi]
+            have := split_app_of (t := psi (succ z) z z) (B := hi) (X := z) (split_fst_ge _ b)
+              (Or.inl rfl)
+            rw [app_z_right] at this
+            rw [this])
+          apply hhi1
+          exact lt_of_le_of_lt (le_app_self hi _) (by rw [← hfb]; exact hlt)
+        · unfold hiOf; rw [hsplit]
+        · unfold loOf; rw [hsplit]; exact fsD_ne_z_of_holeT hζz hHlo
+        · exact hYs
+    · have hHc := holeT_rest hc hH
+      have hfx : fsD (psi s b c) ζ = psi s b (fsD c ζ) := by
+        cases c with
+        | z => exact absurd rfl hc
+        | psi => rfl
+      rw [hfx] at hYot'
+      exact omega_fsD_rest hY hE hc (holeT_not_succ hHc) hYot' (fsD_ne_z_of_holeT hζz hHc)
+        (fsD_not_succ_of_holeT hcb hζ hXz hHc)
+
 end Ytosk
