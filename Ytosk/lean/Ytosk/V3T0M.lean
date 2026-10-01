@@ -268,11 +268,12 @@ theorem nodep_G_root (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (
 end
 
 /-- **`t = 0`, all `n ≥ 2`**: `M[n]` has a value, standard at the root and below the root value of `M`.
-Hypotheses: those of the drop lemma (as `t0_n1`), and for `N = M[n]`: its valuation satisfies `Good3`,
+Hypotheses: those of the drop lemma (as `t0_n1`, without `hVL`: the shape of `D` is `dv_shape` and the
+strictness of the drop is `dep_strict0`), and for `N = M[n]`: its valuation satisfies `Good3`,
 `VSmallNewN` and the root values do not increase; the last copy root counts at `g` when `r` does;
 `hVr` (a changed `v(r)` in `M.take x` is small in a rewriting frame of `g`); `hG′` (in the bump case the
 children of `r` in `M.take x` keep their sum); `hE3` (`g` is not a bump child of its parent). -/
-theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
     (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0)
@@ -286,7 +287,6 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
     (hUA : UpgAbsX M (r + L) ρ)
-    {ζ μ : T} (hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     (hE3 : ∀ g p, par M 0 r = some g → par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 →
       col M g ≠ bump M p)
@@ -318,7 +318,7 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hTD hAbs hWS) hUA
   have hoff := chg_off (show r + L + 1 = M.length from hlen) hC hG hC1 hRk1
   have hnx : ¬ DepX M (r + L) false (r + L) := not_depX_v_x he1
-  have hD := dep_strict (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop hx2 hp hnx hVL
+  have hD := dep_strict0 (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop hx2 hp hnx
   -- the expansion `N`
   set N := TRIO.gexp M r L 0 0 n with hNdef
   have hlN : N.length = r + n * L := lenN0 hlen hn
@@ -396,8 +396,8 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     have hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g) := by
       intro hjb h1 h2
       have hgD : DepX M (r + L) false g := DepX.vbump h1 h2 hrc hjb hxr DepX.leaf
-      obtain ⟨_, hpnd, hcase⟩ := hVL g (by omega) hgD
-      rcases hcase with ⟨_, h2', _⟩ | ⟨Lb, Kb, j', k', _, hch, _, hchj, hKnd, hLnd, _⟩
+      obtain ⟨_, hpnd, hcase⟩ := dv_shape hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hp (by omega) hgD
+      rcases hcase with ⟨h2', _⟩ | ⟨_, Lb, Kb, j', k', hch, _, hchj, _, hKnd, hLnd⟩
       · exact absurd h2' h2
       · have hchM := children_g_last hlen hL hp hg
         have hjr : j' = r := by
@@ -467,7 +467,7 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
             exact (hoffD m (by omega)).2 (hpnd m hpp)
     -- the propagation and the root
     have hdl := t0_dep_lhd hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hRM
-      hoffD hF hVS hTD hKD hAbs hVNN hVL (hE3 g · hg) hS1 hS2
+      hoffD hF hVS hTD hKD hAbs hVNN (hE3 g · hg) hS1 hS2
     apply root_N_A hlen hL hp hn hR0 hR01 hR12 h00 hg hG hGN
     · intro i hi
       by_cases hd : DepX M (r + L) true i
@@ -483,5 +483,42 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true i hd; omega)
     have hOX : mulT (omid M r L ρ) n < ρ.o r := by rw [hor, hom]; exact (lhd_mulT (η := z) n).1
     exact root_N_B hlen hL hp hn hR01 hR12 h00 hrn hn2 hsM hpM hsN hpN hσG hσmid hσlast hOX
+
+/-- `t0_main′` with the unused hypothesis `hVL` (kept for the existing callers). -/
+theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+    (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
+      ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
+      ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
+    (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
+    (hUA : UpgAbsX M (r + L) ρ)
+    {ζ μ : T} (_hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    (hE3 : ∀ g p, par M 0 r = some g → par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 →
+      col M g ≠ bump M p)
+    (hLast : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
+      Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
+    (hVr : ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
+      par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
+      lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
+      VSmallV s')
+    (hG' : ∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
+      sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rkM).o) =
+        sumN ((children (M.take (r + L)) r).map ρ.o))
+    (hN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
+      Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
+      (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
+      ((roots (TRIO.gexp M r L 0 0 n)).map σ.o).Pairwise (fun a b => b ≤ a)) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
+      isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ :=
+  t0_main' hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM hVS hF hFO hArgT hKD hTD
+    hAbs hWS hVSt hUA hsM hpM hE3 hLast hVr hG' hN
 
 end Ytosk

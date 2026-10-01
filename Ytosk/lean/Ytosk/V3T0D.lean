@@ -9,6 +9,7 @@ N = M[n]（n ≥ 2、r に親 g がある）の r より前の列は、構造が
 - 枠の補題 `o_frame_evalG` は `o_frame_eval` の M.take x を一般の行列 M′ にしたもの（証明は同じ）。
 -/
 import Ytosk.V3T0V
+import Ytosk.V3MainT1F
 
 namespace Ytosk
 
@@ -576,7 +577,6 @@ theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
       (¬ DepX M (r + L) false i → σ.v i = ρ.v i))
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hAbs : BumpAbsC M (r + L) ρ) (hVNN : VSmallNewN M r ρ σ)
-    {ζ μ : T} (hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
     (hE3 : ∀ p, par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 → col M g ≠ bump M p)
     (hS1 : Counted M g r → Lhd z (σ.o g) (ρ.o g))
     (hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g)) :
@@ -790,8 +790,9 @@ theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
             apply hE3 i (by rw [hgj]; exact (mem_children_iff.mp hj).2) h1 h2
             rw [hgj]; exact hjb
         · have hkr' : k < r := by omega
-          obtain ⟨_, hpnd, hcase⟩ := hVL i (by omega) (DepX.vbump h1 h2 hj hjb hk hdk)
-          rcases hcase with ⟨_, h2', _⟩ | ⟨Lb, Kb, j', k', _, hch, _, hchj, hKnd, hLnd, _⟩
+          obtain ⟨_, hpnd, hcase⟩ := dv_shape hx hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp (by omega)
+            (DepX.vbump h1 h2 hj hjb hk hdk)
+          rcases hcase with ⟨h2', _⟩ | ⟨_, Lb, Kb, j', k', hch, _, hchj, _, hKnd, hLnd⟩
           · exact absurd h2' h2
           · have hjj : j = j' := by
               rw [hch] at hj
