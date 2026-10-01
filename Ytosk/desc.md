@@ -474,3 +474,6 @@ x の行 1 が 0（値 1 = ψ_0(0)）、r = P_0(x)、コピーは r の兄弟（
 - t = 0 の残り: (1) g の値の組み立て（子の並び・値・sumN・上の枠の補題）、(2) g より上を `o2r_path_from` で
   （自然数の添字の枠: 書き換えの持続には自然数の基本列の単調性 fs t k < fs t (k+1) と PRE、低い部分の条件 (L) の自然数版）、
   (3) 経路にない列の子の一致（`o2r_off_gen'` の仮定）。
+- 追加（2026-10-02）: 経路にない列の子は不変（`children_gexp_off_t0`）、g の値（`o2r_gexp_g_t0`:
+  o_{M[n]}(g) = ψ_a(spArg(a, b_g, ψ_v(b)·n))）。次は g の値を `t0_frame_notrig`・`t0_frame_trig`・`t0_frame_swallow` で
+  o_M(g)[m] に結びつけ、g より上を `o2r_path_from` で（自然数の添字の枠）。
