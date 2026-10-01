@@ -1235,3 +1235,11 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - (b) t = 0・n ≥ 2: `t0_main`（`V3T0M`、サブエージェント）で証明済み。最上位に組み込む。
 - (c) t = 2: 未着手（t = 0 の 2 つの行列を比べる仕組みの上に作る）。
 型と n の場合分け（`desc_step`）は、零列・t = 0・t = 1 の q ≠ r と q = r について証明済み。
+- `trio_terminates` の更新（`V3Top`）: t0_main を組み込んで hT0 を外した。parLast は構造から証明して外した。
+  - 残る仮定は 2 つ:
+    - hInv: すべての標準形で Inv3 ∧ Res3。
+    - hT2: t = 2。
+  - Res3 の中身:
+    - 各段の DropRes と、接頭辞の DropRes。
+    - hcs。
+    - t0: t0_main の残り hVL・hE3・hLast・hVr・hG′・hN。構造から出るものは外す予定。
