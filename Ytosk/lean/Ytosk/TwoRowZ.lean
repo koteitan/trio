@@ -304,4 +304,77 @@ theorem o2r_gexp_r_t0 :
 
 end
 
+section
+variable {M : Mat} {j0 Lb n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+  (hA : Anc0 M j0 (j0 + Lb)) {g : Nat} (hg : par M 0 j0 = some g) (hn : 1 ≤ n)
+  (hx0 : par M 0 (j0 + Lb) = some j0)
+  (hpre : ∀ c, c < j0 + Lb → par (TRIO.gexp M j0 Lb 0 0 n) 0 c = par M 0 c)
+include hlen hLb hA hg hn hx0 hpre
+
+/-- **The children of `g` after a `t = 0` expansion**: those of `M`, then the copy roots. -/
+theorem children_gexp_g_t0 :
+    children (TRIO.gexp M j0 Lb 0 0 n) g =
+      children M g ++ (List.range (n - 1)).map (fun k => j0 + ((k + 1) * Lb + 0)) := by
+  have hlen' := TRIO.gexp_length (d0 := 0) (d1 := 0) (n := n) hlen
+  have hgj := par_lt M 0 j0 g hg
+  have hchM : ∀ c ∈ children M g, c < j0 + Lb := by
+    intro c hc
+    have hcm := mem_children_iff.mp hc
+    rcases Nat.lt_or_ge c (j0 + Lb) with h | h
+    · exact h
+    · exfalso
+      have : c = j0 + Lb := by omega
+      subst this; rw [hx0] at hcm; have := Option.some.inj hcm.2; omega
+  apply eq_of_sorted_mem _ _ (children_sorted _ _)
+  · rw [List.pairwise_append]
+    refine ⟨children_sorted M g, ?_, ?_⟩
+    · apply List.Pairwise.map _ _ List.pairwise_lt_range
+      intro a b hab
+      have : (a + 1) * Lb < (b + 1) * Lb := Nat.mul_lt_mul_of_pos_right (by omega) hLb
+      omega
+    · intro a ha b hb
+      obtain ⟨k, _, rfl⟩ := List.mem_map.mp hb
+      have := hchM a ha
+      have : Lb ≤ (k + 1) * Lb := by
+        have := Nat.mul_le_mul_right Lb (show 1 ≤ k + 1 by omega); simpa using this
+      omega
+  · intro c
+    rw [mem_children_iff, List.mem_append, List.mem_map, mem_children_iff]
+    constructor
+    · rintro ⟨hcl, hcp⟩
+      rcases Nat.lt_or_ge c (j0 + Lb) with h | h
+      · left; rw [hpre c h] at hcp; exact ⟨by omega, hcp⟩
+      · right
+        obtain ⟨k', q'', hk', hq'', rfl⟩ := TRIO.gexp_pos_decomp (j0 := j0) (n := n) (p := c) hLb
+          (by omega) (by rw [hlen'] at hcl; exact hcl)
+        have hk1 : 1 ≤ k' := by
+          rcases Nat.eq_zero_or_pos k' with h0 | h0
+          · subst h0; simp at h; omega
+          · exact h0
+        rcases Nat.eq_zero_or_pos q'' with h0 | h0
+        · subst h0
+          exact ⟨k' - 1, List.mem_range.mpr (by omega), by
+            rw [show k' - 1 + 1 = k' by omega]⟩
+        · exfalso
+          obtain ⟨pa, hpa⟩ := par0_some_of (show j0 < j0 + q'' by omega)
+            (anc0_interval hA (j0 + q'') (by omega) (by omega))
+          have hge := par0_ge_of_anc hA (show j0 < j0 + q'' by omega) (by omega) hpa
+          have hplt := par_lt M 0 _ _ hpa
+          have hpa' : par M 0 (j0 + q'') = some (j0 + (pa - j0)) := by rw [hpa]; congr 1; omega
+          rw [par0_gexp_mir hlen hk' hq'' hpa'] at hcp
+          have := Option.some.inj hcp; omega
+    · rintro (⟨hcl, hcp⟩ | ⟨k, hk, rfl⟩)
+      · have hc := hchM c (mem_children_iff.mpr ⟨hcl, hcp⟩)
+        have hLn : Lb ≤ n * Lb := by
+          have := Nat.mul_le_mul_right Lb hn; simpa using this
+        refine ⟨by rw [hlen']; omega, by rw [hpre c hc]; exact hcp⟩
+      · have hk' := List.mem_range.mp hk
+        refine ⟨?_, par0_gexp_root_t0 hlen hLb (by omega) hA hg⟩
+        rw [hlen']
+        have : (k + 1 + 1) * Lb ≤ n * Lb := Nat.mul_le_mul_right _ (by omega)
+        have h2 : (k + 1 + 1) * Lb = (k + 1) * Lb + Lb := Nat.succ_mul (k + 1) Lb
+        omega
+
+end
+
 end Ytosk
