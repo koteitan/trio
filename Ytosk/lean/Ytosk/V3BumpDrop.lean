@@ -409,4 +409,312 @@ theorem v_weak {V W' W : T} (hV : isOT V = true) (hcsV : CS V) (hW' : Single W')
       le_trans (one_le_of_ne_z (single_ne_z hW')) (le_add_single V hW'.2), isOT_add hV hW'.1⟩
   · left; exact heq
 
+/-! ## 0 でない値と 2 以上の p -/
+
+theorem add_ne_z_right : ∀ (x : T) {y : T}, y ≠ z → add x y ≠ z
+  | z, _, h => by simpa using h
+  | psi a b c, z, _ => by simp
+  | psi a b c, psi d e f, _ => by
+    rw [add_psi_psi]; split <;> simp
+
+theorem sp_ne_z (a : T) : ∀ (c b : T), sp a b c ≠ z
+  | z, b => by simp [sp]
+  | psi s y c, b => by
+    unfold sp
+    split
+    · exact sp_ne_z a c _
+    · exact sp_ne_z a c _
+
+theorem sf_ne_z : ∀ {t : T}, t ≠ z → sf t ≠ z
+  | z, h => absurd rfl h
+  | psi a b c, _ => by
+    simp only [sf]
+    cases hc : sf c with
+    | z => rw [add_z_right]; exact sp_ne_z _ _ _
+    | psi => exact add_ne_z_right _ (by simp)
+
+theorem last_ne_z_bd : ∀ {t : T}, t ≠ z → last t ≠ z
+  | z, h => absurd rfl h
+  | psi a b z, _ => by simp [last]
+  | psi a b (psi c d e), _ => by
+    show last (psi c d e) ≠ z
+    exact last_ne_z_bd (by simp)
+
+theorem vbump_ne_z {N : Mat} {σ : Valn} (hC : Cons N σ) {k : Nat} (hk : k < N.length)
+    (h1 : entry N 1 k ≠ 0) (h2 : entry N 2 k ≠ 0) : σ.v k ≠ z := by
+  rw [(hC k hk).2]; unfold vRhs
+  rw [if_neg h1, if_neg h2]
+  exact sf_ne_z (add_ne_z_right _ (omega_ne_z _))
+
+/-- **`v ≠ 0` where row 1 is nonzero.** -/
+theorem v_ne_z_of_e1 {N : Mat} {σ : Valn} (hC : Cons N σ) {k : Nat} (hk : k < N.length)
+    (h1 : entry N 1 k ≠ 0) : σ.v k ≠ z := by
+  by_cases h2 : entry N 2 k = 0
+  · rw [(hC k hk).2]; unfold vRhs
+    rw [if_neg h1, if_pos h2]
+    apply sf_ne_z
+    apply add_ne_z_right
+    cases hu : upg N k with
+    | none => simp [one]
+    | some k2 =>
+      simp only
+      obtain ⟨m, _, _, hcol, _⟩ := upg_spec hu
+      have hk2 := upg_lt hk hu
+      have e1 : entry N 1 k2 ≠ 0 := by
+        have : entry N 1 k2 = (col N k2).2.1 := rfl
+        rw [this, hcol]; exact h1
+      have e2 : entry N 2 k2 ≠ 0 := by
+        have : entry N 2 k2 = (col N k2).2.2 := rfl
+        rw [this, hcol]; simp
+      exact last_ne_z_bd (vbump_ne_z hC hk2 e1 e2)
+  · exact vbump_ne_z hC hk h1 h2
+
+theorem v_z_of_e1 {N : Mat} {σ : Valn} (hC : Cons N σ) {k : Nat} (hk : k < N.length)
+    (h1 : entry N 1 k = 0) : σ.v k = z := by
+  rw [(hC k hk).2]; unfold vRhs; rw [if_pos h1]
+
+theorem le_add_of_single : ∀ (X : T) {c : T}, (∃ s y, c = psi s y z) → X ≤ add X c
+  | z, _, _ => z_le _
+  | psi a b c0, _, ⟨s, y, rfl⟩ => by
+    rw [add_psi_psi]
+    split
+    · rename_i h
+      exact le_of_lt (lt_of_head_lt (by simpa [head] using h))
+    · exact psi_le_psi_rest (le_add_of_single c0 ⟨s, y, rfl⟩)
+
+theorem foldl_ge : ∀ (l : List T) (acc : T), isOT acc = true → (∀ t ∈ l, Single t) →
+    acc ≤ l.foldl (fun a b => sf (add a b)) acc
+  | [], _, _, _ => le_refl _
+  | t :: l, acc, h, hs => by
+    simp only [List.foldl_cons]
+    have ht := hs t (by simp)
+    have hot : isOT (add acc t) = true := isOT_add h ht.1
+    rw [sf_ot hot]
+    exact le_trans (le_add_of_single acc ht.2)
+      (foldl_ge l _ hot (fun u hu => hs u (List.mem_cons_of_mem _ hu)))
+
+/-- **`1 + Σ ≥ 2`** for a nonempty sum. -/
+theorem two_le_sumN_one_cons {l : List T} (hne : l ≠ []) (hs : ∀ t ∈ l, Single t) :
+    two ≤ sumN (one :: l) := by
+  cases l with
+  | nil => exact absurd rfl hne
+  | cons c l' =>
+    have hc := hs c (by simp)
+    have e : sumN (one :: c :: l') = l'.foldl (fun a b => sf (add a b)) (sumN [one, c]) := by
+      unfold sumN; simp only [List.foldl_cons, List.foldl_nil]
+    have h2 : two ≤ sumN [one, c] := by
+      by_cases h : one < c
+      · rw [onep_self hc h]; obtain ⟨_, s, y, rfl⟩ := hc; exact le_of_lt (two_lt_of_one_lt h)
+      · rw [(onep_two hc h).2]
+    have hot : isOT (sumN [one, c]) = true :=
+      isOT_sumN _ (fun t ht => by simp at ht; rcases ht with rfl | rfl; rfl; exact hc.1)
+    rw [e]
+    exact le_trans h2 (foldl_ge l' _ hot (fun u hu => hs u (List.mem_cons_of_mem _ hu)))
+
+/-! ## 値の仮定 -/
+
+/-- **Value hypothesis**: under a column with rows 1 and 2 nonzero, the `o` values of the children of a
+bump child do not increase (SRO より下の L9 網羅で 57 万件、例外 0). -/
+def BumpKidsDec (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
+    ((children M j).map ρ.o).Pairwise (fun a b => b ≤ a)
+
+/-- **Value hypothesis**: the bump terms `ω^{G_j}` do not increase (L9 網羅で 57 万件、例外 0). -/
+def BumpTermDec (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+    (nzs ((children M i).map (bumpTerm M ρ i))).Pairwise (fun a b => b ≤ a)
+
+/-- The bump term `ω^p` of `v(i)`. -/
+def bumpW (M : Mat) (ρ : Valn) (i : Nat) : T := omega (sumN (one :: (children M i).map (bumpTerm M ρ i)))
+
+/-- **Value hypothesis**: a summand of `v(P_1 i)` at least `ω^2` and below the bump term `w` is `◁ w`
+(L9 網羅: そのような加数は 1 つもない。`ω^2` 未満では `ω ◁ Ω_1` が偽になる例がある). -/
+def BumpAbs (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ r ∈ summands (vOpt ρ (par M 1 i)),
+    ¬ r < psi z two z → r < bumpW M ρ i → Lhd z r (bumpW M ρ i)
+
+/-- **Value hypothesis** (the shape of the weak sources): if a child `k` of a bump child `j` has
+`o(k) = ψ_w(0)` with `w ≠ 0`, then `j` is the only child, `k` is its first child, and the components of
+`v(P_1 i)` are countable (L9 網羅で 3256 件、例外 0). -/
+def BumpWeakShape (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
+    ∀ k ∈ children M j, (∃ w, w ≠ z ∧ ρ.o k = psi w z z) →
+      children M i = [j] ∧ (children M j).head? = some k ∧ CS (vOpt ρ (par M 1 i))
+
+@[simp] theorem sumN_nil : sumN [] = z := rfl
+
+/-! ## 行列の段: M.take x の子 -/
+
+/-- The children of `i` in `M` are those in `M.take x`, then possibly `x`. -/
+theorem children_M_eq {M : Mat} {x : Nat} (hx : x + 1 = M.length) (i : Nat) :
+    ∃ XI, children M i = children (M.take x) i ++ XI ∧ (XI = [] ∨ (XI = [x] ∧ x ∈ children M i)) := by
+  by_cases hxi : x ∈ children M i
+  · exact ⟨[x], by rw [children_take]; exact children_split_x hx hxi, Or.inr ⟨rfl, hxi⟩⟩
+  · exact ⟨[], by rw [children_take, children_filter_x hx hxi]; simp, Or.inl rfl⟩
+
+theorem mem_children_take {M : Mat} {x i k : Nat} (h : k ∈ children (M.take x) i) :
+    k < x ∧ k ∈ children M i := by
+  rw [children_take, List.mem_filter] at h
+  exact ⟨by simpa using h.2, h.1⟩
+
+/-- **The children of a changed bump-type column in `M.take x` are bump columns.** -/
+theorem bump_children_take {M : Mat} {x : Nat} (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M)
+    (hZ1 : Z1C M) {i : Nat} (hi : i < x) (he2 : entry M 2 i = 1) (hT : TopC M x i) :
+    ∀ c ∈ children (M.take x) i, col M c = bump M i := by
+  intro c hc
+  have htop := hT.1
+  unfold topped at htop
+  cases hl : (children (M.take x) i).getLast? with
+  | none => rw [List.getLast?_eq_none_iff] at hl; rw [hl] at hc; simp at hc
+  | some ℓ =>
+    rw [hl] at htop
+    simp only [decide_eq_true_eq] at htop
+    have hlast : children (M.take x) i = (children (M.take x) i).dropLast ++ [ℓ] := by
+      rw [List.dropLast_append_getLast? _ hl]
+    have hall := all_bump_of_last (R0P_take hR0 x) (Z2_take hZ2 x) (SibDec_take hSD x)
+      (Z1C_take hZ1 x) (by rw [entry_take M 2 hi]; exact he2) hlast htop c hc
+    have hcx := (mem_children_take hc).1
+    rwa [col_take M hcx, bump_take M hi] at hall
+
+theorem e2_of_bump {M : Mat} {i j : Nat} (h : col M j = bump M i) : entry M 2 j = 1 := by
+  have : entry M 2 j = (col M j).2.2 := rfl
+  rw [this, h]; rfl
+
+/-! ## G の段: のりしろの子 jl の子の和 -/
+
+/-- **The `G` level.** For the last bump child `jl` of a changed column (its children in `M.take x`
+change only at the last one), `G′ = Σ o′` against `G = Σ o` is in the strong relation, or weakly below
+with a weak source `o(k) = ψ_w(0)` among the children of `jl`. -/
+theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
+    (hKD : BumpKidsDec M ρ) (hWS : BumpWeakShape M ρ)
+    {i jl : Nat} (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i ≠ 0)
+    (hjlM : jl ∈ children M i) (hjlx : jl < x) (hjlb : col M jl = bump M i)
+    (hIH : ∀ k ∈ children M jl, k < x → PO ρ ρ' k ∧ PV M ρ ρ' k) :
+    (∀ t ∈ (children (M.take x) jl).map ρ'.o, Single t) ∧
+    (BRelS (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∨
+      (BWk (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∧
+        ∃ k ∈ children M jl, ∃ w, w ≠ z ∧ ρ.o k = psi w z z)) := by
+  have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
+  have he2jl : entry M 2 jl ≠ 0 := by rw [e2_of_bump hjlb]; simp
+  have hoff := chg_off hx hC hG hC' hRk'
+  obtain ⟨XJ, hXJ, hXJc⟩ := children_M_eq hx jl
+  have hdec := hKD i h1 h2 jl hjlM hjlb
+  rcases List.eq_nil_or_concat (children (M.take x) jl) with hnil | ⟨K0, kl, hKT⟩
+  · -- no child in `M.take x`
+    rw [hnil] at hXJ ⊢
+    simp only [List.map_nil, List.nil_append] at hXJ ⊢
+    refine ⟨by simp, ?_⟩
+    rcases hXJc with rfl | ⟨rfl, hxjl⟩
+    · rw [hXJ]; left; exact brelS_refl
+    · rw [hXJ]
+      have hox : ρ.o x = psi (ρ.v x) z z := o_of_no_counted hC (by omega) (hG.ot_v x (by omega))
+        (fun c hc => by have := mem_children hc; omega)
+      have hsx : Single (ρ.o x) := single_o hC hG (by omega)
+      simp only [List.map_cons, List.map_nil]
+      rw [sumN_singleton hsx, hox]
+      by_cases hvx : ρ.v x = z
+      · left; rw [hvx]
+        exact Or.inl ⟨Or.inr (lhd_zero (by simp)), one_lt_E0⟩
+      · right; exact ⟨⟨z_le _, Or.inl (T.z_lt_psi _ _ _)⟩, x, by simp, _, hvx, hox⟩
+  · rw [List.concat_eq_append] at hKT
+    have hklT : kl ∈ children (M.take x) jl := by rw [hKT]; simp
+    obtain ⟨hklx, hklM⟩ := mem_children_take hklT
+    have hklL : kl < M.length := by omega
+    have hklLT : kl < (M.take x).length := by omega
+    obtain ⟨hPO, hPV⟩ := hIH kl hklM hklx
+    have hK0lt : ∀ k ∈ K0, k < kl := by
+      have hs := children_sorted (M.take x) jl
+      rw [hKT] at hs
+      exact fun k hk => (List.pairwise_append.mp hs).2.2 k hk kl (by simp)
+    have hK0T : ∀ k ∈ K0, k ∈ children (M.take x) jl := fun k hk => by rw [hKT]; simp [hk]
+    have hsame : ∀ k ∈ K0, ρ'.o k = ρ.o k := by
+      intro k hk
+      obtain ⟨hkx', hkM⟩ := mem_children_take (hK0T k hk)
+      apply (hoff k hkx').1
+      intro hCk
+      exact chg_only_last hx hR0 hZ2 hSD hZ1 hUAT hUAB he2jl hkM hklT (hK0lt k hk) hCk (Anc0.refl k)
+    have hchM : children M jl = K0 ++ [kl] ++ XJ := by rw [hXJ, hKT]
+    rw [hchM] at hdec
+    simp only [List.map_append, List.map_cons, List.map_nil] at hdec
+    have hmapT : (children (M.take x) jl).map ρ'.o = K0.map ρ.o ++ [ρ'.o kl] := by
+      rw [hKT, List.map_append, List.map_singleton]
+      congr 1; exact List.map_congr_left hsame
+    have hlekl : ρ'.o kl ≤ ρ.o kl := hPO.1.elim (fun h => h.le) (fun h => DRelO.le (Or.inr h.1))
+    have hsM : ∀ k ∈ children M jl, Single (ρ.o k) := fun k hk => single_o hC hG (mem_children hk).2
+    have hsAll : ∀ t ∈ K0.map ρ.o ++ [ρ.o kl] ++ XJ.map ρ.o, Single t := by
+      intro t ht
+      have : t ∈ (children M jl).map ρ.o := by rw [hchM]; simpa using ht
+      obtain ⟨k, hk, rfl⟩ := List.mem_map.mp this
+      exact hsM k hk
+    have hp1 := List.pairwise_append.mp hdec
+    have hp0 := List.pairwise_append.mp hp1.1
+    have hsK0 : ∀ t ∈ K0.map ρ.o, Single t := fun t ht => hsAll t (by simp [ht])
+    have hsT : ∀ t ∈ K0.map ρ.o ++ [ρ'.o kl], Single t := by
+      intro t ht
+      rcases List.mem_append.mp ht with ht | ht
+      · exact hsK0 t ht
+      · simp at ht; rw [ht]; exact hPO.2
+    have eG' : sumN (K0.map ρ.o ++ [ρ'.o kl]) = app (sumN (K0.map ρ.o)) (ρ'.o kl) :=
+      sumN_snoc_dec hsT (List.pairwise_append.mpr ⟨hp0.1, by simp, fun a ha b hb => by
+        simp at hb; rw [hb]; exact le_trans hlekl (hp0.2.2 a ha _ (by simp))⟩)
+    have eG : sumN (K0.map ρ.o ++ [ρ.o kl] ++ XJ.map ρ.o) =
+        app (app (sumN (K0.map ρ.o)) (ρ.o kl)) (sumN (XJ.map ρ.o)) := by
+      rw [sumN_append_dec hsAll hdec, sumN_snoc_dec (fun t ht => hsAll t (List.mem_append_left _ ht)) hp1.1]
+    refine ⟨by rw [hmapT]; exact hsT, ?_⟩
+    rw [hmapT, hchM]
+    simp only [List.map_append, List.map_cons, List.map_nil]
+    rw [eG', eG]
+    by_cases hK0 : K0 = []
+    · subst hK0
+      simp only [List.map_nil, sumN_nil, app_z]
+      obtain ⟨y0, hy0⟩ := o_psi_sub hC hklL
+      rw [sf_ot (hG.ot_v kl hklL)] at hy0
+      rw [hy0]
+      simp only [app_psi, app_z]
+      by_cases hv : ρ'.v kl = ρ.v kl
+      · obtain ⟨y1, hy1⟩ := o_psi_sub hC' hklLT
+        rw [sf_ot hPV.2.1, hv] at hy1
+        rcases hPO.1 with hl | ⟨⟨w1, w2, X, e1, e2, hWk⟩, _⟩
+        · left
+          rw [hy1, hy0] at hl
+          rw [hy1]
+          exact brelS_single_same _ hl (hy1 ▸ hPO.2.1)
+        · exfalso
+          rw [hy1] at e1; rw [hy0] at e2
+          simp only [psi.injEq] at e1 e2
+          rw [← e1.1, ← e2.1] at hWk
+          exact lt_irrefl' _ hWk.1
+      · have hCk : ChgX M x false kl := by
+          by_contra hn; exact hv ((hoff kl hklx).2 hn)
+        have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCk).1 rfl hklx
+        have ho' : ρ'.o kl = psi (ρ'.v kl) z z := o_of_no_counted hC' hklLT hPV.2.1 hT.2.1
+        have he1 : entry M 1 kl ≠ 0 := by
+          intro he; apply hv
+          rw [v_z_of_e1 hC hklL he, v_z_of_e1 hC' hklLT (by rw [entry_take M 1 hklx]; exact he)]
+        have hv'z : ρ'.v kl ≠ z := v_ne_z_of_e1 hC' hklLT (by rw [entry_take M 1 hklx]; exact he1)
+        rw [ho']
+        rcases hPV.1 with hl | ⟨hWk, hnc⟩
+        · left; exact brelS_fix hl (one_le_of_ne_z hv'z)
+        · right
+          refine ⟨bwk_fix (le_trans (psi_le_psi_z (le_of_lt hWk.1)) (psi_le_psi_rest (z_le _)))
+            hWk.2.2.1 hWk.2.1, kl, by simp, ρ.v kl, ?_, o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc⟩
+          intro hz; rw [hz] at hWk; exact T.not_lt_z _ hWk.1
+    · have hS0 : sumN (K0.map ρ.o) ≠ z := sumN_ne_z hsK0 hp0.1 (by simpa using hK0)
+      rcases hPO.1 with hl | ⟨⟨w1, w2, X, _, e2, hWk⟩, ⟨w, hw⟩⟩
+      · left; exact brelS_app_same hS0 hl _
+      · exfalso
+        rw [hw] at e2
+        simp only [psi.injEq] at e2
+        have hw2 : w ≠ z := by
+          rw [e2.1]; intro hz; rw [hz] at hWk; exact T.not_lt_z _ hWk.1
+        obtain ⟨_, hhead, _⟩ := hWS i h1 h2 jl hjlM hjlb kl hklM ⟨w, hw2, hw⟩
+        rw [hchM] at hhead
+        obtain ⟨k0, K0', rfl⟩ := List.exists_cons_of_ne_nil hK0
+        simp only [List.cons_append, List.head?_cons, Option.some.injEq] at hhead
+        have := hK0lt k0 (by simp)
+        omega
+
 end Ytosk
