@@ -603,6 +603,151 @@ theorem preFC_gexp_t0 : PreFC (TRIO.gexp M j0 Lb 0 0 n) := by
 
 end
 
+/-! ## r が根の場合 -/
+
+section
+variable {M : Mat} {j0 Lb n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+  (hA : Anc0 M j0 (j0 + Lb)) (hrn : par M 0 j0 = none)
+  (hF : F1 (TRIO.gexp M j0 Lb 0 0 n)) (hI : Inv2 M) (hn : 2 ≤ n)
+  (hx0 : par M 0 (j0 + Lb) = some j0) (hx1 : entry M 1 (j0 + Lb) = 0)
+  (hpre : ∀ c, c < j0 + Lb → par (TRIO.gexp M j0 Lb 0 0 n) 0 c = par M 0 c)
+include hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+
+theorem e0_root : entry M 0 j0 = 0 := by
+  have hc := col_zero_of_top hI.z0 hI.e00 (by omega) hrn
+  unfold entry; unfold col at hc; rw [hc]; rfl
+
+theorem e0N_root {k : Nat} (hk : k < n) : entry (TRIO.gexp M j0 Lb 0 0 n) 0 (j0 + (k * Lb + 0)) = 0 := by
+  rw [entry0_gexp_mir hlen hk hLb]
+  simp only [Nat.add_zero, Nat.mul_zero]
+  exact e0_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+
+theorem hR_root : CopyRootsLow (TRIO.gexp M j0 Lb 0 0 n) j0 Lb n := by
+  intro k hk p hp
+  have h0 := e0N_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre hk
+  have := ((par0_spec _).mp hp).2.1; omega
+
+theorem take_root : (TRIO.gexp M j0 Lb 0 0 n).take j0 = M.take j0 := by
+  unfold TRIO.gexp; exact List.take_left' (by rw [List.length_take]; omega)
+
+/-- Before the root `r`, the values are unchanged. -/
+theorem low_root {c : Nat} (hc : c < j0) : o2r (TRIO.gexp M j0 Lb 0 0 n) c = o2r M c := by
+  have h0N : entry (TRIO.gexp M j0 Lb 0 0 n) 0 j0 = 0 := by
+    have := e0N_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre (k := 0) (by omega); simpa using this
+  rw [← o2r_take_low h0N c hc, take_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre,
+    o2r_take_low (e0_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre) c hc]
+
+/-- Before the root `r`, the children are unchanged. -/
+theorem children_low_root {h : Nat} (hh : h < j0) :
+    children (TRIO.gexp M j0 Lb 0 0 n) h = children M h := by
+  have h0N : entry (TRIO.gexp M j0 Lb 0 0 n) 0 j0 = 0 := by
+    have := e0N_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre (k := 0) (by omega); simpa using this
+  have h0M := e0_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+  have hlen' := TRIO.gexp_length (d0 := 0) (d1 := 0) (n := n) hlen
+  apply eq_of_sorted_mem _ _ (children_sorted _ _) (children_sorted _ _)
+  intro d
+  rw [mem_children_iff, mem_children_iff]
+  constructor
+  · rintro ⟨hdl, hdp⟩
+    rcases Nat.lt_or_ge d j0 with h1 | h1
+    · rw [hpre d (by omega)] at hdp; exact ⟨by omega, hdp⟩
+    · exact absurd (par_ge_of_zero h0N h1 hdp) (by omega)
+  · rintro ⟨hdl, hdp⟩
+    rcases Nat.lt_or_ge d j0 with h1 | h1
+    · rw [← hpre d (by omega)] at hdp; exact ⟨by rw [hlen']; omega, hdp⟩
+    · exact absurd (par_ge_of_zero h0M h1 hdp) (by omega)
+
+theorem bst_low_root {h p : Nat} (hp : par M 0 p = some h) (hpj : p < j0) :
+    bst (TRIO.gexp M j0 Lb 0 0 n) h p = bst M h p := by
+  have hhp := par_lt M 0 p h hp
+  unfold bst
+  have hvh : vr (TRIO.gexp M j0 Lb 0 0 n) h = vr M h := by
+    rw [vr_eq_nT hF, vr_eq_nT hI.g2.f1]
+    congr 1
+    have h1 := expand_take_prefix
+    rw [← entry_take (TRIO.gexp M j0 Lb 0 0 n) 1 (show h < j0 by omega),
+      take_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre, entry_take M 1 (show h < j0 by omega)]
+  rw [hvh, children_low_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre (by omega)]
+  congr 2
+  apply List.map_congr_left
+  intro d hd
+  have hdp : d < p := by rw [List.mem_filter] at hd; simpa using hd.2
+  exact low_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre (by omega)
+
+
+theorem good2_root : Good2 (TRIO.gexp M j0 Lb 0 0 n) := by
+  have hRr := hR_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+  have h0M := e0_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+  refine ⟨hF, ot_t0 hlen hLb hA hRr hF hI.g2 hn hx0 hx1 (fun c hc => by
+      rw [low_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre hc]; exact hI.g2.ot c),
+    dec_t0 hlen hLb hA hRr hF hI.g2 hn hx0 hx1 (fun h hh => ?_)⟩
+  rw [children_low_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre hh]
+  have hv : (children M h).map (o2r (TRIO.gexp M j0 Lb 0 0 n)) = (children M h).map (o2r M) := by
+    apply List.map_congr_left; intro d hd
+    have hdp := mem_children_iff.mp hd
+    have hdj : d < j0 := by
+      by_contra hc; exact absurd (par_ge_of_zero h0M (by omega) hdp.2) (by omega)
+    exact low_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre hdj
+  rw [hv]; exact hI.g2.dec h
+
+/-- Shared case split for the frames (`t = 0`, `r` a root). -/
+theorem frames_root (P : T → T → T → T → Prop)
+    (hcopy : ∀ k q' h s y, k < n → 0 < q' → q' < Lb →
+      par (TRIO.gexp M j0 Lb 0 0 n) 0 (j0 + (k * Lb + q')) = some h →
+      o2r (TRIO.gexp M j0 Lb 0 0 n) (j0 + (k * Lb + q')) = psi s y z →
+      P (vr (TRIO.gexp M j0 Lb 0 0 n) h) (bst (TRIO.gexp M j0 Lb 0 0 n) h (j0 + (k * Lb + q'))) s y)
+    (hM : ∀ h p s y, p < M.length → par M 0 p = some h → o2r M p = psi s y z →
+      P (vr M h) (bst M h p) s y) :
+    ∀ h p s y, p < (TRIO.gexp M j0 Lb 0 0 n).length → par (TRIO.gexp M j0 Lb 0 0 n) 0 p = some h →
+      o2r (TRIO.gexp M j0 Lb 0 0 n) p = psi s y z →
+      P (vr (TRIO.gexp M j0 Lb 0 0 n) h) (bst (TRIO.gexp M j0 Lb 0 0 n) h p) s y := by
+  have hlen' := TRIO.gexp_length (d0 := 0) (d1 := 0) (n := n) hlen
+  intro h p s y hpl hp hc
+  rcases Nat.lt_or_ge p j0 with h1 | h1
+  · have hp' : par M 0 p = some h := by rw [← hpre p (by omega)]; exact hp
+    have hhp := par_lt M 0 p h hp'
+    rw [bst_low_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre hp' h1]
+    have hvh : vr (TRIO.gexp M j0 Lb 0 0 n) h = vr M h := by
+      rw [vr_eq_nT hF, vr_eq_nT hI.g2.f1]
+      congr 1
+      rw [← entry_take (TRIO.gexp M j0 Lb 0 0 n) 1 (show h < j0 by omega),
+        take_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre, entry_take M 1 (show h < j0 by omega)]
+    rw [hvh]
+    rw [low_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre h1] at hc
+    exact hM h p s y (by omega) hp' hc
+  · obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := j0) (n := n) (p := p) hLb h1
+      (by rw [hlen'] at hpl; exact hpl)
+    rcases Nat.eq_zero_or_pos q with hq0 | hq0
+    · subst hq0
+      exfalso
+      have h0 := e0N_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre hk
+      have := ((par0_spec _).mp hp).2.1; omega
+    · exact hcopy k q h s y hk hq0 hq hp hc
+
+theorem preHi_root : PreHi (TRIO.gexp M j0 Lb 0 0 n) := by
+  have hRr := hR_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+  intro h p s y hpl hp hc
+  apply frames_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+    (fun a B s y => B ≠ z → lt B y = true → lt (psi a z z) (psi s y z) = true →
+      hiP s y = B ∧ loP s y ≠ z) _ _ h p s y hpl hp hc
+  · intro k q' h s y hk hq0 hq hp hc hB h1 h2
+    exact preHi_copy_t0 hlen hLb hA hRr hF hI.g2 hn hx0 hx1 hI.hi hk hq0 hq hp hc hB h1 h2
+  · intro h p s y hpl hp hc hB h1 h2
+    exact hI.hi h p s y hpl hp hc hB h1 h2
+
+theorem preFC_root : PreFC (TRIO.gexp M j0 Lb 0 0 n) := by
+  have hRr := hR_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+  intro h p s y hpl hp hc
+  apply frames_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+    (fun a B s y => B = z → lt z y = true → lt (psi a z z) (psi s y z) = true → a = s →
+      hiP s y = z ∧ loP s y ≠ z) _ _ h p s y hpl hp hc
+  · intro k q' h s y hk hq0 hq hp hc hB h1 h2 hv
+    exact preFC_copy_t0 hlen hLb hA hRr hF hI.g2 hn hx0 hx1 hI.fc hk hq0 hq hp hc hB h1 h2 hv
+  · intro h p s y hpl hp hc hB h1 h2 hv
+    exact hI.fc h p s y hpl hp hc hB h1 h2 hv
+
+end
+
 /-! ## 展開の形での組み立て -/
 
 /-- The trio invariants, the top-left zero and the zero row 2 survive an expansion. -/
@@ -740,5 +885,124 @@ theorem inv2_expand_t0_g {M : Mat} {r g n : Nat} (hM : 2 ≤ M.length)
   refine ⟨hRD'.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
   simp only [List.map_cons, List.map_nil, List.mem_singleton] at hb; subst hb
   exact le_trans (le_of_lt hρlt) (hRD'.2.2 a ha _ (by simp))
+
+/-- **(I2), `t = 0`, `r` a root.** -/
+theorem inv2_expand_t0_root {M : Mat} {r n : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht0 : TRIO.srow M (M.length - 1) = 0) (hI : Inv2 M) (hrn : par M 0 r = none) (hn : 2 ≤ n) :
+    Inv2 (expand M n) := by
+  obtain ⟨hz0', hr1', he00, hrow⟩ := basic_expand hI hM (show 1 ≤ n by omega)
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hr0 : par M 0 (M.length - 1) = some r := by have h := hr; rw [ht0] at h; exact h
+  have hrx := par_lt M 0 _ r hr0
+  have hgexp := expand_eq_gexp_t0 M n hM hz hr ht0
+  have hF : F1 (TRIO.gexp M r (M.length - 1 - r) 0 0 n) := by
+    rw [← hgexp]; exact F1_expand hI.r1 hI.z0 hM n
+  have hpre0 : ∀ c, c < M.length - 1 →
+      par (TRIO.gexp M r (M.length - 1 - r) 0 0 n) 0 c = par M 0 c := by
+    intro c hc; rw [← hgexp]; exact par0_expand_prefix M hM (by omega) hc
+  have hroots0 := roots_split hx (Anc0.step hr0 (Anc0.refl r))
+    (col_zero_of_top hI.z0 hI.e00 (by omega) hrn)
+  have hr0c := col_zero_of_top hI.z0 hI.e00 (by omega) hrn
+  obtain ⟨Lb, hLbd⟩ : ∃ Lb, Lb = M.length - 1 - r := ⟨_, rfl⟩
+  rw [← hLbd] at hF hgexp hpre0
+  have hlen : r + Lb + 1 = M.length := by omega
+  have hLb : 0 < Lb := by omega
+  have hxe : r + Lb = M.length - 1 := by omega
+  have hA : Anc0 M r (r + Lb) := by rw [hxe]; exact Anc0.step hr0 (Anc0.refl r)
+  have hx0 : par M 0 (r + Lb) = some r := by rw [hxe]; exact hr0
+  have hx1 : entry M 1 (r + Lb) = 0 := by
+    rw [hxe]
+    unfold TRIO.srow at ht0
+    split_ifs at ht0 with h1 h2
+    change ¬ 0 < (M.getD (M.length - 1) (0, 0, 0)).2.1 at h2
+    show (M.getD (M.length - 1) (0, 0, 0)).2.1 = 0
+    omega
+  have hpre : ∀ c, c < r + Lb → par (TRIO.gexp M r Lb 0 0 n) 0 c = par M 0 c := by
+    intro c hc; exact hpre0 c (by omega)
+  have hG2 := good2_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+  have hH2 := preHi_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+  have hFC2 := preFC_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+  refine ⟨by rw [hgexp]; exact hG2, by rw [hgexp]; exact hH2, by rw [hgexp]; exact hFC2, ?_,
+    hz0', hr1', he00, hrow⟩
+  -- the roots: those before `r`, then `r` and its copies
+  unfold RootsDec
+  rw [hgexp]
+  set N := TRIO.gexp M r Lb 0 0 n with hN
+  have hlenN : N.length = r + n * Lb := TRIO.gexp_length hlen
+  have he0 : entry M 0 r = 0 := by unfold entry; unfold col at hr0c; rw [hr0c]; rfl
+  have he1 : entry M 1 r = 0 := by unfold entry; unfold col at hr0c; rw [hr0c]; rfl
+  have he2 : entry M 2 r = 0 := by unfold entry; unfold col at hr0c; rw [hr0c]; rfl
+  set R := (roots M).filter (fun c => decide (c < r)) with hRd
+  have hroots : roots N = R ++ (List.range n).map (fun k => r + k * Lb) := by
+    apply eq_of_sorted_mem _ _ (roots_sorted N)
+    · rw [List.pairwise_append]
+      refine ⟨List.Pairwise.filter _ (roots_sorted M), ?_, ?_⟩
+      · apply List.Pairwise.map _ _ List.pairwise_lt_range
+        intro a c hac; have := Nat.mul_lt_mul_of_pos_right hac hLb; omega
+      · intro a ha c hc
+        rw [hRd, List.mem_filter] at ha
+        obtain ⟨k, _, rfl⟩ := List.mem_map.mp hc
+        simp at ha; omega
+    intro c
+    rw [mem_roots, List.mem_append, hRd, List.mem_filter, mem_roots, List.mem_map]
+    constructor
+    · rintro ⟨hcl, hc0⟩
+      rcases Nat.lt_or_ge c r with h1 | h1
+      · left
+        refine ⟨⟨by omega, ?_⟩, by simpa using h1⟩
+        unfold col at hc0 ⊢; rw [hN, TRIO.gexp_getD_low hlen h1] at hc0; exact hc0
+      · right
+        rw [hlenN] at hcl
+        obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (n := n) (p := c) hLb h1 hcl
+        rcases Nat.eq_zero_or_pos q with h0 | h0
+        · subst h0; exact ⟨k, List.mem_range.mpr hk, by omega⟩
+        · exfalso
+          unfold col at hc0; rw [hN, TRIO.gexp_getD_mir hlen hk hq] at hc0
+          have h2 := congrArg Prod.fst hc0
+          have h3 := anc0_interval hA (r + q) (by omega) (by omega)
+          simp only [Nat.mul_zero, Nat.add_zero] at h2
+          rw [← entry_eq] at h2
+          omega
+    · rintro (⟨⟨hcl, hc0⟩, hcr⟩ | ⟨k, hk, rfl⟩)
+      · simp at hcr
+        refine ⟨by omega, ?_⟩
+        unfold col at hc0 ⊢; rw [hN, TRIO.gexp_getD_low hlen hcr]; exact hc0
+      · have hk' := List.mem_range.mp hk
+        refine ⟨?_, ?_⟩
+        · rw [hlenN]; have := Nat.mul_lt_mul_of_pos_right hk' hLb; omega
+        · unfold col
+          rw [hN, show r + k * Lb = r + (k * Lb + 0) by omega, TRIO.gexp_getD_mir hlen hk' hLb]
+          rw [← entry_eq, ← entry_eq, ← entry_eq]
+          simp [he0, he1, he2]
+  rw [hroots, List.map_append]
+  have hRv : R.map (o2r N) = R.map (o2r M) := by
+    apply List.map_congr_left
+    intro c hc
+    rw [hRd, List.mem_filter] at hc
+    exact low_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre (by simpa using hc.2)
+  have hRr := hR_root hlen hLb hA hrn hF hI hn hx0 hx1 hpre
+  have hCv : ((List.range n).map (fun k => r + k * Lb)).map (o2r N) =
+      List.replicate n (psi (vr M r) (bst M r (r + Lb)) z) := by
+    rw [List.map_map]
+    apply List.ext_getElem (by simp)
+    intro i h1 h2
+    simp only [List.getElem_map, List.getElem_range, List.getElem_replicate, Function.comp]
+    have := o2r_copy_t0 hlen hLb hA hRr hF hI.g2 hn hx0 hx1 (k := i) (q := 0) (by simpa using h1) hLb
+    simpa using this
+  rw [hRv, hCv]
+  have hRD := hI.rd
+  unfold RootsDec at hRD
+  rw [hroots0, List.map_append] at hRD
+  have hRD' := List.pairwise_append.mp hRD
+  have hrlt : psi (vr M r) (bst M r (r + Lb)) z < o2r M r := by
+    rw [o2r_r_succ hI.g2 hlen hx0 hx1, psi_lt_psi_z_iff]
+    exact Or.inr ⟨rfl, lt_app_of (by simp [one])⟩
+  rw [List.pairwise_append]
+  refine ⟨hRD'.1, List.pairwise_replicate.mpr (Or.inr (le_refl _)), fun a ha c hc => ?_⟩
+  rw [List.eq_of_mem_replicate hc]
+  exact le_trans (le_of_lt hrlt) (hRD'.2.2 a ha _ (by simp))
 
 end Ytosk
