@@ -245,4 +245,203 @@ theorem s1_core {a B v Y0 X' : T} {m : Nat}
     rw [hnew]
     exact lhd_of_lhdE_lt (LhdE.trans hNM (Or.inr hlM)) (lt_of_le_of_lt hNM.le hlM.1)
 
+theorem sumN_replicate {O : T} (hO : Single O) : ∀ m, sumN (List.replicate m O) = mulT O m
+  | 0 => rfl
+  | m + 1 => by
+    rw [List.replicate_succ, sumN_cons_dec (fun u hu => by
+        rcases List.mem_cons.mp hu with h | h
+        · rw [h]; exact hO
+        · rw [(List.mem_replicate.mp h).2]; exact hO)
+      (List.pairwise_cons.mpr ⟨fun b hb => by rw [(List.mem_replicate.mp hb).2],
+        List.pairwise_replicate.mpr (Or.inr (le_refl _))⟩), sumN_replicate hO m]
+    rfl
+
+section
+variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+  (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+  (he1 : entry M 1 (r + L) = 0) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
+  {ρ σ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ)
+  (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : Good3 (TRIO.gexp M r L 0 0 n) σ)
+include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
+
+/-- **`o(x) = 1`** and `x` counts at `r`. -/
+theorem o_x_one : ρ.o (r + L) = one := by
+  have hxl : r + L < M.length := by omega
+  rw [o_of_no_counted hC hxl (hG.ot_v _ hxl) (fun c hc => by have := mem_children hc; omega),
+    v_z_of_e1 hC hxl he1]
+  rfl
+
+/-- **`o_M(r) = ψ_v(Y0 + 1)` and `omid = ψ_v(Y0)`** with `Y0` the state of `r` without `x`. -/
+theorem o_r_omid :
+    ρ.o r = psi (ρ.v r) (app (spArg (ρ.v r) z
+      (sumN (((children M r).filter (fun c => decide (c < r + L))).map (cnt M ρ r)))) one) z ∧
+    omid M r L ρ = psi (ρ.v r) (spArg (ρ.v r) z
+      (sumN (((children M r).filter (fun c => decide (c < r + L))).map (cnt M ρ r)))) z := by
+  have hrM : r < M.length := by omega
+  have hvot := hG.ot_v r hrM
+  set F := (children M r).filter (fun c => decide (c < r + L)) with hF
+  have hFot : ∀ t ∈ F.map (cnt M ρ r), isOT t = true := by
+    intro t ht
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+    exact isOT_cnt hG (mem_children (List.mem_filter.mp hc).1).2
+  have hS := isOT_sumN _ hFot
+  set S := sumN (F.map (cnt M ρ r)) with hSdef
+  refine ⟨?_, sf_psi_spArg hvot hS⟩
+  have hxr : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hp⟩
+  have hcx : cnt M ρ r (r + L) = one := by
+    unfold cnt
+    rw [if_neg (by
+      intro h
+      have : entry M 2 (r + L) = (col M (r + L)).2.2 := rfl
+      rw [this, h] at he2; simp [bump] at he2), if_neg (by rw [isUpg_x0 hlen hL hp he2]; simp)]
+    exact o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
+  rw [(hC r hrM).1]
+  unfold oRhs
+  rw [children_split_x (x := r + L) hlen hxr, List.map_append, List.map_singleton, hcx, ← hF,
+    sumN_snoc, ← hSdef, sf_ot (isOT_add hS rfl), add_one_eq_app,
+    sf_psi_spArg hvot (show isOT (app S one) = true from isOT_succ hS), spArg_app]
+  congr 2
+  show spArg (ρ.v r) (spArg (ρ.v r) z S) (psi z z z) = _
+  rw [spArg_single, step_leaf]
+  exact add_one_eq_app _
+
+/-- **Seed S1**: when `r` counts at its parent `g`, `o(g)` drops by `◁` in `N`. -/
+theorem t0_S1 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted M g r)
+    (hF : FrameClosed M ρ) (hVS : VSmallF M ρ)
+    (hσG : ∀ c, c < r → ¬ DepX M (r + L) true c → σ.o c = ρ.o c)
+    (hσvg : σ.v g = ρ.v g)
+    (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = omid M r L ρ)
+    (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
+    (hLast : Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
+    (hl : Lhd z (ρ'.o r) (ρ.o r))
+    (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
+    (hVr : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → ∀ Lc, CL M g = Lc ++ [r] → ∀ s y,
+      ρ.o r = psi s y z →
+      lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
+      VSmallV s') :
+    Lhd z (σ.o g) (ρ.o g) := by
+  have hx : r + L + 1 = M.length := hlen
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
+  have hgr : g < r := par_lt M 0 r g hg
+  have hgM : g < M.length := by omega
+  have hgN : g < (TRIO.gexp M r L 0 0 n).length := by rw [hlN]; omega
+  have hrg : r ∈ children M g := mem_children_iff.mpr ⟨by omega, hg⟩
+  -- the counted children in `M`
+  set F := (children M g).filter (fun d => decide (d < r)) with hFdef
+  have hchM : children M g = F ++ [r] := children_g_last hlen hL hp hg
+  set Lc := F.filter (fun d => decide (Counted M g d)) with hLcdef
+  have hclM : CL M g = Lc ++ [r] := by
+    unfold CL; rw [hchM, List.filter_append]
+    simp only [List.filter_cons, List.filter_nil, decide_eq_true_eq, if_pos hcnt]
+    rfl
+  -- the counted children in `N`
+  set f : Nat → Nat := fun k => r + k * L with hfdef
+  have hroots : [r] ++ (List.range (n - 1)).map (fun k => r + (k + 1) * L) =
+      (List.range (n - 1)).map f ++ [r + (n - 1) * L] := by
+    have e1 : (List.range n).map f = [r] ++ (List.range (n - 1)).map (fun k => r + (k + 1) * L) := by
+      obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+      rw [List.range_succ_eq_map, List.map_cons, List.map_map]
+      simp [hfdef, Nat.add_sub_cancel]
+    have e2 : (List.range n).map f = (List.range (n - 1)).map f ++ [r + (n - 1) * L] := by
+      obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
+      rw [List.range_succ, List.map_append]; simp [hfdef]
+    rw [← e1, e2]
+  set Cm := ((List.range (n - 1)).map f).filter
+    (fun d => decide (Counted (TRIO.gexp M r L 0 0 n) g d)) with hCmdef
+  have hclN : CL (TRIO.gexp M r L 0 0 n) g = Lc ++ Cm ++ [r + (n - 1) * L] := by
+    unfold CL
+    rw [children_g0 hlen hL hp hn hg, hchM, List.append_assoc, hroots, List.filter_append,
+      List.filter_append]
+    have hF' : F.filter (fun d => decide (Counted (TRIO.gexp M r L 0 0 n) g d)) = Lc := by
+      apply List.filter_congr
+      intro d hd
+      have hdr : d < r := by simpa using (List.mem_filter.mp hd).2
+      simp only [counted_lt0 hlen hL hp hn hR0 hZ2 he2 hn2 hgr hdr]
+    rw [hF', List.append_assoc]
+    simp only [List.filter_cons, List.filter_nil, decide_eq_true_eq, if_pos hLast]
+    rfl
+  have hCmv : Cm.map σ.o = List.replicate Cm.length (omid M r L ρ) := by
+    rw [List.eq_replicate_iff]
+    refine ⟨by simp, fun b hb => ?_⟩
+    obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hb
+    obtain ⟨k, hk, rfl⟩ := List.mem_map.mp (List.mem_filter.mp hd).1
+    exact hσmid k (by have := List.mem_range.mp hk; omega)
+  have hLcv : Lc.map σ.o = Lc.map ρ.o := by
+    apply List.map_congr_left
+    intro d hd
+    have hdF := (List.mem_filter.mp hd).1
+    have hdr : d < r := by simpa using (List.mem_filter.mp hdF).2
+    have hdM := (List.mem_filter.mp hdF).1
+    apply hσG d hdr
+    intro hD
+    exact p1_dep hx hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp (by omega) hdM hrg hdr hD hcnt
+  -- the values
+  obtain ⟨hsM, hpM⟩ := cl_vals hC hG hgM
+  obtain ⟨hsN, hpN⟩ := cl_vals hCN hGN hgN
+  rw [hclM] at hsM hpM
+  rw [hclN] at hsN hpN
+  simp only [List.map_append, List.map_singleton] at hsM hpM hsN hpN
+  rw [hLcv, hCmv, hσlast] at hsN hpN
+  obtain ⟨hor, hom⟩ := o_r_omid hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
+  set Y0 := spArg (ρ.v r) z (sumN (((children M r).filter (fun c => decide (c < r + L))).map
+    (cnt M ρ r))) with hY0
+  set v := ρ.v r with hv
+  set a := ρ.v g with ha
+  set Lv := Lc.map ρ.o with hLv
+  set m := Cm.length with hm
+  have hOv : omid M r L ρ = psi v Y0 z := hom
+  -- the sums
+  have hsO : Single (omid M r L ρ) := by
+    rw [← hσmid 0 (by omega)]; simpa using single_o hCN hGN (show r + 0 * L < _ by rw [hlN]; omega)
+  have hsumN : sumN (Lv ++ List.replicate m (omid M r L ρ) ++ [ρ'.o r]) =
+      app (app (sumN Lv) (mulT (omid M r L ρ) m)) (ρ'.o r) := by
+    have hp1 := List.pairwise_append.mp hpN
+    rw [sumN_append_dec hsN hpN, sumN_append_dec (fun t ht => hsN t (List.mem_append_left _ ht)) hp1.1,
+      sumN_replicate hsO m, sumN_singleton (hsN _ (by simp))]
+  have hsumM : sumN (Lv ++ [ρ.o r]) = app (sumN Lv) (ρ.o r) := by
+    rw [sumN_append_dec hsM hpM, sumN_singleton (hsM _ (by simp))]
+  have hoN : σ.o g = psi a (spArg a (spArg a (spArg a z (sumN Lv)) (mulT (omid M r L ρ) m))
+      (ρ'.o r)) z := by
+    rw [o_cl_eq hCN hGN hgN, hclN]
+    simp only [List.map_append, List.map_singleton]
+    rw [hLcv, hCmv, hσlast, hsumN, spArg_app, spArg_app, hσvg]
+  have hoM : ρ.o g = psi a (spArg a (spArg a z (sumN Lv)) (ρ.o r)) z := by
+    rw [o_cl_eq hC hG hgM, hclM]
+    simp only [List.map_append, List.map_singleton]
+    rw [hsumM, spArg_app]
+  have hLs := sumN_dec Lv (fun t ht => hsM t (List.mem_append_left _ ht)) (List.pairwise_append.mp hpM).1
+  have hfr := hVS g hgM Lc r [] (by rw [hclM])
+  rw [hoN, hoM, hOv]
+  have hXot : isOT (ρ.o r) = true := hG.ot_o r (by omega)
+  rw [hor] at hoM hl hfr hXot ⊢
+  have hOld : isOT (psi a (spArg a (spArg a z (sumN Lv)) (psi v (app Y0 one) z)) z) = true := by
+    rw [← hoM]; exact hG.ot_o g hgM
+  apply s1_core hOld hXot (by rw [← hOv]; exact hsO.1)
+  · apply spArg_summands_ge ⟨v, _, rfl⟩ (sumN Lv) z hLs.1
+    · rw [hLs.2]; intro q hq
+      have := (List.pairwise_append.mp hpM).2.2 q hq (ρ.o r) (by simp)
+      rwa [hor] at this
+    · simp [summands]
+  · have hnl : (n - 1) * L + L = n * L := by
+      rw [← Nat.succ_mul]; congr 1; omega
+    rw [← hσlast]; exact single_o hCN hGN (by rw [hlN]; omega)
+  · exact hl
+  · intro hm1
+    have hp1 := List.pairwise_append.mp hpN
+    rw [← hOv]
+    exact hp1.2.2 (omid M r L ρ) (List.mem_append_right _ (List.mem_replicate.mpr ⟨by omega, rfl⟩))
+      (ρ'.o r) (by simp)
+  · exact hy'
+  · intro hrw
+    have := (hfr.2 v (app Y0 one) rfl hrw).subSmall a
+    exact this
+  · intro s' y' hs' hsv hrw
+    exact (hVr s' y' hs' hsv Lc hclM v (app Y0 one) hor hrw).subSmall a
+  · intro hrw
+    exact hF g hgM Lc r [] (by rw [hclM]) v (app Y0 one) hor hrw
+
+end
+
 end Ytosk
