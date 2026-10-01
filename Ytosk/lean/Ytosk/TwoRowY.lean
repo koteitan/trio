@@ -3,7 +3,7 @@
 
 - PreHi: 書き換えが起きる枠で前の兄弟の状態 B ≠ 0 なら、B は子の引数 y の高い部分（Ω_{s+1} 以上）そのもので、
   低い部分は空でない。このとき step は「後ろに足す」と同じ（`step_append`）。
-- PreFC: 最初の子の枠（B = 0）で書き換えが起き、親と子の添字が等しいなら、低い部分は空でない。
+- PreFC: 最初の子の枠（B = 0）で書き換えが起き、親と子の添字が等しいなら、子の引数は低い部分だけ（高い部分が空）。
 - `o2r_frame'`: 親の値 = ψ(spArg(状態, 経路の子の値))。行列全体の Good2 でなく、その節点の子の値の条件だけを仮定する。
 -/
 import Ytosk.TwoRowX
@@ -27,11 +27,11 @@ def PreHi (M : Mat) : Prop :=
     bst M h p ≠ z → lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true →
     hiP s y = bst M h p ∧ loP s y ≠ z
 
-/-- **PreFC** at every first-child frame. -/
+/-- **PreFC** at every first-child frame: with equal subscripts the argument is all low. -/
 def PreFC (M : Mat) : Prop :=
   ∀ h p s y, p < M.length → par M 0 p = some h → o2r M p = psi s y z →
     bst M h p = z → lt z y = true → lt (psi (vr M h) z z) (psi s y z) = true → vr M h = s →
-    loP s y ≠ z
+    hiP s y = z ∧ loP s y ≠ z
 
 /-- **With a nonzero state and PreHi, the step appends.** -/
 theorem step_append {a B s y : T} (hc : isOT (psi s y z) = true)
