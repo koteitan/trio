@@ -7,6 +7,7 @@
 - 上げの先の形（`upg_spec`）。
 -/
 import Ytosk.V3Chg
+import Ytosk.V3InvTake
 
 namespace Ytosk
 
@@ -239,6 +240,229 @@ theorem cnt_change {i c : Nat} (hi : i < x) (hcx : c < x)
       exact hu (this ▸ hjc')
   unfold Counted
   rw [col_take M hcx, bump_take M hi, htop, hup]
+
+end
+
+/-! ## C の構造の帰納法 -/
+
+/-- The shape of a column whose `v` may change: topped in `M.take x`, no counted child there,
+and no column points to it by `P_1`. -/
+def TopC (M : Mat) (x i : Nat) : Prop :=
+  topped (M.take x) i = true ∧ (∀ c ∈ children (M.take x) i, ¬ Counted (M.take x) i c) ∧
+    (∀ d, d < x → par M 1 d ≠ some i)
+
+/-- `c′` is the first column after the subtree of `c`. -/
+def NextC (M : Mat) (c c' : Nat) : Prop :=
+  c < c' ∧ (∀ e, c ≤ e → e < c' → Anc0 M c e) ∧ ¬ Anc0 M c c'
+
+/-- **The interval condition**: a change below a column off the path to `x − 1` enters only through
+an upgrade into the next column after its subtree. -/
+def ICC (M : Mat) (x d : Nat) : Prop :=
+  ∀ c, c < x → Anc0 M c d → ¬ Anc0 M c (x - 1) →
+    ∃ c', NextC M c c' ∧ c' < x ∧ upg M (c' - 1) = some c' ∧ ChgX M x false c'
+
+section
+variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB
+
+/-- **No ancestor-type upgrade into a column whose `v` may change.** -/
+theorem no_anc_upg {i k : Nat} (hT : TopC M x k) (hk : k < x) (hu : upg M i = some k)
+    (hA : Anc0 M k i) (hki : k < i) : False := by
+  have hix : i < x := by have := upg_succ_lt hu; omega
+  have hUk := hUAT i k hu (by omega)
+  by_cases hxk : x ∈ children M k
+  · -- `k` is the parent of `x`
+    have hsplit := children_split_x hx hxk
+    obtain ⟨p, hpk, hpi⟩ := anc0_child hA (by omega)
+    have hpl : p < M.length := by have := hpi.le; omega
+    have hpx : p < x := by have := hpi.le; omega
+    have hpM : p ∈ children M k := mem_children_iff.mpr ⟨hpl, hpk⟩
+    have hpT : p ∈ children (M.take x) k := by
+      rw [children_take, List.mem_filter]; exact ⟨hpM, by simpa using hpx⟩
+    -- the last child of `k` in `M.take x` is the bump column
+    have htop := hT.1
+    unfold topped at htop
+    cases hl : (children (M.take x) k).getLast? with
+    | none => rw [List.getLast?_eq_none_iff] at hl; rw [hl] at hpT; simp at hpT
+    | some ℓ =>
+      rw [hl] at htop
+      simp only [decide_eq_true_eq] at htop
+      have he2 : entry M 2 k = 1 := by have := upg_target_e2 hu; have := hZ2 k; omega
+      have hlast : children (M.take x) k = (children (M.take x) k).dropLast ++ [ℓ] := by
+        rw [List.dropLast_append_getLast? _ hl]
+      have hall := all_bump_of_last (R0P_take hR0 x) (Z2_take hZ2 x) (SibDec_take hSD x)
+        (Z1C_take hZ1 x) (by rw [entry_take M 2 hk]; exact he2) hlast htop p hpT
+      rw [col_take M hpx, bump_take M hk] at hall
+      exact hUAB i k hu (by omega) p hpM hall hpi
+  · have h1 := hT.1
+    rw [topped_take_eq hx hk hxk, hUk] at h1; cases h1
+
+/-- **The structure of `C`**: a changed `v` sits on a topped column with no counted child and no
+`P_1`-child; a change below a column off the path to `x − 1` enters through the next column. -/
+theorem chg_struct {b : Bool} {d : Nat} (h : ChgX M x b d) :
+    (b = false → d < x → TopC M x d) ∧ ICC M x d := by
+  induction h with
+  | leaf =>
+    exact ⟨(fun h => nomatch h), fun c hc hcd hcn => (hcn (anc_xm1 hx hcd hc)).elim⟩
+  | supg hne =>
+    refine ⟨fun _ _ => ?_, fun c _ hcd hcn => absurd hcd hcn⟩
+    have hnil : children (M.take x) (x - 1) = [] := by
+      rw [children_take, List.filter_eq_nil_iff]
+      intro c hc hcx
+      have := (mem_children hc).1
+      simp at hcx; omega
+    refine ⟨by unfold topped; rw [hnil]; rfl, by rw [hnil]; simp, ?_⟩
+    intro e he hp
+    have := par_lt M 1 e (x - 1) hp
+    omega
+  | @scnt i c hc hcx hne =>
+    refine ⟨(fun h => nomatch h), ?_⟩
+    intro c' _ hcd hcn
+    have hic := (mem_children hc).1
+    have hpc : par M 0 c = some i := (mem_children_iff.mp hc).2
+    have hAc : Anc0 M c (x - 1) := by
+      rcases cnt_change hx (by omega) hcx hne with hxc | hu
+      · exact anc_xm1 hx (Anc0.step (mem_children_iff.mp hxc).2 (Anc0.refl c)) hcx
+      · obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu
+        rcases hcase with h | ⟨hA, _⟩
+        · omega
+        · exact hA
+    exact (hcn (Anc0.trans hcd (Anc0.step hpc (Anc0.refl i) |>.trans hAc))).elim
+  | @snb i h1 h2 hxi hxb =>
+    have he2 : entry M 2 i = 1 := by have := hZ2 i; omega
+    have hpx : par M 0 x = some i := (mem_children_iff.mp hxi).2
+    have hix : i < x := (mem_children hxi).1
+    refine ⟨fun _ _ => ?_, fun c hc hcd hcn => (hcn (anc_xm1 hx (Anc0.step hpx hcd) hc)).elim⟩
+    have hall := all_bump_of_last hR0 hZ2 hSD hZ1 he2 (children_split_x hx hxi) hxb
+    have hT : ∀ c ∈ children (M.take x) i, col (M.take x) c = bump (M.take x) i := by
+      intro c hc
+      rw [children_take, List.mem_filter] at hc
+      have hcx : c < x := by simpa using hc.2
+      rw [col_take M hcx, bump_take M hix]
+      exact hall c hc.1
+    refine ⟨?_, fun c hc hcnt => hcnt.1 (hT c hc), fun e he hp => no_par1_of_e2 hZ1 (by omega) he2 hp⟩
+    unfold topped
+    cases hl : (children (M.take x) i).getLast? with
+    | none => rfl
+    | some ℓ => simpa using hT ℓ (List.mem_of_getLast? hl)
+  | @ochild i c hc _ _ _ ih =>
+    exact ⟨(fun h => nomatch h),
+      fun c' hc' hcd hcn => ih.2 c' hc' (Anc0.step (mem_children_iff.mp hc).2 hcd) hcn⟩
+  | @ov i _ ih => exact ⟨(fun h => nomatch h), ih.2⟩
+  | @vpar i m _ hp _ ih =>
+    have hmi := par_lt M 1 i m hp
+    refine ⟨fun _ hi => absurd hp ((ih.1 rfl (by omega)).2.2 i hi), ?_⟩
+    intro c hc hci hcn
+    have hAm := anc0_of_par M 1 m i hp
+    rcases anc0_total hci hAm with h | h
+    · exact ih.2 c hc h hcn
+    · by_cases hmc : m = c
+      · subst hmc; exact ih.2 m hc (Anc0.refl m) hcn
+      · have hix : i < x := by
+          by_cases hci' : c = i
+          · omega
+          · have := anc0_lt_len hci hci'
+            have hne : i ≠ x := fun e => hcn (anc_xm1 hx (e ▸ hci) hc)
+            omega
+        exact absurd hp ((ih.1 rfl (by omega)).2.2 i hix)
+  | @vupg i k _ _ hu _ ih =>
+    have hix : i < x := by have := upg_succ_lt hu; omega
+    obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu
+    refine ⟨fun _ _ => ?_, ?_⟩
+    · rcases hcase with rfl | ⟨hA, hki⟩
+      · have hleaf := leaf_of_upg_next hR0 hu
+        have hnil : children M i = [] := by
+          rw [List.eq_nil_iff_forall_not_mem]
+          intro c hc
+          have := hleaf c (Anc0.step (mem_children_iff.mp hc).2 (Anc0.refl i))
+          have := (mem_children hc).1; omega
+        have hnilT : children (M.take x) i = [] := by rw [children_take, hnil]; rfl
+        refine ⟨by unfold topped; rw [hnilT]; rfl, by rw [hnilT]; simp, ?_⟩
+        intro e _ hp
+        have := hleaf e (anc0_of_par M 1 i e hp)
+        have := par_lt M 1 e i hp; omega
+      · exact (no_anc_upg hx hR0 hZ2 hSD hZ1 hUAT hUAB (ih.1 rfl (by omega)) (by omega) hu hA hki).elim
+    · intro c hc hci hcn
+      rcases hcase with rfl | ⟨hA, hki⟩
+      · by_cases hck : Anc0 M c (i + 1)
+        · exact ih.2 c hc hck hcn
+        · have hi1 : i + 1 < x := by
+            by_contra hn
+            have : i = x - 1 := by omega
+            exact hcn (this ▸ hci)
+          refine ⟨i + 1, ⟨by have := hci.le; omega, fun e h1 h2 => anc_between hci e h1 (by omega), hck⟩,
+            hi1, by simpa using hu, by assumption⟩
+      · exact (no_anc_upg hx hR0 hZ2 hSD hZ1 hUAT hUAB (ih.1 rfl (by omega)) (by omega) hu hA hki).elim
+  | @vbump i j k _ h2 hj hjb hk _ ih =>
+    have hij := (mem_children hj).1
+    have hjk := (mem_children hk).1
+    have hkl := (mem_children hk).2
+    have hjx : j < x := by omega
+    have hpj : par M 0 j = some i := (mem_children_iff.mp hj).2
+    have hpk : par M 0 k = some j := (mem_children_iff.mp hk).2
+    refine ⟨fun _ hix => ?_, fun c hc hci hcn => ih.2 c hc (Anc0.step hpk (Anc0.step hpj hci)) hcn⟩
+    have he2 : entry M 2 i = 1 := by have := hZ2 i; omega
+    -- `j` is the last child of `i` in `M.take x`
+    have hmax : ∀ j' ∈ children (M.take x) i, j' ≤ j := by
+      intro j' hj'
+      by_contra hjj
+      rw [children_take, List.mem_filter] at hj'
+      have hj'x : j' < x := by simpa using hj'.2
+      have hpj' : par M 0 j' = some i := (mem_children_iff.mp hj'.1).2
+      have hnj : ¬ Anc0 M j (x - 1) := by
+        intro hA
+        have h1 := anc_between hA j' (by omega) (by omega)
+        have := (anc0_par h1 (by omega) hpj').le; omega
+      obtain ⟨c', ⟨hjc', hall', hnot'⟩, hc'x, hup', _⟩ := ih.2 j hjx (Anc0.step hpk (Anc0.refl j)) hnj
+      have hA1 : Anc0 M j (c' - 1) := hall' (c' - 1) (by omega) (by omega)
+      obtain ⟨m, hm1, hm2, hcol, _⟩ := upg_spec hup'
+      have he0 : entry M 0 c' = entry M 0 m + 1 := by
+        have : entry M 0 c' = (col M c').1 := rfl
+        rw [this, hcol]
+      have he2c : entry M 2 c' = entry M 2 m + 1 := by
+        have : entry M 2 c' = (col M c').2.2 := rfl
+        rw [this, hcol]
+      have hmc := par_lt M 1 _ _ hm2
+      obtain ⟨hh, hph⟩ := par0_some_of (M := M) hmc (by omega)
+      have hR := hR0 c' hh hph
+      have hhc := par_lt M 0 c' hh hph
+      have hAh : Anc0 M hh (c' - 1) :=
+        anc_between (Anc0.step hph (Anc0.refl hh)) (c' - 1) (by omega) (by omega)
+      have hAm : Anc0 M m (c' - 1) := anc0_of_par M 1 m (c' - 1) hm1
+      have hhm : hh = m := anc0_eq_of_e0 hAh hAm (by omega)
+      have hz := hZ2 c'
+      have hh0 : entry M 2 hh = 0 := by rw [hhm]; omega
+      have hAi : Anc0 M i (c' - 1) := Anc0.trans (Anc0.step hpj (Anc0.refl i)) hA1
+      rcases anc0_total hAh hAi with hhi | hih
+      · by_cases hhi' : hh = i
+        · rw [hhi'] at hh0; omega
+        · have hc'j' : c' ≤ j' := by
+            by_contra hlt
+            have := (anc0_par (hall' j' (by omega) (by omega)) (by omega) hpj').le; omega
+          have hAic : Anc0 M i c' :=
+            anc_between (Anc0.step hpj' (Anc0.refl i)) c' (by omega) hc'j'
+          have hih := anc0_par hAic (by omega) hph
+          exact hhi' (Nat.le_antisymm hhi.le hih.le)
+      · rcases anc0_total hAh hA1 with hhj | hjh
+        · by_cases hhj' : hh = j
+          · exact hnot' (Anc0.step hph (hhj' ▸ Anc0.refl hh))
+          · have hhi := anc0_par hhj hhj' hpj
+            have : hh = i := Nat.le_antisymm hhi.le hih.le
+            rw [this] at hh0; omega
+        · exact hnot' (Anc0.step hph hjh)
+    have hjT : j ∈ children (M.take x) i := by
+      rw [children_take, List.mem_filter]; exact ⟨hj, by simpa using hjx⟩
+    have hsplit := split_last_max _ _ (children_sorted (M.take x) i) hjT hmax
+    have hall := all_bump_of_last (R0P_take hR0 x) (Z2_take hZ2 x) (SibDec_take hSD x)
+      (Z1C_take hZ1 x) (by rw [entry_take M 2 hix]; exact he2) hsplit
+      (by rw [col_take M hjx, bump_take M hix]; exact hjb)
+    refine ⟨?_, fun c hc hcnt => hcnt.1 (hall c hc),
+      fun e he hp => no_par1_of_e2 hZ1 (by omega) he2 hp⟩
+    unfold topped
+    rw [hsplit]
+    simp only [List.getLast?_append, List.getLast?_singleton, Option.some_or, decide_eq_true_eq]
+    exact hall j hjT
 
 end
 
