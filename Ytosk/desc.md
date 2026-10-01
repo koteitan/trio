@@ -1369,3 +1369,11 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - VSmallNewN は前件が一度も立たない（v(cs) が変わる 32596 枠で、書き換えは起きない）。
 - drop1 を範囲 ≥ x で読む文は、元の BumpWeakSrc だけだった。
 - hVr・VSmallNewN は Inv3 ＋ Res3A.drop から出る見込み（omega-lhd、V3T0Res を作成中）。
+
+### hG′ を構造の仮定 hU に替えた（2026-10-02、node-lhd、V3T0G）
+
+- hU: g = P_0(r)、col r = bump g、g の行 1・2 ≠ 0、r < x − 1 のとき upg M (x − 1) = none。
+- 証明: x − 1 に上げがなければ、r < d < x の列 d は ChgX に入らない（no_chg_B）。だから x 以外の r の子の o は M.take x でも同じで、hG′ が出る（children_r_take_same）。
+- hU は今の構造の不変条件からは出ない。長さ 7 以下の全数で、反例が 3 つ（すべて非標準形）。例: (0,0,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(5,0,0)。
+- 標準形のどの性質が hU を禁じるかを探して、構造の不変条件の束に入れる（node-lhd と bump-frame）。
+- hVr・VSmallNewN は構造から証明（V3T0Res、omega-lhd）。V3TopB への組み込みは調整中。
