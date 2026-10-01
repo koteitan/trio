@@ -1109,4 +1109,122 @@ theorem v_par1_lt_ot {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hC : Con
       (omega_single _)
 
 
+/-! ## 始点の性質 -/
+
+/-- **Every child of `r` has a larger row 1 than `r`.** -/
+theorem e1_child_r {M : Mat} {x r : Nat} (hx : x + 1 = M.length) (hR0 : R0P M) (hSD : SibDec M)
+    (h1 : par M 1 x = some r) {c : Nat} (hc : c ∈ children M r) : entry M 1 r < entry M 1 c := by
+  have hA := anc0_of_par M 1 r x h1
+  have hrx : r ≠ x := by have := par_lt M 1 x r h1; omega
+  obtain ⟨p, hpr, hpx⟩ := anc0_child hA hrx
+  have hpl : p < M.length := by have := hpx.le; omega
+  have hpM : p ∈ children M r := mem_children_iff.mpr ⟨hpl, hpr⟩
+  have hp1 := e1_path_child h1 hA hrx hpr hpx
+  have hpc : par M 0 c = some r := (mem_children_iff.mp hc).2
+  have hrp := par_lt M 0 p r hpr
+  have hcl := (mem_children hc).2
+  rcases Nat.lt_trichotomy c p with hcp | rfl | hpc'
+  · obtain ⟨L, R, hLR⟩ := List.append_of_mem hc
+    obtain ⟨hL, _⟩ := sib_order (children_sorted M r) hLR
+    have hpR : p ∈ R := by
+      have : p ∈ L ++ c :: R := hLR ▸ hpM
+      rcases List.mem_append.mp this with h | h
+      · have := hL p h; omega
+      · rcases List.mem_cons.mp h with h | h
+        · omega
+        · exact h
+    have hle := sib_le hSD R L c hLR p hpR
+    unfold colLe at hle
+    have e0p : (col M p).1 = entry M 0 p := rfl
+    have e1p : (col M p).2.1 = entry M 1 p := rfl
+    have e0c : (col M c).1 = entry M 0 c := rfl
+    have e1c : (col M c).2.1 = entry M 1 c := rfl
+    rw [e0p, e1p, e0c, e1c] at hle
+    have := hR0 p r hpr
+    have := hR0 c r hpc
+    omega
+  · exact hp1
+  · have hA' := anc_between hpx c (by omega) (by omega)
+    have := (anc0_par hA' (by omega) hpc).le
+    omega
+
+/-- **The seed `ψ_μ(σ)`: `σ ≠ 0` and every summand of `σ` is at least `Ω_{μ+1}`.** -/
+theorem seed_arg_ge {M : Mat} {x r : Nat} {ρ1 : Valn} {rk : Bool → Nat → Nat} {μ : T}
+    (hx : x + 1 = M.length) (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAB : UAB M)
+    (h1 : par M 1 x = some r) (hqr : par M 0 x ≠ some r)
+    (hC1 : Cons (M.take x) ρ1) (hRk1 : Rk (M.take x) rk)
+    (hotv : ∀ i, i < x → isOT (ρ1.v i) = true) (hoto : ∀ i, i < x → isOT (ρ1.o i) = true)
+    (hv : ρ1.v r = μ) :
+    ∃ σ, ρ1.o r = psi μ σ z ∧ σ ≠ z ∧ AllGeT (psi (succ μ) z z) σ := by
+  have hrx : r < x := par_lt M 1 x r h1
+  have hlen : (M.take x).length = x := by rw [List.length_take]; omega
+  have hrT : r < (M.take x).length := by omega
+  have hμot : isOT μ = true := by rw [← hv]; exact hotv r hrx
+  -- the children of `r` in `M.take x` have subscripts above `μ`
+  have hgt : ∀ c ∈ children (M.take x) r, μ < ρ1.v c := by
+    intro c hc
+    have hcM : c ∈ children M r := (List.mem_filter.mp (by rw [← children_take]; exact hc)).1
+    have hcx : c < x := by
+      have := (mem_children hc).2; omega
+    have he := e1_child_r hx hR0 hSD h1 hcM
+    have hpT : par (M.take x) 0 c = some r := by
+      rw [par_take M 0 c hcx]; exact (mem_children_iff.mp hcM).2
+    have he' : entry (M.take x) 1 r < entry (M.take x) 1 c := by
+      rw [entry_take M 1 hrx, entry_take M 1 hcx]; exact he
+    have hp1 := par1_of_child hpT he'
+    rw [← hv]
+    exact v_par1_lt_ot hC1 (fun i hi => hotv i (by omega)) (fun i hi => hoto i (by omega)) hRk1 _ c r
+      (Nat.le_refl _) (by omega) (by omega) hp1
+  -- the sum of the counted values
+  set S := sumN ((children (M.take x) r).map (cnt (M.take x) ρ1 r)) with hSdef
+  have hel : ∀ t ∈ (children (M.take x) r).map (cnt (M.take x) ρ1 r),
+      isOT t = true ∧ AllGeT (psi (succ μ) z z) t := by
+    intro t ht
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+    have hcx : c < x := by have := (mem_children hc).2; omega
+    rw [cnt_eq_ite]
+    split
+    · refine ⟨hoto c hcx, ?_⟩
+      obtain ⟨σc, hσc⟩ := o_psi_sub hC1 (by omega : c < (M.take x).length)
+      rw [hσc, sf_ot (hotv c hcx)]
+      intro q hq
+      simp only [summands, List.mem_cons, List.mem_nil_iff, or_false] at hq
+      rw [hq, psi_lt_psi_z_iff]
+      rintro (h | ⟨_, h⟩)
+      · exact lt_irrefl' _ (lt_of_lt_of_le (hgt c hc) (lt_succ_iff.mp h))
+      · exact T.not_lt_z _ h
+    · exact ⟨rfl, allGeT_z _⟩
+  have hSot : isOT S = true := isOT_sumN _ (fun t ht => (hel t ht).1)
+  have hSge : AllGeT (psi (succ μ) z z) S := allGeT_foldl _ z rfl (allGeT_z _) hel
+  have hform : ρ1.o r = psi μ (spArg μ z S) z := by
+    rw [(hC1 r hrT).1]
+    unfold oRhs
+    show add (sp (sf (ρ1.v r)) z (sf S)) (sf z) = _
+    rw [sp_eq_spArg, hv, sf_ot hμot, sf_ot hSot]
+    rfl
+  obtain ⟨hmem, hcnt⟩ := first_child_counted_take hx hR0 hZ2 hSD hZ1 hUAB h1 hqr
+  obtain ⟨σ', hσ', hσ'z⟩ := o_arg_ne_z hC1 hrT hmem hcnt
+  refine ⟨spArg μ z S, hform, ?_, allGeT_spArg ⟨_, rfl⟩ S z hSot hSge (allGeT_z _)⟩
+  rw [hform] at hσ'
+  rw [(T.psi.inj hσ').2.1]; exact hσ'z
+
+/-- From the seed form: `ψ_μ(Ω_{μ+1}) ≤ seed` and `seed` is a fixed point of `ω`. -/
+theorem seed_fix {μ σ : T} (hot : isOT (psi μ σ z) = true) (hσz : σ ≠ z)
+    (hσ : AllGeT (psi (succ μ) z z) σ) :
+    etaOm μ ≤ psi μ σ z ∧ omega (psi μ σ z) = psi μ σ z := by
+  have hΩ : psi (succ μ) z z ≤ σ := by
+    have hh : head σ ∈ summands σ := by
+      cases σ with
+      | z => exact absurd rfl hσz
+      | psi a b c => simp [head, summands]
+    exact le_trans (le_of_not_gt (hσ _ hh)) (head_le_self σ)
+  refine ⟨le_psi_arg hΩ, ?_⟩
+  apply omega_fix_nolo hot
+  · intro hE
+    obtain ⟨hμz, hlt⟩ := below_E0 hE
+    have h3 : psi (succ μ) z z = Om one := by rw [hμz]; rfl
+    rw [h3] at hΩ
+    exact lt_irrefl' _ (lt_of_le_of_lt hΩ hlt)
+  · unfold loOf; exact split_snd_z_of_ge hσ
+
 end Ytosk
