@@ -5,9 +5,9 @@ M.take x の枠は、変わらないデータだけを使う:
 - 数える子を持つ列の v は変わらない（TopC）。最後の数える子より前の数える子の o は変わらない（`chg_last`）。
 - 行 2 が 0 でない列の子は、最後の子の部分木の中しか変わらない（`chg_only_last`、のりしろの子も行 2 は 1）。
 これから Good3・FrameOT・FrameClosed・BumpKidsDec・BumpTermDec・BumpAbs・UpgAbs・VSmall（PV から）が保たれる。
-BumpWeakShape は、M で引数が 0 でなかった子が M.take x で ψ_w(0) になる場合（崩れの源）だけが新しく、
-仮定に残る（`BumpWeakShapeNew`）。M.take x の枠の引数の条件 argT と BumpVSmallTake も仮定に残る
-（「新しい成分」の壁）。まとめ: 残りの仮定 `DropRes` だけで述べた n = 0（`t1_n0r`）。
+BumpWeakShape は SRO から到達する行列で偽なので不変条件に入れない。落とす補題が使うのは、実際に生じる
+弱い源（x か、o が変わる子）の形だけで、これを各段の仮定 `BumpWeakSrc` にする。M.take x の枠の引数の条件
+argT と BumpVSmallTake も仮定に残る（「新しい成分」の壁）。まとめ: 残りの仮定 `DropRes` だけで述べた n = 0（`t1_n0r`）。
 -/
 import Ytosk.V3InvTake2
 
@@ -58,13 +58,6 @@ theorem cvals_eq_map' {N : Mat} {σ : Valn} (i : Nat) (h : ∀ c ∈ children N 
 
 theorem lenT {M : Mat} {x : Nat} (hx : x + 1 = M.length) : (M.take x).length = x := by
   rw [List.length_take]; omega
-
-/-- **The new weak sources** (the remaining part of BumpWeakShape for `M.take x`): a child `k` of a
-bump child whose value becomes `ψ_w(0)` (`w ≠ 0`) in `M.take x` but had a nonzero argument in `M`. -/
-def BumpWeakShapeNew (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
-  ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children (M.take x) i, col M j = bump M i →
-    ∀ k ∈ children (M.take x) j, (∃ w, w ≠ z ∧ ρ'.o k = psi w z z) → (∀ w, ρ.o k ≠ psi w z z) →
-      children (M.take x) i = [j] ∧ (children (M.take x) j).head? = some k ∧ CS (vOpt ρ (par M 1 i))
 
 section
 variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
@@ -463,43 +456,6 @@ theorem upgAbs_take (hUA : UpgAbs M ρ) : UpgAbs (M.take x) ρ' := by
       exact absurd (hdrop k hkx).2.le (not_le.mpr this)
     exact lhd_restrict (hUA i k _ hu' hvk (by simp) r hr (lt_of_lt_of_le hrW hWle)) hrW hWle
 
-/-- **BumpWeakShape passes to `M.take x`**, given the new weak sources. -/
-theorem bumpWeakShape_take (hWS : BumpWeakShape M ρ) (hnew : BumpWeakShapeNew M x ρ ρ') :
-    BumpWeakShape (M.take x) ρ' := by
-  intro i h1 h2 j hj hjb k hk hw
-  have hi := lt_of_e1_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' h1
-  rw [entry_take M 1 hi] at h1
-  rw [entry_take M 2 hi] at h2
-  have hjx : j < x := by have := (mem_children hj).2; rw [lenT hx] at this; exact this
-  have hkx : k < x := by have := (mem_children hk).2; rw [lenT hx] at this; exact this
-  rw [col_take M hjx, bump_take M hi] at hjb
-  rw [vOpt_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hi]
-  by_cases hold : ∃ w0, ρ.o k = psi w0 z z
-  · obtain ⟨w0, h0⟩ := hold
-    obtain ⟨w, hwz, hw'⟩ := hw
-    have hw0 : w0 ≠ z := by
-      intro hz
-      have hle := (hdrop k hkx).1.le
-      rw [hw', h0, hz] at hle
-      rcases (le_iff _ _).mp hle with h | h
-      · rcases psi_lt_psi_z_iff.mp h with h | ⟨_, h⟩
-        · exact T.not_lt_z _ h
-        · exact T.not_lt_z _ h
-      · simp only [psi.injEq] at h; exact hwz h.1
-    have hjM : j ∈ children M i := by rw [children_take, List.mem_filter] at hj; exact hj.1
-    have hkM : k ∈ children M j := by rw [children_take, List.mem_filter] at hk; exact hk.1
-    obtain ⟨hci, hhead, hcs⟩ := hWS i h1 h2 j hjM hjb k hkM ⟨w0, hw0, h0⟩
-    refine ⟨?_, ?_, hcs⟩
-    · rw [children_take, hci]; simp [hjx]
-    · rw [children_take]
-      cases hcj : children M j with
-      | nil => rw [hcj] at hhead; cases hhead
-      | cons k0 rest =>
-        rw [hcj] at hhead; simp only [List.head?_cons, Option.some.injEq] at hhead
-        subst hhead
-        simp [List.filter_cons, hkx]
-  · exact hnew i h1 h2 j hj hjb k hk hw (fun w h => hold ⟨w, h⟩)
-
 end
 
 /-! ## 保存の定理と鎖 -/
@@ -513,21 +469,20 @@ structure ValInv (N : Mat) (σ : Valn) : Prop where
   kd : BumpKidsDec N σ
   td : BumpTermDec N σ
   ab : BumpAbs N σ
-  ws : BumpWeakShape N σ
   ua : UpgAbs N σ
 
 /-- The remaining hypotheses of one drop: the frame-argument condition and the smallness of the new
-`v′` (the "new components" wall), and the new weak sources. -/
+`v′` (the "new components" wall), and the shape of the weak sources that occur (`BumpWeakSrc`). -/
 structure DropRes (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
   argT : ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (N.take x) i = Lc ++ [cs] →
     ∀ s y, σ'.o cs = psi s y z → ¬ lt s (σ.v i) = true →
     ∀ g ∈ comps (σ.v i) y, g ≤ step (σ.v i) (spArg (σ.v i) z (sumN (Lc.map σ.o))) s y z
   vst : BumpVSmallTake N x σ σ'
-  wsn : BumpWeakShapeNew N x σ σ'
+  ws : BumpWeakSrc N x σ σ'
 
 theorem DropHypV.of {N : Mat} {x : Nat} {σ σ' : Valn} (hI : ValInv N σ) (hD : DropRes N x σ σ') :
     DropHypV N x σ σ' :=
-  ⟨hI.g, hI.vs, hI.fc, hI.fo, hD.argT, hI.kd, hI.td, hI.ab, hI.ws, hD.vst, hI.ua⟩
+  ⟨hI.g, hI.vs, hI.fc, hI.fo, hD.argT, hI.kd, hI.td, hI.ab, hD.ws, hD.vst, hI.ua⟩
 
 /-- **The value invariants pass to `N.take x`** (given the remaining hypotheses of the drop). -/
 theorem drop_pres {N : Mat} {x : Nat} (hx : x + 1 = N.length)
@@ -535,7 +490,7 @@ theorem drop_pres {N : Mat} {x : Nat} (hx : x + 1 = N.length)
     {σ σ' : Valn} {rk : Bool → Nat → Nat} (hC : Cons N σ) (hI : ValInv N σ) (hD : DropRes N x σ σ')
     (hC' : Cons (N.take x) σ') (hRk' : Rk (N.take x) rk) : ValInv (N.take x) σ' := by
   have hdrop := drop_all hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.vs hI.fc hI.fo hD.argT
-    (bump_drop hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.vs hI.kd hI.td hI.ab hI.ws hD.vst)
+    (bump_drop hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.vs hI.kd hI.td hI.ab hD.ws hD.vst)
     (fun i k W _ hu hv hW => hI.ua i k W hu hv hW)
   exact ⟨good3_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop,
     vsmall_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop,
@@ -544,7 +499,6 @@ theorem drop_pres {N : Mat} {x : Nat} (hx : x + 1 = N.length)
     bumpKidsDec_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.kd,
     bumpTermDec_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.td,
     bumpAbs_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.ab,
-    bumpWeakShape_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.ws hD.wsn,
     upgAbs_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.ua⟩
 
 /-- **`t = 1`, `q ≠ r`, `n = 0`**, with only the remaining hypotheses `DropRes` of the drops
@@ -560,11 +514,10 @@ theorem t1_n0r {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
-    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakShape M ρ)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
     (hUA : UpgAbs M ρ)
     {ζ μ : T} (hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
-    (hWSn : BumpWeakShapeNew M (r + L) ρ (drop1 M (r + L) rkM))
     (hres : ∀ j, r ≤ j → j < r + L →
       DropRes (M.take (j + 1)) j (drop1 M (j + 1) rkM) (drop1 M j rkM)) :
     ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 0) ρN ∧ Rk (TRIO.gexp M r L d0 0 0) rkN ∧
@@ -595,8 +548,8 @@ theorem t1_n0r {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
   have hCj : ∀ j, j ≤ r + L → Cons (M.take j) (drop1 M j rkM) := fun j h => cons_of_rk (hRk j h)
   -- the invariants of `M.take x`
   have hIx : ValInv (M.take (r + L)) (drop1 M (r + L) rkM) :=
-    drop_pres (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC ⟨hG, hVS, hF, hFO, hKD, hTD, hAbs, hWS, hUA⟩
-      ⟨hArgT, hVSt, hWSn⟩ (hCj _ (le_refl _)) (hRk _ (le_refl _))
+    drop_pres (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC ⟨hG, hVS, hF, hFO, hKD, hTD, hAbs, hUA⟩
+      ⟨hArgT, hVSt, hWS⟩ (hCj _ (le_refl _)) (hRk _ (le_refl _))
   -- down the chain
   have hIj : ∀ m j, r + L - j ≤ m → r ≤ j → j ≤ r + L → ValInv (M.take j) (drop1 M j rkM) := by
     intro m

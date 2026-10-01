@@ -546,6 +546,19 @@ def BumpWeakShape (M : Mat) (ρ : Valn) : Prop :=
     ∀ k ∈ children M j, (∃ w, w ≠ z ∧ ρ.o k = psi w z z) →
       children M i = [j] ∧ (children M j).head? = some k ∧ CS (vOpt ρ (par M 1 i))
 
+/-- **Hypothesis on the drop** (the shape of the weak sources that actually occur): the condition of
+`BumpWeakShape` only for a child `k` that is `x` or whose `o` changes in `M.take x`.
+`BumpWeakShape` itself is false on matrices reachable from SRO: in
+(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,1,0)(3,2,1) the column 5 has two bump children and
+the leaf 7 under the first has `o = ψ_1(0)`. This form: SRO からの乱択の展開（長さ 14 まで）で例外 0. -/
+def BumpWeakSrc (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
+  ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
+    ∀ k ∈ children M j, (∃ w, w ≠ z ∧ ρ.o k = psi w z z) → (k = x ∨ ρ'.o k ≠ ρ.o k) →
+      children M i = [j] ∧ (children M j).head? = some k ∧ CS (vOpt ρ (par M 1 i))
+
+theorem BumpWeakShape.src {M : Mat} {ρ : Valn} (h : BumpWeakShape M ρ) (x : Nat) (ρ' : Valn) :
+    BumpWeakSrc M x ρ ρ' := fun i h1 h2 j hj hjb k hk hw _ => h i h1 h2 j hj hjb k hk hw
+
 @[simp] theorem sumN_nil : sumN [] = z := rfl
 
 /-! ## 行列の段: M.take x の子 -/
@@ -594,14 +607,14 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
-    (hKD : BumpKidsDec M ρ) (hWS : BumpWeakShape M ρ)
+    (hKD : BumpKidsDec M ρ) (hWS : BumpWeakSrc M x ρ ρ')
     {i jl : Nat} (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i ≠ 0)
     (hjlM : jl ∈ children M i) (hjlb : col M jl = bump M i)
     (hIH : ∀ k ∈ children M jl, k < x → PO ρ ρ' k ∧ PV M ρ ρ' k) :
     (∀ t ∈ (children (M.take x) jl).map ρ'.o, Single t) ∧
     (BRelS (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∨
       (BWk (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∧
-        ∃ k ∈ children M jl, ∃ w, w ≠ z ∧ ρ.o k = psi w z z)) := by
+        ∃ k ∈ children M jl, ∃ w, w ≠ z ∧ ρ.o k = psi w z z ∧ (k = x ∨ ρ'.o k ≠ ρ.o k))) := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have he2jl : entry M 2 jl ≠ 0 := by rw [e2_of_bump hjlb]; simp
   have hoff := chg_off hx hC hG hC' hRk'
@@ -623,7 +636,7 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       by_cases hvx : ρ.v x = z
       · left; rw [hvx]
         exact Or.inl ⟨Or.inr (lhd_zero (by simp)), one_lt_E0⟩
-      · right; exact ⟨⟨z_le _, Or.inl (T.z_lt_psi _ _ _)⟩, x, by simp, _, hvx, hox⟩
+      · right; exact ⟨⟨z_le _, Or.inl (T.z_lt_psi _ _ _)⟩, x, by simp, _, hvx, hox, Or.inl rfl⟩
   · rw [List.concat_eq_append] at hKT
     have hklT : kl ∈ children (M.take x) jl := by rw [hKT]; simp
     obtain ⟨hklx, hklM⟩ := mem_children_take hklT
@@ -705,17 +718,22 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         · left; exact brelS_fix hl (one_le_of_ne_z hv'z)
         · right
           refine ⟨bwk_fix (le_trans (psi_le_psi_z (le_of_lt hWk.1)) (psi_le_psi_rest (z_le _)))
-            hWk.2.2.1 hWk.2.1, kl, by simp, ρ.v kl, ?_, o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc⟩
+            hWk.2.2.1 hWk.2.1, kl, by simp, ρ.v kl, ?_, o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc,
+            Or.inr (by
+              rw [ho', o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc]
+              intro h; simp only [psi.injEq] at h; exact hv h.1)⟩
           intro hz; rw [hz] at hWk; exact T.not_lt_z _ hWk.1
     · have hS0 : sumN (K0.map ρ.o) ≠ z := sumN_ne_z hsK0 hp0.1 (by simpa using hK0)
-      rcases hPO.1 with hl | ⟨⟨w1, w2, X, _, e2, hWk⟩, ⟨w, hw⟩⟩
+      rcases hPO.1 with hl | ⟨⟨w1, w2, X, e1', e2, hWk⟩, ⟨w, hw⟩⟩
       · left; exact brelS_app_same hS0 hl _
       · exfalso
+        have hne : ρ'.o kl ≠ ρ.o kl := fun h => by
+          rw [e1', e2] at h; simp only [psi.injEq] at h; rw [h.1] at hWk; exact lt_irrefl' _ hWk.1
         rw [hw] at e2
         simp only [psi.injEq] at e2
         have hw2 : w ≠ z := by
           rw [e2.1]; intro hz; rw [hz] at hWk; exact T.not_lt_z _ hWk.1
-        obtain ⟨_, hhead, _⟩ := hWS i h1 h2 jl hjlM hjlb kl hklM ⟨w, hw2, hw⟩
+        obtain ⟨_, hhead, _⟩ := hWS i h1 h2 jl hjlM hjlb kl hklM ⟨w, hw2, hw⟩ (Or.inr hne)
         rw [hchM] at hhead
         obtain ⟨k0, K0', rfl⟩ := List.exists_cons_of_ne_nil hK0
         simp only [List.cons_append, List.head?_cons, Option.some.injEq] at hhead
@@ -793,7 +811,7 @@ theorem bump_rel {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
-    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakShape M ρ)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M x ρ ρ')
     {i : Nat} (hi : i < x)
     (hIH : ∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
       PO ρ ρ' k ∧ PV M ρ ρ' k)
@@ -931,7 +949,7 @@ theorem bump_rel {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       rw [ev'0, hmapT, ← List.cons_append, sf_ot (isOT_add hVot (isOT_omega hp'ot))]
     have hv'ot : isOT (ρ'.v i) = true := by rw [ev']; exact isOT_add hVot (isOT_omega hp'ot)
     refine ⟨hv'ot, ?_⟩
-    rcases hGrel with hS | ⟨hWk, k, hk, w, hw, hok⟩
+    rcases hGrel with hS | ⟨hWk, k, hk, w, hw, hok, hkx⟩
     · -- the strong case
       have ht := brelS_omega hG'ot hGot hS
       have hp := brelS_p hsP hpP hPt (single_omega hG'ot) (single_omega hGot) ht
@@ -988,7 +1006,7 @@ theorem bump_rel {M : Mat} {x : Nat} (hx : x + 1 = M.length)
           · rw [h']
         exact lt_of_lt_of_le hr2 hom
     · -- the weak case
-      obtain ⟨hone, _, hcsV⟩ := hWS i h1 h2 jl hjlM hjlb k hk ⟨w, hw, hok⟩
+      obtain ⟨hone, _, hcsV⟩ := hWS i h1 h2 jl hjlM hjlb k hk ⟨w, hw, hok⟩ hkx
       have hnil : A0 = [] ∧ XI = [] := by
         rw [hXI, hA] at hone
         have hl := congrArg List.length hone
@@ -1033,7 +1051,7 @@ theorem bump_drop {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
     (hVS : VSmall M ρ)
-    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakShape M ρ)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakSrc M x ρ ρ')
     (hVSt : BumpVSmallTake M x ρ ρ') :
     ∀ i, i < x → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
         PO ρ ρ' k ∧ PV M ρ ρ' k) → ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
