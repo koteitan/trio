@@ -303,6 +303,181 @@ theorem upg_copy0 {k q : Nat} (hk : k < n) (hq : q + 1 < L) :
     rw [show r + (k * L + (q + 1)) = r + (k * L + q) + 1 by omega, show r + (q + 1) = r + q + 1 by omega] at he
     rw [he, entry_shk hlen hL hp hn hk (by omega) 0]
 
+/-- In a column before `x`, the upgrade of `N` is that of `M`. -/
+theorem upg_pre0 {i : Nat} (hi : i + 1 < r + L) :
+    upg (TRIO.gexp M r L 0 0 n) i = upg M i := by
+  rw [← upg_take _ hi, gexp_take_x hlen hn, upg_take M hi]
+
+/-- The ancestors of `x − 1` have row 0 at most that of `r` only at `r` and above `r`. -/
+theorem anc_xm1_e0 {a : Nat} (ha : a ∈ ancL M (r + (L - 1))) (hle : entry M 0 a ≤ entry M 0 r) :
+    a ≤ r := by
+  by_contra h
+  have hal := mem_ancL_lt ha
+  have := e0_B_gt hlen hL hp (q := a - r) (by omega) (by omega)
+  rw [show r + (a - r) = a by omega] at this
+  omega
+
+/-- **The upgrade of the last column of a copy** (not the last copy): as `x − 1` in `M`, except that an
+upgrade to `r` goes to the next copy root. -/
+theorem upg_copy_last0 (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) {k : Nat} (hk : k + 1 < n) :
+    upg (TRIO.gexp M r L 0 0 n) (r + (k * L + (L - 1))) =
+      (upg M (r + (L - 1))).map (fun t => if t = r then r + (k + 1) * L else t) := by
+  have hlN := lenN0 hlen hn (M := M) (L := L)
+  have hkL : (k + 1) * L + L ≤ n * L := by
+    have := Nat.mul_le_mul_right L (show k + 1 + 1 ≤ n by omega); rw [Nat.succ_mul] at this; exact this
+  have hnext : r + (k * L + (L - 1)) + 1 = r + ((k + 1) * L + 0) := by rw [Nat.succ_mul]; omega
+  have hxm : r + (L - 1) + 1 = r + L := by omega
+  unfold upg
+  rw [entry_copy0 hlen (by omega) (by omega) 1, entry_copy0 hlen (by omega) (by omega) 2, hlN, hxm,
+    ← hlen]
+  by_cases hc : entry M 1 (r + (L - 1)) = 0 ∨ entry M 2 (r + (L - 1)) = 1 ∨ r + L = r + L + 1
+  · rcases hc with h | h | h
+    · rw [if_pos (Or.inl h), if_pos (Or.inl h)]; rfl
+    · rw [if_pos (Or.inr (Or.inl h)), if_pos (Or.inr (Or.inl h))]; rfl
+    · omega
+  have hc' : ¬ (entry M 1 (r + (L - 1)) = 0 ∨ entry M 2 (r + (L - 1)) = 1 ∨
+      r + (k * L + (L - 1)) + 1 = r + n * L) := by
+    rintro (h | h | h)
+    · exact hc (Or.inl h)
+    · exact hc (Or.inr (Or.inl h))
+    · omega
+  rw [if_neg hc', if_neg (fun h => hc (by rcases h with h | h | h <;> [exact Or.inl h; exact Or.inr (Or.inl h); omega])),
+    par1_copy0 hlen hL hp hn (by omega) (show L - 1 < L by omega)]
+  cases hpm : par M 1 (r + (L - 1)) with
+  | none => rfl
+  | some m =>
+    simp only [Option.map_some]
+    have hmx := par_lt M 1 _ m hpm
+    rw [entry_shk hlen hL hp hn (by omega) (by omega) 0, entry_shk hlen hL hp hn (by omega) (by omega) 2]
+    -- `M` never upgrades forward onto `x`
+    have hfM : ¬ (par M 1 (r + L) = some m ∧
+        col M (r + L) = (entry M 0 m + 1, entry M 1 (r + (L - 1)), entry M 2 m + 1)) := by
+      rintro ⟨_, hcol⟩
+      have : entry M 2 (r + L) = entry M 2 m + 1 := by rw [col_eq_entries] at hcol; simp at hcol; omega
+      omega
+    have hp1n : par (TRIO.gexp M r L 0 0 n) 1 (r + (k * L + (L - 1)) + 1) = par M 1 r := by
+      rw [hnext, par1_copy0 hlen hL hp hn (by omega) hL, Nat.add_zero]
+      cases h : par M 1 r with
+      | none => rfl
+      | some m' =>
+        have := par_lt M 1 r m' h
+        simp only [Option.map_some, Option.some.injEq]; unfold shk; rw [if_neg (by omega)]
+    have hcn : col (TRIO.gexp M r L 0 0 n) (r + (k * L + (L - 1)) + 1) = col M r := by
+      have := col_copy0 hlen (by omega) hL (M := M) (n := n) (k := k + 1) (q := 0)
+      rw [hnext]; simpa using this
+    have hen : entry (TRIO.gexp M r L 0 0 n) 0 (r + (k * L + (L - 1)) + 1) = entry M 0 r := by
+      have := entry_copy0 hlen (by omega) hL 0 (M := M) (n := n) (k := k + 1) (q := 0)
+      rw [hnext]; simpa using this
+    have he0x : entry M 0 (r + L) = entry M 0 r + 1 := hR0 _ _ hp
+    have hclM : ∀ ok, climb (par M 0) ok (r + L) (par M 0 (r + (L - 1))) =
+        (ancL M (r + (L - 1))).find? ok := fun ok => by rw [← hxm]; exact upgClimb_find M _ ok
+    rw [if_neg hfM, upgClimb_find, hclM, hp1n, hcn,
+      ancL_copy0 hlen hL hp hn (by omega) (L - 1) (by omega), List.find?_map]
+    -- the three kinds of ancestors of `x − 1`
+    have hkind : ∀ a ∈ ancL M (r + (L - 1)), a = r ∨ (r < a ∧ entry M 0 r < entry M 0 a) ∨
+        (a < r ∧ entry M 0 a < entry M 0 r) := by
+      intro a ha
+      have hAa := anc0_of_mem_ancL ha
+      have hAr : Anc0 M r (r + (L - 1)) := anc_B hlen hL hp (by omega)
+      rcases anc0_total hAa hAr with h | h
+      · by_cases har : a = r
+        · exact Or.inl har
+        · right; right
+          exact ⟨lt_of_le_of_ne h.le har, anc0_e0_lt h har⟩
+      · by_cases har : a = r
+        · exact Or.inl har
+        · right; left
+          exact ⟨lt_of_le_of_ne h.le (Ne.symm har), anc0_e0_lt h (Ne.symm har)⟩
+    have hmlt : ∀ a, par M 1 a = some m → a < r → m < r := fun a h ha => by
+      have := par_lt M 1 a m h; omega
+    by_cases hfr : par M 1 r = some m ∧
+        col M r = (entry M 0 m + 1, entry M 1 (r + (L - 1)), entry M 2 m + 1)
+    · have hmr : m < r := par_lt M 1 r m hfr.1
+      have hsm : shk r (k * L) m = m := by unfold shk; rw [if_neg (by omega)]
+      rw [hsm, if_pos hfr]
+      have hL1 : L ≠ 1 := by
+        intro h1
+        have h0 : L - 1 = 0 := by omega
+        have hz := hZ2 (r + (L - 1))
+        have hne2 : entry M 2 (r + (L - 1)) ≠ 1 := fun h => hc (Or.inr (Or.inl h))
+        have h2 := hfr.2
+        rw [col_eq_entries] at h2; simp only [Prod.mk.injEq] at h2
+        rw [h0, Nat.add_zero] at hz hne2
+        omega
+      -- `M` climbs to `r`
+      obtain ⟨S, hS, hSp⟩ := ancL_through (anc_B hlen hL hp (show L - 1 ≤ L by omega)) (by omega)
+      rw [hS, List.find?_append, List.find?_cons]
+      have hSn : S.find? (fun q => decide (par M 1 q = some m ∧
+          col M q = (entry M 0 m + 1, entry M 1 (r + (L - 1)), entry M 2 m + 1) ∧
+          entry M 0 q < entry M 0 (r + L))) = none := by
+        rw [List.find?_eq_none]
+        intro s hs
+        obtain ⟨h1, h2, h3, _⟩ := hSp s hs
+        have := anc0_e0_lt h3 (by omega)
+        simp only [decide_eq_true_eq, not_and]; intro _ _; omega
+      rw [hSn]
+      simp only [Option.none_or]
+      have hdec : decide (par M 1 r = some m ∧
+          col M r = (entry M 0 m + 1, entry M 1 (r + (L - 1)), entry M 2 m + 1) ∧
+          entry M 0 r < entry M 0 (r + L)) = true := by
+        simp only [decide_eq_true_eq]; exact ⟨hfr.1, hfr.2, by omega⟩
+      rw [hdec]
+      simp only [Option.map_some, Option.some.injEq, if_true]
+      rw [Nat.succ_mul]; omega
+    · have hfN : ¬ (par M 1 r = some (shk r (k * L) m) ∧
+          col M r = (entry M 0 m + 1, entry M 1 (r + (L - 1)), entry M 2 m + 1)) := by
+        rintro ⟨h1, h2⟩
+        apply hfr
+        by_cases hmr : r ≤ m
+        · have := par_lt M 1 r _ h1; unfold shk at this; rw [if_pos hmr] at this; omega
+        · unfold shk at h1; rw [if_neg hmr] at h1; exact ⟨h1, h2⟩
+      rw [if_neg hfN]
+      have hfind : (ancL M (r + (L - 1))).find? ((fun q => decide (par (TRIO.gexp M r L 0 0 n) 1 q =
+            some (shk r (k * L) m) ∧ col (TRIO.gexp M r L 0 0 n) q =
+              (entry M 0 m + 1, entry M 1 (r + (L - 1)), entry M 2 m + 1) ∧
+            entry (TRIO.gexp M r L 0 0 n) 0 q < entry (TRIO.gexp M r L 0 0 n) 0
+              (r + (k * L + (L - 1)) + 1))) ∘ shk r (k * L)) =
+          (ancL M (r + (L - 1))).find? (fun q => decide (par M 1 q = some m ∧
+            col M q = (entry M 0 m + 1, entry M 1 (r + (L - 1)), entry M 2 m + 1) ∧
+            entry M 0 q < entry M 0 (r + L))) := by
+        apply find?_congr'
+        intro a ha
+        have hal := mem_ancL_lt ha
+        have hk' : k < n := by omega
+        have ha' : a < r + L := by omega
+        simp only [Function.comp]
+        rw [par1_shk hlen hL hp hn hk' ha', col_shk hlen hL hp hn hk' ha', entry_shk hlen hL hp hn hk' ha',
+          hen, he0x]
+        simp only [option_map_inj (shk_inj r _)]
+        rcases hkind a ha with har | ⟨h1, h2⟩ | ⟨h1, h2⟩
+        · subst har
+          simp only [decide_eq_decide]
+          constructor
+          · rintro ⟨_, _, h⟩; omega
+          · rintro ⟨h1', h2', _⟩; exact absurd ⟨h1', h2'⟩ hfr
+        · simp only [decide_eq_decide]
+          constructor
+          · rintro ⟨_, _, h⟩; omega
+          · rintro ⟨_, _, h⟩; omega
+        · simp only [decide_eq_decide]
+          constructor
+          · rintro ⟨h3, h4, _⟩; exact ⟨h3, h4, by omega⟩
+          · rintro ⟨h3, h4, _⟩; exact ⟨h3, h4, h2⟩
+      rw [hfind]
+      cases hF : (ancL M (r + (L - 1))).find? (fun q => decide (par M 1 q = some m ∧
+          col M q = (entry M 0 m + 1, entry M 1 (r + (L - 1)), entry M 2 m + 1) ∧
+          entry M 0 q < entry M 0 (r + L))) with
+      | none => rfl
+      | some F =>
+        have hFm := List.mem_of_find?_eq_some hF
+        have hFp := List.find?_some hF
+        simp only [decide_eq_true_eq] at hFp
+        simp only [Option.map_some, Option.some.injEq]
+        rcases hkind F hFm with rfl | ⟨h1, h2⟩ | ⟨h1, h2⟩
+        · exact absurd ⟨hFp.1, hFp.2.1⟩ hfr
+        · omega
+        · unfold shk; rw [if_neg (by omega), if_neg (by omega)]
+
 end
 
 end Ytosk
