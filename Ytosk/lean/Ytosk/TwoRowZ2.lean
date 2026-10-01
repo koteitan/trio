@@ -224,4 +224,39 @@ theorem twoRow_t0_path {M : Mat} {j0 Lb n g : Nat} (hlen : j0 + Lb + 1 = M.lengt
     rw [o2r_frame hG hlen hpx hph]
     exact (node_fsD hFD).symm
 
+/-- **The two-row `t = 0` expansion** (as `expand`), from `g = P_0(r)` up. Remaining hypothesis: PRE. -/
+theorem twoRow_t0 {M : Mat} {r g n : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht0 : TRIO.srow M (M.length - 1) = 0) (hG : Good2 M)
+    (hr1 : TRIO.r1ok M) (hz0 : TRIO.z0ok M) (hg : par M 0 r = some g) (hn : 2 ≤ n)
+    (hPRE : ∀ h p s y, Anc0 M p (M.length - 1) → par M 0 p = some h → o2r M p = psi s y z →
+      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true →
+      bst M h p ≠ z → ∃ rest, y = app (bst M h p) rest ∧ rest ≠ z) :
+    ∀ h, Anc0 M h g → ∃ j, o2r (expand M n) h = fsD (o2r M h) (natT (j + 1)) ∧
+      isOT (fsD (o2r M h) (natT (j + 1))) = true ∧ fsD (o2r M h) (natT (j + 1)) < o2r M h := by
+  have hr0 : par M 0 (M.length - 1) = some r := by have h := hr; rw [ht0] at h; exact h
+  have hrx := par_lt M 0 _ r hr0
+  have hA : Anc0 M r (M.length - 1) := Anc0.step hr0 (Anc0.refl r)
+  have hlen : r + (M.length - 1 - r) + 1 = M.length := by omega
+  have hxe : r + (M.length - 1 - r) = M.length - 1 := by omega
+  have hx1 : entry M 1 (r + (M.length - 1 - r)) = 0 := by
+    rw [hxe]
+    unfold TRIO.srow at ht0
+    split_ifs at ht0 with h1 h2
+    change ¬ 0 < (M.getD (M.length - 1) (0, 0, 0)).2.1 at h2
+    show (M.getD (M.length - 1) (0, 0, 0)).2.1 = 0
+    omega
+  have hgexp := expand_eq_gexp_t0 M n hM hz hr ht0
+  have hpre : ∀ c, c < r + (M.length - 1 - r) →
+      par (TRIO.gexp M r (M.length - 1 - r) 0 0 n) 0 c = par M 0 c := by
+    intro c hc; rw [← hgexp]; exact par0_expand_prefix M hM (by omega) (by omega)
+  have hF : F1 (TRIO.gexp M r (M.length - 1 - r) 0 0 n) := by
+    rw [← hgexp]; exact F1_expand hr1 hz0 hM n
+  rw [hgexp]
+  rw [← hxe] at hPRE
+  exact twoRow_t0_path hlen (by omega) (by rw [hxe]; exact hA) hg hn (by rw [hxe]; exact hr0)
+    hpre hF hG hx1 hPRE
+
 end Ytosk
