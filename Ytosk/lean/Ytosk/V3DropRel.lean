@@ -573,4 +573,72 @@ theorem bump_p_lhd {Pt : List T} {s' y' s y : T} (hsP : ∀ t ∈ Pt, Single t)
   · exact lhd_one hlt
   · exact absurd hlt (fun h' => lt_irrefl' _ (lt_of_lt_of_le h' (hPb r hrP)))
 
+/-! ## v の枠 (3): のりしろの ω^ の段（ε_0 をまたぐ場合） -/
+
+/-- A standard `ψ_0(y)` below `ψ_0(Ω_1)` dominates its components. -/
+theorem closed_psi0 {y : T} (hot : isOT (psi z y z) = true) (hE : psi z y z < E0) : Closed z (psi z y z) := by
+  intro u hu g hg
+  have hu0 : u = z := by
+    cases u with
+    | z => rfl
+    | psi _ _ _ => exact absurd (by simp [lt]) hu
+  subst hu0
+  obtain ⟨_, hyot, _, _, hcy⟩ := isOT_psi_iff.mp hot
+  have hy1 : y < Om one := (below_E0 hE).2
+  -- `y < ψ_0(y)`
+  have hyl : y < psi z y z := by
+    cases y with
+    | z => exact T.z_lt_psi _ _ _
+    | psi a e r =>
+      have ha : a = z := by
+        cases a with
+        | z => rfl
+        | psi a1 a2 a3 =>
+          exfalso
+          unfold Om at hy1; rw [psi_lt_psi_z_iff] at hy1
+          rcases hy1 with h | ⟨_, h⟩
+          · unfold one at h; rw [T.psi_lt_psi] at h
+            rcases h with h | ⟨_, h⟩ | ⟨_, _, h⟩ <;> exact T.not_lt_z _ h
+          · exact T.not_lt_z _ h
+      subst ha
+      have he : e < psi z e r := hcy e (by simp [comps, lt])
+      rw [T.psi_lt_psi]; right; left; exact ⟨rfl, he⟩
+  simp only [comps, List.mem_append] at hg
+  rw [if_neg (by simp [lt])] at hg
+  simp only [List.mem_cons, List.mem_append] at hg
+  rcases hg with (rfl | h | h) | h
+  · exact le_of_lt hyl
+  · exact le_of_lt (lt_trans (hcy g h) hyl)
+  · simp [comps] at h
+  · simp [comps] at h
+
+/-- **`ω^` across `ψ_0(Ω_1)` with subscript `0`**: a closed `G′ < ψ_0(Ω_1)` against `G ≥ ψ_0(Ω_1)` whose
+leading subscript is `0`. -/
+theorem omega_lhd_mixed0 {G' b c : T} (hG' : G' < E0) (hcl : Closed z G') (hot : isOT (psi z b c) = true)
+    (hE : ¬ psi z b c < E0) : LhdE (omega G') (omega (psi z b c)) := by
+  rw [omega_small hG', omega_big hot hE]
+  apply lhdE_psi_closed _ hcl
+  -- the argument of `ω^G` is at least `Ω_1`
+  have hge := le_omega_big hot hE
+  rw [omega_big hot hE] at hge
+  generalize (app (split b (psi (succ z) z z)).1
+    (if (split b (psi (succ z) z z)).2 = z then c else psi z b c)) = Y at hge ⊢
+  have hEG : E0 ≤ psi z b c := by
+    rcases lt_trichotomy' E0 (psi z b c) with h | h | h
+    · exact le_of_lt h
+    · rw [h]
+    · exact absurd h hE
+  have hEY : E0 ≤ psi z Y z := le_trans hEG hge
+  have hY : Om one ≤ Y := by
+    unfold E0 at hEY
+    rcases (le_iff _ _).mp hEY with h | h
+    · rw [psi_lt_psi_z_iff] at h
+      rcases h with h | ⟨_, h⟩
+      · exact absurd h (lt_irrefl' _)
+      · exact le_of_lt h
+    · simp only [psi.injEq] at h; rw [h.2.1]
+  have hE1 : E0 < Om one := by
+    unfold E0 Om; rw [psi_lt_psi_z_iff]; left; exact T.z_lt_psi _ _ _
+  exact le_of_lt (lt_of_lt_of_le (lt_trans hG' hE1) hY)
+
 end Ytosk
