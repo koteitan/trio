@@ -25,8 +25,7 @@ structure Res3A (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
       lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
       VSmallV s') ∧
     (∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
-      sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rk).o) =
-        sumN ((children (M.take (r + L)) r).map ρ.o)) ∧
+      r < r + L - 1 → upg M (r + L - 1) = none) ∧
     (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → VSmallNewN M r ρ σ)
 
 /-- **The top hypothesis, for every valuation**: every nonempty standard matrix other than SRO has a
@@ -75,8 +74,8 @@ theorem hInv_of_A (h : HInvA) :
   rotate_left
   · -- `t0`: the values of `M[n]` are those of a standard matrix
     intro r L hlen hp he1
-    obtain ⟨hVr, hG', hVN⟩ := RA.t0 r L hlen hp he1
-    refine ⟨hVr, hG', ?_⟩
+    obtain ⟨hVr, hU, hVN⟩ := RA.t0 r L hlen hp he1
+    refine ⟨hVr, hU, ?_⟩
     intro n hn2 σ hCN
     have hL : 0 < L := by
       rcases Nat.eq_zero_or_pos L with h0 | h0
