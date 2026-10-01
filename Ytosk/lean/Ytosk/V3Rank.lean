@@ -127,7 +127,9 @@ include hlen hL hA hd0e hn
 /-- **`M[n]` has a ranking** (`t = 1`, `q ≠ r`). -/
 theorem rk_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
       entry M 1 r < entry M 1 s) (hx2 : entry M 2 (r + L) = 0)
-    (hqr : ∀ q, par M 0 (r + L) = some q → q ≠ r) (hz2 : entry M 2 r ≤ 1)
+    (hxnb : ∀ c, par M 0 (r + L) = some c →
+      col (TRIO.gexp M r L d0 0 n) (r + L) ≠ bump (TRIO.gexp M r L d0 0 n) c)
+    (hz2 : entry M 2 r ≤ 1)
     (hiu : ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 0 n) c = isUpg M c)
     (hiux : isUpg (TRIO.gexp M r L d0 0 n) (r + L) = false)
     (hnd : ∀ g, g ≤ r → ∀ a, a < (n - 1) * L →
@@ -155,7 +157,7 @@ theorem rk_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → 
   intro i hi
   rcases Nat.lt_or_ge i (r + L) with hix | hix
   · -- below `x`
-    have SA := sameAt_lt hlen hL hA hd0e hn hpath hx2 (xnb_of_qnr hlen hL hA hd0e hn hpath hqr) hiu hiux i hix
+    have SA := sameAt_lt hlen hL hA hd0e hn hpath hx2 hxnb hiu hiux i hix
     have hiM : i < M.length := by omega
     obtain ⟨hR1, hR2, hR3⟩ := hRM i hiM
     refine ⟨?_, ?_, ?_⟩

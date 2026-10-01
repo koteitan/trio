@@ -20,7 +20,9 @@ include hlen hL hA hd0e hn
 /-- **The equations of `M[n]`** (`t = 1`, `q ≠ r`). -/
 theorem cons_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
       entry M 1 r < entry M 1 s) (hx2 : entry M 2 (r + L) = 0)
-    (hqr : ∀ q, par M 0 (r + L) = some q → q ≠ r) (hz2 : entry M 2 r ≤ 1)
+    (hxnb : ∀ c, par M 0 (r + L) = some c →
+      col (TRIO.gexp M r L d0 0 n) (r + L) ≠ bump (TRIO.gexp M r L d0 0 n) c)
+    (hz2 : entry M 2 r ≤ 1)
     (hiu : ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 0 n) c = isUpg M c)
     (hiux : isUpg (TRIO.gexp M r L d0 0 n) (r + L) = false)
     {ρ ρP : Valn} {Z : Nat → T} (hC : Cons M ρ) (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP)
@@ -35,7 +37,7 @@ theorem cons_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
   have hlN := len_N (d0 := d0) hlen hn
   intro i hi
   rcases Nat.lt_or_ge i (r + L) with h | h
-  · exact cons_glue_lt (by omega) hC (sameAt_lt hlen hL hA hd0e hn hpath hx2 (xnb_of_qnr hlen hL hA hd0e hn hpath hqr) hiu hiux)
+  · exact cons_glue_lt (by omega) hC (sameAt_lt hlen hL hA hd0e hn hpath hx2 hxnb hiu hiux)
       (fun i hi _ m _ hm => reads_lt_x hlen hx2 hi hm) hF i h
   · have := cons_copy hlen hL hA hd0e hn hpath hz2 hCP hagree (i - (r + L)) (by omega)
     rw [show r + L + (i - (r + L)) = i by omega] at this
