@@ -104,4 +104,40 @@ theorem preAll_take {M : Mat} (hM : 1 ≤ M.length) (hG : Good2 M)
   · rw [o2r_take_off hx p hpl hA] at hc
     exact hP h p s y (by omega) hph hc h1 h2 h3
 
+/-! ## ◁ の推移律と先頭部分 -/
+
+theorem lhd_trans {η a b c : T} (h1 : Lhd η a b) (h2 : Lhd η b c) : Lhd η a c := by
+  refine ⟨lt_trans h1.1 h2.1, fun u d had hdc => ?_⟩
+  rcases lt_trichotomy' d b with hdb | hdb | hdb
+  · exact h1.2 u d had (Or.inl hdb)
+  · exact h1.2 u d had (Or.inr hdb)
+  · intro x hx
+    obtain ⟨y, hy, hxy⟩ := h1.2 u b h1.1 (Or.inr rfl) x hx
+    rcases List.mem_append.mp hy with hy | hy
+    · obtain ⟨y', hy', hyy'⟩ := h2.2 u d hdb hdc y hy
+      exact ⟨y', hy', le_trans hxy hyy'⟩
+    · exact ⟨y, List.mem_append_right _ hy, hxy⟩
+
+/-- **An initial segment is below the whole sum** in Buchholz's sense. -/
+theorem lhd_prefix {η A C : T} (hC : C ≠ z) : Lhd η A (app A C) := by
+  have h := lhd_app A (lhd_zero (η := η) hC)
+  rwa [app_z_right] at h
+
+/-- **A seed whose argument is an initial segment of `b[0]` is good.** -/
+theorem seedOK_of_prefix {a b μ σ : T} (hot : isOT (psi a b z) = true) (hcb : cof b = .big μ)
+    (hμ : ¬ lt μ a = true) (hsot : isOT (psi μ σ z) = true) (hpre : ∃ C, fs b z = app σ C) :
+    SeedOK a b μ (psi μ σ z) := by
+  obtain ⟨C, hC⟩ := hpre
+  by_cases hCz : C = z
+  · subst hCz
+    rw [app_z_right] at hC
+    rw [← hC]
+    exact seedOK_gam1 hot hcb hμ
+  · have hbot : isOT b = true := isOT_arg hot
+    have hV : ValidLt b z := by unfold ValidLt; rw [hcb]; exact T.z_lt_psi _ _ _
+    have hl1 : Lhd z σ (fs b z) := by rw [hC]; exact lhd_prefix hCz
+    have hl2 : Lhd z (fs b z) b := lhd_fs hbot hV
+    refine seedOK_of_lhd hot hcb hμ hsot ?_ (lhd_trans hl1 hl2)
+    rw [hC]; exact le_app_self _ _
+
 end Ytosk
