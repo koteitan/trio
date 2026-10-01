@@ -263,7 +263,7 @@ theorem t0_S2 {g : Nat} (hg : par M 0 r = some g) (hjb : col M r = bump M g)
     by_cases hWE : omega (sumN (one :: Pl ++ [X])) < E0
     · exact lhd_lt_small (isOT_mem_summands hVot hq) hWE hlt'
     · rw [← hbW]
-      apply hAbs g h1 h2 (fun _ _ _ _ => v_z_of_e1 hC (by omega) he1) q hq _ (by rw [hbW]; exact hlt')
+      apply hAbs g h1 h2 (fun _ _ _ _ => v_z_of_e1 hC (by omega) he1) (Or.inr (Or.inr (v_z_of_e1 hC (by omega) he1))) q hq _ (by rw [hbW]; exact hlt')
       intro hq2
       apply hn'
       have h2le : two ≤ sumN (one :: Pl ++ List.replicate n O) :=

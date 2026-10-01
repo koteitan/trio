@@ -567,16 +567,30 @@ def BumpWeakSrc (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
         (k < x ∧ ρ'.o k ≠ ρ.o k ∧ ¬ LhdE (ρ'.v k) (ρ.v k))) →
       children M i = [j] ∧ (children M j).head? = some k ∧ CS (vOpt ρ (par M 1 i))
 
+/-- The parent of `x` is not a bump child. -/
+def XParNB (M : Mat) (x : Nat) : Prop :=
+  ∀ q i, par M 0 x = some q → par M 0 q = some i → col M q ≠ bump M i
+
+/-- At `i`, the `G` level of every bump child in `M.take x` is in the strong relation (for a valuation
+of `M.take x`): the drop takes the strong route at `i`. -/
+def StrongG (M : Mat) (x : Nat) (ρ : Valn) (i : Nat) : Prop :=
+  ∃ σ', Cons (M.take x) σ' ∧ ∀ jl ∈ children (M.take x) i, col M jl = bump M i →
+    BRelS (sumN ((children (M.take x) jl).map σ'.o)) (sumN ((children M jl).map ρ.o))
+
 /-- **Hypothesis on the drop**: `BumpAbs` except at a column with a bump child whose only child is `x`
-with `v(x) ≠ 0` (the collapse; there the drop takes the weak branch and `BumpAbs` is not used, and it
-fails on matrices reachable from SRO). SRO からの乱択の展開（長さ 20 まで）で例外 0. -/
+with `v(x) ≠ 0` (the collapse), and only where the drop takes the strong route at `i` (`StrongG`) or the
+parent of `x` is not a bump child (the use in `t = 2`), or `v(x) = 0` (no collapse at all, `t = 0`). Without the last condition it is false on standard
+matrices: the collapse at `x` can reach `v(i)` weakly through upgrades, e.g. at `i = 11` of
+(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)
+(`r = ω^3`, bump term `Ω_1`). SRO からの乱択の展開とその M[n] の接頭辞閉包（標準形 40 万個）で例外 0. -/
 def BumpAbsC (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
   ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
     (∀ j ∈ children M i, col M j = bump M i → children M j = [x] → ρ.v x = z) →
+    (StrongG M x ρ i ∨ XParNB M x ∨ ρ.v x = z) →
     ∀ r ∈ summands (vOpt ρ (par M 1 i)), ¬ r < psi z two z → r < bumpW M ρ i → Lhd z r (bumpW M ρ i)
 
 theorem BumpAbs.c {M : Mat} {ρ : Valn} (h : BumpAbs M ρ) (x : Nat) : BumpAbsC M x ρ :=
-  fun i h1 h2 _ => h i h1 h2
+  fun i h1 h2 _ _ => h i h1 h2
 
 /-- `BRelS 0 ψ_w(0)` forces `w = 0`. -/
 theorem brelS_z_psi {w : T} (h : BRelS z (psi w z z)) : w = z := by
@@ -1073,7 +1087,16 @@ theorem bump_rel {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       intro r hr hn hlt
       by_cases hWE : omega (sumN (one :: (children M i).map (bumpTerm M ρ i))) < E0
       · exact lhd_lt_small (isOT_mem_summands hVot hr) hWE hlt
-      · apply hAbs i h1 h2 hexcl r hr _ hlt
+      · have hSG : StrongG M x ρ i := by
+          refine ⟨ρ', hC', fun j hjT hjb => ?_⟩
+          rw [hA] at hjT
+          rcases List.mem_append.mp hjT with hj0 | hj0
+          · obtain ⟨hch, ho, -⟩ := early_sib hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hi h2
+              (mem_children_take (hA0T j hj0)).2 hjlT (hA0lt j hj0)
+            rw [hch, List.map_congr_left ho]
+            exact brelS_refl
+          · simp at hj0; subst hj0; exact hS
+        apply hAbs i h1 h2 hexcl (Or.inl hSG) r hr _ hlt
         intro hr2
         apply hn
         have h2le : two ≤ sumN (one :: Pl ++ [omega G']) :=

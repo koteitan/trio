@@ -541,13 +541,13 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
             exact (hoff e hex).1 (fun h => (hLnd d hd e he).2 ((hiff true e hex).mp h)))
     (by
       intro i hi h1 h2
-      apply hAbsC i h1 h2
-      intro j hj hjb hjx
-      exfalso
-      have hxj : r + L ∈ children M j := by rw [hjx]; simp
-      have hpx := (mem_children_iff.mp hxj).2
-      rw [hp] at hpx; cases hpx
-      exact hrb i (mem_children_iff.mp hj).2 hjb)
+      refine hAbsC i h1 h2 (fun j hj hjb hjx => ?_) (Or.inr (Or.inl fun q' i' hq' hi' => ?_))
+      · exfalso
+        have hxj : r + L ∈ children M j := by rw [hjx]; simp
+        have hpx := (mem_children_iff.mp hxj).2
+        rw [hp] at hpx; cases hpx
+        exact hrb i (mem_children_iff.mp hj).2 hjb
+      · rw [hp] at hq'; cases hq'; exact hrb i' hi')
   apply root_N2 hlen hL hp hd0e hn2 hXu hXb hrb he2r hIU hR0 hR01 hR12 h00 hG hGN
   · intro i hi
     by_cases hd : DepS M S true i

@@ -230,7 +230,16 @@ theorem bump_rel_nw {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       intro r hr hn hlt
       by_cases hWE : omega (sumN (one :: (children M i).map (bumpTerm M ρ i))) < E0
       · exact lhd_lt_small (isOT_mem_summands hVot hr) hWE hlt
-      · apply hAbs i h1 h2 hexcl r hr _ hlt
+      · have hSG : StrongG M x ρ i := by
+          refine ⟨ρ', hC', fun j hjT hjb => ?_⟩
+          rw [hA] at hjT
+          rcases List.mem_append.mp hjT with hj0 | hj0
+          · obtain ⟨hch, ho, -⟩ := early_sib hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hi h2
+              (mem_children_take (hA0T j hj0)).2 hjlT (hA0lt j hj0)
+            rw [hch, List.map_congr_left ho]
+            exact brelS_refl
+          · simp at hj0; subst hj0; exact hS
+        apply hAbs i h1 h2 hexcl (Or.inl hSG) r hr _ hlt
         intro hr2
         apply hn
         have h2le : two ≤ sumN (one :: Pl ++ [omega G']) :=

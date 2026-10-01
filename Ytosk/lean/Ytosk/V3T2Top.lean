@@ -111,13 +111,13 @@ theorem abs_of_absC {M : Mat} {x q : Nat} {ρ : Valn} (hAbsC : BumpAbsC M x ρ)
     ∀ i, i < x → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ s ∈ summands (vOpt ρ (par M 1 i)),
       ¬ s < psi z two z → s < bumpW M ρ i → Lhd z s (bumpW M ρ i) := by
   intro i _ h1 h2
-  apply hAbsC i h1 h2
-  intro j hj hjb hjx
-  exfalso
-  have hxj : x ∈ children M j := by rw [hjx]; simp
-  have hpx' := (mem_children_iff.mp hxj).2
-  rw [hpx] at hpx'; cases hpx'
-  exact hqb i (mem_children_iff.mp hj).2 hjb
+  refine hAbsC i h1 h2 (fun j hj hjb hjx => ?_) (Or.inr (Or.inl fun q' i' hq' hi' => ?_))
+  · exfalso
+    have hxj : x ∈ children M j := by rw [hjx]; simp
+    have hpx' := (mem_children_iff.mp hxj).2
+    rw [hpx] at hpx'; cases hpx'
+    exact hqb i (mem_children_iff.mp hj).2 hjb
+  · rw [hpx] at hq'; cases hq'; exact hqb i' hi'
 
 
 

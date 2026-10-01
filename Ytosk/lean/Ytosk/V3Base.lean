@@ -100,7 +100,7 @@ theorem base_dropRes : DropRes (Mlen (1 + 3 * n)) ((Mlen (1 + 3 * n)).length - 1
   · -- UpgAbsX
     intro i k W _ _ _ _ r hr; rw [vOpt_par1] at hr; simp [summands] at hr
   · -- BumpAbsC
-    intro i _ _ _ r hr; rw [vOpt_par1] at hr; simp [summands] at hr
+    intro i _ _ _ _ r hr; rw [vOpt_par1] at hr; simp [summands] at hr
 
 theorem base_fch : FrameClosedHi (Mlen (1 + 3 * n)) (bval (1 + 3 * n) one) := by
   intro i _ L' c R h _

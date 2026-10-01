@@ -985,7 +985,7 @@ theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                 exact (hoffD m (by omega)).2 (hpnd m hpp)
             exact v_bump_lhd hC hG hCN hiM (hiN i hi) h1 h2 (entry_pre0 hlen hn 1 (by omega))
               (entry_pre0 hlen hn 2 (by omega)) hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt hTD
-              (hAbs i h1 h2 (fun _ _ _ _ => v_z_of_e1 hC (by omega) he1))
+              (hAbs i h1 h2 (fun _ _ _ _ => v_z_of_e1 hC (by omega) he1) (Or.inr (Or.inr (v_z_of_e1 hC (by omega) he1))))
   exact fun b i hD hi => key _ b i (le_refl _) hD hi
 
 end
