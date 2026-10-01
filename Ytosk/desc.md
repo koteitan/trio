@@ -1408,3 +1408,17 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 残る仮定（A・B で例外 0）: M の構造の事実、N の isUpg の一致 hIUt、値の hAbs・hVNN・種の閉性。
 - 残り: n = 0, 1（t2_assemble で N = M.take x として）、N の評価（Cons・Rk・Good3）、Res3T2 への集約と hT2 への包装。
 - V3TopB（f1e25b6a）: hT2 は HInvA と Std M を受け取る形にした（trio_terminates′）。N = M[n] の評価に HInvA を当てられる。
+
+### 最上位の定理を帰納法の形に（2026-10-02、V3Congr・V3TopC・V3Ind、緑）
+
+- 評価の一致の補題（V3Congr）: Agree M σ τ（範囲内で一致）、agree_of_cons（Cons の解は範囲内で一意）、good3_congr・rootS_congr・rootP_congr・dropRes_congr。DropRes は BumpWeakSrc の修正のあと、評価を範囲内でしか読まない。
+- HInvE（V3TopC）: 各標準形に「ある」評価と順位があって Inv3 ∧ Res3A。展開の仕組みが作る評価をそのまま使える。
+  - Res3.chain は、接頭辞に HInvE を当てて dropRes_congr で移す（chain_of_E）。
+  - t = 0 の M[n] の Good3 などは good_of_E（HInvE ＋ 順位 → どの評価でも Good3・rootS・rootP）。
+  - trio_terminatesE: HInvE と hT2（HInvE と Std M を受け取る）から WellFounded Step′。
+- 帰納法（V3Ind）: trio_terminates_ind の仮定は 4 つ:
+  - hBase: SRO[n] で Inv3 ∧ Res3A。
+  - hTake: M から接頭辞 M.take j へ（n ≤ 1、最後の列が 0、の場合をまとめる。expand_zero_take・expand_one）。
+  - hExp: n ≥ 2 の展開（最後の列が 0 でない）。
+  - hT2: t = 2 の降下。
+- Res3A は新しい行列でも作る必要がある。そのため DropRes を 1 行列の不変条件（LocA など）から出す道が要る。
