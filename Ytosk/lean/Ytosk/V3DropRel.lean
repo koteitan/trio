@@ -439,4 +439,23 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     rw [hw']
     exact o_frame_weak hs' hp' hWk hdrop hlt
 
+/-- **The `o` frame with no counted child in `M.take x`** (`v` unchanged): all counted children of `M` are
+dropped. -/
+theorem o_frame_empty {M : Mat} {x : Nat} {ρ ρ' : Valn} {i : Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hF : FrameClosed M ρ)
+    (hC' : Cons (M.take x) ρ') (hiT : i < (M.take x).length) (hiM : i < M.length)
+    (hv : ρ'.v i = ρ.v i) (hclT : CL (M.take x) i = []) : LhdE (ρ'.o i) (ρ.o i) := by
+  have hvot : isOT (ρ.v i) = true := hG.ot_v i hiM
+  have hn : ∀ c ∈ children (M.take x) i, ¬ Counted (M.take x) i c := by
+    intro c hc hcnt
+    have : c ∈ CL (M.take x) i := by unfold CL; exact List.mem_filter.mpr ⟨hc, by simpa using hcnt⟩
+    rw [hclT] at this; simp at this
+  rw [o_of_no_counted hC' hiT (by rw [hv]; exact hvot) hn, hv, o_spArg hC hG hiM, cvals_eq_map hC hG i]
+  obtain ⟨hs, hp⟩ := cl_vals hC hG hiM
+  have hTcl := tailcl_of_frame hC hG hF hiM (CL M i) [] (by simp)
+  simp only [List.map_nil] at hTcl
+  have h := drop_tail (ρ.v i) ((CL M i).map ρ.o) (spArg (ρ.v i) z (sumN [])) hs hp
+    (fun u _ q hq => by simp [sumN, spArg, summands] at hq) hTcl
+  simpa [sumN, spArg] using h
+
 end Ytosk
