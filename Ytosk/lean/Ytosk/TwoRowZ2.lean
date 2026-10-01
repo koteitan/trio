@@ -166,4 +166,62 @@ theorem succPath_up_t0 {M : Mat} {j0 Lb g : Nat} (hlen : j0 + Lb + 1 = M.length)
       exact frame p c (hcA.trans hgA) hc (ih c (by omega) hcA).2
   exact fun p hp => key _ p (Nat.le_refl _) hp
 
+/-- **The two-row `t = 0` expansion from `g` up.** Every value on the path from `g` to the root is a
+member `[m]` (`m ≥ 1`) of its natural fundamental sequence. Remaining hypothesis: PRE. -/
+theorem twoRow_t0_path {M : Mat} {j0 Lb n g : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+    (hA : Anc0 M j0 (j0 + Lb)) (hg : par M 0 j0 = some g) (hn : 2 ≤ n)
+    (hx0 : par M 0 (j0 + Lb) = some j0)
+    (hpre : ∀ c, c < j0 + Lb → par (TRIO.gexp M j0 Lb 0 0 n) 0 c = par M 0 c)
+    (hF : F1 (TRIO.gexp M j0 Lb 0 0 n)) (hG : Good2 M) (hx1 : entry M 1 (j0 + Lb) = 0)
+    (hPRE : ∀ h p s y, Anc0 M p (j0 + Lb) → par M 0 p = some h → o2r M p = psi s y z →
+      lt (bst M h p) y = true → lt (psi (vr M h) z z) (psi s y z) = true →
+      bst M h p ≠ z → ∃ rest, y = app (bst M h p) rest ∧ rest ≠ z) :
+    ∀ h, Anc0 M h g → ∃ j, o2r (TRIO.gexp M j0 Lb 0 0 n) h = fsD (o2r M h) (natT (j + 1)) ∧
+      isOT (fsD (o2r M h) (natT (j + 1))) = true ∧ fsD (o2r M h) (natT (j + 1)) < o2r M h := by
+  have hn1 : 1 ≤ n := by omega
+  have hgA : Anc0 M g (j0 + Lb) := anc0_up hg hA
+  have hgj := par_lt M 0 j0 g hg
+  have hsp := succPath_up_t0 hlen hA hg hG hx0 hx1
+  -- standardness and descent of `fsD = fs` on successor-type values
+  have hOK : ∀ p, Anc0 M p g → ∀ k, 1 ≤ k →
+      isOT (fsD (o2r M p) (natT k)) = true ∧ fsD (o2r M p) (natT k) < o2r M p := by
+    intro p hp k _
+    rw [(hsp p hp).2.fsD_eq]
+    exact fs_ot_lt (hG.ot p) ⟨isOT_natT k, by rw [(hsp p hp).2.cof]; exact ⟨k, rfl⟩⟩
+  apply o2r_path_from hlen hG (fun j => natT (j + 1)) hgA
+  · intro j hj; exact vr_gexp_pre_t0 hlen hLb hA hg hn1 hx0 hpre hF hG hj
+  · intro h hh hc
+    rcases hc with hnA | hhg
+    · exact children_gexp_off_t0 hlen hLb hA hg hn1 hx0 hpre hh hnA
+    · exact children_gexp_lt_t0 hlen hLb hA hg hn1 hx0 hpre (by omega) (by omega)
+  · -- the leaf `g`
+    have hgr := o2r_g_fs_t0 hlen hLb hA hg hn1 hx0 hpre hF hG hx1
+    rcases hgr with h1 | h1
+    · refine ⟨n - 1, ?_, hOK g (Anc0.refl g) _ (by omega)⟩
+      rw [show n - 1 + 1 = n by omega, (hsp g (Anc0.refl g)).2.fsD_eq]; exact h1
+    · refine ⟨n - 2, ?_, hOK g (Anc0.refl g) _ (by omega)⟩
+      rw [show n - 2 + 1 = n - 1 by omega, (hsp g (Anc0.refl g)).2.fsD_eq]; exact h1
+  · -- the frames above `g`
+    intro h p j hp hph hokOT hoklt
+    have hpx : Anc0 M p (j0 + Lb) := hp.trans hgA
+    have hhA : Anc0 M h g := anc0_up hph hp
+    obtain ⟨hargp, hop⟩ := hsp p hp
+    refine ⟨j, ?_, hOK h hhA _ (by omega)⟩
+    have hFD : FrameD (vr M h) (bst M h p) (o2r M p) (natT (j + 1)) := by
+      apply frameD_path hG hlen hpx hph ⟨hokOT, hoklt⟩ hop.not_succ
+      · intro s y hc _
+        rw [hc] at hargp; exact hargp.not_succ
+      · intro s hc; exfalso; rw [hc] at hargp; exact hargp.ne_z' rfl
+      · intro s y hc ht1 ht2
+        rw [hc] at hargp
+        change SuccPath y at hargp
+        apply trig_persist_of_pre _ (hPRE h p s y hpx hph hc ht1 ht2)
+        rw [hargp.fsD_eq, hargp.fsD_eq]
+        exact hargp.fs_mono_nat' (show 0 < j + 1 by omega)
+      · intro s y hc _ _
+        rw [hc] at hargp
+        exact L_succ hargp (by omega)
+    rw [o2r_frame hG hlen hpx hph]
+    exact (node_fsD hFD).symm
+
 end Ytosk
