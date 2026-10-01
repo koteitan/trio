@@ -6,6 +6,7 @@
 `Res3.drop` を当てて出る。接頭辞の順位は `M` の順位をそのまま使う（`counted_take_last`）。
 -/
 import Ytosk.V3Top
+import Ytosk.V3T0Res
 import Ytosk.V3ExpOne
 import Ytosk.TwoRowZ
 
@@ -20,13 +21,8 @@ structure Res3A (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
     lt (sf ((drop1 M (M.length - 1) rk).v r)) (ρ.v r) = true →
     ∀ u g, g ∈ comps u ((drop1 M (M.length - 1) rk).o r) → g < (drop1 M (M.length - 1) rk).o r
   t0 : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
-    (∀ s' y', (drop1 M (r + L) rk).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
-      par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
-      lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
-      VSmallV s') ∧
-    (∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
-      r < r + L - 1 → upg M (r + L - 1) = none) ∧
-    (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → VSmallNewN M r ρ σ)
+    ∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
+      r < r + L - 1 → upg M (r + L - 1) = none
 
 /-- **The top hypothesis, for every valuation**: every nonempty standard matrix other than SRO has a
 ranking, and every valuation and ranking of it satisfy `Inv3` and `Res3A`. -/
@@ -74,14 +70,17 @@ theorem hInv_of_A (h : HInvA) :
   rotate_left
   · -- `t0`: the values of `M[n]` are those of a standard matrix
     intro r L hlen hp he1
-    obtain ⟨hVr, hU, hVN⟩ := RA.t0 r L hlen hp he1
-    refine ⟨hVr, hU, ?_⟩
-    intro n hn2 σ hCN
+    have hU := RA.t0 r L hlen hp he1
     have hL : 0 < L := by
       rcases Nat.eq_zero_or_pos L with h0 | h0
       · subst h0; have := par_lt M 0 _ r hp; omega
       · exact h0
     have he2 : entry M 2 (r + L) = 0 := I.r12 _ he1
+    have hDr := RA.drop
+    rw [show M.length - 1 = r + L by omega] at hDr
+    refine ⟨t0_vr hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 hC hR
+      ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hDr, hU, ?_⟩
+    intro n hn2 σ hCN
     have hRN := rk_N0 hlen hL hp (show 1 ≤ n by omega) I.r0p I.z2 he2 hn2 hR
     have hlN : (TRIO.gexp M r L 0 0 n).length = r + n * L := lenN0 hlen (show 1 ≤ n by omega)
     have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
@@ -102,7 +101,8 @@ theorem hInv_of_A (h : HInvA) :
     have hSRN : TRIO.gexp M r L 0 0 n ≠ SRO := by
       intro he; rw [he] at hRN; exact not_val_SRO _ (val_of_rk hRN)
     have IN := ((h _ hSN hSRN hEN).2 σ _ hCN hRN).1
-    exact ⟨IN.good, hVN n hn2 σ hCN, IN.rootS, IN.rootP⟩
+    exact ⟨IN.good, t0_vsmallNewN hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 hC I.good hR hn2 hCN,
+      IN.rootS, IN.rootP⟩
   intro j hj
   have hlj : (M.take (j + 1)).length = j + 1 := by rw [List.length_take]; omega
   have hRj := hRk (j + 1) (by omega)
