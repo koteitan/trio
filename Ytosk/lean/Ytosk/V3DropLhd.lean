@@ -132,4 +132,37 @@ theorem lhdE_step_nn' {a B s' y' s y : T} (hX : LhdE (psi s' y' z) (psi s y z))
     LhdE (step a B s' y' z) (step a B s y z) :=
   lhdE_step_nn hX hn' hn (fun q hq hlt => absurd (lt_of_le_of_lt (hB q hq) hlt) (lt_irrefl' _))
 
+/-- Restricting the interval of `◁`. -/
+theorem lhd_restrict {η b a a' : T} (h : Lhd η b a) (h1 : b < a') (h2 : a' ≤ a) : Lhd η b a' :=
+  ⟨h1, fun u c hc1 hc2 => h.2 u c hc1 (le_trans hc2 h2)⟩
+
+/-- A term with no low part that is below `y` is at most the high part of `y`. -/
+theorem le_hi_of_nolo {θ y' y : T} (hot : isOT y = true) (hle : y' ≤ y)
+    (hl' : (split y' θ).2 = z) : y' ≤ (split y θ).1 := by
+  have e := split_app θ y'
+  rw [hl', app_z_right] at e
+  rcases (le_iff _ _).mp hle with hlt | heq
+  · rcases split_mono θ hlt with h | ⟨h, _⟩
+    · rw [← e]; exact le_of_lt h
+    · rw [← e, h]
+  · rw [← e, heq]
+
+/-- **`hmis` from the argument relation**: if `y'` has no low part and `y` has one, then
+`y' ◁ hi(y) + ψ_s(y)`. -/
+theorem hmis_of_lhdE {s y' y : T} (hot : isOT y = true) (hy : LhdE y' y)
+    (hl' : (split y' (psi (succ s) z z)).2 = z) :
+    LhdE y' (app (split y (psi (succ s) z z)).1 (psi s y z)) := by
+  have hle := le_hi_of_nolo hot hy.le hl'
+  apply LhdE.trans (b := (split y (psi (succ s) z z)).1) _ (lhdE_prefix _ _)
+  rcases (le_iff _ _).mp hle with hlt | heq
+  · rcases hy with rfl | hy
+    · -- `y' = y` has no low part, so `y = hi(y)`
+      have e := split_app (psi (succ s) z z) y'
+      rw [hl', app_z_right] at e
+      rw [e] at hlt; exact absurd hlt (lt_irrefl' _)
+    · exact Or.inr (lhd_restrict hy hlt (by
+        have := le_app_self (split y (psi (succ s) z z)).1 (split y (psi (succ s) z z)).2
+        rw [split_app] at this; exact this))
+  · exact Or.inl heq
+
 end Ytosk
