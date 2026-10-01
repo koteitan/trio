@@ -1501,3 +1501,9 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - BWS‴: BWS′ の前件に ¬ LhdE (v′ i) (v i) を足す（親の v が ◁ で下がるなら形は要らない）。
 - VSmallNew は案なし（VSmallF 自体が標準形で偽）。
 - 閉性の候補 S1〜S4 ＋ PH2 は C′ でも真。閉じていないのは同じ族（前の兄弟が浅いとき）。
+
+### t = 0 の M[n] の Good3（2026-10-02、node-lhd、V3T0Good）
+
+- good3_N_t0: GoodOT N（N の値がすべて標準形）→ Good3 N。減少は、コピーの列（中間は M の値、最後は M.take x の値）、r より前の列（D の子は最後だけで ◁ で下がる）、g で r が数えられる場合に分けて示した。
+- t0_core: GoodOT を仮定して Cons・Rk・Good3・根の標準形と減少を出す。
+- 残り: GoodOT のうち「r より前の D の列の o が標準形」（step_ot 型）。落とす補題の po_of の修理（omega-lhd）と同じ問題なので共通の補題にする。
