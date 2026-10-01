@@ -268,4 +268,113 @@ theorem seedOK_of_lt_c2 {a b μ σ : T} (hot : isOT (psi a b z) = true) (hcb : c
   · rw [psi_lt_psi_z_iff]
     exact Or.inr ⟨rfl, lt_fs_psi hbot hcb hσb (comps_lt hsot)⟩
 
+section domgam
+variable {a b μ : T} (hot : isOT (psi a b z) = true) (hcb : cof b = .big μ) (hμ : ¬ lt μ a = true)
+include hot hcb hμ
+
+theorem gamZ_le : ∀ {j k : Nat}, j ≤ k → gamS μ b z j ≤ gamS μ b z k := by
+  intro j k hjk
+  induction hjk with
+  | refl => exact le_refl _
+  | step _ ih => exact le_trans ih (le_of_lt (gamS_mono hot hcb hμ (seedOK_z a b μ) _))
+
+/-- **The components of the seed-`0` chain are dominated** by those of any `c0 ∈ (b[seed], b]`
+(induction on the chain, through `b[γ_k] ◁_{γ_k} b`). -/
+theorem dom_gam {seed u c0 c1 : T} (hsge : psi μ z z ≤ seed) (hslt : seed < psi (succ μ) z z)
+    (hau : ¬ lt a u = true) (h1 : fs b seed < c0) (h2 : c0 ≤ b) :
+    ∀ k, gamS μ b z k ≤ seed → ∀ y ∈ comps u (gamS μ b z (k + 1)),
+      ∃ y' ∈ comps u (psi a c0 c1) ++ Gc u z, y ≤ y' := by
+  have hbot : isOT b = true := isOT_arg hot
+  have hS0 := seedOK_z a b μ
+  have hμu : ¬ lt μ u = true := fun h => hau (show a < u from lt_of_le_of_lt (le_of_not_gt hμ) h)
+  have hc0in : c0 ∈ comps u (psi a c0 c1) := by simp [comps, hau]
+  have hfsmono : ∀ {η η' : T}, η ≤ η' → fs b η ≤ fs b η' := by
+    intro η η' h
+    rcases (le_iff _ _).mp h with h | h
+    · exact le_of_lt (fs_mono hcb h)
+    · rw [h]
+  intro k
+  induction k with
+  | zero =>
+    intro _ y hy
+    simp only [gamS, comps, hμu, Bool.false_eq_true, if_false, List.mem_append, List.mem_cons,
+      List.not_mem_nil, or_false] at hy
+    rcases hy with rfl | hy | hy
+    · exact ⟨c0, List.mem_append_left _ hc0in, le_of_lt (lt_of_le_of_lt (hfsmono (z_le _)) h1)⟩
+    · obtain ⟨y', hy', hyy'⟩ := (lhd_fs hbot (by unfold ValidLt; rw [hcb]; exact T.z_lt_psi _ _ _)).2
+        u c0 (lt_of_le_of_lt (hfsmono (z_le _)) h1) h2 y hy
+      rcases List.mem_append.mp hy' with hy' | hy'
+      · exact ⟨y', List.mem_append_left _ (mem_comps_psi_arg hau hy'), hyy'⟩
+      · exact ⟨y', List.mem_append_right _ hy', hyy'⟩
+    · exact ⟨y, List.mem_append_left _ (mem_comps_psi_arg hau
+        (comps_mu hbot hcb hsge hslt (le_of_lt h1) h2 hμu y hy)), le_refl _⟩
+  | succ k ih =>
+    intro hk y hy
+    have hγk : gamS μ b z (k + 1) ≤ seed := hk
+    have hγk' : gamS μ b z k ≤ seed :=
+      le_trans (le_of_lt (gamS_mono hot hcb hμ hS0 k)) hγk
+    have hVk : ValidLt b (gamS μ b z (k + 1)) := gamS_valid hot hcb hμ hS0 (k + 1)
+    have hlt1 : fs b (gamS μ b z (k + 1)) < c0 := lt_of_le_of_lt (hfsmono hγk) h1
+    simp only [gamS, comps, hμu, Bool.false_eq_true, if_false, List.mem_append, List.mem_cons,
+      List.not_mem_nil, or_false] at hy
+    rcases hy with rfl | hy | hy
+    · exact ⟨c0, List.mem_append_left _ hc0in, le_of_lt hlt1⟩
+    · obtain ⟨y', hy', hyy'⟩ := (lhd_fs hbot hVk).2 u c0 hlt1 h2 y hy
+      rcases List.mem_append.mp hy' with hy' | hy'
+      · exact ⟨y', List.mem_append_left _ (mem_comps_psi_arg hau hy'), hyy'⟩
+      · simp only [Gc, List.mem_cons] at hy'
+        rcases hy' with rfl | hy'
+        · exact ⟨z, List.mem_append_right _ (by simp [Gc]), hyy'⟩
+        · obtain ⟨y'', hy'', hle⟩ := ih hγk' y' hy'
+          exact ⟨y'', hy'', le_trans hyy' hle⟩
+    · exact ⟨y, List.mem_append_left _ (mem_comps_psi_arg hau
+        (comps_mu hbot hcb hsge hslt (le_of_lt h1) h2 hμu y hy)), le_refl _⟩
+
+/-- **The seed condition from domination by the seed-`0` chain**: if `γ_k < ψ_μ(σ)`, `σ ≤ b[γ_k]`
+and the components of `ψ_μ(σ)` (levels `≤ a`) are dominated by those of `γ_{k+1}`, the seed is good. -/
+theorem seedOK_of_dom_gam {σ : T} (k : Nat) (hsot : isOT (psi μ σ z) = true)
+    (hγ : gamS μ b z k < psi μ σ z) (hσ : σ ≤ fs b (gamS μ b z k))
+    (hdom : ∀ u, ¬ lt a u = true → ∀ g ∈ comps u (psi μ σ z),
+      ∃ y ∈ comps u (gamS μ b z (k + 1)), g ≤ y) :
+    SeedOK a b μ (psi μ σ z) := by
+  have hbot : isOT b = true := isOT_arg hot
+  have hS0 := seedOK_z a b μ
+  have hslt : psi μ σ z < psi (succ μ) z z := by
+    rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self μ)
+  have hge : psi μ z z ≤ psi μ σ z := by
+    rw [le_iff]
+    rcases (le_iff _ _).mp (z_le σ) with h4 | h4
+    · left; rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, h4⟩
+    · right; rw [← h4]
+  have hVk : ValidLt b (gamS μ b z k) := gamS_valid hot hcb hμ hS0 k
+  have hσb : σ < b := lt_of_le_of_lt hσ (fs_lt hVk)
+  have hmono : fs b (gamS μ b z k) < fs b (psi μ σ z) := fs_mono hcb hγ
+  have hd0 : isOT (psi a (fs b (gamS μ b z k)) z) = true := isOT_diag_seed hot hcb hμ hS0 k
+  have hcd0 := comps_lt hd0
+  have hval : ValidLt b (psi μ σ z) := by unfold ValidLt; rw [hcb]; exact hslt
+  have hfsle : fs b (psi μ σ z) ≤ b := le_of_lt (fs_lt hval)
+  refine ⟨hsot, hslt, ?_, ?_, ?_⟩
+  · rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, lt_fs_psi hbot hcb hσb (comps_lt hsot)⟩
+  · intro g hg
+    obtain ⟨y, hy, hgy⟩ := hdom a (lt_irrefl' a) g hg
+    have hμa : ¬ lt μ a = true := hμ
+    simp only [gamS, comps, hμa, Bool.false_eq_true, if_false, List.mem_append, List.mem_cons,
+      List.not_mem_nil, or_false] at hy
+    rcases hy with rfl | hy | hy
+    · exact lt_of_le_of_lt hgy hmono
+    · exact lt_of_le_of_lt hgy (lt_trans (hcd0 y hy) hmono)
+    · -- a component of `μ`: below `b[seed]` (as in `seedOK_of_lhd`)
+      have hgb : y ∈ comps a b := comps_mu hbot hcb hge hslt hfsle (le_refl b) hμ y hy
+      have hgb' := comps_lt hot y hgb
+      by_contra hcon
+      have hgy' : y ∈ comps a y := comps_mu hbot hcb hge hslt
+        (le_of_not_gt (fun h => hcon (lt_of_le_of_lt hgy h))) (le_of_lt hgb') hμ y hy
+      exact Nat.lt_irrefl _ (size_comps hgy')
+  · intro u c0 c1 h1 h2 hau g hg
+    obtain ⟨y, hy, hgy⟩ := hdom u hau g hg
+    obtain ⟨y', hy', hle⟩ := dom_gam hot hcb hμ hge hslt hau h1 h2 k (le_of_lt hγ) y hy
+    exact ⟨y', hy', le_trans hgy hle⟩
+
+end domgam
+
 end Ytosk
