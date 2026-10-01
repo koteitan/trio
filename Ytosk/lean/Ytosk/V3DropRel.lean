@@ -245,4 +245,198 @@ theorem tailcl_of_frame {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ)
     rw [e]
     exact tailcl_of_frame hC hG hF hi Tl (P ++ [c]) (by rw [h]; simp)
 
+/-! ## 評価器の段の o の枠 (2): v が変わらない列 -/
+
+/-- `o` through the counted children, with local hypotheses. -/
+theorem o_cl_loc {M : Mat} {ρ : Valn} {i : Nat} (hC : Cons M ρ) (hi : i < M.length)
+    (hv : isOT (ρ.v i) = true) (hs : ∀ c ∈ CL M i, Single (ρ.o c))
+    (hp : ((CL M i).map ρ.o).Pairwise (fun a b => b ≤ a)) :
+    ρ.o i = psi (ρ.v i) (spArg (ρ.v i) z (sumN ((CL M i).map ρ.o))) z := by
+  classical
+  have hcv : cvals M ρ i = (CL M i).map ρ.o := by
+    unfold cvals CL
+    have : (children M i).map (cnt M ρ i) =
+        (children M i).map (fun c => if Counted M i c then ρ.o c else z) := by
+      apply List.map_congr_left; intro c _; exact cnt_eq_ite M ρ i c
+    rw [this]
+    apply nzs_map_ite
+    intro c hc hcnt
+    exact single_ne_z (hs c (by unfold CL; exact List.mem_filter.mpr ⟨hc, by simpa using hcnt⟩))
+  have hsl : ∀ t ∈ (children M i).map (cnt M ρ i), t = z ∨ Single t := by
+    intro t ht
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+    rw [cnt_eq_ite]
+    split
+    · rename_i hcnt
+      exact Or.inr (hs c (by unfold CL; exact List.mem_filter.mpr ⟨hc, by simpa using hcnt⟩))
+    · exact Or.inl rfl
+  have := o_spArg_loc hC hi hv hsl (by rw [hcv]; exact hp)
+  rw [this, hcv]
+
+theorem DRelO.le {t' t : T} (h : DRelO t' t) : t' ≤ t := by
+  rcases h with h | ⟨w', w, X, rfl, rfl, hW⟩
+  · exact h.le
+  · left; show psi w' z z < psi w X z; rw [psi_lt_psi_z_iff]; exact Or.inl hW.1
+
+theorem sumN_singleton {t : T} (h : Single t) : sumN [t] = t := by
+  show sf (add z t) = t
+  rw [add_z_left]; exact sf_ot h.1
+
+/-- **The `o` frame where `v` does not change**: the counted children of `M.take x` are those of `M`
+up to a tail, and only the last one changes. -/
+theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : List Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hF : FrameClosed M ρ)
+    (hC' : Cons (M.take x) ρ') (hiT : i < (M.take x).length) (hiM : i < M.length)
+    (hv : ρ'.v i = ρ.v i)
+    (hclT : CL (M.take x) i = Lc ++ [cs]) (hcl : CL M i = Lc ++ [cs] ++ Tl)
+    (hsame : ∀ d ∈ Lc, ρ'.o d = ρ.o d)
+    (hcs' : Single (ρ'.o cs)) (hrel : DRelO (ρ'.o cs) (ρ.o cs))
+    (hsub : ∀ s y, ρ.o cs = psi s y z → SubSmall (ρ.v i) s)
+    (hsub' : ∀ s y, ρ'.o cs = psi s y z → SubSmall (ρ.v i) s)
+    (hweak : WkO (ρ'.o cs) (ρ.o cs) → ∃ w, ρ.o cs = psi w z z) :
+    LhdE (ρ'.o i) (ρ.o i) := by
+  set a := ρ.v i with ha
+  obtain ⟨hsM, hpM⟩ := cl_vals hC hG hiM
+  rw [hcl] at hsM hpM
+  simp only [List.map_append, List.map_cons, List.map_nil] at hsM hpM
+  set Lv := Lc.map ρ.o with hLv
+  set Tv := Tl.map ρ.o with hTv
+  have hsL : ∀ t ∈ Lv, Single t := fun t ht => hsM t (by simp [ht])
+  have hcsS : Single (ρ.o cs) := hsM _ (by simp)
+  have hsT : ∀ t ∈ Tv, Single t := fun t ht => hsM t (by simp [ht])
+  have hp1 := List.pairwise_append.mp hpM
+  have hpL : Lv.Pairwise (fun a b => b ≤ a) := (List.pairwise_append.mp hp1.1).1
+  have hLc : ∀ t ∈ Lv, ρ.o cs ≤ t := fun t ht =>
+    (List.pairwise_append.mp hp1.1).2.2 t ht _ (by simp)
+  have hpcT : (ρ.o cs :: Tv).Pairwise (fun a b => b ≤ a) := by
+    refine List.pairwise_cons.mpr ⟨fun t ht => hp1.2.2 _ (by simp) t ht, hp1.2.1⟩
+  have hsC : ∀ t ∈ ρ.o cs :: Tv, Single t := fun t ht => by
+    rcases List.mem_cons.mp ht with h | h
+    · rw [h]; exact hcsS
+    · exact hsT t h
+  have hLC : ∀ u ∈ ρ.o cs :: Tv, u ≤ ρ.o cs := fun u hu => by
+    rcases List.mem_cons.mp hu with h | h
+    · rw [h]
+    · exact hp1.2.2 _ (by simp) u h
+  have hsLc : ∀ t ∈ Lv ++ [ρ.o cs], Single t := fun t ht => by
+    rcases List.mem_append.mp ht with h | h
+    · exact hsL t h
+    · simp at h; rw [h]; exact hcsS
+  have hpLc : (Lv ++ [ρ.o cs]).Pairwise (fun a b => b ≤ a) :=
+    List.pairwise_append.mpr ⟨hpL, by simp, fun t ht b hb => by simp at hb; rw [hb]; exact hLc t ht⟩
+  -- the value in `M.take x`
+  have hmapT : (CL (M.take x) i).map ρ'.o = Lv ++ [ρ'.o cs] := by
+    rw [hclT, List.map_append, List.map_singleton, hLv]
+    congr 1
+    exact List.map_congr_left hsame
+  have hle' := hrel.le
+  have hs' : ∀ t ∈ Lv ++ [ρ'.o cs], Single t := by
+    intro t ht; rcases List.mem_append.mp ht with ht | ht
+    · exact hsL t ht
+    · simp at ht; rw [ht]; exact hcs'
+  have hp' : (Lv ++ [ρ'.o cs]).Pairwise (fun a b => b ≤ a) :=
+    List.pairwise_append.mpr ⟨hpL, by simp, fun t ht b hb => by
+      simp at hb; rw [hb]; exact le_trans hle' (hLc t ht)⟩
+  have hvot : isOT a = true := hG.ot_v i hiM
+  have ho' : ρ'.o i = psi a (spArg a z (sumN (Lv ++ [ρ'.o cs]))) z := by
+    have := o_cl_loc hC' hiT (by rw [hv]; exact hvot)
+      (fun c hc => by
+        have : ρ'.o c ∈ (CL (M.take x) i).map ρ'.o := List.mem_map_of_mem hc
+        rw [hmapT] at this; exact hs' _ this)
+      (by rw [hmapT]; exact hp')
+    rw [this, hmapT, hv]
+  have ho : ρ.o i = psi a (spArg a z (sumN (Lv ++ [ρ.o cs] ++ Tv))) z := by
+    rw [o_spArg hC hG hiM, cvals_eq_map hC hG i, hcl]
+    simp only [List.map_append, List.map_singleton]
+    rfl
+  rw [ho', ho]
+  set B := spArg a z (sumN Lv) with hB
+  have hLs := sumN_dec Lv hsL hpL
+  -- the state before `cs` is above the children
+  have hBge : ∀ t, Single t → t ≤ ρ.o cs → ∀ q ∈ summands B, t ≤ q := by
+    intro t ht htc
+    obtain ⟨s0, y0, rfl⟩ := ht.2
+    apply spArg_summands_ge ⟨s0, y0, rfl⟩ (sumN Lv) z hLs.1
+    · rw [hLs.2]; intro q hq; exact le_trans htc (hLc q hq)
+    · simp [summands]
+  have hCL : CL M i = Lc ++ cs :: Tl := by rw [hcl]; simp
+  obtain ⟨s, y, hsy⟩ := hcsS.2
+  rcases hrel with hrel | hW
+  · -- `⊴` child: one frame, then the tail
+    obtain ⟨s', y', hs'y'⟩ := hcs'.2
+    rw [hsy, hs'y'] at hrel
+    have hc := hcsS.1; rw [hsy] at hc
+    have hc' := hcs'.1; rw [hs'y'] at hc'
+    have hN := node_lhd (a := a) (B := B) hc hc' hrel (hBge _ hcsS (le_refl _) |> fun h => by
+        rw [hsy] at h; exact h) (hsub s y hsy) (hsub' s' y' hs'y')
+      (fun _ hr => hF i hiM Lc cs Tl hCL s y hsy hr)
+    have hstate : spArg a z (sumN ((Lc ++ [cs]).map ρ.o)) = step a B s y z := by
+      rw [List.map_append, List.map_singleton, ← hLv, sumN_append_dec hsLc hpLc,
+        sumN_singleton hcsS, spArg_app, hsy, spArg_single]
+    have hTcl := tailcl_of_frame hC hG hF hiM Tl (Lc ++ [cs]) (by rw [hcl])
+    rw [hstate] at hTcl
+    have hT := drop_tail a Tv (step a B s y z) hsT hp1.2.1
+      (fun u hu q hq => by
+        obtain ⟨s2, y2, hu2⟩ := (hsT u hu).2
+        have := spArg_summands_ge (a := a) (c := u) ⟨s2, y2, hu2⟩ (psi s y z) B hc
+          (by intro q2 hq2; simp [summands] at hq2; rw [hq2, ← hsy]; exact hp1.2.2 _ (by simp) u hu)
+          (hBge u (hsT u hu) (hp1.2.2 _ (by simp) u hu))
+        rw [spArg_single] at this
+        exact this q hq) hTcl
+    rw [hsy, hs'y']
+    rw [hs'y'] at hs' hp'
+    rw [hsy] at hsM hpM
+    exact o_frame_term (L := Lv) (Tl := Tv) hsM hpM hs' hp' hN hT
+  · -- weak child
+    obtain ⟨w', w, X, hw', hw, hWk⟩ := hW
+    obtain ⟨w0, hw0⟩ := hweak ⟨w', w, X, hw', hw, hWk⟩
+    rw [hw] at hw0; simp only [psi.injEq] at hw0; obtain ⟨rfl, rfl, -⟩ := hw0
+    have hF' : spArg a z (sumN (Lv ++ [ρ.o cs] ++ Tv)) = spArg a B (sumN (ρ.o cs :: Tv)) := by
+      rw [List.append_assoc, show [ρ.o cs] ++ Tv = ρ.o cs :: Tv from rfl,
+        sumN_append_dec (fun t ht => hsM t (by simpa using ht)) (by simpa using hpM), spArg_app]
+    rw [hF']
+    have hTcl := tailcl_of_frame hC hG hF hiM (cs :: Tl) Lc (by rw [hCL])
+    have hdrop := drop_tail a (ρ.o cs :: Tv) B hsC hpcT
+      (fun u hu q hq => hBge u (hsC u hu) (hLC u hu) q hq) (by simpa using hTcl)
+    -- the old state after `cs` is `B + ψ_w(0)`, and the rest only grows
+    have hstep : spArg a B (ρ.o cs) = app B (psi w z z) := by
+      rw [hw, spArg_single, step_leaf]
+      exact add_eq_app_of_ge ⟨w, z, rfl⟩ B (hBge _ hcsS (le_refl _) |> fun h => by rw [hw] at h; exact h)
+    have hTcl2 := tailcl_of_frame hC hG hF hiM Tl (Lc ++ [cs]) (by rw [hcl])
+    have hgrow : app B (psi w z z) ≤ spArg a B (sumN (ρ.o cs :: Tv)) := by
+      have e : spArg a B (sumN (ρ.o cs :: Tv)) = spArg a (app B (psi w z z)) (sumN Tv) := by
+        rw [sumN_cons_dec hsC hpcT, hw,
+          show app (psi w z z) (sumN Tv) = psi w z (sumN Tv) from rfl, spArg_cons, step_rest a B w z (sumN Tv) z,
+          step_leaf, add_eq_app_of_ge ⟨w, z, rfl⟩ B (hBge _ hcsS (le_refl _) |> fun h => by rw [hw] at h; exact h)]
+      have hs2 : spArg a z (sumN ((Lc ++ [cs]).map ρ.o)) = app B (psi w z z) := by
+        rw [List.map_append, List.map_singleton, ← hLv, sumN_append_dec hsLc hpLc,
+          sumN_singleton hcsS, spArg_app, hstep]
+      rw [hs2] at hTcl2
+      have hd := drop_tail a Tv (app B (psi w z z)) hsT hp1.2.1
+        (fun u hu q hq => by
+          obtain ⟨s2, y2, hu2⟩ := (hsT u hu).2
+          have hcw : isOT (psi w z z) = true := by rw [← hw]; exact hcsS.1
+          have := spArg_summands_ge (a := a) (c := u) ⟨s2, y2, hu2⟩ (psi w z z) B hcw
+            (by intro q2 hq2; simp [summands] at hq2; rw [hq2, ← hw]; exact hp1.2.2 _ (by simp) u hu)
+            (hBge u (hsT u hu) (hp1.2.2 _ (by simp) u hu))
+          rw [spArg_single, step_leaf, add_eq_app_of_ge ⟨w, z, rfl⟩ B
+            (hBge _ hcsS (le_refl _) |> fun h => by rw [hw] at h; exact h)] at this
+          exact this q hq) hTcl2
+      rw [e]
+      clear e
+      have := hd.le
+      rcases (le_iff _ _).mp this with h | h
+      · rw [psi_lt_psi_z_iff] at h
+        rcases h with h | ⟨_, h⟩
+        · exact absurd h (lt_irrefl' _)
+        · exact le_of_lt h
+      · simp only [psi.injEq] at h; exact (le_iff _ _).mpr (Or.inr h.2.1)
+    have hlt : app B (psi w' z z) < spArg a B (sumN (ρ.o cs :: Tv)) := by
+      apply lt_of_lt_of_le _ hgrow
+      apply app_lt_app_left
+      rw [psi_lt_psi_z_iff]; exact Or.inl hWk.1
+    rw [hw'] at hs' hp'
+    rw [hw']
+    exact o_frame_weak hs' hp' hWk hdrop hlt
+
 end Ytosk
