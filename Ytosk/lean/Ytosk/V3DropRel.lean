@@ -476,7 +476,8 @@ theorem last_add_single {s y : T} : ∀ V : T, last (add V (psi s y z)) = psi s 
 /-- **An upgraded column has the value of its target**: `v(i) = v(k)` when `upg(i) = k`. -/
 theorem v_upg_eq {M : Mat} {ρ : Valn} {i k : Nat} (hC : Cons M ρ) (hiM : i < M.length)
     (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i = 0) (hu : upg M i = some k)
-    (hvot : ∀ j, j < M.length → isOT (ρ.v j) = true) (hoot : ∀ j, j < M.length → isOT (ρ.o j) = true) :
+    (hVot : isOT (vOpt ρ (par M 1 i)) = true)
+    (hoot : ∀ j ∈ children M k, ∀ k' ∈ children M j, isOT (ρ.o k') = true) :
     ρ.v i = ρ.v k := by
   have hk := upg_lt hiM hu
   obtain ⟨m, hm1, hm2, hcol, _⟩ := upg_spec hu
@@ -487,21 +488,19 @@ theorem v_upg_eq {M : Mat} {ρ : Valn} {i k : Nat} (hC : Cons M ρ) (hiM : i < M
     have : entry M 2 k = (col M k).2.2 := rfl
     rw [this, hcol]; simp
   have hV : vOpt ρ (par M 1 k) = vOpt ρ (par M 1 i) := by rw [hm1, hm2]
-  have hVot : isOT (vOpt ρ (par M 1 i)) = true := by
-    rw [hm1]; exact hvot m (by have := par_lt M 1 i m hm1; omega)
   set W := omega (sumN (one :: (children M k).map (bumpTerm M ρ k))) with hW
   have hY : isOT (sumN (one :: (children M k).map (bumpTerm M ρ k))) = true := by
     apply isOT_sumN
     intro t ht
     rcases List.mem_cons.mp ht with rfl | ht
     · rfl
-    · obtain ⟨j, _, rfl⟩ := List.mem_map.mp ht
+    · obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ht
       unfold bumpTerm
       split
       · apply isOT_omega; apply isOT_sumN
         intro t' ht'
         obtain ⟨k', hk', rfl⟩ := List.mem_map.mp ht'
-        exact hoot k' (mem_children hk').2
+        exact hoot j hj k' hk'
       · rfl
   have hWot : isOT W = true := isOT_omega hY
   obtain ⟨sW, yW, hWf⟩ := (single_omega hY).2
