@@ -85,4 +85,44 @@ theorem drop_oframe_val {M M' : Mat} {ρ ρ' : Valn} {i : Nat}
   rw [hc, hc'] at hrel
   exact node_val (by rw [← hc']; exact hcS'.1) (by rw [← hc]; exact hcS.1) hrel hB hroute
 
+/-- **The step result is standard.** -/
+theorem isOT_step {a B s y : T} (hBot : isOT B = true) (hc : isOT (psi s y z) = true) :
+    isOT (step a B s y z) = true := by
+  unfold step
+  split
+  · rw [H_eq hc]
+    have hyot := isOT_arg hc
+    have e := split_app (psi (succ s) z z) y
+    have hhiot : isOT (split y (psi (succ s) z z)).1 = true := by
+      rw [← e] at hyot; exact isOT_app_left hyot
+    split
+    · rw [app_z_right]; exact hhiot
+    · apply isOT_app_of hhiot hc
+      intro q hq
+      have hq' := split_fst_ge (psi (succ s) z z) y q hq
+      simp only [head]
+      rcases lt_trichotomy' q (psi s y z) with h | h | h
+      · exfalso; apply hq'
+        exact lt_trans h (by rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self s))
+      · rw [h]
+      · exact le_of_lt h
+  · exact isOT_add hBot hc
+
+/-- The parent value is standard on an argument route. -/
+theorem ot_parent_lhd {a X' X : T} (hot : isOT (psi a X z) = true) (hX' : isOT X' = true)
+    (hl : LhdE X' X) : isOT (psi a X' z) = true := by
+  rcases hl with rfl | hl
+  · exact hot
+  · exact psi_ot_of_lhd (isOT_sub hot) hX' hl (comps_lt hot) (fun _ g hg => by simp [comps] at hg)
+
+/-- The parent value is standard on the small route. -/
+theorem ot_parent_small {a X' : T} (ha : isOT a = true) (hX' : isOT X' = true)
+    (hsm : ∀ g ∈ comps a X', g ≤ X') : isOT (psi a X' z) = true := by
+  rw [isOT_psi_iff]
+  refine ⟨ha, hX', rfl, z_le _, ?_⟩
+  intro g hg
+  rcases (le_iff _ _).mp (hsm g hg) with h | h
+  · exact h
+  · exfalso; have := size_comps hg; rw [h] at this; exact Nat.lt_irrefl _ this
+
 end Ytosk
