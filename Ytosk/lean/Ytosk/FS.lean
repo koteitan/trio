@@ -567,6 +567,97 @@ theorem om_le : ∀ {t μ : T}, isOT t = true → cof t = .big μ → psi (succ 
         | succ => rw [hcb] at h; cases h
         | omega => rw [hcb] at h; cases h
 
+/-- `η ≤ t[η]` for cofinality `Ω_{μ+1}`. -/
+theorem le_fs : ∀ {t μ g : T}, isOT t = true → cof t = .big μ → g < psi (succ μ) z z → g ≤ fs t g
+  | z, _, _, _, h, _ => by simp [cof] at h
+  | psi a b (psi c d e), μ, g, hot, h, hg => by
+    have h' : cof (psi c d e) = .big μ := by simpa [cof] using h
+    have h1 := prin_le_head (om_le (isOT_rest hot) h')
+    have h2 : head (psi c d e) ≤ psi a b z := (isOT_psi_iff.mp hot).2.2.2.1
+    have h3 : g < psi a b z := lt_of_lt_of_le hg (le_trans h1 h2)
+    show g ≤ psi a b (fs (psi c d e) g)
+    exact le_of_lt (lt_of_lt_of_le h3 (psi_le_psi_rest (z_le _)))
+  | psi a b z, μ, g, hot, h, hg => by
+    unfold fs
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl]
+      by_cases ha : a = z
+      · subst ha; simp [cof] at h
+      · rw [if_neg ha]
+        have hc : cof (psi a z z) = (if isSucc a then Cof.big (init a) else cof a) := by
+          simp [cof, ha]
+        rw [hc] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs]
+        · rw [if_neg hs]; rw [if_neg hs] at h
+          exact le_of_lt (lt_of_le_of_lt (le_fs (isOT_sub hot) h hg) (lt_Om_self _))
+    · rw [if_neg hb]
+      have hc0 : cof (psi a b z) = (if isSucc b then Cof.omega else match cof b with
+            | .big μ => if lt μ a = true then Cof.big μ else Cof.omega
+            | c => c) := by simp [cof, hb]
+      rw [hc0] at h
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; cases h
+      · rw [if_neg hs] at h
+        rw [if_neg hs]
+        cases hcb : cof b with
+        | big ν =>
+          rw [hcb] at h; simp only at h ⊢
+          by_cases hν : lt ν a = true
+          · rw [if_pos hν] at h ⊢; cases h
+            have h1 := succ_le_of_lt hν
+            have h2 : psi (succ μ) z z ≤ psi a z z := by
+              rcases (le_iff _ _).mp h1 with h1 | h1
+              · exact le_of_lt (by rw [psi_lt_psi_z_iff]; exact Or.inl h1)
+              · rw [h1]
+            have h3 : psi a z z ≤ psi a (fs b g) z := by
+              rcases (le_iff _ _).mp (z_le (fs b g)) with h4 | h4
+              · exact le_of_lt (by rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, h4⟩)
+              · rw [← h4]
+            exact le_of_lt (lt_of_lt_of_le hg (le_trans h2 h3))
+          · rw [if_neg hν] at h; cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
+theorem le_between_app {A x y c : T} (h1 : app A x ≤ c) (h2 : c ≤ app A y) :
+    ∃ c0, c = app A c0 ∧ x ≤ c0 ∧ c0 ≤ y := by
+  rcases (le_iff _ _).mp h1 with h1 | rfl
+  · obtain ⟨c0, h, hx, hy⟩ := between_app h1 h2
+    exact ⟨c0, h, le_of_lt hx, hy⟩
+  · refine ⟨x, rfl, le_refl _, ?_⟩
+    rcases (le_iff _ _).mp h2 with h2 | h2
+    · exact le_of_lt ((app_lt_app_left_iff A).mp h2)
+    · rcases lt_trichotomy x y with h | rfl | h
+      · exact le_of_lt h
+      · exact le_refl _
+      · have := app_lt_app_left A h; rw [h2] at this; exact absurd this (lt_irrefl _)
+
+theorem le_between_psi {v b0 b c : T} (h1 : psi v b0 z ≤ c) (h2 : c ≤ psi v b z) :
+    ∃ c0 c1, c = psi v c0 c1 ∧ b0 ≤ c0 ∧ c0 ≤ b := by
+  rcases (le_iff _ _).mp h1 with h1 | rfl
+  · exact between_psi h1 h2
+  · refine ⟨b0, z, rfl, le_refl _, ?_⟩
+    rcases (le_iff _ _).mp h2 with h2 | h2
+    · rw [psi_lt_psi_z_iff] at h2
+      rcases h2 with h2 | ⟨_, h2⟩
+      · exact absurd h2 (lt_irrefl _)
+      · exact le_of_lt h2
+    · simp only [psi.injEq] at h2; rw [h2.2.1]
+
+theorem le_between_sub {a' a c : T} (h1 : psi a' z z ≤ c) (h2 : c ≤ psi a z z) :
+    ∃ v c0 c1, c = psi v c0 c1 ∧ a' ≤ v ∧ v ≤ a := by
+  rcases (le_iff _ _).mp h1 with h1 | rfl
+  · exact between_sub h1 h2
+  · refine ⟨a', z, z, rfl, le_refl _, ?_⟩
+    rcases (le_iff _ _).mp h2 with h2 | h2
+    · rw [psi_lt_psi_z_iff] at h2
+      rcases h2 with h2 | ⟨_, h2⟩
+      · exact le_of_lt h2
+      · exact absurd h2 (T.not_lt_z _)
+    · simp only [psi.injEq] at h2; rw [h2.1]
+
 /-- **Lemma 3.6.** -/
 theorem lhd_fs : ∀ {t η : T}, ValidLt t η → Lhd η (fs t η) t
   | z, η, h => by simp [ValidLt, cof] at h
