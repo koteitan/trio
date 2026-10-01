@@ -195,6 +195,24 @@ theorem vRhs_eq_of {N M0 : Mat} {τ ρ0 : Valn} {i i0 : Nat}
           simp only [h]
     · rw [if_neg e2, if_neg e2, hb e1 e2]
 
+/-- **A change-like set of calls**: closed under the dependency edges and containing `o(x)` (`ChgX` and
+`DepX` both are). -/
+structure DepLike (M : Mat) (x : Nat) (P : Bool → Nat → Prop) : Prop where
+  leaf : P true x
+  ochild : ∀ {i c : Nat}, c ∈ children M i → col M c ≠ bump M i →
+    ¬ (isUpg M c = true ∧ topped M c = true) → P true c → P true i
+  ov : ∀ {i : Nat}, P false i → P true i
+  vpar : ∀ {i m : Nat}, entry M 1 i ≠ 0 → par M 1 i = some m → P false m → P false i
+  vupg : ∀ {i k : Nat}, entry M 1 i ≠ 0 → entry M 2 i = 0 → upg M i = some k → P false k → P false i
+  vbump : ∀ {i j k : Nat}, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → j ∈ children M i → col M j = bump M i →
+    k ∈ children M j → P true k → P false i
+
+theorem depLike_chgX (M : Mat) (x : Nat) : DepLike M x (ChgX M x) :=
+  ⟨ChgX.leaf, ChgX.ochild, ChgX.ov, ChgX.vpar, ChgX.vupg, ChgX.vbump⟩
+
+theorem depLike_depX (M : Mat) (x : Nat) : DepLike M x (DepX M x) :=
+  ⟨DepX.leaf, DepX.ochild, DepX.ov, DepX.vpar, DepX.vupg, DepX.vbump⟩
+
 section
 variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)
@@ -213,6 +231,16 @@ omit hn in
 theorem chgX_r (he2 : entry M 2 (r + L) = 0) : ChgX M (r + L) true r := by
   have hx : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hp⟩
   refine ChgX.ochild hx ?_ ?_ ChgX.leaf
+  · intro h
+    have : entry M 2 (r + L) = (col M (r + L)).2.2 := rfl
+    rw [this, h] at he2; simp [bump] at he2
+  · rw [isUpg_x0 hlen hL hp he2]; simp
+
+omit hn in
+theorem depLike_r (he2 : entry M 2 (r + L) = 0) {P : Bool → Nat → Prop} (hP : DepLike M (r + L) P) :
+    P true r := by
+  have hx : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hp⟩
+  refine hP.ochild hx ?_ ?_ hP.leaf
   · intro h
     have : entry M 2 (r + L) = (col M (r + L)).2.2 := rfl
     rw [this, h] at he2; simp [bump] at he2
@@ -619,10 +647,11 @@ theorem par1_pre0 {i : Nat} (hi : i < r) : par (TRIO.gexp M r L 0 0 n) 1 i = par
     have := par_lt M 1 _ _ hP
     simp only [Option.map_some, shk_lt (show m < r by omega)]
 
-/-- **The `o` equation before `r`** outside `ChgX`. -/
+/-- **The `o` equation before `r`** outside a change-like set `P`. -/
 theorem eqo_G (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
+    {P : Bool → Nat → Prop} (hP : DepLike M (r + L) P)
     {ρ ρ' : Valn} {oMid : T} (hC : Cons M ρ) (hG : Good3 M ρ) {i : Nat} (hi : i < r)
-    (hE : ¬ ChgX M (r + L) true i) :
+    (hE : ¬ P true i) :
     oRhs (TRIO.gexp M r L 0 0 n) (tauN r L n ρ ρ' oMid) i = ρ.o i := by
   rw [(hC i (by omega)).1]
   unfold oRhs
@@ -631,8 +660,8 @@ theorem eqo_G (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 
   · have hbr : col M r = bump M i := by
       by_contra hb
       apply hE
-      exact ChgX.ochild (c := r) (mem_children_iff.mpr ⟨by omega, hig⟩) hb
-        (by rw [not_topped_r hlen hL hp he2]; simp) (chgX_r hlen hL hp he2)
+      exact hP.ochild (c := r) (mem_children_iff.mpr ⟨by omega, hig⟩) hb
+        (by rw [not_topped_r hlen hL hp he2]; simp) (depLike_r hlen hL hp he2 hP)
     rw [children_g0 hlen hL hp hn hig, List.map_append]
     have hmap : (children M i).map (cnt (TRIO.gexp M r L 0 0 n) (tauN r L n ρ ρ' oMid) i) =
         (children M i).map (cnt M ρ i) := by
@@ -661,10 +690,11 @@ theorem eqo_G (hR0 : R0P M) (hZ2 : Z2 M) (he2 : entry M 2 (r + L) = 0) (hn2 : 2 
     have hcr := children_lt_r hlen hL hp hi hig hc
     exact cnt_eq_of (counted_lt0 hlen hL hp hn hR0 hZ2 he2 hn2 hi hcr) (tau_o_lt hcr)
 
-/-- **The `v` equation before `r`** outside `ChgX`. -/
+/-- **The `v` equation before `r`** outside a change-like set `P`. -/
 theorem eqv_G (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
+    {P : Bool → Nat → Prop} (hP : DepLike M (r + L) P)
     {ρ ρ' : Valn} {oMid : T} (hC : Cons M ρ) (hG : Good3 M ρ) {i : Nat} (hi : i < r)
-    (hE : ¬ ChgX M (r + L) false i) :
+    (hE : ¬ P false i) :
     vRhs (TRIO.gexp M r L 0 0 n) (tauN r L n ρ ρ' oMid) i = ρ.v i := by
   rw [(hC i (by omega)).2]
   apply vRhs_eq_of (entry_pre0 hlen hn 1 (by omega)) (entry_pre0 hlen hn 2 (by omega))
@@ -684,13 +714,13 @@ theorem eqv_G (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
       obtain ⟨_, _, _, _, hcase⟩ := upg_spec hU
       rw [tau_v_x hn2 (by rcases hcase with h | ⟨_, h⟩ <;> omega)]
   · intro e1 e2
-    have hCr := chgX_r hlen hL hp he2
+    have hCr := depLike_r hlen hL hp he2 hP
     by_cases hig : par M 0 r = some i
     · have hrb : col M r ≠ bump M i := by
         intro hb
         apply hE
-        exact ChgX.vbump e1 e2 (mem_children_iff.mpr ⟨by omega, hig⟩) hb
-          (mem_children_iff.mpr ⟨by omega, hp⟩) ChgX.leaf
+        exact hP.vbump e1 e2 (mem_children_iff.mpr ⟨by omega, hig⟩) hb
+          (mem_children_iff.mpr ⟨by omega, hp⟩) hP.leaf
       rw [children_g0 hlen hL hp hn hig, List.map_append, ← List.cons_append]
       have hmap : (children M i).map (bumpTerm (TRIO.gexp M r L 0 0 n) (tauN r L n ρ ρ' oMid) i) =
           (children M i).map (bumpTerm M ρ i) := by
@@ -731,23 +761,25 @@ theorem eqv_G (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
         have hjg : par M 0 r ≠ some j := by
           intro hg
           apply hE
-          exact ChgX.vbump e1 e2 hj hjb (mem_children_iff.mpr ⟨by omega, hg⟩) hCr
+          exact hP.vbump e1 e2 hj hjb (mem_children_iff.mpr ⟨by omega, hg⟩) hCr
         rw [children_pre0 hlen hL hp hn hjr hjg]
         apply List.map_congr_left
         intro d hd
         exact tau_o_lt (children_lt_r hlen hL hp hjr hjg hd)
 
-/-- **The values of `N`** (`t = 0`, `n ≥ 2`): outside `ChgX` before `r`, the valuation of `N` is the target
+/-- **The values of `N`** (`t = 0`, `n ≥ 2`): outside a change-like set `P` before `r`, the valuation of `N` is the target
 `tauN` (`M` before `r` and on the middle copies, `omid` at the middle roots, `M.take x` on the last copy). -/
 theorem t0_vals (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (he2 : entry M 2 (r + L) = 0) (hn2 : 2 ≤ n)
+    {P : Bool → Nat → Prop} (hP : DepLike M (r + L) P)
+    (hPread : ∀ m d, r ≤ d → d < r + L → (par M 1 d = some m ∨ (upg M d = some m ∧ m < d)) → ¬ P false m)
     {ρ ρ' σ : Valn} {rkN : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
     (hC' : Cons (M.take (r + L)) ρ')
     (hoff : ∀ i, i < r + L → ¬ ChgX M (r + L) false i → ρ'.v i = ρ.v i)
     (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hRN : Rk (TRIO.gexp M r L 0 0 n) rkN) :
     ∀ i, i < (TRIO.gexp M r L 0 0 n).length →
-      (¬ (i < r ∧ ChgX M (r + L) true i) → σ.o i = (tauN r L n ρ ρ' (omid M r L ρ)).o i) ∧
-      (¬ (i < r ∧ ChgX M (r + L) false i) → σ.v i = (tauN r L n ρ ρ' (omid M r L ρ)).v i) := by
+      (¬ (i < r ∧ P true i) → σ.o i = (tauN r L n ρ ρ' (omid M r L ρ)).o i) ∧
+      (¬ (i < r ∧ P false i) → σ.v i = (tauN r L n ρ ρ' (omid M r L ρ)).v i) := by
   have hlN := lenN0 hlen hn (M := M) (L := L)
   have hx : r + L + 1 = M.length := hlen
   have hread : ∀ q, q < L → ∀ m, m < r → (par M 1 (r + q) = some m ∨ upg M (r + q) = some m) →
@@ -768,11 +800,11 @@ theorem t0_vals (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT 
       rcases hcase with h | ⟨_, h⟩ <;> omega
     · exact v_read_not_chg hx hR0 hZ2 hSD hZ1 hUAT hUAB (d := r + (L - 1)) (by omega)
         (Or.inr ⟨hU, by omega⟩)
-  apply cons_agree (τ := tauN r L n ρ ρ' (omid M r L ρ)) (fun b i => i < r ∧ ChgX M (r + L) b i) hCN hRN
+  apply cons_agree (τ := tauN r L n ρ ρ' (omid M r L ρ)) (fun b i => i < r ∧ P b i) hCN hRN
   · intro i hi hE
     rw [hlN] at hi
     rcases Nat.lt_or_ge i r with hir | hir
-    · rw [tau_o_lt hir, eqo_G hlen hL hp hn hR0 hZ2 he2 hn2 hC hG hir (fun h => hE ⟨hir, h⟩)]
+    · rw [tau_o_lt hir, eqo_G hlen hL hp hn hR0 hZ2 he2 hn2 hP hC hG hir (fun h => hE ⟨hir, h⟩)]
     · obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (Lb := L) (n := n) hL hir hi
       by_cases hkn : k + 1 < n
       · by_cases hq0 : q = 0
@@ -786,7 +818,7 @@ theorem t0_vals (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT 
   · intro i hi hE
     rw [hlN] at hi
     rcases Nat.lt_or_ge i r with hir | hir
-    · rw [tau_v_lt hir, eqv_G hlen hL hp hn he2 hn2 hC hG hir (fun h => hE ⟨hir, h⟩)]
+    · rw [tau_v_lt hir, eqv_G hlen hL hp hn he2 hn2 hP hC hG hir (fun h => hE ⟨hir, h⟩)]
     · obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (Lb := L) (n := n) hL hir hi
       by_cases hkn : k + 1 < n
       · by_cases hq0 : q = 0
@@ -798,13 +830,13 @@ theorem t0_vals (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT 
         rw [tau_v_last hq, eqv_last hlen hL hp hn hC' hq (hread q hq) he2]
   · intro i hi hE
     rw [hlN] at hi
-    refine ⟨fun h => hE ⟨h.1, ChgX.ov h.2⟩, ?_⟩
+    refine ⟨fun h => hE ⟨h.1, hP.ov h.2⟩, ?_⟩
     rintro c hc hcnt ⟨hcr, hcC⟩
     have hic := (mem_children hc).1
     have hir : i < r := by omega
     have hcM := child_lt_r hlen hL hp hn hir hc hcr
     have hcntM := (counted_lt0 hlen hL hp hn hR0 hZ2 he2 hn2 hir hcr).mp hcnt
-    exact hE ⟨hir, ChgX.ochild hcM hcntM.1 hcntM.2 hcC⟩
+    exact hE ⟨hir, hP.ochild hcM hcntM.1 hcntM.2 hcC⟩
   · intro i hi hE he1
     rw [hlN] at hi
     rcases Nat.lt_or_ge i r with hir | hir
@@ -812,31 +844,31 @@ theorem t0_vals (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT 
       refine ⟨?_, ?_, ?_⟩
       · rintro m hm ⟨_, hmC⟩
         rw [par1_pre0 hlen hL hp hn hir] at hm
-        exact hE ⟨hir, ChgX.vpar e1 hm hmC⟩
+        exact hE ⟨hir, hP.vpar e1 hm hmC⟩
       · rintro he2' k hk ⟨_, hkC⟩
         rw [entry_pre0 hlen hn 2 (by omega)] at he2'
         rw [upg_pre0 hlen hL hp hn (by omega)] at hk
-        exact hE ⟨hir, ChgX.vupg e1 he2' hk hkC⟩
+        exact hE ⟨hir, hP.vupg e1 he2' hk hkC⟩
       · rintro he2' j hj hjb k hk ⟨hkr, hkC⟩
         rw [entry_pre0 hlen hn 2 (by omega)] at he2'
         have hjk := (mem_children hk).1
         have hj' := child_lt_r hlen hL hp hn hir hj (by omega)
         have hk' := child_lt_r hlen hL hp hn (show j < r by omega) hk hkr
         rw [col_pre0 hlen hL hp hn (by omega), bump_pre0 hlen hL hp hn (by omega)] at hjb
-        exact hE ⟨hir, ChgX.vbump e1 he2' hj' hjb hk' hkC⟩
+        exact hE ⟨hir, hP.vbump e1 he2' hj' hjb hk' hkC⟩
     · obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (Lb := L) (n := n) hL hir hi
       refine ⟨?_, ?_, ?_⟩
       · rintro m hm ⟨hmr, hmC⟩
         rw [par1_copy0 hlen hL hp hn hk hq] at hm
-        cases hP : par M 1 (r + q) with
-        | none => rw [hP] at hm; cases hm
+        cases hPar : par M 1 (r + q) with
+        | none => rw [hPar] at hm; cases hm
         | some m0 =>
-          rw [hP] at hm
+          rw [hPar] at hm
           simp only [Option.map_some, Option.some.injEq] at hm
           have hm0 : m0 < r := by unfold shk at hm; split at hm <;> omega
           rw [shk_lt hm0] at hm
           subst hm
-          exact v_read_not_chg hx hR0 hZ2 hSD hZ1 hUAT hUAB (d := r + q) (by omega) (Or.inl hP) hmC
+          exact hPread _ (r + q) (by omega) (by omega) (Or.inl hPar) hmC
       · rintro _ m hm ⟨hmr, hmC⟩
         by_cases hq1 : q + 1 < L
         · rw [upg_copy0 hlen hL hp hn hk hq1] at hm
@@ -848,8 +880,7 @@ theorem t0_vals (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT 
             have ht0 : t < r := by unfold shk at hm; split at hm <;> omega
             rw [shk_lt ht0] at hm
             subst hm
-            exact v_read_not_chg hx hR0 hZ2 hSD hZ1 hUAT hUAB (d := r + q) (by omega)
-              (Or.inr ⟨hU, by omega⟩) hmC
+            exact hPread _ (r + q) (by omega) (by omega) (Or.inr ⟨hU, by omega⟩) hmC
         · have hqL : q = L - 1 := by omega
           subst hqL
           by_cases hkn : k + 1 < n
@@ -862,8 +893,7 @@ theorem t0_vals (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT 
               split at hm
               · omega
               · subst hm
-                exact v_read_not_chg hx hR0 hZ2 hSD hZ1 hUAT hUAB (d := r + (L - 1)) (by omega)
-                  (Or.inr ⟨hU, by omega⟩) hmC
+                exact hPread _ (r + (L - 1)) (by omega) (by omega) (Or.inr ⟨hU, by omega⟩) hmC
           · have hk' : k = n - 1 := by omega
             subst hk'
             rw [upg_none_last0 hlen hL hp hn] at hm; cases hm
@@ -871,6 +901,21 @@ theorem t0_vals (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT 
         have := (mem_children hj).1
         have := (mem_children hc).1
         omega
+
+omit hn in
+/-- The `v`'s read from `B` into earlier columns are not in `ChgX`. -/
+theorem read_not_chg (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M)
+    (hUAB : UAB M) :
+    ∀ m d, r ≤ d → d < r + L → (par M 1 d = some m ∨ (upg M d = some m ∧ m < d)) →
+      ¬ ChgX M (r + L) false m :=
+  fun _ _ _ hd h => v_read_not_chg (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hd h
+
+omit hn in
+theorem read_not_dep (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M)
+    (hUAB : UAB M) :
+    ∀ m d, r ≤ d → d < r + L → (par M 1 d = some m ∨ (upg M d = some m ∧ m < d)) →
+      ¬ DepX M (r + L) false m :=
+  fun m d h1 h2 h hD => read_not_chg hlen hL hp hR0 hZ2 hSD hZ1 hUAT hUAB m d h1 h2 h (depX_chgX hD)
 
 end
 
