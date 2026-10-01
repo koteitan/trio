@@ -528,4 +528,49 @@ theorem v_frame_xm1 {V sW yW : T} (hV : isOT V = true) (hW : isOT (psi sW yW z) 
   rw [sf_ot hot1]
   exact lhdE_add_absorb (s' := z) (y' := z) (lhdE_one h1) V hV hot1 hR
 
+/-! ## v の枠 (2): のりしろの p の段 -/
+
+theorem summands_foldl_sub : ∀ (l : List T) (acc : T), isOT acc = true → (∀ t ∈ l, Single t) →
+    ∀ q ∈ summands (l.foldl (fun a b => sf (add a b)) acc), q ∈ summands acc ∨ q ∈ l
+  | [], acc, _, _, q, hq => Or.inl hq
+  | t :: l, acc, hacc, hs, q, hq => by
+    simp only [List.foldl_cons] at hq
+    obtain ⟨s0, y0, rfl⟩ := (hs t List.mem_cons_self).2
+    have hot : isOT (add acc (psi s0 y0 z)) = true := isOT_add hacc (hs _ List.mem_cons_self).1
+    rcases summands_foldl_sub l _ (by rw [sf_ot hot]; exact hot)
+      (fun u hu => hs u (List.mem_cons_of_mem _ hu)) q hq with h | h
+    · rw [sf_ot hot] at h
+      rcases summands_add_single acc q h with h' | ⟨h', _⟩
+      · exact Or.inr (by rw [h']; exact List.mem_cons_self)
+      · exact Or.inl h'
+    · exact Or.inr (List.mem_cons_of_mem _ h)
+
+theorem summands_sumN_sub {l : List T} (hs : ∀ t ∈ l, Single t) : ∀ q ∈ summands (sumN l), q ∈ l := by
+  intro q hq
+  rcases summands_foldl_sub l z rfl hs q hq with h | h
+  · simp [summands] at h
+  · exact h
+
+theorem sumN_snoc_ot {l : List T} {t : T} (hs : ∀ u ∈ l, Single u) (ht : Single t) :
+    sumN (l ++ [t]) = add (sumN l) t := by
+  rw [sumN_snoc, sf_ot (isOT_add (isOT_sumN l (fun u hu => (hs u hu).1)) ht.1)]
+
+/-- **The `p` level of a bump frame**: `1 + P + b′ ⊴ 1 + P + b` from `b′ ⊴ b` (with `P ≥ b`). -/
+theorem bump_p_lhd {Pt : List T} {s' y' s y : T} (hsP : ∀ t ∈ Pt, Single t)
+    (hPb : ∀ t ∈ Pt, psi s y z ≤ t) (hb : Single (psi s y z)) (hb' : Single (psi s' y' z))
+    (h : LhdE (psi s' y' z) (psi s y z)) :
+    LhdE (sumN (one :: Pt ++ [psi s' y' z])) (sumN (one :: Pt ++ [psi s y z])) := by
+  have hsK : ∀ t ∈ one :: Pt, Single t := fun t ht => by
+    rcases List.mem_cons.mp ht with rfl | ht
+    · exact ⟨rfl, z, z, rfl⟩
+    · exact hsP t ht
+  rw [List.cons_append, List.cons_append, ← List.cons_append, ← List.cons_append,
+    sumN_snoc_ot hsK hb', sumN_snoc_ot hsK hb]
+  have hK : isOT (sumN (one :: Pt)) = true := isOT_sumN _ (fun u hu => (hsK u hu).1)
+  apply lhdE_add_absorb h _ hK (isOT_add hK hb'.1)
+  intro r hr hn hlt
+  rcases List.mem_cons.mp (summands_sumN_sub hsK r hr) with rfl | hrP
+  · exact lhd_one hlt
+  · exact absurd hlt (fun h' => lt_irrefl' _ (lt_of_lt_of_le h' (hPb r hrP)))
+
 end Ytosk
