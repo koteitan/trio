@@ -1538,3 +1538,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 吸収が失敗する 127 件は、すべて BRelS でない（弱い枝の）場合。
 - したがって吸収の仮定は強い枝に入る列だけに置けばよい（BumpAbsS、StrongG の形）。
 - 弱い閉包 Wk の外だけで吸収、という ρ だけの形（BumpAbsW）も真だが、今の証明の分岐（g_level の出力で決まる）と合わない。
+- Lean（step-ot）: BWS の k = x の枝に ¬ LhdE (v′ i) (v i)（650c8d59）、BumpAbsC の前件を StrongG ∨ XParNB ∨ v(x) = 0 にした（4908e9f0）。StrongG = M.take x の評価で i ののりしろの子すべてが BRelS。C′ でそれぞれ例外 0。
