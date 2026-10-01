@@ -1523,3 +1523,10 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - NoTrigU（数えない子は書き換えを起こさない）は C′ で例外 0。
 - 落とす補題の順序数側の仮定（VSmallF・FrameClosed）が深い標準形で偽になる。結論（落とす補題の関係、根の値の降下）が C′ で成り立つかを step-ot が確認中。仮定の弱めは t1-struct（FrameClosed）と omega-lhd（VSmallF）。
 - hBase（bump-frame）: SRO[n] の明示的な評価と Inv3 の値の欄まで緑（V3BaseM・V3BaseV・V3BaseI）。Res3A と最上位への差し込みは確認待ち。
+
+### 基底 hBase の証明と trio_terminates_main（2026-10-02、bump-frame、V3BaseM・V3BaseV・V3BaseI・V3Base・V3BaseInd）
+
+- SRO[n] = (0,0,0)((1,1,1)(2,1,1)(3,1,0))^n の明示的な評価 bval (1+3n) 1 と順位 brk。P(t) = ψ_t(0)、K = その列より後ろの D の列の数として:
+  - A・D の列: v = P^K(β)、o = P^{K+1}(β)。B の列: v = ω、o = ψ_ω(o(i+1))。根: o = ψ_0(o(1))。β = 1（最後の列を落とすと β = ω²）。
+- Inv3V と Res3A のすべての欄（hBaseV_holds）。中身があるのは TPLo だけ（fsD(P^{k+1}(1), η) = P^k(η)）。
+- trio_terminates_main: 残りの仮定は hLast（1 列落とし）・hExp（n ≥ 2 の展開）・hT2（t = 2 の降下）の 3 つ。
