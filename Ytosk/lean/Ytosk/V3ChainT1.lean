@@ -55,25 +55,26 @@ theorem t1_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
     (hOS : ∀ i, i < r + L → DepX M (r + L) true i → OShape M (r + L) i)
     (hgam : ∀ m, gamS μ br seed m ≤ ρ.o (r + L) ∧ gamS μ br seed m ≠ z)
     (hgS : ∀ m, ∃ a X, gamS μ br seed m = psi a X z)
-    (hG1 : Good3 (TRIO.gexp M r L d0 0 1) ρ1) :
+    (hG1 : Good3 (TRIO.gexp M r L d0 0 1) ρ1)
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (TRIO.gexp M r L d0 0 1) ρ1) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
       (∀ g, g < r + L → ¬ DepX M (r + L) false g → ρN.v g = ρ.v g) ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hx : r + L + 1 = M.length := hlen
   -- one level: from `P = M[n-1]` to `M[n]`
   have step : ∀ n, 2 ≤ n → ∀ ρP rkP, Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
       Rk (TRIO.gexp M r L d0 0 (n - 1)) rkP → Good3 (TRIO.gexp M r L d0 0 (n - 1)) ρP →
-      ρP.o r = gamS μ br seed (n - 2) →
+      Pn (TRIO.gexp M r L d0 0 (n - 1)) ρP → ρP.o r = gamS μ br seed (n - 2) →
       (∀ g, g ≤ r → ∀ a, a < (n - 1) * L →
         (par (TRIO.gexp M r L d0 0 (n - 1)) 1 (r + a) = some g ∨
           upg (TRIO.gexp M r L d0 0 (n - 1)) (r + a) = some g) → ρ.v g = ρP.v g) →
       ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-        Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
+        Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
         (∀ g, g < r + L → ¬ DepX M (r + L) false g → ρN.v g = ρ.v g) ∧
         isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧
         root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
-    intro n hn ρP rkP hCP hRP hGP hPr hPv
+    intro n hn ρP rkP hCP hRP hGP hPP hPr hPv
     set ζ := gamS μ br seed (n - 2) with hζ
     have hPr' : ρP.o r = fsD (ρ.o (r + L)) ζ := by rw [hox]; exact hPr
     -- the valuation and ranking built in `val_N_t1`
@@ -104,21 +105,25 @@ theorem t1_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
     have hok : ∀ c, c < r + L → DepX M (r + L) true c →
         isOT (fsD (ρ.o c) ζ) = true ∧ fsD (ρ.o c) ζ < ρ.o c := fun c hc hd =>
       hok_of_holeT hrot hcb hμ hS (hG.ot_o c (by omega)) (hHo c hc hd) (n - 2)
-    have hGN : Good3 (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) (fun _ => ζ)) :=
-      good3_N_t1 hlen hL hA hd0e hn hpath hx2 (hxnb n hn) hz2 (hiu n hn) (hiux n hn) hC hG hGP hOS
-        (fun i hi hd => (hok i hi hd).1)
+    have hoto : ∀ i, i < r + L → DepX M (r + L) true i → isOT (fsD (ρ.o i) ζ) = true :=
+      fun i hi hd => (hok i hi hd).1
+    have hotv : ∀ i, i < r + L → DepX M (r + L) false i → isOT (fsD (ρ.v i) ζ) = true :=
         (fun i hi hd => by
           have hH := (hHt false i hd (Or.inl hi)).1
           simp only [valB, cond_false] at hH
           exact (hok_of_holeT hrot hcb hμ hS (hG.ot_v i (by omega)) hH (n - 2)).1)
+    have hle : ∀ c, c < r + L → DepX M (r + L) true c → fsD (ρ.o c) ζ ≤ ρ.o c ∧ fsD (ρ.o c) ζ ≠ z :=
         (fun c hc hd => by
           refine ⟨(hok c hc hd).2.le, single_ne_z ?_⟩
           have hH := hHo c hc hd
           exact single_fsD (o_psi_form hC (by omega)) (holeT_not_succ hH)
             (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hH)) (hgS (n - 2))
             (hok c hc hd).1)
-        (by rw [hPr]; exact hgam (n - 2))
-    refine ⟨_, _, hCN, hRN, hGN, ?_, ?_, ?_⟩
+    have hlex : ρP.o r ≤ ρ.o (r + L) ∧ ρP.o r ≠ z := by rw [hPr]; exact hgam (n - 2)
+    have hGN : Good3 (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) (fun _ => ζ)) :=
+      good3_N_t1 hlen hL hA hd0e hn hpath hx2 (hxnb n hn) hz2 (hiu n hn) (hiux n hn) hC hG hGP hOS
+        hoto hotv hle hlex
+    refine ⟨_, _, hCN, hRN, hGN, hPs n hn ρP (fun _ => ζ) hCP hGP hPP hCN hGN hoto hotv hle hlex, ?_, ?_, ?_⟩
     · -- the value at `r`
       show (glue M (r + L) ρ (shiftV ρP L) ζ).o r = _
       rw [glue_o_dep ρ _ ζ (by omega) hrD, hro, fsD_here hbr hcb, ← hμr]
@@ -142,10 +147,11 @@ theorem t1_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
   intro n hn
   induction n, hn using Nat.le_induction with
   | base =>
-    exact step 2 (le_refl _) ρ1 rk1 hC1 hR1 hG1 hr1 (fun g hg a ha hr => hPv1 g hg a (by omega) hr)
+    exact step 2 (le_refl _) ρ1 rk1 hC1 hR1 hG1 hP1 hr1 (fun g hg a ha hr => hPv1 g hg a (by omega) hr)
   | succ n hn ih =>
-    obtain ⟨ρP, rkP, hCP, hRP, hGP, hPr, hPd, _⟩ := ih
+    obtain ⟨ρP, rkP, hCP, hRP, hGP, hPP, hPr, hPd, _⟩ := ih
     apply step (n + 1) (by omega) ρP rkP (by simpa using hCP) (by simpa using hRP) (by simpa using hGP)
+      (by simpa using hPP)
       (by rw [show n + 1 - 2 = n - 1 by omega]; exact hPr)
     intro g hg a ha hr
     exact (hPd g (by omega) (hnd (n + 1) (by omega) g hg a ha hr)).symm

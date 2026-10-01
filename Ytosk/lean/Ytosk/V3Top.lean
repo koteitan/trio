@@ -520,18 +520,19 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
     · apply dropsAt_of hexp
       by_cases hqr : q = r
       · subst hqr
-        obtain ⟨ρN, rkN, hCN, hRN, _, hot, hlt⟩ :=
+        obtain ⟨ρN, rkN, hCN, hRN, _, _, hot, hlt⟩ :=
           qr_final4 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2 hq
           I.cons I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.ad I.tp1w
-          I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (hsd q hr hq) (n + 2) (by omega)
+          I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (hsd q hr hq) (fun _ _ => True) trivial (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => True.intro) (n + 2) (by omega)
         exact ⟨ρN, rkN, hCN, hRN, hot, hlt⟩
       · obtain ⟨s0, y0, h0⟩ := o_psi_form I.cons (show r < M.length by omega)
         have h := t1_main_final hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2
           (fun h' => hqr (Option.some.inj (hq.symm.trans h'))) I.cons I.good I.rank I.vs I.fc I.fo
           I.tp1 I.tplo I.ad I.au hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua rfl h0 I.rootS I.rootP
           (good3_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
-            ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr) (n + 2) (by omega)
-        obtain ⟨ρN, rkN, hCN, hRN, _, hot, hlt⟩ := h
+            ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr) (fun _ _ => True) trivial (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => True.intro)
+          (n + 2) (by omega)
+        obtain ⟨ρN, rkN, hCN, hRN, _, _, hot, hlt⟩ := h
         exact ⟨ρN, rkN, hCN, hRN, hot, hlt⟩
   · exact hT2 hz h2 n
 

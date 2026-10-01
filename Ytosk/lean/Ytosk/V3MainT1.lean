@@ -69,9 +69,10 @@ theorem t1_main (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → 
     (hPv1 : ∀ g, g ≤ r → ∀ a, a < L →
       (par (TRIO.gexp M r L d0 0 1) 1 (r + a) = some g ∨
         upg (TRIO.gexp M r L d0 0 1) (r + a) = some g) → ρ.v g = ρ1.v g)
-    (hG1 : Good3 (TRIO.gexp M r L d0 0 1) ρ1) :
+    (hG1 : Good3 (TRIO.gexp M r L d0 0 1) ρ1)
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (TRIO.gexp M r L d0 0 1) ρ1) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
       (∀ g, g < r + L → ¬ DepX M (r + L) false g → ρN.v g = ρ.v g) ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hx : r + L + 1 = M.length := hlen
@@ -112,7 +113,7 @@ theorem t1_main (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → 
     hro hrD hO hV hRA hR0 hRlast hRd hsM hpM hsR hC1 hR1 hr1 hPv1 hOS
     (fun m => ⟨by rw [hoxv]; exact (gamS_lt_om hrot hcb hμ (hS vr (lt_irrefl' vr) hrot) m).le,
       by obtain ⟨X, hX⟩ := hζ m; rw [hX]; simp⟩)
-    (fun m => by obtain ⟨X, hX⟩ := hζ m; exact ⟨μ, X, hX⟩) hG1
+    (fun m => by obtain ⟨X, hX⟩ := hζ m; exact ⟨μ, X, hX⟩) hG1 Pn hP1 hPs
 
 end
 

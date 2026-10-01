@@ -722,9 +722,10 @@ theorem t1_main_struct {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h
         (split (fsD y (gamS μ br ((rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM)).o r) m))
           (psi (succ s) z z)).2 = z))
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
-    (hG1 : Good3 (M.take (r + L)) (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM))) :
+    (hG1 : Good3 (M.take (r + L)) (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM)))
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rkM))) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   have hrx : r ≠ r + L := by omega
@@ -740,6 +741,6 @@ theorem t1_main_struct {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h
     (hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq)
     (hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT) hv1 hs1ot hs1lhd hPv1 hV
     (hS2_t1 hR0 hA hrx) (hS3_t1 h1 hA hrx hlen hR0 hZ2 hSD hZ1) hW hLo
-    hRA hRt0 hRlast (dep_anc_x hUAT hZ2 hR12 hBE hlen hx2 hRA) hsM hpM hG1
+    hRA hRt0 hRlast (dep_anc_x hUAT hZ2 hR12 hBE hlen hx2 hRA) hsM hpM hG1 Pn hP1 hPs
 
 end Ytosk

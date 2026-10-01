@@ -478,9 +478,10 @@ theorem t1_main_val {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL :
       ((split y (psi (succ s) z z)).2 = z →
         (split (fsD y (gamS μ br ((drop1 M (r + L) rkM).o r) m)) (psi (succ s) z z)).2 = z))
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
-    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM)) :
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM))
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   have hrM : r < M.length := by omega
@@ -500,6 +501,6 @@ theorem t1_main_val {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL :
   obtain ⟨hcb, hbr⟩ := hcb_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hox hF1 hOS (hV 0) h1 hx2 hqr
     hR12 hBE hro
   exact t1_main_drop hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
-    hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hne hcb hμr hbr hro hF1 hV hW hLo hsM hpM hG1
+    hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hne hcb hμr hbr hro hF1 hV hW hLo hsM hpM hG1 Pn hP1 hPs
 
 end Ytosk

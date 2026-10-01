@@ -69,15 +69,16 @@ theorem qr_main (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → 
     (hr1 : ρ1.o r = seed)
     (hPv1 : ∀ g, g ≤ r → ∀ a, a < L →
       (par (TRIO.gexp M r L d0 0 1) 1 (r + a) = some g ∨
-        upg (TRIO.gexp M r L d0 0 1) (r + a) = some g) → ρ.v g = ρ1.v g) :
+        upg (TRIO.gexp M r L d0 0 1) (r + a) = some g) → ρ.v g = ρ1.v g)
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (TRIO.gexp M r L d0 0 1) ρ1) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
       (∀ g, g < r + L → ¬ DepX M (r + L) false g → ρN.v g = ρ.v g) ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hx : r + L + 1 = M.length := hlen
   have hdx : dOf M (r + L) lo lb (r + L) = 0 := dOf_x hx hxv hOS hVS
   refine qr_chain hlen hL hA hd0e hpath hx2 hxnb hz2 hiu hiux hnd hC hG hRM hOS hbr hcb hgam hro hrD hRA
-    hR0 hRlast hRd hsM hpM ?_ hC1 hR1 hG1 hr1 hPv1
+    hR0 hRlast hRd hsM hpM ?_ hC1 hR1 hG1 hr1 hPv1 Pn hP1 hPs
   intro n _ ρP _ hPr
   refine ⟨zfQ M (r + L) lo lb μ br seed (n - 2), ?_, ?_, (hRt (n - 2)).1, (hRt (n - 2)).2, (hOT (n - 2)).1,
     (hOT (n - 2)).2.1, (hOT (n - 2)).2.2⟩

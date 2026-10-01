@@ -59,24 +59,25 @@ theorem qr_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
     (hr1 : ρ1.o r = seed)
     (hPv1 : ∀ g, g ≤ r → ∀ a, a < L →
       (par (TRIO.gexp M r L d0 0 1) 1 (r + a) = some g ∨
-        upg (TRIO.gexp M r L d0 0 1) (r + a) = some g) → ρ.v g = ρ1.v g) :
+        upg (TRIO.gexp M r L d0 0 1) (r + a) = some g) → ρ.v g = ρ1.v g)
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (TRIO.gexp M r L d0 0 1) ρ1) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
       (∀ g, g < r + L → ¬ DepX M (r + L) false g → ρN.v g = ρ.v g) ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hx : r + L + 1 = M.length := hlen
   have step : ∀ n, 2 ≤ n → ∀ ρP rkP, Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
       Rk (TRIO.gexp M r L d0 0 (n - 1)) rkP → Good3 (TRIO.gexp M r L d0 0 (n - 1)) ρP →
-      ρP.o r = gamS μ br seed (n - 2) →
+      Pn (TRIO.gexp M r L d0 0 (n - 1)) ρP → ρP.o r = gamS μ br seed (n - 2) →
       (∀ g, g ≤ r → ∀ a, a < (n - 1) * L →
         (par (TRIO.gexp M r L d0 0 (n - 1)) 1 (r + a) = some g ∨
           upg (TRIO.gexp M r L d0 0 (n - 1)) (r + a) = some g) → ρ.v g = ρP.v g) →
       ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-        Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
+        Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
         (∀ g, g < r + L → ¬ DepX M (r + L) false g → ρN.v g = ρ.v g) ∧
         isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧
         root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
-    intro n hn ρP rkP hCP hRP hGP hPr hPv
+    intro n hn ρP rkP hCP hRP hGP hPP hPr hPv
     obtain ⟨Zf, hZr, hF, hsR, hlt, hoto, hotv, hle⟩ := hLoc n hn ρP hCP hPr
     have hagree : ∀ g, g ≤ r → ∀ a, a < (n - 1) * L →
         (par (TRIO.gexp M r L d0 0 (n - 1)) 1 (r + a) = some g ∨
@@ -89,9 +90,10 @@ theorem qr_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
       hagree hF
     have hRN := rk_N_t1 hlen hL hA hd0e hn hpath hx2 (hxnb n hn) hz2 (hiu n hn) (hiux n hn) (hnd n hn)
       hRM hRP
-    refine ⟨_, _, hCN, hRN, ?_, ?_, ?_, ?_⟩
-    · exact good3_N_t1 hlen hL hA hd0e hn hpath hx2 (hxnb n hn) hz2 (hiu n hn) (hiux n hn) hC hG hGP hOS
-        hoto hotv hle (by rw [hPr]; exact hgam (n - 2))
+    have hlex : ρP.o r ≤ ρ.o (r + L) ∧ ρP.o r ≠ z := by rw [hPr]; exact hgam (n - 2)
+    have hGN := good3_N_t1 hlen hL hA hd0e hn hpath hx2 (hxnb n hn) hz2 (hiu n hn) (hiux n hn) hC hG hGP hOS
+      hoto hotv hle hlex
+    refine ⟨_, _, hCN, hRN, hGN, hPs n hn ρP Zf hCP hGP hPP hCN hGN hoto hotv hle hlex, ?_, ?_, ?_⟩
     · rw [glueZ_o_dep ρ _ Zf (by omega) hrD, hro, fsD_here hbr hcb, hZr]
       rw [show n - 1 = (n - 2) + 1 by omega]; rfl
     · intro g hg hd
@@ -101,10 +103,11 @@ theorem qr_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
   intro n hn
   induction n, hn using Nat.le_induction with
   | base =>
-    exact step 2 (le_refl _) ρ1 rk1 hC1 hR1 hG1 hr1 (fun g hg a ha hr => hPv1 g hg a (by omega) hr)
+    exact step 2 (le_refl _) ρ1 rk1 hC1 hR1 hG1 hP1 hr1 (fun g hg a ha hr => hPv1 g hg a (by omega) hr)
   | succ n hn ih =>
-    obtain ⟨ρP, rkP, hCP, hRP, hGP, hPr, hPd, _⟩ := ih
+    obtain ⟨ρP, rkP, hCP, hRP, hGP, hPP, hPr, hPd, _⟩ := ih
     apply step (n + 1) (by omega) ρP rkP (by simpa using hCP) (by simpa using hRP) (by simpa using hGP)
+      (by simpa using hPP)
       (by rw [show n + 1 - 2 = n - 1 by omega]; exact hPr)
     intro g hg a ha hr
     exact (hPd g (by omega) (hnd (n + 1) (by omega) g hg a ha hr)).symm

@@ -175,9 +175,10 @@ theorem t1_main_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL
     (hUA : UpgAbsX M (r + L) ρ)
     {μ br vr : T} (hμr : μ = vr) (hro : ρ.o r = psi vr br z)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
-    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM)) :
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM))
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
   have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
@@ -188,6 +189,6 @@ theorem t1_main_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL
   have hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r :=
     ne_of_lt (o_r_strict0 (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE h1 hx2 hqr hC hG hC1 hRk1 hdrop)
   exact t1_main_vloc hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
-    hVS hF hFO hTP hTPLo hAD hAU hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hsM hpM hG1
+    hVS hF hFO hTP hTPLo hAD hAU hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hsM hpM hG1 Pn hP1 hPs
 
 end Ytosk

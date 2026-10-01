@@ -85,9 +85,10 @@ theorem t1_main_drop {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
       ((split y (psi (succ s) z z)).2 = z →
         (split (fsD y (gamS μ br ((drop1 M (r + L) rkM).o r) m)) (psi (succ s) z z)).2 = z))
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
-    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM)) :
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM))
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   have hrx : r ≠ r + L := by omega
@@ -111,7 +112,7 @@ theorem t1_main_drop {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
     rw [o_last_t1 hlen hC hG h1 (by have := par1_entry_lt h1; omega) hx2, hvr, hμr]
   obtain ⟨hlhd, hot⟩ := base_seed hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hr (hdrop r hr).1 hv hne
   apply t1_main_struct hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
-    hrot hcb hμr hbr hoxv hro hF1 (by rw [← hvr]; exact hv) hot hlhd _ hV hW hLo hsM hpM hG1
+    hrot hcb hμr hbr hoxv hro hF1 (by rw [← hvr]; exact hv) hot hlhd _ hV hW hLo hsM hpM hG1 Pn hP1 hPs
   intro g hg a ha h
   rw [gexp_one_eq hlen] at h
   exact base_v_read hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hg ha h

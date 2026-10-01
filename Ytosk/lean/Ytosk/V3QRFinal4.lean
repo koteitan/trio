@@ -72,9 +72,10 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- the seed
     (hcs : lt (sf ((drop1 M (r + L) rkM).v r)) (ρ.v r) = true →
-      ∀ u g, g ∈ comps u ((drop1 M (r + L) rkM).o r) → g < (drop1 M (r + L) rkM).o r) :
+      ∀ u g, g ∈ comps u ((drop1 M (r + L) rkM).o r) → g < (drop1 M (r + L) rkM).o r)
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hx : r + L + 1 = M.length := hlen
   have hrx : r < r + L := by omega
@@ -234,6 +235,6 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       (notNode_of_diag hDW hWne) q hq hlt
     exact lt_of_lt_of_le h0 (fsD_mono_eta (ohole_of_diag hDW) h1s)
   exact qr_final3 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hVS hF hFO
-    hArgT hKD hTD hAbs hWS hVSt hUA hAD hTP hTPL hAU' hAD' hsM hpM hTP1 hYBs hcs hADs0 hLs0
+    hArgT hKD hTD hAbs hWS hVSt hUA hAD hTP hTPL hAU' hAD' hsM hpM hTP1 hYBs hcs hADs0 hLs0 Pn hP1 hPs
 
 end Ytosk

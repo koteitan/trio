@@ -55,9 +55,10 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ (ρ.v r)) z z) →
       (split y (psi (succ s) z z)).2 = z →
       (split (fsD y ((drop1 M (r + L) rkM).o r)) (psi (succ s) z z)).2 = z)
-    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM)) :
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM))
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hx : r + L + 1 = M.length := hlen
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
@@ -177,7 +178,7 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hHR)) (hgS _) hok.1
   intro n hn
   have hSr := hS μ (lt_irrefl' μ) hrot
-  obtain ⟨ρN, rkN, hCN, hRN, hGN, _, _, hot, hlt⟩ :=
+  obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, _, _, hot, hlt⟩ :=
     qr_main hlen hL hA hd0e hpath hx2 (hxnb_t1 hlen hL hA hd0e hZ2 hZ1 h1) (hZ2 r)
       (fun n hn => hiu_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn)
       (fun n hn => hiux_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn)
@@ -196,7 +197,7 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       (fun g hg a ha h => by
         rw [gexp_one_eq hlen] at h
         exact base_v_read hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hg ha h)
-      n hn
-  exact ⟨ρN, rkN, hCN, hRN, hGN, hot, hlt⟩
+      Pn (by rw [gexp_one_eq hlen]; exact hP1) hPs n hn
+  exact ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩
 
 end Ytosk
