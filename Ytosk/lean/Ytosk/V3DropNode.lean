@@ -6,7 +6,7 @@
   親の引数どうしの ◁（`node_arg`）と値どうしの ◁。
 - それ以外は「引数の成分が引数以下」の道で値どうしの ◁ だけ（`lhdE_psi_small`）。
 -/
-import Ytosk.V3DropLhd
+import Ytosk.V3DropFrame
 
 namespace Ytosk
 
@@ -51,5 +51,38 @@ theorem node_val {a B s' y' s y : T} (hc' : isOT (psi s' y' z) = true) (hc : isO
   rcases hroute with h | ⟨hle, hsm⟩
   · exact lhdE_psi a (node_arg hc' hc hrel hB h)
   · exact lhdE_psi_small a hle hsm
+
+/-- **One `o` frame of the drop at the evaluator level**, through `node_val`. -/
+theorem drop_oframe_val {M M' : Mat} {ρ ρ' : Valn} {i : Nat}
+    (hC : Cons M ρ) (hC' : Cons M' ρ') (hi : i < M.length) (hi' : i < M'.length)
+    (hvot : isOT (ρ.v i) = true) (hv : ρ'.v i = ρ.v i)
+    (hs : ∀ t ∈ (children M i).map (cnt M ρ i), t = z ∨ Single t)
+    (hdec : (cvals M ρ i).Pairwise (fun a b => b ≤ a))
+    (hs' : ∀ t ∈ (children M' i).map (cnt M' ρ' i), t = z ∨ Single t)
+    (hdec' : (cvals M' ρ' i).Pairwise (fun a b => b ≤ a))
+    {L R : List Nat} {c : Nat} (hch : children M i = L ++ c :: R) (hch' : children M' i = L ++ c :: R)
+    (hcb : col M c ≠ bump M i) (hcu : ¬ (isUpg M c = true ∧ topped M c = true))
+    (hcb' : col M' c ≠ bump M' i) (hcu' : ¬ (isUpg M' c = true ∧ topped M' c = true))
+    (hR : ∀ d ∈ R, col M d = bump M i ∨ (isUpg M d = true ∧ topped M d = true))
+    (hR' : ∀ d ∈ R, col M' d = bump M' i ∨ (isUpg M' d = true ∧ topped M' d = true))
+    (hL : ∀ d ∈ L, cnt M' ρ' i d = cnt M ρ i d)
+    {s y s' y' : T} (hc : ρ.o c = psi s y z) (hc' : ρ'.o c = psi s' y' z)
+    (hcS : Single (ρ.o c)) (hcS' : Single (ρ'.o c))
+    (hrel : LhdE (ρ'.o c) (ρ.o c)) (hB : ∀ q ∈ summands (preState M ρ i L), psi s y z ≤ q)
+    (hroute : ArgRoute (ρ.v i) (preState M ρ i L) s' y' s y ∨
+      (step (ρ.v i) (preState M ρ i L) s' y' z ≤ step (ρ.v i) (preState M ρ i L) s y z ∧
+        ∀ u, ¬ lt (ρ.v i) u = true → ∀ g ∈ comps u (step (ρ.v i) (preState M ρ i L) s' y' z),
+          g ≤ step (ρ.v i) (preState M ρ i L) s' y' z)) :
+    LhdE (ρ'.o i) (ρ.o i) := by
+  have hpre : preState M' ρ' i L = preState M ρ i L := by
+    unfold preState
+    rw [hv]
+    congr 3
+    exact List.map_congr_left hL
+  have hvot' : isOT (ρ'.v i) = true := by rw [hv]; exact hvot
+  rw [o_frame_loc hC' hi' hvot' hs' hdec' hch' hcb' hcu' hR' hcS',
+    o_frame_loc hC hi hvot hs hdec hch hcb hcu hR hcS, hpre, hv, hc, hc', spArg_single, spArg_single]
+  rw [hc, hc'] at hrel
+  exact node_val (by rw [← hc']; exact hcS'.1) (by rw [← hc]; exact hcS.1) hrel hB hroute
 
 end Ytosk
