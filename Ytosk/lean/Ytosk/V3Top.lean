@@ -369,7 +369,6 @@ structure Res3 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
     lt (sf ((drop1 M (M.length - 1) rk).v r)) (ρ.v r) = true →
     ∀ u g, g ∈ comps u ((drop1 M (M.length - 1) rk).o r) → g < (drop1 M (M.length - 1) rk).o r
   t0 : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
-    (∃ ζ μ : T, ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i) ∧
     (∀ g p, par M 0 r = some g → par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 →
       col M g ≠ bump M p) ∧
     (∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
@@ -471,9 +470,9 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
       exact drop_n1 (d0 := 0) hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hL0 hx2 hr hnx I.cons
         I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua
     · apply dropsAt_of hexp
-      obtain ⟨⟨ζ, μ, hVL⟩, hE3, hLast, hVr, hG', hN⟩ := ht0 r L hlen hr he1
-      exact t0_main hlen hL0 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr he1 I.cons I.good
-        I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua hVL I.rootS I.rootP hE3 hLast
+      obtain ⟨hE3, hLast, hVr, hG', hN⟩ := ht0 r L hlen hr he1
+      exact t0_main' hlen hL0 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr he1 I.cons I.good
+        I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.rootS I.rootP hE3 hLast
         hVr hG' hN (n + 2) (by omega)
   · -- `t = 1`
     have hx2 : entry M 2 (M.length - 1) = 0 := by

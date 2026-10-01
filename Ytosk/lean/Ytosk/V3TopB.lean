@@ -7,6 +7,7 @@
 -/
 import Ytosk.V3Top
 import Ytosk.V3ExpOne
+import Ytosk.TwoRowZ
 
 namespace Ytosk
 
@@ -19,7 +20,6 @@ structure Res3A (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
     lt (sf ((drop1 M (M.length - 1) rk).v r)) (ρ.v r) = true →
     ∀ u g, g ∈ comps u ((drop1 M (M.length - 1) rk).o r) → g < (drop1 M (M.length - 1) rk).o r
   t0 : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
-    (∃ ζ μ : T, ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i) ∧
     (∀ g p, par M 0 r = some g → par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 →
       col M g ≠ bump M p) ∧
     (∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
@@ -31,10 +31,7 @@ structure Res3A (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
     (∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
       sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rk).o) =
         sumN ((children (M.take (r + L)) r).map ρ.o)) ∧
-    (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-      Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
-      (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
-      ((roots (TRIO.gexp M r L 0 0 n)).map σ.o).Pairwise (fun a b => b ≤ a))
+    (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → VSmallNewN M r ρ σ)
 
 /-- **The top hypothesis, for every valuation**: every nonempty standard matrix other than SRO has a
 ranking, and every valuation and ranking of it satisfy `Inv3` and `Res3A`. -/
@@ -78,7 +75,39 @@ theorem hInv_of_A (h : HInvA) :
   have hC := cons_of_rk hR
   obtain ⟨I, RA⟩ := hall _ rk hC hR
   have hRk := rk_take_all hR I.r0p I.z2 I.sd I.z1 I.uab
-  refine ⟨_, rk, I, ⟨RA.drop, ?_, RA.seed, RA.t0⟩⟩
+  refine ⟨_, rk, I, ⟨RA.drop, ?_, RA.seed, ?_⟩⟩
+  rotate_left
+  · -- `t0`: the values of `M[n]` are those of a standard matrix
+    intro r L hlen hp he1
+    obtain ⟨hE3, hLast, hVr, hG', hVN⟩ := RA.t0 r L hlen hp he1
+    refine ⟨hE3, hLast, hVr, hG', ?_⟩
+    intro n hn2 σ hCN
+    have hL : 0 < L := by
+      rcases Nat.eq_zero_or_pos L with h0 | h0
+      · subst h0; have := par_lt M 0 _ r hp; omega
+      · exact h0
+    have he2 : entry M 2 (r + L) = 0 := I.r12 _ he1
+    have hRN := rk_N0 hlen hL hp (show 1 ≤ n by omega) I.r0p I.z2 he2 hn2 hR
+    have hlN : (TRIO.gexp M r L 0 0 n).length = r + n * L := lenN0 hlen (show 1 ≤ n by omega)
+    have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+        TRIO.entry M 2 (M.length - 1) = 0) := by
+      rw [show M.length - 1 = r + L by omega, ← entry_eq, ← entry_eq, ← entry_eq, I.r0p _ _ hp]
+      omega
+    have hs0 : TRIO.srow M (M.length - 1) = 0 := by
+      unfold TRIO.srow
+      rw [show M.length - 1 = r + L by omega, ← entry_eq, ← entry_eq, he1, he2]; rfl
+    have hexp := expand_eq_gexp_t0 M n (by omega) hzT
+      (by rw [hs0, show M.length - 1 = r + L by omega]; exact hp) hs0
+    rw [show M.length - 1 - r = L by omega] at hexp
+    have hSN : Std (TRIO.gexp M r L 0 0 n) := hexp ▸ Std.exp n hM
+    have hEN : TRIO.gexp M r L 0 0 n ≠ [] := by
+      intro he; rw [he] at hlN; simp at hlN
+      have : L ≤ n * L := Nat.le_mul_of_pos_left L (by omega)
+      omega
+    have hSRN : TRIO.gexp M r L 0 0 n ≠ SRO := by
+      intro he; rw [he] at hRN; exact not_val_SRO _ (val_of_rk hRN)
+    have IN := ((h _ hSN hSRN hEN).2 σ _ hCN hRN).1
+    exact ⟨IN.good, hVN n hn2 σ hCN, IN.rootS, IN.rootP⟩
   intro j hj
   have hlj : (M.take (j + 1)).length = j + 1 := by rw [List.length_take]; omega
   have hRj := hRk (j + 1) (by omega)
