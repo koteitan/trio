@@ -15,6 +15,11 @@ M′ = M.take x では、変わりうるのは最後ののりしろの子 jl の
 - `BumpTermDec`: のりしろの項 ω^{G_j} は減少列。
 - `BumpAbs`: V の加数で ω^2 以上かつ w より下のものは w に対して ◁。
 - `BumpWeakShape`: のりしろの子の子 k の o が ψ_w(0)（w ≠ 0）なら、子は 1 つだけ・k は最初の子・V の成分は可算。
+M.take x の値の仮定（PV の第 3 成分 VSmallV v′ のうち、v′ ◁ v の場合だけに使う）:
+- `BumpVSmallTake`: v′ ◁ v なら v′ の成分 ≤ Ω_{v′}（`VSmall (M.take x) ρ′` から出る、`bumpVSmallTake_of`）。
+  弱い場合は CS から、v′ = v の場合は M の VSmall から出る。
+
+結果: `bump_rel`（関係と標準形）、`bump_drop`（`drop_all` の `hBump` の形）。
 -/
 import Ytosk.V3DropMain
 
