@@ -547,15 +547,15 @@ def BumpWeakShape (M : Mat) (ρ : Valn) : Prop :=
       children M i = [j] ∧ (children M j).head? = some k ∧ CS (vOpt ρ (par M 1 i))
 
 /-- **Hypothesis on the drop** (the shape of the weak sources that actually occur): the condition of
-`BumpWeakShape` only for a child `k` that is `x` as the only child of `j`, or whose `o` changes in
-`M.take x`.
+`BumpWeakShape` only for a child `k` that is `x` as the only child of `j`, or a child `k < x` whose `o`
+changes in `M.take x` (at `k = x` the valuation of `M.take x` is junk).
 `BumpWeakShape` itself is false on matrices reachable from SRO: in
 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,1,0)(3,2,1) the column 5 has two bump children and
 the leaf 7 under the first has `o = ψ_1(0)`. This form: SRO からの乱択の展開（長さ 20 まで、接頭辞込み 7 万個、8648 件）で例外 0. -/
 def BumpWeakSrc (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
   ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
     ∀ k ∈ children M j, (∃ w, w ≠ z ∧ ρ.o k = psi w z z) →
-      ((k = x ∧ children M j = [x]) ∨ ρ'.o k ≠ ρ.o k) →
+      ((k = x ∧ children M j = [x]) ∨ (k < x ∧ ρ'.o k ≠ ρ.o k)) →
       children M i = [j] ∧ (children M j).head? = some k ∧ CS (vOpt ρ (par M 1 i))
 
 /-- **Hypothesis on the drop**: `BumpAbs` except at a column with a bump child whose only child is `x`
@@ -636,7 +636,7 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     (BRelS (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∨
       (BWk (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∧
         ∃ k ∈ children M jl, ∃ w, w ≠ z ∧ ρ.o k = psi w z z ∧
-          ((k = x ∧ children M jl = [x]) ∨ ρ'.o k ≠ ρ.o k))) := by
+          ((k = x ∧ children M jl = [x]) ∨ (k < x ∧ ρ'.o k ≠ ρ.o k)))) := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have he2jl : entry M 2 jl ≠ 0 := by rw [e2_of_bump hjlb]; simp
   have hoff := chg_off hx hC hG hC' hRk'
@@ -741,9 +741,9 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         · right
           refine ⟨bwk_fix (le_trans (psi_le_psi_z (le_of_lt hWk.1)) (psi_le_psi_rest (z_le _)))
             hWk.2.2.1 hWk.2.1, kl, by simp, ρ.v kl, ?_, o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc,
-            Or.inr (by
+            Or.inr ⟨hklx, by
               rw [ho', o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc]
-              intro h; simp only [psi.injEq] at h; exact hv h.1)⟩
+              intro h; simp only [psi.injEq] at h; exact hv h.1⟩⟩
           intro hz; rw [hz] at hWk; exact T.not_lt_z _ hWk.1
     · have hS0 : sumN (K0.map ρ.o) ≠ z := sumN_ne_z hsK0 hp0.1 (by simpa using hK0)
       rcases hPO.1 with hl | ⟨⟨w1, w2, X, e1', e2, hWk⟩, ⟨w, hw⟩⟩
@@ -755,7 +755,7 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         simp only [psi.injEq] at e2
         have hw2 : w ≠ z := by
           rw [e2.1]; intro hz; rw [hz] at hWk; exact T.not_lt_z _ hWk.1
-        obtain ⟨_, hhead, _⟩ := hWS i h1 h2 jl hjlM hjlb kl hklM ⟨w, hw2, hw⟩ (Or.inr hne)
+        obtain ⟨_, hhead, _⟩ := hWS i h1 h2 jl hjlM hjlb kl hklM ⟨w, hw2, hw⟩ (Or.inr ⟨hklx, hne⟩)
         rw [hchM] at hhead
         obtain ⟨k0, K0', rfl⟩ := List.exists_cons_of_ne_nil hK0
         simp only [List.cons_append, List.head?_cons, Option.some.injEq] at hhead
