@@ -1141,3 +1141,8 @@ i は k ののりしろの子の部分木に入らない。L8 の全接頭辞で
   - 例外 0: 構造の不変条件すべて、Good3・FrameOT・FrameClosed・BumpKidsDec・BumpTermDec・TP1・TPL・argT・BumpWeakSrc。
   - 落とす補題の結論の関係（o の変化 67 万件・v の変化 7 万件）は反例なし。壊れているのは証明の道筋だけ。
   - 対処（サブエージェント）: UpgAbs を x − 1 の形に、PV から VSmallV を外し、node_lhd が本当に要る弱い条件を測って設計し直す。
+- `t1_main_final`（`V3MainT1F`、サブエージェント）: t = 1・q ≠ r（n ≥ 2）の最終形で、hne も外した。
+  - VLocal を、v(P_1 i) が吸収されなくてよい一般形に直した（`V3StepVG`）。
+  - 残る仮定は、構造の不変条件、t1 の形、値の不変条件、落とす補題の残り。
+    VSmall・BumpAbs・UpgAbs は到達可能な行列で偽なので、置き換え中（サブエージェント）。
+  - 新しい値の不変条件 TP1・TPLo・AbsD・AbsU も、到達可能な行列で測り直し中。
