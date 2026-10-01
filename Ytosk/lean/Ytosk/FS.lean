@@ -414,6 +414,181 @@ theorem fs_mono : ∀ {t : T} {μ : T}, cof t = .big μ → ∀ {η η' : T}, η
         | succ => rw [hcb] at h; cases h
         | omega => rw [hcb] at h; cases h
 
+/-! ## 補題 3.6: t[η] ◁_η t -/
+
+theorem between_sub {a' a c : T} (h1 : psi a' z z < c) (h2 : c ≤ psi a z z) :
+    ∃ v c0 c1, c = psi v c0 c1 ∧ a' ≤ v ∧ v ≤ a := by
+  cases c with
+  | z => exact absurd h1 (T.not_lt_z _)
+  | psi v c0 c1 =>
+    refine ⟨v, c0, c1, rfl, ?_, ?_⟩
+    · rw [T.psi_lt_psi] at h1
+      rcases h1 with h | ⟨rfl, _⟩ | ⟨rfl, _, _⟩
+      · exact le_of_lt h
+      · exact le_refl _
+      · exact le_refl _
+    · rcases (le_iff _ _).mp h2 with h | h
+      · rw [T.psi_lt_psi] at h
+        rcases h with h | ⟨rfl, h⟩ | ⟨rfl, _, h⟩
+        · exact le_of_lt h
+        · exact absurd h (T.not_lt_z _)
+        · exact absurd h (T.not_lt_z _)
+      · simp only [psi.injEq] at h; rw [h.1]
+
+theorem comps_mulT {u x : T} : ∀ n, ∀ g ∈ comps u (mulT x n), g ∈ comps u x
+  | 0, g, h => by simp [mulT, comps] at h
+  | n + 1, g, h => by
+    simp only [mulT] at h
+    rw [comps_app, List.mem_append] at h
+    rcases h with h | h
+    · exact h
+    · exact comps_mulT n g h
+
+theorem lhd_zero {η a : T} (ha : a ≠ z) : Lhd η z a := by
+  refine ⟨?_, fun u c _ _ x hx => by simp [comps] at hx⟩
+  cases a with | z => exact absurd rfl ha | psi => exact T.z_lt_psi _ _ _
+
+theorem lhd_mulT {η a b' : T} : ∀ n, Lhd η (mulT (psi a b' z) n) (psi a (app b' one) z)
+  | 0 => lhd_zero (by simp)
+  | k + 1 => by
+    have hb' : b' < app b' one := by
+      have := app_lt_app_left b' (T.z_lt_psi z z z : z < one); simpa using this
+    refine ⟨mulT_lt (by simp only [head]; rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, hb'⟩)
+      ⟨a, b', rfl⟩ (by simp) (k + 1), fun u c h1 h2 => ?_⟩
+    -- the term `c` is `ψ_a(c0) + c1` with `c0 = b'` or `c0 = b' + 1`
+    obtain ⟨v, c0, c1, rfl⟩ : ∃ v c0 c1, c = psi v c0 c1 := by
+      cases c with
+      | z => exact absurd h1 (T.not_lt_z _)
+      | psi v c0 c1 => exact ⟨v, c0, c1, rfl⟩
+    simp only [mulT, app_psi, app_z] at h1
+    rw [T.psi_lt_psi] at h1
+    have hva : v = a ∧ b' ≤ c0 ∧ c0 ≤ app b' one := by
+      rcases (le_iff _ _).mp h2 with h2 | h2
+      · rw [T.psi_lt_psi] at h2
+        rcases h1 with h1 | ⟨rfl, h1⟩ | ⟨rfl, rfl, _⟩
+        · rcases h2 with h2 | ⟨rfl, _⟩ | ⟨rfl, _, _⟩
+          · exact absurd (lt_trans h1 h2) (lt_irrefl _)
+          · exact absurd h1 (lt_irrefl _)
+          · exact absurd h1 (lt_irrefl _)
+        · rcases h2 with h2 | ⟨_, h2⟩ | ⟨_, rfl, _⟩
+          · exact absurd h2 (lt_irrefl _)
+          · exact ⟨rfl, le_of_lt h1, le_of_lt h2⟩
+          · exact ⟨rfl, le_of_lt h1, le_refl _⟩
+        · rcases h2 with h2 | ⟨_, h2⟩ | ⟨_, _, h2⟩
+          · exact absurd h2 (lt_irrefl _)
+          · exact ⟨rfl, le_refl _, le_of_lt h2⟩
+          · exact absurd h2 (T.not_lt_z _)
+      · simp only [psi.injEq] at h2
+        obtain ⟨rfl, rfl, rfl⟩ := h2
+        exact ⟨rfl, le_of_lt hb', le_refl _⟩
+    obtain ⟨rfl, hc1, hc2⟩ := hva
+    have hc0 : c0 = b' ∨ c0 = app b' one := by
+      rcases (le_iff _ _).mp hc1 with hc1 | hc1
+      · rcases (le_iff _ _).mp hc2 with hc2 | hc2
+        · exfalso
+          obtain ⟨c0', rfl, h3, h4⟩ := between_app (A := b') (x := z) (y := one) (by simpa using hc1)
+            (le_of_lt hc2)
+          have h5 : c0' < one := (app_lt_app_left_iff b').mp hc2
+          rw [lt_one_iff] at h5; subst h5; exact absurd h3 (lt_irrefl _)
+        · exact Or.inr hc2
+      · exact Or.inl hc1.symm
+    intro x hx
+    have hx' := comps_mulT (k + 1) x hx
+    simp only [comps, List.mem_append] at hx'
+    rcases hx' with hx' | hx'
+    · split at hx'
+      · simp at hx'
+      · rename_i hau
+        simp only [List.mem_cons, List.mem_append] at hx'
+        rcases hx' with rfl | hx' | hx'
+        · exact ⟨c0, List.mem_append_left _ (by simp [comps, hau]), hc1⟩
+        · rcases hc0 with rfl | rfl
+          · exact ⟨x, List.mem_append_left _ (by simp [comps, hau, hx']), le_refl _⟩
+          · exact ⟨x, List.mem_append_left _ (by simp [comps, hau, comps_app, hx']), le_refl _⟩
+        · exact ⟨x, List.mem_append_left _ (by simp [comps, hau, hx']), le_refl _⟩
+    · simp at hx'
+
+/-- **Lemma 3.6.** -/
+theorem lhd_fs : ∀ {t η : T}, ValidLt t η → Lhd η (fs t η) t
+  | z, η, h => by simp [ValidLt, cof] at h
+  | psi a b (psi c d e), η, h => by
+    have h' : ValidLt (psi c d e) η := by simpa [ValidLt, cof] using h
+    have := lhd_app (psi a b z) (lhd_fs h')
+    simpa using this
+  | psi a b z, η, h => by
+    unfold ValidLt at h
+    unfold fs
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl]
+      by_cases ha : a = z
+      · subst ha; exact lhd_zero (by simp)
+      · rw [if_neg ha]
+        have hc : cof (psi a z z) = (if isSucc a then Cof.big (init a) else cof a) := by
+          simp [cof, ha]
+        rw [hc] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs]
+          rw [if_pos hs] at h
+          have h' : η < psi (succ (init a)) z z := h
+          unfold succ at h'
+          rw [init_app_one hs] at h'
+          refine ⟨h', fun u c _ _ x hx => ⟨x, List.mem_append_right _ (List.mem_cons_of_mem _ hx), le_refl _⟩⟩
+        · rw [if_neg hs]
+          rw [if_neg hs] at h
+          have ih := lhd_fs (t := a) h
+          refine ⟨by rw [psi_lt_psi_z_iff]; exact Or.inl ih.1, fun u c h1 h2 => ?_⟩
+          obtain ⟨v, c0, c1, rfl, hv1, hv2⟩ := between_sub h1 h2
+          intro x hx
+          simp only [comps, List.mem_append] at hx
+          rcases hx with hx | hx
+          · split at hx
+            · simp at hx
+            · rename_i hau
+              have hvu : ¬ lt v u = true := fun h => hau (lt_of_le_of_lt hv1 h)
+              simp only [List.mem_cons, List.mem_append] at hx
+              rcases hx with rfl | hx | hx
+              · exact ⟨z, List.mem_append_right _ (List.mem_cons_self), le_refl _⟩
+              · simp [comps] at hx
+              · rcases (le_iff _ _).mp hv1 with hv1 | rfl
+                · obtain ⟨y, hy, hxy⟩ := ih.2 u v hv1 hv2 x hx
+                  refine ⟨y, ?_, hxy⟩
+                  rcases List.mem_append.mp hy with hy | hy
+                  · exact List.mem_append_left _ (by simp [comps, hvu, hy])
+                  · exact List.mem_append_right _ hy
+                · exact ⟨x, List.mem_append_left _ (by simp [comps, hvu, hx]), le_refl _⟩
+          · simp [comps] at hx
+    · rw [if_neg hb]
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs]
+        have := lhd_mulT (η := η) (a := a) (b' := init b) (count η)
+        rwa [init_app_one hs] at this
+      · rw [if_neg hs]
+        have hc : cof (psi a b z) = (match cof b with
+            | .big μ => if lt μ a = true then Cof.big μ else Cof.omega
+            | c => c) := by simp [cof, hb, hs]
+        rw [hc] at h
+        cases hcb : cof b with
+        | big μ =>
+          rw [hcb] at h
+          simp only at h ⊢
+          by_cases hμ : lt μ a = true
+          · rw [if_pos hμ]; rw [if_pos hμ] at h
+            have h' : ValidLt b η := by unfold ValidLt; rw [hcb]; exact h
+            exact lhd_psi a (lhd_fs h')
+          · rw [if_neg hμ]
+            sorry
+        | zero =>
+          rw [hcb] at h; exact absurd h (by simp)
+        | succ =>
+          have h' : ValidLt b η := by unfold ValidLt; rw [hcb]; rw [hcb] at h; exact h
+          simp only
+          exact lhd_psi a (lhd_fs h')
+        | omega =>
+          have h' : ValidLt b η := by unfold ValidLt; rw [hcb]; trivial
+          simp only
+          exact lhd_psi a (lhd_fs h')
+
 #eval [psi z (psi z one z) z, psi z (psi (psi one z z) z z) z].map fun t =>
   ((List.range 3).map fun n => str (fs t (natT n)))
 
