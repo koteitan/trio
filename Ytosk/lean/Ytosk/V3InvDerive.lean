@@ -6,7 +6,7 @@ VSmallF・AbsD・AbsU・TPLo・TPLoW・AbsUW・AbsDW・TPLoN・AbsDN・rootS は
 FrameOT・FrameClosed・BumpKidsDec・BumpTermDec・TP1・TP1W・TrigOm・rootP は非標準形で崩れる（Good3 だけでは出ない）。
 ここでは自明な rootS（根の値は 1 項）から。
 -/
-import Ytosk.V3Top
+import Ytosk.V3Good3N
 
 namespace Ytosk
 
