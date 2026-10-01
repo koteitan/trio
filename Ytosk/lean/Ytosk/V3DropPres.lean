@@ -676,4 +676,128 @@ theorem locA_v {M : Mat} {x : Nat} (hx : x + 1 = M.length)
   rw [List.mem_filter] at hcsT
   exact hT.2.1 cs hcsT.1 (by simpa using hcsT.2)
 
+theorem upg_last_none {M : Mat} {x : Nat} (hx : x + 1 = M.length) : upg M x = none := by
+  unfold upg; rw [if_pos (Or.inr (Or.inr hx))]
+
+/-- **Nothing changes strictly between `i` and its last counted child `cs` in `M.take x`.** -/
+theorem chg_none_before {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    {i : Nat} {Lc : List Nat} {cs : Nat} (hcl : CL (M.take x) i = Lc ++ [cs]) :
+    ∀ b d, ChgX M x b d → i < d → d < cs → False := by
+  have hcsT : cs ∈ CL (M.take x) i := by rw [hcl]; simp
+  unfold CL at hcsT
+  rw [List.mem_filter] at hcsT
+  have hcsCnt : Counted (M.take x) i cs := by simpa using hcsT.2
+  obtain ⟨hcsx, hcsM⟩ := mem_children_take hcsT.1
+  have hpcs : par M 0 cs = some i := (mem_children_iff.mp hcsM).2
+  -- the subtree of a column strictly between `i` and `cs` ends before `cs`
+  have hsub : ∀ d y, i < d → d < cs → Anc0 M d y → y < cs := by
+    intro d y hid hdc hA
+    by_contra hge
+    have hAc : Anc0 M d cs := anc_between hA cs (by omega) (by omega)
+    have := (anc0_par hAc (by omega) hpcs).le
+    omega
+  -- `cs` is not upgraded-and-topped in `M.take x`
+  have hcsU : ∀ d, d + 1 = cs → upg M d = some cs → ChgX M x false cs → False := by
+    intro d hd hu hC
+    have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hC).1 rfl hcsx
+    apply hcsCnt.2
+    refine ⟨(isUpg_take M (by omega) cs).mpr ⟨d, by omega, hu⟩, hT.1⟩
+  intro b d hC
+  induction hC with
+  | leaf => intro _ h; omega
+  | supg _ => intro _ h; omega
+  | @scnt d c hc hcx hne =>
+    intro hid hdc
+    have hcd := (mem_children hc).1
+    have hAc : Anc0 M d c := Anc0.step (mem_children_iff.mp hc).2 (Anc0.refl d)
+    have hccs := hsub d c hid hdc hAc
+    apply hne
+    have hxc : x ∉ children M c := fun h =>
+      absurd (hsub d x hid hdc (Anc0.step (mem_children_iff.mp h).2 hAc)) (by omega)
+    have hU : isUpg (M.take x) c = isUpg M c := by
+      apply Bool.eq_iff_iff.mpr
+      rw [isUpg_take M (by omega) c]
+      unfold isUpg
+      rw [List.any_eq_true]
+      constructor
+      · rintro ⟨j, hj, hu⟩
+        exact ⟨j, List.mem_range.mpr (by omega), by simpa using hu⟩
+      · rintro ⟨j, hj, hu⟩
+        have hu' : upg M j = some c := by simpa using hu
+        have hjl := List.mem_range.mp hj
+        refine ⟨j, ?_, hu'⟩
+        by_contra hjx
+        rcases Nat.lt_or_ge j x with hjx' | hjx'
+        · -- `j = x − 1`
+          have hj1 : j = x - 1 := by omega
+          obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu'
+          rcases hcase with h' | ⟨hA, _⟩
+          · omega
+          · have := hsub d j hid hdc (Anc0.trans hAc hA); omega
+        · have hjx2 : j = x := by omega
+          rw [hjx2, upg_last_none hx] at hu'; cases hu'
+    unfold Counted
+    rw [col_take M (by omega), bump_take M (by omega), hU, topped_take_eq hx (by omega) hxc]
+  | snb _ _ hxc _ =>
+    intro hid hdc
+    have := hsub _ x hid hdc (Anc0.step (mem_children_iff.mp hxc).2 (Anc0.refl _))
+    omega
+  | @ochild d c hc _ _ _ ih =>
+    intro hid hdc
+    have hcd := (mem_children hc).1
+    have hccs := hsub d c hid hdc (Anc0.step (mem_children_iff.mp hc).2 (Anc0.refl d))
+    exact ih (by omega) hccs
+  | ov _ ih => exact ih
+  | @vpar d m _ hp hCm _ =>
+    intro hid hdc
+    have hmd := par_lt M 1 d m hp
+    have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCm).1 rfl (by omega)
+    exact hT.2.2 d (by omega) hp
+  | @vupg d k _ _ hu hCk ih =>
+    intro hid hdc
+    obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu
+    rcases hcase with hk | ⟨hA, hkd⟩
+    · rcases Nat.lt_or_ge k cs with hkc | hkc
+      · exact ih (by omega) hkc
+      · exact hcsU d (by omega) (by rw [hu]; congr 1; omega) (by rw [show cs = k by omega]; exact hCk)
+    · have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCk).1 rfl (by omega)
+      exact no_anc_upg hx hR0 hZ2 hSD hZ1 hUAT hUAB hT (by omega) hu hA hkd
+  | @vbump d j k _ _ hj _ hk _ ih =>
+    intro hid hdc
+    have hjd := (mem_children hj).1
+    have hkj := (mem_children hk).1
+    have hAk : Anc0 M d k := Anc0.step (mem_children_iff.mp hk).2
+      (Anc0.step (mem_children_iff.mp hj).2 (Anc0.refl d))
+    exact ih (by omega) (hsub d k hid hdc hAk)
+
+/-- **`LocA`** (structural): where `i` has a counted child in `M.take x`, its `v` and the earlier counted
+children's `o` do not change. -/
+theorem locA {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M) :
+    ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (M.take x) i = Lc ++ [cs] →
+      ¬ ChgX M x false i ∧ ∀ d ∈ Lc, ¬ ChgX M x true d := by
+  intro i hi Lc cs hcl
+  refine ⟨locA_v hx hR0 hZ2 hSD hZ1 hUAT hUAB hi hcl, fun d hd hCd => ?_⟩
+  have hdT : d ∈ CL (M.take x) i := by rw [hcl]; simp [hd]
+  have hdc : d < cs := by
+    have hs : (CL (M.take x) i).Pairwise (· < ·) := by
+      unfold CL; exact (children_sorted (M.take x) i).filter _
+    rw [hcl] at hs
+    exact (List.pairwise_append.mp hs).2.2 d hd cs (by simp)
+  have hid := (mem_children (cl_mem_children hdT)).1
+  exact chg_none_before hx hR0 hZ2 hSD hZ1 hUAT hUAB hcl true d hCd hid hdc
+
+/-- **`argT` from single-matrix invariants**: the structural invariants of `M` and `Good3` of `M.take x`
+(a standard prefix). -/
+theorem argT_std {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
+    (hGT : Good3 (M.take x) ρ') :
+    ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (M.take x) i = Lc ++ [cs] →
+      ∀ s y, ρ'.o cs = psi s y z → ¬ lt s (ρ.v i) = true →
+      ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z :=
+  argT_of_take hx hC hG hC' hRk' hGT (locA hx hR0 hZ2 hSD hZ1 hUAT hUAB)
+
 end Ytosk
