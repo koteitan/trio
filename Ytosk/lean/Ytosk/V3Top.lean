@@ -19,6 +19,7 @@ import Ytosk.V3T0
 import Ytosk.V3T0M
 import Ytosk.V3T0Last
 import Ytosk.V3RootPN
+import Ytosk.V3BumpN
 
 namespace Ytosk
 
@@ -548,13 +549,18 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
         obtain ⟨ρN, rkN, hCN, hRN, _, _, hot, hlt⟩ :=
           qr_final4 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2 hq
           I.cons I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.ad I.tp1w
-          I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (hsd q hr hq) (fun N σ => FrameOT N σ ∧ RootP N σ)
+          I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (hsd q hr hq) (fun N σ => FrameOT N σ ∧ RootP N σ ∧ BumpDec N σ)
           ⟨(valInv_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
             ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr).fo, rootP_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r01 I.r12 I.e00
             (by have := anc0_interval hA (q + L) (by omega) (Nat.le_refl _); omega) I.cons I.rank
-            ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr I.rootP⟩
+            ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr I.rootP,
+            (valInv_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
+              ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr).kd,
+            (valInv_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
+              ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr).td⟩
           (expStep_and (expStep_frameOT_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq I.fo)
-            (expStep_rootP_t1 hlen hL0 hd0e I.z2 I.uat I.r12 I.be I.r01 I.e00 hr hx2 I.rootP))
+            (expStep_and (expStep_rootP_t1 hlen hL0 hd0e I.z2 I.uat I.r12 I.be I.r01 I.e00 hr hx2 I.rootP)
+              (expStep_bumpDec_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq I.good ⟨I.kd, I.td⟩)))
           (n + 2) (by omega)
         exact ⟨ρN, rkN, hCN, hRN, hot, hlt⟩
       · obtain ⟨s0, y0, h0⟩ := o_psi_form I.cons (show r < M.length by omega)
@@ -562,13 +568,18 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
           (fun h' => hqr (Option.some.inj (hq.symm.trans h'))) I.cons I.good I.rank I.vs I.fc I.fo
           I.tp1 I.tplo I.ad I.au hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua rfl h0 I.rootS I.rootP
           (good3_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
-            ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr) (fun N σ => FrameOT N σ ∧ RootP N σ)
+            ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr) (fun N σ => FrameOT N σ ∧ RootP N σ ∧ BumpDec N σ)
           ⟨(valInv_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
             ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr).fo, rootP_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r01 I.r12 I.e00
             (by have := anc0_interval hA (r + L) (by omega) (Nat.le_refl _); omega) I.cons I.rank
-            ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr I.rootP⟩
+            ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr I.rootP,
+            (valInv_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
+              ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr).kd,
+            (valInv_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
+              ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr).td⟩
           (expStep_and (expStep_frameOT_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq I.fo)
-            (expStep_rootP_t1 hlen hL0 hd0e I.z2 I.uat I.r12 I.be I.r01 I.e00 hr hx2 I.rootP))
+            (expStep_and (expStep_rootP_t1 hlen hL0 hd0e I.z2 I.uat I.r12 I.be I.r01 I.e00 hr hx2 I.rootP)
+              (expStep_bumpDec_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq I.good ⟨I.kd, I.td⟩)))
           (n + 2) (by omega)
         obtain ⟨ρN, rkN, hCN, hRN, _, _, hot, hlt⟩ := h
         exact ⟨ρN, rkN, hCN, hRN, hot, hlt⟩
