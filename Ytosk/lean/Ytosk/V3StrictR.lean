@@ -620,4 +620,76 @@ theorem dep_strict {q : Nat} {ζ μ : T} (hx2 : entry M 2 x = 0) (hq : par M 0 x
 
 end
 
+/-! ## まとめ: o(r) は実際に変わる、hne を外した t1_main_val -/
+
+/-- **`o(r)` drops strictly** (`t = 1`, `q ≠ r`), from the drop lemma's conclusion. -/
+theorem o_r_strict {M : Mat} {x r : Nat} (hx : x + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M)
+    (h1 : par M 1 x = some r) (hx2 : entry M 2 x = 0) (hqr : par M 0 x ≠ some r)
+    {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {ζ μ : T}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
+    (hdrop : ∀ i, i < x → PO ρ ρ' i ∧ PV M ρ ρ' i)
+    (hVL : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i) :
+    ρ'.o r < ρ.o r := by
+  have hA : Anc0 M r x := anc0_of_par M 1 r x h1
+  have hr : r < x := par_lt M 1 x r h1
+  have hrx : r ≠ x := by omega
+  have hpath := hpath_of_par1 h1 hA hrx
+  obtain ⟨q, hq⟩ := par0_of_anc hA hrx
+  have hnx : ¬ DepX M x false x := by
+    intro h
+    cases h with
+    | vpar _ hp hdm =>
+      rw [h1] at hp; cases hp
+      exact v_r_not_chg hx hR0 hZ2 hSD hZ1 hUAT hUAB hA hrx hqr hpath (depX_chgX hdm)
+    | vupg _ _ hu _ => have := upg_succ_lt hu; omega
+    | vbump _ h2 _ _ _ _ => exact h2 hx2
+  exact dep_strict hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hx2 hq hnx hVL true r
+    (dep_anc_x hUAT hZ2 hR12 hBE hx hx2 hA) hr
+
+/-- **`t = 1`, `q ≠ r`, all `n ≥ 2`**, without the hypothesis `hne` (`o(r)` changes). -/
+theorem t1_main_strict {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+    (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
+      ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
+      ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakShape M ρ)
+    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
+    (hUA : UpgAbs M ρ)
+    {μ br vr : T} (hμr : μ = vr) (hro : ρ.o r = psi vr br z)
+    (hV : ∀ m i, i < r + L → DepX M (r + L) false i →
+      VLocal M (r + L) ρ (gamS μ br ((drop1 M (r + L) rkM).o r) m) μ i)
+    (hW : ∀ m i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+      DepX M (r + L) true c → ∀ s y, ρ.o c = psi s y z → lt (preState M ρ i L') y = true →
+      lt (psi (ρ.v i) z z) (psi s y z) = true →
+      lt (preState M ρ i L') (fsD y (gamS μ br ((drop1 M (r + L) rkM).o r) m)) = true)
+    (hLo : ∀ m i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+      DepX M (r + L) true c → ∀ s y, ρ.o c = psi s y z → lt (preState M ρ i L') y = true →
+      lt (psi (ρ.v i) z z) (psi s y z) = true →
+      ((split y (psi (succ s) z z)).2 ≠ z →
+        fsD (split y (psi (succ s) z z)).2 (gamS μ br ((drop1 M (r + L) rkM).o r) m) ≠ z) ∧
+      ((split y (psi (succ s) z z)).2 = z →
+        (split (fsD y (gamS μ br ((drop1 M (r + L) rkM).o r) m)) (psi (succ s) z z)).2 = z))
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
+  have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
+  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hF hFO hArgT
+    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hKD hTD hAbs hWS hVSt)
+    (fun i k W _ hu hv hW => hUA i k W hu hv hW)
+  have hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r :=
+    ne_of_lt (o_r_strict (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE h1 hx2 hqr hC hG hC1 hRk1
+      hdrop (hV 0))
+  exact t1_main_val hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
+    hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hV hW hLo hsM hpM
+
 end Ytosk
