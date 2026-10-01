@@ -179,4 +179,63 @@ theorem isOT_fsD : ∀ {t η : T}, isOT t = true → isOT η = true → DV t η 
 theorem fsD_ot_lt {t η : T} (hot : isOT t = true) (hηot : isOT η = true) (hv : DV t η) :
     isOT (fsD t η) = true ∧ fsD t η < t := ⟨isOT_fsD hot hηot hv, fsD_lt hv⟩
 
+/-- **`fsD` is strictly increasing in the index.** -/
+theorem fsD_mono : ∀ {t η η' : T}, DV t η' → η < η' → fsD t η < fsD t η'
+  | z, _, _, h, _ => by simp [DV] at h
+  | psi a b (psi c d e), η, η', h, hlt => by
+    have h' : DV (psi c d e) η' := by simpa [DV] using h
+    show psi a b (fsD (psi c d e) η) < psi a b (fsD (psi c d e) η')
+    rw [T.psi_lt_psi]; exact Or.inr (Or.inr ⟨rfl, rfl, fsD_mono h' hlt⟩)
+  | psi a b z, η, η', h, hlt => by
+    unfold DV at h
+    conv => lhs; unfold fsD
+    conv => rhs; unfold fsD
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl] at h ⊢; rw [if_pos rfl]
+      obtain ⟨ha, h⟩ := h
+      rw [if_neg ha, if_neg ha]
+      by_cases hs : isSucc a = true
+      · rw [if_pos hs, if_pos hs]; exact hlt
+      · rw [if_neg hs] at h ⊢; rw [if_neg hs]
+        rw [psi_lt_psi_z_iff]; exact Or.inl (fsD_mono h hlt)
+    · rw [if_neg hb] at h ⊢; rw [if_neg hb]
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; exact absurd h id
+      · rw [if_neg hs] at h ⊢; rw [if_neg hs]
+        cases hcb : cof b with
+        | big μ =>
+          simp only
+          rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fs_mono hcb hlt⟩
+        | zero =>
+          rw [hcb] at h; simp only at h ⊢
+          rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fsD_mono h.1 hlt⟩
+        | succ =>
+          rw [hcb] at h; simp only at h ⊢
+          rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fsD_mono h.1 hlt⟩
+        | omega =>
+          rw [hcb] at h; simp only at h ⊢
+          rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fsD_mono h.1 hlt⟩
+
+/-- `fsD` of a nonzero index is nonzero. -/
+theorem fsD_ne_z : ∀ {t η : T}, DV t η → η ≠ z → fsD t η ≠ z
+  | z, _, h, _ => by simp [DV] at h
+  | psi a b (psi c d e), η, _, _ => by simp [fsD]
+  | psi a b z, η, h, hη => by
+    unfold DV at h
+    unfold fsD
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl] at h ⊢
+      obtain ⟨ha, h⟩ := h
+      rw [if_neg ha]
+      by_cases hs : isSucc a = true
+      · rw [if_pos hs]; exact hη
+      · rw [if_neg hs]; simp
+    · rw [if_neg hb] at h ⊢
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; exact absurd h id
+      · rw [if_neg hs]
+        cases cof b <;> simp
+
 end Ytosk
