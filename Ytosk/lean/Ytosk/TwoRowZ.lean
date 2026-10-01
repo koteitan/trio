@@ -141,4 +141,79 @@ theorem children_gexp_t0 {k q : Nat} (hk : k < n) (hq : q < Lb) :
 
 end
 
+/-- **Children of a block column in `M`**: inside the block, plus the last column if it hangs there. -/
+theorem children_block {M : Mat} {j0 Lb q : Nat} (hlen : j0 + Lb + 1 = M.length) :
+    children M (j0 + q) =
+      ((List.range Lb).filter (fun q' => decide (0 < q' ∧ par M 0 (j0 + q') = some (j0 + q)))).map
+        (fun q' => j0 + q') ++
+      (if par M 0 (j0 + Lb) = some (j0 + q) then [j0 + Lb] else []) := by
+  apply eq_of_sorted_mem _ _ (children_sorted _ _)
+  · rw [List.pairwise_append]
+    refine ⟨List.Pairwise.map _ (by intro a b hab; omega)
+      (List.Pairwise.filter _ List.pairwise_lt_range), ?_, ?_⟩
+    · split <;> simp
+    · intro a ha b hb
+      split at hb
+      · simp at hb; subst hb
+        obtain ⟨q', hq', rfl⟩ := List.mem_map.mp ha
+        rw [List.mem_filter, List.mem_range] at hq'; omega
+      · simp at hb
+  · intro c
+    rw [mem_children_iff, List.mem_append, List.mem_map]
+    constructor
+    · rintro ⟨hcl, hcp⟩
+      have hcq := par_lt M 0 c _ hcp
+      rcases Nat.lt_or_ge c (j0 + Lb) with h | h
+      · left
+        refine ⟨c - j0, ?_, by omega⟩
+        rw [List.mem_filter, List.mem_range]
+        refine ⟨by omega, ?_⟩
+        simp only [decide_eq_true_eq]
+        exact ⟨by omega, by rw [show j0 + (c - j0) = c by omega]; exact hcp⟩
+      · right
+        have hc : c = j0 + Lb := by omega
+        subst hc
+        rw [if_pos hcp]; simp
+    · rintro (⟨q', hq', rfl⟩ | h)
+      · rw [List.mem_filter, List.mem_range] at hq'
+        simp only [decide_eq_true_eq] at hq'
+        exact ⟨by omega, hq'.2.2⟩
+      · split at h
+        · rename_i hp
+          simp at h; subst h
+          exact ⟨by omega, hp⟩
+        · simp at h
+
+section
+variable {M : Mat} {j0 Lb n : Nat} (hlen : j0 + Lb + 1 = M.length) (hLb : 0 < Lb)
+  (hA : Anc0 M j0 (j0 + Lb)) {g : Nat} (hg : par M 0 j0 = some g)
+  (hF : F1 (TRIO.gexp M j0 Lb 0 0 n))
+include hlen hLb hA hg hF
+
+/-- **Copies have the values of the first copy** (`t = 0`). -/
+theorem o2r_gexp_copy_t0 {k : Nat} (hk : k < n) :
+    ∀ q, q < Lb → o2r (TRIO.gexp M j0 Lb 0 0 n) (j0 + (k * Lb + q)) =
+      o2r (TRIO.gexp M j0 Lb 0 0 n) (j0 + (0 * Lb + q)) := by
+  have hn0 : 0 < n := by omega
+  have key : ∀ m q, Lb - q ≤ m → q < Lb → o2r (TRIO.gexp M j0 Lb 0 0 n) (j0 + (k * Lb + q)) =
+      o2r (TRIO.gexp M j0 Lb 0 0 n) (j0 + (0 * Lb + q)) := by
+    intro m
+    induction m with
+    | zero => intro q h1 h2; omega
+    | succ m ih =>
+      intro q hm hq
+      apply o2r_congr
+      · rw [vr_eq_nT hF, vr_eq_nT hF, entry1_gexp_d1z hlen hk hq, entry1_gexp_d1z hlen hn0 hq]
+      · rw [children_gexp_t0 hlen hLb hA hg hk hq, children_gexp_t0 hlen hLb hA hg hn0 hq,
+          List.map_map, List.map_map]
+        apply List.map_congr_left
+        intro q' hq'
+        rw [List.mem_filter, List.mem_range] at hq'
+        simp only [decide_eq_true_eq] at hq'
+        have := par_lt M 0 _ _ hq'.2.2
+        exact ih q' (by omega) hq'.1
+  exact fun q hq => key _ q (Nat.le_refl _) hq
+
+end
+
 end Ytosk
