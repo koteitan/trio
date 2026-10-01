@@ -7,6 +7,7 @@ M′ = M.take x の各列で、
 値の不変条件（`VSmall`・`FrameClosed`・`FrameOT`）と、のりしろの枠（`hBump`）・x − 1 の吸収（`hX1`）を仮定にとる。
 -/
 import Ytosk.V3DropRel
+import Ytosk.V3StepOT
 
 namespace Ytosk
 
@@ -120,9 +121,10 @@ variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
   {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
   (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
   (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
-  (hStep : ∀ a B s y, isOT (psi a B z) = true → isOT (psi s y z) = true →
-    (∀ q ∈ summands B, psi s y z ≤ q) → SubSmall a s → isOT (psi a (step a B s y z) z) = true)
-include hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hStep
+  (hArgT : ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (M.take x) i = Lc ++ [cs] → ∀ s y,
+    ρ'.o cs = psi s y z → ¬ lt s (ρ.v i) = true →
+    ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hArgT
 
 /-- **One `o` step of the drop.** -/
 theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
@@ -232,7 +234,7 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
       refine ⟨?_, _, _, rfl⟩
       have hBot := hFO i hiM Lc cs Tl (by rw [hclM]; simp)
       have hLs := sumN_dec (Lc.map ρ.o) (fun t ht => hsM t (by simp [ht])) (List.pairwise_append.mp hp1.1).1
-      apply hStep _ _ _ _ hBot (by rw [← hs'y']; exact hPOc.2.1)
+      apply step_ot_of_le hBot (by rw [← hs'y']; exact hPOc.2.1)
       · apply spArg_summands_ge ⟨s', y', rfl⟩ _ z hLs.1
         · rw [hLs.2]; intro q hq; rw [← hs'y']; exact le_trans hle' (hLc q hq)
         · simp [summands]
@@ -240,6 +242,9 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
         obtain ⟨y0, hy0⟩ := o_psi_sub hC' hcsx
         rw [hs'y'] at hy0; simp only [psi.injEq] at hy0
         rw [hy0.1, sf_ot hPVc.2.1]; exact hPVc.2.2.subSmall _
+      · intro hsa g hg
+        exact hArgT i hi Lc cs hcl s' y' hs'y' hsa g hg
+
 /-- **One `v` step of the drop.** The bump-type frame (`hBump`) and the absorption at `x − 1` (`hX1`)
 are hypotheses. -/
 theorem pv_of {i : Nat} (hi : i < x)
@@ -374,7 +379,7 @@ theorem drop_all
       have hPV : ∀ i, i < x → rk false i ≤ N → PV M ρ ρ' i := by
         intro i hi hN
         obtain ⟨_, _, hR⟩ := hRk' i (by omega)
-        apply pv_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hStep hi
+        apply pv_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hArgT hi
         · intro hCv h1 h2
           apply hBump i hi _ hCv h1 h2
           intro j hj hjb k hk hkx
@@ -417,7 +422,7 @@ theorem drop_all
           exact ((ih _ (by omega) k' hk'x).1 (Nat.le_refl _)).2
       refine fun i hi => ⟨fun hN => ?_, hPV i hi⟩
       obtain ⟨hvo, hc, _⟩ := hRk' i (by omega)
-      apply po_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hStep hi
+      apply po_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hF hFO hArgT hi
       · exact hPV i hi (by omega)
       · intro c hcT hcnt
         have hlt := hc c hcT hcnt.1 hcnt.2
