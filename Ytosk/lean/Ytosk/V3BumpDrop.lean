@@ -555,11 +555,16 @@ changes in `M.take x` with `v′(k) ⋪ v(k)` (at `k = x` the valuation of `M.ta
 the leaf 7 under the first has `o = ψ_1(0)`. Without `v′(k) ⋪ v(k)` it is false on standard matrices: in
 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(5,1,0)(5,1,0) the column 9 loses its
 upgrade, `o(9) = Ω_ω` becomes `Ω_1`, and 9 is the second child of 7 (there `v′(9) = 1 ⊴ ω = v(9)`).
-This form: SRO からの乱択の展開とその M[n]（標準形 18 万個）で例外 0. -/
+At `k = x` (the collapse) the shape is needed only when `v′(i) ⋪ v(i)` (otherwise `bump_rel` outputs the strong
+relation directly): without it, CS fails on standard matrices, e.g. at `i = 11` of
+(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,2,0), where
+`v′(11) ◁ v(11)`.
+This form: SRO からの乱択の展開とその M[n] の接頭辞閉包（標準形 40 万個）で例外 0. -/
 def BumpWeakSrc (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
   ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
     ∀ k ∈ children M j, (∃ w, w ≠ z ∧ ρ.o k = psi w z z) →
-      ((k = x ∧ children M j = [x]) ∨ (k < x ∧ ρ'.o k ≠ ρ.o k ∧ ¬ LhdE (ρ'.v k) (ρ.v k))) →
+      ((k = x ∧ children M j = [x] ∧ ¬ LhdE (ρ'.v i) (ρ.v i)) ∨
+        (k < x ∧ ρ'.o k ≠ ρ.o k ∧ ¬ LhdE (ρ'.v k) (ρ.v k))) →
       children M i = [j] ∧ (children M j).head? = some k ∧ CS (vOpt ρ (par M 1 i))
 
 /-- **Hypothesis on the drop**: `BumpAbs` except at a column with a bump child whose only child is `x`
@@ -1080,7 +1085,14 @@ theorem bump_rel {M : Mat} {x : Nat} (hx : x + 1 = M.length)
           · rw [h']
         exact lt_of_lt_of_le hr2 hom
     · -- the weak case
-      obtain ⟨hone, _, hcsV⟩ := hWS i h1 h2 jl hjlM hjlb k hk ⟨w, hw, hok⟩ hkx
+      by_cases hli : LhdE (ρ'.v i) (ρ.v i)
+      · exact Or.inl hli
+      have hkx' : (k = x ∧ children M jl = [x] ∧ ¬ LhdE (ρ'.v i) (ρ.v i)) ∨
+          (k < x ∧ ρ'.o k ≠ ρ.o k ∧ ¬ LhdE (ρ'.v k) (ρ.v k)) := by
+        rcases hkx with ⟨hk1, hk2⟩ | hk'
+        · exact Or.inl ⟨hk1, hk2, hli⟩
+        · exact Or.inr hk'
+      obtain ⟨hone, _, hcsV⟩ := hWS i h1 h2 jl hjlM hjlb k hk ⟨w, hw, hok⟩ hkx'
       have hnil : A0 = [] ∧ XI = [] := by
         rw [hXI, hA] at hone
         have hl := congrArg List.length hone

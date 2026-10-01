@@ -117,8 +117,11 @@ theorem dropRes_congr {N : Mat} {x : Nat} {σ σ' τ τ' : Valn} (hx : x < N.len
     have hok := (h k hkN).1
     rw [← vOpt_par_congr h hiN]
     apply hD.ws i h1 h2 j hj hjb k hk (by rw [hok]; exact hw)
-    rcases hcase with hc | ⟨hkx, hne, hl⟩
-    · exact Or.inl hc
+    rcases hcase with ⟨hkx, hch, hl⟩ | ⟨hkx, hne, hl⟩
+    · have hij : i < j := (mem_children hj).1
+      have hjk : j < k := (mem_children hk).1
+      refine Or.inl ⟨hkx, hch, ?_⟩
+      rw [(h' i (by omega)).2, (h i hiN).2]; exact hl
     · right
       refine ⟨hkx, ?_, ?_⟩
       · rw [(h' k (by omega)).1, hok]; exact hne
