@@ -263,6 +263,7 @@ structure T2QN (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L qp pq : Na
 
 /-- **`q = r`, `x − 1` upgrades to `x`.** -/
 structure T2SV (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Prop where
+  rcl : CL M r ≠ []
   p1 : ∀ m, par M 1 (r + L - 1) = some m → ¬ DepS M (SV r (r + L - 1)) false m
   dv : ∀ c, c < r + L → DepS M (SV r (r + L - 1)) false c → CL M c = []
   os : OSh M (SV r (r + L - 1)) (r + L)
@@ -291,9 +292,6 @@ structure T2QU (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L k : Nat) :
 
 /-- **`q = r`.** -/
 structure T2R (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Prop where
-  rb : ∀ p, par M 0 r = some p → col M r ≠ bump M p
-  rcl : CL M r ≠ []
-  rU : isUpg M r = false
   sv : upg M (r + L - 1) = some (r + L) → T2SV M ρ rk r L
   nn : upg M (r + L - 1) = none → T2QR M ρ rk r L
   up : ∀ k, upg M (r + L - 1) = some k → k < r + L → T2QU M ρ rk r L k
@@ -340,6 +338,23 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     rcases hcase with h | ⟨_, h⟩
     · exact hux (by rw [show r + L - 1 = i by omega]; exact hu)
     · omega
+  have hrb : ∀ p, par M 0 r = some p → col M r ≠ bump M p := fun p _ h => by
+    have := e2_of_col (show col M r = (entry M 0 p + 1, entry M 1 p, 1) from h); omega
+  have hrU : isUpg M r = false := by
+    cases h : isUpg M r with
+    | false => rfl
+    | true =>
+      exfalso
+      unfold isUpg at h
+      obtain ⟨k, _, hk⟩ := List.any_eq_true.mp h
+      have := upg_target_e2 (of_decide_eq_true hk); omega
+  have hrcl_of : par M 0 (r + L) = some r → upg M (r + L - 1) ≠ some (r + L) → CL M r ≠ [] := by
+    intro hq hux hnil
+    have hcnt : Counted M r (r + L) := ⟨hxbr, by rw [isUpg_x_false (hXu_of hux)]; simp⟩
+    have hxin : r + L ∈ CL M r := by
+      unfold CL; rw [List.mem_filter]
+      exact ⟨mem_children_iff.mpr ⟨by omega, hq⟩, by simpa using hcnt⟩
+    rw [hnil] at hxin; simp at hxin
   have hexp : ∀ n, expand M n = TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
       (entry M 1 (r + L) - entry M 1 r) n := by
     intro n
@@ -365,25 +380,25 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     by_cases hqr : q = r
     · rw [hqr] at hq
       have T := R2.qr r L hlen hr hq
-      have hAbs := abs_of_absC hdr.ab hq T.rb
+      have hAbs := abs_of_absC hdr.ab hq hrb
       cases hux : upg M (r + L - 1) with
       | none =>
         have T' := T.nn hux
-        obtain ⟨hdv, hos, hvsh⟩ := qr_shapes hlen hL0 hq (hXu_of (by rw [hux]; simp)) hxbr T.rb
+        obtain ⟨hdv, hos, hvsh⟩ := qr_shapes hlen hL0 hq (hXu_of (by rw [hux]; simp)) hxbr hrb
           I.r0p I.z2 I.sd I.z1 I.uat I.uab
-        exact t2_qr_take hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r T.rb T.rcl T.rU hux
+        exact t2_qr_take hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (hrcl_of hq (by rw [hux]; simp)) hrU hux
           hdv hos hvsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs T'.vnn1 T'.seed1
       | some k =>
         have hkl := upg_lt (by omega) hux
         by_cases hkx : k = r + L
         · rw [hkx] at hux
           have T' := T.sv hux
-          exact t2_sv_take hlen hL0 hq hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r T.rb T.rcl T.rU
+          exact t2_sv_take hlen hL0 hq hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb T'.rcl hrU
             T'.p1 T'.dv T'.os T'.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs
             T'.vnn1 T'.seed1
         · have hk : k < r + L := by omega
           have T' := T.up k hux hk
-          exact t2_qu_take hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r T.rb T.rcl T.rU hux hk
+          exact t2_qu_take hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (hrcl_of hq (by rw [hux]; intro h; cases h; omega)) hrU hux hk
             T'.kT T'.p1 T'.dv T'.vr T'.os T'.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd
             hdr.ua hAbs T'.vnn1 T'.seed1
     · obtain ⟨pq, hpq⟩ := par0_of_anc (anc0_par hA (by omega) hq) (fun h => hqr h.symm)
@@ -407,14 +422,14 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     by_cases hqr : q = r
     · rw [hqr] at hq
       have T := R2.qr r L hlen hr hq
-      have hAbs := abs_of_absC hdr.ab hq T.rb
+      have hAbs := abs_of_absC hdr.ab hq hrb
       by_cases hux : upg M (r + L - 1) = some (r + L)
       · have T' := T.sv hux
         obtain ⟨hIUt, hVNN, hseed⟩ := T'.big n _ _ σ hn hCN
-        exact t2_sv_main hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r T.rb T.rcl hIUt
+        exact t2_sv_main hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb T'.rcl hIUt
           T'.p1 T'.dv T'.os T'.vsh I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hAbs hVNN hseed
       · obtain ⟨hIU, hxcN, hVNN, hseed⟩ := T.big hux n _ _ σ hn hCN
-        exact t2_qr_main hlen hL0 hq hd0e hn (hXu_of hux) hxbr T.rb he2r hIU I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
+        exact t2_qr_main hlen hL0 hq hd0e hn (hXu_of hux) hxbr hrb he2r hIU I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
           I.be I.r01 I.e00 I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hdr.ab hVNN hxcN hseed
     · obtain ⟨pq, hpq⟩ := par0_of_anc (anc0_par hA (by omega) hq) (fun h => hqr h.symm)
       have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
