@@ -684,4 +684,192 @@ theorem last_br_t1 (h1 : par M 1 x = some r) (hx2 : entry M 2 x = 0) (hqr : par 
 
 end
 
+/-! ## 鎖の下限 ψ_μ(Ω_{μ+1}) -/
+
+/-- **A standard term with cofinality `Ω_{μ+1}` has its head at least `Ω_{μ+1}`.** -/
+theorem om_le_head_of_cof : ∀ {t μ : T}, isOT t = true → cof t = .big μ → psi (succ μ) z z ≤ head t
+  | z, _, _, h => by simp [cof] at h
+  | psi a b (psi c d e), μ, hot, h => by
+    have h' : cof (psi c d e) = .big μ := by simpa [cof] using h
+    have ih := om_le_head_of_cof (isOT_rest hot) h'
+    have h4 := (isOT_psi_iff.mp hot).2.2.2.1
+    exact le_trans ih h4
+  | psi a b z, μ, hot, h => by
+    show psi (succ μ) z z ≤ psi a b z
+    unfold cof at h
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl] at h
+      by_cases ha : a = z
+      · rw [if_pos ha] at h; cases h
+      · rw [if_neg ha] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs] at h; cases h
+          have : succ (init a) = a := by unfold succ; exact init_app_one hs
+          rw [this]
+        · rw [if_neg hs] at h
+          have ih := om_le_head_of_cof (isOT_sub hot) h
+          have hμa : μ < a := lt_of_lt_of_le (lt_trans' (lt_succ_self μ) (sub_lt _ z z))
+            (le_trans ih (head_le_self a))
+          exact le_psi_sub (succ_le_of_lt hμa)
+    · rw [if_neg hb] at h
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; cases h
+      · rw [if_neg hs] at h
+        cases hcb : cof b with
+        | big μ' =>
+          rw [hcb] at h; simp only at h
+          split at h
+          · rename_i hlt
+            cases h
+            exact le_trans (le_psi_sub (succ_le_of_lt hlt)) (le_psi_arg (z_le b))
+          · cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
+/-- **`fs` stays above the level.** -/
+theorem lt_fs_of_cof : ∀ {t μ η : T}, isOT t = true → cof t = .big μ → μ < η → μ < fs t η
+  | z, _, _, _, h, _ => by simp [cof] at h
+  | psi a b (psi c d e), μ, η, hot, h, _ => by
+    show μ < psi a b (fs (psi c d e) η)
+    have hh := om_le_head_of_cof hot h
+    exact lt_of_lt_of_le (lt_trans' (lt_succ_self μ) (sub_lt _ z z))
+      (le_trans hh (le_psi_rest (z_le _)))
+  | psi a b z, μ, η, hot, h, hη => by
+    unfold cof at h
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl] at h
+      by_cases ha : a = z
+      · rw [if_pos ha] at h; cases h
+      · rw [if_neg ha] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs] at h; cases h
+          unfold fs; rw [if_pos rfl, if_neg ha, if_pos hs]; exact hη
+        · rw [if_neg hs] at h
+          unfold fs; rw [if_pos rfl, if_neg ha, if_neg hs]
+          exact lt_trans' (lt_fs_of_cof (isOT_sub hot) h hη) (lt_Om_self _)
+    · rw [if_neg hb] at h
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; cases h
+      · rw [if_neg hs] at h
+        cases hcb : cof b with
+        | big μ' =>
+          rw [hcb] at h; simp only at h
+          split at h
+          · rename_i hlt
+            cases h
+            unfold fs; rw [if_neg hb, if_neg hs, hcb]; simp only; rw [if_pos hlt]
+            exact lt_trans' hlt (sub_lt _ _ _)
+          · cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
+/-- **`fs` stays at least `Ω_{μ+1}`** unless the term ends with `Ω_{μ+1}`. -/
+theorem om_le_fs : ∀ {t μ η : T}, isOT t = true → cof t = .big μ → last t ≠ psi (succ μ) z z →
+    μ < η → psi (succ μ) z z ≤ fs t η
+  | z, _, _, _, h, _, _ => by simp [cof] at h
+  | psi a b (psi c d e), μ, η, hot, h, _, _ => by
+    show psi (succ μ) z z ≤ psi a b (fs (psi c d e) η)
+    exact le_trans (om_le_head_of_cof hot h) (le_psi_rest (z_le _))
+  | psi a b z, μ, η, hot, h, hl, hη => by
+    unfold cof at h
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl] at h
+      by_cases ha : a = z
+      · rw [if_pos ha] at h; cases h
+      · rw [if_neg ha] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs] at h; cases h
+          exfalso; apply hl
+          show psi a z z = _
+          have : succ (init a) = a := by unfold succ; exact init_app_one hs
+          rw [this]
+        · rw [if_neg hs] at h
+          unfold fs; rw [if_pos rfl, if_neg ha, if_neg hs]
+          exact le_psi_sub (succ_le_of_lt (lt_fs_of_cof (isOT_sub hot) h hη))
+    · rw [if_neg hb] at h
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; cases h
+      · rw [if_neg hs] at h
+        cases hcb : cof b with
+        | big μ' =>
+          rw [hcb] at h; simp only at h
+          split at h
+          · rename_i hlt
+            cases h
+            unfold fs; rw [if_neg hb, if_neg hs, hcb]; simp only; rw [if_pos hlt]
+            exact le_trans (le_psi_sub (succ_le_of_lt hlt)) (le_psi_arg (z_le _))
+          · cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
+/-- **The chain stays at least `ψ_μ(Ω_{μ+1})`** (given the seed does). -/
+theorem gamS_ge_omfix {μ br seed : T} (hot : isOT br = true) (hcb : cof br = .big μ)
+    (hbrl : last br ≠ psi (succ μ) z z) (hseed : psi μ (psi (succ μ) z z) z ≤ seed) :
+    ∀ m, psi μ (psi (succ μ) z z) z ≤ gamS μ br seed m
+  | 0 => hseed
+  | m + 1 => by
+    show psi μ (psi (succ μ) z z) z ≤ psi μ (fs br (gamS μ br seed m)) z
+    apply le_psi_arg
+    apply om_le_fs hot hcb hbrl
+    exact lt_of_lt_of_le (sub_lt μ _ z) (gamS_ge_omfix hot hcb hbrl hseed m)
+
+/-! ## まとめ: (W)・(L) を TP1・TPL から -/
+
+/-- **`t = 1`, `q ≠ r`, all `n ≥ 2`**: `t1_main_val` with (W) and (L) replaced by the value invariants
+TP1 and TPL and the lower bound `ψ_μ(Ω_{μ+1}) ≤ seed` of the seed. -/
+theorem t1_main_tpl {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hVS : VSmall M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1 M ρ) (hTPL : TPL M ρ)
+    (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
+      ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
+      ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbs M ρ) (hWS : BumpWeakShape M ρ)
+    (hVSt : BumpVSmallTake M (r + L) ρ (drop1 M (r + L) rkM))
+    (hUA : UpgAbs M ρ)
+    (hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r)
+    {μ br vr : T} (hμr : μ = vr) (hro : ρ.o r = psi vr br z)
+    (hseedΩ : psi μ (psi (succ μ) z z) z ≤ (drop1 M (r + L) rkM).o r)
+    (hV : ∀ m i, i < r + L → DepX M (r + L) false i →
+      VLocal M (r + L) ρ (gamS μ br ((drop1 M (r + L) rkM).o r) m) μ i)
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hrx : r < r + L := by omega
+  have hrM : r < M.length := by omega
+  have hvr : ρ.v r = vr := by
+    obtain ⟨y0, hy0⟩ := o_psi_sub hC hrM
+    rw [hro] at hy0; simp only [psi.injEq] at hy0
+    rw [hy0.1, sf_ot (hG.ot_v r hrM)]
+  have hF1 : ∀ i, r < i → i < r + L → DepX M (r + L) true i → ¬ DepX M (r + L) false i →
+      lt μ (ρ.v i) = true := by
+    intro i h2 h3 h4 h5
+    rw [hμr, ← hvr]
+    exact hF1_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB h1 hC hG hRM i h2 h3 h4 h5
+  have hox : ρ.o (r + L) = psi (succ μ) z z := by
+    rw [o_last_t1 hlen hC hG h1 (by have := par1_entry_lt h1; omega) hx2, hvr, hμr]
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
+  have hOS := hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq
+  obtain ⟨hcb, hbr⟩ := hcb_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hox hF1 hOS (hV 0) h1 hx2 hqr
+    hR12 hBE hro
+  have hbrl := last_br_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hox hF1 hOS (hV 0) h1 hx2 hqr
+    hR12 hBE hro
+  have hrot : isOT (psi vr br z) = true := by rw [← hro]; exact hG.ot_o r hrM
+  have hζΩ := gamS_ge_omfix (isOT_arg hrot) hcb hbrl hseedΩ
+  have hLo := hLo_of_TPL hlen hC hG hrx hA hro hcb hμr hbr hox hF1 hOS (hV 0)
+    (hS2_t1 hR0 hA (by omega)) (hS3_t1 h1 hA (by omega) hlen hR0 hZ2 hSD hZ1) hTPL hbrl hζΩ
+  exact t1_main_tp1 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
+    hVS hF hFO hTP hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hV hLo hsM hpM
+
 end Ytosk
