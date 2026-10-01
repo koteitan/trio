@@ -466,4 +466,77 @@ theorem chg_struct {b : Bool} {d : Nat} (h : ChgX M x b d) :
 
 end
 
+/-- The first column after the subtree of a child `s` of `i`, if it is not beyond a later child `y`
+of `i`, is a child of `i`. -/
+theorem next_parent {M : Mat} {i s c' y h : Nat} (hps : par M 0 s = some i) (hpy : par M 0 y = some i)
+    (hsy : s < y) (hN : NextC M s c') (hph : par M 0 c' = some h) : c' ≤ y ∧ h = i := by
+  obtain ⟨hsc, hall, hnot⟩ := hN
+  have hyn : ¬ Anc0 M s y := fun hA => by have := (anc0_par hA (by omega) hpy).le; have := par_lt M 0 s i hps; omega
+  have hc'y : c' ≤ y := by
+    by_contra hlt
+    exact hyn (hall y (by omega) (by omega))
+  refine ⟨hc'y, ?_⟩
+  have hhc := par_lt M 0 c' h hph
+  have hAh : Anc0 M h (c' - 1) := anc_between (Anc0.step hph (Anc0.refl h)) (c' - 1) (by omega) (by omega)
+  have hAs : Anc0 M s (c' - 1) := hall (c' - 1) (by omega) (by omega)
+  rcases anc0_total hAh hAs with hhs | hsh
+  · by_cases hhs' : h = s
+    · exact absurd (Anc0.step hph (hhs' ▸ Anc0.refl h)) hnot
+    · have hhi := anc0_par hhs hhs' hps
+      by_contra hne
+      have hAiy : Anc0 M i y := Anc0.step hpy (Anc0.refl i)
+      have hsi := par_lt M 0 s i hps
+      have hAic : Anc0 M i c' := anc_between hAiy c' (by omega) hc'y
+      have hih := anc0_par hAic (by omega) hph
+      exact hne (Nat.le_antisymm hhi.le hih.le)
+  · exact absurd (Anc0.step hph hsh) hnot
+
+section
+variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB
+
+/-- **(P1) After a changed child, no sibling counts** (in `M.take x`). -/
+theorem chg_last {i c : Nat} (hc : c ∈ children (M.take x) i) (hC : ChgX M x true c) :
+    ∀ c₂ ∈ children (M.take x) i, c < c₂ → ¬ Counted (M.take x) i c₂ := by
+  intro c₂ hc₂ hcc₂ hcnt
+  rw [children_take, List.mem_filter] at hc₂
+  have hc₂x : c₂ < x := by simpa using hc₂.2
+  have hp₂ : par M 0 c₂ = some i := (mem_children_iff.mp hc₂.1).2
+  have key : ∀ n s, c₂ - s ≤ n → s ∈ children (M.take x) i → ChgX M x true s → s < c₂ → False := by
+    intro n
+    induction n with
+    | zero => intro s hn _ _ hs; omega
+    | succ n ih =>
+      intro s hn hsT hCs hs
+      rw [children_take, List.mem_filter] at hsT
+      have hsx : s < x := by simpa using hsT.2
+      have hps : par M 0 s = some i := (mem_children_iff.mp hsT.1).2
+      have hnot : ¬ Anc0 M s (x - 1) := by
+        intro hA
+        have h1 := anc_between hA c₂ (by omega) (by omega)
+        have := (anc0_par h1 (by omega) hp₂).le; have := par_lt M 0 s i hps; omega
+      obtain ⟨c', hN, hc'x, hup, hCc'⟩ :=
+        (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCs).2 s hsx (Anc0.refl s) hnot
+      obtain ⟨m, _, hm2, hcol, _⟩ := upg_spec hup
+      have he0 : entry M 0 c' = entry M 0 m + 1 := by
+        have : entry M 0 c' = (col M c').1 := rfl
+        rw [this, hcol]
+      obtain ⟨hh, hph⟩ := par0_some_of (M := M) (par_lt M 1 _ _ hm2) (by omega)
+      obtain ⟨hc'c₂, hhi⟩ := next_parent hps hp₂ hs hN hph
+      rw [hhi] at hph
+      have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCc').1 rfl hc'x
+      have hup' : isUpg (M.take x) c' = true :=
+        (isUpg_take M (by omega) c').mpr ⟨c' - 1, by have := hN.1; omega, hup⟩
+      have hnc : ¬ Counted (M.take x) i c' := fun h => h.2 ⟨hup', hT.1⟩
+      rcases Nat.eq_or_lt_of_le hc'c₂ with heq | hlt
+      · rw [heq] at hnc; exact hnc hcnt
+      · have hc'T : c' ∈ children (M.take x) i := by
+          rw [children_take, List.mem_filter]
+          exact ⟨mem_children_iff.mpr ⟨by omega, hph⟩, by simpa using hc'x⟩
+        exact ih c' (by have := hN.1; omega) hc'T (ChgX.ov hCc') hlt
+  exact key _ c (Nat.le_refl _) hc hC hcc₂
+
+end
+
 end Ytosk
