@@ -124,4 +124,46 @@ theorem spArg_rx {μ b y lo : T} (hc : isOT (psi μ y z) = true)
     · rw [h1]; rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self μ)
     · exact lt_trans (by rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self μ)) h1
 
+/-- `path_last` without `v(q) > μ`: if the leaf is the last summand, the argument is `q`'s. -/
+theorem path_last_gen {M : Mat} {x q : Nat} (hG : Good2 M) (hx : x + 1 = M.length)
+    (hq : par M 0 x = some q) :
+    ∀ p, Anc0 M p x → p < x → ∃ d, Anc0 M d x ∧ p < d ∧
+      last (argOf (o2r M p)) = o2r M d ∧ (d = x → argOf (o2r M p) = argOf (o2r M q)) := by
+  have key : ∀ m p, x - p ≤ m → Anc0 M p x → p < x → ∃ d, Anc0 M d x ∧ p < d ∧
+      last (argOf (o2r M p)) = o2r M d ∧ (d = x → argOf (o2r M p) = argOf (o2r M q)) := by
+    intro m
+    induction m with
+    | zero => intro p h1 _ h3; omega
+    | succ m ih =>
+      intro p hm hp hpx
+      obtain ⟨c, hc, hcA⟩ := anc0_child hp (by omega)
+      have hpc := par_lt M 0 c p hc
+      obtain ⟨y, hy⟩ := o2r_sub hG c
+      have hcot : isOT (psi (vr M c) y z) = true := by rw [← hy]; exact hG.ot c
+      have hop : o2r M p = psi (vr M p) (step (vr M p) (bst M p c) (vr M c) y z) z := by
+        rw [o2r_frame hG hx hcA hc, hy, spArg_single]
+      rcases step_cases (a := vr M p) (b := bst M p c) hcot with ⟨B, hB⟩ | ⟨h1, hlo, h3, _⟩
+      · refine ⟨c, hcA, hpc, ?_, ?_⟩
+        · rw [hop]; show last (step _ _ _ _ _) = _
+          rw [hB, last_app B (by simp), hy]; rfl
+        · intro hcx; subst hcx; rw [hq] at hc; cases hc; rfl
+      · have hcx : c < x := by
+          rcases Nat.eq_or_lt_of_le hcA.le with h' | h'
+          · exfalso; subst h'
+            rw [o2r_leaf hx (isOT_vr hG.f1 c)] at hy; cases hy; exact h3 rfl
+          · exact h'
+        obtain ⟨d, hdA, hcd, hld, hdx⟩ := ih c (by omega) hcA hcx
+        have hargp : argOf (o2r M p) = argOf (o2r M c) := by
+          rw [hop, hy]; show step _ _ _ _ _ = y; exact h1
+        refine ⟨d, hdA, by omega, by rw [hargp]; exact hld, fun hd => ?_⟩
+        rw [hargp]; exact hdx hd
+  exact fun p => key _ p (Nat.le_refl _)
+
+theorem DiagAt.size_lt {a b μ : T} {t : T} (h : DiagAt a b μ t) : size b < size t := by
+  induction h with
+  | here => simp [size]; omega
+  | rest _ ih => simp [size] at *; omega
+  | arg _ _ _ ih => simp [size] at *; omega
+  | sub _ _ _ ih => simp [size] at *; omega
+
 end Ytosk
