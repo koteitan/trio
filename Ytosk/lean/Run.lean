@@ -7,6 +7,7 @@
 import Ytosk.Eval
 import Ytosk.OT
 import Ytosk.BMS
+import Ytosk.Eval2
 
 open Ytosk
 
@@ -35,7 +36,9 @@ partial def loop (h : IO.FS.Stream) (o : IO.FS.Stream) : IO Unit := do
   if line.isEmpty then return
   match (line.trimAsciiEnd.toString.splitOn "\t") with
   | [r, m] =>
-    if m.startsWith "@" then
+    if m.startsWith "~" then
+      o.putStrLn (r ++ "\t" ++ ((eval2 (parseMat (m.drop 1).toString)).map str).getD "none")
+    else if m.startsWith "@" then
       -- `@n:(matrix)`: print the BM4 expansion
       match (m.drop 1).toString.splitOn ":" with
       | [k, mm] =>
