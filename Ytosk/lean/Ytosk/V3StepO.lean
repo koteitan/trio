@@ -135,6 +135,40 @@ theorem stepO_last (hC : Cons M ρ) (hG : Good3 M ρ) (hx : x + 1 = M.length) (h
   · rw [hframe]
     exact holeT_oframe hcot hHc' hμ hbr hcbr (hpass s y hcv)
 
+/-- **One `o` frame where only the subscript changes** (no counted children). -/
+theorem stepO_sub (hC : Cons M ρ) (hG : Good3 M ρ) (hx : x + 1 = M.length) (hi : i < x)
+    (hnc : ∀ d ∈ children M i, col M d = bump M i ∨ (isUpg M d = true ∧ topped M d = true))
+    (hv : DepX M x false i) (hHv : HoleT μ br vr (ρ.v i))
+    (hokv : isOT (fsD (ρ.v i) ζ) = true ∧ fsD (ρ.v i) ζ < ρ.v i) :
+    oRhs M (glue M x ρ ρN ζ) i = fsD (ρ.o i) ζ ∧ HoleT μ br vr (ρ.o i) := by
+  have hiM : i < M.length := by omega
+  have hvz := holeT_ne_z hHv
+  have hvs := holeT_not_succ hHv
+  refine ⟨hF_o_sub hC hx hi hnc hv (hG.ot_v i hiM) hokv.1 hvz hvs, ?_⟩
+  have hcv : cvals M ρ i = [] := by
+    unfold cvals
+    exact nzs_zeros _ (fun t ht => by obtain ⟨d, hd, rfl⟩ := List.mem_map.mp ht; exact cnt_unc ρ (hnc d hd))
+  rw [o_spArg hC hG hiM, hcv]
+  exact holeT_sub hvz hvs hHv
+
+/-- **One upgrade frame** (`v(i) = v(U i)`, no row-1 parent value). -/
+theorem stepV_upg (hC : Cons M ρ) (hx : x + 1 = M.length) (hi : i < x) {k : Nat} (hk : k < x)
+    (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i = 0) (hu : upg M i = some k)
+    (hp : vOpt (glue M x ρ ρN ζ) (par M 1 i) = z) (hpM : vOpt ρ (par M 1 i) = z)
+    (hkd : DepX M x false k) (hV : Single (ρ.v k)) (hV' : Single (fsD (ρ.v k) ζ))
+    (hHk : HoleT μ br vr (ρ.v k)) :
+    vRhs M (glue M x ρ ρN ζ) i = fsD (ρ.v i) ζ ∧ HoleT μ br vr (ρ.v i) := by
+  have hiM : i < M.length := by omega
+  refine ⟨hF_v_upg hC hx hi hk h1 h2 hu hp hpM hkd hV hV', ?_⟩
+  have hvi : ρ.v i = ρ.v k := by
+    rw [(hC i hiM).2]
+    unfold vRhs
+    rw [if_neg h1, if_pos h2, hu, hpM]
+    obtain ⟨hot, s, y, hsy⟩ := hV
+    simp only [add_z_left]
+    rw [hsy]; simp only [last]; rw [← hsy, sf_ot hot]
+  rw [hvi]; exact hHk
+
 end
 
 end Ytosk
