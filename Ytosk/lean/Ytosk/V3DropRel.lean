@@ -7,6 +7,7 @@
 弱い子 ψ_{w′}(0) は自分の成分を自分で押さえる（`self_small_weak`）ので、親で ⊴ に戻る（`lhd_weak_child`）。
 -/
 import Ytosk.V3DropAsm
+import Ytosk.V3NodeLhd
 
 namespace Ytosk
 
@@ -155,5 +156,45 @@ theorem o_frame_vchg {M : Mat} {x : Nat} {ρ ρ' : Valn} {i : Nat} (hC : Cons M 
     (hrel : DRelV (ρ'.v i) (ρ.v i)) : DRelO (ρ'.o i) (ρ.o i) := by
   rw [o_of_no_counted hC' hix hv' hT, o_spArg hC hG hiM]
   exact drelO_of_v hrel
+
+/-! ## 末尾の子を外す -/
+
+/-- Closedness of each state of a tail where the next summand rewrites. -/
+def TailCl (a : T) : T → List T → Prop
+  | _, [] => True
+  | X, t :: Tl => (∀ s y, t = psi s y z → lt X y = true ∧ lt (psi a z z) (psi s y z) = true → Closed a X) ∧
+      TailCl a (spArg a X t) Tl
+
+theorem sumN_cons_dec {t : T} {l : List T} (hs : ∀ u ∈ t :: l, Single u)
+    (hp : (t :: l).Pairwise (fun a b => b ≤ a)) : sumN (t :: l) = app t (sumN l) := by
+  have := sumN_append_dec (L1 := [t]) (L2 := l) hs hp
+  rw [show [t] ++ l = t :: l from rfl] at this
+  rw [this]
+  congr 1
+  show sf (add z t) = t
+  rw [add_z_left]; exact sf_ot (hs t (by simp)).1
+
+/-- **Dropping a tail of children**: `ψ_a(X) ⊴ ψ_a(spArg a X (sum of the tail))`. -/
+theorem drop_tail (a : T) : ∀ (Tl : List T) (X : T), (∀ u ∈ Tl, Single u) →
+    Tl.Pairwise (fun a b => b ≤ a) → (∀ u ∈ Tl, ∀ q ∈ summands X, u ≤ q) → TailCl a X Tl →
+    LhdE (psi a X z) (psi a (spArg a X (sumN Tl)) z)
+  | [], X, _, _, _, _ => by simp [sumN, spArg]; exact Or.inl rfl
+  | t :: Tl, X, hs, hp, hX, hcl => by
+    obtain ⟨s, y, rfl⟩ := (hs _ List.mem_cons_self).2
+    have hc := (hs _ List.mem_cons_self).1
+    rw [sumN_cons_dec hs hp, show app (psi s y z) (sumN Tl) = psi s y (sumN Tl) from rfl, spArg_cons,
+      step_rest a X s y (sumN Tl) z]
+    have h1 := drop_child_lhd hc (hX _ List.mem_cons_self) (hcl.1 s y rfl)
+    have hTl := (List.pairwise_cons.mp hp)
+    have hsT : ∀ u ∈ Tl, Single u := fun u hu => hs u (List.mem_cons_of_mem _ hu)
+    have hX' : ∀ u ∈ Tl, ∀ q ∈ summands (step a X s y z), u ≤ q := by
+      intro u hu
+      obtain ⟨s2, y2, hu2⟩ := (hsT u hu).2
+      have := spArg_summands_ge (a := a) (c := u) ⟨s2, y2, hu2⟩ (psi s y z) X hc
+        (by intro q hq; simp [summands] at hq; rw [hq]; exact hTl.1 u hu)
+        (fun q hq => le_trans (hTl.1 u hu) (hX _ List.mem_cons_self q hq))
+      simpa [spArg_single] using this
+    have h2 := drop_tail a Tl (step a X s y z) hsT hTl.2 hX' (by simpa [spArg_single] using hcl.2)
+    exact LhdE.trans h1 h2
 
 end Ytosk
