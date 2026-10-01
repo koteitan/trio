@@ -7,6 +7,7 @@
 import Ytosk.V3Top
 import Ytosk.V3T2T
 import Ytosk.V3InvPer
+import Ytosk.V3TopB
 
 namespace Ytosk
 
@@ -118,6 +119,60 @@ theorem abs_of_absC {M : Mat} {x q : Nat} {ρ : Valn} (hAbsC : BumpAbsC M x ρ)
   rw [hpx] at hpx'; cases hpx'
   exact hqb i (mem_children_iff.mp hj).2 hjb
 
+
+
+/-- **`M[n]` (`t = 2`, `n ≥ 2`) is not SRO**: `x′` would be the column `(3,1,0)` (the only one with row 2 zero
+and row 1 positive), and the next column `(2,0,0)` would be below `x` in row 0. -/
+theorem gexp_ne_SRO {M : Mat} {r L d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hA : Anc0 M r (r + L)) (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hd1 : entry M 1 (r + L) = entry M 1 r + d1) (he2r : entry M 2 r = 0)
+    (h1 : entry M 1 r < entry M 1 (r + L)) (hn2 : 2 ≤ n) :
+    TRIO.gexp M r L d0 d1 n ≠ SRO := by
+  intro he
+  have hlN : (TRIO.gexp M r L d0 d1 n).length = r + n * L := TRIO.gexp_length hlen
+  rw [he] at hlN
+  have hl5 : SRO.length = 5 := rfl
+  have hnL : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn2
+  have hx' := TRIO.gexp_getD_mir (M := M) (j0 := r) (Lb := L) (d0 := d0) (d1 := d1) (n := n)
+    (k := 1) (q := 0) hlen (by omega) hL
+  rw [show r + (1 * L + 0) = r + L by omega, Nat.add_zero,
+    if_pos ⟨by omega, by omega, Relation.ReflTransGen.refl⟩, he] at hx'
+  have hj : r + L < 5 := by omega
+  have h3 : r + L = 3 := by
+    have key : ∀ j, j < 5 → (SRO.getD j (0, 0, 0)).2.2 = 0 → 1 ≤ (SRO.getD j (0, 0, 0)).2.1 → j = 3 := by
+      decide
+    apply key _ hj
+    · rw [hx']; exact he2r
+    · rw [hx']; show 1 ≤ entry M 1 r + 1 * d1; omega
+  have hx3 : entry M 0 (r + L) = 3 := by
+    have h := congrArg (fun c : Nat × Nat × Nat => c.1) hx'
+    rw [h3] at h
+    have : (SRO.getD 3 (0, 0, 0)).1 = 3 := rfl
+    simp only at h
+    rw [this] at h
+    show entry M 0 (r + L) = 3
+    have : entry M 0 r + 1 * d0 = 3 := h.symm
+    omega
+  obtain ⟨k, q, hk, hq, hkq⟩ := TRIO.gexp_pos_decomp (j0 := r) (Lb := L) (n := n) (p := 4) hL
+    (by omega) (by omega)
+  have hk1 : 1 ≤ k := by
+    by_contra h
+    have : k = 0 := by omega
+    subst this; omega
+  have h4 := TRIO.gexp_getD_mir (M := M) (j0 := r) (Lb := L) (d0 := d0) (d1 := d1) (n := n)
+    (k := k) (q := q) hlen hk hq
+  rw [← hkq, he] at h4
+  have h40 := congrArg (fun c : Nat × Nat × Nat => c.1) h4
+  have : (SRO.getD 4 (0, 0, 0)).1 = 2 := rfl
+  simp only at h40
+  rw [this] at h40
+  have hrq : entry M 0 r ≤ entry M 0 (r + q) := by
+    rcases Nat.eq_zero_or_pos q with hq0 | hq0
+    · subst hq0; simp
+    · exact (anc0_e0_lt (anc_between hA (r + q) (by omega) (by omega)) (by omega)).le
+  have : d0 ≤ k * d0 := Nat.le_mul_of_pos_left d0 hk1
+  have h2' : 2 = entry M 0 (r + q) + k * d0 := h40
+  omega
 
 /-! ## 残りの仮定の束（t = 2） -/
 
@@ -311,7 +366,8 @@ valuation of each `M[n]` (`n ≥ 2`), every expansion drops the root value. -/
 theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (I : Inv3 M ρ rk) (R : Res3 M ρ rk) (R2 : Res3T2 M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
-    (hNval : ∀ n, 2 ≤ n → ∃ σ rkN, Cons (expand M n) σ ∧ Rk (expand M n) rkN ∧ Good3 (expand M n) σ) :
+    (hNval : ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
+      ∃ σ rkN, Cons (expand M n) σ ∧ Rk (expand M n) rkN ∧ Good3 (expand M n) σ) :
     ∀ n, DropsAt M ρ n := by
   obtain ⟨r, hr⟩ := parLast_of I.e00 I.r01 I.r12 hz
   have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
@@ -447,9 +503,44 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr (fun j _ hj => R.chain j (by omega)) hlast.2
   · apply dropsAt_of (by rw [hexp 1, gexp_one_gen hlen])
     exact ⟨_, _, hC1, hRk1, hlast⟩
-  · obtain ⟨σ, rkN, hCN, hRN, hGN⟩ := hNval (n + 2) (by omega)
+  · have hne := gexp_ne_SRO (n := n + 2) hlen hL0 hA hd0e
+      (show entry M 1 (r + L) = entry M 1 r + (entry M 1 (r + L) - entry M 1 r) by omega) he2r h1lt
+      (by omega)
+    have hnil : TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n + 2)
+        ≠ [] := by
+      intro h
+      have hl := TRIO.gexp_length (M := M) (j0 := r) (Lb := L)
+        (d0 := entry M 0 (r + L) - entry M 0 r) (d1 := entry M 1 (r + L) - entry M 1 r) (n := n + 2) hlen
+      rw [h] at hl
+      have : L ≤ (n + 2) * L := Nat.le_mul_of_pos_left L (by omega)
+      simp at hl; omega
+    obtain ⟨σ, rkN, hCN, hRN, hGN⟩ := hNval (n + 2) (by omega) (by rw [hexp]; exact hne)
+      (by rw [hexp]; exact hnil)
     rw [hexp] at hCN hRN hGN
     apply dropsAt_of (hexp (n + 2))
     exact ⟨σ, rkN, hCN, hRN, hbig (n + 2) (by omega) σ rkN hCN hRN hGN⟩
+
+/-- **`hT2` of `trio_terminatesA`** from the remaining hypotheses `Res3T2`: the valuation of `M[n]`
+(`n ≥ 2`) comes from the top hypothesis `HInvA` (`M[n]` is standard, not SRO, not empty). -/
+theorem t2_hT2
+    (hR2 : ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk) :
+    HInvA → ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n := by
+  intro hInv M ρ rk hM I R hz h2
+  apply t2_drops I R (hR2 M ρ rk hM I R hz h2) hz h2
+  intro n _ hS hE
+  unfold HInvA at hInv
+  obtain ⟨⟨rkN, hRN⟩, hall⟩ := hInv _ (Std.exp n hM) hS hE
+  have hCN := cons_of_rk hRN
+  exact ⟨_, rkN, hCN, hRN, (hall _ rkN hCN hRN).1.good⟩
+
+/-- **Termination of the 3-row BMS from SRO**, with `t = 2` reduced to `Res3T2`: the remaining
+hypotheses are the top hypothesis `HInvA` and `Res3T2` on standard matrices with `t = 2`. -/
+theorem trio_terminates_T2 (hInv : HInvA)
+    (hR2 : ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk) :
+    WellFounded Step' :=
+  trio_terminatesA hInv (t2_hT2 hR2)
 
 end Ytosk
