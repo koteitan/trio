@@ -207,4 +207,215 @@ theorem frame_fs_le {a B s y μ : T}
       exact prehi_of_lt hhi hlo h1 hylt
     rw [hY, hY', fs_app B (by simp) z, hpsi]
 
+/-! ## 落とした行列の枠の式と、q から r までの帰納法 -/
+
+/-- The frame in the dropped matrix over a kept path child. -/
+theorem drop_frameN {M : Mat} (hM : 2 ≤ M.length) (hG : Good2 M) (hH : PreHi M) (hFC : PreFC M)
+    {p c : Nat} (hc : par M 0 c = some p) (hcA : Anc0 M c (M.length - 1)) (hcx : c < M.length - 1) :
+    o2r (M.take (M.length - 1)) p =
+      psi (vr M p) (spArg (vr M p) (bst M p c) (o2r (M.take (M.length - 1)) c)) z := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  set x := M.length - 1 with hxdef
+  set N := M.take x with hNdef
+  have hpc := par_lt M 0 c p hc
+  have hle := children_le_of_anc_last hcA hx hc
+  have hcmem : c ∈ children M p := mem_children_iff.mpr ⟨by omega, hc⟩
+  have hsplit := split_last_max _ c (children_sorted M p) hcmem hle
+  have hoff : ∀ d ∈ (children M p).filter (fun d => decide (d < c)), o2r N d = o2r M d := by
+    intro d hd
+    rw [List.mem_filter] at hd
+    have hdc : d < c := by simpa using hd.2
+    have hdp := mem_children_iff.mp hd.1
+    exact o2r_take_off hx d (by omega) (not_anc_of_earlier hdp.2 hc hdc hcA.le)
+  have hall : ∀ d ∈ children M p, d < x := fun d hd => lt_of_le_of_lt (hle d hd) hcx
+  have hchNM : children N p = children M p := by
+    rw [children_take M x p]
+    exact List.filter_eq_self.mpr (fun d hd => by simpa using hall d hd)
+  have hchN : children N p = (children N p).filter (fun d => decide (d < c)) ++ [c] := by
+    rw [hchNM]; exact hsplit
+  have hvalsN : (children N p).map (o2r N) =
+      ((children M p).filter (fun d => decide (d < c))).map (o2r M) ++ [o2r N c] := by
+    rw [hchN, List.map_append, hchNM]
+    simp only [List.map_cons, List.map_nil]
+    congr 1
+    exact List.map_congr_left hoff
+  obtain ⟨hcot, hcN_lt⟩ := drop_lt hM hG hH hFC hcA hcx
+  have hdM := hG.dec p
+  rw [hsplit, List.map_append] at hdM
+  have hsingN : ∀ t ∈ (children N p).map (o2r N), Single t := by
+    intro t ht
+    rw [hvalsN] at ht
+    rcases List.mem_append.mp ht with ht | ht
+    · obtain ⟨i, _, rfl⟩ := List.mem_map.mp ht; exact single_o2r hG i
+    · rw [List.mem_singleton] at ht; subst ht
+      refine ⟨hcot, ?_⟩
+      obtain ⟨y, y', _, hy', _⟩ := drop_path hM hG hH hFC c hcA hcx
+      exact ⟨_, _, hy'⟩
+  have hdecN : ((children N p).map (o2r N)).Pairwise (fun a b => b ≤ a) := by
+    rw [hvalsN, List.pairwise_append]
+    have hdM' := List.pairwise_append.mp hdM
+    refine ⟨hdM'.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
+    rw [List.mem_singleton] at hb; subst hb
+    exact le_trans (le_of_lt hcN_lt) (hdM'.2.2 a ha _ (by simp))
+  have hfrN := o2r_frame' (F1_take hG.f1 x) hchN hsingN hdecN
+  rw [bst_take hx hc hcx, vr_take M p (by omega)] at hfrN
+  exact hfrN
+
+/-- The node over the last column in the dropped matrix. -/
+theorem drop_frameQ {M : Mat} (hM : 2 ≤ M.length) (hG : Good2 M) {q : Nat}
+    (hq : par M 0 (M.length - 1) = some q) :
+    o2r (M.take (M.length - 1)) q = psi (vr M q) (bst M q (M.length - 1)) z := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  set x := M.length - 1 with hxdef
+  set N := M.take x with hNdef
+  have hqx := par_lt M 0 x q hq
+  have hvp : vr N q = vr M q := vr_take M q hqx
+  have hchN : children N q = (children M q).filter (fun d => decide (d < x)) := children_take M x q
+  have hle := children_le_of_anc_last (Anc0.refl x) hx hq
+  have hoff : ∀ d ∈ (children M q).filter (fun d => decide (d < x)), o2r N d = o2r M d := by
+    intro d hd
+    rw [List.mem_filter] at hd
+    have hdx : d < x := by simpa using hd.2
+    have hdp := mem_children_iff.mp hd.1
+    exact o2r_take_off hx d hdx (not_anc_of_earlier hdp.2 hq hdx (le_refl _))
+  have hvN : (children N q).map (o2r N) =
+      ((children M q).filter (fun d => decide (d < x))).map (o2r M) := by
+    rw [hchN]; exact List.map_congr_left hoff
+  have hdecC : (((children M q).filter (fun d => decide (d < x))).map (o2r M)).Pairwise
+      (fun a b => b ≤ a) := List.Pairwise.sublist (List.Sublist.map _ List.filter_sublist) (hG.dec q)
+  have hSC := sumN_dec _ (fun t ht => by
+    obtain ⟨i, _, rfl⟩ := List.mem_map.mp ht; exact single_o2r hG i) hdecC
+  rw [o2r_spArg (by rw [hvp]; exact isOT_vr hG.f1 q) (by rw [hvN]; exact hSC.1), hvN, hvp]; rfl
+
+theorem last_step {a B s y : T} (hc : isOT (psi s y z) = true) (hy : y ≠ z)
+    (happ : isOT (app B (psi s y z)) = true)
+    (hHi : B ≠ z → lt B y = true → lt (psi a z z) (psi s y z) = true → hiP s y = B ∧ loP s y ≠ z) :
+    ∀ st, last (step a B s y z) = psi st z z → last y = psi st z z := by
+  intro st hst
+  by_cases hB : B = z
+  · subst hB
+    rw [step_first hc] at hst
+    split_ifs at hst with htr hlo
+    · have hyhi : hiP s y = y := by
+        have := hiP_loP s y; rw [hlo, app_z_right] at this; exact this
+      rw [app_z_right, hyhi] at hst; exact hst
+    · rw [last_app _ (by simp), show last (psi s y z) = psi s y z from rfl] at hst
+      exact absurd (psi.inj hst).2.1 hy
+    · rw [show last (psi s y z) = psi s y z from rfl] at hst
+      exact absurd (psi.inj hst).2.1 hy
+  · rw [step_append hc happ (hHi hB), last_app _ (by simp),
+      show last (psi s y z) = psi s y z from rfl] at hst
+    exact absurd (psi.inj hst).2.1 hy
+
+/-- **S1 along the path**: from `q` up to `r`, the dropped argument is at most `[0]` of the argument. -/
+theorem drop_le_fs {M : Mat} (hM : 2 ≤ M.length) (hG : Good2 M) (hH : PreHi M) (hFC : PreFC M)
+    {r : Nat} (hr1 : par M 1 (M.length - 1) = some r) (hb1 : 0 < entry M 1 (M.length - 1)) :
+    ∀ p, Anc0 M p (M.length - 1) → r ≤ p → p < M.length - 1 →
+      ∃ y y', o2r M p = psi (vr M p) y z ∧ o2r (M.take (M.length - 1)) p = psi (vr M p) y' z ∧
+        y' ≤ fs y z ∧ (∀ st, last y = psi st z z → isSucc st = true ∨ st = z) := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  set x := M.length - 1 with hxdef
+  set N := M.take x with hNdef
+  obtain ⟨b, hrv, hb, hcb, hbelow, _⟩ := twoRow_shape hG hx hr1 hb1
+  have hvx : vr M x = succ (vr M r) := by
+    obtain ⟨m0, hm0, he⟩ := hG.f1 x hb1
+    rw [hr1] at hm0; cases hm0
+    rw [vr_eq_nT hG.f1, vr_eq_nT hG.f1, ← he, nT_succ]
+  have key : ∀ m p, x - p ≤ m → Anc0 M p x → r ≤ p → p < x →
+      ∃ y y', o2r M p = psi (vr M p) y z ∧ o2r N p = psi (vr M p) y' z ∧
+        y' ≤ fs y z ∧ (∀ st, last y = psi st z z → isSucc st = true ∨ st = z) := by
+    intro m
+    induction m with
+    | zero => intro p h1 _ _ h3; omega
+    | succ m ih =>
+      intro p hm hpA hrp hpx
+      obtain ⟨c, hc, hcA⟩ := anc0_child hpA (by omega)
+      have hpc := par_lt M 0 c p hc
+      have hcx := hcA.le
+      have hfr := o2r_frame hG hx hcA hc
+      rcases Nat.eq_or_lt_of_le hcx with hcx' | hcx'
+      · -- `p = q`
+        rw [hcx'] at hfr hc
+        have hleaf := o2r_leaf hx (isOT_vr hG.f1 x)
+        rw [hleaf, spArg_single] at hfr
+        have hnotrig : ¬ (lt (bst M p x) z = true ∧
+            lt (psi (vr M p) z z) (psi (vr M x) z z) = true) := by simp [lt]
+        unfold step at hfr
+        rw [if_neg hnotrig] at hfr
+        have hge := bst_summands_ge hG hx (Anc0.refl x) hc
+        rw [hleaf] at hge
+        rw [add_eq_app_of_ge ⟨_, _, rfl⟩ _ hge] at hfr
+        have hfs0 : fs (app (bst M p x) (psi (vr M x) z z)) z = bst M p x := by
+          rw [fs_app _ (by simp) z, hvx]
+          have hss : isSucc (succ (vr M r)) = true := isSucc_succ _
+          have hsz : succ (vr M r) ≠ z := by
+            intro h; rw [h] at hss; simp [isSucc, last, one] at hss
+          have : fs (psi (succ (vr M r)) z z) z = z := by
+            unfold fs; rw [if_pos rfl, if_neg hsz, if_pos hss]
+          rw [this, app_z_right]
+        refine ⟨_, _, hfr, drop_frameQ hM hG hc, by rw [hfs0], ?_⟩
+        intro st hst
+        rw [last_app _ (by simp), show last (psi (vr M x) z z) = psi (vr M x) z z from rfl] at hst
+        obtain ⟨rfl, _, _⟩ := psi.inj hst
+        left; rw [hvx]; exact isSucc_succ _
+      · -- above another path node
+        obtain ⟨yc, yc', hoc, hoc', hlec, hlastc⟩ := ih c (by omega) hcA (by omega) hcx'
+        obtain ⟨yd, yd', hod, hod', hotd', hld, _⟩ := drop_path hM hG hH hFC c hcA hcx'
+        rw [hoc] at hod; rw [hoc'] at hod'
+        obtain ⟨_, rfl, _⟩ := psi.inj hod
+        obtain ⟨_, rfl, _⟩ := psi.inj hod'
+        have hcot : isOT (psi (vr M c) yc z) = true := by rw [← hoc]; exact hG.ot c
+        have hyc : yc ≠ z := by intro h; rw [h] at hld; exact T.not_lt_z _ hld.1
+        have hcofc := hbelow c hcA (by omega)
+        rw [hoc] at hcofc
+        obtain ⟨hcy, hμs⟩ := cof_psi_inv hyc hcofc
+        rw [hoc, spArg_single] at hfr
+        have hfrN := drop_frameN hM hG hH hFC hc hcA hcx'
+        rw [hoc', spArg_single] at hfrN
+        have hpl : c < M.length := by omega
+        have happ := happ_frame hG hx hH hcA hc hoc
+        have hHic := fun hB t1 t2 => hH p c (vr M c) yc hpl hc hoc hB t1 t2
+        have hFCc := fun hB t1 t2 hav => hFC p c (vr M c) yc hpl hc hoc hB t1 t2 hav
+        -- `[0]` of the child is standard
+        have hpsi : fs (psi (vr M c) yc z) z = psi (vr M c) (fs yc z) z := fs_psi_pass hyc hcy hμs z
+        have hV : Valid (psi (vr M c) yc z) z := by
+          refine ⟨rfl, ?_⟩
+          rw [hcofc]; exact T.z_lt_psi _ _ _
+        have hfot := (fs_ot_lt hcot hV).1
+        rw [hpsi] at hfot
+        have hmono : step (vr M p) (bst M p c) (vr M c) yc' z ≤
+            step (vr M p) (bst M p c) (vr M c) (fs yc z) z := by
+          rcases (le_iff _ _).mp hlec with h | h
+          · left
+            have := frame_same (a := vr M p) (b := bst M p c) (Ru := z) (Rw := z) hotd' hfot h (z_le _)
+            simpa [app_z_right] using this
+          · right; rw [h]
+        have hfle := frame_fs_le hcot hyc hcy hμs happ hHic hFCc hlastc
+        refine ⟨_, _, hfr, hfrN, le_trans hmono hfle, ?_⟩
+        intro st hst
+        exact hlastc st (last_step hcot hyc happ hHic st hst)
+  exact fun p hp hrp hpx => key _ p (Nat.le_refl _) hp hrp hpx
+
+/-- **The seed is good**: `c1 = o_{M.take x}(r)` satisfies the seed condition (two rows, `t = 1`). -/
+theorem seed_of_drop {M : Mat} (hM : 2 ≤ M.length) (hG : Good2 M) (hH : PreHi M) (hFC : PreFC M)
+    {r : Nat} (hr1 : par M 1 (M.length - 1) = some r) (hb1 : 0 < entry M 1 (M.length - 1)) :
+    ∀ a', ¬ lt (vr M r) a' = true → isOT (psi a' (argOf (o2r M r)) z) = true →
+      SeedOK a' (argOf (o2r M r)) (vr M r) (o2r (M.take (M.length - 1)) r) := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  obtain ⟨b, hrv, hb, hcb, _, _⟩ := twoRow_shape hG hx hr1 hb1
+  have hrx := par_lt M 1 _ r hr1
+  have hrA : Anc0 M r (M.length - 1) := anc0_of_par M 1 r _ hr1
+  intro a' ha' hot
+  have harg : argOf (o2r M r) = b := by rw [hrv]; rfl
+  rw [harg] at hot ⊢
+  obtain ⟨y, y', hy, hy', hle, _⟩ := drop_le_fs hM hG hH hFC hr1 hb1 r hrA (le_refl r) hrx
+  obtain ⟨yd, yd', hyd, hyd', hot', hl, _⟩ := drop_path hM hG hH hFC r hrA hrx
+  rw [hrv] at hy hyd
+  obtain ⟨_, rfl, _⟩ := psi.inj hy
+  obtain ⟨_, rfl, _⟩ := psi.inj hyd
+  rw [hy'] at hyd'
+  obtain ⟨_, rfl, _⟩ := psi.inj hyd'
+  rw [hy']
+  exact seedOK_of_lhd hot hcb ha' hot' hle hl
+
 end Ytosk
