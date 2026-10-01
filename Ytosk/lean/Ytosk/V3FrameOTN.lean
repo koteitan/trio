@@ -9,6 +9,8 @@ x 以後の列は M[n − 1] の枠をずらしたもの（`children_shift`・`c
 -/
 import Ytosk.V3Good3N
 import Ytosk.V3DropMain
+import Ytosk.V3StructT1
+import Ytosk.V3Struct2
 
 namespace Ytosk
 
@@ -175,5 +177,40 @@ theorem frameOT_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r
     exact hFOP (r + a) (by rw [hlP]; omega) Lc' c' R' hsplit
 
 end
+
+/-- **FrameOT is carried along the chain of expansions.** -/
+theorem expStep_frameOT {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hA : Anc0 M r (r + L)) (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
+      entry M 1 r < entry M 1 s) (hx2 : entry M 2 (r + L) = 0)
+    (hxnb : ∀ n, 2 ≤ n → ∀ c, par M 0 (r + L) = some c →
+      col (TRIO.gexp M r L d0 0 n) (r + L) ≠ bump (TRIO.gexp M r L d0 0 n) c)
+    (hz2 : entry M 2 r ≤ 1)
+    (hiu : ∀ n, 2 ≤ n → ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 0 n) c = isUpg M c)
+    (hiux : ∀ n, 2 ≤ n → isUpg (TRIO.gexp M r L d0 0 n) (r + L) = false)
+    {ρ : Valn} (hFO : FrameOT M ρ)
+    (hOS : ∀ i, i < r + L → DepX M (r + L) true i → OShape M (r + L) i) :
+    ExpStepT1 FrameOT M r L d0 ρ := by
+  intro n hn ρP Z hCP _ hFOP _ _ _ _ _ _
+  exact frameOT_N_t1 hlen hL hA hd0e hn hpath hx2 (hxnb n hn) hz2 (hiu n hn) (hiux n hn) hCP hFO hFOP hOS
+
+/-- **FrameOT is carried** (`t = 1`), with the structural hypotheses from the invariants of `M`. -/
+theorem expStep_frameOT_t1 {M : Mat} {r L d0 q : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some q)
+    {ρ : Valn} (hFO : FrameOT M ρ) : ExpStepT1 FrameOT M r L d0 ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  exact expStep_frameOT hlen hL hA hd0e hpath hx2 (hxnb_t1 hlen hL hA hd0e hZ2 hZ1 h1) (hZ2 r)
+    (fun n hn => hiu_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn)
+    (fun n hn => hiux_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn) hFO
+    (hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq)
+
+/-- Two carried properties are carried together. -/
+theorem expStep_and {P Q : Mat → Valn → Prop} {M : Mat} {r L d0 : Nat} {ρ : Valn}
+    (hP : ExpStepT1 P M r L d0 ρ) (hQ : ExpStepT1 Q M r L d0 ρ) :
+    ExpStepT1 (fun N σ => P N σ ∧ Q N σ) M r L d0 ρ :=
+  fun n hn ρP Z hCP hGP hPQ hCN hGN ho hv hle hlex =>
+    ⟨hP n hn ρP Z hCP hGP hPQ.1 hCN hGN ho hv hle hlex, hQ n hn ρP Z hCP hGP hPQ.2 hCN hGN ho hv hle hlex⟩
 
 end Ytosk
