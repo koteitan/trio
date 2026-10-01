@@ -908,6 +908,99 @@ theorem lhd_fs : ∀ {t η : T}, isOT t = true → ValidLt t η → Lhd η (fs t
           simp only
           exact lhd_psi a (lhd_fs (isOT_arg hot) h')
 
+/-! ## 補題 3.3: 基本列は標準形を保つ -/
+
+theorem isOT_natT : ∀ n, isOT (natT n) = true
+  | 0 => rfl
+  | n + 1 => by
+    show isOT (psi z z (natT n)) = true
+    rw [isOT_psi_iff]
+    refine ⟨rfl, rfl, isOT_natT n, ?_, by simp [comps]⟩
+    cases n with
+    | zero => exact z_le _
+    | succ k => exact le_refl _
+
+theorem comps_natT {u : T} : ∀ n, ∀ g ∈ comps u (natT n), g = z
+  | 0, g, h => by simp [natT, comps] at h
+  | n + 1, g, h => by
+    simp only [natT, comps, List.mem_append] at h
+    rcases h with h | h
+    · split at h
+      · simp at h
+      · simp [comps] at h; exact h
+    · exact comps_natT n g h
+
+theorem comps_nil_of_lt_Om {a η : T} (hη : isOT η = true) (h : η < psi a z z) : comps a η = [] := by
+  apply comps_eq_nil_of_lev
+  intro q hq
+  obtain ⟨s, y, rfl⟩ := mem_summands hq
+  have h1 : psi s y z < psi a z z := lt_of_le_of_lt (le_trans (summands_le_head hη _ hq)
+    (head_le_self η)) h
+  rw [psi_lt_psi_z_iff] at h1
+  rcases h1 with h1 | ⟨_, h1⟩
+  · exact h1
+  · exact absurd h1 (T.not_lt_z _)
+
+/-- A component of a prefix that is below the whole is below the prefix. -/
+theorem comps_lt_prefix {u x y g : T} (hg : g ∈ comps u x) (h : g < app x y) : g < x := by
+  rcases lt_or_ge g x with h1 | h1
+  · exact h1
+  · exfalso
+    have hsz := size_comps hg
+    rcases (le_iff _ _).mp h1 with h2 | rfl
+    · rcases lt_cases h2 with h3 | ⟨y', hy', rfl⟩
+      · exact absurd (h3 y) (not_lt_of_ge (le_of_lt h))
+      · rw [size_app] at hsz
+        cases y' with
+        | z => exact hy' rfl
+        | psi => simp [size] at hsz; omega
+    · exact Nat.lt_irrefl _ hsz
+
+theorem comps_mono {a μ : T} (hle : a ≤ μ) : ∀ {t g : T}, g ∈ comps μ t → g ∈ comps a t
+  | z, _, h => by simp [comps] at h
+  | psi v x c, g, h => by
+    simp only [comps, List.mem_append] at h ⊢
+    rcases h with h | h
+    · left
+      split at h
+      · simp at h
+      · rename_i hvμ
+        have hva : ¬ lt v a = true := fun hva => hvμ (lt_of_lt_of_le hva hle)
+        rw [if_neg hva]
+        simp only [List.mem_cons, List.mem_append] at h ⊢
+        rcases h with h | h | h
+        · exact Or.inl h
+        · exact Or.inr (Or.inl (comps_mono hle h))
+        · exact Or.inr (Or.inr (comps_mono hle h))
+    · exact Or.inr (comps_mono hle h)
+
+theorem isOT_mulT {x : T} (hx : isOT x = true) (hp : ∃ s y, x = psi s y z) :
+    ∀ n, isOT (mulT x n) = true
+  | 0 => rfl
+  | n + 1 => by
+    obtain ⟨s, y, rfl⟩ := hp
+    show isOT (psi s y (mulT (psi s y z) n)) = true
+    rw [isOT_psi_iff]
+    obtain ⟨h1, h2, _, _, h5⟩ := isOT_psi_iff.mp hx
+    refine ⟨h1, h2, isOT_mulT hx ⟨s, y, rfl⟩ n, ?_, h5⟩
+    cases n with
+    | zero => exact z_le _
+    | succ k => exact le_refl _
+
+/-- The index is in range and standard. -/
+def Valid (t η : T) : Prop :=
+  isOT η = true ∧
+  match cof t with
+  | .zero => False
+  | .succ => η = z
+  | .omega => ∃ n, η = natT n
+  | .big μ => η < psi (succ μ) z z
+
+theorem Valid.lt {t η : T} (h : Valid t η) : ValidLt t η := by
+  obtain ⟨_, h⟩ := h
+  unfold ValidLt
+  split at h <;> simp_all
+
 #eval [psi z (psi z one z) z, psi z (psi (psi one z z) z z) z].map fun t =>
   ((List.range 3).map fun n => str (fs t (natT n)))
 
