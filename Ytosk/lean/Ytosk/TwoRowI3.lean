@@ -91,6 +91,72 @@ theorem bst_shift (hF1n : F1 (TRIO.gexp M r L d0 0 n)) (hF1p : F1 (TRIO.gexp M r
   rw [show d + L = r + L + (d - r) by omega,
     o2r_gexp_shift hlen hL hA hd0e hn hF1n hF1p (d - r) (by omega), show r + (d - r) = d by omega]
 
+/-- The parent of a non-root copy column is a shifted column of `P`, at or after `r`. -/
+theorem par_shift_ge {j h : Nat} (hj0 : 0 < j) (hj : j < (n - 1) * L)
+    (hp : par (TRIO.gexp M r L d0 0 n) 0 (r + L + j) = some h) :
+    ∃ h', h = h' + L ∧ par (TRIO.gexp M r L d0 0 (n - 1)) 0 (r + j) = some h' := by
+  rw [par0_gexp_shift hlen hL hA hd0e hn hj0 hj] at hp
+  cases hq : par (TRIO.gexp M r L d0 0 (n - 1)) 0 (r + j) with
+  | none => rw [hq] at hp; cases hp
+  | some h' => rw [hq] at hp; exact ⟨h', (Option.some.inj hp).symm, rfl⟩
+
+/-- **The frames in the copies are the shifted frames of `P`** (for a property of the frame data). -/
+theorem frames_shift (Q : T → T → T → T → Prop)
+    (hF1n : F1 (TRIO.gexp M r L d0 0 n)) (hF1p : F1 (TRIO.gexp M r L d0 0 (n - 1)))
+    (hP : ∀ h p s y, p < (TRIO.gexp M r L d0 0 (n - 1)).length →
+      par (TRIO.gexp M r L d0 0 (n - 1)) 0 p = some h →
+      o2r (TRIO.gexp M r L d0 0 (n - 1)) p = psi s y z →
+      Q (vr (TRIO.gexp M r L d0 0 (n - 1)) h) (bst (TRIO.gexp M r L d0 0 (n - 1)) h p) s y)
+    {j h : Nat} (hj0 : 0 < j) (hj : j < (n - 1) * L)
+    (hp : par (TRIO.gexp M r L d0 0 n) 0 (r + L + j) = some h) {s y : T}
+    (hc : o2r (TRIO.gexp M r L d0 0 n) (r + L + j) = psi s y z) :
+    Q (vr (TRIO.gexp M r L d0 0 n) h) (bst (TRIO.gexp M r L d0 0 n) h (r + L + j)) s y := by
+  obtain ⟨h', rfl, hp'⟩ := par_shift_ge hlen hL hA hd0e hn hj0 hj hp
+  have hh'lt := par_lt _ 0 _ _ hp'
+  have hh'ge : r ≤ h' := by
+    by_contra hc'
+    -- the parent of `r + j` (`j > 0`) is at or after `r`
+    have hP0 : entry (TRIO.gexp M r L d0 0 (n - 1)) 0 h' < entry (TRIO.gexp M r L d0 0 (n - 1)) 0 (r + j) :=
+      ((par0_spec _).mp hp').2.1
+    have hbet := ((par0_spec _).mp hp').2.2
+    have hr' := hbet r (by omega) (by omega)
+    -- row 0 at `r` is at most row 0 at `r + j`, and the row-0 entry of `r` equals that in `M`
+    have hr0 : entry (TRIO.gexp M r L d0 0 (n - 1)) 0 r = entry M 0 r := by
+      have := entry0_gexp_mir (M := M) (j0 := r) (Lb := L) (d0 := d0) (d1 := 0) (n := n - 1)
+        (k := 0) (q := 0) hlen (by omega) hL
+      simpa using this
+    rcases Nat.lt_or_ge j L with hjL | hjL
+    · have := entry0_gexp_mir (M := M) (j0 := r) (Lb := L) (d0 := d0) (d1 := 0) (n := n - 1)
+        (k := 0) (q := j) hlen (by omega) hjL
+      simp at this
+      have h2 := anc0_interval hA (r + j) (by omega) (by omega)
+      rw [this] at hr'; rw [hr0] at hr'; omega
+    · obtain ⟨k, qb, hk, hqb, hjk⟩ := TRIO.gexp_pos_decomp (j0 := 0) (n := n - 1) (p := j) hL
+        (Nat.zero_le _) (by simpa using hj)
+      simp only [Nat.zero_add] at hjk
+      have hk1 : 1 ≤ k := by
+        rcases Nat.eq_zero_or_pos k with h0 | h0
+        · subst h0; simp at hjk; omega
+        · exact h0
+      have := entry0_gexp_mir (M := M) (j0 := r) (Lb := L) (d0 := d0) (d1 := 0) (n := n - 1)
+        (k := k) (q := qb) hlen hk hqb
+      rw [hjk] at hr'; rw [this, hr0] at hr'
+      have hd0 : 0 < d0 := by
+        have := anc0_interval hA (r + L) (by omega) (le_refl _); omega
+      have hmono : entry M 0 r ≤ entry M 0 (r + qb) := by
+        rcases Nat.eq_zero_or_pos qb with h0 | h0
+        · subst h0; simp
+        · exact le_of_lt (anc0_interval hA (r + qb) (by omega) (by omega))
+      have : d0 ≤ k * d0 := Nat.le_mul_of_pos_left d0 (by omega)
+      omega
+  have hjh : h' - r < j := by omega
+  rw [show h' + L = r + L + (h' - r) by omega,
+    vr_shift hlen hL hA hd0e hn hF1n hF1p (show h' - r < (n - 1) * L by omega),
+    bst_shift hlen hL hA hd0e hn hF1n hF1p (show h' - r < (n - 1) * L by omega) hjh hj,
+    show r + (h' - r) = h' by omega]
+  rw [o2r_gexp_shift hlen hL hA hd0e hn hF1n hF1p j hj] at hc
+  exact hP h' (r + j) s y (by rw [lenP_t1 hlen hL hA hd0e hn]; omega) hp' hc
+
 end
 
 end Ytosk
