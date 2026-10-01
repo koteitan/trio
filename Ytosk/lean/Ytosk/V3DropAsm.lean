@@ -5,7 +5,7 @@
 数える子でなくなりうるのは M.take x での最後の子だけで、x はもとから最後なので、余分な子は末尾に付く。
 -/
 import Ytosk.V3ChgS
-import Ytosk.V3DropV
+import Ytosk.V3OmegaLhd
 
 namespace Ytosk
 
@@ -480,5 +480,16 @@ theorem v_bump_add {M : Mat} {i j k : Nat} {ρ : Valn} (hC : Cons M ρ) (hiM : i
   rw [(hC i hiM).2]
   unfold vRhs
   rw [if_neg h1, if_neg h2, hp, sf_ot (isOT_add hV (isOT_omega hpot))]
+
+/-- **`ω^` of a tail change**, on either side of `ψ_0(Ω_1)`. -/
+theorem omega_lhd_app {s b c₀ u' u : T} (hX' : isOT (app (psi s b c₀) u') = true)
+    (hX : isOT (app (psi s b c₀) u) = true) (h : LhdE u' u) :
+    LhdE (omega (app (psi s b c₀) u')) (omega (app (psi s b c₀) u)) := by
+  by_cases hE : psi s b z < E0
+  · obtain ⟨rfl, hb⟩ := below_E0 hE
+    have hlt : ∀ e, psi z b e < E0 := fun e => by
+      unfold E0; rw [T.psi_lt_psi]; exact Or.inr (Or.inl ⟨rfl, hb⟩)
+    exact omega_lhd_small (lhdE_app _ h) (hlt _) (hlt _)
+  · exact omega_lhd_tail hX' hX hE (lhdE_app c₀ h)
 
 end Ytosk
