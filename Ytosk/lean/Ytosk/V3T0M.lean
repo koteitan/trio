@@ -6,7 +6,7 @@
 - r が根のとき: r より前は値が変わらず、M の根 r（値 ψ_v(Y0 + 1)）が N ではコピーの根
   ψ_v(Y0) × (n − 1) と M.take x での r の値に替わる（`root_N_B`）。
 -/
-import Ytosk.V3T0B
+import Ytosk.V3T0S3
 
 namespace Ytosk
 
@@ -272,7 +272,7 @@ Hypotheses: those of the drop lemma (as `t0_n1`, without `hVL`: the shape of `D`
 strictness of the drop is `dep_strict0`), and for `N = M[n]`: its valuation satisfies `Good3`,
 `VSmallNewN` and the root values do not increase; the last copy root counts at `g` when `r` does;
 `hVr` (a changed `v(r)` in `M.take x` is small in a rewriting frame of `g`); `hG′` (in the bump case the
-children of `r` in `M.take x` keep their sum); `hE3` (`g` is not a bump child of its parent). -/
+children of `r` in `M.take x` keep their sum). -/
 theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
@@ -288,8 +288,6 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
     (hUA : UpgAbsX M (r + L) ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
-    (hE3 : ∀ g p, par M 0 r = some g → par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 →
-      col M g ≠ bump M p)
     (hLast : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
     (hVr : ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
@@ -465,9 +463,66 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
           | some m =>
             have := par_lt M 1 g m hpp
             exact (hoffD m (by omega)).2 (hpnd m hpp)
+    -- seed S3
+    have hS3 : ∀ pp, par M 0 g = some pp → entry M 1 pp ≠ 0 → entry M 2 pp ≠ 0 → col M g = bump M pp →
+        Lhd z (σ.v pp) (ρ.v pp) := by
+      intro pp hpg h1 h2 hjb
+      have hppg := par_lt M 0 g pp hpg
+      have hgp : g ∈ children M pp := mem_children_iff.mpr ⟨by omega, hpg⟩
+      have hpD : DepX M (r + L) false pp := DepX.vbump h1 h2 hgp hjb hrc hDr
+      obtain ⟨_, hpnd, hcase⟩ := dv_shape hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hp (by omega) hpD
+      rcases hcase with ⟨h2', _⟩ | ⟨_, Lb, Kb, j', k', hch, _, hchj, _, hKnd, hLnd⟩
+      · exact absurd h2' h2
+      · have hjg : j' = g := by
+          by_contra hne
+          have hgL : g ∈ Lb := by
+            rw [hch] at hgp
+            rcases List.mem_append.mp hgp with h | h
+            · exact h
+            · simp at h; exact absurd h.symm hne
+          exact (hLnd g hgL r hrc).2 hDr
+        subst hjg
+        have hkr : k' = r := by
+          have hchM := children_g_last hlen hL hp hg
+          rw [hchj] at hchM
+          have := congrArg List.getLast? hchM
+          simpa using this
+        rw [hkr] at hchj
+        have hLj : ∀ d ∈ Lb, d < j' :=
+          (sib_order (children_sorted M pp) (R := []) (by rw [hch])).1
+        apply t0_S3 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hpg hjb h1 h2
+          hTD hKD hAbs hch
+        · intro d hd
+          have hdg : par M 0 r ≠ some d := fun h =>
+            (hLnd d hd r (mem_children_iff.mpr ⟨by have := hLj d hd; omega, h⟩)).2 hDr
+          have hdj := hLj d hd
+          apply bumpTerm_eq_of
+          · rw [col_pre0 hlen hL hp hn (by omega), bump_pre0 hlen hL hp hn (by omega)]
+          · intro _
+            rw [children_pre0 hlen hL hp hn (by omega) hdg]
+            apply List.map_congr_left
+            intro e he
+            have her := children_lt_r hlen hL hp (by omega) hdg he
+            exact (hoffD e her).1 (hLnd d hd e he).2
+        · intro d hd hdr
+          have hdK : d ∈ Kb := by
+            rw [hchj] at hd
+            rcases List.mem_append.mp hd with h | h
+            · exact h
+            · simp at h; omega
+          exact (hoffD d hdr).1 (hKnd d hdK)
+        · exact hor
+        · intro k hk; rw [hσmid k hk, hom]
+        · rw [hσlast]; exact hl
+        · rw [par1_pre0 hlen hL hp hn (by omega)]
+          cases hpp : par M 1 pp with
+          | none => rfl
+          | some m =>
+            have := par_lt M 1 pp m hpp
+            exact (hoffD m (by omega)).2 (hpnd m hpp)
     -- the propagation and the root
     have hdl := t0_dep_lhd hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hRM
-      hoffD hF hVS hTD hKD hAbs hVNN (hE3 g · hg) hS1 hS2
+      hoffD hF hVS hTD hKD hAbs hVNN hS3 hS1 hS2
     apply root_N_A hlen hL hp hn hR0 hR01 hR12 h00 hg hG hGN
     · intro i hi
       by_cases hd : DepX M (r + L) true i
@@ -501,8 +556,6 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hUA : UpgAbsX M (r + L) ρ)
     {ζ μ : T} (_hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
-    (hE3 : ∀ g p, par M 0 r = some g → par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 →
-      col M g ≠ bump M p)
     (hLast : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
     (hVr : ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
@@ -519,6 +572,6 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ :=
   t0_main' hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM hVS hF hFO hArgT hKD hTD
-    hAbs hWS hVSt hUA hsM hpM hE3 hLast hVr hG' hN
+    hAbs hWS hVSt hUA hsM hpM hLast hVr hG' hN
 
 end Ytosk

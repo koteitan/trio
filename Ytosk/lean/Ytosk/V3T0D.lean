@@ -4,8 +4,8 @@
 N = M[n]（n ≥ 2、r に親 g がある）の r より前の列は、構造が g の子（コピーの根が並ぶ）を除いて M と同じ。
 - B（[r, x)）の呼び出しで D = DepX M x に入るのは o(r) だけ（`nodep_B`）。
 - D の呼び出しは N で ◁ で真に下がる（`t0_dep_lhd`、D の導出についての帰納法）。種は g の 2 か所:
-  r が g で数えられるときの o(g)（S1）、r が g ののりしろの子のときの v(g)（S2）。g が P_0(g) ののりしろの子に
-  なる場合は仮定で除く（実測 0 件）。
+  r が g で数えられるときの o(g)（S1）、r が g ののりしろの子のときの v(g)（S2）、g が P_0(g) = p の
+  のりしろの子のときの v(p)（S3、`t0_S3`）。
 - 枠の補題 `o_frame_evalG` は `o_frame_eval` の M.take x を一般の行列 M′ にしたもの（証明は同じ）。
 -/
 import Ytosk.V3T0V
@@ -577,7 +577,8 @@ theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
       (¬ DepX M (r + L) false i → σ.v i = ρ.v i))
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hAbs : BumpAbsC M (r + L) ρ) (hVNN : VSmallNewN M r ρ σ)
-    (hE3 : ∀ p, par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 → col M g ≠ bump M p)
+    (hS3 : ∀ p, par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 → col M g = bump M p →
+      Lhd z (σ.v p) (ρ.v p))
     (hS1 : Counted M g r → Lhd z (σ.o g) (ρ.o g))
     (hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g)) :
     ∀ b i, DepX M (r + L) b i → i < r → Lhd z (valB σ b i) (valB ρ b i) := by
@@ -786,9 +787,8 @@ theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
               by_contra hne
               have := children_lt_r hlen hL hp (by omega) hne hk; omega
             have hgj : g = j := Option.some.inj (hg.symm.trans hjg)
-            exfalso
-            apply hE3 i (by rw [hgj]; exact (mem_children_iff.mp hj).2) h1 h2
-            rw [hgj]; exact hjb
+            subst hgj
+            exact hS3 i (mem_children_iff.mp hj).2 h1 h2 hjb
         · have hkr' : k < r := by omega
           obtain ⟨_, hpnd, hcase⟩ := dv_shape hx hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp (by omega)
             (DepX.vbump h1 h2 hj hjb hk hdk)
@@ -817,8 +817,12 @@ theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
               · simp at h; omega
             have hjg : par M 0 r ≠ some j := by
               intro hjg
-              have hgj : g = j := Option.some.inj (hg.symm.trans hjg)
-              exact hE3 i (by rw [hgj]; exact (mem_children_iff.mp hj).2) h1 h2 (by rw [hgj]; exact hjb)
+              -- the last child of `P_0(r)` is `r`, not `k < r`
+              have hl := children_g_last hlen hL hp hjg
+              rw [hchj] at hl
+              have := congrArg List.getLast? hl
+              simp at this
+              omega
             have hchN : children (TRIO.gexp M r L 0 0 n) i = Lb ++ [j] := by
               rw [children_pre0 hlen hL hp hn hi hig, hch]
             have hchjN : children (TRIO.gexp M r L 0 0 n) j = Kb ++ [k] := by
