@@ -5,7 +5,9 @@ googology wiki "Extended Buchholz's function" の基本列。共終数は 0・�
 対角化（ψ_ν(β)、β の共終数が Ω_{μ+1}、μ ≥ ν）は γ[0] = 0、γ[k+1] = ψ_μ(β[γ[k]]) から始める（BM4 の展開に合う版、
 `tools/ebocf_fs.py` の `G0 = "zero"`）。
 
-目標: 標準形 t について t[η] は標準形で t[η] < t（乱択の 22,460 項・61,791 回で例外なし）。
+主定理 `fs_ot_lt`: 標準形 t と範囲内の添字 η（`Valid`）について t[η] は標準形で t[η] < t。
+証明は Buchholz 1986 の補題 3.2〜3.6 の形（関係 `Lhd`、補題 3.4 `lhd_comps`、3.5 `lhd_app`・`lhd_psi`、3.6 `lhd_fs`、3.3 `isOT_fs`）。
+拡張 Buchholz では添字が項なので、対角化の添字 μ の成分の扱い（`comps_mu`）が加わる。
 -/
 import Ytosk.SP
 
@@ -1000,6 +1002,217 @@ theorem Valid.lt {t η : T} (h : Valid t η) : ValidLt t η := by
   obtain ⟨_, h⟩ := h
   unfold ValidLt
   split at h <;> simp_all
+
+theorem isOT_init : ∀ {b : T}, isOT b = true → isOT (init b) = true
+  | z, _ => rfl
+  | psi x y z, _ => rfl
+  | psi x y (psi c d e), h => by
+    show isOT (psi x y (init (psi c d e))) = true
+    rw [isOT_psi_iff] at h ⊢
+    obtain ⟨h1, h2, h3, h4, h5⟩ := h
+    refine ⟨h1, h2, isOT_init h3, ?_, h5⟩
+    by_cases hc : init (psi c d e) = z
+    · rw [hc]; exact z_le _
+    · cases hce : e with
+      | z => simp [init, hce] at hc
+      | psi f g k => exact h4
+
+/-- The subscript of a cofinality `Ω_{μ+1}` is standard. -/
+theorem isOT_cof_mu : ∀ {b μ : T}, isOT b = true → cof b = .big μ → isOT μ = true
+  | z, _, _, h => by simp [cof] at h
+  | psi a b (psi c d e), μ, hot, h => isOT_cof_mu (isOT_rest hot) (by simpa [cof] using h)
+  | psi a b z, μ, hot, h => by
+    by_cases hb : b = z
+    · subst hb
+      by_cases ha : a = z
+      · subst ha; simp [cof] at h
+      · have hc : cof (psi a z z) = (if isSucc a then Cof.big (init a) else cof a) := by
+          simp [cof, ha]
+        rw [hc] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs] at h; cases h; exact isOT_init (isOT_sub hot)
+        · rw [if_neg hs] at h; exact isOT_cof_mu (isOT_sub hot) h
+    · have hc0 : cof (psi a b z) = (if isSucc b then Cof.omega else match cof b with
+            | .big μ => if lt μ a = true then Cof.big μ else Cof.omega
+            | c => c) := by simp [cof, hb]
+      rw [hc0] at h
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs] at h; cases h
+      · rw [if_neg hs] at h
+        cases hcb : cof b with
+        | big ν =>
+          rw [hcb] at h; simp only at h
+          by_cases hν : lt ν a = true
+          · rw [if_pos hν] at h; cases h; exact isOT_cof_mu (isOT_arg hot) hcb
+          · rw [if_neg hν] at h; cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
+/-- The `OT` condition of `ψ_a(X)` from `X ◁_η b`. -/
+theorem psi_ot_of_lhd {a X b η : T} (ha : isOT a = true) (hX : isOT X = true) (hl : Lhd η X b)
+    (hb : ∀ g ∈ comps a b, g < b) (hη : X ≠ z → ∀ g ∈ comps a η, g < X) :
+    isOT (psi a X z) = true := by
+  rw [isOT_psi_iff]
+  refine ⟨ha, hX, rfl, z_le _, ?_⟩
+  by_cases hXz : X = z
+  · subst hXz; simp [comps]
+  · apply lhd_comps hl hb
+    intro g hg
+    simp only [Gc, List.mem_cons] at hg
+    rcases hg with rfl | hg
+    · exact lt_of_le_of_ne (z_le X) (Ne.symm hXz)
+    · exact hη hXz g hg
+
+/-- **Lemma 3.3.** -/
+theorem isOT_fs : ∀ {t η : T}, isOT t = true → Valid t η → isOT (fs t η) = true
+  | z, η, _, h => by simp [Valid, cof] at h
+  | psi a b (psi c d e), η, hot, h => by
+    have h' : Valid (psi c d e) η := by
+      obtain ⟨h1, h2⟩ := h; exact ⟨h1, by simpa [cof] using h2⟩
+    have ih := isOT_fs (isOT_rest hot) h'
+    show isOT (psi a b (fs (psi c d e) η)) = true
+    obtain ⟨h1, h2, _, h4, h5⟩ := isOT_psi_iff.mp hot
+    rw [isOT_psi_iff]
+    exact ⟨h1, h2, ih, le_trans (head_le_of_lt (fs_lt h'.lt)) h4, h5⟩
+  | psi a b z, η, hot, h => by
+    obtain ⟨hηot, h⟩ := h
+    have hcomp := comps_lt hot
+    unfold fs
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl]
+      by_cases ha : a = z
+      · subst ha; rfl
+      · rw [if_neg ha]
+        have hc : cof (psi a z z) = (if isSucc a then Cof.big (init a) else cof a) := by
+          simp [cof, ha]
+        rw [hc] at h
+        by_cases hs : isSucc a = true
+        · rw [if_pos hs]; exact hηot
+        · rw [if_neg hs]; rw [if_neg hs] at h
+          have ih := isOT_fs (isOT_sub hot) ⟨hηot, h⟩
+          rw [isOT_psi_iff]; exact ⟨ih, rfl, rfl, z_le _, by simp [comps]⟩
+    · rw [if_neg hb]
+      by_cases hs : isSucc b = true
+      · rw [if_pos hs]
+        have hb1 : app (init b) one = b := init_app_one hs
+        apply isOT_mulT _ ⟨a, init b, rfl⟩
+        rw [isOT_psi_iff]
+        have hbot := isOT_arg hot
+        refine ⟨isOT_sub hot, isOT_init hbot, rfl, z_le _, fun g hg => ?_⟩
+        have hg' : g ∈ comps a b := by rw [← hb1, comps_app]; exact List.mem_append_left _ hg
+        have := hcomp g hg'
+        rw [← hb1] at this
+        exact comps_lt_prefix hg this
+      · rw [if_neg hs]
+        have hc : cof (psi a b z) = (match cof b with
+            | .big μ => if lt μ a = true then Cof.big μ else Cof.omega
+            | c => c) := by simp [cof, hb, hs]
+        rw [hc] at h
+        have hbot := isOT_arg hot
+        cases hcb : cof b with
+        | big μ =>
+          rw [hcb] at h
+          simp only at h ⊢
+          by_cases hμ : lt μ a = true
+          · rw [if_pos hμ]; rw [if_pos hμ] at h
+            have hv : Valid b η := ⟨hηot, by rw [hcb]; exact h⟩
+            have ih := isOT_fs hbot hv
+            apply psi_ot_of_lhd (isOT_sub hot) ih (lhd_fs hbot hv.lt) hcomp
+            have hηa : η < psi a z z := by
+              apply lt_of_lt_of_le h
+              rcases (le_iff _ _).mp (succ_le_of_lt (show μ < a from hμ)) with h1 | h1
+              · exact le_of_lt (by rw [psi_lt_psi_z_iff]; exact Or.inl h1)
+              · rw [h1]
+            intro _; rw [comps_nil_of_lt_Om hηot hηa]; simp
+          · rw [if_neg hμ]
+            let γ : Nat → T := fun k => Nat.rec (motive := fun _ => T) z (fun _ g => psi μ (fs b g) z) k
+            show isOT (psi a (fs b (γ (count η))) z) = true
+            have hγs : ∀ k, γ (k + 1) = psi μ (fs b (γ k)) z := fun k => rfl
+            have F1 : ∀ k, γ k < psi (succ μ) z z := by
+              intro k; cases k with
+              | zero => exact T.z_lt_psi _ _ _
+              | succ k => rw [hγs]; rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self μ)
+            have F2 : ∀ k, ValidLt b (γ k) := fun k => by unfold ValidLt; rw [hcb]; exact F1 k
+            have F3 : ∀ k, γ k < γ (k + 1) := by
+              intro k; induction k with
+              | zero => rw [hγs]; exact T.z_lt_psi _ _ _
+              | succ k ih =>
+                rw [hγs, hγs (k + 1)]; rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, fs_mono hcb ih⟩
+            have F5 : ∀ k, psi μ z z ≤ γ (k + 1) := by
+              intro k; rw [hγs, le_iff]
+              rcases (le_iff _ _).mp (z_le (fs b (γ k))) with h4 | h4
+              · left; rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, h4⟩
+              · right; rw [← h4]
+            have hμot : isOT μ = true := isOT_cof_mu hbot hcb
+            have haμ : a ≤ μ := le_of_not_gt hμ
+            have hcompμ : ∀ g ∈ comps μ b, g < b := fun g hg => hcomp g (comps_mono haμ hg)
+            have G : ∀ k, isOT (γ k) = true := by
+              intro k; induction k with
+              | zero => rfl
+              | succ k ih =>
+                rw [hγs]
+                apply psi_ot_of_lhd hμot (isOT_fs hbot ⟨ih, by rw [hcb]; exact F1 k⟩)
+                  (lhd_fs hbot (F2 k)) hcompμ
+                intro _ g hg
+                cases k with
+                | zero => have h0 : γ 0 = z := rfl; rw [h0] at hg; simp [comps] at hg
+                | succ j =>
+                  rw [hγs] at hg ih
+                  have hss : lt μ μ = false := Bool.eq_false_iff.mpr (lt_irrefl' μ)
+                  simp only [comps, hss, Bool.false_eq_true, if_false, List.mem_append,
+                    List.mem_cons] at hg
+                  have hmono : fs b (γ j) < fs b (γ (j + 1)) := fs_mono hcb (F3 j)
+                  rcases hg with (rfl | hg | hg) | hg
+                  · exact hmono
+                  · exact lt_trans (comps_lt ih g hg) hmono
+                  · rw [comps_self_nil hμot] at hg; simp at hg
+                  · simp at hg
+            have hV : ∀ k, Valid b (γ k) := fun k => ⟨G k, by rw [hcb]; exact F1 k⟩
+            have Q : ∀ k, ∀ g ∈ comps a (γ k), g < fs b (γ k) := by
+              intro k; induction k with
+              | zero => intro g hg; have h0 : γ 0 = z := rfl; rw [h0] at hg; simp [comps] at hg
+              | succ j ih =>
+                intro g hg
+                rw [hγs] at hg
+                simp only [comps, hμ, Bool.false_eq_true, if_false, List.mem_append,
+                  List.mem_cons] at hg
+                have hmono : fs b (γ j) < fs b (γ (j + 1)) := fs_mono hcb (F3 j)
+                rcases hg with (rfl | hg | hg) | hg
+                · exact hmono
+                · have hR := psi_ot_of_lhd (isOT_sub hot) (isOT_fs hbot (hV j))
+                    (lhd_fs hbot (F2 j)) hcomp (fun _ => ih)
+                  exact lt_trans (comps_lt hR g hg) hmono
+                · have hgb : g ∈ comps a b := comps_mu hbot hcb (F5 j) (F1 (j + 1))
+                    (le_of_lt (fs_lt (F2 (j + 1)))) (le_refl b) hμ g hg
+                  have hgb' := hcomp g hgb
+                  by_contra hcon
+                  have hgy : g ∈ comps a g := comps_mu hbot hcb (F5 j) (F1 (j + 1))
+                    (le_of_not_gt hcon) (le_of_lt hgb') hμ g hg
+                  exact Nat.lt_irrefl _ (size_comps hgy)
+                · simp at hg
+            exact psi_ot_of_lhd (isOT_sub hot) (isOT_fs hbot (hV _)) (lhd_fs hbot (F2 _)) hcomp
+              (fun _ => Q _)
+        | zero => rw [hcb] at h; exact absurd h (by simp)
+        | succ =>
+          rw [hcb] at h; simp only at h ⊢
+          have hv : Valid b η := ⟨hηot, by rw [hcb]; exact h⟩
+          apply psi_ot_of_lhd (isOT_sub hot) (isOT_fs hbot hv) (lhd_fs hbot hv.lt) hcomp
+          subst h; intro _; simp [comps]
+        | omega =>
+          rw [hcb] at h; simp only at h ⊢
+          have hv : Valid b η := ⟨hηot, by rw [hcb]; exact h⟩
+          have ih := isOT_fs hbot hv
+          apply psi_ot_of_lhd (isOT_sub hot) ih (lhd_fs hbot hv.lt) hcomp
+          obtain ⟨n, rfl⟩ := h
+          intro hX g hg
+          rw [comps_natT n g hg]
+          exact lt_of_le_of_ne (z_le _) (Ne.symm hX)
+
+/-- **Fundamental sequences of standard terms are standard and smaller.** -/
+theorem fs_ot_lt {t η : T} (hot : isOT t = true) (hv : Valid t η) :
+    isOT (fs t η) = true ∧ fs t η < t := ⟨isOT_fs hot hv, fs_lt hv.lt⟩
 
 #eval [psi z (psi z one z) z, psi z (psi (psi one z z) z z) z].map fun t =>
   ((List.range 3).map fun n => str (fs t (natT n)))
