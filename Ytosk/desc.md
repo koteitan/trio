@@ -1492,3 +1492,12 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 吸収は Res3.drop の UpgAbsX・BumpAbsC から。
 - 残り: Res3T2（構造と D の形の事実、drop1 の値の事実、N の事実。A・B で例外 0、C′ では未測定）。
 - M[n] の評価の存在は HInvE から（V3IndV、01b21cc6）: expand_ne_SRO（標準形の展開は SRO でない。SInvX は展開で保たれ UAB を与えるが、SRO は UAB を満たさない）と inv_expand_of_E。
+
+### C′ での DropRes の置き換え案と直した形（2026-10-02、step-ot、tools/probe_bumpw.py）
+
+- C′ で例外 0: LocA（と argT ⟸ Good3(take) ∧ LocA）、LocWeak、UpgAbsL（と UpgAbsX ⟸ UpgAbsL）、Dx の健全性。
+- 直した形（C′ で例外 0）:
+  - BumpAbsW: e1, e2 ≠ 0 で v(i) が弱い閉包 Wk に入らないすべての i で BumpAbs。BumpAbsC を置き換える（Wk は崩れの枠の v から依存の辺を逆にたどる。o ← o(子) は通らず、o ← v(自分) は数える子がないときだけ通る）。
+  - BWS‴: BWS′ の前件に ¬ LhdE (v′ i) (v i) を足す（親の v が ◁ で下がるなら形は要らない）。
+- VSmallNew は案なし（VSmallF 自体が標準形で偽）。
+- 閉性の候補 S1〜S4 ＋ PH2 は C′ でも真。閉じていないのは同じ族（前の兄弟が浅いとき）。
