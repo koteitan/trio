@@ -517,4 +517,15 @@ theorem v_upg_eq {M : Mat} {ρ : Valn} {i k : Nat} (hC : Cons M ρ) (hiM : i < M
     rw [hWf']; exact last_add_single _
   rw [hl, sf_ot (isOT_add hVot hWot)]
 
+/-- **The lost upgrade of `x − 1`**: `v′ = V + 1` against `v = V + W` (`W = ω^p` the bump value of the
+target). The summands of `V` absorbed only by `W` are assumed `◁ W` (measured: they are `1`). -/
+theorem v_frame_xm1 {V sW yW : T} (hV : isOT V = true) (hW : isOT (psi sW yW z) = true)
+    (h1 : one ≤ psi sW yW z)
+    (hR : ∀ r ∈ summands V, ¬ r < one → r < psi sW yW z → Lhd z r (psi sW yW z)) :
+    LhdE (sf (add V one)) (add V (psi sW yW z)) := by
+  have hone : isOT one = true := rfl
+  have hot1 : isOT (add V one) = true := isOT_add hV hone
+  rw [sf_ot hot1]
+  exact lhdE_add_absorb (s' := z) (y' := z) (lhdE_one h1) V hV hot1 hR
+
 end Ytosk
