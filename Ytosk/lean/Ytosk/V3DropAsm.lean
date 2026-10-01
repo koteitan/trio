@@ -152,4 +152,62 @@ theorem v_read_not_chg {g d : Nat} (hd : d < x)
 
 end
 
+section
+variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB
+
+/-- **Below a column with row 2 nonzero, changes are only under its last child** (in `M.take x`). -/
+theorem chg_only_last {i j j' d : Nat} {b : Bool} (h2 : entry M 2 i ≠ 0) (hj : j ∈ children M i)
+    (hj' : j' ∈ children (M.take x) i) (hjj : j < j') (hC : ChgX M x b d) (hjd : Anc0 M j d) : False := by
+  have hij := (mem_children hj).1
+  have hpj : par M 0 j = some i := (mem_children_iff.mp hj).2
+  rw [children_take, List.mem_filter] at hj'
+  have hj'x : j' < x := by simpa using hj'.2
+  have hpj' : par M 0 j' = some i := (mem_children_iff.mp hj'.1).2
+  have hjx : j < x := by omega
+  have hnj : ¬ Anc0 M j (x - 1) := by
+    intro hA
+    have h1 := anc_between hA j' (by omega) (by omega)
+    have := (anc0_par h1 (by omega) hpj').le; omega
+  obtain ⟨c', ⟨hjc', hall', hnot'⟩, hc'x, hup', _⟩ :=
+    (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hC).2 j hjx hjd hnj
+  have hA1 : Anc0 M j (c' - 1) := hall' (c' - 1) (by omega) (by omega)
+  obtain ⟨m, hm1, hm2, hcol, _⟩ := upg_spec hup'
+  have he0 : entry M 0 c' = entry M 0 m + 1 := by
+    have : entry M 0 c' = (col M c').1 := rfl
+    rw [this, hcol]
+  have he2c : entry M 2 c' = entry M 2 m + 1 := by
+    have : entry M 2 c' = (col M c').2.2 := rfl
+    rw [this, hcol]
+  have hmc := par_lt M 1 _ _ hm2
+  obtain ⟨hh, hph⟩ := par0_some_of (M := M) hmc (by omega)
+  have hR := hR0 c' hh hph
+  have hhc := par_lt M 0 c' hh hph
+  have hAh : Anc0 M hh (c' - 1) :=
+    anc_between (Anc0.step hph (Anc0.refl hh)) (c' - 1) (by omega) (by omega)
+  have hAm : Anc0 M m (c' - 1) := anc0_of_par M 1 m (c' - 1) hm1
+  have hhm : hh = m := anc0_eq_of_e0 hAh hAm (by omega)
+  have hz := hZ2 c'
+  have hh0 : entry M 2 hh = 0 := by rw [hhm]; omega
+  have hAi : Anc0 M i (c' - 1) := Anc0.trans (Anc0.step hpj (Anc0.refl i)) hA1
+  rcases anc0_total hAh hAi with hhi | hih
+  · by_cases hhi' : hh = i
+    · rw [hhi'] at hh0; omega
+    · have hc'j' : c' ≤ j' := by
+        by_contra hlt
+        have := (anc0_par (hall' j' (by omega) (by omega)) (by omega) hpj').le; omega
+      have hAic : Anc0 M i c' := anc_between (Anc0.step hpj' (Anc0.refl i)) c' (by omega) hc'j'
+      have hih := anc0_par hAic (by omega) hph
+      exact hhi' (Nat.le_antisymm hhi.le hih.le)
+  · rcases anc0_total hAh hA1 with hhj | hjh
+    · by_cases hhj' : hh = j
+      · exact hnot' (Anc0.step hph (hhj' ▸ Anc0.refl hh))
+      · have hhi := anc0_par hhj hhj' hpj
+        have : hh = i := Nat.le_antisymm hhi.le hih.le
+        rw [this] at hh0; omega
+    · exact hnot' (Anc0.step hph hjh)
+
+end
+
 end Ytosk
