@@ -382,4 +382,163 @@ theorem t1_main_tp1 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL :
   exact t1_main_val hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
     hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hV hW hLo hsM hpM
 
+/-! ## (L) -/
+
+/-- **Value invariant TPL** (the low part stays empty): at a rewriting frame whose argument `y` has no
+part below `Ω_{s+1}` and ends with `Ω_a` (`a` a limit with a hole), `Ω_{fsD(a, ψ_μ(Ω_{μ+1}))} ≥ Ω_{s+1}`
+(`μ` the level of the hole; SRO より下の L8 網羅と乱択で 406 枠、例外 0。下限 ψ_μ(1) では 3 件崩れる). -/
+def TPL (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i L c R, children M i = L ++ c :: R → ∀ s y, ρ.o c = psi s y z →
+    lt (preState M ρ i L) y = true → lt (psi (ρ.v i) z z) (psi s y z) = true →
+    (split y (psi (succ s) z z)).2 = z → ∀ a, last y = psi a z z → isSucc a = false → OHole a →
+    ¬ psi (fsD a (psi (holeLev y) (psi (succ (holeLev y)) z z) z)) z z < psi (succ s) z z
+
+theorem summands_fsD_psi {a b ζ : T} (hb : b ≠ z) :
+    ∀ q ∈ summands (fsD (psi a b z) ζ), ∃ b', q = psi a b' z := by
+  intro q hq
+  by_cases hs : isSucc b = true
+  · have h : fsD (psi a b z) ζ = mulT (psi a (init b) z) (count ζ) := by
+      conv => lhs; unfold fsD
+      rw [if_neg hb, if_pos hs]
+    rw [h] at hq
+    exact ⟨init b, summands_mulT ⟨_, _, rfl⟩ _ q hq⟩
+  · rw [fsD_psi hb (by simpa using hs)] at hq
+    simp only [summands, List.mem_cons, List.mem_nil_iff, or_false] at hq
+    exact ⟨_, hq⟩
+
+theorem DiagAt.last' {a b μ : T} : ∀ {t : T}, DiagAt a b μ t → DiagAt a b μ (last t)
+  | z, h => by cases h
+  | psi _ _ z, h => h
+  | psi _ _ (psi c d e), h => by
+    show DiagAt a b μ (last (psi c d e))
+    cases h with
+    | rest h' => exact DiagAt.last' h'
+
+theorem DiagAt.not_omega_succ {a b μ a' : T} (h : DiagAt a b μ (psi a' z z)) : isSucc a' = false := by
+  cases h with
+  | here hb _ _ => exact absurd rfl hb
+  | arg hb _ _ => exact absurd rfl hb
+  | sub _ hs _ => exact hs
+
+/-- **(L)(ii) at a frame of `D`**: no low part stays no low part. -/
+theorem lo_keep_of_TPL {μ br vr s y ζ : T} (hTPLf : (split y (psi (succ s) z z)).2 = z →
+      ∀ a, last y = psi a z z → isSucc a = false → OHole a →
+      ¬ psi (fsD a (psi μ (psi (succ μ) z z) z)) z z < psi (succ s) z z)
+    (hy : y ≠ z) (hH : HoleT μ br vr (psi s y z)) (hcb : cof br = .big μ)
+    (hbrl : last br ≠ psi (succ μ) z z) (hζΩ : psi μ (psi (succ μ) z z) z ≤ ζ)
+    (hl : (split y (psi (succ s) z z)).2 = z) :
+    (split (fsD y ζ) (psi (succ s) z z)).2 = z := by
+  have hHy := holeT_arg hy hH hcb
+  apply lo_z_keep hy hl
+  have hyall : ∀ q ∈ summands y, ¬ q < psi (succ s) z z := by
+    intro q hq
+    have e := split_app (psi (succ s) z z) y
+    rw [hl, app_z_right] at e
+    rw [← e] at hq
+    exact split_fst_ge _ y q hq
+  have hHl := holeT_last hHy
+  have hlh := hyall _ (last_mem hy)
+  obtain ⟨a, b, hlc⟩ := last_psi_form hy
+  rw [hlc] at hlh hHl ⊢
+  by_cases hb : b = z
+  · subst hb
+    by_cases ha : isSucc a = true
+    · -- the last summand is `Ω_{μ+1}`
+      exfalso
+      have haz : a ≠ z := by
+        intro h; subst h
+        have h1 : isSucc (z : T) = false := rfl
+        rw [h1] at ha; cases ha
+      have hcf : cof (psi a z z) = .big (init a) := by
+        unfold cof; rw [if_pos rfl, if_neg haz, if_pos ha]
+      have hia : init a = μ := by
+        rcases hHl with h | ⟨_, _, hD⟩
+        · rw [hcf] at h; cases h; rfl
+        · rw [hD.not_omega_succ] at ha; cases ha
+      have hsa : succ μ = a := by rw [← hia]; unfold succ; exact init_app_one ha
+      rcases hH with hcof | ⟨a', _, hD⟩
+      · have hμs := (cof_psi_inv hy hcof).2
+        apply hlh
+        rw [← hsa, psi_lt_psi_z_iff]
+        left
+        exact lt_of_le_of_lt (le_refl _) (show succ μ < succ s from by
+          rw [lt_succ_iff]; exact succ_le_of_lt (show μ < s from hμs))
+      · cases hD with
+        | here _ _ _ => exact hbrl (by rw [hlc, ← hsa])
+        | arg _ _ hDy =>
+          have := hDy.last'
+          rw [hlc] at this
+          rw [this.not_omega_succ] at ha; cases ha
+        | sub _ _ _ => exact hy rfl
+    · have haz : a ≠ z := by
+        intro h; subst h
+        have := holeT_not_succ hHl
+        have h1 : isSucc (psi z z z) = true := rfl
+        rw [h1] at this; cases this
+      have hns : isSucc a = false := by simpa using ha
+      have hOa : OHole a := by
+        have h := ohole_of_holeT hHl
+        unfold OHole at h
+        rw [if_pos rfl] at h
+        rcases h.2 with h' | h'
+        · rw [hns] at h'; cases h'
+        · exact h'
+      rw [fsD_sub haz hns]
+      intro q hq
+      simp only [summands, List.mem_cons, List.mem_nil_iff, or_false] at hq
+      subst hq
+      intro hlt
+      apply hTPLf hl a hlc hns hOa
+      exact lt_of_le_of_lt (le_psi_sub (fsD_mono_eta hOa hζΩ)) hlt
+  · intro q hq
+    obtain ⟨b', rfl⟩ := summands_fsD_psi hb q hq
+    intro hlt
+    apply hlh
+    rw [psi_lt_psi_z_iff] at hlt ⊢
+    rcases hlt with h | ⟨h, h'⟩
+    · exact Or.inl h
+    · exact absurd h' (T.not_lt_z _)
+
+/-- **(L) from TPL** on the whole chain, given the lower bound `ψ_μ(Ω_{μ+1}) ≤ ζ` of the chain. -/
+theorem hLo_of_TPL {M : Mat} {x r : Nat} {ρ : Valn} {μ br vr seed ζ0 : T} (hx : x + 1 = M.length)
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hrx : r < x) (hAr : Anc0 M r x) (hro : ρ.o r = psi vr br z)
+    (hcb : cof br = .big μ) (hμr : μ = vr) (hbr : br ≠ z) (hox : ρ.o x = psi (succ μ) z z)
+    (hF1 : ∀ i, r < i → i < x → DepX M x true i → ¬ DepX M x false i → lt μ (ρ.v i) = true)
+    (hOS : ∀ i, i < x → DepX M x true i → OShape M x i)
+    (hV : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ0 μ i)
+    (hS2 : ∀ i k, i ≤ r → DepX M x false i → entry M 2 i = 0 → upg M i = some k → k ≤ r)
+    (hS3 : ∀ i j k, i ≤ r → j ∈ children M i → col M j = bump M i → k ∈ children M j →
+      DepX M x true k → k ≤ r)
+    (hTPL : TPL M ρ) (hbrl : last br ≠ psi (succ μ) z z)
+    (hζΩ : ∀ m, psi μ (psi (succ μ) z z) z ≤ gamS μ br seed m) :
+    ∀ m i L' c R, i < x → DepX M x true i → children M i = L' ++ c :: R →
+      DepX M x true c → ∀ s y, ρ.o c = psi s y z → lt (preState M ρ i L') y = true →
+      lt (psi (ρ.v i) z z) (psi s y z) = true →
+      ((split y (psi (succ s) z z)).2 ≠ z →
+        fsD (split y (psi (succ s) z z)).2 (gamS μ br seed m) ≠ z) ∧
+      ((split y (psi (succ s) z z)).2 = z →
+        (split (fsD y (gamS μ br seed m)) (psi (succ s) z z)).2 = z) := by
+  have hH := t1_hole hC hG hx hrx hAr hro hcb hμr hbr (Or.inl (by rw [hox]; exact cof_omega_succ μ))
+    hF1 hOS hV hS2 hS3
+  intro m i L' c R _ _ hch hdc s y hcv hlt1 hlt2
+  have hcM : c ∈ children M i := by rw [hch]; simp
+  have hcl := (mem_children hcM).2
+  obtain ⟨hHc, _⟩ := hH true c hdc (by
+    rcases Nat.lt_or_ge c x with h | h
+    · exact Or.inl h
+    · exact Or.inr ⟨by omega, rfl⟩)
+  simp only [valB, cond_true] at hHc
+  rw [hcv] at hHc
+  have hy : y ≠ z := by
+    intro h; rw [h] at hlt1; exact T.not_lt_z _ hlt1
+  have hHy := holeT_arg hy hHc hcb
+  have hζz : gamS μ br seed m ≠ z := by
+    intro h; have := hζΩ m; rw [h] at this
+    exact T.not_lt_z _ (lt_of_lt_of_le (T.z_lt_psi _ _ _) this)
+  refine ⟨fun hl => lo_ne_z_of_holeT hζz hHy hl, fun hl => ?_⟩
+  have hlev := holeLev_holeT hHy
+  have hTf := hTPL i L' c R hch s y hcv hlt1 hlt2
+  rw [hlev] at hTf
+  exact lo_keep_of_TPL hTf hy hHc hcb hbrl (hζΩ m) hl
+
 end Ytosk
