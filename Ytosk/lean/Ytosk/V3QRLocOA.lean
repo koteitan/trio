@@ -49,10 +49,8 @@ variable {M : Mat} {x r : Nat} {ρ : Valn} {μ b seed : T} (hx : x + 1 = M.lengt
     ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →
     lt (preState M ρ i L) (app b (psi (succ μ) z z)) = true →
     lt (psi (ρ.v i) z z) (psi s (app b (psi (succ μ) z z)) z) = true → preState M ρ i L ≤ b)
-  (hLs : ∀ i L c R, i < x → DepX M x true i → children M i = L ++ c :: R → DepX M x true c →
-    c < x → dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
+  (hLs : ∀ c, c < x → DepX M x true c → dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
     ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) →
-    lt (preState M ρ i L) y = true → lt (psi (ρ.v i) z z) (psi s y z) = true →
     (split y (psi (succ s) z z)).2 = z → (split (fsD y seed) (psi (succ s) z z)).2 = z)
 include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hvr hb hpre hox hOS hVS hBk hxv
   hS hseedS hsp0 hTP hTPL hYB hLs
@@ -191,7 +189,7 @@ theorem qr_oloc (m : Nat) : ∀ i, i < x → DepX M x true i →
             have hm0 : m = 0 := by omega
             have hdc0 : dOf M x lo lb c = 0 := by omega
             rw [hk0]
-            exact hLs i L c R hi hd hch hdc hcx hdc0 s y hcv hyb htr1 htr2 hl0
+            exact hLs c hcx hdc hdc0 s y hcv hyb hl0
           · obtain ⟨k', hk'⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
             have hDy : DiagAt a' br μ y := DiagAt.arg_inv hDc' hyz (fun h => hyb h.2)
             have hlev : holeLev y = μ := DiagAt.holeLev_eq hDy
