@@ -84,14 +84,15 @@ def bst (M : Mat) (h p : Nat) : T :=
 
 /-- **The path after expansion (two rows).** -/
 theorem o2r_expand_path (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
-    (hY : isOT (o2r (expand M n) (M.length - 1)) = true)
-    (hDV : ∀ p, Anc0 M p (M.length - 1) → DV (o2r M p) (o2r (expand M n) (M.length - 1)))
+    (hOK : ∀ p, Anc0 M p (M.length - 1) →
+      isOT (fsD (o2r M p) (o2r (expand M n) (M.length - 1))) = true ∧
+        fsD (o2r M p) (o2r (expand M n) (M.length - 1)) < o2r M p)
     (hF : ∀ h p, Anc0 M p (M.length - 1) → par M 0 p = some h →
       FrameD (vr M h) (bst M h p) (o2r M p) (o2r (expand M n) (M.length - 1))) :
     ∀ h, Anc0 M h (M.length - 1) →
       o2r (expand M n) h = fsD (o2r M h) (o2r (expand M n) (M.length - 1)) := by
   have hx : M.length - 1 + 1 = M.length := by omega
-  generalize hYdef : o2r (expand M n) (M.length - 1) = Y at hY hDV hF
+  generalize hYdef : o2r (expand M n) (M.length - 1) = Y at hOK hF
   -- the leaf
   have hleaf : o2r (expand M n) (M.length - 1) = fsD (o2r M (M.length - 1)) Y := by
     have hv := isOT_vr hG.f1 (M.length - 1)
@@ -149,9 +150,9 @@ theorem o2r_expand_path (hG : Good2 M) (hb1 : 0 < entry M 1 (M.length - 1))
         rw [o2r_spArg hvM (sumN_children hG h).1, hsumM, spArg_app]; rfl
       -- the value in `M[n]`
       have hc'ot : isOT (o2r (expand M n) c) = true := by
-        rw [hIH]; exact isOT_fsD (hG.ot c) hY (hDV c hcA)
+        rw [hIH]; exact (hOK c hcA).1
       have hc'le : o2r (expand M n) c ≤ o2r M c := by
-        rw [hIH]; exact le_of_lt (fsD_lt (hDV c hcA))
+        rw [hIH]; exact le_of_lt (hOK c hcA).2
       have hdM' : (C.map (o2r M) ++ [o2r (expand M n) c]).Pairwise (fun a b => b ≤ a) := by
         rw [List.pairwise_append] at hdM ⊢
         refine ⟨hdM.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
