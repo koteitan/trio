@@ -306,4 +306,107 @@ theorem vsmall_of_cs {t : T} (hcs : CS t) (h1 : one ≤ t) : VSmallV t := by
   intro u g hg
   exact le_of_lt (lt_of_lt_of_le (hcs g (comps_sub_z u t g hg)) (Om_one_le_psi h1))
 
+/-! ## p の段（前の兄弟つき）と G の段の形 -/
+
+theorem sumN_ne_z {l : List T} (hs : ∀ t ∈ l, Single t) (hp : l.Pairwise (fun a b => b ≤ a))
+    (hne : l ≠ []) : sumN l ≠ z := by
+  intro h
+  have := (sumN_dec l hs hp).2
+  rw [h] at this
+  simp only [summands] at this
+  exact hne this.symm
+
+theorem sumN_one_cons_gt {q : T} {l : List T} (hq : Single q) (h : one < q) :
+    sumN (one :: q :: l) = sumN (q :: l) := by
+  unfold sumN
+  simp only [List.foldl_cons]
+  congr 1
+  obtain ⟨hot, s, y, rfl⟩ := hq
+  have h1 : isOT one = true := rfl
+  rw [add_z_left, sf_ot h1, add_z_left]
+  unfold one at h ⊢
+  rw [add_psi_psi, if_pos h]
+
+/-- **A common nonzero prefix**: `S + a′` against `S + a + R`. -/
+theorem brelS_app_same {S a' a : T} (hS : S ≠ z) (h : LhdE a' a) (R : T) :
+    BRelS (app S a') (app (app S a) R) := by
+  cases S with
+  | z => exact absurd rfl hS
+  | psi s b c =>
+    have hl : LhdE (app (psi s b c) a') (app (app (psi s b c) a) R) :=
+      LhdE.trans (lhdE_app _ h) (lhdE_prefix _ R)
+    simp only [app_psi] at hl ⊢
+    by_cases hE : psi s b (app (app c a) R) < E0
+    · exact Or.inl ⟨hl, hE⟩
+    · exact Or.inr (Or.inl ⟨hl, fun h' => hE (lt_E0_rest h'), _, _, _, _, _, rfl, rfl⟩)
+
+/-- **The `p` level**: `1 + P + t′` against `1 + P + t` (the terms of `P` are at least `t`). -/
+theorem brelS_p {Pl : List T} {t' t : T} (hsP : ∀ q ∈ Pl, Single q)
+    (hpP : Pl.Pairwise (fun a b => b ≤ a)) (hPt : ∀ q ∈ Pl, t ≤ q) (ht' : Single t') (ht : Single t)
+    (h : BRelS t' t) : BRelS (sumN (one :: Pl ++ [t'])) (sumN (one :: Pl ++ [t])) := by
+  have hle := (brelS_lhdE h).le
+  cases Pl with
+  | nil => simpa using brelS_onep ht' ht h
+  | cons q Pr =>
+    have hq := hsP q (by simp)
+    by_cases hq1 : one < q
+    · simp only [List.cons_append]
+      rw [sumN_one_cons_gt hq hq1, sumN_one_cons_gt hq hq1]
+      have hsl : ∀ c, Single c → c ≤ t → (∀ u ∈ (q :: Pr) ++ [c], Single u) ∧
+          ((q :: Pr) ++ [c]).Pairwise (fun a b => b ≤ a) := by
+        intro c hc hct
+        refine ⟨fun u hu => ?_, List.pairwise_append.mpr ⟨hpP, by simp, fun a ha b hb => ?_⟩⟩
+        · rcases List.mem_append.mp hu with hu | hu
+          · exact hsP u hu
+          · simp at hu; rw [hu]; exact hc
+        · simp at hb; rw [hb]; exact le_trans hct (hPt a ha)
+      obtain ⟨hs1, hp1⟩ := hsl t' ht' hle
+      obtain ⟨hs2, hp2⟩ := hsl t ht (le_refl _)
+      rw [← List.cons_append, ← List.cons_append, sumN_snoc_dec hs1 hp1, sumN_snoc_dec hs2 hp2]
+      have hS : sumN (q :: Pr) ≠ z := sumN_ne_z hsP hpP (by simp)
+      have := brelS_app_same hS (brelS_lhdE h) z
+      simpa using this
+    · have hq0 : q = one := (onep_two hq hq1).1
+      have ht1 : t = one := le_antisymm (hq0 ▸ hPt q (by simp)) (one_le_of_ne_z (single_ne_z ht))
+      have ht1' : t' = one :=
+        le_antisymm (ht1 ▸ hle) (one_le_of_ne_z (single_ne_z ht'))
+      rw [ht1, ht1']; exact brelS_refl
+
+/-- `ψ_s(y′) ⊴ ψ_s(y)` with the same subscript, against `ψ_s(y) + R`. -/
+theorem brelS_single_same {s y' y : T} (R : T) (h : LhdE (psi s y' z) (psi s y z))
+    (hot' : isOT (psi s y' z) = true) : BRelS (psi s y' z) (psi s y R) := by
+  have hl : LhdE (psi s y' z) (psi s y R) := LhdE.trans h (by
+    have := lhdE_prefix (psi s y z) R; simpa using this)
+  by_cases hE : psi s y R < E0
+  · exact Or.inl ⟨hl, hE⟩
+  · by_cases hE' : psi s y' z < E0
+    · obtain ⟨rfl, _⟩ := lt_E0_iff.mp hE'
+      exact Or.inr (Or.inr (Or.inl ⟨hl, hE', closed_psi0 hot' hE', hE, _, _, rfl⟩))
+    · exact Or.inr (Or.inl ⟨hl, hE', _, _, _, _, _, rfl, rfl⟩)
+
+theorem brelS_fix {w' w Y R : T} (h : LhdE w' w) (h1 : one ≤ w') : BRelS (psi w' z z) (psi w Y R) :=
+  Or.inr (Or.inr (Or.inr ⟨w', w, Y, R, rfl, rfl, h, h1⟩))
+
+theorem bwk_fix {w' X : T} (hle : psi w' z z ≤ X) (h1 : one ≤ w') (hcs : CS w') :
+    BWk (psi w' z z) X := ⟨hle, Or.inr ⟨w', rfl, h1, hcs⟩⟩
+
+/-! ## v の段のまとめ -/
+
+/-- **The strong case**: `V + W′ ⊴ V + W` with absorption. -/
+theorem v_strong {V W' W : T} (hV : isOT V = true) (hW' : Single W') (hW : Single W)
+    (h : LhdE W' W) (hR : ∀ r ∈ summands V, ¬ r < W' → r < W → Lhd z r W) :
+    LhdE (add V W') (add V W) := by
+  obtain ⟨hot', s', y', rfl⟩ := hW'
+  obtain ⟨_, s, y, rfl⟩ := hW
+  exact lhdE_add_absorb h V hV (isOT_add hV hot') hR
+
+/-- **The weak case**: `V + W′ = V + W` or weakly below. -/
+theorem v_weak {V W' W : T} (hV : isOT V = true) (hcsV : CS V) (hW' : Single W') (hW : Single W)
+    (h : BWk W' W) : add V W' = add V W ∨ WkV (add V W') (add V W) := by
+  rcases (le_iff _ _).mp (add_le_add_single V hW'.2 hW.2 h.1) with hlt | heq
+  · right
+    exact ⟨hlt, cs_add hcsV (bwk_cs hW'.1 h),
+      le_trans (one_le_of_ne_z (single_ne_z hW')) (le_add_single V hW'.2), isOT_add hV hW'.1⟩
+  · left; exact heq
+
 end Ytosk
