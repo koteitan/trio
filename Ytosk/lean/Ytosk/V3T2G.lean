@@ -241,6 +241,7 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ
         lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
         VSmallV (σ.v cs))
     (hSeed : ∀ b i, S b i → i < bnd → DepS M S b i →
+      (∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i)) →
       (∀ b' i', rkM b' i' < rkM b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →
         Lhd z (valB σ b' i') (valB ρ b' i')) →
       Lhd z (valB σ b i) (valB ρ b i)) :
@@ -260,7 +261,7 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ
     (fun i j hi hj hjx hjb => DepS.seed (hbjS i j hi hj hjx hjb))
     (fun i j k hi hj hjx hjb hk hkx => DepS.seed (hbkS i j k hi hj hjx hjb hk hkx))
   have hdl := deps_lhd_genW (S := S) (W := W) (bnd := bnd) hC hG hCN hGN hRM (by omega) hbN
-    hF hVS hTD hKD hoff hWv hWo hWb hSeed hDvNil hCLnil
+    hF hVS hTD hKD hoff hWv hWo hWb (fun b i hs hi hd ih => hSeed b i hs hi hd hoff ih) hDvNil hCLnil
     (by
       intro i hi hns hnw hD hv
       obtain ⟨Lp, c, R, hch', hcnt', hdc, hR, hL⟩ := hOS i hi hns hnw hD hv
