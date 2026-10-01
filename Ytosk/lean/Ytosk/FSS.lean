@@ -276,4 +276,54 @@ theorem fsD_seed {a b μ seed : T} (hS : SeedOK a b μ seed) :
           · exact ⟨x, List.mem_append_left _ (by simp [comps, hvu, hx]), le_refl _⟩
     · simp at hx
 
+/-! ## 枠を上る DiagAt -/
+
+theorem DiagAt.append {a b μ : T} : ∀ (B : T) {c : T}, c ≠ z → DiagAt a b μ c → DiagAt a b μ (app B c)
+  | z, _, _, h => by simpa using h
+  | psi a' b' B', c, hc, h => by
+    simp only [app_psi]
+    cases hB : app B' c with
+    | z => exact absurd (app_eq_z hB).2 hc
+    | psi d e f =>
+      have := DiagAt.append B' hc h
+      rw [hB] at this
+      exact DiagAt.rest this
+
+/-- The diagonal point stays below the node after one frame (any of the three cases). -/
+theorem DiagAt.frame {a b μ a' b' s y : T} (hc : isOT (psi s y z) = true)
+    (hD : DiagAt a b μ (psi s y z))
+    (hcase : ((y ≤ b' ∨ s < a') ∧ isOT (app b' (psi s y z)) = true) ∨
+      ((lt b' y = true ∧ lt (psi a' z z) (psi s y z) = true) ∧ (split y (psi (succ s) z z)).2 ≠ z) ∨
+      ((lt b' y = true ∧ lt (psi a' z z) (psi s y z) = true) ∧ (split y (psi (succ s) z z)).2 = z ∧
+        DiagAt a b μ y)) :
+    DiagAt a b μ (spArg a' b' (psi s y z)) := by
+  have hcz : psi s y z ≠ z := by simp
+  rcases hcase with ⟨hno, hbc⟩ | ⟨htr, hlo⟩ | ⟨htr, hlo, hy⟩
+  · have h1 : spArg a' b' (psi s y z) = app b' (psi s y z) := by
+      apply spArg_eq_app hbc
+      intro s' y' hq
+      simp only [summands, List.mem_cons, List.mem_nil_iff, or_false, psi.injEq] at hq
+      obtain ⟨rfl, rfl, _⟩ := hq; exact hno
+    rw [h1]; exact DiagAt.append b' hcz hD
+  · have hH : spArg a' b' (psi s y z) = app (split y (psi (succ s) z z)).1 (psi s y z) := by
+      rw [spArg_cons]; show step a' b' s y z = _
+      unfold step; rw [if_pos htr, H_eq hc]; simp [hlo]
+    rw [hH]; exact DiagAt.append _ hcz hD
+  · have hH : spArg a' b' (psi s y z) = y := by
+      rw [spArg_cons]; show step a' b' s y z = _
+      unfold step; rw [if_pos htr, H_eq hc, if_pos hlo, app_z_right]
+      have := split_app (psi (succ s) z z) y; rw [hlo, app_z_right] at this; exact this
+    rw [hH]; exact hy
+
+theorem DiagAt.ne_z {a b μ : T} {t : T} (h : DiagAt a b μ t) : t ≠ z := by
+  cases h <;> simp
+
+/-- The argument of a node over the diagonal point. -/
+theorem DiagAt.arg_inv {a b μ a' y : T} (h : DiagAt a b μ (psi a' y z)) (hy : y ≠ z)
+    (hne : ¬ (a' = a ∧ y = b)) : DiagAt a b μ y := by
+  cases h with
+  | here => exact absurd ⟨rfl, rfl⟩ hne
+  | arg _ _ h' => exact h'
+  | sub => exact absurd rfl hy
+
 end Ytosk
