@@ -332,4 +332,158 @@ theorem spArg_eq_app {a : T} : ∀ {b R : T}, isOT (app b R) = true →
     rw [spArg_eq_app hot' (fun s' y' h => (hR s' y' (by simp [summands, h])).imp_left
       (fun h' => le_trans h' (le_app_self _ _))), hassoc]
 
+
+/-! ## 違いの道の 1 段（添字が違う） -/
+
+/-- `h` is below `w` at a position inside `h`: `h ++ R < w` for every `R`. -/
+def SB (h w : T) : Prop := ∀ R, app h R < w
+
+theorem SB_lt {h w : T} (hs : SB h w) : h < w := by simpa using hs z
+
+/-- Appending a principal term below every summand of `w` keeps `SB`. -/
+theorem SB_add {s y : T} : ∀ {σ W : T}, SB σ W → (∀ q ∈ summands W, psi s y z < q) →
+    SB (add σ (psi s y z)) W
+  | z, W, hs, _ => absurd (hs W) (by simp)
+  | psi a1 b1 c1, z, hs, _ => absurd (hs z) (T.not_lt_z _)
+  | psi a1 b1 c1, psi a2 b2 c2, hs, hq => by
+    rw [add_psi_psi]
+    split
+    · intro R
+      exact lt_of_head_lt (hq _ (by simp [summands]))
+    · have h0 := hs z
+      simp only [app_psi, app_z_right] at h0
+      rw [T.psi_lt_psi] at h0
+      rcases h0 with h0 | ⟨rfl, h0⟩ | ⟨rfl, rfl, _⟩
+      · intro R; simp only [app_psi]; rw [T.psi_lt_psi]; exact Or.inl h0
+      · intro R; simp only [app_psi]; rw [T.psi_lt_psi]; exact Or.inr (Or.inl ⟨rfl, h0⟩)
+      · have hc : SB c1 c2 := by
+          intro R
+          have h1 := hs R
+          simp only [app_psi] at h1
+          rw [T.psi_lt_psi] at h1
+          rcases h1 with h1 | ⟨_, h1⟩ | ⟨_, _, h1⟩
+          · exact absurd h1 (lt_irrefl _)
+          · exact absurd h1 (lt_irrefl _)
+          · exact h1
+        have ih := SB_add hc (fun q hq' => hq q (by simp [summands, hq']))
+        intro R; simp only [app_psi]; rw [T.psi_lt_psi]; exact Or.inr (Or.inr ⟨rfl, rfl, ih R⟩)
+
+/-- Every summand of `b + c` is at least the principal `c`. -/
+theorem add_summands_ge {s y : T} : ∀ b : T, ∀ q ∈ summands (add b (psi s y z)), psi s y z ≤ q
+  | z, q, hq => by simp [summands] at hq; rw [hq]
+  | psi a1 b1 c1, q, hq => by
+    rw [add_psi_psi] at hq
+    split at hq
+    · simp [summands] at hq; rw [hq]
+    · rename_i h
+      simp only [summands, List.mem_cons] at hq
+      rcases hq with rfl | hq
+      · exact le_of_not_gt h
+      · exact add_summands_ge c1 q hq
+
+/-- `x < y` splits into: `x` is below `y` inside `x`, or `x` is a proper prefix of `y`. -/
+theorem lt_cases : ∀ {x y : T}, x < y → SB x y ∨ ∃ y', y' ≠ z ∧ y = app x y'
+  | z, y, h => Or.inr ⟨y, by rintro rfl; exact T.not_lt_z _ h, by simp⟩
+  | psi a b c, z, h => absurd h (T.not_lt_z _)
+  | psi a b c, psi d e f, h => by
+    rw [T.psi_lt_psi] at h
+    rcases h with h | ⟨rfl, h⟩ | ⟨rfl, rfl, h⟩
+    · left; intro R; simp only [app_psi]; rw [T.psi_lt_psi]; exact Or.inl h
+    · left; intro R; simp only [app_psi]; rw [T.psi_lt_psi]; exact Or.inr (Or.inl ⟨rfl, h⟩)
+    · rcases lt_cases h with h1 | ⟨y', hy', he⟩
+      · left; intro R; simp only [app_psi]; rw [T.psi_lt_psi]; exact Or.inr (Or.inr ⟨rfl, rfl, h1 R⟩)
+      · right; exact ⟨y', hy', by rw [he]; rfl⟩
+
+theorem app_le_app_left (p : T) {y y' : T} (h : y ≤ y') : app p y ≤ app p y' := by
+  rcases (le_iff _ _).mp h with h | rfl
+  · exact le_of_lt (app_lt_app_left p h)
+  · exact le_refl _
+
+/-- When `ψ_s(y)` triggers on `b`, the new state is at least `b + ψ_s(y)`. -/
+theorem add_le_H {b s y : T} (hy : isOT (psi s y z) = true) (hb : b < y) :
+    add b (psi s y z) ≤ H s y := by
+  obtain ⟨B, X, hbx, _, he⟩ := add_prefix s y b
+  rw [he]
+  have hB : B < H s y := lt_of_le_of_lt (by rw [hbx]; exact le_app_self _ _) (lt_of_lt_of_le hb (le_H hy))
+  rcases lt_cases hB with h1 | ⟨y', hy', he'⟩
+  · exact le_of_lt (h1 _)
+  · rw [he']
+    apply app_le_app_left
+    have hq : psi s y z ≤ head y' := by
+      have := H_summands_ge hy (head y')
+      apply this; rw [he', summands_app]
+      cases y' with
+      | z => exact absurd rfl hy'
+      | psi => simp [summands, head]
+    cases y' with
+    | z => exact absurd rfl hy'
+    | psi a2 b2 c2 =>
+      rcases (le_iff _ _).mp hq with h2 | h2
+      · exact le_of_lt (lt_of_head_lt h2)
+      · simp only [head] at h2; rw [h2]; exact psi_le_psi_rest (z_le _)
+
+/-- The state of `sp` does not decrease. -/
+theorem le_step {a b s y c : T} (hy : isOT (psi s y z) = true) : b ≤ step a b s y c := by
+  unfold step
+  split
+  · rename_i h; exact le_of_lt (lt_of_lt_of_le h.1 (le_H hy))
+  · exact le_of_lt (lt_add_principal s y b)
+
+/-- A trigger needs `a ≤ s`. -/
+theorem not_lt_of_trig {a s y c : T} (h : lt (psi a z z) (psi s y c) = true) : ¬ s < a := by
+  intro hsa
+  have h' : psi a z z < psi s y c := h
+  rw [T.psi_lt_psi] at h'
+  rcases h' with h3 | ⟨h3, _⟩ | ⟨h3, _, _⟩
+  · exact lt_asymm h3 hsa
+  · subst h3; exact lt_irrefl _ hsa
+  · subst h3; exact lt_irrefl _ hsa
+
+/-- The `SB` invariant along the rest of the smaller side. -/
+theorem SB_spArg_run {a b W : T} :
+    ∀ {σ R : T}, SB σ W → b ≤ σ →
+    (∀ s y, psi s y z ∈ summands R → isOT (psi s y z) = true ∧ (∀ q ∈ summands W, psi s y z < q) ∧
+      (b < y → ¬ s < a → SB (H s y) W)) →
+    SB (spArg a σ R) W
+  | σ, z, hs, _, _ => hs
+  | σ, psi s y R, hs, hb, hR => by
+    obtain ⟨hot, hq, htr⟩ := hR s y (by simp [summands])
+    rw [spArg_cons]
+    have hnext : SB (step a σ s y R) W := by
+      unfold step
+      split
+      · rename_i h
+        exact htr (lt_of_le_of_lt hb h.1) (not_lt_of_trig h.2)
+      · exact SB_add hs hq
+    exact SB_spArg_run hnext (le_trans hb (le_step hot))
+      (fun s' y' h => hR s' y' (by simp [summands, h]))
+
+/-- **One frame with different subscripts.** With a common state `b`, next summands `c_u < c_w`, every
+summand of the smaller side's rest below every summand of `W0 = b + c_w`, and every summand of the smaller
+side that could trigger producing a state below `W0` inside itself, the final state of the smaller side is
+below that of the larger side, provided the larger side's rest does not rewrite. -/
+theorem spArg_frame_diff {a b su yu sw yw Ru Rw : T}
+    (hcw : isOT (psi sw yw z) = true) (hlt : psi su yu z < psi sw yw z)
+    (hR : ∀ s y, psi s y z ∈ summands (psi su yu Ru) → isOT (psi s y z) = true ∧
+      (∀ q ∈ summands (add b (psi sw yw z)), psi s y z < q) ∧
+      (b < y → ¬ s < a → SB (H s y) (add b (psi sw yw z))))
+    (hNw : spArg a (step a b sw yw Rw) Rw = app (step a b sw yw Rw) Rw) :
+    spArg a b (psi su yu Ru) < spArg a b (psi sw yw Rw) := by
+  have hfin : SB (spArg a b (psi su yu Ru)) (add b (psi sw yw z)) := by
+    rw [spArg_cons]
+    obtain ⟨hot, _, htr⟩ := hR su yu (by simp [summands])
+    have h0 : SB (step a b su yu Ru) (add b (psi sw yw z)) := by
+      unfold step
+      split
+      · rename_i h; exact htr h.1 (not_lt_of_trig h.2)
+      · exact add_app_lt hlt b
+    exact SB_spArg_run h0 (le_step hot) (fun s y h => hR s y (by simp [summands, h]))
+  apply lt_of_lt_of_le (SB_lt hfin)
+  rw [spArg_cons, hNw]
+  apply le_trans _ (le_app_self _ _)
+  unfold step
+  split
+  · rename_i h; exact add_le_H hcw h.1
+  · exact le_refl _
+
 end Ytosk
