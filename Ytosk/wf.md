@@ -1,8 +1,23 @@
-# 拡張 Buchholz の標準形の整礎性 — 区別された集合による構文的証明（設計）
+# 拡張 Buchholz の標準形の整礎性 — 区別された集合による構文的証明
 
 [← 戻る](README.md)
 
 目標: 標準形の項の集合 OT の上で、辞書式順序 `<` が整礎であること。順序数への評価は使わない。
+
+**状態: Lean で証明済み。** 定理 `Ytosk.wf_OT`（[`lean/Ytosk/WF.lean`](lean/Ytosk/WF.lean)）、`sorry` なし、
+公理は `propext, Classical.choice, Quot.sound` のみ。
+
+```lean
+theorem wf_OT : WellFounded (fun s t : T => isOT s = true ∧ isOT t = true ∧ s < t)
+```
+
+| ファイル | 中身 |
+|---|---|
+| [`Order.lean`](lean/Ytosk/Order.lean) | `<` は全順序（`LinearOrder T`） |
+| [`Basic.lean`](lean/Ytosk/Basic.lean) | 段 lev、Ω、後続、α⁺、連結と、その順序の性質 |
+| [`OTLemmas.lean`](lean/Ytosk/OTLemmas.lean) | 標準形の性質、連結の分け方、成分 |
+| [`Dist.lean`](lean/Ytosk/Dist.lean) | C^α(X)、区別された集合 D、W、補題 1〜9 |
+| [`WF.lean`](lean/Ytosk/WF.lean) | 鍵の補題 10、補題 11〜13、定理 |
 
 方法は Buchholz の「区別された集合（distinguished sets）」。
 Arai の [Wellfoundedness proof with the maximal distinguished set](https://arxiv.org/abs/2211.08619)（2022）
