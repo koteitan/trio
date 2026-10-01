@@ -43,6 +43,18 @@ termination_by M.length - n
 def ev2r (M : Mat) : T :=
   sumN ((List.range M.length).filter (fun i => col M i = (0, 0, 0)) |>.map (o2r M))
 
+/-- The defining equation of `o2r` without `attach`. -/
+theorem o2r_eq (M : Mat) (n : Nat) :
+    o2r M n = sf (psi (vr M n) (sumN ((children M n).map (o2r M))) z) := by
+  rw [o2r]
+  congr 3
+  simp [List.map_attach_eq_pmap]
+
+/-- **Congruence.** Equal subscripts and equal lists of child values give equal values. -/
+theorem o2r_congr {M M' : Mat} {n n' : Nat} (hv : vr M n = vr M' n')
+    (hc : (children M n).map (o2r M) = (children M' n').map (o2r M')) : o2r M n = o2r M' n' := by
+  rw [o2r_eq, o2r_eq, hv, hc]
+
 #eval [[(0,0,0), (1,1,0), (2,2,0)], [(0,0,0), (1,1,0), (2,2,0), (2,0,0)],
     [(0,0,0), (1,1,0), (2,1,0), (1,1,0), (2,1,0), (1,1,0), (2,0,0), (3,1,0), (4,1,0), (3,1,0), (4,1,0), (3,1,0)]].map
   fun (M : Mat) => (str (ev2r M), (eval2 M).map str)
