@@ -128,4 +128,39 @@ theorem col_zero_of_top {M : Mat} (hz0 : TRIO.z0ok M) (h00 : entry M 0 0 = 0) {�
   simp at he h1 h2
   rw [he, h1, h2]
 
+theorem col_ne_zero_of_entry {M : Mat} {c : Nat} (h : 0 < entry M 0 c) : col M c ≠ (0, 0, 0) := by
+  intro hc; unfold entry col at *; rw [hc] at h; simp at h
+
+/-- **With `t ≥ 1` (row 0 ascends), the expansion keeps the roots.** -/
+theorem roots_expand_t1 {M : Mat} {r n : Nat} (hM : 2 ≤ M.length)
+    (hz : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0))
+    (hr : par M (TRIO.srow M (M.length - 1)) (M.length - 1) = some r)
+    (ht : 0 < TRIO.srow M (M.length - 1)) (hn : 1 ≤ n)
+    (hxr : col M (M.length - 1) ≠ (0, 0, 0)) : roots (expand M n) = roots M := by
+  obtain ⟨d1, heq, hlen, hLb, hA, hd0e⟩ := expand_gexp_data M n hM hz hr ht
+  have hrx := par_lt M _ _ _ hr
+  have hdpos : 0 < entry M 0 (M.length - 1) - entry M 0 r := by
+    have := anc0_interval (anc0_of_par M _ _ _ hr) (M.length - 1) hrx (Nat.le_refl _); omega
+  have hlen' : (expand M n).length = r + n * (M.length - 1 - r) := by
+    rw [heq]; exact TRIO.gexp_length hlen
+  apply roots_eq (x := M.length - 1) (by omega)
+  · rw [hlen']; have := Nat.mul_le_mul_right (M.length - 1 - r) hn; simp at this; omega
+  · intro c hc
+    have h1 := expand_take_prefix M hM hn
+    rw [← col_take (expand M n) hc, h1, col_take M hc]
+  · exact hxr
+  · intro c hc1 hc2
+    apply col_ne_zero_of_entry
+    rw [hlen'] at hc2
+    obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (n := n) (p := c) hLb (by omega) hc2
+    have hk1 : 1 ≤ k := by
+      rcases Nat.eq_zero_or_pos k with h0 | h0
+      · subst h0; simp at hc1; omega
+      · exact h0
+    rw [heq, entry0_gexp_mir hlen hk hq]
+    have : 1 * (entry M 0 (M.length - 1) - entry M 0 r) ≤ k * (entry M 0 (M.length - 1) - entry M 0 r) :=
+      Nat.mul_le_mul_right _ hk1
+    omega
+
 end Ytosk
