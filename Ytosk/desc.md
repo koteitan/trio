@@ -1565,3 +1565,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - t = 0 の RootP N（node-lhd、V3T0Root、834c2396）: r に親があれば N と M の根は同じで、変わるのは x の祖先の最後の根だけ。r が根なら根の値は M の根 ++ omid×(n−1) ++ o′(r)。t0_core は Cons・Rk・Good3・FrameOT・RootP を出し、実質の残りは hOTD だけ。
 - t = 2（strict-r、55c5c981）: SeedC を SeedL に弱めた版をコミット。Res3T2 は C′ で例外 0（SeedL は python の抜き取り検査）。
 - seed（omega-lhd、V3SeedLhd）: seedOK_of_lhd_below（種 ◁ o(r) から SeedOK、残りは comps_a）。
+- t = 1 の TrigOm（t1-struct、7fb2a29d・1454209e・5622b1fc）: q = r では ζ = 1 の端の場合が消え、残りの仮定なし（数える子の形 TrigOmC）。Inv3 の TrigOm・TP1・TP1W を数える子の形に替える（使う側はすべて数える子の前提を持つ）。これで NoTrigU とその保存は要らない。
