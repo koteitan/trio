@@ -824,3 +824,21 @@ Lean（`V3SeedTop.lean`、緑）:
 - `seedOK_of_lhd_top`: ψ_μ(σ) 標準形、σ < b、ψ_μ(σ) ◁ ψ_μ(b) ⇒ SeedOK。
   したがって始点の条件は「r で seed ◁ o(r)」だけ。F_k（γ_k を入れた値）への DomLe は不要になった。
 - ◁ は標準形も運ぶ（`psi_ot_of_lhd`）ので、M.take x の値の標準形（不変条件 (I1)）も同じ関係から出る。根では降下（n = 1）。
+
+### Lean の進捗（2026-10-03）
+
+| ファイル | 内容 |
+|---|---|
+| `V3Seed` | `seedOK_of_c2`・`lt_fs_psi`・`seedOK_of_dom_gam`（`dom_gam`） |
+| `V3SeedTop` | `cof_gam`（基本列の共終性）、`seedOK_of_lhd_top`（seed ◁ o(r) ⇒ SeedOK） |
+| `V3DomLe`・`V3DropStep` | 成分の支配つきの ≤ と枠 1 段（今は ◁ の道を主に使う） |
+| `V3DropLhd` | `LhdE`、枠 1 段 `lhdE_step_nn`・`lhdE_step_tt`、`lhd_psi_small`（引数の成分が引数以下なら ψ の値で ◁） |
+| `V3Struct1` | `hpath_of_par1`（r = P_1(x) から経路の行 1） |
+| `V3Struct2` | `upg_refl`、`hiu_t1`・`hiux_t1`（上げられるかは x より前で M と N で同じ、x は上げられない） |
+| `V3BaseT1` | `t1_main2`: 基底 M.take x の評価を `rk_take` から、始点の条件を seed ◁ o(r) から |
+| `V3InvTake` | R0P・Z2・Z1C・SibDec は先頭部分で保たれる |
+
+落とす補題の枠 1 段の実測（t = 1・q ≠ r、M の値への ◁）: 書き換えなし同士は条件 hBm が全件、書き換えあり同士は添字同じで
+引数の ◁ がほぼ全件、M だけ書き換えで低い部分ありは先頭部分が共通。step の段で ◁ が崩れる 9 件はすべて
+「引数の成分が引数以下」（`lhd_psi_small` の道）。v の変化は上げが消える x−1・のりしろだけで v(P_1) は不変。
+q = r の展開は列ごとの ζ が鎖の先へ何段もずれる型（2 行の q = r の一般化）。
