@@ -259,4 +259,96 @@ theorem fillC_fsD : ∀ (ctx : List (T × T)) {c ζ : T}, FramesD ctx c ζ →
     simp only [fillC]
     rw [fillC_fsD fr h2, node_fsD h1]
 
+/-! ## DV を使わない版（fsD の値の標準形と大小を仮定に置く） -/
+
+theorem fsD_lo_lt {p lo ζ : T} (hlo : lo ≠ z) (h : fsD (app p lo) ζ < app p lo) : fsD lo ζ < lo := by
+  rw [fsD_app p hlo] at h
+  exact (app_lt_app_left_iff p).mp h
+
+/-- **Commutation, non-rewriting case** (no `DV`). -/
+theorem frame_fsD_notrig' {a b s y ζ : T}
+    (hok : isOT (fsD (psi s y z) ζ) = true ∧ fsD (psi s y z) ζ < psi s y z)
+    (hno : y ≤ b ∨ s < a) (hbc : isOT (app b (psi s y z)) = true)
+    (hno' : ∀ s' y', psi s' y' z ∈ summands (fsD (psi s y z) ζ) → y' ≤ b ∨ s' < a) :
+    fsD (spArg a b (psi s y z)) ζ = spArg a b (fsD (psi s y z) ζ) := by
+  obtain ⟨hfot, hflt⟩ := hok
+  have hcz : psi s y z ≠ z := by simp
+  have h1 : spArg a b (psi s y z) = app b (psi s y z) := by
+    apply spArg_eq_app hbc
+    intro s' y' hq
+    simp only [summands, List.mem_cons, List.mem_nil_iff, or_false, psi.injEq] at hq
+    obtain ⟨rfl, rfl, _⟩ := hq; exact hno
+  have hbot : isOT b = true := isOT_app_left hbc
+  have hbf : isOT (app b (fsD (psi s y z) ζ)) = true := by
+    apply isOT_app_of hbot hfot
+    intro q hq
+    exact le_trans (head_le_of_lt hflt) (summand_ge_of_app hbc hq)
+  rw [h1, fsD_app b hcz, spArg_eq_app hbf hno']
+
+/-- **Commutation, rewriting case with a lower part** (no `DV`). -/
+theorem frame_fsD_trig' {a b s y ζ : T} (hc : isOT (psi s y z) = true) (hys : isSucc y = false)
+    (hok : isOT (fsD (psi s y z) ζ) = true ∧ fsD (psi s y z) ζ < psi s y z)
+    (htr : lt b y = true ∧ lt (psi a z z) (psi s y z) = true)
+    (hlo : (split y (psi (succ s) z z)).2 ≠ z)
+    (hlo' : fsD (split y (psi (succ s) z z)).2 ζ ≠ z)
+    (hbη : lt b (fsD y ζ) = true) :
+    fsD (spArg a b (psi s y z)) ζ = spArg a b (fsD (psi s y z) ζ) := by
+  have hy : y ≠ z := by rintro rfl; simp [lt] at htr
+  have hfc : fsD (psi s y z) ζ = psi s (fsD y ζ) z := fsD_psi hy hys ζ
+  have hcη : isOT (psi s (fsD y ζ) z) = true := by rw [← hfc]; exact hok.1
+  have hylt : fsD y ζ < y := by
+    have := hok.2; rw [hfc, psi_lt_psi_z_iff] at this
+    rcases this with h | ⟨_, h⟩
+    · exact absurd h (lt_irrefl' _)
+    · exact h
+  have hbpl := split_app (psi (succ s) z z) y
+  have hpge := split_fst_ge (psi (succ s) z z) y
+  have hlo1 := split_snd_head (psi (succ s) z z) y
+  generalize hP : (split y (psi (succ s) z z)) = pr at hbpl hpge hlo1 hlo hlo'
+  obtain ⟨p, lo⟩ := pr
+  simp only at hbpl hpge hlo1 hlo hlo'
+  have hloh : head lo < psi (succ s) z z := by rcases hlo1 with h | h; exact absurd h hlo; exact h
+  have hH : spArg a b (psi s y z) = app p (psi s y z) := by
+    rw [spArg_cons]; show step a b s y z = _
+    unfold step; rw [if_pos htr, H_eq hc, hP]; simp [hlo]
+  have hcz : psi s y z ≠ z := by simp
+  rw [hH, fsD_app p hcz, hfc]
+  have hfy : fsD y ζ = app p (fsD lo ζ) := by rw [← hbpl]; exact fsD_app p hlo ζ
+  have hlolt : fsD lo ζ < lo := fsD_lo_lt hlo (by rw [hbpl]; exact hylt)
+  have hsp : split (fsD y ζ) (psi (succ s) z z) = (p, fsD lo ζ) := by
+    rw [hfy]
+    apply split_app_of hpge
+    right; exact lt_of_le_of_lt (head_le_of_lt hlolt) hloh
+  rw [spArg_cons]; show _ = step a b s (fsD y ζ) z
+  unfold step
+  have hy' : fsD y ζ ≠ z := by intro h; rw [h] at hbη; simp [lt] at hbη
+  have htr' : lt b (fsD y ζ) = true ∧ lt (psi a z z) (psi s (fsD y ζ) z) = true :=
+    ⟨hbη, by rw [← trig_cond hy hy']; exact htr.2⟩
+  rw [if_pos htr', H_eq hcη, hsp]
+  simp [hlo']
+
+/-- **Commutation, rewriting case with no lower part** (no `DV`). -/
+theorem frame_fsD_trig0' {a b s y ζ : T} (hc : isOT (psi s y z) = true) (hys : isSucc y = false)
+    (hok : isOT (fsD (psi s y z) ζ) = true ∧ fsD (psi s y z) ζ < psi s y z)
+    (htr : lt b y = true ∧ lt (psi a z z) (psi s y z) = true)
+    (hlo : (split y (psi (succ s) z z)).2 = z)
+    (hlo' : (split (fsD y ζ) (psi (succ s) z z)).2 = z)
+    (hbη : lt b (fsD y ζ) = true) :
+    fsD (spArg a b (psi s y z)) ζ = spArg a b (fsD (psi s y z) ζ) := by
+  have hy : y ≠ z := by rintro rfl; simp [lt] at htr
+  have hfc : fsD (psi s y z) ζ = psi s (fsD y ζ) z := fsD_psi hy hys ζ
+  have hcη : isOT (psi s (fsD y ζ) z) = true := by rw [← hfc]; exact hok.1
+  have hH : spArg a b (psi s y z) = y := by
+    rw [spArg_cons]; show step a b s y z = _
+    unfold step; rw [if_pos htr, H_eq hc, if_pos hlo, app_z_right]
+    have := split_app (psi (succ s) z z) y; rw [hlo, app_z_right] at this; exact this
+  rw [hH, hfc]
+  rw [spArg_cons]; show _ = step a b s (fsD y ζ) z
+  unfold step
+  have hy' : fsD y ζ ≠ z := by intro h; rw [h] at hbη; simp [lt] at hbη
+  have htr' : lt b (fsD y ζ) = true ∧ lt (psi a z z) (psi s (fsD y ζ) z) = true :=
+    ⟨hbη, by rw [← trig_cond hy hy']; exact htr.2⟩
+  rw [if_pos htr', H_eq hcη, if_pos hlo', app_z_right]
+  have := split_app (psi (succ s) z z) (fsD y ζ); rw [hlo', app_z_right] at this; exact this.symm
+
 end Ytosk
