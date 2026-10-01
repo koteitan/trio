@@ -351,4 +351,60 @@ theorem frame_fsD_trig0' {a b s y ζ : T} (hc : isOT (psi s y z) = true) (hys : 
   rw [if_pos htr', H_eq hcη, if_pos hlo', app_z_right]
   have := split_app (psi (succ s) z z) (fsD y ζ); rw [hlo', app_z_right] at this; exact this.symm
 
+/-! ## ζ がずれる段（引き上げ: 子の引数の最後の加数がむき出しの Ω） -/
+
+theorem not_succ_lt_succ {ν s : T} (h : ¬ ν < s) : ¬ succ ν < succ s := by
+  intro h'
+  have h1 : succ ν ≤ s := lt_succ_iff.mp h'
+  exact h (lt_of_lt_of_le (lt_succ_self ν) h1)
+
+/-- **Commutation with a shifted index.** The child `ψ_s(P + Ω_{ν+1})` (with `P` above `Ω_{s+1}` and
+`ν ≥ s`) rewrites to its argument; after `Ω_{ν+1} ↦ ζ` the argument gets a lower part `ζ`, so the
+child stays as `ψ_s(P + ζ)` and the parent sees the index `ψ_s(P + ζ)` instead of `ζ`. -/
+theorem frame_fsD_shift {a b s P ν ζ : T}
+    (hc : isOT (psi s (app P (psi (succ ν) z z)) z) = true)
+    (hcη : isOT (psi s (app P ζ) z) = true)
+    (htr : lt b (app P (psi (succ ν) z z)) = true ∧
+      lt (psi a z z) (psi s (app P (psi (succ ν) z z)) z) = true)
+    (hP : ∀ q ∈ summands P, ¬ q < psi (succ s) z z) (hνs : ¬ ν < s)
+    (hζ : ζ < psi (succ s) z z) (hζz : ζ ≠ z) (hbη : lt b (app P ζ) = true) :
+    fsD (spArg a b (psi s (app P (psi (succ ν) z z)) z)) (psi s (app P ζ) z) =
+      spArg a b (psi s (app P ζ) z) := by
+  have hΩz : psi (succ ν) z z ≠ z := by simp
+  have hsν : succ ν ≠ z := by intro h; have := isSucc_succ ν; rw [h] at this; simp [isSucc, last, one] at this
+  -- the left side: the child rewrites to its argument
+  have hB : ∀ q ∈ summands (app P (psi (succ ν) z z)), ¬ q < psi (succ s) z z := by
+    intro q hq
+    rw [summands_app] at hq
+    rcases List.mem_append.mp hq with hq | hq
+    · exact hP q hq
+    · simp [summands] at hq; subst hq
+      intro h; rw [psi_lt_psi_z_iff] at h
+      rcases h with h | ⟨_, h⟩
+      · exact not_succ_lt_succ hνs h
+      · exact absurd h (by simp)
+  have hlo : (split (app P (psi (succ ν) z z)) (psi (succ s) z z)).2 = z := by
+    have := split_app_of (B := app P (psi (succ ν) z z)) (X := z) hB (Or.inl rfl)
+    rw [app_z_right] at this; rw [this]
+  have hfst : (split (app P (psi (succ ν) z z)) (psi (succ s) z z)).1 = app P (psi (succ ν) z z) := by
+    have := split_app_of (B := app P (psi (succ ν) z z)) (X := z) hB (Or.inl rfl)
+    rw [app_z_right] at this; rw [this]
+  have hH : spArg a b (psi s (app P (psi (succ ν) z z)) z) = app P (psi (succ ν) z z) := by
+    rw [spArg_cons]; show step a b s _ z = _
+    unfold step; rw [if_pos htr, H_eq hc, if_pos hlo, app_z_right, hfst]
+  have hleaf : fsD (psi (succ ν) z z) (psi s (app P ζ) z) = psi s (app P ζ) z := by
+    unfold fsD; rw [if_pos rfl, if_neg hsν, if_pos (isSucc_succ ν)]
+  rw [hH, fsD_app P hΩz, hleaf]
+  -- the right side: a rewrite with lower part `ζ`
+  have hsp : split (app P ζ) (psi (succ s) z z) = (P, ζ) :=
+    split_app_of hP (Or.inr (lt_of_le_of_lt (head_le_self ζ) hζ))
+  rw [spArg_cons]; show _ = step a b s (app P ζ) z
+  unfold step
+  have hy : app P (psi (succ ν) z z) ≠ z := fun h => hΩz (app_eq_z h).2
+  have hy' : app P ζ ≠ z := fun h => hζz (app_eq_z h).2
+  have htr' : lt b (app P ζ) = true ∧ lt (psi a z z) (psi s (app P ζ) z) = true :=
+    ⟨hbη, by rw [← trig_cond hy hy']; exact htr.2⟩
+  rw [if_pos htr', H_eq hcη, hsp]
+  simp [hζz]
+
 end Ytosk
