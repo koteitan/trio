@@ -1436,3 +1436,14 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 反例 X = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,0,0)(6,1,1)(7,1,1)(8,1,0)(4,2,0)(5,3,0)（bms -s = 1）。
   - V = v(P_1 r) = ψ_0(Ω_{Ω_1}) のとき o′(r) = ψ_{V+1}(0) の段 0 の成分に Ω_{Ω_1} が入る。
   - 使う側の hC2 もここで破れる。SeedOK 自体は成り立つ見込み（c0 の添字の成分が V の成分を押さえる）。t = 1・q = r の種をこの道で組み直す（omega-lhd）。
+
+### 最終形 trio_terminates_final（2026-10-02、V3IndV、緑）
+
+- 構造の 10 項目は sInv_std から出るので、帰納法の各段は値の部分 Inv3V（Cons・Good3・Rk・値の不変条件・rootS・rootP）と Res3A だけを作ればよい。
+- 接頭辞の段は 1 列落としに減る（hTake_of_last、1 列ずつ繰り返す。途中の接頭辞は順位があるので SRO でない）。
+- 残りの仮定は 4 つ:
+  - hBase: SRO[n] の Inv3V ∧ Res3A（bump-frame）。
+  - hLast: M → M.take (len − 1)。落とす補題で Good3・VSmallF・FrameClosed・FrameOT・BumpKidsDec・BumpTermDec・rootS・rootP（x が根でないとき）が出る（hLast_of）。
+    残りは値の 11 項目（AbsD・AbsU・TP1・TPLo・TP1W・TPLoW・AbsUW・AbsDW・TrigOm・TPLoN・AbsDN）、x が根のときの rootP、M.take x の Res3A。
+  - hExp: n ≥ 2 の展開の Inv3V ∧ Res3A（t = 1 は t1-struct の出力で Good3・FrameOT・RootP・BumpDec まで）。
+  - hT2: t = 2 の降下（strict-r）。
