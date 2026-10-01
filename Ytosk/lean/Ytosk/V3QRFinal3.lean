@@ -13,6 +13,7 @@ hADs0（添字 0 ののりしろの枠の吸収を始点で）。
 -/
 import Ytosk.V3QRSeed
 import Ytosk.V3MainT1F
+import Ytosk.V3DropPres
 
 namespace Ytosk
 
@@ -59,6 +60,7 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       (split y (psi (succ s) z z)).2 = z →
       (split (fsD y ((drop1 M (r + L) rkM).o r)) (psi (succ s) z z)).2 = z) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hx : r + L + 1 = M.length := hlen
   have hr : r < r + L := by omega
@@ -192,5 +194,6 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
         exact hYBs hlt1 i L' c R hi hd hch hdc s hcv htr1 htr2
   exact qr_final2 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hKD hTD
     hAD hTP hTPL hAU' hAD' hsM hpM hYB hS hsp0 hADs0 hLs
+    (good3_take (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop)
 
 end Ytosk

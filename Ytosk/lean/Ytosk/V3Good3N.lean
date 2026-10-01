@@ -7,7 +7,10 @@ N の評価 σ = glueZ M x ρ (shiftV ρP L) Z（x より前は M の値、D で
   D の列では最後の数える子の値だけが下がる（もとの値以下、0 でない）。x 以後の列は M[n − 1] の列と
   子の値の並びが同じ（`children_shift`・`cnt_copy`）。
 -/
-import Ytosk.V3Top
+import Ytosk.V3HoleT1
+import Ytosk.V3T1
+import Ytosk.V3Copy5
+import Ytosk.TwoRowI3
 
 namespace Ytosk
 

@@ -37,6 +37,7 @@ theorem qr_main (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → 
     {μ br seed : T} (hbr : br ≠ z) (hcb : cof br = .big μ)
     (hro : ρ.o r = psi μ br z) (hrD : DepX M (r + L) true r)
     (hox : ∀ ζ, fsD (ρ.o (r + L)) ζ = ζ)
+    (hgam : ∀ m, gamS μ br seed m ≤ ρ.o (r + L) ∧ gamS μ br seed m ≠ z)
     {Rt : Nat} (hRA : Anc0 M Rt (r + L))
     (hR0 : col M Rt = (0, 0, 0)) (hRlast : ∀ j, Rt < j → j ≤ r + L → entry M 0 j ≠ 0)
     (hRd : DepX M (r + L) true Rt)
@@ -54,23 +55,32 @@ theorem qr_main (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → 
       VLocZ M (r + L) ρ (zfQ M (r + L) lo lb μ br seed m) i)
     (hRt : ∀ m, Single (fsD (ρ.o Rt) (zfQ M (r + L) lo lb μ br seed m Rt)) ∧
       fsD (ρ.o Rt) (zfQ M (r + L) lo lb μ br seed m Rt) < ρ.o Rt)
+    (hOT : ∀ m, (∀ i, i < r + L → DepX M (r + L) true i →
+        isOT (fsD (ρ.o i) (zfQ M (r + L) lo lb μ br seed m i)) = true) ∧
+      (∀ i, i < r + L → DepX M (r + L) false i →
+        isOT (fsD (ρ.v i) (zfQ M (r + L) lo lb μ br seed m i)) = true) ∧
+      (∀ c, c < r + L → DepX M (r + L) true c →
+        fsD (ρ.o c) (zfQ M (r + L) lo lb μ br seed m c) ≤ ρ.o c ∧
+        fsD (ρ.o c) (zfQ M (r + L) lo lb μ br seed m c) ≠ z))
     -- the base `M[1] = M.take x`
     {ρ1 : Valn} {rk1 : Bool → Nat → Nat}
     (hC1 : Cons (TRIO.gexp M r L d0 0 1) ρ1) (hR1 : Rk (TRIO.gexp M r L d0 0 1) rk1)
+    (hG1 : Good3 (TRIO.gexp M r L d0 0 1) ρ1)
     (hr1 : ρ1.o r = seed)
     (hPv1 : ∀ g, g ≤ r → ∀ a, a < L →
       (par (TRIO.gexp M r L d0 0 1) 1 (r + a) = some g ∨
         upg (TRIO.gexp M r L d0 0 1) (r + a) = some g) → ρ.v g = ρ1.v g) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
-      ρN.o r = gamS μ br seed (n - 1) ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
       (∀ g, g < r + L → ¬ DepX M (r + L) false g → ρN.v g = ρ.v g) ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hx : r + L + 1 = M.length := hlen
   have hdx : dOf M (r + L) lo lb (r + L) = 0 := dOf_x hx hxv hOS hVS
-  refine qr_chain hlen hL hA hd0e hpath hx2 hxnb hz2 hiu hiux hnd hC hRM hbr hcb hro hrD hRA hR0 hRlast
-    hRd hsM hpM ?_ hC1 hR1 hr1 hPv1
+  refine qr_chain hlen hL hA hd0e hpath hx2 hxnb hz2 hiu hiux hnd hC hG hRM hOS hbr hcb hgam hro hrD hRA
+    hR0 hRlast hRd hsM hpM ?_ hC1 hR1 hG1 hr1 hPv1
   intro n _ ρP _ hPr
-  refine ⟨zfQ M (r + L) lo lb μ br seed (n - 2), ?_, ?_, hRt (n - 2)⟩
+  refine ⟨zfQ M (r + L) lo lb μ br seed (n - 2), ?_, ?_, (hRt (n - 2)).1, (hRt (n - 2)).2, (hOT (n - 2)).1,
+    (hOT (n - 2)).2.1, (hOT (n - 2)).2.2⟩
   · unfold zfQ; rw [hdr, Nat.add_zero]
   · apply qr_path hC hG hx ?_ (hO (n - 2)) (hV (n - 2))
     show ρP.o (r + L - L) = _

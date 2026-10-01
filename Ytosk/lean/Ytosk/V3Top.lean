@@ -512,9 +512,11 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
     · apply dropsAt_of hexp
       by_cases hqr : q = r
       · subst hqr
-        exact qr_final4 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2 hq
+        obtain ⟨ρN, rkN, hCN, hRN, _, hot, hlt⟩ :=
+          qr_final4 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2 hq
           I.cons I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.ad I.tp1w
           I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (hsd q hr hq) (n + 2) (by omega)
+        exact ⟨ρN, rkN, hCN, hRN, hot, hlt⟩
       · obtain ⟨s0, y0, h0⟩ := o_psi_form I.cons (show r < M.length by omega)
         have h := t1_main_final hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2
           (fun h' => hqr (Option.some.inj (hq.symm.trans h'))) I.cons I.good I.rank I.vs I.fc I.fo

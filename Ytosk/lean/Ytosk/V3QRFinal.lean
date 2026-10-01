@@ -4,6 +4,8 @@
 `qr_main`（列ごとの添字での帰納法）に、構造の補題（t1 と共通: `hOS_t1`・`dv_shape`・`hS3_t1`・`hxnb_t1`・
 `hiu_t1`・`hiux_t1`・`hnd_t1`・`root_t1`・`dep_anc_x`）、局所条件（`qr_oloc`・`qr_vloc`）、M[1] の評価
 （`drop1`、`base_v_read`）を入れる（`qr_final`）。
+出力は Good3（M[n] の評価が標準形）も含む。D の値の標準性は穴（`qr_holeD`・`hok_of_holeT`）から、
+M[1] の Good3 は仮定 hG1（`qr_final3` で `good3_take` から出す）。
 残る仮定:
 - 値の不変条件: BumpKidsDec・BumpTermDec・AbsD（t1 と共通）、TP1W・TPLoW・AbsUW・AbsDW（η = 1 版）。
 - y = b_r の書き換えの枠で B < b + ζ（鎖のすべての項、hYB）。
@@ -52,8 +54,10 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) c = 0 →
       ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ (ρ.v r)) z z) →
       (split y (psi (succ s) z z)).2 = z →
-      (split (fsD y ((drop1 M (r + L) rkM).o r)) (psi (succ s) z z)).2 = z) :
+      (split (fsD y ((drop1 M (r + L) rkM).o r)) (psi (succ s) z z)).2 = z)
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM)) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
   have hx : r + L + 1 = M.length := hlen
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
@@ -117,6 +121,46 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
         unfold entry; unfold col at h2; simpa using h2
       have := par1_entry_lt h1; omega
   have hrot : isOT (psi μ (app b (psi (succ μ) z z)) z) = true := by rw [← hro]; exact hG.ot_o r hrM
+  have hseedz : seed ≠ z := by obtain ⟨a, X, he⟩ := hseedS; rw [he]; simp
+  have hgS : ∀ k, ∃ a X, gamS μ (app b (psi (succ μ) z z)) seed k = psi a X z := by
+    intro k; cases k with
+    | zero => exact hseedS
+    | succ k => exact ⟨μ, _, rfl⟩
+  -- the holes of the `D` values give standard, smaller, nonzero values
+  have hHok : ∀ bb i, DepX M (r + L) bb i → i < r + L → ∀ m,
+      isOT (fsD (valB ρ bb i) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ
+        (app b (psi (succ μ) z z)) seed m i)) = true ∧
+      fsD (valB ρ bb i) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ
+        (app b (psi (succ μ) z z)) seed m i) < valB ρ bb i := by
+    intro bb i hd hi m
+    obtain ⟨hH, _⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS bb i hd hi
+    have hot : isOT (valB ρ bb i) = true := by
+      cases bb
+      · exact hG.ot_v i (by omega)
+      · exact hG.ot_o i (by omega)
+    exact hok_of_holeT hrot cof_br (lt_irrefl' μ) hS hot hH
+      (m + dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) i)
+  have hOT : ∀ m, (∀ i, i < r + L → DepX M (r + L) true i →
+        isOT (fsD (ρ.o i) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ
+          (app b (psi (succ μ) z z)) seed m i)) = true) ∧
+      (∀ i, i < r + L → DepX M (r + L) false i →
+        isOT (fsD (ρ.v i) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ
+          (app b (psi (succ μ) z z)) seed m i)) = true) ∧
+      (∀ c, c < r + L → DepX M (r + L) true c →
+        fsD (ρ.o c) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ (app b (psi (succ μ) z z)) seed m c)
+          ≤ ρ.o c ∧
+        fsD (ρ.o c) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ (app b (psi (succ μ) z z)) seed m c)
+          ≠ z) := by
+    intro m
+    refine ⟨fun i hi hd => (hHok true i hd hi m).1, fun i hi hd => (hHok false i hd hi m).1,
+      fun c hc hd => ⟨(hHok true c hd hc m).2.le, ?_⟩⟩
+    have hcM : c < M.length := by omega
+    obtain ⟨hH, _⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS true c hd hc
+    simp only [valB, cond_true] at hH
+    exact single_ne_z (single_fsD (o_psi_form hC hcM) (holeT_not_succ hH)
+      (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hH)) (hgS _)
+      (hok_of_holeT hrot cof_br (lt_irrefl' μ) hS (hG.ot_o c hcM) hH
+        (m + dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) c)).1)
   have hRt : ∀ m, Single (fsD (ρ.o Rt) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ
         (app b (psi (succ μ) z z)) seed m Rt)) ∧
       fsD (ρ.o Rt) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ (app b (psi (succ μ) z z)) seed m Rt)
@@ -128,33 +172,31 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
     have hRM' : Rt < M.length := by omega
     have hok := hok_of_holeT hrot cof_br (lt_irrefl' μ) hS (hG.ot_o Rt hRM') hHR
       (m + dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) Rt)
-    have hseedz : seed ≠ z := by obtain ⟨a, X, he⟩ := hseedS; rw [he]; simp
-    have hgS : ∀ k, ∃ a X, gamS μ (app b (psi (succ μ) z z)) seed k = psi a X z := by
-      intro k; cases k with
-      | zero => exact hseedS
-      | succ k => exact ⟨μ, _, rfl⟩
     refine ⟨?_, hok.2⟩
     exact single_fsD (o_psi_form hC hRM') (holeT_not_succ hHR)
       (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hHR)) (hgS _) hok.1
   intro n hn
-  obtain ⟨ρN, rkN, hCN, hRN, _, _, hot, hlt⟩ :=
+  have hSr := hS μ (lt_irrefl' μ) hrot
+  obtain ⟨ρN, rkN, hCN, hRN, hGN, _, _, hot, hlt⟩ :=
     qr_main hlen hL hA hd0e hpath hx2 (hxnb_t1 hlen hL hA hd0e hZ2 hZ1 h1) (hZ2 r)
       (fun n hn => hiu_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn)
       (fun n hn => hiux_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn)
       (hnd_t1 hlen hL hA hd0e hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2) hC hG hRM
       (fun h => absurd (app_eq_z h).2 (by simp)) cof_br hro hdep.1 (fun ζ => by
         rw [hox]; exact fsD_leaf (isSucc_succ μ) (succ_ne_z μ))
+      (fun m => ⟨by rw [hox]; exact (gamS_lt_om hrot cof_br (lt_irrefl' μ) hSr m).le,
+        gamS_ne_z_q hseedz m⟩)
       hRA hRt0 hRlast hRd hsM hpM hxv hOS hVS hdr
       (fun m => qr_oloc hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro rfl hb hpre hox
         hOS hVS hBk hxv hS hseedS hsp0 hTP hTPL hYB hLs m)
       (fun m => qr_vloc hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS hb hVS
         hBk hxv hseedS hTPL hLs hS hAU' hAD' hADs0 m)
-      hRt (ρ1 := drop1 M (r + L) rkM) (rk1 := rkM) (by rw [gexp_one_eq hlen]; exact hC1)
-      (by rw [gexp_one_eq hlen]; exact hRk1) rfl
+      hRt hOT (ρ1 := drop1 M (r + L) rkM) (rk1 := rkM) (by rw [gexp_one_eq hlen]; exact hC1)
+      (by rw [gexp_one_eq hlen]; exact hRk1) (by rw [gexp_one_eq hlen]; exact hG1) rfl
       (fun g hg a ha h => by
         rw [gexp_one_eq hlen] at h
         exact base_v_read hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hg ha h)
       n hn
-  exact ⟨ρN, rkN, hCN, hRN, hot, hlt⟩
+  exact ⟨ρN, rkN, hCN, hRN, hGN, hot, hlt⟩
 
 end Ytosk
