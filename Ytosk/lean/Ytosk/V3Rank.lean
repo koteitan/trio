@@ -155,7 +155,7 @@ theorem rk_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → 
   intro i hi
   rcases Nat.lt_or_ge i (r + L) with hix | hix
   · -- below `x`
-    have SA := sameAt_lt hlen hL hA hd0e hn hpath hx2 hqr hiu hiux i hix
+    have SA := sameAt_lt hlen hL hA hd0e hn hpath hx2 (xnb_of_qnr hlen hL hA hd0e hn hpath hqr) hiu hiux i hix
     have hiM : i < M.length := by omega
     obtain ⟨hR1, hR2, hR3⟩ := hRM i hiM
     refine ⟨?_, ?_, ?_⟩

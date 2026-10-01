@@ -133,10 +133,45 @@ theorem upg_N_xm1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
       rw [par_gexp_pre hlen (by omega) 1 (by omega), col_gexp_pre hlen (by omega) (by omega),
         entry_gexp_pre hlen (by omega) 0 (by omega)]
 
+/-- When `q ≠ r`, the copy root `x` is not a bump child of `q` in `N`. -/
+theorem xnb_of_qnr (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
+      entry M 1 r < entry M 1 s) (hqr : ∀ q, par M 0 (r + L) = some q → q ≠ r) :
+    ∀ c, par M 0 (r + L) = some c →
+      col (TRIO.gexp M r L d0 0 n) (r + L) ≠ bump (TRIO.gexp M r L d0 0 n) c := by
+  intro c hpc h
+  have hrc := q_ge_r hlen hL hA hd0e hn hpc
+  have hcA : Anc0 M c (r + L) := Anc0.step hpc (Anc0.refl _)
+  have hcr : c ≠ r := hqr c hpc
+  have hcx := par_lt M 0 _ _ hpc
+  have hrc' : Anc0 M r c := by
+    rcases anc0_total hA hcA with h1 | h1
+    · exact h1
+    · have := h1.le; omega
+  have h1c := hpath c hrc' hcA hcr (by omega)
+  have hNx : (col (TRIO.gexp M r L d0 0 n) (r + L)).2.1 = entry M 1 r := by
+    show entry (TRIO.gexp M r L d0 0 n) 1 (r + L) = entry M 1 r
+    exact e1_root hlen hL hA hd0e hn
+  rw [h] at hNx; unfold bump at hNx; simp at hNx
+  rw [entry_gexp_pre hlen (by omega) 1 (by omega)] at hNx; omega
+
+omit hA in
+/-- When row 2 of `r` is `0`, the copy root `x` is not a bump child in `N`. -/
+theorem xnb_of_r2 (hr2 : entry M 2 r = 0) :
+    ∀ c, col (TRIO.gexp M r L d0 0 n) (r + L) ≠ bump (TRIO.gexp M r L d0 0 n) c := by
+  intro c h
+  have h0 : 0 < (n - 1) * L := Nat.mul_pos (by omega) hL
+  have he := e2_copy (d0 := d0) (a := 0) hlen hL hn h0
+  simp only [Nat.add_zero] at he
+  have : (col (TRIO.gexp M r L d0 0 n) (r + L)).2.2 = entry (TRIO.gexp M r L d0 0 n) 2 (r + L) := rfl
+  rw [h, he, entry_gexp_pre (m := n - 1) hlen (by omega) 2 (by omega), hr2] at this
+  unfold bump at this; simp at this
+
 /-- **Topped before `x`.** -/
 theorem topped_N_lt (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
       entry M 1 r < entry M 1 s) (hx2 : entry M 2 (r + L) = 0)
-    (hqr : ∀ q, par M 0 (r + L) = some q → q ≠ r) {c : Nat} (hc : c < r + L) :
+    (hxnb : ∀ c, par M 0 (r + L) = some c →
+      col (TRIO.gexp M r L d0 0 n) (r + L) ≠ bump (TRIO.gexp M r L d0 0 n) c)
+    {c : Nat} (hc : c < r + L) :
     topped (TRIO.gexp M r L d0 0 n) c = topped M c := by
   unfold topped
   rw [children_N_lt hlen hL hA hd0e hn hc]
@@ -153,23 +188,12 @@ theorem topped_N_lt (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r 
     · rw [col_gexp_pre hlen (by omega) h]
     · have hdx : d = r + L := by omega
       subst hdx
-      -- `c` is the parent of `x`, on the path, so row 1 of `c` exceeds row 1 of `r`
       have hpc := (mem_children_iff.mp hdm).2
-      have hrc := q_ge_r hlen hL hA hd0e hn hpc
-      have hcA : Anc0 M c (r + L) := Anc0.step hpc (Anc0.refl _)
-      have hcr : c ≠ r := hqr c hpc
-      have hrc' : Anc0 M r c := by
-        rcases anc0_total hA hcA with h1 | h1
-        · exact h1
-        · have := h1.le; omega
-      have h1c := hpath c hrc' hcA hcr (by omega)
-      have hNx : (col (TRIO.gexp M r L d0 0 n) (r + L)).2.1 = entry M 1 r := by
-        show entry (TRIO.gexp M r L d0 0 n) 1 (r + L) = entry M 1 r
-        exact e1_root hlen hL hA hd0e hn
+      have hNb := hxnb c hpc
       have hMx : (col M (r + L)).2.2 = 0 := hx2
       rw [decide_eq_decide]
       constructor
-      · intro h; rw [h] at hNx; unfold bump at hNx; simp at hNx; omega
+      · intro h; exact absurd (by rw [← hb] at h; exact h) hNb
       · intro h; rw [h] at hMx; unfold bump at hMx; simp at hMx
 
 
@@ -226,7 +250,8 @@ theorem reads_lt_x (hx2 : entry M 2 (r + L) = 0) {i m : Nat} (hi : i < r + L)
 /-- **The columns before `x` have the same structure**, given that being an upgrade target agrees. -/
 theorem sameAt_lt (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
       entry M 1 r < entry M 1 s) (hx2 : entry M 2 (r + L) = 0)
-    (hqr : ∀ q, par M 0 (r + L) = some q → q ≠ r)
+    (hxnb : ∀ c, par M 0 (r + L) = some c →
+      col (TRIO.gexp M r L d0 0 n) (r + L) ≠ bump (TRIO.gexp M r L d0 0 n) c)
     (hiu : ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 0 n) c = isUpg M c)
     (hiux : isUpg (TRIO.gexp M r L d0 0 n) (r + L) = false) :
     ∀ i, i < r + L → SameAt M (TRIO.gexp M r L d0 0 n) i := by
@@ -241,20 +266,7 @@ theorem sameAt_lt (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
     intro c hc hcx'
     subst hcx'
     have hpc := (mem_children_iff.mp hc).2
-    have hcr : i ≠ r := hqr i hpc
-    have hcA : Anc0 M i (r + L) := Anc0.step hpc (Anc0.refl _)
-    have hri := q_ge_r hlen hL hA hd0e hn hpc
-    have hrc' : Anc0 M r i := by
-      rcases anc0_total hA hcA with h1 | h1
-      · exact h1
-      · have := h1.le; omega
-    have h1c := hpath i hrc' hcA hcr (by omega)
-    refine ⟨fun h => ?_, fun h => ?_⟩
-    · have : (col (TRIO.gexp M r L d0 0 n) (r + L)).2.1 = entry M 1 r := by
-        show entry (TRIO.gexp M r L d0 0 n) 1 (r + L) = entry M 1 r
-        exact e1_root hlen hL hA hd0e hn
-      rw [h] at this; unfold bump at this; simp at this
-      rw [entry_gexp_pre hlen (by omega) 1 hi] at this; omega
+    refine ⟨hxnb i hpc, fun h => ?_⟩
     · have : (col M (r + L)).2.2 = 0 := hx2
       rw [h] at this; unfold bump at this; simp at this
   refine ⟨entry_gexp_pre hlen (by omega) 1 hi, entry_gexp_pre hlen (by omega) 2 hi,
@@ -266,7 +278,7 @@ theorem sameAt_lt (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
     rcases Nat.lt_or_ge c (r + L) with h | h
     · unfold cnt
       rw [col_gexp_pre hlen (by omega) h, hb, hiu c h,
-        topped_N_lt hlen hL hA hd0e hn hpath hx2 hqr h]
+        topped_N_lt hlen hL hA hd0e hn hpath hx2 hxnb h]
     · have hcx' : c = r + L := by have := hcx c hc; omega
       obtain ⟨h1, h2⟩ := hxN c hc hcx'
       subst hcx'

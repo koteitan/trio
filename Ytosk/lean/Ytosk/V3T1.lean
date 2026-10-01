@@ -35,7 +35,7 @@ theorem cons_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
   have hlN := len_N (d0 := d0) hlen hn
   intro i hi
   rcases Nat.lt_or_ge i (r + L) with h | h
-  · exact cons_glue_lt (by omega) hC (sameAt_lt hlen hL hA hd0e hn hpath hx2 hqr hiu hiux)
+  · exact cons_glue_lt (by omega) hC (sameAt_lt hlen hL hA hd0e hn hpath hx2 (xnb_of_qnr hlen hL hA hd0e hn hpath hqr) hiu hiux)
       (fun i hi _ m _ hm => reads_lt_x hlen hx2 hi hm) hF i h
   · have := cons_copy hlen hL hA hd0e hn hpath hz2 hCP hagree (i - (r + L)) (by omega)
     rw [show r + L + (i - (r + L)) = i by omega] at this
