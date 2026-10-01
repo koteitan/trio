@@ -1,11 +1,13 @@
 /-
-**3 行・t = 1・q ≠ r: 枠の条件 (W) を値の不変条件 TP1 から。**
+**3 行・t = 1・q ≠ r: 枠の条件 (W)・(L) を値の不変条件 TP1・TPL から。**
 
 - 穴の段 `holeLev`: 共終数 Ω_{μ+1} の項と、対角化の点 ψ_{a'}(b)（cof b = Ω_{μ+1}）の下の項で μ（`holeLev_holeT`）。
 - 値の不変条件 **TP1**: 書き換えの枠（B < y、ψ_{v(i)}(0) < ψ_s(y)）で穴のある y について B < fsD(y, ψ_{holeLev y}(1))。
-- 始点 seed = o_{M.take x}(r) の引数は 0 でない（M.take x で r の最初の子 r+1 は数える子、`seed_arg_ne_z`）。
-  よって ψ_μ(1) ≤ seed、鎖のすべての項も ψ_μ(1) 以上。
-- (W)（`hW_of_TP1`）: TP1 と穴と fsD の単調性から。
+- 値の不変条件 **TPL**: 低い部分のない y が Ω_a（a 極限）で終わる枠で Ω_{fsD(a, ψ_μ(Ω_{μ+1}))} ≥ Ω_{s+1}。
+- 始点 seed = o_{M.take x}(r) の引数は 0 でない（M.take x で r の最初の子 r+1 は数える子、`seed_ge_one`）。
+- b_r の最後の項は Ω_{μ+1} でない（`last_br_t1`）。よって ψ_μ(Ω_{μ+1}) ≤ seed なら鎖のすべての項も
+  ψ_μ(Ω_{μ+1}) 以上（`gamS_ge_omfix`、fs は Ω_{μ+1} 以上を保つ `om_le_fs`）。
+- (W)（`hW_of_TP1`）・(L)（`hLo_of_TPL`）。まとめ `t1_main_tp1`（(W) を外す）・`t1_main_tpl`（(W)・(L) を外す）。
 -/
 import Ytosk.V3ValT1R
 import Ytosk.V3TP1
