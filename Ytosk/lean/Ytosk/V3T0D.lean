@@ -250,6 +250,175 @@ theorem o_frame_lhd {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
     obtain ⟨s'', h''⟩ := hy s hsy
     rw [hs'y'] at h''; simp only [psi.injEq] at h''; exact h''.2.1
 
+theorem foldl_nzs : ∀ (l : List T) (acc : T), isOT acc = true → (∀ t ∈ l, isOT t = true) →
+    l.foldl (fun a b => sf (add a b)) acc = (nzs l).foldl (fun a b => sf (add a b)) acc
+  | [], _, _, _ => rfl
+  | t :: l, acc, hacc, hl => by
+    have hl' : ∀ u ∈ l, isOT u = true := fun u hu => hl u (by simp [hu])
+    by_cases ht : t = z
+    · have : nzs (t :: l) = nzs l := by simp [nzs, List.filter_cons, ht]
+      rw [this, List.foldl_cons, ht, add_z_right, sf_ot hacc]
+      exact foldl_nzs l acc hacc hl'
+    · have : nzs (t :: l) = t :: nzs l := by simp [nzs, List.filter_cons, ht]
+      rw [this, List.foldl_cons, List.foldl_cons]
+      have hot : isOT (add acc t) = true := isOT_add hacc (hl t (by simp))
+      exact foldl_nzs l _ (by rw [sf_ot hot]; exact hot) hl'
+
+theorem sumN_nzs {l : List T} (hl : ∀ t ∈ l, isOT t = true) : sumN l = sumN (nzs l) :=
+  foldl_nzs l z rfl hl
+
+/-- **The bump-type `v` frame of two matrices** with the same children at `i` and at its last (bump)
+child `j`, where the sum `G` of the children of `j` changes in the strong relation and strictly. -/
+theorem v_bump_lhd {M N : Mat} {ρ σ : Valn} {i j : Nat} {L : List Nat} {G' G : T}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hCN : Cons N σ) (hiM : i < M.length) (hiN : i < N.length)
+    (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i ≠ 0) (he1 : entry N 1 i = entry M 1 i)
+    (he2 : entry N 2 i = entry M 2 i) (hV : vOpt σ (par N 1 i) = vOpt ρ (par M 1 i))
+    (hchM : children M i = L ++ [j]) (hchN : children N i = L ++ [j])
+    (hbL : ∀ d ∈ L, bumpTerm N σ i d = bumpTerm M ρ i d)
+    (hbjM : bumpTerm M ρ i j = omega G) (hbjN : bumpTerm N σ i j = omega G')
+    (hGot : isOT G = true) (hG'ot : isOT G' = true) (hS : BRelS G' G) (hlt : G' < G)
+    (hTD : BumpTermDec M ρ)
+    (hAbs : ∀ q ∈ summands (vOpt ρ (par M 1 i)), ¬ q < psi z two z → q < bumpW M ρ i →
+      Lhd z q (bumpW M ρ i)) :
+    Lhd z (σ.v i) (ρ.v i) := by
+  set V := vOpt ρ (par M 1 i) with hVdef
+  have hVot : isOT V = true := by
+    rw [hVdef]
+    cases hp : par M 1 i with
+    | none => rfl
+    | some m => exact hG.ot_v m (by have := par_lt M 1 i m hp; omega)
+  set Lb := L.map (bumpTerm M ρ i) with hLb
+  have hLbot : ∀ t ∈ Lb, isOT t = true := fun t ht => by
+    obtain ⟨d, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm hG i d
+  have hmapM : (children M i).map (bumpTerm M ρ i) = Lb ++ [omega G] := by
+    rw [hchM, List.map_append, List.map_singleton, hbjM]
+  have hmapN : (children N i).map (bumpTerm N σ i) = Lb ++ [omega G'] := by
+    rw [hchN, List.map_append, List.map_singleton, hbjN, List.map_congr_left hbL]
+  set Pl := nzs Lb with hPl
+  have hsumM : sumN (one :: (Lb ++ [omega G])) = sumN (one :: Pl ++ [omega G]) := by
+    rw [sumN_nzs (l := one :: (Lb ++ [omega G])) (fun t ht => by
+      rcases List.mem_cons.mp ht with rfl | ht
+      · rfl
+      · rcases List.mem_append.mp ht with ht | ht
+        · exact hLbot t ht
+        · simp at ht; rw [ht]; exact isOT_omega hGot)]
+    simp only [nzs, List.filter_cons, List.filter_append]
+    simp [one, omega_ne_z G]
+    rw [hPl, nzs]; simp
+  have hsumN : sumN (one :: (Lb ++ [omega G'])) = sumN (one :: Pl ++ [omega G']) := by
+    rw [sumN_nzs (l := one :: (Lb ++ [omega G'])) (fun t ht => by
+      rcases List.mem_cons.mp ht with rfl | ht
+      · rfl
+      · rcases List.mem_append.mp ht with ht | ht
+        · exact hLbot t ht
+        · simp at ht; rw [ht]; exact isOT_omega hG'ot)]
+    simp only [nzs, List.filter_cons, List.filter_append]
+    simp [one, omega_ne_z G']
+    rw [hPl, nzs]; simp
+  have hsP : ∀ q ∈ Pl, Single q := by
+    intro q hq
+    rw [hPl, nzs, List.mem_filter] at hq
+    obtain ⟨hq, hqz⟩ := hq
+    obtain ⟨d, _, rfl⟩ := List.mem_map.mp hq
+    unfold bumpTerm at hqz ⊢
+    by_cases hb : col M d = bump M i
+    · rw [if_pos hb]
+      exact single_omega (by
+        apply isOT_sumN; intro t ht
+        obtain ⟨k, hk, rfl⟩ := List.mem_map.mp ht; exact hG.ot_o k (mem_children hk).2)
+    · rw [if_neg hb] at hqz; simp at hqz
+  have hdecP := hTD i h1 h2
+  rw [hmapM, nzs_append, nzs_single (omega_ne_z G)] at hdecP
+  have hpre := List.pairwise_append.mp hdecP
+  have hpP : Pl.Pairwise (fun a b => b ≤ a) := hpre.1
+  have hPt : ∀ q ∈ Pl, omega G ≤ q := fun q hq => hpre.2.2 q hq _ (by simp)
+  have hPot : ∀ t ∈ one :: Pl, isOT t = true := by
+    intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · rfl
+    · exact (hsP t ht).1
+  have hp'ot : isOT (sumN (one :: Pl ++ [omega G'])) = true := isOT_sumN _ (fun t ht => by
+    rcases List.mem_append.mp ht with h | h
+    · exact hPot t h
+    · simp at h; rw [h]; exact isOT_omega hG'ot)
+  have hpot : isOT (sumN (one :: Pl ++ [omega G])) = true := isOT_sumN _ (fun t ht => by
+    rcases List.mem_append.mp ht with h | h
+    · exact hPot t h
+    · simp at h; rw [h]; exact isOT_omega hGot)
+  have ev : ρ.v i = add V (omega (sumN (one :: Pl ++ [omega G]))) := by
+    rw [(hC i hiM).2]; unfold vRhs
+    rw [if_neg h1, if_neg h2, hmapM, hsumM, sf_ot (isOT_add hVot (isOT_omega hpot))]
+  have ev' : σ.v i = add V (omega (sumN (one :: Pl ++ [omega G']))) := by
+    rw [(hCN i hiN).2]; unfold vRhs
+    rw [he1, he2, if_neg h1, if_neg h2, hV, hmapN, hsumN, sf_ot (isOT_add hVot (isOT_omega hp'ot))]
+  have hp := brelS_p hsP hpP hPt (single_omega hG'ot) (single_omega hGot) (brelS_omega hG'ot hGot hS)
+  have hW := brelS_lhdE (brelS_omega hp'ot hpot hp)
+  have hbW : bumpW M ρ i = omega (sumN (one :: Pl ++ [omega G])) := by
+    unfold bumpW; rw [hmapM, hsumM]
+  have hE : LhdE (σ.v i) (ρ.v i) := by
+    rw [ev', ev]
+    apply v_strong hVot (single_omega hp'ot) (single_omega hpot) hW
+    intro q hq hn hlt'
+    by_cases hWE : omega (sumN (one :: Pl ++ [omega G])) < E0
+    · exact lhd_lt_small (isOT_mem_summands hVot hq) hWE hlt'
+    · rw [← hbW]
+      apply hAbs q hq _ (by rw [hbW]; exact hlt')
+      intro hq2
+      apply hn
+      have h2le : two ≤ sumN (one :: Pl ++ [omega G']) :=
+        two_le_sumN_one_cons (by simp) (fun t ht => by
+          rcases List.mem_append.mp ht with h | h
+          · exact hsP t h
+          · simp at h; rw [h]; exact single_omega hG'ot)
+      have hom : psi z two z ≤ omega (sumN (one :: Pl ++ [omega G'])) := by
+        rw [← omega_small two_lt_E0]
+        rcases (le_iff _ _).mp h2le with h' | h'
+        · exact le_of_lt (omega_lt_omega isOT_two hp'ot h')
+        · rw [h']
+      exact lt_of_lt_of_le hq2 hom
+  apply lhd_of_lhdE_lt hE
+  rw [ev', ev]
+  apply add_lt_add_left
+  apply omega_lt_omega hp'ot hpot
+  exact sumN_snoc_lt hPot hPot (isOT_omega hG'ot) (isOT_omega hGot) (le_refl _)
+    (omega_lt_omega hG'ot hGot hlt)
+
+/-- **The `G` level** (the children of the bump child): the last child changes by `◁`, either with the
+same subscript or to `ψ_{w′}(0)` with `w′ ⊴ w`. -/
+theorem g_brel {Kv : List T} {t' t : T} (hsK : ∀ u ∈ Kv, Single u)
+    (hpK : (Kv ++ [t]).Pairwise (fun a b => b ≤ a)) (ht : Single t) (ht' : Single t')
+    (hl : Lhd z t' t)
+    (hform : (∃ s y y', t = psi s y z ∧ t' = psi s y' z) ∨
+      (∃ w' w Y, t' = psi w' z z ∧ t = psi w Y z ∧ LhdE w' w ∧ one ≤ w')) :
+    BRelS (sumN (Kv ++ [t'])) (sumN (Kv ++ [t])) ∧ sumN (Kv ++ [t']) < sumN (Kv ++ [t]) ∧
+      isOT (sumN (Kv ++ [t'])) = true := by
+  have hp1 := List.pairwise_append.mp hpK
+  have hKt : ∀ u ∈ Kv, t ≤ u := fun u hu => hp1.2.2 u hu t (by simp)
+  have hst : ∀ u ∈ Kv ++ [t], Single u := fun u hu => by
+    rcases List.mem_append.mp hu with h | h
+    · exact hsK u h
+    · simp at h; rw [h]; exact ht
+  have hst' : ∀ u ∈ Kv ++ [t'], Single u := fun u hu => by
+    rcases List.mem_append.mp hu with h | h
+    · exact hsK u h
+    · simp at h; rw [h]; exact ht'
+  have hpK' : (Kv ++ [t']).Pairwise (fun a b => b ≤ a) :=
+    List.pairwise_append.mpr ⟨hp1.1, by simp, fun a ha b hb => by
+      simp at hb; rw [hb]; exact le_trans (le_of_lt hl.1) (hKt a ha)⟩
+  have hKot : ∀ u ∈ Kv, isOT u = true := fun u hu => (hsK u hu).1
+  refine ⟨?_, sumN_snoc_lt hKot hKot ht'.1 ht.1 (le_refl _) hl.1,
+    isOT_sumN _ (fun u hu => (hst' u hu).1)⟩
+  rw [sumN_snoc_dec hst' hpK', sumN_snoc_dec hst hpK]
+  by_cases hK : Kv = []
+  · subst hK
+    simp only [sumN_nil, app_z]
+    rcases hform with ⟨s, y, y', rfl, rfl⟩ | ⟨w', w, Y, rfl, rfl, hw, h1⟩
+    · exact brelS_single_same z (Or.inr hl) ht'.1
+    · exact brelS_fix hw h1
+  · have hS0 : sumN Kv ≠ z := sumN_ne_z hsK hp1.1 hK
+    have := brelS_app_same hS0 (Or.inr hl) z
+    simpa using this
+
 /-- `v(x)` is not in `D` when row 1 of `x` is `0`. -/
 theorem not_depX_v_x {M : Mat} {x : Nat} (he1 : entry M 1 x = 0) : ¬ DepX M x false x := by
   intro h
