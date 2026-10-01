@@ -19,7 +19,8 @@ inductive ChgX (M : Mat) (x : Nat) : Bool → Nat → Prop
   | supg : upg M (x - 1) ≠ none → ChgX M x false (x - 1)
   | scnt {i c : Nat} : c ∈ children M i → c < x → ¬ (Counted (M.take x) i c ↔ Counted M i c) →
       ChgX M x true i
-  | snb {i : Nat} : x ∈ children M i → col M x = bump M i → ChgX M x false i
+  | snb {i : Nat} : entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → x ∈ children M i → col M x = bump M i →
+      ChgX M x false i
   | ochild {i c : Nat} : c ∈ children M i → col M c ≠ bump M i →
       ¬ (isUpg M c = true ∧ topped M c = true) → ChgX M x true c → ChgX M x true i
   | ov {i : Nat} : ChgX M x false i → ChgX M x true i
@@ -179,7 +180,7 @@ theorem vRhs_take_off {ρ : Valn} (hot : ∀ c, c < M.length → isOT (ρ.o c) =
     · rfl
   rw [children_take, List.map_congr_left hbt]
   by_cases hxi : x ∈ children M i
-  · have hxb : col M x ≠ bump M i := fun hb => hE (ChgX.snb hxi hb)
+  · have hxb : col M x ≠ bump M i := fun hb => hE (ChgX.snb h1 h2 hxi hb)
     have hz : bumpTerm M ρ i x = z := by unfold bumpTerm; rw [if_neg hxb]
     conv_rhs => rw [children_split_x hx hxi, List.map_append, List.map_singleton, hz,
       ← List.cons_append]
