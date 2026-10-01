@@ -589,3 +589,19 @@ lean-yapss（https://github.com/koteitan/yet-another-pss-proof）は値の標準
   PRE は PreHi から、先頭部分の条件は `inv2_take_all` から。
 - 残り: (I2) n ≥ 2 の展開で Inv2 が保たれる（写しは M[n−1] からのずらし、経路は fsD の形、つなぎ目の枠）、
   対角列が Inv2 を満たす、`wf_OT` と合わせた 2 行の停止性。その後 3 行（Val）へ。
+
+### 到達点（2026-10-02）: 2 行の停止性が完成（Lean、sorry なし）
+
+**`twoRow_terminates`**（`TwoRowDiag.lean`）: 2 行の標準形（対角列 (0,0,0)(1,1,0)…(k,k,0) から展開で届く行列、`Std2`）から
+始めた展開の関係は整礎。公理は propext・Classical.choice・Quot.sound だけ。
+
+組み立て:
+- 不変条件 `Inv2`（Good2・PreHi・PreFC・RootsDec・z0ok・r1ok・左上 0・行 2 が 0）。
+- 降下 `twoRow_desc_inv`: Inv2 なら ev2r(M[n]) < ev2r(M)、標準形。
+- 保存 `inv2_expand_all`: (I1) 落とす（`inv2_take`）、(I2) t = 0 で r が根でない（`inv2_expand_t0_g`）・根
+  （`inv2_expand_t0_root`）、t = 1（`inv2_expand_t1_all`、写しは M[n−1] からのずらし、つなぎ目は (q, x)）。
+- 出発点 `inv2_diag2`: 対角列の値は o(k) = Ω_k、i < k で o(i) = ψ_i(Ω_k)。
+- 整礎性 `twoRow_wf`: 根の和を標準形の項の順序（`wf_OT`）に移す。
+
+次: 3 行（評価器 `Val`、添字が項・上げ・のりしろ）。2 行の枠組み（落とす補題・展開の補題・始点の定理・
+枠の不変条件）をどこまで持ち上げられるかを、まず 3 行のデータで測る（PreHi・PreFC の 3 行版が成り立つか）。
