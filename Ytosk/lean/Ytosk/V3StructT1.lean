@@ -11,6 +11,7 @@ x = r + L が最後の列、r = P_1(x)、q = P_0(x) ≠ r、x の行 2 は 0。�
 -/
 import Ytosk.V3ChgS
 import Ytosk.V3BaseT1
+import Ytosk.V3DropAsm
 
 namespace Ytosk
 
@@ -518,6 +519,124 @@ theorem dep_anc_x (hx : x + 1 = M.length) (hx2 : entry M 2 x = 0) {a : Nat} (ha 
   path_up hUAT hZ2 hR12 hBE (x - a) a x (Nat.le_refl _) (by omega) ha hx2 DepX.leaf
     (fun t _ htx => not_anc_out (by omega) (by have := htx.le; omega))
 
+end
+
+/-! ## hxnb・hcnt・hnd -/
+
+section
+variable {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+  (hA : Anc0 M r (r + L)) (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+  (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+include hlen hL hA hd0e hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2
+
+omit hR0 hSD hUAT hUAB hx2 in
+/-- **`hxnb`**: the copy root is not a bump child (row 2 of `r` is `0`). -/
+theorem hxnb_t1 : ∀ n, 2 ≤ n → ∀ c, par M 0 (r + L) = some c →
+    col (TRIO.gexp M r L d0 0 n) (r + L) ≠ bump (TRIO.gexp M r L d0 0 n) c := by
+  intro n hn c _
+  exact xnb_of_r2 hlen hL hd0e hn (e2_r_zero h1 hA (by omega) hZ2 hZ1) c
+
+omit hL hA hd0e hUAB h1 hx2 in
+/-- **`hcnt`**: dropping `x` counts no new child. -/
+theorem hcnt_t1 : ∀ i c, i < r + L → c ∈ children (M.take (r + L)) i →
+    Counted (M.take (r + L)) i c → Counted M i c := by
+  have h := counted_take_last (M := M) (by omega) hR0 hZ2 hSD hZ1 hUAT
+  rw [show M.length - 1 = r + L by omega] at h
+  exact h
+
+omit hL hA hd0e h1 hx2 in
+/-- A `v` read through `P_1` or an upgrade from a column in `[r, x)` with target at or before `r` is
+not in `D`. -/
+theorem nodep_read {d g : Nat} (hrd : r ≤ d) (hd : d < r + L) (hg : g ≤ r)
+    (h : par M 1 d = some g ∨ upg M d = some g) : ¬ DepX M (r + L) false g := by
+  intro hD
+  apply v_read_not_chg (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hd _
+    (depX_chgX hD)
+  rcases h with h | h
+  · exact Or.inl h
+  · refine Or.inr ⟨h, ?_⟩
+    obtain ⟨_, _, _, _, hcase⟩ := upg_spec h
+    rcases hcase with h' | ⟨_, h'⟩
+    · omega
+    · exact h'
+
+
+/-- **The reads of `M[m]` from `[r, end)` into columns at or before `r` are not in `D`**
+(induction on the number of copies). -/
+theorem nd_read : ∀ m, 1 ≤ m → ∀ g, g ≤ r → ∀ a, a < m * L →
+    (par (TRIO.gexp M r L d0 0 m) 1 (r + a) = some g ∨
+      upg (TRIO.gexp M r L d0 0 m) (r + a) = some g) → ¬ DepX M (r + L) false g := by
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  intro m
+  induction m with
+  | zero => intro h; omega
+  | succ m ih =>
+    intro _ g hg a ha h
+    rcases Nat.lt_or_ge a L with haL | haL
+    · -- the first copy is `M` itself
+      have hd : r + a < r + L := by omega
+      apply nodep_read hlen hR0 hZ2 hSD hZ1 hUAT hUAB (by omega : r ≤ r + a) hd hg
+      rcases h with h | h
+      · left; rwa [par_gexp_pre hlen (by omega) 1 hd] at h
+      · right
+        rcases Nat.lt_or_ge (r + a + 1) (r + L) with hi | hi
+        · rwa [← upg_take _ hi, gexp_take_x hlen (by omega), upg_take M hi] at h
+        · have hxa : r + a = r + L - 1 := by omega
+          rw [hxa] at h ⊢
+          rcases Nat.eq_zero_or_pos m with hm0 | hm0
+          · subst hm0
+            rw [show (0 : Nat) + 1 = 1 from rfl, gexp_one_eq hlen,
+              upg_take_last M (by omega) (by omega)] at h
+            cases h
+          · rwa [upg_N_xm1 hlen hL hA hd0e (show 2 ≤ m + 1 by omega) hpath hx2] at h
+    · -- a later copy
+      have hm1 : 1 ≤ m := by
+        by_contra hm
+        have : m = 0 := by omega
+        subst this
+        omega
+      have hn : 2 ≤ m + 1 := by omega
+      rcases Nat.eq_or_lt_of_le haL with rfl | haL'
+      · -- the copy root
+        rcases h with h | h
+        · rw [par1_root hlen hL hA hd0e hn hpath] at h
+          exact nodep_read hlen hR0 hZ2 hSD hZ1 hUAT hUAB (Nat.le_refl r) (by omega) hg (Or.inl h)
+        · rw [upg_root hlen hL hA hd0e hn hpath (hZ2 r)] at h
+          exact ih hm1 g hg 0 (Nat.mul_pos hm1 hL) (Or.inr (by simpa using h))
+      · obtain ⟨j, rfl⟩ : ∃ j, a = L + j := ⟨a - L, by omega⟩
+        have hj0 : 0 < j := by omega
+        have hj : j < (m + 1 - 1) * L := by
+          rw [Nat.add_sub_cancel]; rw [Nat.succ_mul] at ha; omega
+        rw [show r + (L + j) = r + L + j by omega] at h
+        rcases h with h | h
+        · rw [par1_copy hlen hL hA hd0e hn hpath hj0 hj, Nat.add_sub_cancel] at h
+          cases hp : par (TRIO.gexp M r L d0 0 m) 1 (r + j) with
+          | none => rw [hp] at h; cases h
+          | some p =>
+            rw [hp] at h
+            simp only [Option.map_some, Option.some.injEq] at h
+            split at h
+            · omega
+            · subst h
+              exact ih hm1 p hg j (by rw [Nat.add_sub_cancel] at hj; exact hj) (Or.inl hp)
+        · rw [upg_copy hlen hL hA hd0e hn hpath hj0 hj, Nat.add_sub_cancel] at h
+          cases hp : upg (TRIO.gexp M r L d0 0 m) (r + j) with
+          | none => rw [hp] at h; cases h
+          | some p =>
+            rw [hp] at h
+            simp only [Option.map_some, Option.some.injEq] at h
+            split at h
+            · omega
+            · subst h
+              exact ih hm1 p hg j (by rw [Nat.add_sub_cancel] at hj; exact hj) (Or.inr hp)
+
+/-- **`hnd`**: the `v`'s read by the copies at or before `r` are not in `D`. -/
+theorem hnd_t1 : ∀ n, 2 ≤ n → ∀ g, g ≤ r → ∀ a, a < (n - 1) * L →
+    (par (TRIO.gexp M r L d0 0 (n - 1)) 1 (r + a) = some g ∨
+      upg (TRIO.gexp M r L d0 0 (n - 1)) (r + a) = some g) → ¬ DepX M (r + L) false g :=
+  fun n hn g hg a ha h =>
+    nd_read hlen hL hA hd0e hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2 (n - 1) (by omega) g hg a ha h
 end
 
 end Ytosk
