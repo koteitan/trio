@@ -574,3 +574,18 @@ lean-yapss（https://github.com/koteitan/yet-another-pss-proof）は値の標準
 - 部分的な始点（M.take(r+p) での r の値の引数）は b[0] の先頭部分にならない（17429 件）。全体の始点 σ_x は
   網羅・乱択とも全件で b[0] の先頭部分。したがって構成は「(I1) 1 列落とす ＋ 全体の始点」。
 - 部品（`TwoRowI.lean`・`TwoRowX.lean`、緑）: `lhd_trans`、`lhd_prefix`、`seedOK_of_prefix`、置き換え `PosR` と `posR_ot`。
+
+### 到達点（2026-10-02）: 2 行は「展開で不変条件が保たれる」(I2) を残すだけ（Lean、sorry なし）
+
+- 不変条件 `Inv2`（`TwoRowJ.lean`）: Good2・PreHi・PreFC（強い形: 添字が等しい最初の子の枠で書き換えが起きるなら
+  子の引数は低い部分だけ）・RootsDec・z0ok・r1ok・左上が 0・行 2 が 0。
+- **(I1) 最後の列を落としても Inv2 が保たれる**（`inv2_take`）。核は `drop_path`（`TwoRowV.lean`）:
+  経路上で落とした値は標準形、引数どうしの ◁、引数は最後の項だけ違う（`Shape`）。枠を 1 段上がる補題 `frame_drop` は
+  「後ろに足す枠（B ≠ 0、PreHi で書き換えも後ろに足すのと同じ）」と「最初の子の枠（書き換えの有無・低い部分の有無・
+  崩れ・吸収・子の引数が 0）」の場合分け。
+- **始点の条件は定理**（`seed_of_drop`、`TwoRowK.lean`）: q から r まで「落とした引数 ≤ fs(引数, 0)」（`drop_le_fs`、
+  枠の比較 `frame_fs_le` と step の単調性 `frame_same`）と `drop_path` の ◁ から `seedOK_of_lhd`。
+- **降下の仮定は Inv2 だけ**（`twoRow_desc_inv`）: すべての n で ev2r(M[n]) < ev2r(M)、ev2r(M[n]) は標準形。
+  PRE は PreHi から、先頭部分の条件は `inv2_take_all` から。
+- 残り: (I2) n ≥ 2 の展開で Inv2 が保たれる（写しは M[n−1] からのずらし、経路は fsD の形、つなぎ目の枠）、
+  対角列が Inv2 を満たす、`wf_OT` と合わせた 2 行の停止性。その後 3 行（Val）へ。
