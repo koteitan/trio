@@ -1678,3 +1678,15 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - drop-fix（2b9de577）: hLast の部品、x が根のときの RootP（rootP_take_root）。
 - t0-exp（bcd737b1・a9ede4ed）: t = 0 の M[n] の TP1C・TP1WC・TrigOmC は「影の枠」以外で成り立つ（class A の枠と、B が 0 か新しい引数の先頭部分のとき）。hExp_t0_mainC の残り T0RWResC は B ≠ 0 で B が y′ の先頭部分でない枠だけ（D の 1082/16 万件、g の 16 件）で、これは closure の PH3 の影の枠そのもの。PH3c 型の M の不変条件で閉じる見込み。
 - t2-exp（d31aae6a、緑）: deps_lhd_ot（V3DepOT）= Good3 N を仮定しない deps_lhd_gen。DepS の呼び出しで Lhd（新, 旧）と新の標準形を順位の帰納法で同時に出す。仮定は FrameNodeOT（M の枠だけの性質: 最後の数える子 ψ_s(y) を標準形の ψ_{s′}(y′)（Lhd、y′ ≠ 0 なら s′ = s）に替えても ψ_{v i}(step …) は標準形。C′ の 69 万枠で例外 0）など。FrameNodeOT は drop-fix の argT の除去・t0-exp の hOTD と共通の核なので、t2-exp が一般の形で作る。
+
+### t = 2 の写しの値の置き換え σ（2026-10-02、t2-subst、V3Subst・V3SubstC、緑）
+
+- N = M[n] の列 x + a と P = M[n − 1] の列 r + a の値の関係（C′ の t = 2 の 3000 行列 × n = 2..4、例外 0）。V = v_P(r)、V′ = v_N(x′)（いつも V < V′）。
+  - f(s) = V′ + σ(s − V)（s ≥ V、s − V = sub s V。f(V) = V′）。
+  - σ(0) = 0、σ(ψ_s(y) + c) = ψ_{f(s)}(σ y) + σ c（V < s）、ψ_s(y) + σ c（s ≤ V。y の中には入らない）。
+  - 守られた列（r の行 1 の子孫と r）: v_N = f(v_P)、o_N = ψ_{f(s)}(σ y)（o_P = ψ_s(y)。a ≠ 0 では σ(o_P)）。守られない列: v も o も等しい。
+- 値だけの写像では書けない: V = 0 で、ブロックの中の e1 = 0 の列の下の守られない値が守られた値と一致する（9000 件中 614 件で 1 つの P の値が 2 つの N の値に写る）。「s ≤ V の加数の中に入らない」がちょうどその区別。
+- 境界の事実（例外 0）: 守られた列が読む守られない値（数える子、のりしろの子の子）は添字 ≤ V（sh_fix で σ が動かさない）。守られない列は守られた値を読まない。r 以外の守られた列の P_1 は守られた列か r、上げの先は守られていて v > V。r の数える子の添字はすべて V より大きい。兄弟の比較で守られた列と守られない列が混ざるのは「守られた列が先、守られない列が後、<」だけ。
+- V3Subst（行列によらない）: sub の分解（add_sub_cancel'・sub_add_dist・sub_lt_sub）、σ は標準形の上の順序の埋め込み（sh_lt_iff・sh_inj）、f は V 以上で狭義単調（shf_lt_iff）、t ≤ σ t（le_sh）、s ≤ f(s)、標準形の保存（isOT_sh、根の形 isOT_shTop: ψ_s(y) → ψ_{f(s)}(σ y)、s ≥ V）。成分は comps_sh で σ に乗る（V′ の成分は段 f(u) ≥ V′ より下なので入らない）。仮定は isOT V・isOT V′・V < V′ だけ。
+- V3SubstC: 和（sh_add）・結合則（add_assoc'）・last・sumN・split・H・ω（sh_omega）・sp の 1 段（sh_step_gt・sh_step_le）と spArg（sh_spArg、段 a ≥ V。a = V では添字 V の加数がないことを仮定）。評価器の右辺の形: sf_psi_sh（o の式）、sf_psi_sh_gt（v > V なら σ(sf ψ_v(S))）、shf_add_last・shf_add_one・shf_add_omega（v の式）、pairwise_sh（数える子の減少列）。
+- Good3 N の写しの部分は: 標準形は isOT_sh・isOT_shTop、dec は守られた組なら pairwise_sh、守られない組は等しい値、混ざった組は b ≤ a ≤ σ(a)（le_sh）。Cons N は順位の帰納法で上の右辺の形を当てる（t2-exp）。
