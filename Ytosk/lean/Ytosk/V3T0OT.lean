@@ -290,6 +290,185 @@ theorem ot_v_at {N : Mat} {σ : Valn} (hC : Cons N σ) {i : Nat} (hi : i < N.len
         · rfl
     rw [sf_ot (isOT_add (hV h1) hBo)]; exact isOT_add (hV h1) hBo
 
+/-! ## 型の伝わり方（枠 1 段） -/
+
+/-- **The class of a node's argument pair** at its own level `a` (`θ = Ω_{a+1}`): A, both without low
+part (B0), or the new one is the high part of the old one (C). -/
+def ClsNode (a X' X : T) : Prop :=
+  ((split X' (psi (succ a) z z)).1 = (split X (psi (succ a) z z)).1 ∧ (split X' (psi (succ a) z z)).2 ≠ z) ∨
+  ((split X' (psi (succ a) z z)).2 = z ∧ (split X (psi (succ a) z z)).2 = z) ∨
+  X' = (split X (psi (succ a) z z)).1
+
+theorem succ_le_succ' {a s : T} (h : a ≤ s) : succ a ≤ succ s := by
+  rcases lt_or_ge (succ s) (succ a) with h' | h'
+  · exfalso
+    have h1 : succ s ≤ a := lt_succ_iff.mp h'
+    exact absurd (lt_of_le_of_lt (le_trans h1 h) (lt_succ_self s)) (lt_irrefl' _)
+  · exact h'
+
+theorem theta_mono {a s : T} (h : a ≤ s) : psi (succ a) z z ≤ psi (succ s) z z := le_psi_sub (succ_le_succ' h)
+
+/-- A child below `Ω_{a+1}` has subscript at most `a`. -/
+theorem lt_theta_iff {a s y : T} : psi s y z < psi (succ a) z z ↔ s ≤ a := by
+  rw [psi_lt_psi_z_iff, ← lt_succ_iff]
+  constructor
+  · rintro (h | ⟨_, h⟩)
+    · exact h
+    · exact absurd h (T.not_lt_z _)
+  · exact Or.inl
+
+theorem split_all_high {θ : T} : ∀ X : T, (∀ q ∈ summands X, ¬ q < θ) → split X θ = (X, z) := by
+  intro X hX
+  have := split_app_of (t := θ) (B := X) (X := z) hX (Or.inl rfl)
+  rwa [app_z_right] at this
+
+/-- **The class of `B + c′` against `B + c`** at the level `a`. -/
+theorem cls_app_pair {a B c c' : T} (hc : ∃ s y, c = psi s y z) (hc' : ∃ s y, c' = psi s y z)
+    (hcc : c' ≤ c) (hB : ∀ q ∈ summands B, c ≤ q)
+    (hhigh : ¬ c < psi (succ a) z z → ¬ c' < psi (succ a) z z) :
+    ClsNode a (app B c') (app B c) := by
+  set θ := psi (succ a) z z with hθ
+  by_cases hlow : c < θ
+  · have hlow' : c' < θ := lt_of_le_of_lt hcc hlow
+    left
+    obtain ⟨s, y, rfl⟩ := hc
+    obtain ⟨s', y', rfl⟩ := hc'
+    rw [split_app_low (P := B) (R := psi s' y' z) (Or.inr hlow'),
+      split_app_low (P := B) (R := psi s y z) (Or.inr hlow)]
+    refine ⟨rfl, ?_⟩
+    intro h; exact absurd (app_eq_z h).2 (by simp)
+  · have hhigh' := hhigh hlow
+    right; left
+    have hBh : ∀ q ∈ summands B, ¬ q < θ := fun q hq h => hlow (lt_of_le_of_lt (hB q hq) h)
+    obtain ⟨s, y, rfl⟩ := hc
+    obtain ⟨s', y', rfl⟩ := hc'
+    rw [split_all_high (app B (psi s' y' z)) (by
+        intro q hq; rw [summands_app] at hq
+        rcases List.mem_append.mp hq with hq | hq
+        · exact hBh q hq
+        · simp [summands] at hq; rw [hq]; exact hhigh'),
+      split_all_high (app B (psi s y z)) (by
+        intro q hq; rw [summands_app] at hq
+        rcases List.mem_append.mp hq with hq | hq
+        · exact hBh q hq
+        · simp [summands] at hq; rw [hq]; exact hlow)]
+    exact ⟨rfl, rfl⟩
+
+/-- The high part at `Ω_{s+1}` has no summand below `Ω_{a+1}` when `a ≤ s`. -/
+theorem hi_all_high {a s : T} (has : a ≤ s) (y : T) :
+    ∀ q ∈ summands (split y (psi (succ s) z z)).1, ¬ q < psi (succ a) z z :=
+  fun q hq h => split_fst_ge _ y q hq (lt_of_lt_of_le h (theta_mono has))
+
+/-- **The class passes up one frame** (`a = v(parent)`): from the class of the child's argument pair
+(with the rewrite agreement in class B), or a bare child `ψ_{s′}(0)` that stays at least `Ω_{a+1}` when
+`ψ_s(0)` is. -/
+theorem cls_node {a B s s' y y' : T} (hc : isOT (psi s y z) = true) (hc' : isOT (psi s' y' z) = true)
+    (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
+    (hch : (s' = s ∧ Lhd z y' y ∧ ClsABC B s y' y (Trig a B s y)) ∨
+      (y = z ∧ y' = z ∧ Lhd z s' s ∧
+        (¬ psi s z z < psi (succ a) z z → ¬ psi s' z z < psi (succ a) z z))) :
+    ClsNode a (step a B s' y' z) (step a B s y z) := by
+  rcases hch with ⟨rfl, hl, hcl⟩ | ⟨rfl, rfl, hl, hhv⟩
+  · have hyy : y' < y := hl.1
+    have hpsi : psi s' y' z < psi s' y z := psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, hyy⟩)
+    have hBc' : ∀ q ∈ summands B, psi s' y' z ≤ q := fun q hq => le_trans (le_of_lt hpsi) (hBc q hq)
+    set θs := psi (succ s') z z with hθs
+    have ey := split_app θs y
+    have ey' := split_app θs y'
+    have hdown : lt (psi a z z) (psi s' y z) = true → lt B y' = true →
+        lt (psi a z z) (psi s' y' z) = true := by
+      intro h2 hB'
+      change psi a z z < psi s' y z at h2
+      change psi a z z < psi s' y' z
+      rcases psi_lt_psi_z_iff.mp h2 with h | ⟨rfl, _⟩
+      · exact psi_lt_psi_z_iff.mpr (Or.inl h)
+      · exact psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_of_le_of_lt (z_le B) hB'⟩)
+    have hhigh : ¬ psi s' y z < psi (succ a) z z → ¬ psi s' y' z < psi (succ a) z z := by
+      intro h h'; exact h (lt_theta_iff.mpr (lt_theta_iff.mp h'))
+    by_cases ht : lt B y = true ∧ lt (psi a z z) (psi s' y z) = true
+    · have has : a ≤ s' := by
+        have h2 : psi a z z < psi s' y z := ht.2
+        rcases psi_lt_psi_z_iff.mp h2 with h | ⟨h, _⟩
+        · exact le_of_lt h
+        · rw [h]
+      -- `y` and `y′` are not below `Ω_{s′}`: the rest of the argument is at least the child
+      by_cases ht' : lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true
+      · unfold step
+        rw [if_pos ht', if_pos ht, H_eq hc', H_eq hc]
+        rcases hcl with ⟨hhi, hlo'⟩ | ⟨hl0', hl0, _⟩ | hC
+        · have hlo : (split y θs).2 ≠ z := by
+            intro h0
+            rw [h0, app_z_right] at ey
+            have : (split y' θs).1 < y' := by
+              have h := lt_app_of (x := (split y' θs).1) hlo'; rwa [ey'] at h
+            rw [hhi, ey] at this
+            exact absurd (lt_trans this hyy) (lt_irrefl' _)
+          rw [if_neg hlo', if_neg hlo, hhi]
+          apply cls_app_pair ⟨_, _, rfl⟩ ⟨_, _, rfl⟩ (le_of_lt hpsi)
+            (fun q hq => not_lt.mp (fun h => split_fst_ge _ y q hq
+              (lt_trans h (lt_theta_iff.mpr (le_refl s'))))) hhigh
+        · rw [if_pos hl0', if_pos hl0, app_z_right, app_z_right]
+          right; left
+          exact ⟨by rw [split_all_high _ (hi_all_high has y')],
+            by rw [split_all_high _ (hi_all_high has y)]⟩
+        · have hlo : (split y θs).2 ≠ z := by
+            intro h0; rw [h0, app_z_right, ← hC] at ey; rw [ey] at hyy; exact absurd hyy (lt_irrefl' _)
+          have hs' : split y' θs = (y', z) := by rw [hC]; exact split_hi_self θs y
+          rw [hs', if_neg hlo]
+          simp only [if_true, app_z_right]
+          rw [← hC]
+          have hy'h : ∀ q ∈ summands y', ¬ q < psi (succ a) z z := by
+            rw [hC]; exact hi_all_high has y
+          by_cases hlow : psi s' y z < psi (succ a) z z
+          · right; right
+            rw [split_app_low (Or.inr hlow), split_all_high y' hy'h]
+          · right; left
+            refine ⟨by rw [split_all_high y' hy'h], ?_⟩
+            rw [split_all_high _ (by
+              intro q hq; rw [summands_app] at hq
+              rcases List.mem_append.mp hq with hq | hq
+              · exact hy'h q hq
+              · simp [summands] at hq; rw [hq]; exact hlow)]
+      · -- only the old frame rewrites: class C with `B = y′`
+        rcases hcl with ⟨hhi, hlo'⟩ | ⟨_, _, htr⟩ | hC
+        · exfalso; apply ht'
+          have hBhi : B ≤ (split y θs).1 := B_le_hi hc ht.1 hBc
+          have hB' : lt B y' = true := by
+            show B < y'
+            rw [← hhi] at hBhi
+            refine lt_of_le_of_lt hBhi ?_
+            have h := lt_app_of (x := (split y' θs).1) hlo'; rwa [ey'] at h
+          exact ⟨hB', hdown ht.2 hB'⟩
+        · exact absurd ⟨htr ht, hdown ht.2 (htr ht)⟩ ht'
+        · have hBhi : B ≤ y' := by rw [hC]; exact B_le_hi hc ht.1 hBc
+          have hBy : B = y' := by
+            rcases (le_iff _ _).mp hBhi with h | h
+            · exact absurd ⟨h, hdown ht.2 h⟩ ht'
+            · exact h
+          have hlo : (split y θs).2 ≠ z := by
+            intro h0; rw [h0, app_z_right, ← hC] at ey; rw [ey] at hyy; exact absurd hyy (lt_irrefl' _)
+          unfold step
+          rw [if_neg ht', if_pos ht, H_eq hc, if_neg hlo, ← hC, add_eq_app_of_ge ⟨_, _, rfl⟩ B hBc', hBy]
+          have hy'h : ∀ q ∈ summands y', ¬ q < psi s' y z := by
+            intro q hq h
+            rw [hC] at hq
+            exact split_fst_ge _ y q hq (lt_trans h (lt_theta_iff.mpr (le_refl s')))
+          exact cls_app_pair ⟨_, _, rfl⟩ ⟨_, _, rfl⟩ (le_of_lt hpsi)
+            (fun q hq => not_lt.mp (hy'h q hq)) hhigh
+    · -- the old frame does not rewrite, so neither does the new one
+      have ht' : ¬ (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) := fun h =>
+        ht ⟨lt_trans (show B < y' from h.1) hyy, lt_trans (show psi a z z < psi s' y' z from h.2) hpsi⟩
+      unfold step
+      rw [if_neg ht', if_neg ht, add_eq_app_of_ge ⟨_, _, rfl⟩ B hBc, add_eq_app_of_ge ⟨_, _, rfl⟩ B hBc']
+      exact cls_app_pair ⟨_, _, rfl⟩ ⟨_, _, rfl⟩ (le_of_lt hpsi) hBc hhigh
+  · have hpsi : psi s' z z < psi s z z := (lhd_psi_sub hl).1
+    have hn : ∀ s0, ¬ (lt B z = true ∧ lt (psi a z z) (psi s0 z z) = true) := by
+      rintro s0 ⟨h, _⟩; exact T.not_lt_z _ h
+    unfold step
+    rw [if_neg (hn s'), if_neg (hn s), add_eq_app_of_ge ⟨_, _, rfl⟩ B hBc,
+      add_eq_app_of_ge ⟨_, _, rfl⟩ B (fun q hq => le_trans (le_of_lt hpsi) (hBc q hq))]
+    exact cls_app_pair ⟨_, _, rfl⟩ ⟨_, _, rfl⟩ (le_of_lt hpsi) hBc hhv
+
 section
 variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)
@@ -521,16 +700,23 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
     (hS3 : ∀ p, par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 → col M g = bump M p →
       Lhd z (σ.v p) (ρ.v p))
     (hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g))
-    (hShape : ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
+    (hTrigB : ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
       ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z → Lhd z y' y →
-      ClsABC (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y' y
-        (Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y))
+      (split y' (psi (succ s) z z)).2 = z → (split y (psi (succ s) z z)).2 = z →
+      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
+      lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true)
+    (hVchg : ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
+      σ.v c ≠ ρ.v c → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
+      ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z)
+    (hClsG : Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z →
+      ClsNode (ρ.v g) X' X)
     (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
       ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true) :
     ∀ b i, i < r → isOT (valB σ b i) = true ∧
       (DepX M (r + L) b i → Lhd z (valB σ b i) (valB ρ b i)) ∧
       (b = true → DepX M (r + L) true i → σ.v i = ρ.v i →
-        ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X) := by
+        ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X ∧
+          ClsNode (ρ.v i) X' X) := by
   have hx : r + L + 1 = M.length := hlen
   have hlN := lenN0 hlen hn (M := M) (L := L)
   have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
@@ -558,7 +744,8 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
   have key : ∀ K, ∀ b i, rk b i ≤ K → i < r →
       isOT (valB σ b i) = true ∧ (DepX M (r + L) b i → Lhd z (valB σ b i) (valB ρ b i)) ∧
       (b = true → DepX M (r + L) true i → σ.v i = ρ.v i →
-        ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X) := by
+        ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X ∧
+          ClsNode (ρ.v i) X' X) := by
     intro K
     induction K using Nat.strongRecOn with
     | _ K ih =>
@@ -816,7 +1003,8 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
           exact ⟨by show isOT (σ.o i) = true; rw [he]; exact hG.ot_o i hiM, fun h => absurd h hD,
             fun _ h => absurd h hD⟩
         suffices hmain : isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ (σ.v i = ρ.v i →
-            ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X) by
+            ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X ∧
+              ClsNode (ρ.v i) X' X) by
           exact ⟨hmain.1, fun _ => hmain.2.1, fun _ _ hv => hmain.2.2 hv⟩
         have hvot : isOT (ρ.v i) = true := hG.ot_v i hiM
         cases hD with
@@ -837,10 +1025,11 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
           have hci := (mem_children hc).1
           have hcl := (mem_children hc).2
           have hfin : (∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X ∧
-              isOT X' = true) → isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ (σ.v i = ρ.v i →
-              ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X) := by
-            rintro ⟨X, X', hX, hX', hl', hXo⟩
-            refine ⟨?_, by rw [hX, hX']; exact lhd_psi _ hl', fun _ => ⟨X, X', hX, hX', hl'⟩⟩
+              isOT X' = true ∧ ClsNode (ρ.v i) X' X) → isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧
+              (σ.v i = ρ.v i → ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X ∧
+                ClsNode (ρ.v i) X' X) := by
+            rintro ⟨X, X', hX, hX', hl', hXo, hcls⟩
+            refine ⟨?_, by rw [hX, hX']; exact lhd_psi _ hl', fun _ => ⟨X, X', hX, hX', hl', hcls⟩⟩
             rw [hX']
             have hot := hG.ot_o i hiM
             rw [hX] at hot
@@ -856,10 +1045,13 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
             have hig : par M 0 r = some i := (mem_children_iff.mp hc).2
             have hgi : g = i := Option.some.inj (hg.symm.trans hig)
             rw [← hgi] at hcnt hv' ⊢
-            by_cases hm1 : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
-            · exact t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hg hcnt
-                (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl hy' hC1 hGT hm1
-            · exact hG0 hcnt (fun k hk hk' => hm1 ⟨k, hk, hk'⟩)
+            obtain ⟨X, X', hX, hX', hl', hXo⟩ : ∃ X X', ρ.o g = psi (ρ.v g) X z ∧
+                σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true := by
+              by_cases hm1 : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
+              · exact t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hg hcnt
+                  (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl hy' hC1 hGT hm1
+              · exact hG0 hcnt (fun k hk hk' => hm1 ⟨k, hk, hk'⟩)
+            exact ⟨X, X', hX, hX', hl', hXo, hClsG hcnt X X' hX hX'⟩
           · have hcr : c < r := by omega
             rcases hOS_t1 hx hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp i (by omega) (DepX.ochild hc hcb hcu hdc) with
               ⟨hv, _⟩ | ⟨_, Lp, c0, R, hch, _, _, hR, hLnd⟩
@@ -949,10 +1141,11 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
                   rwa [hsy] at this
                 · simp [summands]
               -- the child: same `v` (argument relation) or a bare changed `v`
-              have hch : (s' = s ∧ Lhd z y' y ∧ ClsABC B s y' y (Trig a B s y)) ∨
-                  (y = z ∧ y' = z ∧ Lhd z s' s) := by
+              have hchC : (s' = s ∧ Lhd z y' y ∧ ClsABC B s y' y (Trig a B s y)) ∨
+                  (y = z ∧ y' = z ∧ Lhd z s' s ∧
+                    (¬ psi s z z < psi (succ a) z z → ¬ psi s' z z < psi (succ a) z z)) := by
                 by_cases hvc : σ.v c = ρ.v c
-                · obtain ⟨X, X', hX, hX', hlX⟩ := hIH.2.2 rfl hdc hvc
+                · obtain ⟨X, X', hX, hX', hlX, hclsX⟩ := hIH.2.2 rfl hdc hvc
                   rw [hsy] at hX; rw [hs'y'] at hX'
                   simp only [psi.injEq] at hX hX'
                   obtain ⟨hs1, hy1, -⟩ := hX
@@ -960,7 +1153,12 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
                   have es : s' = s := hs2.trans hs1.symm
                   subst es; subst hy1; subst hy2
                   refine Or.inl ⟨rfl, hlX, ?_⟩
-                  exact hShape i c Lc hi hcr hclM hdc _ _ _ (by rw [hsy]) (by rw [hs'y']) hlX
+                  rw [← hs1] at hclsX
+                  rcases hclsX with hA | hB0 | hC
+                  · exact Or.inl hA
+                  · exact Or.inr (Or.inl ⟨hB0.1, hB0.2, hTrigB i c Lc hi hcr hclM hdc _ _ _
+                      (by rw [hsy]) (by rw [hs'y']) hlX hB0.1 hB0.2⟩)
+                  · exact Or.inr (Or.inr hC)
                 · have hdv : DepX M (r + L) false c := by
                     by_contra hn'; exact hvc ((hoffD c hcr).2 hn')
                   have hvK : rk false c < K := by have := (hRM c hcM).1; omega
@@ -973,15 +1171,21 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
                   simp only [psi.injEq] at hoM hoN
                   obtain ⟨rfl, rfl, -⟩ := hoM
                   obtain ⟨rfl, rfl, -⟩ := hoN
-                  exact Or.inr ⟨rfl, rfl, hvIH.2.1 hdv⟩
+                  exact Or.inr ⟨rfl, rfl, hvIH.2.1 hdv, hVchg i c Lc hi hcr hclM hdc hvc⟩
+              have hch : (s' = s ∧ Lhd z y' y ∧ ClsABC B s y' y (Trig a B s y)) ∨
+                  (y = z ∧ y' = z ∧ Lhd z s' s) := by
+                rcases hchC with h | ⟨h1, h2, h3, _⟩
+                · exact Or.inl h
+                · exact Or.inr ⟨h1, h2, h3⟩
               have hA := node_arg_lhd (a := a) hc0 hc0' hBc hch
-              exact ⟨_, _, hformM, hformN, hA, isOT_step hBot hc0'⟩
+              exact ⟨_, _, hformM, hformN, hA, isOT_step hBot hc0', cls_node hc0 hc0' hBc hchC⟩
   intro b i hi
   exact key _ b i (le_refl _) hi
 
 end
 
-/-- **`hOTD` of `t0_core`** from the class residuals at the frames before `r` (`hShapeN`) and at `g` when
+/-- **`hOTD` of `t0_core`** from the residuals: the rewrite agreement at class-B0 children (`hTrigBN`),
+a changed `v` of a child stays at least `Ω_{a+1}` (`hVchgN`), the class at `g` (`hClsGN`), and `g` when
 no middle copy root counts (`hG0N`). -/
 theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
@@ -1000,11 +1204,18 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     (hLast : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
-    (hShapeN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
+    (hTrigBN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
       ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z → Lhd z y' y →
-      ClsABC (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y' y
-        (Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y))
+      (split y' (psi (succ s) z z)).2 = z → (split y (psi (succ s) z z)).2 = z →
+      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
+      lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true)
+    (hVchgN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
+      ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
+      σ.v c ≠ ρ.v c → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
+      ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z)
+    (hClsGN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
+      Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → ClsNode (ρ.v g) X' X)
     (hG0N : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
       ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true) :
@@ -1267,13 +1478,14 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           · rw [show k = n - 1 by omega, hσlast]; exact hGT.ot_o r (by rw [List.length_take]; omega)
     intro i hi hd
     exact (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT hσB hσBv
-      hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hShapeN n hn2 σ hCN)
-      (hG0N n hn2 σ hCN g hg) true i hi) |> fun h => ⟨h.1, h.2.2 rfl hd, fun hne => by
+      hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
+      (hVchgN n hn2 σ hCN) (hClsGN n hn2 σ hCN g hg) (hG0N n hn2 σ hCN g hg) true i hi) |> fun h =>
+      ⟨h.1, (fun hv => let ⟨X, X', a1, a2, a3, _⟩ := h.2.2 rfl hd hv; ⟨X, X', a1, a2, a3⟩), fun hne => by
         have hdv : DepX M (r + L) false i := by
           by_contra hn'; exact hne ((hoffD i hi).2 hn')
         have hvot := (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT
-          hσB hσBv hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hShapeN n hn2 σ hCN)
-          (hG0N n hn2 σ hCN g hg) false i hi).1
+          hσB hσBv hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
+          (hVchgN n hn2 σ hCN) (hClsGN n hn2 σ hCN g hg) (hG0N n hn2 σ hCN g hg) false i hi).1
         exact o_N_noc' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hi
           (cl_nil_of_depv' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hi hdv) hvot⟩
   · have hrn : par M 0 r = none := by

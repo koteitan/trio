@@ -163,18 +163,27 @@ def T0OTD : Prop :=
     2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true
 
-/-- **The class residuals** of the `D` frames of `N = M[n]` (`t = 0`), which give `T0OTD` (`t0_otd`):
-at a frame before `r` whose last counted child `c` keeps its `v`, the pair of arguments of `c` is of class
-A, B (with a rewrite of the old frame also one of the new) or C; and at `g = P_0(r)` when no middle copy
-root counts, the arguments drop by `◁` (C′ の標本で例外 0). -/
+/-- **The class residuals** of the `D` frames of `N = M[n]` (`t = 0`), which give `T0OTD` (`t0_otd`;
+the class of the argument pairs passes up the frames by `cls_node`): (i) at a frame before `r` whose last
+counted child keeps its `v` and whose child pair has no low part in either (class B0), a rewrite of the old
+frame is one of the new frame; (ii) a changed `v` of such a child stays at least `Ω_{a+1}` when the old one
+is; (iii) the class of the argument pair at `g = P_0(r)`; (iv) at `g` when no middle copy root counts,
+the arguments drop by `◁` (C′ の標本で例外 0). -/
 def T0Shape : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
     Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
       ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z → Lhd z y' y →
-      ClsABC (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y' y
-        (Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y)) ∧
+      (split y' (psi (succ s) z z)).2 = z → (split y (psi (succ s) z z)).2 = z →
+      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
+      lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true) ∧
+    (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
+      ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
+      σ.v c ≠ ρ.v c → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
+      ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z) ∧
+    (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
+      Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → ClsNode (ρ.v g) X' X) ∧
     (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
       ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true)
@@ -188,13 +197,13 @@ theorem t0_D_of_shape (h : T0Shape) {M : Mat} {ρ : Valn} {rk : Bool → Nat →
     ∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true ∧ (σ.v i = ρ.v i →
       ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X) ∧
       (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z) := by
-  obtain ⟨h1, h2⟩ := h M ρ rk r L hM hS I R hlen hL hp he1
+  obtain ⟨h1, h2, h3, h4⟩ := h M ρ rk r L hM hS I R hlen hL hp he1
   have hDr := R.drop
   rw [show M.length - 1 = r + L by omega] at hDr
   exact t0_otd hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hDr.ws hDr.vst hDr.ua I.rootS I.rootP
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
-    h1 h2 n hn σ hCN
+    h1 h2 h3 h4 n hn σ hCN
 
 /-- **`T0OTD` from the class residuals.** -/
 theorem t0OTD_of_shape (h : T0Shape) : T0OTD := by
