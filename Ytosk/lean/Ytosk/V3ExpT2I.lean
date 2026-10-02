@@ -6,6 +6,7 @@ expand M n に順位がある（`rk_expand_t2`）。rk_gexp_t2_final の仮定�
 -/
 import Ytosk.V3ExpT2H
 import Ytosk.V3InvT2
+import Ytosk.V3IndV
 
 namespace Ytosk
 
@@ -64,5 +65,24 @@ theorem rk_expand_t2 {M : Mat} (hX : SInvX M) (hJ : RowJ M) (hz : col M (M.lengt
     (fun m _ => by rw [← hexp m]; exact (sInvX_expand hX m).toSInv.uat)
     (fun m _ => by rw [← hexp m]; exact (sInvX_expand hX m).loc.2.2.1) hRM n hn
   exact ⟨rk, by rw [hexp n]; exact hrk⟩
+
+/-- **The remaining work of `hExp` for `t = 2`**: given the evaluation (`Cons`) and a ranking of
+`M[n]`, the value fields of `Inv3V` and `Res3A`. -/
+def T2ExpRes : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
+    col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 → ∀ n, 2 ≤ n →
+    ∀ σ rkN, Cons (expand M n) σ → Rk (expand M n) rkN →
+      Inv3V (expand M n) σ rkN ∧ Res3A (expand M n) σ rkN
+
+/-- **`hExp` for `t = 2`** from its remaining work: the ranking of `M[n]` is `rk_expand_t2` and the
+evaluation is the iteration of the equations along it (`cons_of_rk`). -/
+theorem hExp_t2 (hRes : T2ExpRes) :
+    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
+      col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN := by
+  intro M ρ rk hM hS _ I R hz h2 n hn
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  obtain ⟨rkN, hRN⟩ := rk_expand_t2 hX hJ hz h2 I.rank n (by omega)
+  exact ⟨_, rkN, hRes M ρ rk hM hS I R hz h2 n hn _ rkN (cons_of_rk hRN) hRN⟩
 
 end Ytosk
