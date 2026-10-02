@@ -792,20 +792,50 @@ theorem qnu_shapes {M : Mat} {r L qp pq k : Nat} (hlen : r + L + 1 = M.length)
         have := (mem_children_iff.mp hd).2; rw [hdq, hpq] at this; exact (Option.some.inj this).symm
       exact absurd (Or.inr (Or.inl ⟨rfl, hipq⟩)) hns
 
+/-- **A topped column before `x` is upgraded in `N` iff in `M`**, when `N` and `M` agree before `x` and both
+satisfy `UAT` (an upgrade into a topped column comes from the column just before it). -/
+theorem isUpg_topped_take {M N : Mat} {x c : Nat} (hxM : x ≤ M.length) (hxN : x ≤ N.length)
+    (hT : N.take x = M.take x) (hUM : UAT M) (hUN : UAT N) (hc : c < x)
+    (htN : topped N c = true) (htM : topped M c = true) : isUpg N c = isUpg M c := by
+  have hup : ∀ i, i + 1 < x → upg N i = upg M i := fun i hi => by
+    rw [← upg_take N hi, hT, upg_take M hi]
+  apply Bool.eq_iff_iff.mpr
+  unfold isUpg
+  simp only [List.any_eq_true, decide_eq_true_eq, List.mem_range]
+  constructor
+  · rintro ⟨i, _, hu⟩
+    have hci : c = i + 1 := by
+      by_contra h; have := hUN i c hu h; rw [htN] at this; cases this
+    exact ⟨i, by omega, by rw [← hup i (by omega)]; exact hu⟩
+  · rintro ⟨i, _, hu⟩
+    have hci : c = i + 1 := by
+      by_contra h; have := hUM i c hu h; rw [htM] at this; cases this
+    exact ⟨i, by omega, by rw [hup i (by omega)]; exact hu⟩
+
+/-- `topped` agrees when the children agree with the same columns. -/
+theorem topped_eq_of {M N : Mat} {c : Nat} (hch : children N c = children M c)
+    (hcol : ∀ d ∈ children M c, col N d = col M d) (hb : bump N c = bump M c) :
+    topped N c = topped M c := by
+  unfold topped
+  rw [hch]
+  cases h : (children M c).getLast? with
+  | none => rfl
+  | some d =>
+    have hd : d ∈ children M c := List.mem_of_getLast? h
+    simp only
+    rw [hcol d hd, hb]
+
 /-- **`q ≠ r`** (`x` a bump child of `q = r + qp`, `P_0 q = pq`). -/
 structure T2QN (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L qp pq : Nat) : Prop where
   seed1 : (drop1 M (r + L) rk).o pq ≠ ρ.o pq
   big : ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
-    (∀ c, c < r + L → c ≠ r + qp → topped M c = true →
-      isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c) ∧ VNNcN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
-      SeedL ρ σ pq
+    VNNcN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ SeedL ρ σ pq
 
 /-- **`q = r`, `x − 1` upgrades to `x`.** -/
 structure T2SV (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Prop where
   rcl : CL M r ≠ []
   seed1 : (drop1 M (r + L) rk).o r ≠ ρ.o r
   big : ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
-    (∀ c, c < r + L → topped M c = true → isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c) ∧
     VNNcN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ SeedL ρ σ r
 
 /-- **`q = r`, `x − 1` upgrades nowhere** (`n ≤ 1`). -/
@@ -823,7 +853,7 @@ structure T2R (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Pr
   up : ∀ k, upg M (r + L - 1) = some k → k < r + L → T2QU M ρ rk r L k
   big : upg M (r + L - 1) ≠ some (r + L) → ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c) ∧
-    Counted (TRIO.gexp M r L d0 d1 n) r (r + L) ∧ VNNc M (r + L) ρ σ ∧ SeedL ρ σ r
+    VNNc M (r + L) ρ σ ∧ SeedL ρ σ r
 
 /-- **The remaining hypotheses of `t = 2`** (`x = r + L`, `r = P_2(x)`). -/
 structure Res3T2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
@@ -983,6 +1013,19 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ <
         root M ρ := by
     intro n hn σ rkN hCN hRN hGN
+    have hT : (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n).take
+        (r + L) = M.take (r + L) := gexp_take_x hlen (by omega)
+    have hUN : UAT (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) := by
+      rw [← hexp n]; exact (sInvX_expand hX n).toSInv.uat
+    have hlN := TRIO.gexp_length (M := M) (j0 := r) (Lb := L) (d0 := entry M 0 (r + L) - entry M 0 r)
+      (d1 := entry M 1 (r + L) - entry M 1 r) (n := n) hlen
+    have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L (by omega)
+    have hcolN : ∀ d, d < r + L →
+        col (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) d = col M d :=
+      fun d hd => col_gexp_pre hlen (by omega) hd
+    have hbN : ∀ c, c < r + L →
+        bump (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c = bump M c :=
+      fun c hc => by unfold bump; rw [entry_gexp_pre hlen (by omega) 0 hc, entry_gexp_pre hlen (by omega) 1 hc]
     by_cases hqr : q = r
     · rw [hqr] at hq
       have T := R2.qr r L hlen hr hq
@@ -991,10 +1034,38 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       · have T' := T.sv hux
         obtain ⟨Sp1, _, Sdv, Sos, Svsh⟩ := sv_shapes hlen hL0 hq hux (rx_of_sv hlen I.z2 I.z1 hr hux) hrb he2r
           I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be
-        obtain ⟨hIUt, hVNN, hseed⟩ := T'.big n _ _ σ hn hCN
+        obtain ⟨hVNN, hseed⟩ := T'.big n _ _ σ hn hCN
+        have hIUt : ∀ c, c < r + L → topped M c = true →
+            isUpg (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c =
+              isUpg M c := by
+          intro c hc htM
+          have hcr : c ≠ r := by
+            intro hcr'
+            rw [hcr'] at htM
+            have hxr : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hq⟩
+            have hsplit := children_split_x hlen hxr
+            unfold topped at htM; rw [hsplit] at htM; simp at htM
+            exact hxbr htM
+          have hch := children_N2 (d1 := entry M 1 (r + L) - entry M 1 r) hlen hL0 hq hd0e (by omega) hn hc
+          apply isUpg_topped_take (by omega) (by omega) hT I.uat hUN hc _ htM
+          rw [topped_eq_of hch (fun d hd => hcolN d (by
+            have := (mem_children hd).2
+            by_contra h'
+            have hdx : d = r + L := by omega
+            have := (mem_children_iff.mp hd).2; rw [hdx, hq] at this; exact hcr (Option.some.inj this).symm))
+            (hbN c hc)]
+          exact htM
         exact t2_sv_main hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb T'.rcl hIUt
           Sp1 Sdv Sos Svsh I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hAbs hVNN hseed
-      · obtain ⟨hIU, hxcN, hVNN, hseed⟩ := T.big hux n _ _ σ hn hCN
+      · obtain ⟨hIU, hVNN, hseed⟩ := T.big hux n _ _ σ hn hCN
+        have hxcN : Counted (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+            (entry M 1 (r + L) - entry M 1 r) n) r (r + L) := by
+          have hx2 := (entry_xprime (d1 := entry M 1 (r + L) - entry M 1 r) hlen hL0 hq hd0e (by omega) hn).1
+          refine ⟨fun h => ?_, fun ⟨hiu, _⟩ => ?_⟩
+          · have := e2_of_col (show col _ (r + L) = (_, _, 1) from h); omega
+          · unfold isUpg at hiu
+            obtain ⟨k0, _, hk0⟩ := List.any_eq_true.mp hiu
+            have := upg_target_e2 (of_decide_eq_true hk0); omega
         exact t2_qr_main hlen hL0 hq hd0e hn (hXu_of hux) hxbr hrb he2r hIU I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
           I.be I.r01 I.e00 I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hdr.ab hVNN hxcN hseed
     · obtain ⟨pq, hpq⟩ := par0_of_anc (anc0_par hA (by omega) hq) (fun h => hqr h.symm)
@@ -1005,7 +1076,21 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       obtain ⟨Tp1, TqL, Tdv, Tos, Tvsh⟩ := qn_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
         I.uat I.uab I.r12 hpq' Tqb
       have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
-      obtain ⟨hIUt, hVNN, hseed⟩ := T.big n _ _ σ hn hCN
+      obtain ⟨hVNN, hseed⟩ := T.big n _ _ σ hn hCN
+      have hIUt : ∀ c, c < r + L → c ≠ r + (q - r) → topped M c = true →
+          isUpg (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c =
+            isUpg M c := by
+        intro c hc hcq htM
+        have hch := children_N2Q (d1 := entry M 1 (r + L) - entry M 1 r) hlen hL0 hA hq' (by omega) hd0e
+          (by omega) hn hc
+        apply isUpg_topped_take (by omega) (by omega) hT I.uat hUN hc _ htM
+        rw [topped_eq_of hch (fun d hd => hcolN d (by
+          have := (mem_children hd).2
+          by_contra h'
+          have hdx : d = r + L := by omega
+          have := (mem_children_iff.mp hd).2; rw [hdx, hq'] at this; exact hcq (Option.some.inj this).symm))
+          (hbN c hc)]
+        exact htM
       exact t2_qn_main hlen hL0 hA hq' (by omega) hd0e hn Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hpq'
         Tqb Te2pq Tclq Tclpq hIUt Tp1 TqL Tdv Tos Tvsh I.cons I.good I.rank hCN hGN hRN
         I.fc I.vs I.td I.kd hAbs hVNN hseed
