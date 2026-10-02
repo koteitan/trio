@@ -6,8 +6,9 @@ M[n] の評価 ρN と順位 rkN で Cons・Rk・Good3・Pn を出す。ここ�
 - 残りの仮定なしで運ぶもの: FrameOT・RootP・BumpDec（t1-struct）、FrameClosed（`expStep_frameClosed_t1'`、
   `FrameClosedOmN` を鎖の穴の情報から `frameClosedOmN_t1`）、TrigOmC（`expStep_trigOmC`）、
   TP1C・TP1WC（`expStep_tpG`・`qr2_tpG`、fsD の合成 `fsD_comp`）。AbsU は AbsD から（`absU_of_absD`）。
-- TPLoN は残り `TPLoNRes`（古い最後の添字が節点か Ω 型の D の列、q = r・n = 2 の種）つきで運ぶ（`expStep_tploN`）。
-- 残りの値の欄の束 `QV`（VSmallF・AbsD・TPLo・TPLoW・AbsUW・AbsDW・AbsDN）は仮定 `hQs`。
+- TPLoN・TPLo は残り `TPLoNRes`・`TPLoRes`（退化した添字 = q = r・n = 2 の種と、種の条件 `SeedCond`、
+  groupA の tplo_fsD_gen の残り）つきで運ぶ（`expStep_tploN`・`expStep_tplo`）。
+- 残りの値の欄の束 `QV`（VSmallF・AbsD・TPLoW・AbsUW・AbsDW・AbsDN）は仮定 `hQs`。
 M.take x（鎖の始点）での値は、落とす補題（`valInv_drop1`・`rootP_drop1`）と、1 列落としの残り
 （`hLast_of` の hRest と同じ形の `RestT`）から。M[n] の `Res3A` は仮定 `hRes`。
 -/
@@ -385,28 +386,123 @@ theorem tploN_fsD {y0 ζ θ : T} (hO : OHole y0) (hζz : ζ ≠ z) (hζs : isSuc
     exact one_le_of_ne_z (fsD_ne_z_oh hOζ (by simp [one]))
   · exact hRes a0 hl0e has0 hOa0 hcN hAll0 has hOa hca hNa
 
+/-! ## 種の条件（groupA の tplo_fsD_gen・absorb_fsD_W の残り） -/
+
+/-- **The seed condition** of the index `ζ` against the old index `η₀`, for the subterms of `s`. -/
+def SeedCond (s ζ η0 θ : T) : Prop := ∀ u, SubS s u → u < ζ → u < η0 → u < fsD ζ θ
+
+theorem seedCond_of_le {s ζ η0 θ : T} (h : η0 ≤ fsD ζ θ) : SeedCond s ζ η0 θ :=
+  fun _ _ _ hu => lt_of_lt_of_le hu h
+
+/-- The TPLo condition at one value `ψ_s(y)`. -/
+def TPLoAt (s y : T) : Prop :=
+  (split y (psi (succ s) z z)).2 = z →
+    ∀ a, last y = psi a z z → isSucc a = false → OHole a →
+    ¬ psi (fsD a (etaOm (holeLev y))) z z < psi (succ s) z z
+
+/-- The old argument has no low part when the new one has none. -/
+theorem allGe_back {y0 ζ a a0 θ : T} (hdec : fsD y0 ζ = app (init y0) (psi a z z))
+    (hl0e : last y0 = psi a0 z z) (hle : fsD y0 ζ ≤ y0) (hAll : AllGeT θ (fsD y0 ζ)) : AllGeT θ y0 := by
+  have hy0e : y0 = app (init y0) (psi a0 z z) := by rw [← hl0e]; exact (init_app_last y0).symm
+  rw [hdec] at hAll hle
+  obtain ⟨hP, hA⟩ := allGe_app.mp hAll
+  rw [hy0e]
+  refine allGe_app.mpr ⟨hP, ?_⟩
+  have hle' : psi a z z ≤ psi a0 z z := by
+    apply le_of_app_le_app (P := init y0)
+    conv => rhs; rw [← hy0e]
+    exact hle
+  intro q hq
+  simp only [summands, List.mem_cons, List.not_mem_nil, or_false] at hq
+  subst hq
+  intro hlt
+  exact hA _ (by simp [summands]) (lt_of_le_of_lt hle' hlt)
+
+/-- **The TPLo-type comparison at a new argument** from TPLo at the old one and the seed condition. -/
+theorem tplo_new {s0 y0 ζ θ : T} (hO : OHole y0) (hζz : ζ ≠ z) (hζs : isSucc ζ = false)
+    (hζ1 : ∃ μ X, ζ = psi μ X z ∧ X ≠ z) (hle : fsD y0 ζ ≤ y0) (hM : TPLoAt s0 y0)
+    (hS : SeedCond s0 ζ (etaOm (holeLev y0)) θ) :
+    (split (fsD y0 ζ) (psi (succ s0) z z)).2 = z → ∀ a, last (fsD y0 ζ) = psi a z z →
+      ¬ psi (fsD a θ) z z < psi (succ s0) z z := by
+  intro hsplit a hl
+  have hAll := allGe_of_split_snd hsplit
+  obtain ⟨a0, hl0e, _, has0, hOa0, ha, hdec⟩ := last_fsD_om hO hζz hζ1 hl
+  have hAll0 := allGe_back hdec hl0e hle hAll
+  have hM' := tpl_iff.mp (hM (split_snd_of_allGe hAll0) a0 hl0e has0 hOa0)
+  have hN : s0 < a := by
+    rw [hdec] at hAll
+    exact tpl_iff.mp ((allGe_app.mp hAll).2 _ (by simp [summands]))
+  rw [ha] at hN ⊢
+  exact tpl_iff.mpr (tplo_fsD_gen hOa0 hζz hζs hM' hN hS)
+
+/-- **TPLo at a new argument** (the index of the new hole is `etaOm (holeLev ζ)`). -/
+theorem tploAt_new {s0 y0 ζ : T} (hO : OHole y0) (hζz : ζ ≠ z) (hζs : isSucc ζ = false)
+    (hζ1 : ∃ μ X, ζ = psi μ X z ∧ X ≠ z) (hle : fsD y0 ζ ≤ y0) (hM : TPLoAt s0 y0)
+    (hS : SeedCond s0 ζ (etaOm (holeLev y0)) (etaOm (holeLev ζ))) : TPLoAt s0 (fsD y0 ζ) := by
+  intro hsplit a hl _ _
+  rw [holeLev_fsD hO hζz hζs]
+  exact tplo_new hO hζz hζs hζ1 hle hM hS hsplit a hl
+
 /-- The TPLoN condition at one value `ψ_s(y)`. -/
 def TPLoNAt (s y : T) : Prop :=
   (split y (psi (succ s) z z)).2 = z →
     ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → NotNode a →
     ¬ psi (fsD a one) z z < psi (succ s) z z
 
-/-- **The residual of the TPLoN carry** (`t = 1`): the `D` columns below `x` where the index is not
-`ψ_μ(X)` with `X ≠ 0` (only the seed at `q = r`, `n = 2`), or where the old last subscript `a₀` is a node or
-`Ω`-cofinal. -/
-def TPLoNRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
-  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T),
-    (∃ μ br vr seed k0, HoleData M (r + L) ρ μ br vr seed ∧
-      (∀ i, ∃ k, k0 ≤ k ∧ Z i = gamS μ br seed k) ∧ ρP.o r = gamS μ br seed k0 ∧ k0 = n - 2 ∧
-      μ = vr ∧ ρ.o r = psi vr br z) →
-    ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
-    (¬ (isSucc (Z c) = false ∧ ∃ μ X, Z c = psi μ X z ∧ X ≠ z) ∨
-      ∃ a0, last y0 = psi a0 z z ∧ isSucc a0 = false ∧ OHole a0 ∧ ¬ (cof a0 = .omega ∧ NotNode a0)) →
-    TPLoNAt s0 (fsD y0 (Z c))
+/-- The hole information of `ExpStepT1` at level `n`. -/
+def HoleInfo (M : Mat) (r L n : Nat) (ρ ρP : Valn) (Z : Nat → T) : Prop :=
+  ∃ μ br vr seed k0, HoleData M (r + L) ρ μ br vr seed ∧
+    (∀ i, ∃ k, k0 ≤ k ∧ Z i = gamS μ br seed k) ∧ ρP.o r = gamS μ br seed k0 ∧ k0 = n - 2 ∧
+    μ = vr ∧ ρ.o r = psi vr br z
 
-/-- **TPLoN is carried** (`t = 1`). The residual `hRes` is the `D` columns below `x` where the index is
-not of the form `ψ_μ(X)` with `X ≠ 0` (only the seed at `q = r`, `n = 2`), or where the old last subscript
-`a₀` is a node or `Ω`-cofinal (C′ の 4 万行列で D の列の約 4%). -/
+/-- The index is a single term `ψ_μ(X)` with `X ≠ 0` (every chain term except a degenerate seed). -/
+def GoodIdx (ζ : T) : Prop := isSucc ζ = false ∧ ∃ μ X, ζ = psi μ X z ∧ X ≠ z
+
+/-- **Residual: degenerate indices** (only the seed at `q = r`, `n = 2`): the field `F` at the new value. -/
+def DegRes (F : T → T → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
+    ¬ GoodIdx (Z c) → F s0 (fsD y0 (Z c))
+
+/-- **Residual: the seed condition** at the `D` columns where `G s₀ y₀ ζ` holds (index `θ ζ` at the new
+hole). -/
+def SeedRes (G : T → T → T → Prop) (θf : T → T) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
+    GoodIdx (Z c) → G s0 y0 (Z c) → SeedCond s0 (Z c) (etaOm (holeLev y0)) (θf (Z c))
+
+/-- **Residual: a field `F` at the new value** at the `D` columns where `G s₀ y₀ ζ` holds. -/
+def FieldRes (G : T → T → T → Prop) (F : T → T → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
+    GoodIdx (Z c) → G s0 y0 (Z c) → F s0 (fsD y0 (Z c))
+
+/-- The TPLo pattern at the new value `ψ_{s₀}(y₀⟨ζ⟩)`. -/
+def TPLoPatN (s0 y0 ζ : T) : Prop :=
+  (split (fsD y0 ζ) (psi (succ s0) z z)).2 = z ∧
+    ∃ a, last (fsD y0 ζ) = psi a z z ∧ isSucc a = false ∧ OHole a
+
+/-- The old last subscript is a node or `Ω`-cofinal. -/
+def BadA0 (s0 y0 : T) : Prop :=
+  ∃ a0, last y0 = psi a0 z z ∧ isSucc a0 = false ∧ OHole a0 ∧ ¬ (cof a0 = .omega ∧ NotNode a0)
+
+/-- **The residual of the TPLoN carry** (`t = 1`): degenerate indices, and the columns whose old last
+subscript is a node or `Ω`-cofinal (C′ 4 万行列で D の列の約 4%; the seed condition with `θ = 1` is false in
+3 of them, so the instance itself is the residual). -/
+def TPLoNRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  DegRes TPLoNAt M r L d0 ρ ∧ FieldRes (fun s0 y0 _ => BadA0 s0 y0) TPLoNAt M r L d0 ρ
+
+/-- **The residual of the TPLo carry** (`t = 1`): degenerate indices, and the seed condition at the columns
+with the TPLo pattern at the new value (C′ 4 万行列で 15413 件、例外 0). -/
+def TPLoRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  DegRes TPLoAt M r L d0 ρ ∧ SeedRes TPLoPatN (fun ζ => etaOm (holeLev ζ)) M r L d0 ρ
+
+theorem tploAt_of {M : Mat} {ρ : Valn} (h : TPLo M ρ) {c : Nat} (hc : c < M.length) {s y : T}
+    (ho : ρ.o c = psi s y z) : TPLoAt s y :=
+  fun hs a hl has hOa => h c hc s y ho hs a hl has hOa
+
+/-- **TPLoN is carried** (`t = 1`). At a `D` column below `x` the new last subscript is `a₀⟨ζ⟩`; if `a₀`
+is `ω`-cofinal and not a node, TPLoN of `M` persists (`tploN_fsD`). Residual `TPLoNRes`. -/
 theorem expStep_tploN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
@@ -417,7 +513,8 @@ theorem expStep_tploN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
   have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
   intro n hn ρP Z hCP _ hTPP _ _ _ _ hle _ hH
-  have hRes' := hRes n hn ρP Z hH
+  have hDeg := hRes.1 n hn ρP Z hH
+  have hSd := hRes.2 n hn ρP Z hH
   obtain ⟨μ', br', vr', seed, k0, hHD, _, _, _, _, _⟩ := hH
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
@@ -470,18 +567,17 @@ theorem expStep_tploN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
             · exact absurd h'' (lt_irrefl' _)
             · exact le_of_lt h''
           · rw [(T.psi.inj h').2.1]
-        by_cases hgood : isSucc (Z c) = false ∧ ∃ μ X, Z c = psi μ X z ∧ X ≠ z
+        by_cases hgood : GoodIdx (Z c)
         · obtain ⟨hζs, μ, X, hζe, hX⟩ := hgood
           have hζz : Z c ≠ z := by rw [hζe]; simp
-          by_cases hbad : ∃ a0, last y0 = psi a0 z z ∧ isSucc a0 = false ∧ OHole a0 ∧
-              ¬ (cof a0 = .omega ∧ NotNode a0)
-          · exact hRes' c hc' hd s0 y0 h0 hy0 (Or.inr hbad) hsplit a hl has hOa hca hNa
+          by_cases hbad : BadA0 s0 y0
+          · exact hSd c hc' hd s0 y0 h0 hy0 ⟨hζs, μ, X, hζe, hX⟩ hbad hsplit a hl has hOa hca hNa
           · refine tploN_fsD hOy0 hζz hζs ⟨μ, X, hζe, hX⟩ hyy0
               (fun hAll a0 hl0 has0 hOa0 hca0 hNa0 =>
                 I.tplon c hcM s0 y0 h0 (split_snd_of_allGe hAll) a0 hl0 has0 hOa0 hca0 hNa0)
               (fun a0 hl0 has0 hOa0 hcN _ _ _ _ _ => absurd ⟨a0, hl0, has0, hOa0, hcN⟩ hbad)
               (allGe_of_split_snd hsplit) a hl has hOa hca hNa
-        · exact hRes' c hc' hd s0 y0 h0 hy0 (Or.inl hgood) hsplit a hl has hOa hca hNa
+        · exact hDeg c hc' hd s0 y0 h0 hy0 hgood hsplit a hl has hOa hca hNa
     · rw [hσ, glueZ_o_lt ρ (shiftV ρP L) Z hc' hd] at hσc
       exact I.tplon c hcM s y hσc hsplit a hl has hOa hca hNa
   · -- a copy column
@@ -491,6 +587,88 @@ theorem expStep_tploN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
       show ρP.o (r + L + b - L) = ρP.o (r + b); congr 1; omega
     rw [hσo] at hσc
     exact hTPP (r + b) (by rw [hlP]; rw [hlN] at hc; omega) s y hσc hsplit a hl has hOa hca hNa
+
+/-- **TPLo is carried** (`t = 1`): at a `D` column below `x`, TPLo of `M` and the seed condition at the new
+hole level (`tploAt_new`). Residual `TPLoRes`: degenerate indices and the seed condition. -/
+theorem expStep_tplo {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hRes : TPLoRes M r L d0 ρ) :
+    ExpStepT1 TPLo M r L d0 ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
+  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
+  intro n hn ρP Z hCP _ hTPP _ _ _ _ hle _ hH
+  have hDeg := hRes.1 n hn ρP Z hH
+  have hSd := hRes.2 n hn ρP Z hH
+  obtain ⟨μ', br', vr', seed, k0, hHD, _, _, _, _, _⟩ := hH
+  set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
+  have hlN := len_N (d0 := d0) hlen hn
+  have hlP := len_P (d0 := d0) (n := n) hlen
+  intro c hc s y hσc hsplit a hl has hOa
+  rcases Nat.lt_or_ge c (r + L) with hc' | hc'
+  · have hcM : c < M.length := by omega
+    obtain ⟨s0, y0, h0⟩ := o_psi_form I.cons hcM
+    by_cases hd : DepX M (r + L) true c
+    · rw [hσ, glueZ_o_dep ρ (shiftV ρP L) Z hc' hd, h0] at hσc
+      by_cases hy0 : y0 = z
+      · exfalso
+        subst hy0
+        by_cases hs0 : isSucc s0 = true
+        · -- a `D` leaf with old value `Ω_{t+1}` below `x`: impossible
+          rcases hOS c hc' hd with ⟨hvc, hnc⟩ | ⟨_, L', c', R', hch', hcb', hcu', hR', _⟩
+          · have hHv := hHD.hole false c hvc hc'
+            simp only [valB, cond_false] at hHv
+            have hoc := o_nocnt I.cons I.good hcM hnc
+            rw [h0] at hoc
+            have hs : s0 = ρ.v c := (T.psi.inj hoc).1
+            have := holeT_not_succ hHv
+            rw [← hs, hs0] at this; cases this
+          · have hc'M := (mem_children (by rw [hch']; exact List.mem_append_right _ List.mem_cons_self :
+              c' ∈ children M c)).2
+            have hfr := o_frame I.cons I.good hcM hch' hcb' hcu' hR' hc'M
+            obtain ⟨s3, y3, hc3⟩ := o_psi_form I.cons hc'M
+            rw [hc3, spArg_single, h0] at hfr
+            exact step_ne_z' _ _ _ _ _ (T.psi.inj hfr).2.1.symm
+        · by_cases hs0z : s0 = z
+          · subst hs0z; unfold fsD at hσc; simp at hσc
+          · rw [fsD_sub hs0z (by simpa using hs0)] at hσc
+            rw [← (T.psi.inj hσc).2.1] at hl
+            simp [last] at hl
+      · have hHc := hHD.hole true c hd hc'
+        simp only [valB, cond_true] at hHc
+        rw [h0] at hHc
+        have hy0s := not_succ_arg_of_holeT hy0 hHc
+        have hHy := holeT_arg hy0 hHc hHD.cb
+        have hOy0 := ohole_of_holeT hHy
+        rw [fsD_psi hy0 hy0s] at hσc
+        obtain ⟨hss, hyy, _⟩ := T.psi.inj hσc
+        subst hss hyy
+        have hlec : psi s0 (fsD y0 (Z c)) z ≤ psi s0 y0 z := by
+          have := (hle c hc' hd).1
+          rw [h0, fsD_psi hy0 hy0s] at this; exact this
+        have hyy0 : fsD y0 (Z c) ≤ y0 := by
+          rcases (le_iff _ _).mp hlec with h' | h'
+          · rcases psi_lt_psi_z_iff.mp h' with h'' | ⟨_, h''⟩
+            · exact absurd h'' (lt_irrefl' _)
+            · exact le_of_lt h''
+          · rw [(T.psi.inj h').2.1]
+        by_cases hgood : GoodIdx (Z c)
+        · obtain ⟨hζs, μ, X, hζe, hX⟩ := hgood
+          have hζz : Z c ≠ z := by rw [hζe]; simp
+          exact tploAt_new hOy0 hζz hζs ⟨μ, X, hζe, hX⟩ hyy0 (tploAt_of I.tplo hcM h0)
+            (hSd c hc' hd s0 y0 h0 hy0 ⟨hζs, μ, X, hζe, hX⟩ ⟨hsplit, a, hl, has, hOa⟩) hsplit a hl has hOa
+        · exact hDeg c hc' hd s0 y0 h0 hy0 hgood hsplit a hl has hOa
+    · rw [hσ, glueZ_o_lt ρ (shiftV ρP L) Z hc' hd] at hσc
+      exact I.tplo c hcM s y hσc hsplit a hl has hOa
+  · -- a copy column
+    obtain ⟨b, rfl⟩ : ∃ b, c = r + L + b := ⟨c - (r + L), by omega⟩
+    have hσo : σ.o (r + L + b) = ρP.o (r + b) := by
+      rw [hσ, glueZ_o_ge ρ (shiftV ρP L) Z (by omega)]
+      show ρP.o (r + L + b - L) = ρP.o (r + b); congr 1; omega
+    rw [hσo] at hσc
+    exact hTPP (r + b) (by rw [hlP]; rw [hlN] at hc; omega) s y hσc hsplit a hl has hOa
 
 /-! ## TP1C along the chain -/
 
@@ -1309,12 +1487,12 @@ theorem expStep_trigOmC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
 
 /-- **The value fields of `Inv3V` not yet carried by a proven step** (`t = 1`). -/
 def QV (N : Mat) (σ : Valn) : Prop :=
-  VSmallF N σ ∧ AbsD N σ ∧ TPLo N σ ∧ TPLoW N σ ∧ AbsUW N σ ∧ AbsDW N σ ∧ AbsDN N σ
+  VSmallF N σ ∧ AbsD N σ ∧ TPLoW N σ ∧ AbsUW N σ ∧ AbsDW N σ ∧ AbsDN N σ
 
 /-- **The property carried along the `t = 1` chain.** -/
 def PT1 (N : Mat) (σ : Valn) : Prop :=
   FrameOT N σ ∧ RootP N σ ∧ BumpDec N σ ∧ FrameClosed N σ ∧ TrigOmC N σ ∧ TP1C N σ ∧ TP1WC N σ ∧
-    TPLoN N σ ∧ QV N σ
+    TPLoN N σ ∧ TPLo N σ ∧ QV N σ
 
 theorem expStepAt_iff {P Q : Mat → Valn → Prop} (h : ∀ N σ, P N σ ↔ Q N σ) {M : Mat} {r L d0 n : Nat}
     {ρ : Valn} (hP : ExpStepT1At P M r L d0 ρ n) : ExpStepT1At Q M r L d0 ρ n :=
@@ -1360,7 +1538,7 @@ def RestT (M : Mat) (rk : Bool → Nat → Nat) : Prop :=
 /-- **`Inv3V` from the chain's output.** -/
 theorem inv3V_of_PT1 {N : Mat} {σ : Valn} {rk : Bool → Nat → Nat} (hC : Cons N σ) (hR : Rk N rk)
     (hG : Good3 N σ) (hP : PT1 N σ) : Inv3V N σ rk :=
-  let ⟨fo, rp, ⟨kd, td⟩, fc, trig, tp1, tp1w, tplon, vs, ad, tplo, tplow, auw, adw, adn⟩ := hP
+  let ⟨fo, rp, ⟨kd, td⟩, fc, trig, tp1, tp1w, tplon, tplo, vs, ad, tplow, auw, adw, adn⟩ := hP
   ⟨hC, hG, hR, vs, fc, fo, kd, td, ad, absU_of_absD hC hG ad, tp1, tplo, tp1w, tplow, auw, adw, trig, tplon, adn,
     rootS_of_good hC hG, rp⟩
 
@@ -1371,7 +1549,8 @@ theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M
     (hx2 : entry M 2 (r + L) = 0)
     (hRT : RestT M rk)
     (hQs : ExpStepT1 QV M r L (entry M 0 (r + L) - entry M 0 r) ρ)
-    (hResN : TPLoNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ) :
+    (hResN : TPLoNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+    (hResL : TPLoRes M r L (entry M 0 (r + L) - entry M 0 r) ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN,
       Inv3V (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN rkN ∧
       isOT (root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN) = true ∧
@@ -1399,7 +1578,7 @@ theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M
   rw [show M.length - 1 = r + L by omega] at hRT'
   obtain ⟨ad, tp1, tplo, tp1w, tplow, auw, adw, trig, tplon, adn⟩ := hRT'
   have hP1 : PT1 (M.take (r + L)) (drop1 M (r + L) rk) :=
-    ⟨V1.fo, hRP1, ⟨V1.kd, V1.td⟩, V1.fc, trig, tp1, tp1w, tplon, V1.vs, ad, tplo, tplow, auw, adw, adn⟩
+    ⟨V1.fo, hRP1, ⟨V1.kd, V1.td⟩, V1.fc, trig, tp1, tp1w, tplon, tplo, V1.vs, ad, tplow, auw, adw, adn⟩
   have hPs : ExpStepT1 PT1 M r L (entry M 0 (r + L) - entry M 0 r) ρ :=
     expStep_and (expStep_frameOT_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq I.fo)
       (expStep_and (expStep_rootP_t1 hlen hL0 hd0e I.z2 I.uat I.r12 I.be I.r01 I.e00 hr hx2 I.rootP)
@@ -1408,7 +1587,8 @@ theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M
           (expStep_and (expStep_frameClosed_t1' I hlen hL0 hd0e hr hx2) (expStep_and (expStep_trigOmC I hlen hL0 hd0e hr hx2)
             (expStep_and (expStep_tp1C I hlen hL0 hd0e hr hx2)
               (expStep_and (expStep_tp1WC I hlen hL0 hd0e hr hx2)
-                (expStep_and (expStep_tploN I hlen hL0 hd0e hr hx2 hResN) hQs)))))))
+                (expStep_and (expStep_tploN I hlen hL0 hd0e hr hx2 hResN)
+                  (expStep_and (expStep_tplo I hlen hL0 hd0e hr hx2 hResL) hQs))))))))
   by_cases hqr : q = r
   · subst hqr
     obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=
@@ -1437,7 +1617,7 @@ theorem hExp_t1
       ExpStepT1 QV M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hResN : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → ∀ r L, r + L + 1 = M.length →
       par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
-      TPLoNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+      TPLoNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ TPLoRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hRes : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 → ∀ n, 2 ≤ n →
       ∀ σ rkN, Inv3 (expand M n) σ rkN → Res3A (expand M n) σ rkN) :
@@ -1473,7 +1653,7 @@ theorem hExp_t1
   obtain ⟨ρN, rkN, V, _, _⟩ :=
     inv3V_N_t1 I R hlen hr hx2 (hRT M ρ rk hM hS I R hz h1t)
       (hQs M ρ rk hM hS I R r L hlen hr hx2)
-      (hResN M ρ rk hM hS I R r L hlen hr hx2) n hn
+      (hResN M ρ rk hM hS I R r L hlen hr hx2).1 (hResN M ρ rk hM hS I R r L hlen hr hx2).2 n hn
   rw [← hexp] at V
   exact ⟨ρN, rkN, V, hRes M ρ rk hM hS I R hz h1t n hn ρN rkN
     (Inv3.ofV (sInv_std (Std.exp n hM) hNS) V)⟩
