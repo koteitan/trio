@@ -164,4 +164,72 @@ theorem copy_good3_gexp {σ ρ : Valn} {rk : Bool → Nat → Nat}
 
 end
 
+/-- **The remaining facts of the copy block** of every `M[n]` (`n ≥ 2`, measured with 0 exceptions). -/
+def T2CopyRes (M : Mat) (r L d0 d1 : Nat) : Prop :=
+  ∀ n, 2 ≤ n → ∀ σ ρ, Cons (TRIO.gexp M r L d0 d1 n) σ → Cons (TRIO.gexp M r L d0 d1 (n - 1)) ρ →
+    T2GuardKids (TRIO.gexp M r L d0 d1 (n - 1)) r ∧ T2GuardVal (TRIO.gexp M r L d0 d1 (n - 1)) ρ r ∧
+    T2RootKids (TRIO.gexp M r L d0 d1 (n - 1)) r ∧ T2Base (TRIO.gexp M r L d0 d1 (n - 1)) σ ρ r ∧
+    isOT (σ.v (r + L)) = true ∧ ρ.v r < σ.v (r + L)
+
+/-- **The part before `x`** of Good3 of `M[n]`, given standard values from `x` on (the `hOTout` of
+`deps_lhd_ot`): the `D` calls by `◁`, the seeds `q`, `p2`, and the unchanged calls from `M`. -/
+def T2BelowX (M : Mat) (r L d0 d1 : Nat) : Prop :=
+  ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
+    (∀ j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (σ.o j) = true ∧ isOT (σ.v j) = true) →
+    ∀ i, i < r + L → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
+      (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a)
+
+section
+variable {M : Mat} {r L d0 d1 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+  (hA : Anc0 M r (r + L)) (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+  (hd0 : 0 < d0) (hd1 : 0 < d1) (hgx : TRIO.le1 M r (r + L)) (he2r : entry M 2 r = 0)
+include hlen hL hA hd0e hd0 hd1 hgx he2r
+
+/-- **Good3 of every `M[n]`** (`t = 2`, `n ≥ 1`), by induction on `n`: the copies by `σ` from `M[n − 1]`,
+the part before `x` from `T2BelowX`, the base `M[1] = M.take x` given. -/
+theorem good3_gexp_t2
+    (hRk : ∀ n, 1 ≤ n → ∃ rk, Rk (TRIO.gexp M r L d0 d1 n) rk)
+    (hBE : ∀ n, 1 ≤ n → BumpE2 (TRIO.gexp M r L d0 d1 n))
+    (hB1 : ∀ σ, Cons (TRIO.gexp M r L d0 d1 1) σ → Good3 (TRIO.gexp M r L d0 d1 1) σ)
+    (hRes : T2CopyRes M r L d0 d1) (hBX : T2BelowX M r L d0 d1) :
+    ∀ n, 1 ≤ n → ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ → Good3 (TRIO.gexp M r L d0 d1 n) σ := by
+  intro n hn
+  induction n with
+  | zero => omega
+  | succ m ih =>
+    rcases Nat.eq_zero_or_pos m with hm0 | hm0
+    · subst hm0; exact hB1
+    · intro σ hCN
+      have hn2 : 2 ≤ m + 1 := by omega
+      obtain ⟨rk, hRP⟩ := hRk m hm0
+      have hCP : Cons (TRIO.gexp M r L d0 d1 m) (rhsIt _ (rkBound _ rk)) := cons_of_rk hRP
+      have hGP := ih hm0 _ hCP
+      have hm : m + 1 - 1 = m := by omega
+      obtain ⟨hK, hKV, hRK, hB, hV', hVV⟩ := hRes (m + 1) hn2 σ _ hCN (by rw [hm]; exact hCP)
+      rw [hm] at hK hKV hRK hB
+      have hcp := copy_good3_gexp hlen hL hA hd0e hn2 hd0 hd1 hgx he2r (by rw [hm]; exact hBE m hm0)
+        hCN (by rw [hm]; exact hCP) (by rw [hm]; exact hGP) (by rw [hm]; exact hRP)
+        (by rw [hm]; exact hK) (by rw [hm]; exact hKV) (by rw [hm]; exact hRK) (by rw [hm]; exact hB)
+        hV' hVV
+      have hlN : (TRIO.gexp M r L d0 d1 (m + 1)).length = r + (m + 1) * L := TRIO.gexp_length hlen
+      have hnL : (m + 1) * L = (m + 1 - 1) * L + L := by rw [hm, Nat.succ_mul]
+      have hcopy : ∀ j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 (m + 1)).length →
+          isOT (σ.o j) = true ∧ isOT (σ.v j) = true ∧
+          (cvals (TRIO.gexp M r L d0 d1 (m + 1)) σ j).Pairwise (fun a b => b ≤ a) := by
+        intro j h1 h2
+        obtain ⟨a, rfl⟩ : ∃ a, j = r + L + a := ⟨j - (r + L), by omega⟩
+        obtain ⟨_, _, h3, h4, h5⟩ := hcp a (by omega)
+        exact ⟨h3, h4, h5⟩
+      have hbx := hBX (m + 1) hn2 σ hCN (fun j h1 h2 => ⟨(hcopy j h1 h2).1, (hcopy j h1 h2).2.1⟩)
+      have hall : ∀ i, i < (TRIO.gexp M r L d0 d1 (m + 1)).length →
+          isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
+          (cvals (TRIO.gexp M r L d0 d1 (m + 1)) σ i).Pairwise (fun a b => b ≤ a) := by
+        intro i hi
+        rcases Nat.lt_or_ge i (r + L) with h | h
+        · exact hbx i h
+        · exact hcopy i h hi
+      exact ⟨fun i hi => (hall i hi).1, fun i hi => (hall i hi).2.1, fun i hi => (hall i hi).2.2⟩
+
+end
+
 end Ytosk
