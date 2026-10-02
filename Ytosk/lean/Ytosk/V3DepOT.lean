@@ -5,24 +5,20 @@
 D の呼び出しの値の ◁ と標準形を M の順位についての帰納法で同時に出す。
 - 種の呼び出しは仮定（◁ と標準形）。
 - v を通る o: ψ_{v′}(0) は v′ が標準形なら標準形。
-- 最後の数える子を通る o: 枠 1 段の標準形は M の枠の性質 `FrameNodeOT`（最後の数える子を ◁ で下げた標準形に
-  替えても親は標準形）。実測: M の枠で最後の子を基本列の項に替えた 69 万件で例外 0（C′ 3000 行列）。
+- 最後の数える子を通る o: 枠 1 段の標準形は `node_ot_hard`（V3DropStrong）。仮定は M の FrameOT・VSmallF、
+  N 側の 2 つ: 添字が変わった新しい子の VSmallNew 型（`hVSN`）と、難しい場合（添字同じ・a < s・新旧とも書き換え・
+  高い部分が違う）の成分の上界 comps_a y′ ≤ H(s, y′)（`hHard`）。実測: t = 2 の N の D の枠 17.9 万件のうち
+  難しい場合 2.2 万件で上界は例外 0（C′ 8000 行列、n = 2, 3）。
 - 上げの v: 行き先の v と同じ。のりしろの v: V + ω^Y で V・Y が標準形。
 - bnd 以後（t = 2 では写し）の値の標準形は仮定 `hOTout`。
 -/
 import Ytosk.V3DepLhd
 import Ytosk.V3DropMain
+import Ytosk.V3DropStrong
 
 namespace Ytosk
 
 open T
-
-/-- **Lowering the last counted child by `◁` keeps the frame standard** (a property of the frames of `M`). -/
-def FrameNodeOT (M : Mat) (ρ : Valn) : Prop :=
-  ∀ i, i < M.length → ∀ (Lc : List Nat) (c : Nat), CL M i = Lc ++ [c] → ∀ s y s' y',
-    ρ.o c = psi s y z → isOT (psi s' y' z) = true → Lhd z (psi s' y' z) (psi s y z) →
-    (y' ≠ z → s' = s) →
-    isOT (psi (ρ.v i) (step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s' y' z) z) = true
 
 /-- `o_frame_lhdT` with the standard values of the counted children of `i` in `N` given directly. -/
 theorem o_frame_lhdS {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
@@ -79,11 +75,22 @@ theorem o_frame_lhdS {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
 
 /-- **`◁` and standard form through `DepS M S`**, without the evaluation `Good3` of `N`: the changed calls
 below `bnd` drop by `◁` and are standard. The standard form of a frame with a lowered last child is the
-property `FrameNodeOT` of `M`; the values of `N` from `bnd` on are standard by hypothesis (`hOTout`). -/
+lemma `node_ot_hard` with `FrameOT`, `VSmallF` of `M` and two hypotheses on `N`: the subscript bound of a
+changed last child (`hVSN`) and the bound of the hard case (`hHard`); the values of `N` from `bnd` on are
+standard by hypothesis (`hOTout`). -/
 theorem deps_lhd_ot {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ : Valn} {rk : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hCN : Cons N σ) (hRM : Rk M rk)
     (hbM : bnd ≤ M.length) (hbN : bnd ≤ N.length)
-    (hF : FrameClosed M ρ) (hFN : FrameNodeOT M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
+    (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ)
+    (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
+    (hVSN : ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v c ≠ ρ.v c →
+      ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
+    (hHard : ∀ i (Lc : List Nat) c s y y', i < bnd → CL N i = Lc ++ [c] → ρ.o c = psi s y z →
+      σ.o c = psi s y' z → lt (ρ.v i) s = true →
+      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s y' z) = true) →
+      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+      (split y' (psi (succ s) z z)).1 < (split y (psi (succ s) z z)).1 →
+      ∀ g ∈ comps (ρ.v i) y', g ≤ H s y')
     (hoff : ∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i))
     (hOTout : ∀ b j, bnd ≤ j → j < N.length → isOT (valB σ b j) = true)
     (hSeed : ∀ b i, S b i → i < bnd → DepS M S b i →
@@ -228,8 +235,42 @@ theorem deps_lhd_ot {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ :
             have hformN := o_last_form hCN hiN (by rw [hv']; exact hG.ot_v i hiM) hclN hsN hpN hs'y'
             have hLm : Lc.map σ.o = Lc.map ρ.o := List.map_congr_left hsame
             rw [hformN, hLm, hv']
-            exact hFN i hiM Lc c hclM s y s' y' hsy (by rw [← hs'y']; exact hIHot)
-              (by rw [← hs'y', ← hsy]; exact hIH) (fun hy' => hss s y s' y' hsy hs'y' hy')
+            have hLs := sumN_dec (Lc.map ρ.o) (fun t ht => hsM t (List.mem_append_left _ ht))
+              (List.pairwise_append.mp hpM).1
+            have hBc : ∀ q ∈ summands (spArg (ρ.v i) z (sumN (Lc.map ρ.o))), psi s y z ≤ q := by
+              apply spArg_summands_ge ⟨s, y, rfl⟩ (sumN (Lc.map ρ.o)) z hLs.1
+              · rw [hLs.2]; intro q hq; rw [← hsy]
+                exact (List.pairwise_append.mp hpM).2.2 q hq _ (by simp)
+              · simp [summands]
+            have hfr := hVS i hiM Lc c [] (by rw [hclM])
+            have hsvc : s = ρ.v c := hvM s y hsy
+            have hsub : ∀ g ∈ comps (ρ.v i) s, g ≤ psi s z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) := by
+              rw [hsvc]; exact hfr
+            have hs'v : s' = σ.v c := by
+              obtain ⟨y0, hy0⟩ := o_psi_sub hCN hcN
+              rw [hs'y'] at hy0; simp only [psi.injEq] at hy0
+              have hvot : isOT (σ.v c) = true := by
+                by_cases hdv : DepS M S false c
+                · exact (ih _ (by have := hRM c hcM; omega) false c (le_refl _) hdv hcb).2
+                · rw [(hoff c hcb).2 hdv]; exact hG.ot_v c hcM
+              rw [hy0.1, sf_ot hvot]
+            have hsub' : ∀ g ∈ comps (ρ.v i) s', g ≤ psi s' z z ∨
+                g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) := by
+              by_cases hvc : σ.v c = ρ.v c
+              · rw [hs'v, hvc, ← hsvc]; exact hsub
+              · rw [hs'v]; exact hVSN i Lc c hi hclN hvc
+            have hot : isOT (psi (ρ.v i) (step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z) z) = true := by
+              rw [← o_last_form hC hiM (hG.ot_v i hiM) hclM (fun d hd => single_o hC hG
+                (mem_children (cl_mem_children hd)).2) (by
+                  rw [hclM, List.map_append, List.map_singleton]; exact hpM) hsy]
+              exact hG.ot_o i hiM
+            have hBot := hFO i hiM Lc c [] (by rw [hclM])
+            apply node_ot_hard (by rw [← hsy]; exact hG.ot_o c hcM) (by rw [← hs'y']; exact hIHot)
+              (Or.inr (by rw [← hs'y', ← hsy]; exact hIH)) hBc (fun hy' => hss s y s' y' hsy hs'y' hy')
+              hsub hsub' _ hot hBot
+            intro hss' has ht' ht hhi
+            rw [hss'] at ht' hs'y'
+            exact hHard i Lc c s y y' hi hclN hsy hs'y' has ht' ht hhi
       | false =>
         show Lhd z (σ.v i) (ρ.v i) ∧ isOT (σ.v i) = true
         obtain ⟨he1, he2, hpar, hpnd, hupg, hupgb, hbsh⟩ := hVc i hi hs hD
