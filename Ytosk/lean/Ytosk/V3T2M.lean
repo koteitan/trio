@@ -3,7 +3,7 @@
 
 主の場合（x へ上げる列がない、x と r はのりしろの子でない）では、種は o(r) だけ。
 - D = DepS M {o(r)} は x より前で DepX M x と同じ（`depS_iff_depX`）。
-- x より前の数え方は N と M で同じ（x より前の isUpg が N と M で同じことを仮定 hIU に置く）。
+- x より前の数え方は N と M で同じ（x より前の topped な列の isUpg が N と M で同じことを仮定 hIU に置く）。
 -/
 import Ytosk.V3T2S
 import Ytosk.V3DepLhd
@@ -89,7 +89,7 @@ variable {M : Mat} {r L d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
   (hp : par M 0 (r + L) = some r) (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (hn2 : 2 ≤ n)
   (hXu : ∀ i, upg M i ≠ some (r + L)) (hXb : col M (r + L) ≠ bump M r)
   (he2r : entry M 2 r = 0)
-  (hIU : ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c)
+  (hIU : ∀ c, c < r + L → topped M c = true → isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c)
 include hlen hL hp hd0e hn2 hXu hXb he2r hIU
 
 omit hIU in
@@ -98,8 +98,8 @@ theorem upg_N2_pre {j : Nat} (hj : j + 1 < r + L) :
   rw [← upg_take _ hj, gexp_take_x hlen (by omega), upg_take M hj]
 
 /-- **Upgrades into columns before `x`** are the same in `N` and `M` (the hypothesis `hIU`). -/
-theorem isUpg_N2 {c : Nat} (hc : c < r + L) :
-    isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c := hIU c hc
+theorem isUpg_N2 {c : Nat} (hc : c < r + L) (ht : topped M c = true) :
+    isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c := hIU c hc ht
 
 omit hIU in
 /-- **`topped` before `x`** is the same. -/
@@ -133,7 +133,10 @@ theorem counted_N2 {i c : Nat} (hi : i < r + L) (hc : c < r + L) :
   unfold Counted
   rw [col_gexp_pre hlen (by omega) hc, show bump (TRIO.gexp M r L d0 d1 n) i = bump M i by
       unfold bump; rw [entry_gexp_pre hlen (by omega) 0 hi, entry_gexp_pre hlen (by omega) 1 hi],
-    isUpg_N2 hlen hL hp hd0e hn2 hXu hXb he2r hIU hc, topped_N2 hlen hL hp hd0e hn2 hXu hXb he2r hc]
+    topped_N2 hlen hL hp hd0e hn2 hXu hXb he2r hc]
+  by_cases ht : topped M c = true
+  · rw [isUpg_N2 hlen hL hp hd0e hn2 hXu hXb he2r hIU hc ht]
+  · simp [ht]
 
 /-- **The counted children before `x`** are the same (given that `x′` counts at `r`). -/
 theorem CL_N2 (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L)) {i : Nat} (hi : i < r + L) :
@@ -160,7 +163,7 @@ variable {M : Mat} {r L d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
   (hXu : ∀ i, upg M i ≠ some (r + L)) (hXb : col M (r + L) ≠ bump M r)
   (hrb : ∀ p, par M 0 r = some p → col M r ≠ bump M p)
   (he2r : entry M 2 r = 0)
-  (hIU : ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c)
+  (hIU : ∀ c, c < r + L → topped M c = true → isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c)
 include hlen hL hp hd0e hn2 hXu hXb hrb he2r hIU
 
 /-- **Outside `D`, `N` has the values of `M` before `x`.** -/

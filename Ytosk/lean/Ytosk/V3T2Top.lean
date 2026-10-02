@@ -852,7 +852,6 @@ structure T2R (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Pr
   nn : upg M (r + L - 1) = none → T2QR M ρ rk r L
   up : ∀ k, upg M (r + L - 1) = some k → k < r + L → T2QU M ρ rk r L k
   big : upg M (r + L - 1) ≠ some (r + L) → ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
-    (∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c) ∧
     VNNc M (r + L) ρ σ ∧ SeedL ρ σ r
 
 /-- **The remaining hypotheses of `t = 2`** (`x = r + L`, `r = P_2(x)`). -/
@@ -1057,7 +1056,14 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
           exact htM
         exact t2_sv_main hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb T'.rcl hIUt
           Sp1 Sdv Sos Svsh I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hAbs hVNN hseed
-      · obtain ⟨hIU, hVNN, hseed⟩ := T.big hux n _ _ σ hn hCN
+      · obtain ⟨hVNN, hseed⟩ := T.big hux n _ _ σ hn hCN
+        have hIU : ∀ c, c < r + L → topped M c = true →
+            isUpg (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c =
+              isUpg M c := by
+          intro c hc htM
+          apply isUpg_topped_take (by omega) (by omega) hT I.uat hUN hc _ htM
+          rw [topped_N2 (d1 := entry M 1 (r + L) - entry M 1 r) hlen hL0 hq hd0e hn (hXu_of hux) hxbr he2r hc]
+          exact htM
         have hxcN : Counted (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
             (entry M 1 (r + L) - entry M 1 r) n) r (r + L) := by
           have hx2 := (entry_xprime (d1 := entry M 1 (r + L) - entry M 1 r) hlen hL0 hq hd0e (by omega) hn).1
