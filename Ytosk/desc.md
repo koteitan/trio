@@ -1595,3 +1595,9 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - wip（fef65fc3、緑）: t = 2・q ≠ r で x − 1 が上げる場合（V3T2QNU t2_qnu_take）。種 {v(q), o(q), o(pq), v(x−1)}。v(q) は v_bump_drop_upg（V + ω^{S′} ◁ V + ω^{S+1}）、v(x−1) は UpgAbsX。Res3T2 から un を外し、この場合の D の形の欄 up を足した。実測は C′ の接頭辞の 2 段展開から集めた 14443 個で例外 0（すべて同じ族の変形）。
 - closure: Inv3 の AbsDW と TPLoW も標準形で偽（N = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,0)、C′ の行列の M[2]、C′ に入っていない）。どちらも ζ = 1 の段の等号の境目で 1 ずれる（AbsDW は q = 境界、TPLoW は fsD = s）。より深い集合 C″ で全欄を洗い直す。
 - wip（145cca9b、緑）: Res3T2 から構造の 5 項目を外した（t2_drops が SInvX ∧ RowJ を受け取る。t2_hT2 は sInvXJ_std から）。SeedL（o_N(p) ◁ o_M(p)、n = 2, 3）を C′ の t = 2 の全行列 207914 件と上げの集合 28886 件で検査して例外 0（◁ の判定は (b, a] の有限個の c で試す近似を強めたもの）。次は D の形の欄を ChgX の構造の補題から。
+- wip（dfac2444）: t = 2・q ≠ r の D の形（p1・qL・dv・os・vsh）を ChgX の構造の補題から（qn_shapes、chg_pq）。Res3T2 の T2QN から外した。
+- drop-fix（測定、V3NodeLhd の新しい補題は緑）:
+  - 落とす補題の結論 PO/PV は C′ の全 736 万列で成り立つ。崩れているのは道筋だけ（node_lhd の SubSmall 78 枠、Closed B）。
+  - 落とす補題では「どちらも書き換え s′ < s」「新しい方だけ書き換え」の枝は起きない（v′(cs) ≠ v(cs) なら o′(cs) = ψ_{s′}(0)）。
+  - 新しい不変条件 FrameDom a B s X: max(B, Ω_s) < C ≤ X = H(s, y) の C について、comps_u(B) ∪ comps_u(s) は C :: comps_u C ++ comps_u a で支配される。証明が使うのはちょうどこれで、B が hi(y) の先頭部分、Closed、SubSmall を含む。
+  - 計画: FrameClosed を「書き換えの枠 → FrameDom」、VSmallF を「comps ≤ Ω_{v c} ∨ ≤ B」、VSmallNew を同じ形（第 2 部は不要: s′ < s は Lhd(c′, c) を C = Ω_s で）に定義し直す。
