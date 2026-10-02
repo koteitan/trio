@@ -1705,3 +1705,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 変わる呼び出しの ◁ と標準形 deps_lhd_ot（V3DepOT）: deps_lhd_gen から N の Good3 を外した形。仮定は M の枠の性質 FrameNodeOT（最後の数える子を ◁ で下げた標準形に替えても親は標準形）、bnd 以後の値の標準形（t = 2 では写し、t2-subst）、種の ◁ と標準形。
 - groupA の提案 PhiX（AbsD・AbsU を強めた帰納法向きの形）: e1 c ≠ 0 の列 c の増分 X_c（e2 c ≠ 0 なら bumpW c、上げられた列なら bumpW (upg c)）に穴があるとき、P_1 の鎖の上のすべての p について、v(p) の部分項 u（と部分項の頭 ψ_a(b)）で u < X_c なら u < fsD(X_c, ψ_μ(Ω_{μ+1}))（μ = holeLev X_c）。C′ で 434787 件、例外 0。長さ 9 の反例では AbsD の 2 つでだけ破れる。PhiX ⇒ AbsD・AbsU。t = 1 の種の隙間の条件は M[n−1] の値についての PhiX 型の主張なので、鎖で運べる見込み。TPLo は含まない。承認、t1-exp の Pn で AbsD・AbsU の代わりに運ぶ。
 - t2-exp（a57f865a・765af593、緑）: t = 2 の M[n] の順位を残りなしで（rk_gexp_t2_final、仮定は構造だけ）。背骨の補題 not_depS_spine（a と c の間の背骨の列がすべて e1 ≥ e1(a) なら、v(a) は c の真の祖先 y の o(y) に依存しない、BumpLeaf だけから）と系 not_depS_anc（v(a) は祖先の o に依存しない）。hF2・T2Tgt は外れた。次は t = 2 の M[n] の FrameOT・RootP・BumpDec・FrameClosed・TP1C 系。
+
+### hExp の t = 0 部分の現状（2026-10-02、t0-exp、V3ExpT0 hExp_t0_mainC、緑）
+
+- 証明済み（N = M[n]、t = 0、n ≥ 2）: Cons・Rk・Good3（T0Shape のもとで）・FrameOT・FrameClosed・BumpKidsDec・BumpTermDec・rootS・rootP・根の降下。
+- 残り:
+  - T0Shape（hOTD、C′ 全体で例外 0）: (i) class B0 の子で古い枠が書き換えるなら新しい枠も（22.7 万件、PreHi 型の核）、(ii) v が変わる子 c で P_1(c) ≠ P_0(c) なら Ω_{a+1} 以上のまま、(iii) g の引数の組の class、(iv) まれな場合（383 件）。
+  - T0RWResC（TP1C・TP1WC・TrigOmC）: 影の枠だけ（B ≠ 0 で新しい引数の先頭部分でない）。
+  - T0Rest: A 群の 7 欄、TPLoW・AbsDW、N の Res3A（argT は HardArg/FrameNodeOT 待ち）。
+- 再利用できる道具: frameQ_N_t0（N の枠の性質を M・M.take x と D/g の枠から）、rwc_N_t0、node_arg_lhd・cls_node、t0_dep_ot。
+- 次: (iii)(iv) → (ii)（背骨の補題で）→ closure の P の定義が入ったら (i) と影の枠を PH3c・FC3 から、N の P を frameQ_N_t0 で。
