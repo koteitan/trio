@@ -5,7 +5,7 @@ N = M[n]、P = M[n − 1]（n ≥ 2）、ガード g = le1 P r。構造の仮定
 上げの先は P_1 が同じで行 2 ≥ 1（r ではない）なので、上げについてのガードの閉じ方も構造から出る。
 
 残り（明示した仮定、実測は C′ の t = 2 の 3000 行列 × n = 2..4 で例外 0）:
-- `T2GuardKids`: g でない列の数える子・のりしろの子の子は g でない。
+- （`T2GuardKids`: g でない列の数える子・のりしろの子の子は g でない。守られた子の親は守られる（guard_par）ので証明済み。）
 - `T2GuardVal`: g の列の、g でない数える子・のりしろの子の子の v は V = v_P(r) 以下。
 - `T2RootKids`: r の数える子は g。
 - `T2Base`: 写しの v が読む r より前の列の v は N と P で等しい。
@@ -47,6 +47,22 @@ variable {M : Mat} {r L d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
   (hd0 : 0 < d0) (hd1 : 0 < d1) (hgx : TRIO.le1 M r (r + L)) (he2r : entry M 2 r = 0)
   (hBEP : BumpE2 (TRIO.gexp M r L d0 d1 (n - 1)))
 include hlen hL hA hd0e hn hd0 hd1 hgx he2r hBEP
+
+/-- **`T2GuardKids` holds**: the parent of a guarded child is guarded (`guard_par`). -/
+theorem t2GuardKids_gexp : T2GuardKids (TRIO.gexp M r L d0 d1 (n - 1)) r := by
+  set P := TRIO.gexp M r L d0 d1 (n - 1) with hP
+  have hlP : P.length = r + (n - 1) * L := TRIO.gexp_length hlen
+  have hanc : ∀ i, r ≤ i → i < P.length → Anc0 P r i := by
+    intro i h1 h2
+    obtain ⟨a, rfl⟩ : ∃ a, i = r + a := ⟨i - r, by omega⟩
+    exact ancP_r hlen hL hA hd0e hn hd0 hd1 hgx (by omega)
+  refine ⟨fun i d h1 h2 hd _ hg hgd => hg ?_, fun i j k h1 h2 hj _ hk hg hgk => hg ?_⟩
+  · obtain ⟨hdl, hpd⟩ := mem_children_iff.mp hd
+    exact guard_par (hanc i h1 h2) hpd hdl hgd
+  · obtain ⟨hjl, hpj⟩ := mem_children_iff.mp hj
+    obtain ⟨hkl, hpk⟩ := mem_children_iff.mp hk
+    have hrj : Anc0 P r j := Anc0.step hpj (hanc i (by omega) h2)
+    exact guard_par (hanc i (by omega) h2) hpj hjl (guard_par hrj hpk hkl hgk)
 
 /-- **The copy relation and Good3 at the copies of `M[n]`** (`t = 2`). -/
 theorem copy_good3_gexp {σ ρ : Valn} {rk : Bool → Nat → Nat}
@@ -167,7 +183,7 @@ end
 /-- **The remaining facts of the copy block** of every `M[n]` (`n ≥ 2`, measured with 0 exceptions). -/
 def T2CopyRes (M : Mat) (r L d0 d1 : Nat) : Prop :=
   ∀ n, 2 ≤ n → ∀ σ ρ, Cons (TRIO.gexp M r L d0 d1 n) σ → Cons (TRIO.gexp M r L d0 d1 (n - 1)) ρ →
-    T2GuardKids (TRIO.gexp M r L d0 d1 (n - 1)) r ∧ T2GuardVal (TRIO.gexp M r L d0 d1 (n - 1)) ρ r ∧
+    T2GuardVal (TRIO.gexp M r L d0 d1 (n - 1)) ρ r ∧
     T2RootKids (TRIO.gexp M r L d0 d1 (n - 1)) r ∧ T2Base (TRIO.gexp M r L d0 d1 (n - 1)) σ ρ r ∧
     isOT (σ.v (r + L)) = true ∧ ρ.v r < σ.v (r + L)
 
@@ -205,7 +221,8 @@ theorem good3_gexp_t2
       have hCP : Cons (TRIO.gexp M r L d0 d1 m) (rhsIt _ (rkBound _ rk)) := cons_of_rk hRP
       have hGP := ih hm0 _ hCP
       have hm : m + 1 - 1 = m := by omega
-      obtain ⟨hK, hKV, hRK, hB, hV', hVV⟩ := hRes (m + 1) hn2 σ _ hCN (by rw [hm]; exact hCP)
+      obtain ⟨hKV, hRK, hB, hV', hVV⟩ := hRes (m + 1) hn2 σ _ hCN (by rw [hm]; exact hCP)
+      have hK := t2GuardKids_gexp hlen hL hA hd0e hn2 hd0 hd1 hgx he2r (by rw [hm]; exact hBE m hm0)
       rw [hm] at hK hKV hRK hB
       have hcp := copy_good3_gexp hlen hL hA hd0e hn2 hd0 hd1 hgx he2r (by rw [hm]; exact hBE m hm0)
         hCN (by rw [hm]; exact hCP) (by rw [hm]; exact hGP) (by rw [hm]; exact hRP)
