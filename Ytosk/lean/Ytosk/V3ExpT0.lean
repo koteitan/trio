@@ -42,6 +42,30 @@ theorem t0_shape {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M �
     by rw [show r + (M.length - 1 - r) = M.length - 1 by omega]; exact he1, fun n => ?_⟩
   exact expand_eq_gexp_t0 M n (by omega) hzT (by rw [hs0]; exact hr) hs0
 
+/-! ## 3 つの欄 -/
+
+/-- `TP1C` as a rewriting-frame property. -/
+def PTP1 (_a B _s y : T) : Prop := OHole y → lt B (fsD y (psi (holeLev y) one z)) = true
+
+/-- `TP1WC` as a rewriting-frame property. -/
+def PTP1W (_a B _s y : T) : Prop := cof y = .omega → OHole y → lt B (fsD y one) = true
+
+/-- `TrigOmC` as a rewriting-frame property. -/
+def PTrig (_a B _s y : T) : Prop := ∀ ν, y = psi (succ ν) z z → B = z
+
+theorem rwc_tp1 {M : Mat} {ρ : Valn} : RWC PTP1 M ρ ↔ TP1C M ρ := Iff.rfl
+
+theorem rwc_tp1w {M : Mat} {ρ : Valn} : RWC PTP1W M ρ ↔ TP1WC M ρ := Iff.rfl
+
+theorem rwc_trig {M : Mat} {ρ : Valn} : RWC PTrig M ρ ↔ TrigOmC M ρ := by
+  constructor
+  · intro h i L c R hch hcnt s ν hsy hlt htr
+    exact h i L c R hch hcnt s _ hsy hlt htr ν rfl
+  · intro h i L c R hch hcnt s y hsy hlt htr ν hy
+    subst hy
+    exact h i L c R hch hcnt s ν hsy hlt htr
+
+
 /-- **The residual `hOTD`** of `t0_core`: the `o` values of the `D` columns before `r` are standard. -/
 def T0OTD : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
@@ -76,6 +100,19 @@ theorem t0OTD_of_shape (h : T0Shape) : T0OTD := by
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
     h1 h2 n hn σ hCN
 
+/-- **The residual of a rewriting-frame field `P` at `N = M[n]`** (`t = 0`): the frames before `r`
+whose last counted child is in `D`, and the first copy root of `g` (the middle value or `o′(r)` after the
+counted siblings of `r`). The other frames come from `M` and `M.take x` (`rwc_N_t0`). -/
+def T0RWRes (P : T → T → T → T → Prop) : Prop :=
+  ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
+    Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → Good3 (TRIO.gexp M r L 0 0 n) σ →
+    (∀ i, i < r → ¬ (par M 0 r = some i ∧ Counted M i r) →
+      ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R → DepX M (r + L) true c →
+        QP P (ρ.v i) (Lc.map ρ.o) (σ.o c)) ∧
+    (∀ g, par M 0 r = some g → Counted M g r → ∀ Lc, CL M g = Lc ++ [r] →
+      ∀ cv, (cv = omid M r L ρ ∨ cv = (drop1 M (r + L) rk).o r) → QP P (ρ.v g) (Lc.map ρ.o) cv)
+
 /-- **The remaining value fields of `N = M[n]`** (`t = 0`) and its `Res3A`, for the valuation built by
 `t0_core` (which already has `Cons`, `Rk`, `Good3`, `FrameOT`, `FrameClosed`, `BumpKidsDec`, `BumpTermDec`). The context
 includes the invariants of the prefix `M.take x` (from the one-column drops in the induction). -/
@@ -88,12 +125,13 @@ def T0Rest : Prop :=
       FrameClosed (TRIO.gexp M r L 0 0 n) σ →
       BumpKidsDec (TRIO.gexp M r L 0 0 n) σ → BumpTermDec (TRIO.gexp M r L 0 0 n) σ →
       let N := TRIO.gexp M r L 0 0 n
-      VSmallF N σ ∧ AbsD N σ ∧ AbsU N σ ∧ TP1C N σ ∧ TPLo N σ ∧ TP1WC N σ ∧
-        TPLoW N σ ∧ AbsUW N σ ∧ AbsDW N σ ∧ TrigOmC N σ ∧ TPLoN N σ ∧ AbsDN N σ ∧ Res3A N σ rkN
+      VSmallF N σ ∧ AbsD N σ ∧ AbsU N σ ∧ TPLo N σ ∧
+        TPLoW N σ ∧ AbsUW N σ ∧ AbsDW N σ ∧ TPLoN N σ ∧ AbsDN N σ ∧ Res3A N σ rkN
 
 /-- **`hExp` for `t = 0`** (`n ≥ 2`), from the residuals `T0OTD` and `T0Rest`, with the invariants of the
 prefix `M.take x` given. -/
-theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) (hR1 : T0RWRes PTP1) (hR1W : T0RWRes PTP1W)
+    (hRT : T0RWRes PTrig) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (hs0 : TRIO.srow M (M.length - 1) = 0)
     (hT : ∀ j, j < M.length → M.take j ≠ SRO → M.take j ≠ [] →
@@ -110,7 +148,7 @@ theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) {M : Mat} {ρ : Valn} {rk : Bool
     (fun n hn σ hCN => ⟨hOTD M ρ rk r L n hM hS I R hlen hL hp he1 hn σ hCN,
       t0_vsmallNewN hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.cons I.good I.rank hn hCN⟩)
     n hn2
-  obtain ⟨σ, rkN, hCN, hRN, hGN, hFON, hFCN, hKDN, hTDN, hpN, _⟩ := hcore
+  obtain ⟨σ, rkN, hCN, hRN, hGN, hFON, hFCN, hKDN, hTDN, hRWN, hpN, _⟩ := hcore
   -- the prefix `M.take x`
   have hTx : ∃ τ rkT, Inv3 (M.take (r + L)) τ rkT ∧ Res3A (M.take (r + L)) τ rkT := by
     apply hT (r + L) (by omega)
@@ -124,8 +162,25 @@ theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) {M : Mat} {ρ : Valn} {rk : Bool
       have := congrArg List.length h
       rw [List.length_take, Nat.min_eq_left (by omega)] at this
       simp only [List.length_nil] at this; omega
-  obtain ⟨hvs, had, hau, htp1, htplo, htp1w, htplow, hauw, hadw, htrig, htplon, hadn, hRN'⟩ :=
+  obtain ⟨hvs, had, hau, htplo, htplow, hauw, hadw, htplon, hadn, hRN'⟩ :=
     hRest M ρ rk r L n hM hS I R hlen hL hp he1 hTx hn2 σ rkN hCN hRN hGN hFON hFCN hKDN hTDN
+  -- the rewriting-frame fields, with the prefix valuation `drop1`
+  have hRk1 : Rk (M.take (r + L)) rk :=
+    rk_take (by omega) I.rank (by
+      have := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+      rwa [show M.length - 1 = r + L by omega] at this)
+  obtain ⟨τ, rkT, IT, _⟩ := hTx
+  have hAg : ∀ i, i < (M.take (r + L)).length →
+      τ.o i = (drop1 M (r + L) rk).o i ∧ τ.v i = (drop1 M (r + L) rk).v i :=
+    agree_of_cons IT.cons (cons_of_rk hRk1) IT.rank
+  have hP : ∀ P, RWC P M ρ → RWC P (M.take (r + L)) τ → T0RWRes P → RWC P (TRIO.gexp M r L 0 0 n) σ := by
+    intro P hPM hPT hres
+    obtain ⟨hD, hG0⟩ := hres M ρ rk r L n hM hS I R hlen hL hp he1 hn2 σ hCN hGN
+    exact hRWN P hPM (rwc_congr hPT hAg) hD hG0
+  have htp1 : TP1C (TRIO.gexp M r L 0 0 n) σ := hP PTP1 I.tp1 IT.tp1 hR1
+  have htp1w : TP1WC (TRIO.gexp M r L 0 0 n) σ := hP PTP1W I.tp1w IT.tp1w hR1W
+  have htrig : TrigOmC (TRIO.gexp M r L 0 0 n) σ :=
+    rwc_trig.mp (hP PTrig (rwc_trig.mpr I.trig) (rwc_trig.mpr IT.trig) hRT)
   exact ⟨σ, rkN, ⟨hCN, hGN, hRN, hvs, hFCN, hFON, hKDN, hTDN, had, hau, htp1, htplo, htp1w, htplow, hauw,
     hadw, htrig, htplon, hadn, rootS_of_good hCN hGN, hpN⟩, hRN'⟩
 
@@ -134,12 +189,12 @@ one-column drop `hLast` (`hTake_of_last`). -/
 theorem hExp_t0_of_last
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
-    (hOTD : T0OTD) (hRest : T0Rest) :
+    (hOTD : T0OTD) (hRest : T0Rest) (hR1 : T0RWRes PTP1) (hR1W : T0RWRes PTP1W) (hRT : T0RWRes PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN := by
   intro M ρ rk hM hS hE I R hz hs0 n hn2
-  apply hExp_t0 hOTD hRest hM hS I R hz hs0 _ n hn2
+  apply hExp_t0 hOTD hRest hR1 hR1W hRT hM hS I R hz hs0 _ n hn2
   intro j hj hjS hjE
   obtain ⟨τ, rkT, V, R'⟩ := hTake_of_last hLast M ρ rk hM hS hE I R j hj hjS hjE
   exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩

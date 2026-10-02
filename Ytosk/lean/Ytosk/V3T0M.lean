@@ -7,7 +7,7 @@
   ψ_v(Y0) × (n − 1) と M.take x での r の値に替わる（`root_N_B`）。
 -/
 import Ytosk.V3T0Bump
-import Ytosk.V3T0Frm
+import Ytosk.V3T0RW
 
 namespace Ytosk
 
@@ -221,6 +221,13 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       Good3 (TRIO.gexp M r L 0 0 n) ρN ∧ FrameOT (TRIO.gexp M r L 0 0 n) ρN ∧
       FrameClosed (TRIO.gexp M r L 0 0 n) ρN ∧
       BumpKidsDec (TRIO.gexp M r L 0 0 n) ρN ∧ BumpTermDec (TRIO.gexp M r L 0 0 n) ρN ∧
+      (∀ P, RWC P M ρ → RWC P (M.take (r + L)) (drop1 M (r + L) rkM) →
+        (∀ i, i < r → ¬ (par M 0 r = some i ∧ Counted M i r) →
+          ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R → DepX M (r + L) true c →
+            QP P (ρ.v i) (Lc.map ρ.o) (ρN.o c)) →
+        (∀ g, par M 0 r = some g → Counted M g r → ∀ Lc, CL M g = Lc ++ [r] →
+          ∀ cv, (cv = omid M r L ρ ∨ cv = (drop1 M (r + L) rkM).o r) → QP P (ρ.v g) (Lc.map ρ.o) cv) →
+        RWC P (TRIO.gexp M r L 0 0 n) ρN) ∧
       ((roots (TRIO.gexp M r L 0 0 n)).map ρN.o).Pairwise (fun a b => b ≤ a) ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ := by
   intro n hn2
@@ -317,6 +324,15 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       by_contra hn'; exact hne ((hoffD d hd).2 hn')
     exact o_N_noc hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hd
       (cl_nil_of_depv hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hd hdv)
+  have hRW : ∀ P, RWC P M ρ → RWC P (M.take (r + L)) ρ' →
+      (∀ i, i < r → ¬ (par M 0 r = some i ∧ Counted M i r) →
+        ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R → DepX M (r + L) true c →
+          QP P (ρ.v i) (Lc.map ρ.o) (σ.o c)) →
+      (∀ g, par M 0 r = some g → Counted M g r → ∀ Lc, CL M g = Lc ++ [r] →
+        ∀ cv, (cv = omid M r L ρ ∨ cv = ρ'.o r) → QP P (ρ.v g) (Lc.map ρ.o) cv) →
+      RWC P N σ := fun P hM hT hDP hG0 =>
+    rwc_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN P hM hC1 hGT hT
+      (fun i hri hiN => ⟨hσB i hri hiN, hσBv i hri hiN⟩) hoffD hσmid hσlast (hLast n hn2) hO'le hy' hDP hG0
   by_cases hrg : ∃ g, par M 0 r = some g
   · obtain ⟨g, hg⟩ := hrg
     have hgr : g < r := par_lt M 0 r g hg
@@ -521,7 +537,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
         hOXle hO'le,
       bumpTermDec_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hKD hTD hVT.td hσB
         (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => le_of_lt (hdl true d hD hd).1) hσmid hσlast
-        (fun _ => hl) hG0le,
+        (fun _ => hl) hG0le, hRW,
       rootP_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hR01 hR12 h00 hpM
         (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => le_of_lt (hdl true d hD hd).1)
         (fun h => absurd h (by rw [hg]; simp)) hσmid hσlast hOXle hO'le, ?_⟩
@@ -558,7 +574,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       bumpTermDec_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hKD hTD hVT.td hσB
         (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => absurd hd (by
           have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true d hD; omega))
-        hσmid hσlast (fun h => absurd hrn h) (fun g hg => absurd hg (by rw [hrn]; simp)), ?_, ?_⟩
+        hσmid hσlast (fun h => absurd hrn h) (fun g hg => absurd hg (by rw [hrn]; simp)), hRW, ?_, ?_⟩
     · exact rootP_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hR01 hR12 h00 hpM
         (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => absurd hd (by
           have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true d hD; omega))
@@ -600,7 +616,7 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ := by
   intro n hn2
-  obtain ⟨ρN, rkN, hCN, hRN, _, _, _, _, _, _, h⟩ := t0_core hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM
+  obtain ⟨ρN, rkN, hCN, hRN, _, _, _, _, _, _, _, h⟩ := t0_core hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM
     hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hsM hpM hLast
     (fun n hn σ hCN => let h := hN n hn σ hCN;
       ⟨fun i hi _ => h.1.ot_o i (by rw [lenN0 hlen (by omega)]; omega), h.2.1⟩) n hn2
