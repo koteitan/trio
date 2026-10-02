@@ -1603,3 +1603,5 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 計画: FrameClosed を「書き換えの枠 → FrameDom」、VSmallF を「comps ≤ Ω_{v c} ∨ ≤ B」、VSmallNew を同じ形（第 2 部は不要: s′ < s は Lhd(c′, c) を C = Ω_s で）に定義し直す。
 - closure: AbsDW と TPLoW は ≤ に弱めても標準形で偽（N = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(3,0,0)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,0)）。穴 Ω_1 が n = 2 の段で初めて W に現れる。使うのは t = 1・q = r の仕組みだけなので、そこで要る形に直す（wip）。PH3s も深い標準形 17 個で偽で、PH3c（π の位置の部分木を Ω_s に替え、π より右を落とした形が B = hi）に替えた（C′ と長い展開の 128150 個で例外 0）。
 - wip（dfac2444・33be3327・143e0dde）: Res3T2 の D の形の欄をすべて外した（qn_shapes・sv_shapes・qnu_shapes、種が x の祖先で ChgX に入る一般の DepS の補題 V3T2DS）。Res3T2 の残りは seed1（drop1 の o(p) が変わる）、T2SV.rcl（CL r ≠ []）、big（n ≥ 2: isUpg の一致、Counted N r x、VNNc/VNNcN、SeedL）。
+- wip（36c5545a・be8a97fd）: Res3T2 の構造の欄をほぼ外した（isUpg_topped_take: N.take x = M.take x と UAT から topped な列の isUpg は一致。Counted N r x は x′ の行 2 = 0 から）。残りは値に近いものだけ（seed1、rcl、VNNc/VNNcN、SeedL）。VNNc/VNNcN は drop-fix の変更で不要になるので消す。
+- drop-fix: 新しい VSmallNew は「comps ≤ Ω_{v′} ∨ ≤ B」だけ。V3DepLhd の補題は hVNN を使わない（hss と FrameClosed = FrameDom）。FrameDom は深い集合 D でも例外 0、新しい VSmallF も C′ と D で例外 0。
