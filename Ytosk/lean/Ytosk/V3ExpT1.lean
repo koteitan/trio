@@ -231,6 +231,260 @@ theorem expStep_trigOmC_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I 
         · rw [h]
       exact lt_irrefl' _ (lt_of_lt_of_le hF (le_trans his hsr))
 
+/-! ## 最後の加数の添字の不変条件（TPLo 系）の補題 -/
+
+theorem ohole_last : ∀ {t : T}, OHole t → OHole (last t)
+  | z, h => h
+  | psi a b z, h => h
+  | psi a b (psi c d e), h => by
+    have h' : OHole (psi c d e) := h
+    show OHole (last (psi c d e)); exact ohole_last h'
+
+theorem last_app' : ∀ (P : T) {X : T}, X ≠ z → last (app P X) = last X
+  | z, _, _ => rfl
+  | psi a b P, X, hX => by
+    simp only [app_psi]
+    have hPX : app P X ≠ z := fun h => hX (app_eq_z h).2
+    cases hc : app P X with
+    | z => exact absurd hc hPX
+    | psi d e f =>
+      show last (psi d e f) = last X
+      rw [← hc]; exact last_app' P hX
+
+theorem last_ne_z'' : ∀ {t : T}, t ≠ z → last t ≠ z
+  | z, h => absurd rfl h
+  | psi a b z, _ => by simp [last]
+  | psi a b (psi c d e), _ => by show last (psi c d e) ≠ z; exact last_ne_z'' (by simp)
+
+theorem last_single' : ∀ {t : T}, t ≠ z → ∃ a b, last t = psi a b z
+  | z, h => absurd rfl h
+  | psi a b z, _ => ⟨a, b, rfl⟩
+  | psi a b (psi c d e), _ => by show ∃ a b, last (psi c d e) = psi a b z; exact last_single' (by simp)
+
+theorem fsD_init_last {t : T} (ht : t ≠ z) (ζ : T) : fsD t ζ = app (init t) (fsD (last t) ζ) := by
+  conv => lhs; rw [← init_app_last t]
+  exact fsD_app _ (last_ne_z'' ht) ζ
+
+theorem le_of_app_le_app {P x y : T} (h : app P x ≤ app P y) : x ≤ y := by
+  rcases lt_trichotomy' x y with h' | h' | h'
+  · exact le_of_lt h'
+  · rw [h']
+  · exact absurd (lt_of_le_of_lt h (app_lt_app_left P h')) (lt_irrefl' _)
+
+theorem allGe_of_split_snd {θ t : T} (h : (split t θ).2 = z) : AllGeT θ t := by
+  intro q hq
+  have ht := split_app θ t
+  rw [h, app_z_right] at ht
+  rw [← ht] at hq
+  exact split_fst_ge θ t q hq
+
+theorem split_snd_of_allGe {θ : T} : ∀ {t : T}, AllGeT θ t → (split t θ).2 = z
+  | z, _ => rfl
+  | psi a b c, h => by
+    have hh : ¬ psi a b z < θ := h _ (by simp [summands])
+    have hc : AllGeT θ c := fun q hq => h q (by simp [summands, hq])
+    simp only [split]
+    rw [if_neg (show ¬ lt (psi a b z) θ = true from hh)]
+    exact split_snd_of_allGe hc
+
+theorem allGe_app {θ P X : T} : AllGeT θ (app P X) ↔ AllGeT θ P ∧ AllGeT θ X := by
+  unfold AllGeT
+  rw [summands_app]
+  constructor
+  · intro h; exact ⟨fun q hq => h q (List.mem_append_left _ hq), fun q hq => h q (List.mem_append_right _ hq)⟩
+  · rintro ⟨h1, h2⟩ q hq
+    rcases List.mem_append.mp hq with hq | hq
+    · exact h1 q hq
+    · exact h2 q hq
+
+/-- **The last summand after `fsD`** when it is `Ω_a`: it comes from an old last summand `Ω_{a₀}` with a
+hole in `a₀`, and `a = a₀⟨ζ⟩` (the index `ζ` is single with a nonzero argument). -/
+theorem last_fsD_om {y0 ζ a : T} (hO : OHole y0) (hζz : ζ ≠ z) (hζ1 : ∃ μ X, ζ = psi μ X z ∧ X ≠ z)
+    (hl : last (fsD y0 ζ) = psi a z z) :
+    ∃ a0, last y0 = psi a0 z z ∧ a0 ≠ z ∧ isSucc a0 = false ∧ OHole a0 ∧ a = fsD a0 ζ ∧
+      fsD y0 ζ = app (init y0) (psi a z z) := by
+  have hy0z : y0 ≠ z := by intro h; subst h; exact hO
+  have hl0 := ohole_last hO
+  have hdec := fsD_init_last hy0z ζ
+  have hlz : fsD (last y0) ζ ≠ z := fsD_ne_z_oh hl0 hζz
+  rw [hdec, last_app' _ hlz] at hl
+  obtain ⟨a0, b0, hl0e⟩ := last_single' hy0z
+  rw [hl0e] at hl0 hl hdec
+  unfold OHole at hl0
+  by_cases hb : b0 = z
+  · subst hb
+    rw [if_pos rfl] at hl0
+    obtain ⟨ha0, hl0⟩ := hl0
+    by_cases has0 : isSucc a0 = true
+    · exfalso
+      rw [fsD_leaf has0 ha0] at hl
+      obtain ⟨μ, X, hζe, hX⟩ := hζ1
+      rw [hζe] at hl
+      exact hX (T.psi.inj hl).2.1
+    · have has0' : isSucc a0 = false := by simpa using has0
+      have hOa0 : OHole a0 := by rcases hl0 with h | h; exact absurd h has0; exact h
+      rw [fsD_sub ha0 has0'] at hl hdec
+      have ha : fsD a0 ζ = a := (T.psi.inj hl).1
+      refine ⟨a0, hl0e, ha0, has0', hOa0, ha.symm, ?_⟩
+      rw [hdec, ha]
+  · exfalso
+    rw [if_neg hb] at hl0
+    have hbs : isSucc b0 = false := by
+      by_contra hc; rw [if_pos (by simpa using hc)] at hl0; exact hl0
+    rw [if_neg (by rw [hbs]; simp)] at hl0
+    rw [fsD_psi hb hbs] at hl
+    have hfz : fsD b0 ζ ≠ z := by
+      cases hcb : cof b0 with
+      | big m => rw [fsD_eq_fs hcb]; exact fs_ne_z_big hcb hζz
+      | zero => rw [hcb] at hl0; exact fsD_ne_z_oh hl0 hζz
+      | succ => rw [hcb] at hl0; exact fsD_ne_z_oh hl0 hζz
+      | omega => rw [hcb] at hl0; exact fsD_ne_z_oh hl0 hζz
+    exact hfz (T.psi.inj hl).2.1
+
+/-- **TPLoN at a new argument `y₀⟨ζ⟩`** from TPLoN at the old argument `y₀`, when the old last
+subscript `a₀` is `ω`-cofinal and not a node (`fsD_comp` and monotonicity); the other old last
+subscripts are the hypothesis `hRes`. -/
+theorem tploN_fsD {y0 ζ θ : T} (hO : OHole y0) (hζz : ζ ≠ z) (hζs : isSucc ζ = false)
+    (hζ1 : ∃ μ X, ζ = psi μ X z ∧ X ≠ z) (hle : fsD y0 ζ ≤ y0)
+    (hM : AllGeT θ y0 → ∀ a0, last y0 = psi a0 z z → isSucc a0 = false → OHole a0 →
+      cof a0 = .omega → NotNode a0 → ¬ psi (fsD a0 one) z z < θ)
+    (hRes : ∀ a0, last y0 = psi a0 z z → isSucc a0 = false → OHole a0 →
+      ¬ (cof a0 = .omega ∧ NotNode a0) → AllGeT θ y0 →
+      isSucc (fsD a0 ζ) = false → OHole (fsD a0 ζ) → cof (fsD a0 ζ) = .omega → NotNode (fsD a0 ζ) →
+      ¬ psi (fsD (fsD a0 ζ) one) z z < θ) :
+    AllGeT θ (fsD y0 ζ) → ∀ a, last (fsD y0 ζ) = psi a z z → isSucc a = false → OHole a →
+      cof a = .omega → NotNode a → ¬ psi (fsD a one) z z < θ := by
+  intro hAll a hl has hOa hca hNa
+  have hy0z : y0 ≠ z := by intro h; subst h; exact hO
+  obtain ⟨a0, hl0e, _, has0, hOa0, ha, hdec⟩ := last_fsD_om hO hζz hζ1 hl
+  -- the old argument has no low part either
+  have hy0e : y0 = app (init y0) (psi a0 z z) := by rw [← hl0e]; exact (init_app_last y0).symm
+  have hAll0 : AllGeT θ y0 := by
+    rw [hdec] at hAll hle
+    obtain ⟨hP, hA⟩ := allGe_app.mp hAll
+    rw [hy0e]
+    refine allGe_app.mpr ⟨hP, ?_⟩
+    have hle' : psi a z z ≤ psi a0 z z := by
+      apply le_of_app_le_app (P := init y0)
+      conv => rhs; rw [← hy0e]
+      exact hle
+    intro q hq
+    simp only [summands, List.mem_cons, List.not_mem_nil, or_false] at hq
+    subst hq
+    intro hlt
+    exact hA _ (by simp [summands]) (lt_of_le_of_lt hle' hlt)
+  subst ha
+  by_cases hcN : cof a0 = .omega ∧ NotNode a0
+  · have h0 := hM hAll0 a0 hl0e has0 hOa0 hcN.1 hcN.2
+    have hOζ := ohole_of_fsD hOa0 hζz hζs hOa
+    rw [fsD_comp hOa0 hζz hζs]
+    intro hlt
+    apply h0
+    refine lt_of_le_of_lt (le_psi_sub (fsD_mono_eta hOa0 ?_)) hlt
+    exact one_le_of_ne_z (fsD_ne_z_oh hOζ (by simp [one]))
+  · exact hRes a0 hl0e has0 hOa0 hcN hAll0 has hOa hca hNa
+
+/-- The TPLoN condition at one value `ψ_s(y)`. -/
+def TPLoNAt (s y : T) : Prop :=
+  (split y (psi (succ s) z z)).2 = z →
+    ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → NotNode a →
+    ¬ psi (fsD a one) z z < psi (succ s) z z
+
+/-- **TPLoN is carried** (`t = 1`). The residual `hRes` is the `D` columns below `x` where the index is
+not of the form `ψ_μ(X)` with `X ≠ 0` (only the seed at `q = r`, `n = 2`), or where the old last subscript
+`a₀` is a node or `Ω`-cofinal (C′ の 4 万行列で D の列の約 4%). -/
+theorem expStep_tploN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hRes : ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T),
+      (∃ μ br vr seed k0, HoleData M (r + L) ρ μ br vr seed ∧
+        (∀ i, ∃ k, k0 ≤ k ∧ Z i = gamS μ br seed k) ∧ ρP.o r = gamS μ br seed k0 ∧ k0 = n - 2 ∧
+        μ = vr ∧ ρ.o r = psi vr br z) →
+      ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
+      (¬ (isSucc (Z c) = false ∧ ∃ μ X, Z c = psi μ X z ∧ X ≠ z) ∨
+        ∃ a0, last y0 = psi a0 z z ∧ isSucc a0 = false ∧ OHole a0 ∧ ¬ (cof a0 = .omega ∧ NotNode a0)) →
+      TPLoNAt s0 (fsD y0 (Z c))) :
+    ExpStepT1 TPLoN M r L d0 ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
+  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
+  intro n hn ρP Z hCP _ hTPP _ _ _ _ hle _ hH
+  have hRes' := hRes n hn ρP Z hH
+  obtain ⟨μ', br', vr', seed, k0, hHD, _, _, _, _, _⟩ := hH
+  set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
+  have hlN := len_N (d0 := d0) hlen hn
+  have hlP := len_P (d0 := d0) (n := n) hlen
+  intro c hc s y hσc hsplit a hl has hOa hca hNa
+  rcases Nat.lt_or_ge c (r + L) with hc' | hc'
+  · have hcM : c < M.length := by omega
+    obtain ⟨s0, y0, h0⟩ := o_psi_form I.cons hcM
+    by_cases hd : DepX M (r + L) true c
+    · rw [hσ, glueZ_o_dep ρ (shiftV ρP L) Z hc' hd, h0] at hσc
+      by_cases hy0 : y0 = z
+      · exfalso
+        subst hy0
+        by_cases hs0 : isSucc s0 = true
+        · -- a `D` leaf with old value `Ω_{t+1}` below `x`: impossible
+          rcases hOS c hc' hd with ⟨hvc, hnc⟩ | ⟨_, L', c', R', hch', hcb', hcu', hR', _⟩
+          · have hHv := hHD.hole false c hvc hc'
+            simp only [valB, cond_false] at hHv
+            have hoc := o_nocnt I.cons I.good hcM hnc
+            rw [h0] at hoc
+            have hs : s0 = ρ.v c := (T.psi.inj hoc).1
+            have := holeT_not_succ hHv
+            rw [← hs, hs0] at this; cases this
+          · have hc'M := (mem_children (by rw [hch']; exact List.mem_append_right _ List.mem_cons_self :
+              c' ∈ children M c)).2
+            have hfr := o_frame I.cons I.good hcM hch' hcb' hcu' hR' hc'M
+            obtain ⟨s3, y3, hc3⟩ := o_psi_form I.cons hc'M
+            rw [hc3, spArg_single, h0] at hfr
+            exact step_ne_z' _ _ _ _ _ (T.psi.inj hfr).2.1.symm
+        · by_cases hs0z : s0 = z
+          · subst hs0z; unfold fsD at hσc; simp at hσc
+          · rw [fsD_sub hs0z (by simpa using hs0)] at hσc
+            rw [← (T.psi.inj hσc).2.1] at hl
+            simp [last] at hl
+      · have hHc := hHD.hole true c hd hc'
+        simp only [valB, cond_true] at hHc
+        rw [h0] at hHc
+        have hy0s := not_succ_arg_of_holeT hy0 hHc
+        have hHy := holeT_arg hy0 hHc hHD.cb
+        have hOy0 := ohole_of_holeT hHy
+        rw [fsD_psi hy0 hy0s] at hσc
+        obtain ⟨hss, hyy, _⟩ := T.psi.inj hσc
+        subst hss hyy
+        have hlec : psi s0 (fsD y0 (Z c)) z ≤ psi s0 y0 z := by
+          have := (hle c hc' hd).1
+          rw [h0, fsD_psi hy0 hy0s] at this; exact this
+        have hyy0 : fsD y0 (Z c) ≤ y0 := by
+          rcases (le_iff _ _).mp hlec with h' | h'
+          · rcases psi_lt_psi_z_iff.mp h' with h'' | ⟨_, h''⟩
+            · exact absurd h'' (lt_irrefl' _)
+            · exact le_of_lt h''
+          · rw [(T.psi.inj h').2.1]
+        by_cases hgood : isSucc (Z c) = false ∧ ∃ μ X, Z c = psi μ X z ∧ X ≠ z
+        · obtain ⟨hζs, μ, X, hζe, hX⟩ := hgood
+          have hζz : Z c ≠ z := by rw [hζe]; simp
+          by_cases hbad : ∃ a0, last y0 = psi a0 z z ∧ isSucc a0 = false ∧ OHole a0 ∧
+              ¬ (cof a0 = .omega ∧ NotNode a0)
+          · exact hRes' c hc' hd s0 y0 h0 hy0 (Or.inr hbad) hsplit a hl has hOa hca hNa
+          · refine tploN_fsD hOy0 hζz hζs ⟨μ, X, hζe, hX⟩ hyy0
+              (fun hAll a0 hl0 has0 hOa0 hca0 hNa0 =>
+                I.tplon c hcM s0 y0 h0 (split_snd_of_allGe hAll) a0 hl0 has0 hOa0 hca0 hNa0)
+              (fun a0 hl0 has0 hOa0 hcN _ _ _ _ _ => absurd ⟨a0, hl0, has0, hOa0, hcN⟩ hbad)
+              (allGe_of_split_snd hsplit) a hl has hOa hca hNa
+        · exact hRes' c hc' hd s0 y0 h0 hy0 (Or.inl hgood) hsplit a hl has hOa hca hNa
+    · rw [hσ, glueZ_o_lt ρ (shiftV ρP L) Z hc' hd] at hσc
+      exact I.tplon c hcM s y hσc hsplit a hl has hOa hca hNa
+  · -- a copy column
+    obtain ⟨b, rfl⟩ : ∃ b, c = r + L + b := ⟨c - (r + L), by omega⟩
+    have hσo : σ.o (r + L + b) = ρP.o (r + b) := by
+      rw [hσ, glueZ_o_ge ρ (shiftV ρP L) Z (by omega)]
+      show ρP.o (r + L + b - L) = ρP.o (r + b); congr 1; omega
+    rw [hσo] at hσc
+    exact hTPP (r + b) (by rw [hlP]; rw [hlN] at hc; omega) s y hσc hsplit a hl has hOa hca hNa
+
 /-! ## TP1C along the chain -/
 
 theorem ohole_app_inv : ∀ {P c : T}, c ≠ z → OHole (app P c) → OHole c
