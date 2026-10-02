@@ -192,13 +192,33 @@ def PF3(M):
         if split(y, (succ(s), Z, Z))[1] == Z: return False
     return True
 
+def FC3(M):
+    """最初の数える子の枠（B = 0）で書き換えが起き hi ≠ 0 のとき:
+    v(i) < s なら hi の頭の添字 k は s + X（s が k の和の先頭部分）、v(i) = s なら s は極限（0 でも後続でもない）。"""
+    C = Ctx(list(M))
+    if not C.ok: return False
+    for i in range(len(M)):
+        cl = C.CL(i); vi = C.v(i)
+        if not cl: continue
+        s, y, _ = C.o(cl[0])
+        if y == Z or not lt((vi, Z, Z), (s, y, Z)): continue
+        hi, lo = split(y, (succ(s), Z, Z))
+        if hi == Z: continue
+        if s == vi:
+            if s == Z or last(s) == ONE: return False
+        else:
+            k = summ(hi)[0][0]
+            if summ(k)[:len(summ(s))] != summ(s) or k == s: return False
+    return True
+
 PH = os.environ.get('PH', 'c')   # c: PH3c（既定）、s: PH3s
 def P(M):
     M = list(M)
     return (S1(M) and S2(M) and S3(M) and S4(M) and (PH3c(M) if PH == 'c' else PH3s(M))
             and (S5(M) if os.environ.get('S5') == '1' else True)
             and (H1(M) if os.environ.get('H1') == '1' else True)
-            and (PF3(M) if os.environ.get('PF') == '1' else True))
+            and (PF3(M) if os.environ.get('PF') == '1' else True)
+            and (FC3(M) if os.environ.get('FC') == '1' else True))
 
 RELAX = os.environ.get('RELAX', '0') != '0'   # 1: 穴の欄を非厳密版に、2: さらに AbsDW・TPLoW を外す（標準形で偽）
 def world(M):
