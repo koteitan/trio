@@ -1606,3 +1606,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - wip（36c5545a・be8a97fd）: Res3T2 の構造の欄をほぼ外した（isUpg_topped_take: N.take x = M.take x と UAT から topped な列の isUpg は一致。Counted N r x は x′ の行 2 = 0 から）。残りは値に近いものだけ（seed1、rcl、VNNc/VNNcN、SeedL）。VNNc/VNNcN は drop-fix の変更で不要になるので消す。
 - drop-fix: 新しい VSmallNew は「comps ≤ Ω_{v′} ∨ ≤ B」だけ。V3DepLhd の補題は hVNN を使わない（hss と FrameClosed = FrameDom）。FrameDom は深い集合 D でも例外 0、新しい VSmallF も C′ と D で例外 0。
 - チームを 7 人に（ユーザーの指示: 速さ優先、ただし無駄はしない）。追加の 4 人は互いに重ならない仕事: t1-exp・t0-exp・t2-exp（hExp の t = 1, 0, 2 の部分）、groupA（A 群の欄を Good3 ＋ 構造から出す補題）。
+- wip（f8ea9e05）: AbsDW・TPLoW を言い直した。エンジンが使う値は各列の鎖の項 gamS(m + d_c)（d_c = dOf c）で、旧形の下限 ψ_μ(1) は小さすぎた（反例の c = 4 は d_c = 2）。新しい形は、最後の列が t = 1・q = r のとき D = DepX M x の列で η = gamS μ b_r 1 (max 1 (dOf c)) で評価する（使う側は gamS_lb）。始点（添字 0）は TPLoN・AbsDN から。実測: 新形は t = 1・q = r の 43.9 万件で例外 0、旧形は 11 件偽。新しい欄は行列自身の最後の列の枠に依存する。
