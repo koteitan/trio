@@ -1677,3 +1677,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 分担の変更: t = 1 の鎖での A 群の項目の受け渡しは t1-exp、◁ の下げ（1 列落としと t = 0）での保存の補題は groupA。
 - drop-fix（2b9de577）: hLast の部品、x が根のときの RootP（rootP_take_root）。
 - t0-exp（bcd737b1・a9ede4ed）: t = 0 の M[n] の TP1C・TP1WC・TrigOmC は「影の枠」以外で成り立つ（class A の枠と、B が 0 か新しい引数の先頭部分のとき）。hExp_t0_mainC の残り T0RWResC は B ≠ 0 で B が y′ の先頭部分でない枠だけ（D の 1082/16 万件、g の 16 件）で、これは closure の PH3 の影の枠そのもの。PH3c 型の M の不変条件で閉じる見込み。
+- t2-exp（d31aae6a、緑）: deps_lhd_ot（V3DepOT）= Good3 N を仮定しない deps_lhd_gen。DepS の呼び出しで Lhd（新, 旧）と新の標準形を順位の帰納法で同時に出す。仮定は FrameNodeOT（M の枠だけの性質: 最後の数える子 ψ_s(y) を標準形の ψ_{s′}(y′)（Lhd、y′ ≠ 0 なら s′ = s）に替えても ψ_{v i}(step …) は標準形。C′ の 69 万枠で例外 0）など。FrameNodeOT は drop-fix の argT の除去・t0-exp の hOTD と共通の核なので、t2-exp が一般の形で作る。
