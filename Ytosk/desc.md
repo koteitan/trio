@@ -1648,3 +1648,5 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - groupA（長さ 8〜9 の Good3 ∧ SInvX ∧ RowJ の全数 490 万個）: VSmallF・AbsU・TPLoN・AbsDN は例外 0。AbsD（2 個）・TPLo（4 個）・AbsUW（9 個）は偽（すべて非標準形）。反例はどれも closure の P の部品 FC3 に反する。P を仮定に足した含意を測る。
 - t2-exp（測定）: t = 2 の写しの値は M[n−1] の値で V = v(r) を V′ = v(x′) ≥ V + 1 に深く置き換えたもの（のりしろの項の添字の中まで）。ガードのない v は同じ、o は同じか真に大きい。t = 2 の M[n] の Good3 には評価器に対する置き換えの理論が要る（研究の中心）。並行して、新しい担当 t2-subst が置き換えの補題（V3Subst）を作る。t2-exp は門の補題と、変わる呼び出しの標準形を出す補題。
 - groupA: 長さ 8〜9 の反例 13 個はすべて FC3 に反する（S5 は標準形で偽なので使わない）。したがって目標は「Good3 ∧ SInvX ∧ RowJ ∧ FC3 → AbsD・TPLo・AbsUW」と「Good3 ∧ SInvX ∧ RowJ → VSmallF・AbsU・TPLoN・AbsDN」（長さ 9 以下で例外 0、C′ を崩した 6911 個でも例外 0）。FC3 は帰納法で運ぶ。
+- t0-exp（b02c86fd・ba6dae72、緑）: t = 0 の M[n] の FrameClosed を証明（frameClosed_N_t0、D の枠は FrameDom.mono と H_mono、後の写しの根は書き換えない）。TP1C・TP1WC・TrigOmC は残り T0RWRes（r より前で最後の数える子が D の枠と、g での最初の写しの根）に帰着。T0Shape は C′ 全体（n = 2, 3, 4、160 万件）で例外 0（class A/B だけが出る）。
+- PC の負荷対策を強めた: trio の python を CPU 0〜11 に固定（taskset）し nice 15。見張りが 30 秒ごとに新しい測定にも当てる。CPU の空きは 3% → 51%。
