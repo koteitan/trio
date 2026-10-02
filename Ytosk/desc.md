@@ -1723,3 +1723,17 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - wip: Inv3 の TPLoN（全列、η = 1、NotNode）も標準形で偽（深い接頭辞の 64476 件中 5 件）。使う所（hLs0: 最後の列の枠の D、dOf = 0）に限れば例外 0。TPLoW と同じ形に言い直す（wip）。AbsDN は全列でも例外 0。TPLoW の中身: 枠の D の 99.8% は η = 1 で成り立ち、鎖の番号が本当に要るのは a が節点 ψ_{a′}(b′ + Ω_{μ+1}) の場合だけ。
 - closure: FC3 を入れると S2・H1 は不要（閉性の結果が同じ）。S1・S3・S4 は外せない。候補 P = S1 ∧ S3 ∧ S4 ∧ PH3c ∧ FC3。閉性: 古い基底 1053 個、C′ の末尾 249/249・途中の列 371/371、deep3 の途中の列 214/214、歩み 9875 段で壊れる例 0。P は C′・deep2・deep3（65.6 万個の標準形）で真。M[n] の PH3c・FC3 の枠は、M の同じ種類の枠の写しか、t = 2 の新しいつなぎ目の枠（種類は eq・pre・cut・<s+X・=lim）。
 - t2-exp（最終報告）: t = 2 の順位は残りなし、背骨の補題・門の補題・deps_lhd_ot・hExp_t2。T2ExpRes の核は M[n] の Good3（写しは t2-subst の σ、x より前は hVSN・hHard・種）。次は Good3 N を仮定にした項目ごとの補題。
+
+### 一時停止（2026-10-02 23:45、ユーザーの指示）
+
+- ハートビートを消し、8 人の担当と測定をすべて止めた。コミット済みの版は全体ビルド緑（最後に確かめたのは 715 jobs）。
+- 作業ツリーに未コミットで残っているもの: V3ExpT2W.lean（変更）・V3ExpT2F.lean（新規）・lakefile.toml（t2-subst か t2-exp の作業途中、ビルド未確認）。
+- 最上位: trio_terminates_main_T2（V3Main）。残りの仮定は hLast・hExp・hR2（Res3T2 の値の欄 seed1・SeedL）。
+- 再開するときの続き（担当ごと）:
+  - drop-fix: argT を HardArg に狭めた drop_all_hard への切り替え、HardArg/FrameNodeOT の順序数の補題（t2-exp の hHard・t0-exp の hOTD と共通）、hLast。
+  - closure: P = S1 ∧ S3 ∧ S4 ∧ PH3c ∧ FC3 の Lean の定義（定義だけのファイル）と保存の理由。
+  - groupA: PhiX（運ぶ不変条件）の保存を 1 列落とし・t = 0・t = 2 で。
+  - t1-exp: t = 1 の鎖で PhiX・AbsUW・VSmallF を運ぶ（TPLoN の全列の形は偽なのでやめる）。残り TPLoRes・TPLoNRes・M[n] の Res3A。
+  - t0-exp: T0Shape の (ii)(iii)(iv)、P が入ったら (i) と影の枠。
+  - t2-exp: Good3 N を仮定にした t = 2 の項目ごとの補題。t2-subst: T2CopyRes などの写しの境界の事実。
+  - wip: TPLoN を TPLoW の形に言い直す、新しい行列の TPLoW・AbsDW（節点の場合の閉性 K(d)）。
