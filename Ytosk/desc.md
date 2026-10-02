@@ -1647,3 +1647,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - t1-exp（8e95c210、緑）: t = 1 の M[n] の TP1C・TP1WC を鎖にそって運ぶ（M の TP1C から）。新しい順序数の補題 fsD_comp: OHole t、ζ ≠ 0 かつ後続でないとき fsD (fsD t ζ) θ = fsD t (fsD ζ θ)（V3FsdComp）。D の子では y⟨ζ⟩⟨θ⟩ = y⟨ζ⟨θ⟩⟩ で ψ_μ(1) ≤ ζ⟨θ⟩ なので M の TP1C が続く。残りは QR2Res（q = r・n = 2 で種が ψ_μ(1) より小さいとき）。
 - groupA（長さ 8〜9 の Good3 ∧ SInvX ∧ RowJ の全数 490 万個）: VSmallF・AbsU・TPLoN・AbsDN は例外 0。AbsD（2 個）・TPLo（4 個）・AbsUW（9 個）は偽（すべて非標準形）。反例はどれも closure の P の部品 FC3 に反する。P を仮定に足した含意を測る。
 - t2-exp（測定）: t = 2 の写しの値は M[n−1] の値で V = v(r) を V′ = v(x′) ≥ V + 1 に深く置き換えたもの（のりしろの項の添字の中まで）。ガードのない v は同じ、o は同じか真に大きい。t = 2 の M[n] の Good3 には評価器に対する置き換えの理論が要る（研究の中心）。並行して、新しい担当 t2-subst が置き換えの補題（V3Subst）を作る。t2-exp は門の補題と、変わる呼び出しの標準形を出す補題。
+- groupA: 長さ 8〜9 の反例 13 個はすべて FC3 に反する（S5 は標準形で偽なので使わない）。したがって目標は「Good3 ∧ SInvX ∧ RowJ ∧ FC3 → AbsD・TPLo・AbsUW」と「Good3 ∧ SInvX ∧ RowJ → VSmallF・AbsU・TPLoN・AbsDN」（長さ 9 以下で例外 0、C′ を崩した 6911 個でも例外 0）。FC3 は帰納法で運ぶ。
