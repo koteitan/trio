@@ -268,6 +268,178 @@ theorem bmp_N2g (he2r : entry M 2 r = 0) (hqb : ∀ i, par M 0 q = some i → co
     rw [hk', hq] at hpk; cases hpk
     exact hqb i (mem_children_iff.mp hjM).2 hjb
 
+
+end
+
+/-! ## 写しの列ののりしろ・topped・上げられる・数える -/
+
+/-- A column whose next column is its child upgrades only to an earlier column. -/
+theorem upg_lt_of_child {G : Mat} {c t : Nat} (hA : Anc0 G c (c + 1)) (h : upg G c = some t) : t < c := by
+  unfold upg at h
+  split_ifs at h with h0
+  cases hm : par G 1 c with
+  | none => rw [hm] at h; cases h
+  | some m =>
+    rw [hm] at h
+    simp only at h
+    have hmc := anc0_of_par G 1 m c hm
+    have hmc' := par_lt G 1 c m hm
+    have h1 := anc0_e0_lt hmc (by omega)
+    have h2 := anc0_e0_lt hA (by omega)
+    split_ifs at h with h3
+    · exfalso
+      have : entry G 0 (c + 1) = (col G (c + 1)).1 := rfl
+      rw [this, h3.2] at h2
+      simp only at h2
+      omega
+    · rw [upgClimb_find] at h
+      exact mem_ancL_lt (List.mem_of_find?_eq_some h)
+
+theorem par1_same_of_eq {G : Mat} {p d m : Nat} (hd : d < G.length) (hpd : par G 0 d = some p)
+    (he : entry G 1 d = entry G 1 p) (hm : par G 1 p = some m) : par G 1 d = some m := by
+  obtain ⟨hmem, hlt, hmax⟩ := (par1_some_iff G p m).mp hm
+  rw [par1_some_iff, ancL_eq hpd, he]
+  refine ⟨List.mem_cons_of_mem _ hmem, hlt, fun y hy hmy => ?_⟩
+  rcases List.mem_cons.mp hy with rfl | hy
+  · exact le_refl _
+  · exact hmax y hy hmy
+
+section
+variable {M : Mat} {r L d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+  (hA : Anc0 M r (r + L)) (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (hn : 2 ≤ n)
+  (hd0 : 0 < d0) (hd1 : 0 < d1) (hgx : TRIO.le1 M r (r + L)) (he2r : entry M 2 r = 0)
+include hlen hL hA hd0e hn hd0 hd1 hgx he2r
+
+/-- **Bump children of a copy column** are the shifted ones. -/
+theorem bump_copy2 (hBEP : BumpE2 (TRIO.gexp M r L d0 d1 (n - 1))) {a d : Nat} (ha : a < (n - 1) * L)
+    (hd : d ∈ children (TRIO.gexp M r L d0 d1 (n - 1)) (r + a)) :
+    col (TRIO.gexp M r L d0 d1 n) (d + L) = bump (TRIO.gexp M r L d0 d1 n) (r + L + a) ↔
+      col (TRIO.gexp M r L d0 d1 (n - 1)) d = bump (TRIO.gexp M r L d0 d1 (n - 1)) (r + a) := by
+  set P := TRIO.gexp M r L d0 d1 (n - 1) with hP
+  have hlP : P.length = r + (n - 1) * L := TRIO.gexp_length hlen
+  have hdc := mem_children hd
+  have hpd := (mem_children_iff.mp hd).2
+  have hda : d - r < (n - 1) * L := by omega
+  have hrA := ancP_r (d1 := d1) hlen hL hA hd0e hn hd0 hd1 hgx ha
+  have hcd : col (TRIO.gexp M r L d0 d1 n) (d + L) =
+      (entry P 0 d + d0, entry P 1 d + (if TRIO.le1 P r d then d1 else 0), entry P 2 d) := by
+    rw [show d + L = r + L + (d - r) by omega, col_copy2 hlen hL hA hd0e hn hd0 hd1 hgx hda,
+      show r + (d - r) = d by omega]
+  have hbN : bump (TRIO.gexp M r L d0 d1 n) (r + L + a) =
+      (entry P 0 (r + a) + d0 + 1, entry P 1 (r + a) + (if TRIO.le1 P r (r + a) then d1 else 0), 1) := by
+    unfold bump
+    rw [e0_copy2 hlen hL hA hd0e hn ha, show r + L + a = (r + a) + L by omega,
+      e1_shift2 hlen hL hA hd0e hn hd0 hd1 hgx (by omega) (by omega)]
+  rw [hcd, hbN, col_eq_entries P d]
+  unfold bump
+  simp only [Prod.mk.injEq]
+  by_cases hgd : TRIO.le1 P r d <;> by_cases hgp : TRIO.le1 P r (r + a)
+  · rw [if_pos hgd, if_pos hgp]; constructor <;> (rintro ⟨h1, h2, h3⟩; exact ⟨by omega, by omega, h3⟩)
+  · exact absurd (guard_par hrA hpd hdc.2 hgd) hgp
+  · rw [if_neg hgd, if_pos hgp]
+    constructor
+    · rintro ⟨h1, h2, h3⟩
+      exfalso; exact hgd (guard_up hrA hpd hdc.2 hgp (by omega))
+    · rintro ⟨h1, h2, h3⟩
+      exfalso
+      by_cases hpr : r + a = r
+      · -- a bump child of `r` would give row 2 of `r` equal to `1`
+        have hb : col P d = bump P (r + a) := by
+          rw [col_eq_entries]; unfold bump; simp only [Prod.mk.injEq]; exact ⟨h1, h2, h3⟩
+        have := hBEP _ _ hd hb
+        rw [hpr, entry_gexp_pre hlen (show 1 ≤ n - 1 by omega) 2 (by omega), he2r] at this
+        omega
+      · obtain ⟨m, hm, hgm⟩ := le1_par1_down hgp hpr
+        exact hgd (le1_par1_up hgm (par1_same_of_eq hdc.2 hpd h2 hm) hdc.2)
+  · rw [if_neg hgd, if_neg hgp]; constructor <;> (rintro ⟨h1, h2, h3⟩; exact ⟨by omega, by omega, h3⟩)
+
+/-- **`topped` of a copy column** is the shifted one. -/
+theorem topped_copy2 (hBEP : BumpE2 (TRIO.gexp M r L d0 d1 (n - 1))) {a : Nat} (ha : a < (n - 1) * L) :
+    topped (TRIO.gexp M r L d0 d1 n) (r + L + a) = topped (TRIO.gexp M r L d0 d1 (n - 1)) (r + a) := by
+  unfold topped
+  rw [children_shift2 hlen hL hA hd0e hn ha, List.getLast?_map]
+  cases h : (children (TRIO.gexp M r L d0 d1 (n - 1)) (r + a)).getLast? with
+  | none => rfl
+  | some c =>
+    simp only [Option.map_some]
+    have hc := List.mem_of_getLast? h
+    rw [decide_eq_decide]
+    exact bump_copy2 hlen hL hA hd0e hn hd0 hd1 hgx he2r hBEP ha hc
+
+/-- **The copy root upgrades only to a column before `x`.** -/
+theorem upg_rootN {t : Nat} (h : upg (TRIO.gexp M r L d0 d1 n) (r + L) = some t) : t < r + L := by
+  have hlN : (TRIO.gexp M r L d0 d1 n).length = r + L + (n - 1) * L := by
+    rw [TRIO.gexp_length hlen]
+    have : n * L = (n - 1) * L + L := by rw [← Nat.succ_mul, show (n - 1).succ = n by omega]
+    omega
+  rcases Nat.lt_or_ge 1 ((n - 1) * L) with h1 | h1
+  · obtain ⟨S, -, hSN, -⟩ := ancL_copy2 (d1 := d1) hlen hL hA hd0e hn 1 (by omega) h1
+    have hA1 : Anc0 (TRIO.gexp M r L d0 d1 n) (r + L) (r + L + 1) :=
+      anc0_of_mem_ancL (by rw [hSN]; simp)
+    exact upg_lt_of_child hA1 h
+  · have := upg_lt_len h; omega
+
+/-- **`r` in `P` upgrades only to an earlier column.** -/
+theorem upgP_r {t : Nat} (h : upg (TRIO.gexp M r L d0 d1 (n - 1)) r = some t) : t < r := by
+  have hlP : (TRIO.gexp M r L d0 d1 (n - 1)).length = r + (n - 1) * L := TRIO.gexp_length hlen
+  rcases Nat.lt_or_ge 1 ((n - 1) * L) with h1 | h1
+  · exact upg_lt_of_child (ancP_r (d1 := d1) hlen hL hA hd0e hn hd0 hd1 hgx h1) h
+  · have := upg_lt_len h; omega
+
+/-- **Being an upgrade target** of a copy column is the shifted one. -/
+theorem isUpg_copy2 {d : Nat} (hrd : r < d) (hd : d < r + (n - 1) * L) :
+    isUpg (TRIO.gexp M r L d0 d1 n) (d + L) = isUpg (TRIO.gexp M r L d0 d1 (n - 1)) d := by
+  have hlN : (TRIO.gexp M r L d0 d1 n).length = r + L + (n - 1) * L := by
+    rw [TRIO.gexp_length hlen]
+    have : n * L = (n - 1) * L + L := by rw [← Nat.succ_mul, show (n - 1).succ = n by omega]
+    omega
+  have hlP : (TRIO.gexp M r L d0 d1 (n - 1)).length = r + (n - 1) * L := TRIO.gexp_length hlen
+  apply Bool.eq_iff_iff.mpr
+  unfold isUpg
+  simp only [List.any_eq_true, decide_eq_true_eq, List.mem_range]
+  constructor
+  · rintro ⟨k, hk, hu⟩
+    rcases Nat.lt_or_ge k (r + L) with hkx | hkx
+    · have := upg_le hu; omega
+    · rcases Nat.eq_or_lt_of_le hkx with hkx | hkx
+      · rw [← hkx] at hu; have := upg_rootN hlen hL hA hd0e hn hd0 hd1 hgx he2r hu; omega
+      · have hu' := hu
+        rw [show k = r + L + (k - (r + L)) by omega,
+          upg_copy2 hlen hL hA hd0e hn hd0 hd1 hgx he2r (by omega) (by omega)] at hu'
+        cases ht : upg (TRIO.gexp M r L d0 d1 (n - 1)) (r + (k - (r + L))) with
+        | none => rw [ht] at hu'; cases hu'
+        | some t =>
+          rw [ht] at hu'
+          simp only [Option.map_some, Option.some.injEq] at hu'
+          refine ⟨r + (k - (r + L)), by omega, ?_⟩
+          rw [ht]
+          split_ifs at hu' with htr
+          · congr 1; omega
+          · omega
+  · rintro ⟨k, hk, hu⟩
+    rcases Nat.lt_or_ge k r with hkr | hkr
+    · have := upg_le hu; omega
+    · rcases Nat.eq_or_lt_of_le hkr with hkr | hkr
+      · rw [← hkr] at hu; have := upgP_r hlen hL hA hd0e hn hd0 hd1 hgx he2r hu; omega
+      · refine ⟨r + L + (k - r), by omega, ?_⟩
+        rw [upg_copy2 hlen hL hA hd0e hn hd0 hd1 hgx he2r (by omega) (by omega),
+          show r + (k - r) = k by omega, hu]
+        simp; omega
+
+/-- **Counted children of a copy column** are the shifted ones. -/
+theorem counted_copy2 (hBEP : BumpE2 (TRIO.gexp M r L d0 d1 (n - 1))) {a d : Nat} (ha : a < (n - 1) * L)
+    (hd : d ∈ children (TRIO.gexp M r L d0 d1 (n - 1)) (r + a)) :
+    Counted (TRIO.gexp M r L d0 d1 n) (r + L + a) (d + L) ↔
+      Counted (TRIO.gexp M r L d0 d1 (n - 1)) (r + a) d := by
+  have hlP : (TRIO.gexp M r L d0 d1 (n - 1)).length = r + (n - 1) * L := TRIO.gexp_length hlen
+  have hdc := mem_children hd
+  unfold Counted
+  rw [ne_eq, ne_eq, bump_copy2 hlen hL hA hd0e hn hd0 hd1 hgx he2r hBEP ha hd,
+    isUpg_copy2 hlen hL hA hd0e hn hd0 hd1 hgx he2r (by omega) (by omega),
+    show d + L = r + L + (d - r) by omega,
+    topped_copy2 hlen hL hA hd0e hn hd0 hd1 hgx he2r hBEP (show d - r < (n - 1) * L by omega),
+    show r + (d - r) = d by omega]
+
 end
 
 end Ytosk
