@@ -2,12 +2,13 @@
 **3 行・t = 1: 最上位の仮定 hExp の t = 1 の部分（n ≥ 2）の組み立て。**
 
 t = 1 の鎖（q ≠ r は `t1_main_final`、q = r は `qr_final4`）は、運ぶ性質 Pn を指定すると
-M[n] の評価 ρN と順位 rkN で Cons・Rk・Good3・Pn を出す。ここでは Pn として
-- 証明済みで運べるもの: FrameOT（`expStep_frameOT_t1`）・RootP（`expStep_rootP_t1`）・
-  BumpDec（`expStep_bumpDec_t1`）・FrameClosed（`expStep_frameClosed_t1`、残りは FrameClosedOmN）、
-- 残りの値の欄の束 `QV`（VSmallF と 9 項目。AbsU は AbsD から（`absU_of_absD`）、TrigOmC は `expStep_trigOmC` で運ぶ）
-を使う。M.take x（鎖の始点）での値は、落とす補題（`valInv_drop1`・`rootP_drop1`）と、1 列落としの残り
-（`hLast_of` の hRest と同じ形）から。
+M[n] の評価 ρN と順位 rkN で Cons・Rk・Good3・Pn を出す。ここでは Pn = `PT1`:
+- 残りの仮定なしで運ぶもの: FrameOT・RootP・BumpDec（t1-struct）、FrameClosed（`expStep_frameClosed_t1'`、
+  `FrameClosedOmN` を鎖の穴の情報から `frameClosedOmN_t1`）、TrigOmC（`expStep_trigOmC`）、
+  TP1C・TP1WC（`expStep_tpG`・`qr2_tpG`、fsD の合成 `fsD_comp`）。AbsU は AbsD から（`absU_of_absD`）。
+- 残りの値の欄の束 `QV`（VSmallF・AbsD・TPLo・TPLoW・AbsUW・AbsDW・TPLoN・AbsDN）は仮定 `hQs`。
+M.take x（鎖の始点）での値は、落とす補題（`valInv_drop1`・`rootP_drop1`）と、1 列落としの残り
+（`hLast_of` の hRest と同じ形の `RestT`）から。M[n] の `Res3A` は仮定 `hRes`。
 -/
 import Ytosk.V3IndV
 import Ytosk.V3TrigQR
@@ -835,6 +836,204 @@ theorem qr2_tpG {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ
       rw [he]; simp
     exact hTPP (r + a) Lc' c' R' hsplit hcntP s y hc ht1 ht2 hOy η hPη
 
+/-! ## FrameClosedOmN from the chain -/
+
+/-- **The domination at a frame whose new argument extends the state**: if `y = B + δ` with `B` at or
+above `Ω_{s+1}` and `0 < δ < Ω_{s+1}`, every `C ∈ (B, H(s, y)]` extends `B`, so the components of `B` are
+components of `C`. -/
+theorem frameDom_app {a B s δ : T} (hB : AllGeT (psi (succ s) z z) B) (hδz : δ ≠ z)
+    (hδ : δ < psi (succ s) z z) (hot : isOT (psi s (app B δ) z) = true)
+    (hsa : ∀ u, ¬ lt a u = true → ∀ g ∈ comps u s, ∃ d ∈ comps u a, g ≤ d) :
+    FrameDom a B s (H s (app B δ)) := by
+  have hsplit : split (app B δ) (psi (succ s) z z) = (B, δ) :=
+    split_app_of hB (Or.inr (lt_of_le_of_lt (head_le_self δ) hδ))
+  have hH : H s (app B δ) = app B (psi s (app B δ) z) := by
+    rw [H_eq hot, hsplit]; simp only; rw [if_neg hδz]
+  intro u hu C hBC _ hCX g hg
+  rw [hH] at hCX
+  obtain ⟨c0, hc0, _, _⟩ := between_app (A := B) (x := z) (y := psi s (app B δ) z) (c := C)
+    (by rw [app_z_right]; exact hBC) hCX
+  rcases hg with hg | hg
+  · refine ⟨g, List.mem_cons_of_mem _ (List.mem_append_left _ ?_), le_refl _⟩
+    rw [hc0, comps_app]; exact List.mem_append_left _ hg
+  · obtain ⟨d, hd, hgd⟩ := hsa u hu g hg
+    exact ⟨d, List.mem_cons_of_mem _ (List.mem_append_right _ hd), hgd⟩
+
+/-- **FrameClosedOmN of the glued valuation** (`t = 1`), from the chain's hole information. Below `x` a
+counted child with old value `Ω_{t+1}` is not in `D` (its new value is the old one, no trigger). At `x`:
+for `q ≠ r` no trigger (F1); for `q = r` the new argument is `b + δ` with `δ < Ω_{μ+1}` (`frameDom_app`). -/
+theorem frameClosedOmN_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hn : 2 ≤ n)
+    {ρP : Valn} {Z : Nat → T}
+    (hGN : Good3 (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z))
+    (hlex : ρP.o r ≤ ρ.o (r + L) ∧ ρP.o r ≠ z)
+    (hH : ∃ μ br vr seed k0, HoleData M (r + L) ρ μ br vr seed ∧
+      (∀ i, ∃ k, k0 ≤ k ∧ Z i = gamS μ br seed k) ∧ ρP.o r = gamS μ br seed k0 ∧ k0 = n - 2 ∧
+      μ = vr ∧ ρ.o r = psi vr br z) :
+    FrameClosedOmN M r L ρ (glueZ M (r + L) ρ (shiftV ρP L) Z) := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
+  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
+  have hox := o_last_t1 hlen I.cons I.good h1 (by have := par1_entry_lt h1; omega) hx2
+  obtain ⟨μ', br', vr', seed, k0, hHD, _, hPr, hk0n, hμv, hro'⟩ := hH
+  set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
+  have hlN := len_N (d0 := d0) hlen hn
+  have hσx : σ.o (r + L) = ρP.o r := by
+    rw [hσ, glueZ_o_ge ρ (shiftV ρP L) Z (Nat.le_refl _)]
+    show ρP.o (r + L - L) = ρP.o r; rw [Nat.add_sub_cancel]
+  intro i hi Lc c R hCL t hct htv s y hc ⟨ht1, ht2⟩
+  have hcCL : c ∈ CL M i := by rw [hCL]; simp
+  have hcm : c ∈ children M i := cl_mem_children hcCL
+  have hcnt : Counted M i c := by unfold CL at hcCL; simpa using (List.mem_filter.mp hcCL).2
+  have hcM := (mem_children hcm).2
+  rcases Nat.lt_or_ge c (r + L) with hc' | hc'
+  · exfalso
+    by_cases hd : DepX M (r + L) true c
+    · rcases hOS c hc' hd with ⟨hvc, hnc⟩ | ⟨_, L', c', R', hch', hcb', hcu', hR', _⟩
+      · have hHv := hHD.hole false c hvc hc'
+        simp only [valB, cond_false] at hHv
+        have hoc := o_nocnt I.cons I.good hcM hnc
+        rw [hct] at hoc
+        have hs : succ t = ρ.v c := (T.psi.inj hoc).1
+        have := holeT_not_succ hHv
+        rw [← hs, isSucc_succ] at this; cases this
+      · have hc'M := (mem_children (by rw [hch']; exact List.mem_append_right _ List.mem_cons_self :
+          c' ∈ children M c)).2
+        have hfr := o_frame I.cons I.good hcM hch' hcb' hcu' hR' hc'M
+        obtain ⟨s3, y3, hc3⟩ := o_psi_form I.cons hc'M
+        rw [hc3, spArg_single, hct] at hfr
+        exact step_ne_z' _ _ _ _ _ (T.psi.inj hfr).2.1.symm
+    · rw [hσ, glueZ_o_lt ρ (shiftV ρP L) Z hc' hd, hct] at hc
+      rw [← (T.psi.inj hc).2.1] at ht1
+      exact T.not_lt_z _ ht1
+  have hcx : c = r + L := by omega
+  subst hcx
+  have hix : par M 0 (r + L) = some i := (mem_children_iff.mp hcm).2
+  have hiq : i = q := Option.some.inj (hix.symm.trans hq)
+  subst hiq
+  have hsy : psi s y z ≤ psi (succ (ρ.v r)) z z := by rw [← hc, hσx, ← hox]; exact hlex.1
+  have hyz : y ≠ z := by intro h'; rw [h'] at ht1; exact T.not_lt_z _ ht1
+  have hsr : s ≤ ρ.v r := by
+    rcases (le_iff _ _).mp hsy with h' | h'
+    · rcases psi_lt_psi_z_iff.mp h' with h'' | ⟨_, h''⟩
+      · exact lt_succ_iff.mp h''
+      · exact absurd h'' (T.not_lt_z _)
+    · exact absurd (T.psi.inj h').2.1 hyz
+  have his : ρ.v i ≤ s := by
+    rcases psi_lt_psi_z_iff.mp ht2 with h' | ⟨h', _⟩
+    · exact le_of_lt h'
+    · rw [h']
+  by_cases hqr : i = r
+  · subst hqr
+    obtain ⟨b, hro, hbe, hb⟩ := qr_o_r hlen I.r0p I.sd h1 hx2 hq I.cons I.good I.rank
+    have hsμ : s = ρ.v i := le_antisymm hsr his
+    subst hsμ
+    -- the state is `b`
+    have hRn : R = [] := by
+      rcases R with _ | ⟨d, R'⟩
+      · rfl
+      · exfalso
+        have hdCL : d ∈ CL M i := by rw [hCL]; simp
+        have hdm := cl_mem_children hdCL
+        have hsort := children_sorted M i
+        have hdx : d ≤ i + L := by have := (mem_children hdm).2; omega
+        have hCLs : (CL M i).Pairwise (· < ·) := List.Pairwise.filter _ hsort
+        rw [hCL] at hCLs
+        have := (List.pairwise_cons.mp (List.pairwise_append.mp hCLs).2.1).1 d (by simp)
+        omega
+    subst hRn
+    have hBb : spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = b := by
+      have hcv := cvals_eq_map I.cons I.good i
+      rw [hCL] at hcv
+      unfold cvals at hcv
+      rw [qr_children hlen h1 hx2 hq, List.map_append, nzs_append] at hcv
+      have hxc := qr_x_counted hlen h1 hx2 hq
+      have hox0 : ρ.o (i + L) ≠ z := by rw [hox]; simp
+      have hlast : nzs ([i + L].map (cnt M ρ i)) = [ρ.o (i + L)] := by
+        simp only [List.map_cons, List.map_nil]
+        rw [cnt_cnt ρ hxc.1 hxc.2]
+        simp [nzs, hox0]
+      rw [hlast, List.map_append, List.map_singleton] at hcv
+      have := List.append_cancel_right hcv
+      rw [hbe]; unfold preState; rw [this]
+    rw [hBb] at ht1 ⊢
+    -- pin the hole data
+    rw [hro] at hro'
+    obtain ⟨hvr, hbr', _⟩ := T.psi.inj hro'
+    subst hvr hμv hbr'
+    have hot : isOT (psi (ρ.v i) (app b (psi (succ (ρ.v i)) z z)) z) = true := by
+      rw [← hro]; exact I.good.ot_o i (by omega)
+    have hSr := hHD.S (ρ.v i) (lt_irrefl' _) hot
+    have hcbr : cof (app b (psi (succ (ρ.v i)) z z)) = .big (ρ.v i) := cof_br
+    have hotN : isOT (psi (ρ.v i) y z) = true := by rw [← hc]; exact hGN.ot_o (i + L) (by rw [hlN]; have := Nat.mul_pos (show 0 < n - 1 by omega) hL; omega)
+    have hsa : ∀ u, ¬ lt (ρ.v i) u = true → ∀ g ∈ comps u (ρ.v i), ∃ d ∈ comps u (ρ.v i), g ≤ d :=
+      fun _ _ g hg => ⟨g, hg, le_refl _⟩
+    -- the new argument is `b + δ`
+    rw [hσx, hPr] at hc
+    cases k0 with
+    | succ j =>
+      change psi (ρ.v i) (fs (app b (psi (succ (ρ.v i)) z z)) (gamS (ρ.v i) _ seed j)) z = psi (ρ.v i) y z at hc
+      rw [fs_br] at hc
+      have hy := (T.psi.inj hc).2.1
+      subst hy
+      have hseedz : seed ≠ z := by obtain ⟨a, X, h⟩ := hHD.seedS; rw [h]; simp
+      exact frameDom_app hb (gamS_ne_z_gen hseedz j)
+        (gamS_lt_om hot hcbr (lt_irrefl' _) hSr j) hotN hsa
+    | zero =>
+      change seed = psi (ρ.v i) y z at hc
+      have hnext := hSr.lt_next
+      rw [fs_br, hc] at hnext
+      have hyb : y < app b (psi (ρ.v i) y z) := by
+        rcases psi_lt_psi_z_iff.mp hnext with h' | ⟨_, h'⟩
+        · exact absurd h' (lt_irrefl' _)
+        · exact h'
+      obtain ⟨c0, hc0, hc0z, hc0le⟩ := between_app (A := b) (x := z) (y := psi (ρ.v i) y z) (c := y)
+        (by rw [app_z_right]; exact ht1) (le_of_lt hyb)
+      have hc0z' : c0 ≠ z := by intro h'; rw [h'] at hc0z; exact T.not_lt_z _ hc0z
+      have hc0lt : c0 < psi (succ (ρ.v i)) z z := by
+        apply lt_of_le_of_lt hc0le
+        rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self _)
+      rw [hc0] at hotN ⊢
+      exact frameDom_app hb hc0z' hc0lt hotN hsa
+  · -- `q ≠ r`: no trigger (F1)
+    exfalso
+    have hqr' : par M 0 (r + L) ≠ some r := fun h' => hqr (Option.some.inj (hq.symm.trans h'))
+    have hri : r < i := by
+      rcases Nat.eq_or_lt_of_le (par0_ge_of_anc hA (show r < r + L by omega) (Nat.le_refl _) hix) with h' | h'
+      · exact absurd h'.symm hqr
+      · exact h'
+    have hdi : DepX M (r + L) true i := dep_anc_x I.uat I.z2 I.r12 I.be hlen hx2 (anc0_of_par M 0 i _ hix)
+    have hvi : ¬ DepX M (r + L) false i := by
+      rcases hOS i hi hdi with ⟨_, hnc⟩ | ⟨hv', _⟩
+      · rcases hnc _ hcm with h' | h'
+        · exact absurd h' hcnt.1
+        · exact absurd h' hcnt.2
+      · exact hv'
+    have hF := hF1_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 I.cons I.good I.rank i hri hi hdi hvi
+    exact lt_irrefl' _ (lt_of_lt_of_le hF (le_trans his hsr))
+
+/-- **FrameClosed is carried** (`t = 1`), with no residual. -/
+theorem expStep_frameClosed_t1' {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) :
+    ExpStepT1 (fun N σ => FrameClosed N σ) M r L d0 ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
+  have hox : ∃ t, ρ.o (r + L) = psi (succ t) z z :=
+    ⟨_, o_last_t1 hlen I.cons I.good h1 (by have := par1_entry_lt h1; omega) hx2⟩
+  intro n hn ρP Z hCP _ hFCP _ hGN hoto _ hle hlex hH
+  have hxnb := hxnb_t1 hlen hL hA hd0e I.z2 I.z1 h1 n hn
+  have hiu := hiu_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn
+  have hiux := hiux_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn
+  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
+  exact frameClosed_N_t1 hlen hL hA hd0e hn hpath hx2 hxnb (I.z2 r) hiu hiux hCP hOS I.cons I.good I.fc
+    (frameClosedOmN_t1 I hlen hL hd0e h1 hx2 hn hGN hlex hH) hoto hFCP
+    (fun c hc hd => (hle c hc hd).1) hlex.1 hox
+
 /-- **TrigOmC is carried** (`t = 1`). -/
 theorem expStep_trigOmC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
@@ -905,14 +1104,12 @@ theorem inv3V_of_PT1 {N : Mat} {σ : Valn} {rk : Bool → Nat → Nat} (hC : Con
     rootS_of_good hC hG, rp⟩
 
 /-- **`t = 1`, `n ≥ 2`, in the `gexp` form**: the valuation of `M[n]` with `Inv3V`, from the chains.
-Residuals: the base `RestT` at `M.take x`, the step `hQs` of the uncarried value fields `QV`, and the
-`FrameClosed` residual `FrameClosedOmN` of every glued valuation. -/
+Residuals: the base `RestT` at `M.take x` and the step `hQs` of the uncarried value fields `QV`. -/
 theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 1 (r + L) = some r)
     (hx2 : entry M 2 (r + L) = 0)
     (hRT : RestT M rk)
-    (hQs : ExpStepT1 QV M r L (entry M 0 (r + L) - entry M 0 r) ρ)
-    (hOm : ∀ (ρP : Valn) (Z : Nat → T), FrameClosedOmN M r L ρ (glueZ M (r + L) ρ (shiftV ρP L) Z)) :
+    (hQs : ExpStepT1 QV M r L (entry M 0 (r + L) - entry M 0 r) ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN,
       Inv3V (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN rkN ∧
       isOT (root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN) = true ∧
@@ -946,8 +1143,7 @@ theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M
       (expStep_and (expStep_rootP_t1 hlen hL0 hd0e I.z2 I.uat I.r12 I.be I.r01 I.e00 hr hx2 I.rootP)
         (expStep_and (expStep_bumpDec_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq I.good
             ⟨I.kd, I.td⟩)
-          (expStep_and (expStep_frameClosed_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq
-              I.cons I.good I.fc hOm) (expStep_and (expStep_trigOmC I hlen hL0 hd0e hr hx2)
+          (expStep_and (expStep_frameClosed_t1' I hlen hL0 hd0e hr hx2) (expStep_and (expStep_trigOmC I hlen hL0 hd0e hr hx2)
             (expStep_and (expStep_tp1C I hlen hL0 hd0e hr hx2)
               (expStep_and (expStep_tp1WC I hlen hL0 hd0e hr hx2) hQs))))))
   by_cases hqr : q = r
@@ -969,7 +1165,6 @@ theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M
 matrices only):
 - `hRT`: the 11 value fields of `M.take x` with the drop valuation (also the residual of `hLast_of`);
 - `hQs`: the uncarried value fields `QV` pass from `M[n − 1]` to the glued valuation of `M[n]`;
-- `hOm`: `FrameClosedOmN` of the glued valuations (the residual of `frameClosed_N_t1`);
 - `hRes`: `Res3A` of `M[n]` (the drop residual `DropRes` of `M[n] → M[n].take` and the seed). -/
 theorem hExp_t1
     (hRT : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
@@ -977,9 +1172,6 @@ theorem hExp_t1
     (hQs : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → ∀ r L, r + L + 1 = M.length →
       par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
       ExpStepT1 QV M r L (entry M 0 (r + L) - entry M 0 r) ρ)
-    (hOm : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → ∀ r L, r + L + 1 = M.length →
-      par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
-      ∀ (ρP : Valn) (Z : Nat → T), FrameClosedOmN M r L ρ (glueZ M (r + L) ρ (shiftV ρP L) Z))
     (hRes : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 → ∀ n, 2 ≤ n →
       ∀ σ rkN, Inv3 (expand M n) σ rkN → Res3A (expand M n) σ rkN) :
@@ -1014,7 +1206,7 @@ theorem hExp_t1
   have hlen : r + L + 1 = M.length := by omega
   obtain ⟨ρN, rkN, V, _, _⟩ :=
     inv3V_N_t1 I R hlen hr hx2 (hRT M ρ rk hM hS I R hz h1t)
-      (hQs M ρ rk hM hS I R r L hlen hr hx2) (hOm M ρ rk hM hS I R r L hlen hr hx2) n hn
+      (hQs M ρ rk hM hS I R r L hlen hr hx2) n hn
   rw [← hexp] at V
   exact ⟨ρN, rkN, V, hRes M ρ rk hM hS I R hz h1t n hn ρN rkN
     (Inv3.ofV (sInv_std (Std.exp n hM) hNS) V)⟩
