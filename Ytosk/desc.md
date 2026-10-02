@@ -1587,3 +1587,8 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - closure: Inv3 を閉じる標準形らしさの条件の探索（再帰的な形）。
   - wip: V3InvJ（構造の不変条件 J）・V3T0Bump（t = 0 の BumpDec）を仕上げ、t = 2 の un の場合を足す。
 - wip（83fd1a27・bda78683、緑）: 構造の不変条件 RowJ（e2 c ≠ 0 ∧ P_0 c = q ⇒ e1 q ≤ e1 c）は take と展開で保たれ、すべての標準形で成り立つ（rowJ_std、SRO も含む）。t = 2・q ≠ r の構造の 5 項目（xb・qb・e2pq・clq・clpq）を SInvX ∧ RowJ から証明（t2_qn_struct）。
+- wip（11e781b2）: t = 0 の M[n] の BumpKidsDec・BumpTermDec（V3T0Bump）。
+- closure（tools/probe_close_ph3.py）: PH2 を値の段の PreHi「PH3s」に替えると、S1 ∧ S2 ∧ S3 ∧ S4 ∧ PH3s は今までの基底の集合すべてで閉じる（n = 1..3 で壊れる例 0）、PH3s は C′ 全体で真。
+  - PH3s（枠 i、数える子 c、B ≠ 0、s = o(c) の添字、y = 引数、書き換えが起きるとき。hi/lo は y を Ω_{s+1} で分けたもの）: (eq) hi = B ∧ lo ≠ 0（元の PreHi）、(pre) B は hi の真の先頭部分、(shadow) s ≠ 0、B = X + b0、hi = X + h0 + R で、b0 は h0 の右端の背骨上の位置 π（添字 k ≥ s の単一項 ψ_k(γ)）を Ω_s に替えたもの。
+  - 残った族 (0,0,0)(1,1,1)(1,1,0)(2,2,1)(3,2,0)… は B = Ω_ω、hi = ψ_ω(Ω_2) で shadow にならず除かれる。S1〜S4 はどれも外せない。
+  - 次: 強い検査（標準形を少し崩した基底、1 列落とし、P の中での長い展開、深い標準形）と保存の理由。
