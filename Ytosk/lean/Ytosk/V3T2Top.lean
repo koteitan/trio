@@ -8,6 +8,7 @@ import Ytosk.V3Top
 import Ytosk.V3T2T
 import Ytosk.V3T2QNU
 import Ytosk.V3InvT2
+import Ytosk.V3T2DS
 import Ytosk.V3InvPer
 import Ytosk.V3TopB
 
@@ -469,6 +470,115 @@ theorem qu_shapes {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < 
         · exact h'
         · cases h'
 
+/-- No column upgrades into `x` (`q ≠ r`). -/
+theorem upg_not_x' {M : Mat} {r L qp : Nat} (hlen : r + L + 1 = M.length)
+    (hA : Anc0 M r (r + L)) (hp : par M 0 (r + L) = some (r + qp)) (hqp : 0 < qp)
+    (hxb : col M (r + L) = bump M (r + qp)) (hBE : BumpE2 M) : ∀ i, upg M i ≠ some (r + L) := by
+  intro i hu
+  have := upg_succ_lt hu
+  have hqx := par_lt M 0 _ _ hp
+  exact upg_not_x hlen hA hp hxb hBE hu (le_refl _) (by omega)
+
+/-- **`o(pq)` is a change** (`q ≠ r`): through `o(q)` if `q` counts at `pq`, else through `x − 1`... the
+upgrade `q − 1 → q`. -/
+theorem chg_pq {M : Mat} {r L qp pq : Nat} (hlen : r + L + 1 = M.length)
+    (hA : Anc0 M r (r + L)) (hp : par M 0 (r + L) = some (r + qp)) (hqp : 0 < qp)
+    (hxb : col M (r + L) = bump M (r + qp)) (hBE : BumpE2 M) (hR0 : R0P M) (hZ2 : Z2 M) (hUAT : UAT M)
+    (hR12 : R12 M) (hpq : par M 0 (r + qp) = some pq) (hqb : col M (r + qp) ≠ bump M pq) (he1q : entry M 1 (r + qp) ≠ 0) :
+    ChgX M (r + L) true pq := by
+  have hXu := upg_not_x' hlen hA hp hqp hxb hBE
+  have hqx := par_lt M 0 _ _ hp
+  have hxq : r + L ∈ children M (r + qp) := mem_children_iff.mpr ⟨by omega, hp⟩
+  have he2q : entry M 2 (r + qp) ≠ 0 := by rw [hBE _ _ hxq hxb]; omega
+  have hsnb : ChgX M (r + L) false (r + qp) := ChgX.snb he1q he2q hxq hxb
+  have hqpq : r + qp ∈ children M pq := mem_children_iff.mpr ⟨by omega, hpq⟩
+  by_cases hcu : isUpg M (r + qp) = true ∧ topped M (r + qp) = true
+  · obtain ⟨hiu, htop⟩ := hcu
+    unfold isUpg at hiu
+    obtain ⟨k0, _, hk0⟩ := List.any_eq_true.mp hiu
+    have hu : upg M k0 = some (r + qp) := of_decide_eq_true hk0
+    have hk0q : k0 + 1 = r + qp := by
+      by_contra hne
+      have := hUAT k0 (r + qp) hu (fun h => hne h.symm)
+      rw [this] at htop; cases htop
+    obtain ⟨m, hm1, hmq, hcol, _⟩ := upg_spec hu
+    have hpqq := par_lt M 0 _ _ hpq
+    have hAmq := anc0_of_par M 1 m (r + qp) hmq
+    have hApq : Anc0 M pq (r + qp) := Anc0.step hpq (Anc0.refl pq)
+    have hme : m = pq := by
+      apply anc0_eq_of_e0 hAmq hApq
+      have := e0_of_col hcol; have := hR0 _ _ hpq; omega
+    subst hme
+    have hAk0 := anc0_of_par M 1 m k0 hm1
+    have hk0l : k0 < M.length := by omega
+    obtain ⟨he1k, he2k⟩ := upg_e12 hu
+    have he2k0 : entry M 2 k0 = 0 := by have := hZ2 k0; omega
+    have hSC1 : ∀ b i, (fun b i => b = false ∧ i = r + qp : Bool → Nat → Prop) b i → ChgX M (r + L) b i := by
+      rintro b i ⟨rfl, rfl⟩; exact hsnb
+    have hD : DepS M (fun b i => b = false ∧ i = r + qp) true k0 :=
+      DepS.ov (DepS.vupg he1k he2k0 hu (DepS.seed ⟨rfl, rfl⟩))
+    have hDm := path_upS hUAT hZ2 hR12 hBE (k0 - m) m k0 (le_refl _) hk0l hAk0 (ne_of_e2z he2k0) hD
+      (fun t hmt htk => ⟨k0, hk0l, Anc0.refl k0, fun hA => by
+        rw [hk0q] at hA
+        have htq : t ≠ r + qp := by have := htk.le; omega
+        have := (anc0_par hA htq hpq).le; omega⟩)
+    exact depS_chgX hlen hXu hSC1 hDm (by omega)
+  · exact ChgX.ochild hqpq hqb hcu (ChgX.ov hsnb)
+
+/-- **The shape of `D = DepS M {v(q), o(pq)}`** (`q ≠ r`), from the structure of `M`. -/
+theorem qn_shapes {M : Mat} {r L qp pq : Nat} (hlen : r + L + 1 = M.length)
+    (hA : Anc0 M r (r + L)) (hp : par M 0 (r + L) = some (r + qp)) (hqp : 0 < qp)
+    (hxb : col M (r + L) = bump M (r + qp)) (hBE : BumpE2 M)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M) (hR12 : R12 M)
+    (hpq : par M 0 (r + qp) = some pq) (hqb : col M (r + qp) ≠ bump M pq) :
+    (∀ m, par M 1 (r + qp) = some m → ¬ DepS M (SQ (r + qp) pq) false m) ∧
+    (∀ d ∈ children M (r + qp), col M d = bump M (r + qp) → ∀ e ∈ children M d,
+      ¬ DepS M (SQ (r + qp) pq) true e) ∧
+    (∀ c, c < r + L → DepS M (SQ (r + qp) pq) false c → CL M c = []) ∧
+    OShW M (SQ (r + qp) pq) (WQ (r + qp)) (r + L) ∧ VSh M (SQ (r + qp) pq) (r + L) := by
+  have hx : r + L + 1 = M.length := hlen
+  have hXu := upg_not_x' hlen hA hp hqp hxb hBE
+  have hqx := par_lt M 0 _ _ hp
+  have hpqq := par_lt M 0 _ _ hpq
+  have hxq : r + L ∈ children M (r + qp) := mem_children_iff.mpr ⟨by omega, hp⟩
+  have he2q : entry M 2 (r + qp) = 1 := hBE _ _ hxq hxb
+  have he1q : entry M 1 (r + qp) ≠ 0 := by
+    have h1 : entry M 1 (r + L) = entry M 1 (r + qp) :=
+      e1_of_col (show col M (r + L) = (entry M 0 (r + qp) + 1, entry M 1 (r + qp), 1) from hxb)
+    intro h0; rw [← h1] at h0; have := hR12 _ h0
+    have := e2_of_col (show col M (r + L) = (entry M 0 (r + qp) + 1, entry M 1 (r + qp), 1) from hxb)
+    omega
+  have hAq : Anc0 M (r + qp) (r + L) := Anc0.step hp (Anc0.refl _)
+  have hSC : ∀ b i, (SQ (r + qp) pq) b i → ChgX M (r + L) b i := by
+    rintro b i (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
+    · exact ChgX.snb he1q (by omega) hxq hxb
+    · exact chg_pq hlen hA hp hqp hxb hBE hR0 hZ2 hUAT hR12 hpq hqb he1q
+  have hSA : ∀ b i, (SQ (r + qp) pq) b i → Anc0 M i (r + L) ∧ i < r + L := by
+    rintro b i (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
+    · exact ⟨hAq, hqx⟩
+    · exact ⟨Anc0.step hp (Anc0.step hpq (Anc0.refl _)), by omega⟩
+  refine ⟨fun m hm hd => ?_, fun d hd _ e he hD => ?_, fun c hc hd => ?_, fun i hi hns hnw hD hv => ?_,
+    fun i hi hns hD => vsh_S hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hSC hSA hi hns hD⟩
+  · have hmq := par_lt M 1 _ m hm
+    exact (topC_of_depS hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hSC hSA (by omega) hd).2.2 _ hqx hm
+  · have hdx : d < r + L := by have := (mem_children he).1; have := (mem_children he).2; omega
+    exact nodep_below_q hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hSC hSA hp hd hdx hD
+      (Anc0.step (mem_children_iff.mp he).2 (Anc0.refl d))
+  · unfold CL; rw [List.filter_eq_nil_iff]
+    intro d hdc hcnt
+    apply uncnt_of_depvS hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hSC hSA hc hd hdc _ (of_decide_eq_true hcnt)
+    intro hxc hcx
+    have hcq : c = r + qp := by
+      have := (mem_children_iff.mp hxc).2; rw [hp] at this; exact (Option.some.inj this).symm
+    rw [hcq] at hcx; exact hcx.1 hxb
+  · apply os_S hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hSC hSA hi hns hD hv
+    intro d hd hxd
+    have hdq : d = r + qp := by
+      have := (mem_children_iff.mp hxd).2; rw [hp] at this; exact (Option.some.inj this).symm
+    have hipq : i = pq := by
+      have := (mem_children_iff.mp hd).2; rw [hdq, hpq] at this; exact (Option.some.inj this).symm
+    exact hns (Or.inr ⟨rfl, hipq⟩)
+
 /-- **`q ≠ r`, `x − 1` upgrades to `k`** (`n ≤ 1`): the seeds are `v(q)`, `o(q)`, `o(pq)` and `v(x − 1)`
 (`SQU`). Example (standard): `(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,1)`. -/
 structure T2QNU (M : Mat) (r L qp pq : Nat) : Prop where
@@ -483,12 +593,6 @@ structure T2QNU (M : Mat) (r L qp pq : Nat) : Prop where
 
 /-- **`q ≠ r`** (`x` a bump child of `q = r + qp`, `P_0 q = pq`). -/
 structure T2QN (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L qp pq : Nat) : Prop where
-  p1 : ∀ m, par M 1 (r + qp) = some m → ¬ DepS M (SQ (r + qp) pq) false m
-  qL : ∀ d ∈ children M (r + qp), col M d = bump M (r + qp) → ∀ e ∈ children M d,
-    ¬ DepS M (SQ (r + qp) pq) true e
-  dv : ∀ c, c < r + L → DepS M (SQ (r + qp) pq) false c → CL M c = []
-  os : OShW M (SQ (r + qp) pq) (WQ (r + qp)) (r + L)
-  vsh : VSh M (SQ (r + qp) pq) (r + L)
   seed1 : (drop1 M (r + L) rk).o pq ≠ ρ.o pq
   up : ∀ k, upg M (r + L - 1) = some k → T2QNU M r L qp pq
   big : ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
@@ -658,12 +762,14 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
       have T := R2.qn r L (q - r) pq hlen hr hq' (by omega) hpq'
       obtain ⟨Txb, Tqb, Te2pq, Tclq, Tclpq⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+      obtain ⟨Tp1, TqL, Tdv, Tos, Tvsh⟩ := qn_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
+        I.uat I.uab I.r12 hpq' Tqb
       have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
       have hs1 := hseed1 pq (by have := par_lt M 0 _ _ hpq; omega) Tclpq T.seed1
       cases hux : upg M (r + L - 1) with
       | none =>
         exact t2_qn_take hlen hL0 hA hq' (by omega) Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 hpq' Tqb Te2pq
-          Tclq Tclpq hux T.p1 T.qL T.dv T.os T.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd
+          Tclq Tclpq hux Tp1 TqL Tdv Tos Tvsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd
           hAbs hvnn1 hs1
       | some k =>
         have U := T.up k hux
@@ -697,10 +803,12 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
       have T := R2.qn r L (q - r) pq hlen hr hq' (by omega) hpq'
       obtain ⟨Txb, Tqb, Te2pq, Tclq, Tclpq⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+      obtain ⟨Tp1, TqL, Tdv, Tos, Tvsh⟩ := qn_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
+        I.uat I.uab I.r12 hpq' Tqb
       have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
       obtain ⟨hIUt, hVNN, hseed⟩ := T.big n _ _ σ hn hCN
       exact t2_qn_main hlen hL0 hA hq' (by omega) hd0e hn Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hpq'
-        Tqb Te2pq Tclq Tclpq hIUt T.p1 T.qL T.dv T.os T.vsh I.cons I.good I.rank hCN hGN hRN
+        Tqb Te2pq Tclq Tclpq hIUt Tp1 TqL Tdv Tos Tvsh I.cons I.good I.rank hCN hGN hRN
         I.fc I.vs I.td I.kd hAbs hVNN hseed
   intro n
   rcases n with _ | _ | n
