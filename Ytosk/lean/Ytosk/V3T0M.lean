@@ -379,7 +379,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           rw [Nat.add_zero, Nat.add_zero] at hch0
           rw [hch0, List.map_map]
         apply t0_S2G (O' := omega (sumN ((children (M.take (j' + L)) j').map ρ'.o))) hlen hL hp hn hR0 hZ2
-          hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hjb h1 h2 hTD hAbs
+          hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hjb h1 h2 hTD hAbs
         · intro d hd hdr
           have hdL : d ∈ Lb := by
             rw [hch] at hd
@@ -456,7 +456,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
         rw [hkr] at hchj
         have hLj : ∀ d ∈ Lb, d < j' :=
           (sib_order (children_sorted M pp) (R := []) (by rw [hch])).1
-        apply t0_S3 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hpg hjb h1 h2
+        apply t0_S3 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hpg hjb h1 h2
           hTD hKD hAbs hch
         · intro d hd
           have hdg : par M 0 r ≠ some d := fun h =>
@@ -486,6 +486,9 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           | some m =>
             have := par_lt M 1 pp m hpp
             exact (hoffD m (by omega)).2 (hpnd m hpp)
+        · intro k hk
+          have : k * L < n * L := Nat.mul_lt_mul_of_pos_right hk hL
+          exact hGN.ot_o _ (by rw [hlN]; omega)
     -- the propagation and the root
     have hdl := t0_dep_lhd hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hRM
       hoffD hF hVS hTD hKD hAbs hVNN hS3 hS1 hS2

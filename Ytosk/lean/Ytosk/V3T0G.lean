@@ -236,6 +236,7 @@ variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : GoodOT (TRIO.gexp M r L 0 0 n) σ)
 include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
 
+omit hGN in
 /-- **Seed S2, with a dropped last copy**: when `r` is a bump child of its parent `g` (rows 1 and 2 of `g` nonzero), `v(g)`
 drops by `◁` in `N`. -/
 theorem t0_S2G {g : Nat} (hg : par M 0 r = some g) (hjb : col M r = bump M g)

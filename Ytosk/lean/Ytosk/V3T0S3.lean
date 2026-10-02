@@ -108,6 +108,7 @@ variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : GoodOT (TRIO.gexp M r L 0 0 n) σ)
 include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
 
+omit hGN in
 /-- **Seed S3**: when `g = P_0(r)` is a bump child of its parent `p` (rows 1 and 2 of `p` nonzero),
 `v(p)` drops by `◁` in `N`. -/
 theorem t0_S3 {g p : Nat} (hg : par M 0 r = some g) (hpg : par M 0 g = some p)
@@ -119,7 +120,8 @@ theorem t0_S3 {g p : Nat} (hg : par M 0 r = some g) (hpg : par M 0 g = some p)
     {B0 : T} (hor : ρ.o r = psi (ρ.v r) (app B0 one) z)
     (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = psi (ρ.v r) B0 z)
     (hσlast : Lhd z (σ.o (r + (n - 1) * L)) (ρ.o r))
-    (hV : vOpt σ (par (TRIO.gexp M r L 0 0 n) 1 p) = vOpt ρ (par M 1 p)) :
+    (hV : vOpt σ (par (TRIO.gexp M r L 0 0 n) 1 p) = vOpt ρ (par M 1 p))
+    (hOTr : ∀ k, k < n → isOT (σ.o (r + k * L)) = true) :
     Lhd z (σ.v p) (ρ.v p) := by
   have hlN := lenN0 hlen hn (M := M) (L := L)
   have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
@@ -141,7 +143,7 @@ theorem t0_S3 {g p : Nat} (hg : par M 0 r = some g) (hpg : par M 0 g = some p)
   have hrN : r < (TRIO.gexp M r L 0 0 n).length := by rw [hlN]; omega
   have hO : Single O := by
     rw [← show σ.o (r + 0 * L) = O from hσmid 0 (by omega)]
-    exact single_oT hCN hGN (by rw [hlN]; omega)
+    exact ⟨hOTr 0 (by omega), o_psi_form hCN (by rw [hlN]; omega)⟩
   have hmapN : (r :: (List.range (n - 1)).map (fun k => r + (k + 1) * L)).map σ.o =
       List.replicate (n - 1) O ++ [σ.o (r + (n - 1) * L)] := by
     obtain ⟨m, hm⟩ : ∃ m, n - 1 = m + 1 := ⟨n - 2, by omega⟩
@@ -178,7 +180,7 @@ theorem t0_S3 {g p : Nat} (hg : par M 0 r = some g) (hpg : par M 0 g = some p)
   have hnl : (n - 1) * L + L ≤ n * L := by
     rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right L (by omega)
   have hlastN : r + (n - 1) * L < (TRIO.gexp M r L 0 0 n).length := by rw [hlN]; omega
-  obtain ⟨hS, hlt, hG'ot⟩ := g3_brel hn2 hsK hdec hX hO (single_oT hCN hGN hlastN) hσlast
+  obtain ⟨hS, hlt, hG'ot⟩ := g3_brel hn2 hsK hdec hX hO ⟨hOTr (n - 1) (by omega), o_psi_form hCN hlastN⟩ hσlast
   have hGot : isOT (sumN (F.map ρ.o ++ [psi (ρ.v r) (app B0 one) z])) = true := isOT_sumN _ (fun u hu => by
     rcases List.mem_append.mp hu with h | h
     · exact (hsK u h).1

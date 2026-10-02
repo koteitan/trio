@@ -10,7 +10,7 @@ N = M[n] = TRIO.gexp M r L 0 0 n（r = P_0(x)、x = r + L、Δ = 0）の評価 �
   - `T0Rest`: 値の不変条件の残りの欄（VSmallF・FrameClosed と 11 項目）と N の `Res3A`。
     文脈として M の不変条件と、接頭辞 M.take x の不変条件（帰納法で 1 列落としから出る）を渡す。
 -/
-import Ytosk.V3T0M
+import Ytosk.V3T0OT
 import Ytosk.V3T0Last
 import Ytosk.V3IndV
 
@@ -48,6 +48,33 @@ def T0OTD : Prop :=
     Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true
+
+/-- **The class residuals** of the `D` frames of `N = M[n]` (`t = 0`), which give `T0OTD` (`t0_otd`):
+at a frame before `r` whose last counted child `c` keeps its `v`, the pair of arguments of `c` is of class
+A, B (with a rewrite of the old frame also one of the new) or C; and at `g = P_0(r)` when no middle copy
+root counts, the arguments drop by `◁` (C′ の標本で例外 0). -/
+def T0Shape : Prop :=
+  ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
+    Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
+      ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
+      ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z → Lhd z y' y →
+      ClsABC (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y' y
+        (Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y)) ∧
+    (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
+      Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
+      ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true)
+
+/-- **`T0OTD` from the class residuals.** -/
+theorem t0OTD_of_shape (h : T0Shape) : T0OTD := by
+  intro M ρ rk r L n hM hS I R hlen hL hp he1 hn σ hCN
+  obtain ⟨h1, h2⟩ := h M ρ rk r L hM hS I R hlen hL hp he1
+  have hDr := R.drop
+  rw [show M.length - 1 = r + L by omega] at hDr
+  exact t0_otd hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
+    I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hDr.ws hDr.vst hDr.ua I.rootS I.rootP
+    (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
+    h1 h2 n hn σ hCN
 
 /-- **The remaining value fields of `N = M[n]`** (`t = 0`) and its `Res3A`, for the valuation built by
 `t0_core` (which already has `Cons`, `Rk`, `Good3`, `FrameOT`, `BumpKidsDec`, `BumpTermDec`). The context
