@@ -1637,3 +1637,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - t1-exp（460c67f5・7247bdbb）: t = 1 の M[n] の TrigOmC を残りなしで運ぶ（q = r は holeT_pin、q ≠ r は穴の情報に k0 ≤ k を記録して Z c が後続でないことを出す）。AbsU は groupA の absU_of_absD から。hExp_t1 の残りは RestT、QV（VSmallF ∧ AbsD ∧ TP1C ∧ TPLo ∧ TP1WC ∧ TPLoW ∧ AbsUW ∧ AbsDW ∧ TPLoN ∧ AbsDN）の ExpStepT1、FrameClosedOmN、M[n] の Res3A。
 - groupA（54f04400）: upg_target_val、absU_of_absD、穴の経路にそった比較の伝播 Reach。
 - t2-exp（f9b39a50）: t = 2 の M[n] の順位の抽象形 rk_N_t2_abs（4 段）。
+- groupA: 「Good3 ＋ SInvX ∧ RowJ → AbsD / TPLo」は偽。反例 M = (0,0,0)(1,1,1)(2,1,1)(3,0,0)(4,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0)（長さ 9、非標準形、構造と Good3 は満たす）。列 6 で W_6 = Ω_1、V = v(5) = ψ_0(Ω_1) で fsD(Ω_1, ψ_0(Ω_1)) = V。前の A 群の測定（長さ 8 以下の網羅と乱択）は見落としていた。closure の P を仮定に足せば含意が生き残るかを測る。absU_of_absD は有効。
