@@ -1650,3 +1650,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - groupA: 長さ 8〜9 の反例 13 個はすべて FC3 に反する（S5 は標準形で偽なので使わない）。したがって目標は「Good3 ∧ SInvX ∧ RowJ ∧ FC3 → AbsD・TPLo・AbsUW」と「Good3 ∧ SInvX ∧ RowJ → VSmallF・AbsU・TPLoN・AbsDN」（長さ 9 以下で例外 0、C′ を崩した 6911 個でも例外 0）。FC3 は帰納法で運ぶ。
 - t0-exp（b02c86fd・ba6dae72、緑）: t = 0 の M[n] の FrameClosed を証明（frameClosed_N_t0、D の枠は FrameDom.mono と H_mono、後の写しの根は書き換えない）。TP1C・TP1WC・TrigOmC は残り T0RWRes（r より前で最後の数える子が D の枠と、g での最初の写しの根）に帰着。T0Shape は C′ 全体（n = 2, 3, 4、160 万件）で例外 0（class A/B だけが出る）。
 - PC の負荷対策を強めた: trio の python を CPU 0〜11 に固定（taskset）し nice 15。見張りが 30 秒ごとに新しい測定にも当てる。CPU の空きは 3% → 51%。
+- t2-exp（0fc9501c、緑）: 門の補題 depS_gate・depS_rk（v(r) は o(q) にも o(p2) にも依存しない、tgt_r_t2）。順位の残り T2Tgt を r 以外の行き先に減らした。測定: 一般の補題 VIS（a とその子孫 c の間の列がすべて e1 ≥ e1(a) なら、v(a) は間の y の o(y) に依存しない）は C′ で例外 0。N の変わる呼び出しの標準形には、FrameDom の形の標準形の節点の補題 node_otD が要る（drop-fix の argT の除去と同じもの、共通化する）。
