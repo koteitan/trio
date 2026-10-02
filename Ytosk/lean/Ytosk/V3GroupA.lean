@@ -397,6 +397,32 @@ theorem absorb_fsD_W {V W ζ θ : T} (hOW : OHole W) (hζ : ζ ≠ z) (hζs : is
   have hsub := summand_subS hq
   exact fsD_transfer (subClosed_subS V) (fun u hu h1 h0 => hseed u hu h1 h0) hOW q hsub hq1 hq0
 
+
+/-- The TPL-type condition `Ω_A ≥ Ω_{s+1}` is `s < A`. -/
+theorem tpl_iff {A s : T} : ¬ psi A z z < psi (succ s) z z ↔ s < A := by
+  rw [psi_lt_psi_z_iff]
+  constructor
+  · intro h
+    rcases lt_trichotomy' s A with h1 | h1 | h1
+    · exact h1
+    · exact absurd (Or.inl (lt_succ_iff.mpr (Or.inr h1.symm))) h
+    · exact absurd (Or.inl (lt_succ_iff.mpr (Or.inl h1))) h
+  · rintro h (h1 | ⟨_, h1⟩)
+    · rcases lt_succ_iff.mp h1 with h2 | h2
+      · exact lt_irrefl' _ (T.lt_trans' h h2)
+      · rw [h2] at h; exact lt_irrefl' _ h
+    · exact absurd h1 (T.not_lt_z _)
+
+/-- **TPLo-type comparison survives `a ↦ fsD(a, ζ)`**: from `s < fsD(a, η₀)` (old field) and `s < fsD(a, ζ)`
+(the new last subscript is above `s`), with the seed condition on the subterms of `s`. -/
+theorem tplo_fsD_gen {s a0 ζ θ η0 : T} (hOa0 : OHole a0) (hζ : ζ ≠ z) (hζs : isSucc ζ = false)
+    (hM : s < fsD a0 η0) (hN : s < fsD a0 ζ)
+    (hseed : ∀ u, SubS s u → u < ζ → u < η0 → u < fsD ζ θ) :
+    s < fsD (fsD a0 ζ) θ := by
+  rw [fsD_comp hOa0 hζ hζs θ]
+  exact fsD_transfer (subClosed_subS s) (fun u hu h1 h0 => hseed u hu h1 h0) hOa0 s
+    (subT_subS (.refl s)) hN hM
+
 /-! ## Key: 吸収が穴の基本列でも保たれるなら v(P_1 d) < fsD(v(d), η) -/
 
 theorem gA_ohole_app_inv : ∀ {P c : T}, c ≠ z → OHole (app P c) → OHole c
