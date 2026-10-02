@@ -148,7 +148,7 @@ if __name__=='__main__':
     mats=pickle.load(open(sys.argv[1],'rb'))
     mats=[m for m in mats if len(m)<=int(sys.argv[2])]
     tot=Counter(); exs={}
-    with Pool(26) as p:
+    with Pool(6) as p:
         for cc,ee in p.imap_unordered(work,mats,chunksize=50):
             tot.update(cc)
             for k,v in ee.items(): exs.setdefault(k,v)

@@ -115,7 +115,7 @@ if __name__ == '__main__':
     seeds = pickle.load(open(sys.argv[1], 'rb'))
     rounds = int(sys.argv[3]) if len(sys.argv) > 3 else 3
     found = set()
-    with Pool(26) as p:
+    with Pool(6) as p:
         for r in p.imap_unordered(grow, [m for m in seeds if len(m) <= 22], chunksize=50): found |= r
         for _ in range(rounds):
             new = set()
