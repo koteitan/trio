@@ -6,7 +6,7 @@
 - spArg(μ, b, seed) = b + seed（`spArg_seed`）。
 - SeedOK: seed の添字が μ なら `seedOK_of_lhd_top`、μ より小さいなら ◁ と段 a′ の成分の条件 hcs（comps_a の形）から `seedOK_of_lhd_below`。
   （2026-10-02: 以前の hcs「始点の成分はすべて始点より小さい」は標準形で偽。弱めた。）
-- 始点の (L)(ii): seed ≥ ψ_μ(1) なら TPLoW から。そうでない場合（b = 0、r = x − 1 のときだけ）は仮定 hLs0。
+- 始点の (L)(ii): 仮定 hLs0（V3QRFinal4 で TPLoN から）。
 - y = b_r の書き換えの枠の (W)（B < b + ζ）: 鎖の 2 項目以降は TP1（t1 の不変条件、η = ψ_μ(1)）から。
 残る仮定（q = r に固有、どれも始点が ψ_μ(1) より小さい場合（b = 0）か添字が μ より小さい場合だけ）:
 hYBs（始点で B < b + seed）、hcs（始点の成分は始点より小さい）、hLs0（始点での (L)(ii)）、
@@ -54,12 +54,12 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
       ∀ g ∈ comps a' ((drop1 M (r + L) rkM).o r),
         g < app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
-    (hADs0 : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z → ∀ i, i < r + L →
+    (hADs0 : ∀ i, i < r + L →
       DepX M (r + L) false i → entry M 2 i ≠ 0 →
       dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
       ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
         q < fsD (bumpW M ρ i) ((drop1 M (r + L) rkM).o r))
-    (hLs0 : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z → ∀ c, c < r + L → DepX M (r + L) true c →
+    (hLs0 : ∀ c, c < r + L → DepX M (r + L) true c →
       dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c = 0 →
       ∀ s y, ρ.o c = psi s y z → y ≠ app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z) →
       (split y (psi (succ s) z z)).2 = z →
@@ -139,29 +139,7 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
       ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) →
       (split y (psi (succ s) z z)).2 = z → (split (fsD y seed) (psi (succ s) z z)).2 = z := by
-    intro c hc hdc hd0 s y hcv hyb hl
-    by_cases h1s : psi μ one z ≤ seed
-    · by_cases hyz : y = z
-      · subst hyz; simp [fsD, split]
-      have hox : ρ.o (r + L) = psi (succ μ) z z :=
-        o_last_t1 hlen hC hG h1 (by have := par1_entry_lt h1; omega) hx2
-      have hOS := hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq
-      obtain ⟨_, a', _, hDc⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro
-        hox hOS true c hdc hc
-      simp only [valB, cond_true] at hDc
-      rw [hcv] at hDc
-      have hDy : DiagAt a' _ μ y := DiagAt.arg_inv hDc hyz (fun h => hyb h.2)
-      have hlev : holeLev y = μ := DiagAt.holeLev_eq hDy
-      refine lo_keep_Q hDc hyz hyb ?_ h1s hl
-      intro hl' a hla hns hOa hca
-      have := hTPL c (by omega) s y hcv hl' a hla hns hOa hca
-      rw [hlev] at this; exact this
-    · have hlt1 : seed < psi μ one z := by
-        rcases lt_trichotomy' seed (psi μ one z) with h | h | h
-        · exact h
-        · exact absurd (le_of_eq h.symm) h1s
-        · exact absurd (le_of_lt h) h1s
-      exact hLs0 hlt1 c hc hdc hd0 s y hcv hyb hl
+    exact hLs0
   -- (W) at the frames with the child `ψ_s(b_r)`: TP1 for the chain from the second term, `hYBs` at the seed
   have hYB : ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
       DepX M (r + L) true c → ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →

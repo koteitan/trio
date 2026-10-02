@@ -292,7 +292,7 @@ theorem base_auw : AbsUW (Mlen L) (bval L β) := by
   intro i k _ _ _ q hq; rw [vOpt_par1] at hq; simp [summands] at hq
 
 theorem base_adw : AbsDW (Mlen L) (bval L β) := by
-  intro i _ _ _ _ _ q hq; rw [vOpt_par1] at hq; simp [summands] at hq
+  intro _ _ _ _ _ _ _ i _ _ _ _ _ _ q hq; rw [vOpt_par1] at hq; simp [summands] at hq
 
 theorem base_adn : AbsDN (Mlen L) (bval L β) := by
   intro i _ _ _ _ _ _ q hq; rw [vOpt_par1] at hq; simp [summands] at hq
@@ -360,8 +360,8 @@ theorem base_tplo : TPLo (Mlen L) (bval L β) := by
   exact tplo_core hs _ _ rfl k
 
 theorem base_tplow : TPLoW (Mlen L) (bval L β) := by
-  intro c hc s y ho _ a hl _ hOa hcof
-  obtain ⟨k, _, rfl, _⟩ := tplo_shape hF (by simpa using hc) ho hl hOa
+  intro _ _ _ _ _ _ _ c hc _ s y ho _ _ a hl _ hOa hcof
+  obtain ⟨k, _, rfl, _⟩ := tplo_shape hF (by simp at hc; omega) ho hl hOa
   rw [cof_tw_one] at hcof; cases hcof
 
 theorem base_tplon : TPLoN (Mlen L) (bval L β) := by

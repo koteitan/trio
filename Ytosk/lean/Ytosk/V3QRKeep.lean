@@ -4,7 +4,8 @@
 値の不変条件（大域）:
 - **TP1W**: 書き換えの枠で cof y = ω の穴のある y について B < fsD(y, 1)。
 - **TPLoW**: o(c) = ψ_s(y) で y に低い部分がなく、最後の項 Ω_a の a が対角化の点の穴（cof a = ω）をもつなら
-  Ω_{fsD(a, ψ_μ(1))} ≥ Ω_{s+1}（μ = 穴の段）。
+  Ω_{fsD(a, η)} ≥ Ω_{s+1}。η は最後の列の枠（t = 1・q = r）の D の列 c の鎖の項の下限 gamS μ b_r 1 (max 1 d_c)
+  （旧形の η = ψ_μ(1) は標準形で偽）。添字 0（始点）は TPLoN から（V3QRFinal4 の hLs0）。
 補題:
 - `lo_keep_Q`: y ≠ b_r で対角化の点の下に穴があれば、η₀ ≤ ζ で (L)(ii)。
 - `lo_keep_br`: y = b_r（ψ_s(b_r)、s < μ）では ζ = ψ_μ(X) なら (L)(ii)。
@@ -22,11 +23,20 @@ def TP1W (M : Mat) (ρ : Valn) : Prop :=
     lt (preState M ρ i L) y = true → lt (psi (ρ.v i) z z) (psi s y z) = true →
     cof y = .omega → OHole y → lt (preState M ρ i L) (fsD y one) = true
 
-/-- **Value invariant TPLoW**: the low part stays empty at `η = ψ_μ(1)` for a diagonal-point hole. -/
+/-- **Value invariant TPLoW**: in the frame of the last column `x` (`t = 1`, `q = r`,
+`o(r) = ψ_μ(b + Ω_{μ+1})`), at a `D` column `c` the low part stays empty at the lower bound
+`gamS μ b_r 1 (max 1 d_c)` of its chain term (`d_c = dOf c`; the index `0` is the seed, handled by
+`TPLoN`). The earlier form at `η = ψ_μ(1)` is false on standard matrices:
+`(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(3,0,0)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,0)`
+(`c = 4`, `d_c = 2`). -/
 def TPLoW (M : Mat) (ρ : Valn) : Prop :=
-  ∀ c, c < M.length → ∀ s y, ρ.o c = psi s y z → (split y (psi (succ s) z z)).2 = z →
+  ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
+    entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ (app b (psi (succ μ) z z)) z →
+    ∀ c, c < M.length - 1 → DepX M (M.length - 1) true c → ∀ s y, ρ.o c = psi s y z →
+    y ≠ app b (psi (succ μ) z z) → (split y (psi (succ s) z z)).2 = z →
     ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega →
-    ¬ psi (fsD a (psi (holeLev y) one z)) z z < psi (succ s) z z
+    ¬ psi (fsD a (gamS μ (app b (psi (succ μ) z z)) one
+      (max 1 (dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) c)))) z z < psi (succ s) z z
 
 /-- **(L)(ii) for `y ≠ b_r`** under a diagonal point, from the condition at `η₀ ≤ ζ`. -/
 theorem lo_keep_Q {a' br μ s y ζ η₀ : T} (hD : DiagAt a' br μ (psi s y z)) (hy : y ≠ z) (hyb : y ≠ br)
@@ -124,5 +134,36 @@ theorem gamS_ge_psi1 {μ b seed : T} (hs : seed ≠ z) (k : Nat) :
   rw [gamS_succ_q]; unfold qnext
   apply le_psi_arg
   exact one_le_of_ne_z (fun h => gamS_ne_z_q hs k (app_eq_z h).2)
+
+/-- **The chain from `1` bounds the chain from the seed** from the first term on. -/
+theorem gamS_lb {μ b seed : T} (hs : one ≤ seed) :
+    ∀ j k, 1 ≤ j → j ≤ k →
+      gamS μ (app b (psi (succ μ) z z)) one j ≤ gamS μ (app b (psi (succ μ) z z)) seed k := by
+  have hmono1 : ∀ j, gamS μ (app b (psi (succ μ) z z)) one j ≤
+      gamS μ (app b (psi (succ μ) z z)) one (j + 1) := by
+    intro j
+    induction j with
+    | zero =>
+      rw [gamS_succ_q]; unfold qnext
+      exact one_le_of_ne_z (by simp)
+    | succ j ih =>
+      rw [gamS_succ_q, gamS_succ_q μ b one (j + 1)]
+      exact le_psi_arg (app_le_app_left b ih)
+  have hseed : ∀ k, gamS μ (app b (psi (succ μ) z z)) one k ≤ gamS μ (app b (psi (succ μ) z z)) seed k := by
+    intro k
+    induction k with
+    | zero => exact hs
+    | succ k ih =>
+      rw [gamS_succ_q, gamS_succ_q μ b seed k]
+      exact le_psi_arg (app_le_app_left b ih)
+  have hidx : ∀ j d, gamS μ (app b (psi (succ μ) z z)) one j ≤
+      gamS μ (app b (psi (succ μ) z z)) one (j + d) := by
+    intro j d
+    induction d with
+    | zero => exact le_refl _
+    | succ d ih => exact le_trans ih (hmono1 (j + d))
+  intro j k _ hjk
+  obtain ⟨d, rfl⟩ : ∃ d, k = j + d := ⟨k - j, by omega⟩
+  exact le_trans (hidx j d) (hseed (j + d))
 
 end Ytosk

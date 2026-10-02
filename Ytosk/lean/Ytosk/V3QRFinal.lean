@@ -45,7 +45,7 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       isOT (psi a' (app b (psi (succ (ρ.v r)) z z)) z) = true →
       SeedOK a' (app b (psi (succ (ρ.v r)) z z)) (ρ.v r) ((drop1 M (r + L) rkM).o r))
     (hsp0 : spArg (ρ.v r) b ((drop1 M (r + L) rkM).o r) = app b ((drop1 M (r + L) rkM).o r))
-    (hADs0 : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z → ∀ i, i < r + L →
+    (hADs0 : ∀ i, i < r + L →
       DepX M (r + L) false i → entry M 2 i ≠ 0 →
       dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) i = 0 →
       ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →

@@ -192,13 +192,14 @@ theorem qr_oloc (m : Nat) : ∀ i, i < x → DepX M x true i →
             rw [hk0]
             exact hLs c hcx hdc hdc0 s y hcv hyb hl0
           · obtain ⟨k', hk'⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
-            have hDy : DiagAt a' br μ y := DiagAt.arg_inv hDc' hyz (fun h => hyb h.2)
-            have hlev : holeLev y = μ := DiagAt.holeLev_eq hDy
             rw [hk']
-            refine lo_keep_Q hDc' hyz hyb ?_ (gamS_ge_psi1 hseedz k') hl0
+            refine lo_keep_Q hDc' hyz hyb ?_ (gamS_lb (one_le_of_ne_z hseedz)
+              (max 1 (dOf M x lo lb c)) (k' + 1) (le_max_left _ _) (max_le (by omega) (by omega))) hl0
             intro hl a hla hns hOa hca
-            have := hTPL c hcM s y hcv hl a hla hns hOa hca
-            rw [hlev] at this; exact this
+            have hT := hTPL
+            unfold TPLoW at hT
+            rw [show M.length - 1 = x by omega] at hT
+            exact hT r μ b h1 hq hx2 hro c hcx hdc s y hcv hyb hl a hla hns hOa hca
   · -- `c = x`: `i = r`, the frame at `r`
     have hcx' : c = x := by omega
     subst hcx'

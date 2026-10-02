@@ -39,7 +39,7 @@ theorem qr_final2 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
         ((drop1 M (r + L) rkM).o r))
     (hsp0 : spArg (ρ.v r) (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r) =
       app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
-    (hADs0 : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z → ∀ i, i < r + L →
+    (hADs0 : ∀ i, i < r + L →
       DepX M (r + L) false i → entry M 2 i ≠ 0 →
       dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
       ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →

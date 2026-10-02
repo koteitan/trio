@@ -171,11 +171,11 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     have hNA := qr_lastNA hx hC hG hKD hTD hq hro hOS hVS' hBk hb hd hc hdd
     refine ⟨qr_diag0 hx hC hG hKD hTD hq hro hOS hVS' hBk hd hc hdd, fun h => (hNA.1 h).1, hNA.2⟩
   -- hLs0
-  have hLs0 : seed < psi μ one z → ∀ c, c < r + L → DepX M (r + L) true c →
+  have hLs0 : ∀ c, c < r + L → DepX M (r + L) true c →
       dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
       ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) →
       (split y (psi (succ s) z z)).2 = z → (split (fsD y seed) (psi (succ s) z z)).2 = z := by
-    intro _ c hc hdc hd0 s y hcv hyb hl
+    intro c hc hdc hd0 s y hcv hyb hl
     by_cases hyz : y = z
     · subst hyz; simp [fsD, split]
     obtain ⟨hD, hNA, _⟩ := hdiag true c hc hdc hd0
@@ -195,10 +195,10 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     exact hTPN c (by omega) s y hcv hl' a hla hns hOa hca
       (notNode_of_diag hDa (hNA rfl s y hcv a hla))
   -- hADs0
-  have hADs0 : seed < psi μ one z → ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
+  have hADs0 : ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
       dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) i = 0 →
       ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i → q < fsD (bumpW M ρ i) seed := by
-    intro _ i hi hv h2 hd0 q hq hlt
+    intro i hi hv h2 hd0 q hq hlt
     have hiM : i < M.length := by omega
     obtain ⟨h1', _, hcase⟩ := hVS' i hi hv
     rcases hcase with ⟨h2', _⟩ | ⟨_, L', K, j, k, hch, hjb, hchj, hdk, _, _⟩

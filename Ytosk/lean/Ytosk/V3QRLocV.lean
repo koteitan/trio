@@ -3,8 +3,8 @@
 
 値の不変条件（大域、cof ω の穴に限る）:
 - **AbsUW**: 上げ i → k で、v(P_1 i) の加数で last v(k) より小さいものは fsD(last v(k), 1) より小さい。
-- **AbsDW**: のりしろの項 W について同じ（fsD(W, ψ_μ(1))、μ は穴の段）。添字 0 で始点が ψ_μ(1) より小さいときは
-  始点での条件（仮定 hADs0）。
+- **AbsDW**: のりしろの項 W について同じ。最後の列の枠（t = 1・q = r）の D の v の呼び出しで、鎖の項の下限
+  gamS μ b_r 1 (max 1 d_i) で評価する（旧形の ψ_μ(1) は標準形で偽）。添字 0（始点）は仮定 hADs0（AbsDN から）。
 補題:
 - `qr_lkeep`: D の列 c（c < x、o(c) ≠ A）の (L)(ii) を鎖の添字 gamS(m + d_c) で（y = b_r なら引き上げの数 ≥ 1、
   y ≠ b_r なら TPLoW か始点の仮定 hLs）。
@@ -21,12 +21,18 @@ def AbsUW (M : Mat) (ρ : Valn) : Prop :=
   ∀ i k, upg M i = some k → OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
     ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) → q < fsD (last (ρ.v k)) one
 
-/-- **Value invariant AbsDW** (`η = ψ_μ(1)` with `μ` the hole level, holes with cofinality `ω`). -/
+/-- **Value invariant AbsDW**: in the frame of the last column `x` (`t = 1`, `q = r`,
+`o(r) = ψ_μ(b + Ω_{μ+1})`), at a `v` call `i` of `D` the absorption holds at the lower bound
+`gamS μ b_r 1 (max 1 d_i)` of its chain term (the index `0` is the seed, handled by `AbsDN`). The
+earlier form at `η = ψ_μ(1)` is false on standard matrices (see `TPLoW`, `i = 10`). -/
 def AbsDW (M : Mat) (ρ : Valn) : Prop :=
-  ∀ i, i < M.length → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → OHole (bumpW M ρ i) →
-    cof (bumpW M ρ i) = .omega →
+  ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
+    entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ (app b (psi (succ μ) z z)) z →
+    ∀ i, i < M.length - 1 → DepX M (M.length - 1) false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+    OHole (bumpW M ρ i) → cof (bumpW M ρ i) = .omega →
     ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
-      q < fsD (bumpW M ρ i) (psi (holeLev (bumpW M ρ i)) one z)
+      q < fsD (bumpW M ρ i) (gamS μ (app b (psi (succ μ) z z)) one
+        (max 1 (dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) i)))
 
 /-- In a standard `P ++ X`, every summand of `P` is at least the head of `X`. -/
 theorem summands_ge_of_app : ∀ {P X : T}, isOT (app P X) = true → ∀ q ∈ summands P, head X ≤ q
@@ -153,18 +159,21 @@ theorem qr_lkeep (m : Nat) {c : Nat} (hc : c < x) (hdc : DepX M x true c) {s y :
       exact hLs c hc hdc (by omega) s y hcv hyb hl
     · obtain ⟨k', hk'⟩ : ∃ k', m + dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c = k' + 1 :=
       ⟨m + dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c - 1, by omega⟩
-      have hDy : DiagAt a' _ μ y := DiagAt.arg_inv hDc hyz (fun h => hyb h.2)
-      have hlev : holeLev y = μ := DiagAt.holeLev_eq hDy
       rw [hk']
-      refine lo_keep_Q hDc hyz hyb ?_ (gamS_ge_psi1 hseedz k') hl
+      refine lo_keep_Q hDc hyz hyb ?_ (gamS_lb (one_le_of_ne_z hseedz)
+        (max 1 (dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c)) (k' + 1) (le_max_left _ _)
+        (max_le (by omega) (by omega))) hl
       intro hl' a hla hns hOa hca
-      have := hTPL c (by omega) s y hcv hl' a hla hns hOa hca
-      rw [hlev] at this; exact this
+      have hxl : M.length - 1 = x := by omega
+      have hT := hTPL
+      unfold TPLoW at hT
+      rw [hxl] at hT
+      exact hT r μ b h1 hq hx2 hro c hc hdc s y hcv hyb hl' a hla hns hOa hca
 
 variable (hS : ∀ a', ¬ lt μ a' = true → isOT (psi a' (app b (psi (succ μ) z z)) z) = true →
     SeedOK a' (app b (psi (succ μ) z z)) μ seed)
   (hAU' : AbsUW M ρ) (hAD' : AbsDW M ρ)
-  (hADs0 : seed < psi μ one z → ∀ i, i < x → DepX M x false i → entry M 2 i ≠ 0 →
+  (hADs0 : ∀ i, i < x → DepX M x false i → entry M 2 i ≠ 0 →
     dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) i = 0 →
     ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i → q < fsD (bumpW M ρ i) seed)
 include hS hAU' hAD' hADs0
@@ -172,6 +181,7 @@ include hS hAU' hAD' hADs0
 /-- **`VLocZ` on all `v` calls of `D`** (`t = 1`, `q = r`). -/
 theorem qr_vloc (m : Nat) : ∀ i, i < x → DepX M x false i →
     VLocZ M x ρ (zfQ M x (loQ M ρ μ b) (lbQ M ρ μ b) μ (app b (psi (succ μ) z z)) seed m) i := by
+  have hqx0 : par M 0 x = some r := hq
   set br := app b (psi (succ μ) z z) with hbrdef
   set lo := loQ M ρ μ b with hlodef
   set lb := lbQ M ρ μ b with hlbdef
@@ -359,27 +369,21 @@ theorem qr_vloc (m : Nat) : ∀ i, i < x → DepX M x false i →
       rw [← hωp]
       have hOW : OHole (bumpW M ρ i) := by rw [hBD.W]; exact ohole_of_diag hDW
       have hcW : cof (bumpW M ρ i) = .omega := by rw [hBD.W]; exact DiagAt.cof_omega hDW
-      have h0 := hAD' i hiM h1' h2 hOW hcW q hq (by rw [hBD.W]; exact hlt)
-      rw [hBD.W, DiagAt.holeLev_eq hDW] at h0
       unfold zfQ
-      by_cases h1s : psi μ one z ≤ gamS μ br seed (m + dOf M x lo lb i)
-      · exact lt_of_lt_of_le h0 (fsD_mono_eta (ohole_of_diag hDW) h1s)
-      · have hidx : m + dOf M x lo lb i = 0 := by
-          rcases Nat.eq_zero_or_pos (m + dOf M x lo lb i) with h | h
-          · exact h
-          · exfalso
-            obtain ⟨k', hk'⟩ : ∃ k', m + dOf M x lo lb i = k' + 1 :=
-              ⟨m + dOf M x lo lb i - 1, by omega⟩
-            rw [hk'] at h1s; exact h1s (gamS_ge_psi1 hseedz k')
-        rw [hidx] at h1s ⊢
-        have hlt1 : seed < psi μ one z := by
-          rcases lt_trichotomy' seed (psi μ one z) with h | h | h
-          · exact h
-          · exact absurd (le_of_eq h.symm) h1s
-          · exact absurd (le_of_lt h) h1s
-        have h2' := hADs0 hlt1 i hi hv h2 (by omega) q hq (by rw [hBD.W]; exact hlt)
+      by_cases hk0 : m + dOf M x lo lb i = 0
+      · rw [hk0]
+        have h2' := hADs0 i hi hv h2 (by omega) q hq (by rw [hBD.W]; exact hlt)
         rw [hBD.W] at h2'
         exact h2'
+      · have hxl : M.length - 1 = x := by omega
+        have hT := hAD'
+        unfold AbsDW at hT
+        rw [hxl] at hT
+        have h0 := hT r μ b h1 hqx0 hx2 hro i hi hv h1' h2 hOW hcW q hq (by rw [hBD.W]; exact hlt)
+        rw [hBD.W] at h0
+        exact lt_of_lt_of_le h0 (fsD_mono_eta (ohole_of_diag hDW)
+          (gamS_lb (one_le_of_ne_z hseedz) (max 1 (dOf M x lo lb i)) (m + dOf M x lo lb i)
+            (le_max_left _ _) (max_le (by omega) (by omega))))
 
 end
 
