@@ -1586,3 +1586,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - drop-fix: 落とす補題の仮定を C′ で真な弱い形に替え、Inv3・Res3A の偽の欄を外す。
   - closure: Inv3 を閉じる標準形らしさの条件の探索（再帰的な形）。
   - wip: V3InvJ（構造の不変条件 J）・V3T0Bump（t = 0 の BumpDec）を仕上げ、t = 2 の un の場合を足す。
+- wip（83fd1a27・bda78683、緑）: 構造の不変条件 RowJ（e2 c ≠ 0 ∧ P_0 c = q ⇒ e1 q ≤ e1 c）は take と展開で保たれ、すべての標準形で成り立つ（rowJ_std、SRO も含む）。t = 2・q ≠ r の構造の 5 項目（xb・qb・e2pq・clq・clpq）を SInvX ∧ RowJ から証明（t2_qn_struct）。
