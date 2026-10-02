@@ -122,6 +122,40 @@ theorem ptrig_classA {a B s y y' : T} (hc : isOT (psi s y z) = true) (hBc : ∀ 
     · exact h
   · simp [split] at hlo
 
+/-! ## 状態が 0 か引数の先頭部分なら 3 つの欄は成り立つ -/
+
+/-- A state that is `0` or a proper prefix of `y′` stays below `fsD(y′, η)` at a hole. -/
+theorem prefix_fsD {B y' η : T} (hlt : lt B y' = true) (hpre : B = z ∨ ∃ R, y' = app B R)
+    (hO : OHole y') (hη : η ≠ z) : lt B (fsD y' η) = true := by
+  rcases hpre with rfl | ⟨R, rfl⟩
+  · show z < fsD y' η
+    exact lt_of_le_of_ne (z_le _) (Ne.symm (fsD_ne_z_oh hO hη))
+  · have hR : R ≠ z := by
+      rintro rfl; rw [app_z_right] at hlt; exact absurd hlt (lt_irrefl' _)
+    rw [fsD_app _ hR]
+    exact lt_app_of (fsD_ne_z_oh (ohole_app_inv0 hR hO) hη)
+
+theorem ptp1_prefix {a B s y' : T} (hlt : lt B y' = true) (hpre : B = z ∨ ∃ R, y' = app B R) :
+    PTP1 a B s y' := fun hO => prefix_fsD hlt hpre hO (by simp)
+
+theorem ptp1w_prefix {a B s y' : T} (hlt : lt B y' = true) (hpre : B = z ∨ ∃ R, y' = app B R) :
+    PTP1W a B s y' := fun _ hO => prefix_fsD hlt hpre hO (by simp [one])
+
+theorem ptrig_prefix {a B s y' : T} (hlt : lt B y' = true) (hpre : B = z ∨ ∃ R, y' = app B R) :
+    PTrig a B s y' := by
+  intro ν hy'
+  rcases hpre with h | ⟨R, hR⟩
+  · exact h
+  · subst hy'
+    cases B with
+    | z => rfl
+    | psi b1 b2 b3 =>
+      exfalso
+      simp only [app_psi, psi.injEq] at hR
+      obtain ⟨rfl, rfl, h3⟩ := hR
+      obtain ⟨rfl, rfl⟩ := app_eq_z h3.symm
+      exact absurd hlt (lt_irrefl' _)
+
 /-- **The residual `hOTD`** of `t0_core`: the `o` values of the `D` columns before `r` are standard. -/
 def T0OTD : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
@@ -354,5 +388,58 @@ theorem hExp_t0_main
     (t0RWRes_of PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht) hS hB1)
     (t0RWRes_of PTP1W (fun _ _ _ _ _ hc hBc hl hA ht => ptp1w_classA hc hBc hl hA ht) hS hB1W)
     (t0RWRes_of PTrig (fun _ _ _ _ _ hc hBc hl hA ht => ptrig_classA hc hBc hl hA ht) hS hBT)
+
+
+/-- `QP` only where the state is not `0` and not a prefix of the argument (the shadow frames). -/
+abbrev QPS (P : T → T → T → T → Prop) (a : T) (Lv : List T) (cv : T) : Prop :=
+  ∀ s y, cv = psi s y z → lt (spArg a z (sumN Lv)) y = true → lt (psi a z z) (psi s y z) = true →
+    spArg a z (sumN Lv) ≠ z → (¬ ∃ R, y = app (spArg a z (sumN Lv)) R) → P a (spArg a z (sumN Lv)) s y
+
+theorem qp_of_qps {P : T → T → T → T → Prop}
+    (hPpre : ∀ a B s y', lt B y' = true → (B = z ∨ ∃ R, y' = app B R) → P a B s y')
+    {a : T} {Lv : List T} {cv : T} (h : QPS P a Lv cv) : QP P a Lv cv := by
+  intro s y hcv hlt htr
+  by_cases hB : spArg a z (sumN Lv) = z
+  · exact hPpre _ _ _ _ hlt (Or.inl hB)
+  by_cases hpre : ∃ R, y = app (spArg a z (sumN Lv)) R
+  · exact hPpre _ _ _ _ hlt (Or.inr hpre)
+  exact h s y hcv hlt htr hB hpre
+
+/-- **The residual of a rewriting-frame field `P` on the shadow frames**: `T0RWResB P` where moreover
+the state is not `0` and not a prefix of the argument. -/
+def T0RWResC (P : T → T → T → T → Prop) : Prop :=
+  ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
+    Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → Good3 (TRIO.gexp M r L 0 0 n) σ →
+    (∀ i, i < r → ¬ (par M 0 r = some i ∧ Counted M i r) →
+      ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R → DepX M (r + L) true c →
+        ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z → Lhd z y' y → ¬ ClsA s y' y →
+          QPS P (ρ.v i) (Lc.map ρ.o) (σ.o c)) ∧
+    (∀ g, par M 0 r = some g → Counted M g r → ∀ Lc, CL M g = Lc ++ [r] →
+      ∀ cv, (cv = omid M r L ρ ∨ cv = (drop1 M (r + L) rk).o r) → QPS P (ρ.v g) (Lc.map ρ.o) cv)
+
+theorem t0RWResB_of (P : T → T → T → T → Prop)
+    (hPpre : ∀ a B s y', lt B y' = true → (B = z ∨ ∃ R, y' = app B R) → P a B s y')
+    (hC : T0RWResC P) : T0RWResB P := by
+  intro M ρ rk r L n hM hS I R hlen hL hp he1 hn σ hCN hGN
+  obtain ⟨hD, hG0⟩ := hC M ρ rk r L n hM hS I R hlen hL hp he1 hn σ hCN hGN
+  exact ⟨fun i hi hng Lc c Rr hCL hDc s y y' h1 h2 h3 h4 => qp_of_qps hPpre (hD i hi hng Lc c Rr hCL hDc s y y' h1 h2 h3 h4),
+    fun g hg hc Lc hcl cv hcv => qp_of_qps hPpre (hG0 g hg hc Lc hcl cv hcv)⟩
+
+/-- **`hExp` for `t = 0` with the shadow residuals**: `T0Shape`, `T0Rest`, and `T0RWResC` (the
+rewriting frames where the state is neither `0` nor a prefix of the argument, at `D` frames outside
+class A and at the first copy root of `g`). -/
+theorem hExp_t0_mainC
+    (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
+      ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
+    (hS : T0Shape) (hRest : T0Rest) (hC1 : T0RWResC PTP1) (hC1W : T0RWResC PTP1W)
+    (hCT : T0RWResC PTrig) :
+    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
+      col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN :=
+  hExp_t0_main hLast hS hRest
+    (t0RWResB_of PTP1 (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) hC1)
+    (t0RWResB_of PTP1W (fun _ _ _ _ hlt hpre => ptp1w_prefix hlt hpre) hC1W)
+    (t0RWResB_of PTrig (fun _ _ _ _ hlt hpre => ptrig_prefix hlt hpre) hCT)
 
 end Ytosk
