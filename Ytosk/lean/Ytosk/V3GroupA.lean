@@ -10,6 +10,7 @@ VSmallF・AbsD・AbsU・TPLo・AbsUW・TPLoN・AbsDN。
 -/
 import Ytosk.V3InvDerive
 import Ytosk.V3Top
+import Ytosk.V3FsdComp
 
 namespace Ytosk
 
@@ -177,6 +178,298 @@ theorem reach_gap {S : T → Prop} (hS : SubClosed S) {η : T} :
       intro u ⟨c', hu⟩ hlt
       exact reach_gap hS hOb (by rw [← hl]; exact hg) u (hS.arg hu) hlt
 
+
+
+/-! ## 添字の付け替え: fsD(X, ξ₁)・fsD(X, ξ₀) の下にある部分項は fsD(X, ξ₂) の下
+
+S が部分項で閉じていて、S の u について「u < ξ₁ かつ u < ξ₀ なら u < ξ₂」なら、
+S の u について「u < fsD(X, ξ₁) かつ u < fsD(X, ξ₀) なら u < fsD(X, ξ₂)」（X に穴があるとき）。
+fsD の再帰で両方の比較が同じ経路を降り、穴の位置で添字どうしの比較になるため。
+-/
+
+theorem fsD_transfer {S : T → Prop} (hS : SubClosed S) {ξ₀ ξ₁ ξ₂ : T}
+    (h : ∀ u, S u → u < ξ₁ → u < ξ₀ → u < ξ₂) :
+    ∀ {X : T}, OHole X → ∀ u, S u → u < fsD X ξ₁ → u < fsD X ξ₀ → u < fsD X ξ₂
+  | z, hO, _, _, _, _ => absurd hO (by simp [OHole])
+  | psi a b (psi c d e), hO, u, hu, h1, h0 => by
+    have hO' : OHole (psi c d e) := hO
+    have hf : ∀ ξ, fsD (psi a b (psi c d e)) ξ = psi a b (fsD (psi c d e) ξ) := fun _ => rfl
+    rw [hf] at h1 h0 ⊢
+    cases u with
+    | z => exact T.z_lt_psi _ _ _
+    | psi a' b' c' =>
+      rw [T.psi_lt_psi] at h1 h0 ⊢
+      rcases h1 with h1 | ⟨rfl, h2⟩ | ⟨rfl, rfl, h3⟩
+      · exact Or.inl h1
+      · exact Or.inr (Or.inl ⟨rfl, h2⟩)
+      · rcases h0 with h0 | ⟨_, h0⟩ | ⟨_, _, h0⟩
+        · exact absurd h0 (lt_irrefl' _)
+        · exact absurd h0 (lt_irrefl' _)
+        · exact Or.inr (Or.inr ⟨rfl, rfl, fsD_transfer hS h hO' c' (hS.rest hu) h3 h0⟩)
+  | psi a b z, hO, u, hu, h1, h0 => by
+    by_cases hb : b = z
+    · subst hb
+      have h2 : a ≠ z ∧ (isSucc a = true ∨ OHole a) := by simpa [OHole] using hO
+      by_cases hs : isSucc a = true
+      · rw [fsD_leaf hs h2.1] at h1 h0 ⊢; exact h u hu h1 h0
+      · have hs' : isSucc a = false := by simpa using hs
+        have hOa : OHole a := by simpa [hs] using h2.2
+        rw [fsD_sub h2.1 hs'] at h1 h0 ⊢
+        cases u with
+        | z => exact T.z_lt_psi _ _ _
+        | psi a' b' c' =>
+          rw [T.psi_lt_psi] at h1 h0 ⊢
+          rcases h1 with h1 | ⟨_, h1⟩ | ⟨_, _, h1⟩
+          · rcases h0 with h0 | ⟨_, h0⟩ | ⟨_, _, h0⟩
+            · exact Or.inl (fsD_transfer hS h hOa a' (hS.sub hu) h1 h0)
+            · exact absurd h0 (T.not_lt_z _)
+            · exact absurd h0 (T.not_lt_z _)
+          · exact absurd h1 (T.not_lt_z _)
+          · exact absurd h1 (T.not_lt_z _)
+    · have hs : isSucc b = false := by
+        by_contra hc
+        have : isSucc b = true := by simpa using hc
+        simp [OHole, hb, this] at hO
+      have hOb : OHole b := by
+        cases hcb : cof b with
+        | big μ => exact ohole_of_cof_big hcb
+        | zero => simpa [OHole, hb, hs, hcb] using hO
+        | succ => simpa [OHole, hb, hs, hcb] using hO
+        | omega => simpa [OHole, hb, hs, hcb] using hO
+      rw [fsD_psi hb hs] at h1 h0 ⊢
+      cases u with
+      | z => exact T.z_lt_psi _ _ _
+      | psi a' b' c' =>
+        rw [T.psi_lt_psi] at h1 h0 ⊢
+        rcases h1 with h1 | ⟨rfl, h2⟩ | ⟨rfl, _, h3⟩
+        · exact Or.inl h1
+        · rcases h0 with h0 | ⟨_, h0⟩ | ⟨_, _, h0⟩
+          · exact absurd h0 (lt_irrefl' _)
+          · exact Or.inr (Or.inl ⟨rfl, fsD_transfer hS h hOb b' (hS.arg hu) h2 h0⟩)
+          · exact absurd h0 (T.not_lt_z _)
+        · exact absurd h3 (T.not_lt_z _)
+
+
+
+theorem subT_z : ∀ t : T, SubT z t
+  | z => .refl z
+  | psi _ _ c => .rest (subT_z c)
+
+/-- Subterms of `V` and the heads `ψ_a(b)` of subterms `ψ_a(b) + c` (these include the summands). -/
+def SubS (V : T) : T → Prop := fun u => ∃ w, SubT w V ∧ (u = w ∨ ∃ a b c, w = psi a b c ∧ u = psi a b z)
+
+theorem subClosed_subS (V : T) : SubClosed (SubS V) := by
+  intro u ⟨w, hw, hu⟩ x hx
+  rcases hu with rfl | ⟨a, b, c, rfl, rfl⟩
+  · exact ⟨x, SubT.trans hx hw, Or.inl rfl⟩
+  · cases hx with
+    | refl => exact ⟨_, hw, Or.inr ⟨a, b, c, rfl, rfl⟩⟩
+    | sub h => exact ⟨x, SubT.trans h (SubT.trans (.sub (.refl a)) hw), Or.inl rfl⟩
+    | arg h => exact ⟨x, SubT.trans h (SubT.trans (.arg (.refl b)) hw), Or.inl rfl⟩
+    | rest h =>
+      have : x = z := by cases h; rfl
+      subst this; exact ⟨z, SubT.trans (subT_z _) hw, Or.inl rfl⟩
+
+theorem summand_subS : ∀ {V q : T}, q ∈ summands V → SubS V q
+  | z, _, h => by simp [summands] at h
+  | psi a b c, q, h => by
+    simp only [summands, List.mem_cons] at h
+    rcases h with rfl | h
+    · exact ⟨psi a b c, .refl _, Or.inr ⟨a, b, c, rfl, rfl⟩⟩
+    · obtain ⟨w, hw, hu⟩ := summand_subS h
+      exact ⟨w, .rest hw, hu⟩
+
+theorem subT_subS {V u : T} (h : SubT u V) : SubS V u := ⟨u, h, Or.inl rfl⟩
+
+/-! ## 穴の水準と fsD -/
+
+theorem holeLev_psi_arg {a X : T} (hX : X ≠ z) : holeLev (psi a X z) = holeLev X := by
+  cases hc : cof X with
+  | big μ => simp [holeLev, hX, hc, holeLev_cof hc]
+  | zero => simp [holeLev, hX, hc]
+  | succ => simp [holeLev, hX, hc]
+  | omega => simp [holeLev, hX, hc]
+
+theorem holeLev_sub' {a : T} (hs : isSucc a = false) : holeLev (psi a z z) = holeLev a := by
+  simp [holeLev, hs]
+
+theorem holeLev_fs : ∀ {b μ ζ : T}, cof b = .big μ → ζ ≠ z → isSucc ζ = false →
+    holeLev (fs b ζ) = holeLev ζ
+  | z, _, _, h, _, _ => by simp [cof] at h
+  | psi a b (psi c d e), μ, ζ, h, hζ, hs => by
+    have h' : cof (psi c d e) = .big μ := by simpa [cof] using h
+    rw [fs_rest (by simp)]
+    have hX := fs_ne_z_big h' hζ
+    cases hf : fs (psi c d e) ζ with
+    | z => exact absurd hf hX
+    | psi f g k =>
+      show holeLev (psi f g k) = holeLev ζ
+      rw [← hf]; exact holeLev_fs h' hζ hs
+  | psi a b z, μ, ζ, h, hζ, hs => by
+    have hc := h
+    unfold cof at h
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl] at h
+      by_cases ha : a = z
+      · rw [if_pos ha] at h; cases h
+      · rw [if_neg ha] at h
+        by_cases has : isSucc a = true
+        · rw [fs_leaf' ha has]
+        · rw [if_neg has] at h
+          have has' : isSucc a = false := by simpa using has
+          rw [fs_sub' ha has', holeLev_sub' (isSucc_fs_big h hζ hs), holeLev_fs h hζ hs]
+    · rw [if_neg hb] at h
+      by_cases hbs : isSucc b = true
+      · rw [if_pos hbs] at h; cases h
+      · rw [if_neg hbs] at h
+        have hbs' : isSucc b = false := by simpa using hbs
+        cases hcb : cof b with
+        | big ν =>
+          rw [hcb] at h; simp only at h
+          by_cases hν : lt ν a = true
+          · rw [fs_big' hb hbs' hcb hν, holeLev_psi_arg (fs_ne_z_big hcb hζ), holeLev_fs hcb hζ hs]
+          · rw [if_neg hν] at h; cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
+/-- **The hole level after `fsD` at a hole is that of the index.** -/
+theorem holeLev_fsD : ∀ {t ζ : T}, OHole t → ζ ≠ z → isSucc ζ = false → holeLev (fsD t ζ) = holeLev ζ
+  | z, _, h, _, _ => by simp [OHole] at h
+  | psi a b (psi c d e), ζ, h, hζ, hs => by
+    have h' : OHole (psi c d e) := h
+    rw [fsD_rest (by simp)]
+    have hX := fsD_ne_z_oh h' hζ
+    cases hf : fsD (psi c d e) ζ with
+    | z => exact absurd hf hX
+    | psi f g k =>
+      show holeLev (psi f g k) = holeLev ζ
+      rw [← hf]; exact holeLev_fsD h' hζ hs
+  | psi a b z, ζ, h, hζ, hs => by
+    unfold OHole at h
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl] at h
+      obtain ⟨ha, h⟩ := h
+      by_cases has : isSucc a = true
+      · rw [fsD_leaf has ha]
+      · have has' : isSucc a = false := by simpa using has
+        have ha' : OHole a := by rcases h with h | h; exact absurd h has; exact h
+        rw [fsD_sub ha has', holeLev_sub' (isSucc_fsD_oh ha' hζ hs), holeLev_fsD ha' hζ hs]
+    · rw [if_neg hb] at h
+      by_cases hbs : isSucc b = true
+      · rw [if_pos hbs] at h; exact absurd h id
+      · rw [if_neg hbs] at h
+        have hbs' : isSucc b = false := by simpa using hbs
+        rw [fsD_psi hb hbs']
+        cases hcb : cof b with
+        | big ν =>
+          rw [fsD_eq_fs hcb, holeLev_psi_arg (fs_ne_z_big hcb hζ), holeLev_fs hcb hζ hs]
+        | zero =>
+          rw [hcb] at h
+          rw [holeLev_psi_arg (fsD_ne_z_oh h hζ), holeLev_fsD h hζ hs]
+        | succ =>
+          rw [hcb] at h
+          rw [holeLev_psi_arg (fsD_ne_z_oh h hζ), holeLev_fsD h hζ hs]
+        | omega =>
+          rw [hcb] at h
+          rw [holeLev_psi_arg (fsD_ne_z_oh h hζ), holeLev_fsD h hζ hs]
+
+/-! ## AbsD 型の吸収の保存: のりしろの項が fsD(W, ζ) に替わる
+
+M で「V の加数で W より小さいものは fsD(W, η_W) より小さい」（η_W = ψ_μ(Ω_{μ+1})、μ = holeLev W）。
+N で W が W′ = fsD(W, ζ)（V は同じ）になるとき、fsD(W′, θ) = fsD(W, fsD(ζ, θ))（fsD_comp）なので、
+添字の付け替え（fsD_transfer）で、種 ζ についての条件
+  「V の部分項 u で u < ζ かつ u < η_W なら u < fsD(ζ, θ)」
+から N の吸収が出る。
+-/
+
+/-- **Absorption survives `W ↦ fsD(W, ζ)`**, given the seed condition on `ζ`. -/
+theorem absorb_fsD_W {V W ζ θ : T} (hOW : OHole W) (hζ : ζ ≠ z) (hζs : isSucc ζ = false)
+    (hM : ∀ q ∈ summands V, q < W → q < fsD W (etaOm (holeLev W)))
+    (hlt : fsD W ζ < W)
+    (hseed : ∀ u, SubS V u → u < ζ → u < etaOm (holeLev W) → u < fsD ζ θ) :
+    ∀ q ∈ summands V, q < fsD W ζ → q < fsD (fsD W ζ) θ := by
+  intro q hq hq1
+  rw [fsD_comp hOW hζ hζs θ]
+  have hq0 := hM q hq (lt_trans' hq1 hlt)
+  have hsub := summand_subS hq
+  exact fsD_transfer (subClosed_subS V) (fun u hu h1 h0 => hseed u hu h1 h0) hOW q hsub hq1 hq0
+
+/-! ## Key: 吸収が穴の基本列でも保たれるなら v(P_1 d) < fsD(v(d), η) -/
+
+theorem gA_ohole_app_inv : ∀ {P c : T}, c ≠ z → OHole (app P c) → OHole c
+  | z, c, _, h => by simpa using h
+  | psi a b P, c, hc, h => by
+    have hne : app P c ≠ z := fun he => hc (app_eq_z he).2
+    simp only [app_psi] at h
+    cases hP : app P c with
+    | z => exact absurd hP hne
+    | psi d e f =>
+      rw [hP] at h
+      have h' : OHole (psi d e f) := h
+      rw [← hP] at h'
+      exact gA_ohole_app_inv hc h'
+
+theorem gA_holeLev_app : ∀ (P : T) {c : T}, c ≠ z → holeLev (app P c) = holeLev c
+  | z, _, _ => by simp
+  | psi a b P, c, hc => by
+    have hne : app P c ≠ z := fun he => hc (app_eq_z he).2
+    simp only [app_psi]
+    cases hP : app P c with
+    | z => exact absurd hP hne
+    | psi d e f =>
+      show holeLev (psi d e f) = holeLev c
+      rw [← hP]; exact gA_holeLev_app P hc
+
+/-- `fsD` of a single term with a hole is a single term (for a single index). -/
+theorem gA_fsD_single {s y η : T} (hO : OHole (psi s y z)) (hη : ∃ a b, η = psi a b z) :
+    ∃ s' y', fsD (psi s y z) η = psi s' y' z := by
+  by_cases hy : y = z
+  · subst hy
+    have h2 : s ≠ z ∧ (isSucc s = true ∨ OHole s) := by simpa [OHole] using hO
+    by_cases hs : isSucc s = true
+    · rw [fsD_leaf hs h2.1]; exact hη
+    · rw [fsD_sub h2.1 (by simpa using hs)]; exact ⟨_, _, rfl⟩
+  · have hs : isSucc y = false := by
+      by_contra hc
+      have : isSucc y = true := by simpa using hc
+      simp [OHole, hy, this] at hO
+    rw [fsD_psi hy hs]; exact ⟨_, _, rfl⟩
+
+/-- **Key (ordinal form)**: if the summands of `V` absorbed by the single term `X` stay below
+`fsD(X, η)`, then `V < fsD(V + X, η)`. -/
+theorem lt_fsD_add {V s y η : T} (hO : OHole (psi s y z)) (hη : ∃ a b, η = psi a b z)
+    (habs : ∀ q ∈ summands V, q < psi s y z → q < fsD (psi s y z) η) :
+    V < fsD (add V (psi s y z)) η := by
+  obtain ⟨B, Lo, hb, hLo, he⟩ := add_prefix s y V
+  rw [he, fsD_app B (by simp)]
+  obtain ⟨s', y', hF⟩ := gA_fsD_single hO hη
+  rw [hb]
+  apply app_lt_app_left B
+  rw [hF]
+  cases Lo with
+  | z => exact T.z_lt_psi _ _ _
+  | psi a b c =>
+    have hh : psi a b z < psi s y z := by
+      rw [T.psi_lt_psi] at hLo
+      rw [psi_lt_psi_z_iff]
+      rcases hLo with h1 | ⟨rfl, h2⟩ | ⟨_, _, h3⟩
+      · exact Or.inl h1
+      · exact Or.inr ⟨rfl, h2⟩
+      · exact absurd h3 (T.not_lt_z _)
+    have hq : psi a b z ∈ summands V := by
+      rw [hb, summands_app]; simp [summands]
+    have := habs _ hq hh
+    rw [hF, psi_lt_psi_z_iff] at this
+    rw [T.psi_lt_psi]
+    rcases this with h1 | ⟨rfl, h2⟩
+    · exact Or.inl h1
+    · exact Or.inr (Or.inl ⟨rfl, h2⟩)
+
+theorem etaOm_single (μ : T) : ∃ a b, etaOm μ = psi a b z := ⟨_, _, rfl⟩
+
 /-! ## 上げの先の値 -/
 
 section
@@ -240,6 +533,89 @@ theorem absU_of_absD (hC : Cons M ρ) (hG : Good3 M ρ) (hAD : AbsD M ρ) : AbsU
   rw [upg_target_last hC hG hiM hu] at hO hlt ⊢
   rw [← hpar] at hq
   exact hAD k hkM h1k h2k hO q hq hlt
+
+
+/-- **Key**: from AbsD and AbsU, `v(P_1 d) < fsD(v(d), ψ_μ(Ω_{μ+1}))` at every column with a hole in `v(d)`. -/
+theorem lt_fsD_v (hC : Cons M ρ) (hG : Good3 M ρ) (hAD : AbsD M ρ) (hAU : AbsU M ρ) {d : Nat}
+    (hd : d < M.length) (h1 : entry M 1 d ≠ 0) (hO : OHole (ρ.v d)) :
+    vOpt ρ (par M 1 d) < fsD (ρ.v d) (etaOm (holeLev (ρ.v d))) := by
+  have hVot : isOT (vOpt ρ (par M 1 d)) = true := by
+    cases hp : par M 1 d with
+    | none => rfl
+    | some m => exact hG.ot_v m (by have := par_lt M 1 d m hp; omega)
+  by_cases h2 : entry M 2 d = 0
+  · cases hu : upg M d with
+    | none =>
+      exfalso
+      have hv := (hC d hd).2
+      unfold vRhs at hv
+      rw [if_neg h1, if_pos h2, hu] at hv
+      simp only at hv
+      rw [sf_ot (isOT_add hVot rfl)] at hv
+      rw [hv] at hO
+      have : OHole (last (add (vOpt ρ (par M 1 d)) one)) := by
+        obtain ⟨B, X, _, _, he⟩ := add_prefix z z (vOpt ρ (par M 1 d))
+        rw [show one = psi z z z from rfl, he] at hO ⊢
+        exact absurd (gA_ohole_app_inv (by simp) hO) (by simp [OHole])
+      exact absurd this (by
+        rw [show one = psi z z z from rfl, last_add_single]; simp [OHole])
+    | some k =>
+      obtain ⟨hkM, h1k, h2k, hpar, hvk, hWs⟩ := upg_target_val hC hG hd hu
+      have hlast := upg_target_last hC hG hd hu
+      obtain ⟨hWot, s, y, hW⟩ := hWs
+      have hv := (hC d hd).2
+      unfold vRhs at hv
+      rw [if_neg h1, if_pos h2, hu] at hv
+      simp only at hv
+      rw [hlast, hW, sf_ot (isOT_add hVot (by rw [← hW]; exact hWot))] at hv
+      have hOW : OHole (psi s y z) := by
+        obtain ⟨B, X, _, _, he⟩ := add_prefix s y (vOpt ρ (par M 1 d))
+        rw [hv, he] at hO; exact gA_ohole_app_inv (by simp) hO
+      have hhl : holeLev (ρ.v d) = holeLev (psi s y z) := by
+        obtain ⟨B, X, _, _, he⟩ := add_prefix s y (vOpt ρ (par M 1 d))
+        rw [hv, he]; exact gA_holeLev_app B (by simp)
+      rw [hhl, hv]
+      apply lt_fsD_add hOW (etaOm_single _)
+      intro q hq hlt
+      have := hAU d k hu (by rw [hlast, hW]; exact hOW) q hq (by rw [hlast, hW]; exact hlt)
+      rwa [hlast, hW] at this
+  · have hoot : ∀ j ∈ children M d, col M j = bump M d → ∀ k' ∈ children M j, isOT (ρ.o k') = true :=
+      fun j _ _ k' hk' => hG.ot_o k' (mem_children hk').2
+    obtain ⟨sW, yW, hv, _, _⟩ := v_bump_form hC hd h1 h2 hVot hoot
+    have hW : bumpW M ρ d = psi sW yW z := by
+      have hv' := (hC d hd).2
+      unfold vRhs at hv'
+      rw [if_neg h1, if_neg h2] at hv'
+      have hl := congrArg last (hv'.symm.trans hv)
+      rw [last_add_single] at hl
+      have hY : isOT (sumN (one :: (children M d).map (bumpTerm M ρ d))) = true := by
+        apply isOT_sumN
+        intro t ht
+        rcases List.mem_cons.mp ht with rfl | ht
+        · rfl
+        · obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ht
+          unfold bumpTerm
+          split
+          · rename_i hjb
+            apply isOT_omega; apply isOT_sumN
+            intro t' ht'
+            obtain ⟨k', hk', rfl⟩ := List.mem_map.mp ht'
+            exact hoot j hj hjb k' hk'
+          · rfl
+      obtain ⟨s', y', hs'⟩ := (single_omega hY).2
+      rw [sf_ot (isOT_add hVot (isOT_omega hY)), hs', last_add_single] at hl
+      unfold bumpW; rw [hs']; exact hl
+    have hOW : OHole (psi sW yW z) := by
+      obtain ⟨B, X, _, _, he⟩ := add_prefix sW yW (vOpt ρ (par M 1 d))
+      rw [hv, he] at hO; exact gA_ohole_app_inv (by simp) hO
+    have hhl : holeLev (ρ.v d) = holeLev (psi sW yW z) := by
+      obtain ⟨B, X, _, _, he⟩ := add_prefix sW yW (vOpt ρ (par M 1 d))
+      rw [hv, he]; exact gA_holeLev_app B (by simp)
+    rw [hhl, hv]
+    apply lt_fsD_add hOW (etaOm_single _)
+    intro q hq hlt
+    have := hAD d hd h1 h2 (by rw [hW]; exact hOW) q hq (by rw [hW]; exact hlt)
+    rwa [hW] at this
 
 end
 
