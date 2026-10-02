@@ -12,7 +12,26 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from collections import Counter
 from multiprocessing import Pool
 import trio
-from probe_close_ph3 import frames, ph3s_kind, S
+from probe_close_ph3 import frames, ph3c_kind as ph3s_kind, S, Ctx, split, succ, lt, Z, summ, last, ONE
+
+def frames0(M):
+    """B = 0 の書き換えの枠（最初の数える子、hi ≠ 0）: (i, c, 種類)。種類は FC3 の分類。"""
+    C = Ctx(list(M))
+    if not C.ok: return None
+    out = []
+    for i in range(len(M)):
+        cl = C.CL(i); vi = C.v(i)
+        if not cl: continue
+        c = cl[0]; s, y, _ = C.o(c)
+        if y == Z or not lt((vi, Z, Z), (s, y, Z)): continue
+        hi, lo = split(y, (succ(s), Z, Z))
+        if hi == Z: continue
+        if s == vi: k = '=lim' if (s != Z and last(s) != ONE) else '=BAD'
+        else:
+            h = summ(hi)[0][0]
+            k = '<s+X' if summ(h)[:len(summ(s))] == summ(s) else '<BAD'
+        out.append((i, c, k + ('/lo0' if lo == Z else '/lo+')))
+    return out
 
 def where(M, n):
     x = len(M) - 1
@@ -27,6 +46,7 @@ def go(M):
     if w is None: return out, ex
     r, L, t = w
     fM = {(i, c): ph3s_kind(B, hi, lo, s) or 'BAD' for i, c, B, hi, lo, s in (frames(M) or [])}
+    fM.update({(i, c): k for i, c, k in (frames0(M) or [])})
     for n in (2, 3):
         N = trio.expand(M, n)
         fN = frames(N)
@@ -34,8 +54,8 @@ def go(M):
         def mp(j):
             if j < r: return ('G', j)
             a, xx = divmod(j - r, L); return ('a%d' % min(a, 2), r + xx)
-        for i, c, B, hi, lo, s in fN:
-            kN = ph3s_kind(B, hi, lo, s) or 'BAD'
+        allN = [(i, c, ph3s_kind(B, hi, lo, s) or 'BAD') for i, c, B, hi, lo, s in fN] + (frames0(N) or [])
+        for i, c, kN in allN:
             (pi, i0), (pc, c0) = mp(i), mp(c)
             kM = fM.get((i0, c0), 'none')
             key = (t, pi, pc, kN, kM)
@@ -50,7 +70,7 @@ if __name__ == '__main__':
     random.Random(1).shuffle(mats)
     if len(sys.argv) > 2: mats = mats[:int(sys.argv[2])]
     c = Counter(); ex = {}
-    with Pool(24) as p:
+    with Pool(10) as p:
         for o, e in p.imap_unordered(go, mats, chunksize=100):
             c.update(o)
             for k, v in e.items(): ex.setdefault(k, v)

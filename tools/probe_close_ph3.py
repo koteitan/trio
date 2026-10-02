@@ -214,7 +214,9 @@ def FC3(M):
 PH = os.environ.get('PH', 'c')   # c: PH3c（既定）、s: PH3s
 def P(M):
     M = list(M)
-    return (S1(M) and S2(M) and S3(M) and S4(M) and (PH3c(M) if PH == 'c' else PH3s(M))
+    sk = os.environ.get('SKIP', '').split(',')   # 例: SKIP=S1,S3 で外す
+    return ((('S1' in sk) or S1(M)) and (('S2' in sk) or S2(M)) and (('S3' in sk) or S3(M)) and (('S4' in sk) or S4(M))
+            and (PH3c(M) if PH == 'c' else PH3s(M))
             and (S5(M) if os.environ.get('S5') == '1' else True)
             and (H1(M) if os.environ.get('H1') == '1' else True)
             and (PF3(M) if os.environ.get('PF') == '1' else True)
