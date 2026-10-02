@@ -1630,3 +1630,7 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 5c7cf30b: Inv3・Inv3V の tp1・tp1w・trig を数える子の形 TP1C・TP1WC・TrigOmC に替えた（使う側の W 型の仮定に Counted M i c → を足し、最後の使い手が数える子の前提を与える）。NoTrigU は不要。
 - 注意（t1-exp・drop-fix・t0-exp が独立に気づいた）: DropRes.argT を argT_std で出すには M[n].take の Good3 が要り、帰納法の中では循環する。drop-fix が落とす補題から argT を外す（新しい o′(i) の標準形を M 側の事実から）。t0-exp の hOTD も同じ問題で共通の補題にする。
 - t2-exp（測定）: M[n] の順位は M′ = M.take x ++ [(x0, x1, 0)] を使う段の順位で例外 0。写しの値は M や M.take x の単純なずらしではない（q ≠ r で約 68% が違う）ので、Good3 には順序数の議論が要る。M[n−1] → M[n] の鎖の構造を測る。
+- t0-exp（dd30d7b7、緑）: V3ExpT0.hExp_t0 / hExp_t0_of_last（t = 0 の hExp、n ≥ 2）。残りは T0OTD（hOTD）と T0Rest（VSmallF・FrameClosed・11 欄・N の Res3A）。
+  - hOTD の測定: N の D の o の節点（r より前、v 不変）では引数どうしが LhdE（69572 件、例外 0）で、ot_parent_lhd で標準形になる。組は class A（Ω_{v(i)+1} 以上の部分が同じで N に低い部分）か class B（どちらも低い部分なし）。
+  - hOTD は (a) 節点の補題が class A/B で引数の ◁ を保つ、(b) class B の子で「M が書き換えるなら N も」（B が hi(y) の先頭部分という PreHi 型の事実、closure の PH3c）、(c) v が変わる子は Ω_{v(p)+1} 以上のまま、に帰着。
+  - この引数の ◁ は 1 列落としでは偽（約 1%）なので、drop-fix の argT とは共通の補題にならない（n ≥ 2 に特有）。
