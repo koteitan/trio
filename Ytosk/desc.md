@@ -1611,3 +1611,15 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - PF3: 最初の数える子（B = 0）が書き換え、v(i) = s で s が 0 か後続なら lo ≠ 0（2 行の PreFC の 3 行版）。
   - H1: 穴の欄（TP1・TP1W・AbsD・AbsDN・AbsU・AbsUW・TPLoN、≤）を cof X = ω のとき fsD(X, 1) で評価。
   - 前の検査で壊れる基底 1790/1790 が閉じ、約 1.8 万段の歩みで 1 件壊れたが PF3 で除けた。より大きな検査中。
+
+### 落とす補題から偽の仮定を外した（2026-10-02、drop-fix、75a912b5、全体ビルド緑）
+
+- 落とす補題の結論 PO/PV は C′ の全 736 万列で成り立つ。偽だったのは道筋の仮定だけ。
+- 置き換え（どれも C′ と D（C′ の M[1..3] の接頭辞の閉包、218 万個）で例外 0）:
+  - FrameClosed := 書き換えの枠で FrameDom (v i) B s (H s y)。FrameDom: max(B, Ω_s) < C ≤ H(s, y) のすべての C で、comps_u B と comps_u s が C :: comps_u C ++ comps_u (v i) で支配される。
+  - VSmallF := comps_{v i}(v c) ≤ Ω_{v c} ∨ ≤ B（VSmallV の部分は削除）。
+  - VSmallNew（Res3A.drop.vst）:= 変わった v′(cs) について同じ形（第 2 部は削除。s′ < s は C = Ω_s で Lhd(c′, c) から）。
+  - seed（hcs）:= comps_a の形（s′ < μ → ∀ a′ ≤ μ、ψ_{a′}(b + Ω_{μ+1}) が標準形なら comps_{a′} seed < b + seed）。V3QRFinal3 は seedOK_of_lhd_below を使う。
+- 外した: Res3A.fch、Res3.t0 の hVr、hVNN/VNNc/VNNcN（V3DepLhd・V3T2*）。
+- 主な補題（V3NodeLhd）: node_lhdD、drop_child_lhdD、prel_tn_dom、H_mono、V3StepOT.step_ot_of_leB。
+- 残り: V3FrameClN の FrameClosedOmN（t = 1 の M[n] の FrameClosed 用の N 側の仮定）。新しい FrameClosed・VSmallF の展開での保存は hExp の仕事。
