@@ -15,14 +15,17 @@ namespace Ytosk
 
 open T
 
-/-- `Res3` without `chain`, plus the extra invariants the induction carries (`fch`). -/
+/-- `Res3` without `chain`. (The former field `fch : FrameClosedHi M ρ` was removed on 2026-10-02:
+it is false on standard matrices; `FrameClosed` of `M[n]` (`t = 1`) now takes the residual
+`FrameClosedOmN` on `M[n]` instead.) -/
 structure Res3A (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
-  /-- Frames before a high child are closed (needed for `FrameClosed` of `M[n]`, t1-struct). -/
-  fch : FrameClosedHi M ρ
   drop : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
   seed : ∀ r, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
     lt (sf ((drop1 M (M.length - 1) rk).v r)) (ρ.v r) = true →
-    ∀ u g, g ∈ comps u ((drop1 M (M.length - 1) rk).o r) → g < (drop1 M (M.length - 1) rk).o r
+    ∀ a', ¬ lt (ρ.v r) a' = true →
+    isOT (psi a' (app (qrB M ρ r (M.length - 1)) (psi (succ (ρ.v r)) z z)) z) = true →
+    ∀ g ∈ comps a' ((drop1 M (M.length - 1) rk).o r),
+      g < app (qrB M ρ r (M.length - 1)) ((drop1 M (M.length - 1) rk).o r)
 
 /-- **The top hypothesis, for every valuation**: every nonempty standard matrix other than SRO has a
 ranking, and every valuation and ranking of it satisfy `Inv3` and `Res3A`. -/
@@ -77,8 +80,6 @@ theorem hInv_of_A (h : HInvA) :
     have he2 : entry M 2 (r + L) = 0 := I.r12 _ he1
     have hDr := RA.drop
     rw [show M.length - 1 = r + L by omega] at hDr
-    refine ⟨t0_vr hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 hC hR
-      ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hDr, ?_⟩
     intro n hn2 σ hCN
     have hRN := rk_N0 hlen hL hp (show 1 ≤ n by omega) I.r0p I.z2 he2 hn2 hR
     have hlN : (TRIO.gexp M r L 0 0 n).length = r + n * L := lenN0 hlen (show 1 ≤ n by omega)

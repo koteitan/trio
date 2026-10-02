@@ -21,22 +21,17 @@ def VSmallV (t : T) : Prop := ∀ u, ∀ g ∈ comps u t, g ≤ psi t z z
 def VSmall (M : Mat) (ρ : Valn) : Prop := ∀ i, i < M.length → VSmallV (ρ.v i)
 
 /-- **Value invariant** (frame form): for every counted child `c` of `i`, the components of `v(c)` at the
-level `v(i)` are at most `Ω_{v(c)}`, and when `c` rewrites the state, all components are. -/
+level `v(i)` are at most `Ω_{v(c)}` or at most the state `B` before `c`.
+(2026-10-02 弱めた形。以前は「≤ Ω_{v(c)}」と書き換える枠での `VSmallV`。どちらも標準形で偽:
+`v(c) = ψ_0(Ω_{Ω_1} + ψ_0(Ω_{Ω_1}))` の成分 Ω_{Ω_1}。書き換える枠の添字の成分は `FrameClosed` が受け持つ。) -/
 def VSmallF (M : Mat) (ρ : Valn) : Prop :=
   ∀ i, i < M.length → ∀ (L : List Nat) (c : Nat) (R : List Nat), CL M i = L ++ c :: R →
-    (∀ g ∈ comps (ρ.v i) (ρ.v c), g ≤ psi (ρ.v c) z z) ∧
-    (∀ s y, ρ.o c = psi s y z →
-      lt (spArg (ρ.v i) z (sumN (L.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
-      VSmallV (ρ.v c))
+    ∀ g ∈ comps (ρ.v i) (ρ.v c), g ≤ psi (ρ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (L.map ρ.o))
 
-/-- **Hypothesis on the drop**: the same for a last counted child of `M.take x` whose `v` changes
-(the rewriting condition is that of the frame of `M`). -/
+/-- **Hypothesis on the drop**: the same for a last counted child of `M.take x` whose `v` changes. -/
 def VSmallNew (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
   ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (M.take x) i = Lc ++ [cs] → ρ'.v cs ≠ ρ.v cs →
-    (∀ g ∈ comps (ρ.v i) (ρ'.v cs), g ≤ psi (ρ'.v cs) z z) ∧
-    (∀ s y, ρ.o cs = psi s y z →
-      lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
-      VSmallV (ρ'.v cs))
+    ∀ g ∈ comps (ρ.v i) (ρ'.v cs), g ≤ psi (ρ'.v cs) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))
 
 /-- **Value invariant**: every state of every frame gives a standard `ψ`. -/
 def FrameOT (M : Mat) (ρ : Valn) : Prop :=
@@ -227,31 +222,10 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
         have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCv).1 rfl (by rw [hlenT] at hcsx0; exact hcsx0)
         exact o_of_no_counted hC' hcsx0 hPVc.2 hT.2.1
       refine ⟨Or.inl (o_frame_eval hC hG hF hC' hiT hiM hv' hcl hclM hsame hPOc.2 hPOc.1
-        (fun s y h hrw => by rw [hvM s y h]; exact (hfr.2 s y h hrw).subSmall _)
-        (fun s y s' y' h h' hrw => by
-          rw [hvT s' y' h']
-          by_cases hvs : ρ'.v cs = ρ.v cs
-          · have hle : psi s' y' z ≤ psi s y z := by
-              have := hPOc.1.elim (fun h => h.le) (fun h => DRelO.le (Or.inr h.1)); rw [h, h'] at this; exact this
-            have hss : s' = s := by rw [hvT s' y' h', hvs, ← hvM s y h]
-            have hold : lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
-                lt (psi (ρ.v i) z z) (psi s y z) = true := by
-              rcases hrw with hn | ho
-              · have hyy : y' ≤ y := by
-                  rw [hss] at hle
-                  rcases (le_iff _ _).mp hle with hl | hl
-                  · rcases psi_lt_psi_z_iff.mp hl with hl | ⟨_, hl⟩
-                    · exact absurd hl (lt_irrefl' _)
-                    · exact le_of_lt hl
-                  · simp only [psi.injEq] at hl; rw [hl.2.1]
-                exact ⟨lt_of_lt_of_le hn.1 hyy, lt_of_lt_of_le hn.2 hle⟩
-              · exact ho
-            rw [hvs]; exact (hfr.2 s y h hold).subSmall _
-          · rcases hrw with hn | ho
-            · exfalso
-              rw [hchgv hvs] at h'; simp only [psi.injEq] at h'
-              have := hn.1; rw [← h'.2.1] at this; exact T.not_lt_z _ this
-            · exact ((hVN i hi Lc cs hcl hvs).2 s y h ho).subSmall _)), ?_⟩
+        (fun s y s' y' h h' hy' => by
+          rw [hvT s' y' h', hvM s y h]
+          by_contra hvs
+          rw [hchgv hvs] at h'; simp only [psi.injEq] at h'; exact hy' h'.2.1.symm)), ?_⟩
       -- `o′(i)` is standard
       have hcsM : cs < M.length := by
         have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega
@@ -285,14 +259,14 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
       refine ⟨?_, _, _, rfl⟩
       have hBot := hFO i hiM Lc cs Tl (by rw [hclM]; simp)
       have hLs := sumN_dec (Lc.map ρ.o) (fun t ht => hsM t (by simp [ht])) (List.pairwise_append.mp hp1.1).1
-      apply step_ot_of_le' hBot (by rw [← hs'y']; exact hPOc.2.1)
+      apply step_ot_of_leB hBot (by rw [← hs'y']; exact hPOc.2.1)
       · apply spArg_summands_ge ⟨s', y', rfl⟩ _ z hLs.1
         · rw [hLs.2]; intro q hq; rw [← hs'y']; exact le_trans hle' (hLc q hq)
         · simp [summands]
       · rw [hvT s' y' hs'y']
         by_cases hvs : ρ'.v cs = ρ.v cs
-        · rw [hvs]; exact hfr.1
-        · exact (hVN i hi Lc cs hcl hvs).1
+        · rw [hvs]; exact hfr
+        · exact hVN i hi Lc cs hcl hvs
       · intro hsa g hg
         exact hArgT i hi Lc cs hcl s' y' hs'y' hsa g hg
 

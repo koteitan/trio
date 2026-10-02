@@ -396,10 +396,6 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
     (hRN : Rk (TRIO.gexp M r L d0 d1 n) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hAbsC : BumpAbsC M (r + L) ρ)
-    (hVNN : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL M i = Lc ++ [cs] → σ.v cs ≠ ρ.v cs →
-      ∀ s y, ρ.o cs = psi s y z →
-        lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
-        VSmallV (σ.v cs))
     (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L))
     (hseed : Lhd z (σ.o r) (ρ.o r)) :
     isOT (root (TRIO.gexp M r L d0 d1 n) σ) = true ∧ root (TRIO.gexp M r L d0 d1 n) σ < root M ρ := by
@@ -480,7 +476,6 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
           have hdc' : Counted M i d := by simpa using hd'.2
           have := hLs d hd'.1
           exact ⟨fun h => hLnd d hd'.1 hdc' ((hiff true d (by omega)).mp h), by omega⟩)
-    hVNN
     (by
       intro i hi _ hD
       have hDX := (hiff false i hi).mp hD

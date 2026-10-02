@@ -139,41 +139,21 @@ theorem s1_core {a B v Y0 X' : T} {m : Nat}
     (hX' : Single X') (hl : Lhd z X' (psi v (app Y0 one) z))
     (hX'O : 1 ≤ m → X' ≤ psi v Y0 z)
     (hy' : ∀ s' y', X' = psi s' y' z → s' ≠ v → y' = z)
-    (hsub : lt B (app Y0 one) = true ∧ lt (psi a z z) (psi v (app Y0 one) z) = true → SubSmall a v)
-    (hsub0 : ∀ s' y', X' = psi s' y' z → s' ≠ v →
-      lt B (app Y0 one) = true ∧ lt (psi a z z) (psi v (app Y0 one) z) = true → SubSmall a s')
-    (hcl : lt B (app Y0 one) = true ∧ lt (psi a z z) (psi v (app Y0 one) z) = true → Closed a B) :
+    (hdom : lt B (app Y0 one) = true ∧ lt (psi a z z) (psi v (app Y0 one) z) = true →
+      FrameDom a B v (H v (app Y0 one))) :
     Lhd z (psi a (spArg a (spArg a B (mulT (psi v Y0 z) m)) X') z)
       (psi a (spArg a B (psi v (app Y0 one) z)) z) := by
   obtain ⟨s', y', rfl⟩ := hX'.2
   have hc' := hX'.1
+  have hss : y' ≠ z → s' = v := fun hy => by
+    by_contra hs; exact hy (hy' s' y' rfl hs)
   have hOX : psi v Y0 z < psi v (app Y0 one) z := psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_app_one Y0⟩)
   rcases Nat.eq_zero_or_pos m with hm0 | hm
   · subst hm0
     simp only [mulT]
     show Lhd z (psi a (spArg a B (psi s' y' z)) z) (psi a (spArg a B (psi v (app Y0 one) z)) z)
     rw [spArg_single, spArg_single]
-    have hsub' : (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) ∨
-        (lt B (app Y0 one) = true ∧ lt (psi a z z) (psi v (app Y0 one) z) = true) → SubSmall a s' := by
-      intro hrw
-      by_cases hs : s' = v
-      · subst hs
-        apply hsub
-        rcases hrw with hn | ho
-        · have hle : psi s' y' z ≤ psi s' (app Y0 one) z := le_of_lt hl.1
-          have hyy : y' ≤ app Y0 one := by
-            rcases (le_iff _ _).mp hle with h | h
-            · rcases psi_lt_psi_z_iff.mp h with h | ⟨_, h⟩
-              · exact absurd h (lt_irrefl' _)
-              · exact le_of_lt h
-            · simp only [psi.injEq] at h; rw [h.2.1]
-          exact ⟨lt_of_lt_of_le hn.1 hyy, lt_of_lt_of_le hn.2 hle⟩
-        · exact ho
-      · have hyz := hy' s' y' rfl hs
-        rcases hrw with hn | ho
-        · exfalso; have := hn.1; rw [hyz] at this; exact T.not_lt_z _ this
-        · exact hsub0 s' y' rfl hs ho
-    have hE := node_lhd hX hc' (Or.inr hl) hBX hsub hsub' (fun _ hr => hcl hr)
+    have hE := node_lhdD hX hc' (Or.inr hl) hBX hss hdom
     apply lhd_of_lhdE_lt hE
     apply psi_lt_psi_z_iff.mpr; right; refine ⟨rfl, ?_⟩
     apply step_lt hX hc' (Or.inl hl) hBX
@@ -211,11 +191,7 @@ theorem s1_core {a B v Y0 X' : T} {m : Nat}
             exact hnr ⟨lt_of_lt_of_le h1 hyy, lt_trans h2 hlt'⟩
           · have := hy' s' y' rfl hs
             rw [this] at h1; exact T.not_lt_z _ h1
-        exact node_lhd hO hc' (Or.inr hlO) hB'O (fun h => absurd h hnr)
-          (fun h => by rcases h with h | h
-                       · exact absurd h hnew
-                       · exact absurd h hnr)
-          (fun _ h => absurd h hnr)
+        exact node_lhdD hO hc' (Or.inr hlO) hB'O hss (fun h => absurd h hnr)
     -- (ii) the middle value is a term of the fundamental sequence of the old value
     have hArg : spArg a B (psi v (app Y0 one) z) ≠ z := by
       intro h
@@ -310,18 +286,14 @@ theorem o_r_omid :
 
 /-- **Seed S1**: when `r` counts at its parent `g`, `o(g)` drops by `◁` in `N`. -/
 theorem t0_S1 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted M g r)
-    (hF : FrameClosed M ρ) (hVS : VSmallF M ρ)
+    (hF : FrameClosed M ρ)
     (hσG : ∀ c, c < r → ¬ DepX M (r + L) true c → σ.o c = ρ.o c)
     (hσvg : σ.v g = ρ.v g)
     (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = omid M r L ρ)
     (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
     (hLast : Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
     (hl : Lhd z (ρ'.o r) (ρ.o r))
-    (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
-    (hVr : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → ∀ Lc, CL M g = Lc ++ [r] → ∀ s y,
-      ρ.o r = psi s y z →
-      lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
-      VSmallV s') :
+    (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z) :
     Lhd z (σ.o g) (ρ.o g) := by
   have hx : r + L + 1 = M.length := hlen
   have hlN := lenN0 hlen hn (M := M) (L := L)
@@ -438,10 +410,9 @@ theorem t0_S1 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted M
     simp only [List.map_append, List.map_singleton]
     rw [hsumM, spArg_app]
   have hLs := sumN_dec Lv (fun t ht => hsM t (List.mem_append_left _ ht)) (List.pairwise_append.mp hpM).1
-  have hfr := hVS g hgM Lc r [] (by rw [hclM])
   rw [hoN, hoM, hOv]
   have hXot : isOT (ρ.o r) = true := hG.ot_o r (by omega)
-  rw [hor] at hoM hl hfr hXot ⊢
+  rw [hor] at hoM hl hXot ⊢
   have hOld : isOT (psi a (spArg a (spArg a z (sumN Lv)) (psi v (app Y0 one) z)) z) = true := by
     rw [← hoM]; exact hG.ot_o g hgM
   apply s1_core hOld hXot (by rw [← hOv]; exact hsO.1)
@@ -460,11 +431,6 @@ theorem t0_S1 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted M
     exact hp1.2.2 (omid M r L ρ) (List.mem_append_right _ (List.mem_replicate.mpr ⟨by omega, rfl⟩))
       (ρ'.o r) (by simp)
   · exact hy'
-  · intro hrw
-    have := (hfr.2 v (app Y0 one) rfl hrw).subSmall a
-    exact this
-  · intro s' y' hs' hsv hrw
-    exact (hVr s' y' hs' hsv Lc hclM v (app Y0 one) hor hrw).subSmall a
   · intro hrw
     exact hF g hgM Lc r [] (by rw [hclM]) v (app Y0 one) hor hrw
 

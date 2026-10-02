@@ -146,10 +146,6 @@ theorem t2_qn_main (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hAbs : ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
       ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
-    (hVNN : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (TRIO.gexp M r L d0 d1 n) i = Lc ++ [cs] → cs < r + L → σ.v cs ≠ ρ.v cs →
-      ∀ s y, ρ.o cs = psi s y z →
-        lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
-        VSmallV (σ.v cs))
     (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
     isOT (root (TRIO.gexp M r L d0 d1 n) σ) = true ∧ root (TRIO.gexp M r L d0 d1 n) σ < root M ρ := by
   have hlN : (TRIO.gexp M r L d0 d1 n).length = r + n * L := TRIO.gexp_length hlen
@@ -332,7 +328,7 @@ theorem t2_qn_main (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
       have := e2_of_col (show col M _ = (entry M 0 i + 1, entry M 1 i, 1) from hjb)
       omega)
     (fun c hc _ _ hd => hDvNil c hc hd) (fun c hc hw _ hd => hCLnil c hc hw (hDvNil c hc hd))
-    hCLnil hOS hVSh hRD hWle hAbs hVNN hSeed
+    hCLnil hOS hVSh hRD hWle hAbs hSeed
 
 end
 

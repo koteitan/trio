@@ -214,10 +214,6 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     (hLast : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
-    (hVr : ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
-      par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
-      lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
-      VSmallV s')
     (hN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       (∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true) ∧ VSmallNewN M r ρ σ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
@@ -330,9 +326,8 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       intro hcnt'
       have hσvg : σ.v g = ρ.v g := (hoffD g hgr).2 (fun hd =>
         uncnt_of_depv hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hp (by omega) hd hrc hcnt')
-      exact t0_S1 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hcnt' hF hVS
+      exact t0_S1 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hcnt' hF
         (fun c hc hd => (hoffD c hc).1 hd) hσvg hσmid hσlast (hLast n hn2 g hg hcnt') hl hy'
-        (fun s' y' hs hne Lc hcl => hVr s' y' hs hne g Lc hg hcl)
     -- seed S2
     have hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g) := by
       intro hjb h1 h2
@@ -552,10 +547,6 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     (hLast : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
-    (hVr : ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
-      par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
-      lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
-      VSmallV s')
     (hN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
       (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
@@ -564,7 +555,7 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ := by
   intro n hn2
   obtain ⟨ρN, rkN, hCN, hRN, _, _, _, h⟩ := t0_core hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM
-    hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hsM hpM hLast hVr
+    hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hsM hpM hLast
     (fun n hn σ hCN => let h := hN n hn σ hCN;
       ⟨fun i hi _ => h.1.ot_o i (by rw [lenN0 hlen (by omega)]; omega), h.2.1⟩) n hn2
   exact ⟨ρN, rkN, hCN, hRN, h⟩
@@ -588,10 +579,6 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     (hLast : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
-    (hVr : ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
-      par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
-      lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
-      VSmallV s')
     (hN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
       (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
@@ -599,6 +586,6 @@ theorem t0_main {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ :=
   t0_main' hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM hVS hF hFO hArgT hKD hTD
-    hAbs hWS hVSt hUA hsM hpM hLast hVr hN
+    hAbs hWS hVSt hUA hsM hpM hLast hN
 
 end Ytosk

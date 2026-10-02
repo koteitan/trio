@@ -31,10 +31,6 @@ theorem dep_lhd_gen {M N : Mat} {x bnd : Nat} {ρ σ : Valn} {rk : Bool → Nat 
     (hOc : ∀ i, i < bnd → ¬ Seed true i → DepX M x true i → ¬ DepX M x false i →
       ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ DepX M x true c ∧ c < bnd ∧
         ∀ d ∈ Lc, ¬ DepX M x true d ∧ d < bnd)
-    (hVNN : ∀ i, i < bnd → ∀ (Lc : List Nat) (cs : Nat), CL M i = Lc ++ [cs] → σ.v cs ≠ ρ.v cs →
-      ∀ s y, ρ.o cs = psi s y z →
-        lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
-        VSmallV (σ.v cs))
     (hVc : ∀ i, i < bnd → ¬ Seed false i → DepX M x false i →
       entry N 1 i = entry M 1 i ∧ entry N 2 i = entry M 2 i ∧ par N 1 i = par M 1 i ∧
       (∀ m, par M 1 i = some m → ¬ DepX M x false m) ∧ upg N i = upg M i ∧
@@ -98,30 +94,6 @@ theorem dep_lhd_gen {M N : Mat} {x bnd : Nat} {ρ σ : Valn} {rk : Bool → Nat 
             rw [hs'y'] at hy0; simp only [psi.injEq] at hy0
             rw [hy0.1, sf_ot (hGN.ot_v c (by omega)), hvc, ← hvM s y hsy]
           apply o_frame_lhd hC hG hF hCN hGN hiM hiN hv' hclN hclM hsame hIH
-          · intro s y hsy hrw
-            rw [hvM s y hsy]; exact (hfr.2 s y hsy hrw).subSmall _
-          · intro s y s' y' hsy hs'y' hrw
-            by_cases hvc : σ.v c = ρ.v c
-            · have hss := hsv s y s' y' hsy hs'y' hvc
-              subst hss
-              have hle : psi s' y' z ≤ psi s' y z := by rw [← hs'y', ← hsy]; exact le_of_lt hIH.1
-              have hold : lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
-                  lt (psi (ρ.v i) z z) (psi s' y z) = true := by
-                rcases hrw with hn' | ho
-                · have hyy : y' ≤ y := by
-                    rcases (le_iff _ _).mp hle with hl | hl
-                    · rcases psi_lt_psi_z_iff.mp hl with hl | ⟨_, hl⟩
-                      · exact absurd hl (lt_irrefl' _)
-                      · exact le_of_lt hl
-                    · simp only [psi.injEq] at hl; rw [hl.2.1]
-                  exact ⟨lt_of_lt_of_le hn'.1 hyy, lt_of_lt_of_le hn'.2 hle⟩
-                · exact ho
-              rw [hvM s' y hsy]; exact (hfr.2 s' y hsy hold).subSmall _
-            · have ho0 := hchv hvc
-              rw [hs'y'] at ho0; simp only [psi.injEq] at ho0
-              rcases hrw with hn' | ho
-              · exfalso; have := hn'.1; rw [ho0.2.1] at this; exact T.not_lt_z _ this
-              · rw [ho0.1]; exact (hVNN i hi Lc c hclM hvc s y hsy ho).subSmall _
           · intro s hs
             have hclc : CL M c = [] := by
               by_contra hne
@@ -251,10 +223,6 @@ theorem deps_lhd_gen {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ 
     (hOc : ∀ i, i < bnd → ¬ S true i → DepS M S true i → ¬ DepS M S false i →
       ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ DepS M S true c ∧ c < bnd ∧
         ∀ d ∈ Lc, ¬ DepS M S true d ∧ d < bnd)
-    (hVNN : ∀ i, i < bnd → ∀ (Lc : List Nat) (cs : Nat), CL M i = Lc ++ [cs] → σ.v cs ≠ ρ.v cs →
-      ∀ s y, ρ.o cs = psi s y z →
-        lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
-        VSmallV (σ.v cs))
     (hVc : ∀ i, i < bnd → ¬ S false i → DepS M S false i →
       entry N 1 i = entry M 1 i ∧ entry N 2 i = entry M 2 i ∧ par N 1 i = par M 1 i ∧
       (∀ m, par M 1 i = some m → ¬ DepS M S false m) ∧ upg N i = upg M i ∧
@@ -318,30 +286,6 @@ theorem deps_lhd_gen {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ 
             rw [hs'y'] at hy0; simp only [psi.injEq] at hy0
             rw [hy0.1, sf_ot (hGN.ot_v c (by omega)), hvc, ← hvM s y hsy]
           apply o_frame_lhd hC hG hF hCN hGN hiM hiN hv' hclN hclM hsame hIH
-          · intro s y hsy hrw
-            rw [hvM s y hsy]; exact (hfr.2 s y hsy hrw).subSmall _
-          · intro s y s' y' hsy hs'y' hrw
-            by_cases hvc : σ.v c = ρ.v c
-            · have hss := hsv s y s' y' hsy hs'y' hvc
-              subst hss
-              have hle : psi s' y' z ≤ psi s' y z := by rw [← hs'y', ← hsy]; exact le_of_lt hIH.1
-              have hold : lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
-                  lt (psi (ρ.v i) z z) (psi s' y z) = true := by
-                rcases hrw with hn' | ho
-                · have hyy : y' ≤ y := by
-                    rcases (le_iff _ _).mp hle with hl | hl
-                    · rcases psi_lt_psi_z_iff.mp hl with hl | ⟨_, hl⟩
-                      · exact absurd hl (lt_irrefl' _)
-                      · exact le_of_lt hl
-                    · simp only [psi.injEq] at hl; rw [hl.2.1]
-                  exact ⟨lt_of_lt_of_le hn'.1 hyy, lt_of_lt_of_le hn'.2 hle⟩
-                · exact ho
-              rw [hvM s' y hsy]; exact (hfr.2 s' y hsy hold).subSmall _
-            · have ho0 := hchv hvc
-              rw [hs'y'] at ho0; simp only [psi.injEq] at ho0
-              rcases hrw with hn' | ho
-              · exfalso; have := hn'.1; rw [ho0.2.1] at this; exact T.not_lt_z _ this
-              · rw [ho0.1]; exact (hVNN i hi Lc c hclM hvc s y hsy ho).subSmall _
           · intro s hs
             have hclc : CL M c = [] := by
               by_contra hne
@@ -465,10 +409,6 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
     (hOc : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S true i → ¬ DepS M S false i →
       ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ DepS M S true c ∧ c < bnd ∧
         ∀ d ∈ Lc, ¬ DepS M S true d ∧ d < bnd)
-    (hVNN : ∀ i, i < bnd → ∀ (Lc : List Nat) (cs : Nat), CL N i = Lc ++ [cs] → cs < bnd → σ.v cs ≠ ρ.v cs →
-      ∀ s y, ρ.o cs = psi s y z →
-        lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
-        VSmallV (σ.v cs))
     (hVc : ∀ i, i < bnd → ¬ S false i → DepS M S false i →
       entry N 1 i = entry M 1 i ∧ entry N 2 i = entry M 2 i ∧ par N 1 i = par M 1 i ∧
       (∀ m, par M 1 i = some m → ¬ DepS M S false m) ∧ upg N i = upg M i ∧
@@ -535,30 +475,6 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
             rw [hs'y'] at hy0; simp only [psi.injEq] at hy0
             rw [hy0.1, sf_ot (hGN.ot_v c (by omega)), hvc, ← hvM s y hsy]
           apply o_frame_lhd hC hG hF hCN hGN hiM hiN hv' hclN hclM hsame hIH
-          · intro s y hsy hrw
-            rw [hvM s y hsy]; exact (hfr.2 s y hsy hrw).subSmall _
-          · intro s y s' y' hsy hs'y' hrw
-            by_cases hvc : σ.v c = ρ.v c
-            · have hss := hsv s y s' y' hsy hs'y' hvc
-              subst hss
-              have hle : psi s' y' z ≤ psi s' y z := by rw [← hs'y', ← hsy]; exact le_of_lt hIH.1
-              have hold : lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
-                  lt (psi (ρ.v i) z z) (psi s' y z) = true := by
-                rcases hrw with hn' | ho
-                · have hyy : y' ≤ y := by
-                    rcases (le_iff _ _).mp hle with hl | hl
-                    · rcases psi_lt_psi_z_iff.mp hl with hl | ⟨_, hl⟩
-                      · exact absurd hl (lt_irrefl' _)
-                      · exact le_of_lt hl
-                    · simp only [psi.injEq] at hl; rw [hl.2.1]
-                  exact ⟨lt_of_lt_of_le hn'.1 hyy, lt_of_lt_of_le hn'.2 hle⟩
-                · exact ho
-              rw [hvM s' y hsy]; exact (hfr.2 s' y hsy hold).subSmall _
-            · have ho0 := hchv hvc
-              rw [hs'y'] at ho0; simp only [psi.injEq] at ho0
-              rcases hrw with hn' | ho
-              · exfalso; have := hn'.1; rw [ho0.2.1] at this; exact T.not_lt_z _ this
-              · rw [ho0.1]; exact (hVNN i hi Lc c hclN hcb hvc s y hsy ho).subSmall _
           · intro s hs
             have hclc : CL M c = [] := by
               by_contra hne

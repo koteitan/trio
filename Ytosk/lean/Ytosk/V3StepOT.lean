@@ -125,6 +125,52 @@ theorem step_ot_of_le' {a B s y : T} (hBot : isOT (psi a B z) = true) (hc : isOT
     · exact le_trans (le_of_lt (comps_lt hBot g hg)) (le_app_self _ _)
     · exact hcs g hg
 
+/-- **One frame keeps the parent standard**, the components of the subscript at the level `a` being at
+most `Ω_s` or at most the state `B` (`B ≤ B + c ≤ step`). -/
+theorem step_ot_of_leB {a B s y : T} (hBot : isOT (psi a B z) = true) (hc : isOT (psi s y z) = true)
+    (hBc : ∀ q ∈ summands B, psi s y z ≤ q) (hsub : ∀ g ∈ comps a s, g ≤ psi s z z ∨ g ≤ B)
+    (hy : ¬ lt s a = true → ∀ g ∈ comps a y, g ≤ step a B s y z) :
+    isOT (psi a (step a B s y z) z) = true := by
+  apply ot_parent_small (isOT_sub hBot) (isOT_step (isOT_arg hBot) hc)
+  have hBs : B ≤ step a B s y z := le_trans (le_app_self _ _) (app_le_step hc hBc)
+  have hcs : ∀ g ∈ comps a (psi s y z), g ≤ step a B s y z := by
+    intro g hg
+    by_cases hsa : lt s a = true
+    · simp [comps, hsa] at hg
+    · rw [comps_psi_z_of_ge hsa] at hg
+      simp only [List.mem_cons, List.mem_append] at hg
+      rcases hg with rfl | hg | hg
+      · exact y_le_step hc hBc hsa
+      · exact hy hsa g hg
+      · rcases hsub g hg with h | h
+        · exact le_trans h (om_le_step hc hBc)
+        · exact le_trans h hBs
+  by_cases ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true
+  · have hst : step a B s y z = H s y := by unfold step; rw [if_pos ht]
+    rw [hst] at hcs ⊢
+    intro g hg
+    rw [H_eq hc, comps_app] at hg
+    rcases List.mem_append.mp hg with hg | hg
+    · have hsa : ¬ lt s a = true := not_lt.mpr (le_of_trig ht.2)
+      apply hcs
+      rw [comps_psi_z_of_ge hsa]
+      apply List.mem_cons_of_mem
+      apply List.mem_append_left
+      have hy' : g ∈ comps a (app (split y (psi (succ s) z z)).1 (split y (psi (succ s) z z)).2) := by
+        rw [comps_app]; exact List.mem_append_left _ hg
+      rwa [split_app] at hy'
+    · split at hg
+      · simp [comps] at hg
+      · exact hcs g hg
+  · have hst : step a B s y z = app B (psi s y z) := by
+      unfold step; rw [if_neg ht, step_add hBc]
+    rw [hst] at hcs ⊢
+    intro g hg
+    rw [comps_app] at hg
+    rcases List.mem_append.mp hg with hg | hg
+    · exact le_trans (le_of_lt (comps_lt hBot g hg)) (le_app_self _ _)
+    · exact hcs g hg
+
 /-- `step_ot_of_le'` with the components of the subscript at all levels `≤ a` bounded. -/
 theorem step_ot_of_le {a B s y : T} (hBot : isOT (psi a B z) = true) (hc : isOT (psi s y z) = true)
     (hBc : ∀ q ∈ summands B, psi s y z ≤ q) (hsub : SubSmall a s)

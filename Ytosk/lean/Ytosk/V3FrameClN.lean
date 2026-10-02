@@ -25,6 +25,15 @@ def FrameClosedOm (M : Mat) (ρ : Valn) : Prop :=
     ρ.o c = psi (succ t) z z → ¬ lt t (ρ.v i) = true →
     Closed (ρ.v i) (spArg (ρ.v i) z (sumN (L.map ρ.o)))
 
+/-- **Residual on the glued valuation `σ` of `M[n]`** (2026-10-02): at a frame of `M` whose counted child is a
+leaf `Ω_{t+1}` (`t ≥ v(i)`), if the new child value of `σ` rewrites, the frame is dominated (`FrameDom`).
+（以前は `FrameClosedOm`（頭が閉じている）を `FrameClosedHi` から出していたが、`FrameClosedHi` は標準形で偽。） -/
+def FrameClosedOmN (M : Mat) (r L : Nat) (ρ σ : Valn) : Prop :=
+  ∀ i, i < r + L → ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R → ∀ t,
+    ρ.o c = psi (succ t) z z → ¬ lt t (ρ.v i) = true → ∀ s y, σ.o c = psi s y z →
+    lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
+    FrameDom (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s (H s y)
+
 /-! ## 順序数の補題: 値が下がっても引き金は戻る -/
 
 /-- `fsD` of `ψ_s(y)` with `y ≠ 0`, when single, keeps the subscript. -/
@@ -273,7 +282,8 @@ theorem frameHead_copy (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠
 
 
 
-/-- **FrameClosed passes to the glued valuation of `M[n]`** (`t = 1`), given FrameClosedOm of `M`. -/
+/-- **FrameClosed passes to the glued valuation of `M[n]`** (`t = 1`), given the residual `FrameClosedOmN`
+at the frames whose child was a leaf `Ω_{t+1}` in `M`. -/
 theorem frameClosed_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
       entry M 1 r < entry M 1 s) (hx2 : entry M 2 (r + L) = 0)
     (hxnb : ∀ c, par M 0 (r + L) = some c →
@@ -283,7 +293,9 @@ theorem frameClosed_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s �
     (hiux : isUpg (TRIO.gexp M r L d0 0 n) (r + L) = false)
     {ρ ρP : Valn} {Z : Nat → T} (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP)
     (hOS : ∀ i, i < r + L → DepX M (r + L) true i → OShape M (r + L) i)
-    (hC : Cons M ρ) (hFC : FrameClosed M ρ) (hFCO : FrameClosedOm M ρ)
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hFC : FrameClosed M ρ)
+    (hOmN : FrameClosedOmN M r L ρ (glueZ M (r + L) ρ (shiftV ρP L) Z))
+    (hGN : ∀ c, c < r + L → DepX M (r + L) true c → isOT (fsD (ρ.o c) (Z c)) = true)
     (hFCP : FrameClosed (TRIO.gexp M r L d0 0 (n - 1)) ρP)
     (hle : ∀ c, c < r + L → DepX M (r + L) true c → fsD (ρ.o c) (Z c) ≤ ρ.o c)
     (hlex : ρP.o r ≤ ρ.o (r + L)) (hox : ∃ t, ρ.o (r + L) = psi (succ t) z z) :
@@ -298,23 +310,39 @@ theorem frameClosed_N_t1 (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s �
     have hcM := mem_children (List.mem_filter.mp hcCL).1
     have hiM : i < M.length := by omega
     obtain ⟨s0, y0, h0⟩ := o_psi_form hC hcM.2
+    have hc0 := hc
     by_cases hcx : c = r + L
-    · rw [hcx] at hc hCLM
+    · rw [hcx] at hc hCLM hc0
       rw [glueZ_o_ge ρ (shiftV ρP L) Z (le_refl _)] at hc
       have hc' : ρP.o r = psi s y z := by
         have : (shiftV ρP L).o (r + L) = ρP.o r := by show ρP.o (r + L - L) = _; rw [Nat.add_sub_cancel]
         rw [← this]; exact hc
       obtain ⟨t, hto⟩ := hox
       have hnt := trig_back_succ (by rw [← hto]; exact hlex) hc' ht
-      exact hFCO i hiM Lc (r + L) R hCLM t hto hnt
+      exact hOmN i h Lc (r + L) R hCLM t hto hnt s y hc0 ht
     · have hcx' : c < r + L := by omega
       by_cases hd : DepX M (r + L) true c
       · rw [glueZ_o_dep ρ (shiftV ρP L) Z hcx' hd, h0] at hc
         have hl := hle c hcx' hd
         rw [h0] at hl
         rcases trig_back_fsD hl hc ht with htM | ⟨t, hst, hy0, hnt⟩
-        · exact hFC i hiM Lc c R hCLM s0 y0 h0 htM
-        · exact hFCO i hiM Lc c R hCLM t (by rw [h0, hst, hy0]) hnt
+        · -- the frame of `M` rewrites: same subscript, smaller argument
+          have hD := hFC i hiM Lc c R hCLM s0 y0 h0 htM
+          have hy0z : y0 ≠ z := ne_z_of_lt htM.1
+          have hss : s = s0 := fsD_psi_shape hy0z hc
+          subst hss
+          have hle' : psi s y z ≤ psi s y0 z := by rw [← hc]; exact hl
+          have hyy : y ≤ y0 := by
+            rcases (le_iff _ _).mp hle' with h' | h'
+            · rcases psi_lt_psi_z_iff.mp h' with h' | ⟨_, h'⟩
+              · exact absurd h' (lt_irrefl' _)
+              · exact le_of_lt h'
+            · simp only [psi.injEq] at h'; rw [h'.2.1]
+          have hc1 : isOT (psi s y z) = true := by
+            rw [← hc]; have := hGN c hcx' hd; rwa [h0] at this
+          have hc2 : isOT (psi s y0 z) = true := by rw [← h0]; exact hG.ot_o c hcM.2
+          exact FrameDom.mono hD (H_mono hc1 hc2 hyy)
+        · exact hOmN i h Lc c R hCLM t (by rw [h0, hst, hy0]) hnt s y hc0 ht
       · rw [glueZ_o_lt ρ (shiftV ρP L) Z hcx' hd] at hc
         exact hFC i hiM Lc c R hCLM s y hc ht
   · obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
@@ -378,27 +406,25 @@ namespace Ytosk
 
 open T
 
-/-- **FrameClosed and FrameClosedHi are carried together** (`t = 1`). -/
+/-- **FrameClosed is carried** (`t = 1`), given the residual `FrameClosedOmN` of every glued valuation. -/
 theorem expStep_frameClosed_t1 {M : Mat} {r L d0 q : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some q)
-    {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) (hFC : FrameClosed M ρ) (hFH : FrameClosedHi M ρ) :
-    ExpStepT1 (fun N σ => FrameClosed N σ ∧ FrameClosedHi N σ) M r L d0 ρ := by
-  have hFCO := frameClosedOm_of_hi hFH
+    {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) (hFC : FrameClosed M ρ)
+    (hOm : ∀ (ρP : Valn) (Z : Nat → T), FrameClosedOmN M r L ρ (glueZ M (r + L) ρ (shiftV ρP L) Z)) :
+    ExpStepT1 (fun N σ => FrameClosed N σ) M r L d0 ρ := by
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   have hpath := hpath_of_par1 h1 hA (by omega)
   have hox : ∃ t, ρ.o (r + L) = psi (succ t) z z :=
     ⟨_, o_last_t1 hlen hC hG h1 (by have := par1_entry_lt h1; omega) hx2⟩
-  intro n hn ρP Z hCP _ hFCP _ _ _ _ hle hlex _
+  intro n hn ρP Z hCP _ hFCP _ _ hGN _ hle hlex _
   have hxnb := hxnb_t1 hlen hL hA hd0e hZ2 hZ1 h1 n hn
   have hiu := hiu_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn
   have hiux := hiux_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn
   have hOS := hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq
-  exact ⟨frameClosed_N_t1 hlen hL hA hd0e hn hpath hx2 hxnb (hZ2 r) hiu hiux hCP hOS hC hFC hFCO hFCP.1
-      (fun c hc hd => (hle c hc hd).1) hlex.1 hox,
-    frameClosedHi_N_t1 hlen hL hA hd0e hn hpath hx2 hxnb (hZ2 r) hiu hiux hCP hOS hFH hFCP.2
-      (fun c hc hd => (hle c hc hd).1) hlex.1⟩
+  exact frameClosed_N_t1 hlen hL hA hd0e hn hpath hx2 hxnb (hZ2 r) hiu hiux hCP hOS hC hG hFC (hOm ρP Z) hGN hFCP
+      (fun c hc hd => (hle c hc hd).1) hlex.1 hox
 
 end Ytosk
 

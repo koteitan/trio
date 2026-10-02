@@ -251,10 +251,6 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ 
     -- values
     (hAbs : ∀ i, i < bnd → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
       ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
-    (hVNN : ∀ i, i < bnd → ∀ (Lc : List Nat) (cs : Nat), CL N i = Lc ++ [cs] → cs < bnd → σ.v cs ≠ ρ.v cs →
-      ∀ s y, ρ.o cs = psi s y z →
-        lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
-        VSmallV (σ.v cs))
     (hSeed : ∀ b i, S b i → i < bnd → DepS M S b i →
       (∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i)) →
       (∀ b' i', rkM b' i' < rkM b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →
@@ -309,7 +305,6 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ 
       have hd' := List.mem_filter.mp hd
       have hdM : d ∈ children M i := by rw [hch']; simp [hd'.1]
       exact ⟨hL d hd'.1 (by simpa using hd'.2), hall d hdM⟩)
-    hVNN
     (by
       intro i hi hns hD
       obtain ⟨hpnd, hbsh⟩ := hVSh i hi hns hD

@@ -103,14 +103,8 @@ theorem dropRes_congr {N : Mat} {x : Nat} {σ σ' τ τ' : Valn} (hx : x < N.len
     have hvc := (h cs (by omega)).2
     have hoc := (h cs (by omega)).1
     rw [← hvc', ← hvc] at hne
-    obtain ⟨h1, h2⟩ := hD.vst i hi Lc cs hcl hne
-    refine ⟨?_, ?_⟩
-    · rw [← hv, ← hvc']; exact h1
-    · intro s y ho htr
-      rw [← hvc']
-      rw [← hoc] at ho
-      rw [← hv, ← map_o_congr h hL] at htr
-      exact h2 s y ho htr
+    have h1 := hD.vst i hi Lc cs hcl hne
+    rw [← hv, ← hvc', ← map_o_congr h hL]; exact h1
   · intro i h1 h2 j hj hjb k hk hw hcase
     have hkN := (mem_children hk).2
     have hiN := lt_of_entry_ne h1

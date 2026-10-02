@@ -370,12 +370,11 @@ structure Res3 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   chain : ∀ j, j + 1 < M.length → DropRes (M.take (j + 1)) j (drop1 M (j + 1) rk) (drop1 M j rk)
   seed : ∀ r, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
     lt (sf ((drop1 M (M.length - 1) rk).v r)) (ρ.v r) = true →
-    ∀ u g, g ∈ comps u ((drop1 M (M.length - 1) rk).o r) → g < (drop1 M (M.length - 1) rk).o r
+    ∀ a', ¬ lt (ρ.v r) a' = true →
+    isOT (psi a' (app (qrB M ρ r (M.length - 1)) (psi (succ (ρ.v r)) z z)) z) = true →
+    ∀ g ∈ comps a' ((drop1 M (M.length - 1) rk).o r),
+      g < app (qrB M ρ r (M.length - 1)) ((drop1 M (M.length - 1) rk).o r)
   t0 : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
-    (∀ s' y', (drop1 M (r + L) rk).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
-      par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
-      lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
-      VSmallV s') ∧
     (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
       (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
@@ -491,12 +490,12 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
       exact drop_n1 (d0 := 0) hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hL0 hx2 hr hnx I.cons
         I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua
     · apply dropsAt_of hexp
-      obtain ⟨hVr, hN⟩ := ht0 r L hlen hr he1
+      have hN := ht0 r L hlen hr he1
       have hLast := fun n (hn : 2 ≤ n) g (hg : par M 0 r = some g) (hc : Counted M g r) =>
         counted_last0 hlen hL0 hr he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc
       exact t0_main' hlen hL0 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr he1 I.cons I.good
         I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.rootS I.rootP hLast
-        hVr hN (n + 2) (by omega)
+        hN (n + 2) (by omega)
   · -- `t = 1`
     have hx2 : entry M 2 (M.length - 1) = 0 := by
       unfold TRIO.srow at h1t

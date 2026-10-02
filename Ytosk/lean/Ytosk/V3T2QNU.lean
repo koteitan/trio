@@ -180,10 +180,6 @@ theorem t2_qnu_take (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (hUA : UpgAbsX M (r + L) ρ)
     (hAbs : ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
       ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
-    (hVNN : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] → cs < r + L → σ.v cs ≠ ρ.v cs →
-      ∀ s y, ρ.o cs = psi s y z →
-        lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
-        VSmallV (σ.v cs))
     (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
     isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ := by
   have hlT : (M.take (r + L)).length = r + L := by rw [List.length_take]; omega
@@ -408,7 +404,7 @@ theorem t2_qnu_take (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (fun i h => h.elim) (fun i h => h) (fun i c _ _ h => h.elim) (fun i j c _ _ _ _ _ h => h.elim)
     (fun c hc _ _ hd => hDvNil c hc hd) (fun c hc _ _ hd => hCLnil c hc (hDvNil c hc hd))
     (fun c hc _ hcl => hCLnil c hc hcl) (fun i hi hns _ hD hv => hOS i hi hns hD hv) hVSh hRD
-    (fun i _ h => h.elim) hAbs hVNN hSeed
+    (fun i _ h => h.elim) hAbs hSeed
 
 end
 

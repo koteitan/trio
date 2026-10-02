@@ -64,15 +64,13 @@ theorem base_dropRes : DropRes (Mlen (1 + 3 * n)) ((Mlen (1 + 3 * n)).length - 1
   · -- VSmallNew
     intro i _ Lc cs hCL _
     obtain ⟨hcs, hc1, hk⟩ := CL_drop_kind hCL
-    refine ⟨fun g hg => ?_, fun s y ho htr => ?_⟩
-    · rw [(drop_eq n cs hcs).2, bval_vAD (by omega) hk] at hg ⊢
-      rcases comps_tw hβ2 _ _ g hg with rfl | ⟨rfl, _⟩
-      · exact z_le _
-      · left; show two < psi (tw w2 (Kd (3 * n) cs)) z z
-        unfold two; rw [psi_lt_psi]; left; exact z_lt_tw hβ2 _
-    · rw [bval_oAD (by omega) hk] at ho
-      cases ho
-      have := htr.1; rw [lt_z_false] at this; cases this
+    intro g hg
+    left
+    rw [(drop_eq n cs hcs).2, bval_vAD (by omega) hk] at hg ⊢
+    rcases comps_tw hβ2 _ _ g hg with rfl | ⟨rfl, _⟩
+    · exact z_le _
+    · left; show two < psi (tw w2 (Kd (3 * n) cs)) z z
+      unfold two; rw [psi_lt_psi]; left; exact z_lt_tw hβ2 _
   · -- BumpWeakSrc
     intro i h1 _ j hj hb k hk _ _
     have hiL : i < 1 + 3 * n := by
@@ -110,7 +108,7 @@ theorem base_fch : FrameClosedHi (Mlen (1 + 3 * n)) (bval (1 + 3 * n) one) := by
 
 theorem base_res3A : Res3A (Mlen (1 + 3 * n)) (bval (1 + 3 * n) one) (brk (1 + 3 * n)) := by
   have hx : (Mlen (1 + 3 * n)).length - 1 = 3 * n := by simp
-  refine ⟨base_fch, base_dropRes, ?_⟩
+  refine ⟨base_dropRes, ?_⟩
   · -- seed
     intro r h1 h0
     rw [hx] at h1 h0

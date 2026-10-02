@@ -87,13 +87,7 @@ theorem o_frame_evalG {M M' : Mat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : List Na
     (hsame : ∀ d ∈ Lc, ρ'.o d = ρ.o d)
     (hcs' : Single (ρ'.o cs))
     (hrel : LhdE (ρ'.o cs) (ρ.o cs) ∨ (WkO (ρ'.o cs) (ρ.o cs) ∧ ∃ w, ρ.o cs = psi w z z))
-    (hsub : ∀ s y, ρ.o cs = psi s y z →
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-      SubSmall (ρ.v i) s)
-    (hsub' : ∀ s y s' y', ρ.o cs = psi s y z → ρ'.o cs = psi s' y' z →
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true) ∨
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-      SubSmall (ρ.v i) s') :
+    (hss : ∀ s y s' y', ρ.o cs = psi s y z → ρ'.o cs = psi s' y' z → y' ≠ z → s' = s) :
     LhdE (ρ'.o i) (ρ.o i) := by
   set a := ρ.v i with ha
   obtain ⟨hsM, hpM⟩ := cl_vals hC hG hiM
@@ -170,9 +164,9 @@ theorem o_frame_evalG {M M' : Mat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : List Na
     rw [hsy, hs'y'] at hrel
     have hc := hcsS.1; rw [hsy] at hc
     have hc' := hcs'.1; rw [hs'y'] at hc'
-    have hN := node_lhd (a := a) (B := B) hc hc' hrel (hBge _ hcsS (le_refl _) |> fun h => by
-        rw [hsy] at h; exact h) (hsub s y hsy) (hsub' s y s' y' hsy hs'y')
-      (fun _ hr => hF i hiM Lc cs Tl hCL s y hsy hr)
+    have hN := node_lhdD (a := a) (B := B) hc hc' hrel (hBge _ hcsS (le_refl _) |> fun h => by
+        rw [hsy] at h; exact h) (hss s y s' y' hsy hs'y')
+      (fun hr => hF i hiM Lc cs Tl hCL s y hsy hr)
     have hstate : spArg a z (sumN ((Lc ++ [cs]).map ρ.o)) = step a B s y z := by
       rw [List.map_append, List.map_singleton, ← hLv, sumN_append_dec hsLc hpLc,
         sumN_singleton hcsS, spArg_app, hsy, spArg_single]
@@ -255,13 +249,6 @@ theorem o_frame_lhdT {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
     (hclN : CL N i = Lc ++ [c]) (hclM : CL M i = Lc ++ [c])
     (hsame : ∀ d ∈ Lc, σ.o d = ρ.o d)
     (hl : Lhd z (σ.o c) (ρ.o c))
-    (hsub : ∀ s y, ρ.o c = psi s y z →
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-      SubSmall (ρ.v i) s)
-    (hsub' : ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z →
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true) ∨
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-      SubSmall (ρ.v i) s')
     (hy : ∀ s, ρ.o c = psi s z z → ∃ s', σ.o c = psi s' z z)
     (hss : ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z → y' ≠ z → s' = s)
     (hpN0 : ((CL N i).map σ.o).Pairwise (fun a b => b ≤ a)) :
@@ -270,7 +257,7 @@ theorem o_frame_lhdT {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
   have hcM : c < M.length := (mem_children (cl_mem_children (show c ∈ CL M i by rw [hclM]; simp))).2
   have hcs' := single_oT hCN hGN hcN
   have hE := o_frame_evalG hC hG hF hCN hiN hiM hv hclN (Tl := []) (by rw [hclM, List.append_nil]) hsame
-    hcs' (Or.inl (Or.inr hl)) hsub hsub'
+    hcs' (Or.inl (Or.inr hl)) (fun s y s' y' h h' hy' => hss s y s' y' h h' hy')
   apply lhd_of_lhdE_lt hE
   -- strictness
   have hvot : isOT (ρ.v i) = true := hG.ot_v i hiM
@@ -318,17 +305,10 @@ theorem o_frame_lhd {M N : Mat} {ρ σ : Valn} {i c : Nat} {Lc : List Nat}
     (hclN : CL N i = Lc ++ [c]) (hclM : CL M i = Lc ++ [c])
     (hsame : ∀ d ∈ Lc, σ.o d = ρ.o d)
     (hl : Lhd z (σ.o c) (ρ.o c))
-    (hsub : ∀ s y, ρ.o c = psi s y z →
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-      SubSmall (ρ.v i) s)
-    (hsub' : ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z →
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true) ∨
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-      SubSmall (ρ.v i) s')
     (hy : ∀ s, ρ.o c = psi s z z → ∃ s', σ.o c = psi s' z z)
     (hss : ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z → y' ≠ z → s' = s) :
     Lhd z (σ.o i) (ρ.o i) :=
-  o_frame_lhdT hC hG hF hCN hGN.toOT hiM hiN hv hclN hclM hsame hl hsub hsub' hy hss (cl_vals hCN hGN hiN).2
+  o_frame_lhdT hC hG hF hCN hGN.toOT hiM hiN hv hclN hclM hsame hl hy hss (cl_vals hCN hGN hiN).2
 
 theorem foldl_nzs : ∀ (l : List T) (acc : T), isOT acc = true → (∀ t ∈ l, isOT t = true) →
     l.foldl (fun a b => sf (add a b)) acc = (nzs l).foldl (fun a b => sf (add a b)) acc
@@ -768,30 +748,6 @@ theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
               rw [List.map_append, List.map_singleton] at hpM
               exact pairwise_snoc_le hpM (le_of_lt hIH.1)
             apply o_frame_lhdT (hpN0 := hpN0) hC hG hF hCN hGN hiM (hiN i hi) hv' hclN hclM hsame hIH
-            · intro s y hsy hrw
-              rw [hvM s y hsy]; exact (hfr.2 s y hsy hrw).subSmall _
-            · intro s y s' y' hsy hs'y' hrw
-              by_cases hvc : σ.v c = ρ.v c
-              · have hss := hsv s y s' y' hsy hs'y' hvc
-                subst hss
-                have hle : psi s' y' z ≤ psi s' y z := by rw [← hs'y', ← hsy]; exact le_of_lt hIH.1
-                have hold : lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
-                    lt (psi (ρ.v i) z z) (psi s' y z) = true := by
-                  rcases hrw with hn' | ho
-                  · have hyy : y' ≤ y := by
-                      rcases (le_iff _ _).mp hle with hl | hl
-                      · rcases psi_lt_psi_z_iff.mp hl with hl | ⟨_, hl⟩
-                        · exact absurd hl (lt_irrefl' _)
-                        · exact le_of_lt hl
-                      · simp only [psi.injEq] at hl; rw [hl.2.1]
-                    exact ⟨lt_of_lt_of_le hn'.1 hyy, lt_of_lt_of_le hn'.2 hle⟩
-                  · exact ho
-                rw [hvM s' y hsy]; exact (hfr.2 s' y hsy hold).subSmall _
-              · have ho0 := hchv hvc
-                rw [hs'y'] at ho0; simp only [psi.injEq] at ho0
-                rcases hrw with hn' | ho
-                · exfalso; have := hn'.1; rw [ho0.2.1] at this; exact T.not_lt_z _ this
-                · rw [ho0.1]; exact (hVNN i hi Lc c hclM hvc s y hsy ho).subSmall _
             · intro s hs
               have hclc : CL M c = [] := by
                 by_contra hne

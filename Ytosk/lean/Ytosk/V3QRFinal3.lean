@@ -4,7 +4,8 @@
 落とす補題（`drop_all`、仮定は t1 の `t1_main_final` と同じ）から:
 - seed = o_{M[1]}(r) < A（D の狭義の降下 `dep_strict0`）、seed ◁ A（PO の 2 つ目の場合は A = Ω_w の形なので起きない）。
 - spArg(μ, b, seed) = b + seed（`spArg_seed`）。
-- SeedOK: seed の添字が μ なら `seedOK_of_lhd_top`、μ より小さいなら成分の条件 hcs から `seedOK_of_c2`。
+- SeedOK: seed の添字が μ なら `seedOK_of_lhd_top`、μ より小さいなら ◁ と段 a′ の成分の条件 hcs（comps_a の形）から `seedOK_of_lhd_below`。
+  （2026-10-02: 以前の hcs「始点の成分はすべて始点より小さい」は標準形で偽。弱めた。）
 - 始点の (L)(ii): seed ≥ ψ_μ(1) なら TPLoW から。そうでない場合（b = 0、r = x − 1 のときだけ）は仮定 hLs0。
 - y = b_r の書き換えの枠の (W)（B < b + ζ）: 鎖の 2 項目以降は TP1（t1 の不変条件、η = ψ_μ(1)）から。
 残る仮定（q = r に固有、どれも始点が ψ_μ(1) より小さい場合（b = 0）か添字が μ より小さい場合だけ）:
@@ -12,6 +13,7 @@ hYBs（始点で B < b + seed）、hcs（始点の成分は始点より小さい
 hADs0（添字 0 ののりしろの枠の吸収を始点で）。
 -/
 import Ytosk.V3QRSeed
+import Ytosk.V3SeedLhd
 import Ytosk.V3MainT1F
 import Ytosk.V3DropPres
 
@@ -48,7 +50,10 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       lt (psi (ρ.v i) z z) (psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
       lt (preState M ρ i L') (app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r)) = true)
     (hcs : lt (sf ((drop1 M (r + L) rkM).v r)) (ρ.v r) = true →
-      ∀ u g, g ∈ comps u ((drop1 M (r + L) rkM).o r) → g < (drop1 M (r + L) rkM).o r)
+      ∀ a', ¬ lt (ρ.v r) a' = true →
+      isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
+      ∀ g ∈ comps a' ((drop1 M (r + L) rkM).o r),
+        g < app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
     (hADs0 : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z → ∀ i, i < r + L →
       DepX M (r + L) false i → entry M 2 i ≠ 0 →
       dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
@@ -120,23 +125,10 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     rw [psi_lt_psi_z_iff] at hsub
     rcases hsub with hsμ | ⟨hsμ, hσb⟩
     · -- the subscript is below `μ`
-      apply seedOK_of_c2 hot' cof_br ha' hsot
-      · exact lt_trans hlt' (by rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self μ))
-      · rw [psi_lt_psi_z_iff]; exact Or.inl hsμ
-      · intro u _ g hg
-        left
-        have hg' := hcs hsμ u g (by rw [hs1']; exact hg)
-        rw [hs1'] at hg'
-        rw [fs_br]
-        refine lt_of_lt_of_le hg' ?_
-        by_cases hbz : b = z
-        · rw [hbz]; exact le_refl _
-        · apply le_of_lt
-          apply lt_app_right _ hbz
-          apply isOT_app_of hbot hsot
-          intro q hq
-          exact le_of_lt (lt_of_lt_of_le (lt_trans hlt'
-            (by rw [psi_lt_psi_z_iff]; exact Or.inl (lt_succ_self μ))) (le_of_not_gt (hb q hq)))
+      apply seedOK_of_lhd_below ha' hsot hsμ
+      · rw [← hro, ← hs1']; exact hlhd
+      · have h := hcs hsμ a' ha' hot'
+        rw [hs1'] at h; exact h
     · -- the subscript is `μ`
       rw [hsμ] at hsot ⊢
       have hl' : Lhd z (psi μ σ1 z) (psi μ (app b (psi (succ μ) z z)) z) := by

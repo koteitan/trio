@@ -1,5 +1,7 @@
 /-
-**3 行・t = 0: Res3A.t0 の値の 2 項目（hVr と VSmallNewN）を構造から出す。**
+**3 行・t = 0: Res3A.t0 の値の項目 VSmallNewN を構造から出す。**
+
+（hVr は 2026-10-02 に不要になった: 種 S1 の枠は `FrameDom` で閉じ、添字の小ささを使わない。`t0_vr` は削除。）
 
 - 次の列型の上げ upg M (r − 1) = some r があると、g = P_0(r) は r より前に数える子を持つ（`cnt_before_next_upg`）。
   r − 1 を含む g の子 c は、bump なら SibDec に反し（col r > bump g）、isUpg ∧ topped なら UAT から次の列型の
@@ -237,103 +239,6 @@ theorem cl_r_of_chg (hchg : ChgX M (r + L) false r) : CL M r = [r + L] := by
     have hdT : d ∈ children (M.take (r + L)) r := by
       rw [children_take, List.mem_filter]; exact ⟨hd.1, by simpa using hdx⟩
     exact hTop.2.1 d hdT (counted_take_of hlen hL hp hdx hdr (of_decide_eq_true hcd) (by omega))
-
-/-- **`hVr`**: a changed `v(r)` in `M.take x`, in a rewriting frame of `g`, is small. -/
-theorem t0_vr {ρ : Valn} {rk : Bool → Nat → Nat} (hC : Cons M ρ) (hR : Rk M rk) (hI : ValInv M ρ)
-    (hD : DropRes M (r + L) ρ (drop1 M (r + L) rk)) :
-    ∀ s' y', (drop1 M (r + L) rk).o r = psi s' y' z → s' ≠ ρ.v r → ∀ g Lc,
-      par M 0 r = some g → CL M g = Lc ++ [r] → ∀ s y, ρ.o r = psi s y z →
-      lt (spArg (ρ.v g) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true →
-      VSmallV s' := by
-  have hx : r + L + 1 = M.length := hlen
-  have hcntT := counted_take_last (M := M) (by omega) hR0 hZ2 hSD hZ1 hUAT
-  rw [show M.length - 1 = r + L by omega] at hcntT
-  have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) hR hcntT
-  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rk) := cons_of_rk hRk1
-  have hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rk) :=
-    good3_drop1 hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hR hI hD
-  intro s' y' hs hne g Lc hg hcl s y hos htr
-  have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
-  have hs'v : s' = (drop1 M (r + L) rk).v r := by
-    obtain ⟨y0, hy0⟩ := o_psi_sub hC1 hrT
-    rw [hs] at hy0
-    simp only [psi.injEq] at hy0
-    rw [hy0.1, sf_ot (hG1.ot_v r hrT)]
-  have hne' : (drop1 M (r + L) rk).v r ≠ ρ.v r := hs'v ▸ hne
-  have hchg : ChgX M (r + L) false r := by
-    by_contra h; exact hne' ((chg_off hx hC hI.g hC1 hRk1 r (by omega)).2 h)
-  have hgr := par_lt M 0 r g hg
-  have hgM : g < M.length := by omega
-  have hrcl : r ∈ CL M g := by rw [hcl]; simp
-  have hcnt : Counted M g r := of_decide_eq_true (List.mem_filter.mp hrcl).2
-  have hchM := children_g_last hlen hL hp hg
-  by_cases hct : Counted (M.take (r + L)) g r
-  · -- the frame of `g` is the same in `M.take x`: `VSmallNew`
-    have hclT : CL (M.take (r + L)) g = Lc ++ [r] := by
-      have hF : ((children M g).filter (fun d => decide (d < r))).filter
-          (fun d => decide (Counted (M.take (r + L)) g d)) =
-          ((children M g).filter (fun d => decide (d < r))).filter (fun d => decide (Counted M g d)) := by
-        apply List.filter_congr
-        intro d hd
-        rw [List.mem_filter] at hd
-        have hdr : d < r := by simpa using hd.2
-        have hdT : d ∈ children (M.take (r + L)) g := by
-          rw [children_take, List.mem_filter]; exact ⟨hd.1, by simp; omega⟩
-        apply Bool.eq_iff_iff.mpr
-        simp only [decide_eq_true_eq]
-        exact ⟨fun h => hcntT g d (by omega) hdT h,
-          fun h => counted_take_of hlen hL hp (by omega) (by omega) h (by omega)⟩
-      have hLc : Lc = ((children M g).filter (fun d => decide (d < r))).filter
-          (fun d => decide (Counted M g d)) := by
-        have h := hcl
-        unfold CL at h
-        rw [hchM, List.filter_append] at h
-        simp only [List.filter_cons, List.filter_nil, decide_eq_true_eq, if_pos hcnt] at h
-        exact (List.append_cancel_right h).symm
-      unfold CL
-      rw [children_take_ne_r hlen hL hp (by omega), hchM, List.filter_append, hF, ← hLc]
-      simp only [List.filter_cons, List.filter_nil, decide_eq_true_eq, if_pos hct]
-    rw [hs'v]
-    exact (hD.vst g (by omega) Lc r hclT hne').2 s y hos htr
-  · -- `g` loses `r` in `M.take x`: an earlier child is counted, and `o(r) = ψ_v(1)`
-    exfalso
-    obtain ⟨_, _, c, hcM, hcr, hcMc, _⟩ :=
-      counted_take_r_or hlen hL hp hR0 hZ2 hSD hZ1 hUAT hUAB hg hcnt hct
-    have hcLc : c ∈ Lc := by
-      have h : c ∈ CL M g := List.mem_filter.mpr ⟨hcM, decide_eq_true hcMc⟩
-      rw [hcl] at h
-      rcases List.mem_append.mp h with h | h
-      · exact h
-      · simp at h; omega
-    have hB : spArg (ρ.v g) z (sumN (Lc.map ρ.o)) ≠ z := by
-      apply spArg_ne_z; right
-      have hv := cl_vals hC hI.g hgM
-      rw [hcl, List.map_append] at hv
-      apply sumN_ne_z_of_single (fun t ht => hv.1 t (List.mem_append_left _ ht))
-        (List.pairwise_append.mp hv.2).1
-      intro h; rw [List.map_eq_nil_iff] at h; rw [h] at hcLc; simp at hcLc
-    have hrM : r < M.length := by omega
-    have hy : y = one := by
-      have ho := o_spArg hC hI.g hrM
-      rw [cvals_eq_map hC hI.g, cl_r_of_chg hlen hL hp he1 hR0 hZ2 hSD hZ1 hUAT hUAB hR12
-        hchg] at ho
-      simp only [List.map_cons, List.map_nil] at ho
-      rw [sumN_singleton (single_o hC hI.g (by omega)),
-        o_x_one0 hlen hL hp he1 hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hC hI.g] at ho
-      rw [hos] at ho
-      simp only [psi.injEq] at ho
-      rw [ho.2.1, one, spArg_cons, step_leaf]
-      rfl
-    rw [hy] at htr
-    apply hB
-    have h1 := htr.1
-    generalize spArg (ρ.v g) z (sumN (Lc.map ρ.o)) = B at h1 ⊢
-    cases B with
-    | z => rfl
-    | psi a b c =>
-      exfalso
-      simp only [one, lt] at h1
-      split_ifs at h1 <;> simp [lt] at h1
 
 /-- **`VSmallNewN`**: in `N = M[n]` a changed `v` of a last counted child before `r` never comes with
 the rewriting condition (that child has no counted child, so its argument is `0`). -/

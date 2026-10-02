@@ -238,7 +238,8 @@ theorem rewrite_take {i : Nat} (hi : i < x) {L : List Nat} {c : Nat} {R : List N
     rw [hc'] at hw'; simp only [psi.injEq] at hw'
     have := ht'.1; rw [hw'.2.1] at this; exact T.not_lt_z _ this
 
-/-- **FrameClosed passes to `M.take x`.** -/
+/-- **FrameClosed passes to `M.take x`**: a rewriting new child has the same subscript and a smaller
+argument, so its frame is that of `M` with a smaller `H`. -/
 theorem frameClosed_take (hF : FrameClosed M ρ) : FrameClosed (M.take x) ρ' := by
   intro i hi L c R h s' y' hc' ht'
   rw [lenT hx] at hi
@@ -248,8 +249,31 @@ theorem frameClosed_take (hF : FrameClosed M ρ) : FrameClosed (M.take x) ρ' :=
   obtain ⟨hsM, _⟩ := cl_vals hC hG hiM
   rw [hM] at hsM
   obtain ⟨s, y, hsy⟩ := (hsM (ρ.o c) (by simp)).2
-  exact hF i hiM L c (R ++ Tl) hM s y hsy
+  have hcT : c ∈ CL (M.take x) i := by rw [h]; simp
+  have hcx : c < x := by have := (mem_children (cl_mem_children hcT)).2; rw [lenT hx] at this; exact this
+  have hD := hF i hiM L c (R ++ Tl) hM s y hsy
     (rewrite_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hi h hc' ht' hsy)
+  -- the same subscript
+  have hvs := new_rewrite_same_v hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hcx hc'
+    (ne_z_of_lt ht'.1)
+  obtain ⟨y0, hy0⟩ := o_psi_sub hC' (show c < (M.take x).length by rw [lenT hx]; exact hcx)
+  rw [hc'] at hy0; simp only [psi.injEq] at hy0
+  obtain ⟨y1, hy1⟩ := o_psi_sub hC (show c < M.length by omega)
+  rw [hsy] at hy1; simp only [psi.injEq] at hy1
+  have hss : s' = s := by rw [hy0.1, hy1.1, hvs]
+  subst hss
+  have hle : psi s' y' z ≤ psi s' y z := by
+    rw [← hc', ← hsy]
+    exact DRelO.le ((hdrop c hcx).1.1.elim (fun h => Or.inl h) (fun h => Or.inr h.1))
+  have hyy : y' ≤ y := by
+    rcases (le_iff _ _).mp hle with h | h
+    · rcases psi_lt_psi_z_iff.mp h with h | ⟨_, h⟩
+      · exact absurd h (lt_irrefl' _)
+      · exact le_of_lt h
+    · simp only [psi.injEq] at h; rw [h.2.1]
+  have hc1 : isOT (psi s' y' z) = true := by rw [← hc']; exact (hdrop c hcx).1.2.1
+  have hc2 : isOT (psi s' y z) = true := by rw [← hsy]; exact hG.ot_o c (by omega)
+  exact FrameDom.mono hD (H_mono hc1 hc2 hyy)
 
 /-- **VSmallF passes to `M.take x`**, given the new subscripts of the drop (`VSmallNew`). -/
 theorem vsmallF_take (hVF : VSmallF M ρ) (hVN : VSmallNew M x ρ ρ') : VSmallF (M.take x) ρ' := by
@@ -262,32 +286,24 @@ theorem vsmallF_take (hVF : VSmallF M ρ) (hVN : VSmallNew M x ρ ρ') : VSmallF
   have hcc := cl_mem_children hcT
   have hcx : c < x := by have := (mem_children hcc).2; rw [lenT hx] at this; exact this
   rw [hv, hL]
-  refine ⟨?_, fun s' y' hc' ht' => ?_⟩
-  · by_cases hvc : ρ'.v c = ρ.v c
-    · rw [hvc]; exact hfr.1
-    · -- `c` changes, so it is the last counted child
-      have hR : R = [] := by
-        rcases R with _ | ⟨d, R'⟩
-        · rfl
-        · exfalso
-          have hdT : d ∈ CL (M.take x) i := by rw [h]; simp
-          have hcd : c < d := by
-            have hs := cl_sorted (M.take x) i
-            rw [h] at hs
-            exact (List.pairwise_cons.mp (List.pairwise_append.mp hs).2.1).1 d (by simp)
-          have hCc : ChgX M x true c := by
-            apply ChgX.ov; by_contra hn; exact hvc ((chg_off hx hC hG hC' hRk' c hcx).2 hn)
-          exact chg_last hx hR0 hZ2 hSD hZ1 hUAT hUAB hcc hCc d (cl_mem_children hdT) hcd
-            (by unfold CL at hdT; simpa using (List.mem_filter.mp hdT).2)
-      subst hR
-      exact (hVN i hi L c h hvc).1
-  · have hvs := new_rewrite_same_v hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hcx hc'
-      (ne_z_of_lt ht'.1)
-    obtain ⟨hsM, _⟩ := cl_vals hC hG hiM
-    rw [hM] at hsM
-    obtain ⟨s, y, hsy⟩ := (hsM (ρ.o c) (by simp)).2
-    rw [hvs]
-    exact hfr.2 s y hsy (rewrite_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hi h hc' ht' hsy)
+  by_cases hvc : ρ'.v c = ρ.v c
+  · rw [hvc]; exact hfr
+  · -- `c` changes, so it is the last counted child
+    have hR : R = [] := by
+      rcases R with _ | ⟨d, R'⟩
+      · rfl
+      · exfalso
+        have hdT : d ∈ CL (M.take x) i := by rw [h]; simp
+        have hcd : c < d := by
+          have hs := cl_sorted (M.take x) i
+          rw [h] at hs
+          exact (List.pairwise_cons.mp (List.pairwise_append.mp hs).2.1).1 d (by simp)
+        have hCc : ChgX M x true c := by
+          apply ChgX.ov; by_contra hn; exact hvc ((chg_off hx hC hG hC' hRk' c hcx).2 hn)
+        exact chg_last hx hR0 hZ2 hSD hZ1 hUAT hUAB hcc hCc d (cl_mem_children hdT) hcd
+          (by unfold CL at hdT; simpa using (List.mem_filter.mp hdT).2)
+    subst hR
+    exact hVN i hi L c h hvc
 
 /-! ## のりしろの枠 -/
 

@@ -159,11 +159,11 @@ theorem o_frame_vchg {M : Mat} {x : Nat} {ρ ρ' : Valn} {i : Nat} (hC : Cons M 
 
 /-! ## 末尾の子を外す -/
 
-/-- Closedness of each state of a tail where the next summand rewrites. -/
+/-- The domination (`FrameDom`) of each state of a tail where the next summand rewrites. -/
 def TailCl (a : T) : T → List T → Prop
   | _, [] => True
-  | X, t :: Tl => (∀ s y, t = psi s y z → lt X y = true ∧ lt (psi a z z) (psi s y z) = true → Closed a X) ∧
-      TailCl a (spArg a X t) Tl
+  | X, t :: Tl => (∀ s y, t = psi s y z → lt X y = true ∧ lt (psi a z z) (psi s y z) = true →
+      FrameDom a X s (H s y)) ∧ TailCl a (spArg a X t) Tl
 
 theorem sumN_cons_dec {t : T} {l : List T} (hs : ∀ u ∈ t :: l, Single u)
     (hp : (t :: l).Pairwise (fun a b => b ≤ a)) : sumN (t :: l) = app t (sumN l) := by
@@ -184,7 +184,7 @@ theorem drop_tail (a : T) : ∀ (Tl : List T) (X : T), (∀ u ∈ Tl, Single u) 
     have hc := (hs _ List.mem_cons_self).1
     rw [sumN_cons_dec hs hp, show app (psi s y z) (sumN Tl) = psi s y (sumN Tl) from rfl, spArg_cons,
       step_rest a X s y (sumN Tl) z]
-    have h1 := drop_child_lhd hc (hX _ List.mem_cons_self) (hcl.1 s y rfl)
+    have h1 := drop_child_lhdD hc (hX _ List.mem_cons_self) (hcl.1 s y rfl)
     have hTl := (List.pairwise_cons.mp hp)
     have hsT : ∀ u ∈ Tl, Single u := fun u hu => hs u (List.mem_cons_of_mem _ hu)
     have hX' : ∀ u ∈ Tl, ∀ q ∈ summands (step a X s y z), u ≤ q := by
@@ -199,13 +199,14 @@ theorem drop_tail (a : T) : ∀ (Tl : List T) (X : T), (∀ u ∈ Tl, Single u) 
 
 /-! ## 値の不変条件: 書き換える枠の状態は閉じている -/
 
-/-- **Value invariant**: in every frame of `M` where the counted child rewrites the state, the state is
-closed at the levels `≤ v(i)`. -/
+/-- **Value invariant**: in every frame of `M` where the counted child `ψ_s(y)` rewrites the state `B`,
+the components of `B` and of `s` are dominated in every `C` with `max(B, Ω_s) < C ≤ H(s, y)`
+(`FrameDom`; 2026-10-02 弱めた形。以前の「B が閉じている」は SRO から届く標準形で偽）。 -/
 def FrameClosed (M : Mat) (ρ : Valn) : Prop :=
   ∀ i, i < M.length → ∀ (L : List Nat) (c : Nat) (R : List Nat), CL M i = L ++ c :: R → ∀ s y,
     ρ.o c = psi s y z →
     lt (spArg (ρ.v i) z (sumN (L.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
-    Closed (ρ.v i) (spArg (ρ.v i) z (sumN (L.map ρ.o)))
+    FrameDom (ρ.v i) (spArg (ρ.v i) z (sumN (L.map ρ.o))) s (H s y)
 
 theorem cl_mem_children {M : Mat} {i c : Nat} (h : c ∈ CL M i) : c ∈ children M i := by
   unfold CL at h; exact (List.mem_filter.mp h).1
@@ -292,13 +293,7 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     (hsame : ∀ d ∈ Lc, ρ'.o d = ρ.o d)
     (hcs' : Single (ρ'.o cs))
     (hrel : LhdE (ρ'.o cs) (ρ.o cs) ∨ (WkO (ρ'.o cs) (ρ.o cs) ∧ ∃ w, ρ.o cs = psi w z z))
-    (hsub : ∀ s y, ρ.o cs = psi s y z →
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-      SubSmall (ρ.v i) s)
-    (hsub' : ∀ s y s' y', ρ.o cs = psi s y z → ρ'.o cs = psi s' y' z →
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true) ∨
-      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-      SubSmall (ρ.v i) s') :
+    (hss : ∀ s y s' y', ρ.o cs = psi s y z → ρ'.o cs = psi s' y' z → y' ≠ z → s' = s) :
     LhdE (ρ'.o i) (ρ.o i) := by
   set a := ρ.v i with ha
   obtain ⟨hsM, hpM⟩ := cl_vals hC hG hiM
@@ -375,9 +370,9 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     rw [hsy, hs'y'] at hrel
     have hc := hcsS.1; rw [hsy] at hc
     have hc' := hcs'.1; rw [hs'y'] at hc'
-    have hN := node_lhd (a := a) (B := B) hc hc' hrel (hBge _ hcsS (le_refl _) |> fun h => by
-        rw [hsy] at h; exact h) (hsub s y hsy) (hsub' s y s' y' hsy hs'y')
-      (fun _ hr => hF i hiM Lc cs Tl hCL s y hsy hr)
+    have hN := node_lhdD (a := a) (B := B) hc hc' hrel (hBge _ hcsS (le_refl _) |> fun h => by
+        rw [hsy] at h; exact h) (hss s y s' y' hsy hs'y')
+      (fun hr => hF i hiM Lc cs Tl hCL s y hsy hr)
     have hstate : spArg a z (sumN ((Lc ++ [cs]).map ρ.o)) = step a B s y z := by
       rw [List.map_append, List.map_singleton, ← hLv, sumN_append_dec hsLc hpLc,
         sumN_singleton hcsS, spArg_app, hsy, spArg_single]

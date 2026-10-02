@@ -246,7 +246,8 @@ theorem base_vsmallF : VSmallF (Mlen L) (bval L β) := by
   intro i hi L' c R h
   obtain ⟨_, hc, hcase⟩ := CL_split hF h
   have hcL : c < L := by have := (mem_children hc).2; simpa using this
-  refine ⟨fun g hg => ?_, fun s y ho htr => absurd (no_trig hF (by simpa using hi) hc ho htr.1 htr.2) id⟩
+  intro g hg
+  left
   have hvc : (bval L β).v c = tw β (Kd L c) := bval_vAD (by omega) (by omega)
   rw [hvc] at hg ⊢
   rcases comps_tw hβ _ _ g hg with rfl | ⟨rfl, _⟩

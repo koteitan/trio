@@ -73,8 +73,6 @@ theorem hInv_of_E (h : HInvE) :
   have he2 : entry M 2 (r + L) = 0 := I.r12 _ he1
   have hDr := RA.drop
   rw [show M.length - 1 = r + L by omega] at hDr
-  refine ⟨t0_vr hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 hC hR
-    ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hDr, ?_⟩
   intro n hn2 σ hCN
   have hRN := rk_N0 hlen hL hp (show 1 ≤ n by omega) I.r0p I.z2 he2 hn2 hR
   have hlN : (TRIO.gexp M r L 0 0 n).length = r + n * L := lenN0 hlen (show 1 ≤ n by omega)

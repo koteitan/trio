@@ -20,11 +20,9 @@ theorem node_ot_hard {a B s' y' s y : T}
     (hc : isOT (psi s y z) = true) (hc' : isOT (psi s' y' z) = true)
     (hrel : LhdE (psi s' y' z) (psi s y z))
     (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
-    (hsub : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → SubSmall a s)
-    (hsub' : (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) ∨
-      (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → SubSmall a s')
-    (hBcl : ¬ (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) →
-      (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → Closed a B)
+    (hss : y' ≠ z → s' = s)
+    (hsub : ∀ g ∈ comps a s, g ≤ psi s z z ∨ g ≤ B)
+    (hsub' : ∀ g ∈ comps a s', g ≤ psi s' z z ∨ g ≤ B)
     (hy : s' = s → lt a s = true → (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) →
       (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) →
       (split y' (psi (succ s) z z)).1 < (split y (psi (succ s) z z)).1 → ∀ g ∈ comps a y', g ≤ H s y')
@@ -39,10 +37,8 @@ theorem node_ot_hard {a B s' y' s y : T}
     · -- both rewrite
       have hst : step a B s y z = H s y := by unfold step; rw [if_pos ht]
       have hst' : step a B s' y' z = H s' y' := by unfold step; rw [if_pos ht']
-      rcases psi_lt_psi_z_iff.mp hl.1 with hss | ⟨hs, hyy⟩
-      · obtain ⟨hcomp, hyle⟩ := comps_le_of_sub_lt hl hss (hsub' (Or.inl ht'))
-        rw [hst', H_of_le_om hc' (ne_z_of_lt ht'.1) hyle] at hX'ot ⊢
-        exact ot_parent_small ha hX'ot (closed_of_le_om hcomp a (lt_irrefl' a))
+      rcases psi_lt_psi_z_iff.mp hl.1 with hss' | ⟨hs, hyy⟩
+      · rw [hss (ne_z_of_lt ht'.1)] at hss'; exact absurd hss' (lt_irrefl' _)
       · subst s'
         rw [hst] at hot
         rw [hst'] at hX'ot ⊢
@@ -79,7 +75,12 @@ theorem node_ot_hard {a B s' y' s y : T}
               · exact y_le_step (B := B) hc' (fun q hq => le_trans (le_of_lt hl.1) (hBc q hq))
                   (not_lt.mpr has) |>.trans (le_of_eq hst')
               · exact hcy g hg
-              · exact le_trans ((hsub ht) a (lt_irrefl' a) g hg) hOm
+              · rcases hsub g hg with h | h
+                · exact le_trans h hOm
+                · have hBc' : ∀ q ∈ summands B, psi s y' z ≤ q :=
+                    fun q hq => le_trans (le_of_lt hl.1) (hBc q hq)
+                  refine le_trans h (le_trans (B_le_hi hc' ht'.1 hBc') ?_)
+                  rw [H_eq hc']; exact le_app_self _ _
         · -- same high part: argument-level `◁`
           have hlo0 : (split y (psi (succ s) z z)).2 ≠ z := by
             intro h; rw [h] at hlo; exact T.not_lt_z _ hlo
@@ -91,32 +92,43 @@ theorem node_ot_hard {a B s' y' s y : T}
     · -- only the new child rewrites: `B = 0`, `X' = c'`, `X = c`
       have hac : psi a z z < psi s y z := lt_trans (show psi a z z < psi s' y' z from ht'.2) hl.1
       have hyB : ¬ B < y := fun h => ht ⟨h, hac⟩
-      rcases psi_lt_psi_z_iff.mp hl.1 with hss | ⟨rfl, hyy⟩
-      · obtain ⟨_, hyle⟩ := comps_le_of_sub_lt hl hss (hsub' (Or.inl ht'))
-        by_cases hBz : B = z
-        · subst hBz
-          have hyz : y = z := by
-            by_contra h; exact hyB (lt_of_le_of_ne (z_le _) (Ne.symm h))
-          subst hyz
-          have hst' : step a z s' y' z = psi s' y' z := by
-            unfold step; rw [if_pos ht', H_of_le_om hc' (ne_z_of_lt ht'.1) hyle]
-          have hst : step a z s z z = psi s z z := by unfold step; rw [if_neg ht]; rfl
-          rw [hst] at hot
-          rw [hst'] at hX'ot ⊢
-          exact ot_parent_lhd hot hX'ot (Or.inr hl)
-        · exfalso
-          have hcB : psi s y z ≤ B := le_trans (hBc _ (head_mem_summands hBz)) (head_le_self B)
-          have hy'c : y' ≤ psi s y z :=
-            le_trans hyle (le_trans (psi_le_psi_arg (z_le y')) (le_of_lt hl.1))
-          exact lt_irrefl' B (lt_of_lt_of_le (show B < y' from ht'.1) (le_trans hy'c hcB))
+      rcases psi_lt_psi_z_iff.mp hl.1 with hss' | ⟨rfl, hyy⟩
+      · rw [hss (ne_z_of_lt ht'.1)] at hss'; exact absurd hss' (lt_irrefl' _)
       · exact absurd (lt_trans (show B < y' from ht'.1) hyy) hyB
   · by_cases ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true
     · -- only the old child rewrites: the small route
+      have hBc' : ∀ q ∈ summands B, psi s' y' z ≤ q := fun q hq => le_trans (le_of_lt hl.1) (hBc q hq)
       have hst' : step a B s' y' z = app B (psi s' y' z) := by
-        unfold step; rw [if_neg ht', step_add (fun q hq => le_trans (le_of_lt hl.1) (hBc q hq))]
-      rw [hst'] at hX'ot ⊢
-      exact ot_parent_small ha hX'ot
-        (closed_tn hl ht' ht hBc (hBcl ht' ht) (hsub ht) (hsub' (Or.inr ht)) a (lt_irrefl' a))
+        unfold step; rw [if_neg ht', step_add hBc']
+      have hBs : B ≤ step a B s' y' z := by rw [hst']; exact le_app_self _ _
+      apply step_ot_of_leB hBot hc' hBc' hsub'
+      intro hsa g hg
+      by_cases hyz : y' = z
+      · subst hyz; simp [comps] at hg
+      obtain rfl := hss hyz
+      have has := le_of_trig ht.2
+      have htr : lt (psi a z z) (psi s' y' z) = true := by
+        show psi a z z < psi s' y' z
+        rcases (le_iff _ _).mp has with h | rfl
+        · exact psi_lt_psi_z_iff.mpr (Or.inl h)
+        · exact psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_of_le_of_ne (z_le _) (Ne.symm hyz)⟩)
+      have hyB : y' ≤ B := not_lt.mp (fun h => ht' ⟨h, htr⟩)
+      rcases (le_iff _ _).mp hyB with hyB | rfl
+      · have h1 : psi s' y' z < psi s' B z := psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, hyB⟩)
+        have h2 : psi s' B z ≤ psi s' y z := psi_le_psi_arg (le_of_lt ht.1)
+        have hsu : ¬ s' < a := not_lt.mpr has
+        have hgc : g ∈ comps a (psi s' y' z) := by rw [comps_psi_z_of_ge hsu]; simp [hg]
+        obtain ⟨w, hw, hgw⟩ := hl.2 a _ h1 h2 g hgc
+        rw [List.mem_append, comps_psi_z_of_ge hsu] at hw
+        simp only [Gc, comps, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hw
+        rcases hw with (rfl | hw | hw) | rfl
+        · exact le_trans hgw hBs
+        · exact le_trans hgw (le_trans (le_of_lt (comps_lt hBot w hw)) hBs)
+        · rcases hsub w hw with h | h
+          · exact le_trans hgw (le_trans h (om_le_step hc' hBc'))
+          · exact le_trans hgw (le_trans h hBs)
+        · exact le_trans hgw (z_le _)
+      · exact le_trans (le_of_lt (comps_lt hBot g hg)) hBs
     · -- no rewrite
       exact ot_parent_lhd hot hX'ot (lhdE_step_nn' (Or.inr hl) ht' ht hBc)
 
@@ -221,46 +233,19 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
           by_contra hn; exact hvs ((hoff cs (by rw [hlenT] at hcsx0; exact hcsx0)).2 hn)
         have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCv).1 rfl (by rw [hlenT] at hcsx0; exact hcsx0)
         exact o_of_no_counted hC' hcsx0 hPVc.2 hT.2.1
-      -- the smallness of the subscripts where a frame rewrites
-      have hsubM : ∀ s y, ρ.o cs = psi s y z →
-          (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-          SubSmall (ρ.v i) s := fun s y h hrw => by rw [hvM s y h]; exact (hfr.2 s y h hrw).subSmall _
-      have hsubT : ∀ s y s' y', ρ.o cs = psi s y z → ρ'.o cs = psi s' y' z →
-          (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true) ∨
-          (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-          SubSmall (ρ.v i) s' := by
-        intro s y s' y' h h' hrw
-        rw [hvT s' y' h']
-        by_cases hvs : ρ'.v cs = ρ.v cs
-        · have hle : psi s' y' z ≤ psi s y z := by
-            have := hPOc.1.elim (fun h => h.le) (fun h => DRelO.le (Or.inr h.1)); rw [h, h'] at this; exact this
-          have hss : s' = s := by rw [hvT s' y' h', hvs, ← hvM s y h]
-          have hold : lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
-              lt (psi (ρ.v i) z z) (psi s y z) = true := by
-            rcases hrw with hn | ho
-            · have hyy : y' ≤ y := by
-                rw [hss] at hle
-                rcases (le_iff _ _).mp hle with hl | hl
-                · rcases psi_lt_psi_z_iff.mp hl with hl | ⟨_, hl⟩
-                  · exact absurd hl (lt_irrefl' _)
-                  · exact le_of_lt hl
-                · simp only [psi.injEq] at hl; rw [hl.2.1]
-              exact ⟨lt_of_lt_of_le hn.1 hyy, lt_of_lt_of_le hn.2 hle⟩
-            · exact ho
-          rw [hvs]; exact (hfr.2 s y h hold).subSmall _
-        · rcases hrw with hn | ho
-          · exfalso
-            rw [hchgv hvs] at h'; simp only [psi.injEq] at h'
-            have := hn.1; rw [← h'.2.1] at this; exact T.not_lt_z _ this
-          · exact ((hVN i hi Lc cs hcl hvs).2 s y h ho).subSmall _
-      have hsubA : ∀ s' y', ρ'.o cs = psi s' y' z → ∀ g ∈ comps (ρ.v i) s', g ≤ psi s' z z := by
+      have hssT : ∀ s y s' y', ρ.o cs = psi s y z → ρ'.o cs = psi s' y' z → y' ≠ z → s' = s := by
+        intro s y s' y' h h' hy'
+        rw [hvT s' y' h', hvM s y h]
+        by_contra hvs
+        rw [hchgv hvs] at h'; simp only [psi.injEq] at h'; exact hy' h'.2.1.symm
+      have hsubA : ∀ s' y', ρ'.o cs = psi s' y' z → ∀ g ∈ comps (ρ.v i) s',
+          g ≤ psi s' z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) := by
         intro s' y' h'
         rw [hvT s' y' h']
         by_cases hvs : ρ'.v cs = ρ.v cs
-        · rw [hvs]; exact hfr.1
-        · exact (hVN i hi Lc cs hcl hvs).1
-      refine ⟨Or.inl (o_frame_eval hC hG hF hC' hiT hiM hv' hcl hclM hsame hPOc.2 hPOc.1
-        hsubM hsubT), ?_⟩
+        · rw [hvs]; exact hfr
+        · exact hVN i hi Lc cs hcl hvs
+      refine ⟨Or.inl (o_frame_eval hC hG hF hC' hiT hiM hv' hcl hclM hsame hPOc.2 hPOc.1 hssT), ?_⟩
       -- `o′(i)` is standard
       have hcsM : cs < M.length := by
         have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega
@@ -328,14 +313,14 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
           | cons c0 Tl' => exact hFO i hiM (Lc ++ [cs]) c0 Tl' (by rw [hclM])
         exact node_ot_hard hcsS.1 (by rw [← hs'y']; exact hPOc.2.1) hrelL
           (hBge _ (single_o hC hG hcsM) (le_refl _) |> fun h => by rw [hsy] at h; exact h)
-          (hsubM s y hsy) (hsubT s y s' y' hsy hs'y') (fun _ hr => hF i hiM Lc cs Tl hCL s y hsy hr)
+          (hssT s y s' y' hsy hs'y') (by rw [hvM s y hsy]; exact hfr) (hsubA s' y' hs'y')
           (fun hss has ht' ht hhi => by
             subst hss
             exact hHard i hi Lc cs hcl s' y' y hs'y' hsy has ht' ht hhi)
           hot hBot
       · -- a weak child `ψ_{w′}(0)`: the argument is `0`
         rw [hs'y'] at e1; simp only [psi.injEq] at e1
-        apply step_ot_of_le' hBot (by rw [← hs'y']; exact hPOc.2.1)
+        apply step_ot_of_leB hBot (by rw [← hs'y']; exact hPOc.2.1)
         · exact hBge _ hPOc.2 hle' |> fun h => by rw [hs'y'] at h; exact h
         · exact hsubA s' y' hs'y'
         · intro _ g hg; rw [e1.2.1] at hg; simp [comps] at hg

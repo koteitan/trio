@@ -72,7 +72,10 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- the seed
     (hcs : lt (sf ((drop1 M (r + L) rkM).v r)) (ρ.v r) = true →
-      ∀ u g, g ∈ comps u ((drop1 M (r + L) rkM).o r) → g < (drop1 M (r + L) rkM).o r)
+      ∀ a', ¬ lt (ρ.v r) a' = true →
+      isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
+      ∀ g ∈ comps a' ((drop1 M (r + L) rkM).o r),
+        g < app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
     (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
       Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
