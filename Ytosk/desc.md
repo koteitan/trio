@@ -1634,3 +1634,6 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - hOTD の測定: N の D の o の節点（r より前、v 不変）では引数どうしが LhdE（69572 件、例外 0）で、ot_parent_lhd で標準形になる。組は class A（Ω_{v(i)+1} 以上の部分が同じで N に低い部分）か class B（どちらも低い部分なし）。
   - hOTD は (a) 節点の補題が class A/B で引数の ◁ を保つ、(b) class B の子で「M が書き換えるなら N も」（B が hi(y) の先頭部分という PreHi 型の事実、closure の PH3c）、(c) v が変わる子は Ω_{v(p)+1} 以上のまま、に帰着。
   - この引数の ◁ は 1 列落としでは偽（約 1%）なので、drop-fix の argT とは共通の補題にならない（n ≥ 2 に特有）。
+- t1-exp（460c67f5・7247bdbb）: t = 1 の M[n] の TrigOmC を残りなしで運ぶ（q = r は holeT_pin、q ≠ r は穴の情報に k0 ≤ k を記録して Z c が後続でないことを出す）。AbsU は groupA の absU_of_absD から。hExp_t1 の残りは RestT、QV（VSmallF ∧ AbsD ∧ TP1C ∧ TPLo ∧ TP1WC ∧ TPLoW ∧ AbsUW ∧ AbsDW ∧ TPLoN ∧ AbsDN）の ExpStepT1、FrameClosedOmN、M[n] の Res3A。
+- groupA（54f04400）: upg_target_val、absU_of_absD、穴の経路にそった比較の伝播 Reach。
+- t2-exp（f9b39a50）: t = 2 の M[n] の順位の抽象形 rk_N_t2_abs（4 段）。
