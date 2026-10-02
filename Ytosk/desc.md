@@ -1605,3 +1605,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - wip（dfac2444・33be3327・143e0dde）: Res3T2 の D の形の欄をすべて外した（qn_shapes・sv_shapes・qnu_shapes、種が x の祖先で ChgX に入る一般の DepS の補題 V3T2DS）。Res3T2 の残りは seed1（drop1 の o(p) が変わる）、T2SV.rcl（CL r ≠ []）、big（n ≥ 2: isUpg の一致、Counted N r x、VNNc/VNNcN、SeedL）。
 - wip（36c5545a・be8a97fd）: Res3T2 の構造の欄をほぼ外した（isUpg_topped_take: N.take x = M.take x と UAT から topped な列の isUpg は一致。Counted N r x は x′ の行 2 = 0 から）。残りは値に近いものだけ（seed1、rcl、VNNc/VNNcN、SeedL）。VNNc/VNNcN は drop-fix の変更で不要になるので消す。
 - drop-fix: 新しい VSmallNew は「comps ≤ Ω_{v′} ∨ ≤ B」だけ。V3DepLhd の補題は hVNN を使わない（hss と FrameClosed = FrameDom）。FrameDom は深い集合 D でも例外 0、新しい VSmallF も C′ と D で例外 0。
+- チームを 7 人に（ユーザーの指示: 速さ優先、ただし無駄はしない）。追加の 4 人は互いに重ならない仕事: t1-exp・t0-exp・t2-exp（hExp の t = 1, 0, 2 の部分）、groupA（A 群の欄を Good3 ＋ 構造から出す補題）。
