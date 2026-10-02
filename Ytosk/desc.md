@@ -1715,3 +1715,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - T0Rest: A 群の 7 欄、TPLoW・AbsDW、N の Res3A（argT は HardArg/FrameNodeOT 待ち）。
 - 再利用できる道具: frameQ_N_t0（N の枠の性質を M・M.take x と D/g の枠から）、rwc_N_t0、node_arg_lhd・cls_node、t0_dep_ot。
 - 次: (iii)(iv) → (ii)（背骨の補題で）→ closure の P の定義が入ったら (i) と影の枠を PH3c・FC3 から、N の P を frameQ_N_t0 で。
+- groupA: t = 1 の種の隙間の条件は HoleData・SeedOK からは出ない。変わる bump の列 i はほとんど r の祖先で、P_1 i は r の P_1 の鎖に乗らない。o(r) = ψ_μ(Ω_{μ+1}) のとき、残りは「v(P_1 i) の部分項は隙間 [ψ_{μ−1}(Ω_μ), Ω_μ) を避ける」という r より上の列の大域的な事実で、長さ 9 の非標準形の反例が破るのと同じもの。これを運ぶ大域的な不変条件 G（隙間の不変条件）を探す（closure の P の部品になるかもしれない）。t1-exp は当面 hseed を明示的な仮定にする。
