@@ -156,4 +156,89 @@ theorem hExp_t1
   exact ⟨ρN, rkN, V, hRes M ρ rk hM hS I R hz h1t n hn ρN rkN
     (Inv3.ofV (sInv_std (Std.exp n hM) hNS) V)⟩
 
+/-! ## TrigOmC along the chain, `q = r` -/
+
+/-- No diagonal point on `b ++ Ω_{m+1}`. -/
+theorem not_diag_app_om {a br μ : T} (hbr : br ≠ z) (m : T) :
+    ∀ b, DiagAt a br μ (app b (psi (succ m) z z)) → False
+  | z, h => not_diag_om hbr h
+  | psi c d e, h => by
+    generalize hU : app (psi c d e) (psi (succ m) z z) = U at h
+    cases h with
+    | here _ _ _ =>
+      have := (T.psi.inj hU).2.2; simp only [app] at this
+      exact absurd (app_eq_z this).2 (by simp)
+    | rest h' =>
+      have := (T.psi.inj hU).2.2
+      rw [← this] at h'
+      exact not_diag_app_om hbr m e h'
+    | arg _ _ _ =>
+      have := (T.psi.inj hU).2.2
+      exact absurd (app_eq_z this).2 (by simp)
+    | sub _ _ _ =>
+      have := (T.psi.inj hU).2.2
+      exact absurd (app_eq_z this).2 (by simp)
+
+/-- **The witnesses of the hole data are those of `o(r) = ψ_μ(b + Ω_{μ+1})`.** -/
+theorem holeT_pin {μ b μ' br' vr' : T} (hcb' : cof br' = .big μ')
+    (hH : HoleT μ' br' vr' (psi μ (app b (psi (succ μ) z z)) z)) :
+    μ' = μ ∧ br' = app b (psi (succ μ) z z) ∧ ¬ lt vr' μ = true := by
+  have hXz : app b (psi (succ μ) z z) ≠ z := fun h => absurd (app_eq_z h).2 (by simp)
+  have hcX : cof (app b (psi (succ μ) z z)) = .big μ := cof_br
+  have hbr' : br' ≠ z := by intro h; rw [h] at hcb'; simp [cof] at hcb'
+  rcases hH with hc | ⟨a', ha', hD⟩
+  · have := DiagAt.cof_omega (DiagAt.here (a := μ) hXz hcX (lt_irrefl' μ))
+    rw [this] at hc; cases hc
+  · generalize hU : psi μ (app b (psi (succ μ) z z)) z = U at hD
+    cases hD with
+    | here _ hc _ =>
+      obtain ⟨h1, h2, _⟩ := T.psi.inj hU
+      subst h1; subst h2
+      rw [hcX] at hc
+      exact ⟨(Cof.big.inj hc).symm, rfl, ha'⟩
+    | rest _ => exact absurd (T.psi.inj hU).2.2.symm (by simp)
+    | arg _ _ hD' =>
+      rw [← (T.psi.inj hU).2.1] at hD'
+      exact (not_diag_app_om hbr' μ b hD').elim
+    | sub _ _ _ => exact absurd (T.psi.inj hU).2.1 (fun h => hXz h)
+
+/-- **TrigOmC is carried** (`t = 1`, `q = r`): the residuals `hShape`, `hLeaf` of `trigOm_N_t1` are
+`qr_hShape`, `qr_hLeaf` once the hole data is pinned (`holeT_pin`). -/
+theorem expStep_trigOmC_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r) :
+    ExpStepT1 TrigOmC M r L d0 ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  obtain ⟨b, hro, hbe, _⟩ := qr_o_r hlen I.r0p I.sd h1 hx2 hq I.cons I.good I.rank
+  have hox := o_last_t1 hlen I.cons I.good h1 (by have := par1_entry_lt h1; omega) hx2
+  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
+  have hrD : DepX M (r + L) true r := dep_anc_x I.uat I.z2 I.r12 I.be hlen hx2 hA
+  intro n hn ρP Z hCP _ hTOP _ _ _ _ hle hlex hH
+  obtain ⟨μ', br', vr', seed, hHD, hZ, ⟨k0, hPr⟩⟩ := hH
+  have hHr := hHD.hole true r hrD (by omega)
+  simp only [valB, cond_true] at hHr
+  rw [hro] at hHr
+  obtain ⟨hμ', hbr', hvr'⟩ := holeT_pin hHD.cb hHr
+  subst hμ' hbr'
+  have hot : isOT (psi (ρ.v r) (app b (psi (succ (ρ.v r)) z z)) z) = true := by
+    rw [← hro]; exact I.good.ot_o r (by omega)
+  have hSr := hHD.S (ρ.v r) hvr' hot
+  have hseedz : seed ≠ z := by obtain ⟨a, X, h⟩ := hHD.seedS; rw [h]; simp
+  have hZz : ∀ c, Z c ≠ z := fun c => by
+    obtain ⟨k, hk⟩ := hZ c; rw [hk]; exact gamS_ne_z_q hseedz k
+  have hxnb := hxnb_t1 hlen hL hA hd0e I.z2 I.z1 h1 n hn
+  have hiu := hiu_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn
+  have hiux := hiux_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn
+  have hσx : (glueZ M (r + L) ρ (shiftV ρP L) Z).o (r + L) = ρP.o r := by
+    rw [glueZ_o_ge ρ (shiftV ρP L) Z (Nat.le_refl _)]
+    show ρP.o (r + L - L) = ρP.o r; rw [Nat.add_sub_cancel]
+  exact trigOm_N_t1 hlen hL hA hd0e hn hpath hx2 hxnb (I.z2 r) hiu hiux hOS I.cons hCP I.trig hTOP
+    (qr_hShape hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 h1 hq I.cons I.good I.kd I.td I.ad hro hox hOS hZz)
+    (fun c hc hd => (hle c hc hd).1)
+    (qr_hLeaf hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 h1 hq I.cons I.good I.kd I.td I.ad hro hox hOS rfl
+      hSr hseedz hbe.symm ⟨k0, by rw [hσx]; exact hPr⟩)
+    ⟨_, hox⟩
+
 end Ytosk
