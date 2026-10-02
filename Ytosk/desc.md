@@ -1695,3 +1695,11 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - groupA（d04e1bf4）: 保存の道具 fsD_transfer・holeLev_fsD・absorb_fsD_W（AbsD 型の吸収は W ↦ fsD(W, ζ) で保たれる）。t = 1 の値は fsD の像なのでこれが当てはまる。t = 0（ω 型の列で新しい穴ができる）・t = 2（添字の置き換え）・1 列落としは仕組みごとの議論が要る。分担: t = 1 は t1-exp、ほかは groupA（t = 2 は t2-subst の σ を使う）。
 - wip（測定）: 新しい TPLoW・AbsDW は新しい行列（M.take x と M[n]）のすべての型で中身がある（C′ で例外 0）。M[n] の枠は M・M.take x の枠とほとんど一致しないので、M から運ぶ形の帰着は効かない。値の層の研究として進める（P の H1・FC3・PH3c から出せるかも確かめる）。
 - groupA（1d55aacd）: t = 1 の AbsD・TPLo の受け渡しは absorb_fsD_W・tplo_fsD_gen の 1 行の適用に帰着。残りは種の隙間の条件（新しい穴の段で V の部分項が隙間 [ψ_μ′(Ω_μ′+1), Ω_μ′+1) を避ける）で、groupA が HoleData・SeedOK から示す。
+
+### 背骨の補題と、t = 2 の順位の完成（2026-10-02、t2-exp、V3Spine・V3ExpT2H・V3DepOT、緑）
+
+- 背骨の補題（not_depS_spine、BumpLeaf だけから）: c の真の祖先の列を背骨とよぶ。背骨の上の a で、a と c の間の背骨の列の行 1 がすべて e1(a) 以上なら、v(a) は c の真の祖先 y の o(y) に依存しない。
+  - 証明: v(a) から届く呼び出しを含む前向きに閉じた集合 SpG。背骨の列は v の呼び出しだけで条件 InvC、c の子孫は制限なし、横の枝の列は分岐点の InvC と「左の証人」（c より左なら、分岐点との間に行 1 が分岐点以下の列がある）。左の証人で P_1 が分岐点にならず、枝の最後の列から次の列への上げが背骨に乗ることを除く。のりしろの辺が背骨に落ちるのは BumpLeaf（行 1 が大きいのりしろの孫は葉で最後の子）で除く。
+  - 系: ANC（v(a) は真の祖先の o に依存しない）、not_depS_anc_o（o も同じ）。
+- t = 2 の M[n] の順位 rk_gexp_t2_final: 仮定は M の構造（R0P・Z2・SibDec・Z1C・UAT・BumpLeaf、e2 r = 0、e1 r < e1 x、le1 M r x、d0, d1 > 0、col q ≠ bump(P_0 q)）と展開の UAT・BumpE2（sInvX_expand から）だけ。非到達の仮定 hF2・T2Tgt は背骨の補題で外れた。
+- 変わる呼び出しの ◁ と標準形 deps_lhd_ot（V3DepOT）: deps_lhd_gen から N の Good3 を外した形。仮定は M の枠の性質 FrameNodeOT（最後の数える子を ◁ で下げた標準形に替えても親は標準形）、bnd 以後の値の標準形（t = 2 では写し、t2-subst）、種の ◁ と標準形。
