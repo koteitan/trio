@@ -396,6 +396,42 @@ theorem nodep_sibS2 {p a : Nat} (hpa : par M 0 p = some a) (hpx : Anc0 M p x) (h
     · have hc'M : c' ∈ children M a := mem_children_iff.mpr ⟨by omega, hph⟩
       exact ih c' (by have := hN.1; omega) hc'M hlt false c' hdc' (Anc0.refl c')
 
+/-- **No `D` below an earlier sibling of any column `p < x`**, if `v(p)` is not in `D` when `p − 1` upgrades
+to `p`. -/
+theorem nodep_sibS3 {p a : Nat} (hpa : par M 0 p = some a) (hpxl : p < x)
+    (hnp : upg M (p - 1) = some p → ¬ DepS M S false p) :
+    ∀ n c, p - c ≤ n → c ∈ children M a → c < p → ∀ b d, DepS M S b d → ¬ Anc0 M c d := by
+  intro n
+  induction n with
+  | zero => intro c hn _ hcp; omega
+  | succ n ih =>
+    intro c hn hc hcp b d hd hcd
+    have hca : par M 0 c = some a := (mem_children_iff.mp hc).2
+    have hac := par_lt M 0 c a hca
+    have hap := par_lt M 0 p a hpa
+    have hcx : ¬ Anc0 M c x := by
+      intro hA
+      have h1 := anc_between hA p (by omega) (by omega)
+      have := (anc0_par h1 (by omega) hpa).le; omega
+    have hcx1 : ¬ Anc0 M c (x - 1) := by
+      intro hA
+      have h1 := anc_between hA p (by omega) (by omega)
+      have := (anc0_par h1 (by omega) hpa).le; omega
+    obtain ⟨c', hN, hc'x, hup, hdc'⟩ := dep_exitS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu hd c hcd hcx hcx1
+    have hAap : Anc0 M a p := Anc0.step hpa (Anc0.refl a)
+    have hc'p : c' ≤ p := by
+      by_contra hlt
+      have hA := hN.2.1 p (by omega) (by omega)
+      have := (anc0_par hA (by omega) hpa).le; omega
+    have hAac' : Anc0 M a c' := anc_between hAap c' (by have := hN.1; omega) hc'p
+    obtain ⟨h', hph⟩ := par0_of_anc hAac' (by have := hN.1; omega)
+    obtain ⟨_, hha⟩ := next_parent hca hpa hcp hN hph
+    rw [hha] at hph
+    rcases Nat.eq_or_lt_of_le hc'p with heq | hlt
+    · subst heq; exact hnp hup hdc'
+    · have hc'M : c' ∈ children M a := mem_children_iff.mpr ⟨by omega, hph⟩
+      exact ih c' (by have := hN.1; omega) hc'M hlt false c' hdc' (Anc0.refl c')
+
 /-- **(P1 in `M`)** After a child in `D`, no later sibling before `x` counts. -/
 theorem p1_depS2 {i c c₂ : Nat} (hi : i < x) (hc : c ∈ children M i) (hc₂ : c₂ ∈ children M i)
     (hcc : c < c₂) (hD : DepS M S true c) (hcnt : Counted M i c₂) (hc₂x : c₂ < x)
