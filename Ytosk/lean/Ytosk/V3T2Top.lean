@@ -7,6 +7,7 @@
 import Ytosk.V3Top
 import Ytosk.V3T2T
 import Ytosk.V3T2QNU
+import Ytosk.V3InvT2
 import Ytosk.V3InvPer
 import Ytosk.V3TopB
 
@@ -482,11 +483,6 @@ structure T2QNU (M : Mat) (r L qp pq : Nat) : Prop where
 
 /-- **`q ≠ r`** (`x` a bump child of `q = r + qp`, `P_0 q = pq`). -/
 structure T2QN (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L qp pq : Nat) : Prop where
-  xb : col M (r + L) = bump M (r + qp)
-  qb : col M (r + qp) ≠ bump M pq
-  e2pq : entry M 2 pq = 0
-  clq : CL M (r + qp) = []
-  clpq : CL M pq ≠ []
   p1 : ∀ m, par M 1 (r + qp) = some m → ¬ DepS M (SQ (r + qp) pq) false m
   qL : ∀ d ∈ children M (r + qp), col M d = bump M (r + qp) → ∀ e ∈ children M d,
     ¬ DepS M (SQ (r + qp) pq) true e
@@ -545,7 +541,7 @@ structure Res3T2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
 /-- **Step 1 for `t = 2`**: from the invariants, the remaining hypotheses (`Res3`, `Res3T2`) and a
 valuation of each `M[n]` (`n ≥ 2`), every expansion drops the root value. -/
 theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (I : Inv3 M ρ rk) (R : Res3 M ρ rk) (R2 : Res3T2 M ρ rk)
+    (I : Inv3 M ρ rk) (R : Res3 M ρ rk) (R2 : Res3T2 M ρ rk) (hX : SInvX M) (hJ : RowJ M)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hNval : ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
       ∃ σ rkN, Cons (expand M n) σ ∧ Rk (expand M n) rkN ∧ Good3 (expand M n) σ) :
@@ -661,17 +657,18 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
       have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
       have T := R2.qn r L (q - r) pq hlen hr hq' (by omega) hpq'
-      have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact T.qb)
-      have hs1 := hseed1 pq (by have := par_lt M 0 _ _ hpq; omega) T.clpq T.seed1
+      obtain ⟨Txb, Tqb, Te2pq, Tclq, Tclpq⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+      have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
+      have hs1 := hseed1 pq (by have := par_lt M 0 _ _ hpq; omega) Tclpq T.seed1
       cases hux : upg M (r + L - 1) with
       | none =>
-        exact t2_qn_take hlen hL0 hA hq' (by omega) T.xb I.be I.z2 I.uat I.r12 I.r01 I.e00 hpq' T.qb T.e2pq
-          T.clq T.clpq hux T.p1 T.qL T.dv T.os T.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd
+        exact t2_qn_take hlen hL0 hA hq' (by omega) Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 hpq' Tqb Te2pq
+          Tclq Tclpq hux T.p1 T.qL T.dv T.os T.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd
           hAbs hvnn1 hs1
       | some k =>
         have U := T.up k hux
-        exact t2_qnu_take hlen hL0 hA hq' (by omega) T.xb I.be I.r0p I.z2 I.sd I.z1 I.uat I.r12 I.r01 I.e00
-          hpq' T.qb T.e2pq T.clq T.clpq hux U.p1 U.p1a U.qsh U.dv U.os U.vsh I.cons I.good I.rank hC1 hG1
+        exact t2_qnu_take hlen hL0 hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1 I.uat I.r12 I.r01 I.e00
+          hpq' Tqb Te2pq Tclq Tclpq hux U.p1 U.p1a U.qsh U.dv U.os U.vsh I.cons I.good I.rank hC1 hG1
           hRk1 I.fc I.vs I.td I.kd hdr.ua hAbs hvnn1 hs1
   -- `n ≥ 2`
   have hbig : ∀ n, 2 ≤ n → ∀ σ rkN,
@@ -699,10 +696,11 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
       have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
       have T := R2.qn r L (q - r) pq hlen hr hq' (by omega) hpq'
-      have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact T.qb)
+      obtain ⟨Txb, Tqb, Te2pq, Tclq, Tclpq⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+      have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
       obtain ⟨hIUt, hVNN, hseed⟩ := T.big n _ _ σ hn hCN
-      exact t2_qn_main hlen hL0 hA hq' (by omega) hd0e hn T.xb I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hpq'
-        T.qb T.e2pq T.clq T.clpq hIUt T.p1 T.qL T.dv T.os T.vsh I.cons I.good I.rank hCN hGN hRN
+      exact t2_qn_main hlen hL0 hA hq' (by omega) hd0e hn Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hpq'
+        Tqb Te2pq Tclq Tclpq hIUt T.p1 T.qL T.dv T.os T.vsh I.cons I.good I.rank hCN hGN hRN
         I.fc I.vs I.td I.kd hAbs hVNN hseed
   intro n
   rcases n with _ | _ | n
@@ -736,7 +734,9 @@ theorem t2_hT2
     HInvA → ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n := by
   intro hInv M ρ rk hM I R hz h2
-  apply t2_drops I R (hR2 M ρ rk hM I R hz h2) hz h2
+  have hne : M ≠ SRO := by intro h; subst h; revert h2; decide
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hne
+  apply t2_drops I R (hR2 M ρ rk hM I R hz h2) hX hJ hz h2
   intro n _ hS hE
   unfold HInvA at hInv
   obtain ⟨⟨rkN, hRN⟩, hall⟩ := hInv _ (Std.exp n hM) hS hE

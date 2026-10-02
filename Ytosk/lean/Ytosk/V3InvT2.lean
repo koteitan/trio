@@ -10,7 +10,9 @@ x = r + L（最後の列）、r = P_2 x、q = r + qp = P_0 x（q ≠ r）、pq =
   上げの先で topped なら UAT で upg pq = pq + 1、P_1 pq = m で e0 m = e0 pq となり矛盾。
 -/
 import Ytosk.V3InvJ
-import Ytosk.V3T2Top
+import Ytosk.V3DropAsm
+import Ytosk.V3Chg
+import Ytosk.V3ChgS
 
 namespace Ytosk
 

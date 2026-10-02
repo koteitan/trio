@@ -19,7 +19,9 @@ theorem t2_hT2E
     HInvE → ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n := by
   intro hInv M ρ rk hM I R hz h2
-  apply t2_drops I R (hR2 M ρ rk hM I R hz h2) hz h2
+  have hne : M ≠ SRO := by intro h; subst h; revert h2; decide
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hne
+  apply t2_drops I R (hR2 M ρ rk hM I R hz h2) hX hJ hz h2
   intro n _ _ hE
   obtain ⟨σ, rkN, IN, _⟩ := inv_expand_of_E hInv hM hE
   exact ⟨σ, rkN, IN.cons, IN.rank, IN.good⟩
