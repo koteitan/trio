@@ -503,6 +503,216 @@ theorem v_gt_par1_at {N : Mat} {σ : Valn} (hC : Cons N σ) {c i : Nat} (hc : c 
         · rfl
     exact lt_sf_add_single hvi (isOT_omega hY) (single_omega hY).2
 
+/-- The middle copies after a state at least `Y0` (or below the level) are appended. -/
+theorem spArg_copies {a v Y0 : T} (hO : isOT (psi v Y0 z) = true) :
+    ∀ (k : Nat) (S : T), (Y0 ≤ S ∨ ¬ psi a z z < psi v Y0 z) → (∀ q ∈ summands S, psi v Y0 z ≤ q) →
+      spArg a S (mulT (psi v Y0 z) k) = app S (mulT (psi v Y0 z) k)
+  | 0, S, _, _ => by simp [mulT, spArg, app_z_right]
+  | k + 1, S, hSY, hS => by
+    show spArg a S (app (psi v Y0 z) (mulT (psi v Y0 z) k)) = _
+    rw [app_psi, app_z, spArg_cons, step_rest a S v Y0 _ z]
+    have hnt : ¬ (lt S Y0 = true ∧ lt (psi a z z) (psi v Y0 z) = true) := by
+      rintro ⟨h1, h2⟩
+      rcases hSY with h | h
+      · exact absurd (lt_of_lt_of_le (show S < Y0 from h1) h) (lt_irrefl' _)
+      · exact h h2
+    have hst : step a S v Y0 z = app S (psi v Y0 z) := by
+      unfold step; rw [if_neg hnt]; exact add_eq_app_of_ge ⟨_, _, rfl⟩ S hS
+    rw [hst, spArg_copies hO k (app S (psi v Y0 z))
+      (hSY.imp_left (fun h => le_trans h (le_app_self _ _)))
+      (fun q hq => by
+        rw [summands_app] at hq
+        rcases List.mem_append.mp hq with hq | hq
+        · exact hS q hq
+        · simp [summands] at hq; rw [hq])]
+    rw [app_assoc']
+    rfl
+
+/-- **Class A from a common prefix**: two nonzero low tails after the same `B`. -/
+theorem clsA_app {a B R R' : T} (hR : R ≠ z) (hRh : head R < psi (succ a) z z)
+    (hR' : R' ≠ z) (hR'h : head R' < psi (succ a) z z) : ClsNode a (app B R') (app B R) := by
+  left
+  rw [split_app_low (Or.inr hR'h), split_app_low (Or.inr hRh)]
+  exact ⟨rfl, fun h => hR' (app_eq_z h).2⟩
+
+/-- **Class B0 when every summand is high.** -/
+theorem clsB0_high {a X X' : T} (hX : ∀ q ∈ summands X, ¬ q < psi (succ a) z z)
+    (hX' : ∀ q ∈ summands X', ¬ q < psi (succ a) z z) : ClsNode a X' X := by
+  right; left
+  rw [split_all_high X hX, split_all_high X' hX']
+  exact ⟨rfl, rfl⟩
+
+/-- **The class at `g`** (`m ≥ 1` middle copies before the last copy root): the children `ψ_v(Y0)` × m and
+then `X′` against the single child `ψ_v(Y0 + 1)`; a bare `X′ = ψ_{s′}(0)` with `s′ ≠ v` is assumed to stay
+at least `Ω_{a+1}` when `ψ_v(0)` is. -/
+theorem s1_core_cls {a B v Y0 X' : T} {m : Nat} (hm : 1 ≤ m)
+    (hX : isOT (psi v (app Y0 one) z) = true) (hO : isOT (psi v Y0 z) = true)
+    (hBX : ∀ q ∈ summands B, psi v (app Y0 one) z ≤ q)
+    (hX' : Single X') (hX'O : X' ≤ psi v Y0 z)
+    (hy' : ∀ s' y', X' = psi s' y' z → s' ≠ v → y' = z)
+    (hvch : ∀ s' y', X' = psi s' y' z → s' ≠ v → ¬ psi v z z < psi (succ a) z z →
+      ¬ psi s' z z < psi (succ a) z z) :
+    ClsNode a (spArg a (spArg a B (mulT (psi v Y0 z) m)) X') (spArg a B (psi v (app Y0 one) z)) := by
+  obtain ⟨s', y', rfl⟩ := hX'.2
+  have hOX : psi v Y0 z < psi v (app Y0 one) z := psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_app_one Y0⟩)
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+  have hBO : ∀ q ∈ summands B, psi v Y0 z ≤ q := fun q hq => le_trans (le_of_lt hOX) (hBX q hq)
+  -- the state after the first copy, and the copies after it
+  have hfirst : spArg a B (mulT (psi v Y0 z) (m' + 1)) =
+      app (step a B v Y0 z) (mulT (psi v Y0 z) m') := by
+    show spArg a B (app (psi v Y0 z) (mulT (psi v Y0 z) m')) = _
+    rw [app_psi, app_z, spArg_cons, step_rest a B v Y0 _ z]
+    apply spArg_copies hO
+    · unfold step
+      split_ifs with ht
+      · exact Or.inl (le_H hO)
+      · by_cases h2 : psi a z z < psi v Y0 z
+        · left
+          have hBY : Y0 ≤ B := by
+            rcases lt_or_ge B Y0 with h | h
+            · exact absurd ⟨h, h2⟩ ht
+            · exact h
+          exact le_trans hBY (le_of_lt (by
+            have := add_lt_add_left B (T.z_lt_psi v Y0 z); rwa [add_z_right] at this))
+        · exact Or.inr h2
+    · intro q hq
+      unfold step at hq
+      split_ifs at hq with ht
+      · exact H_summands_ge hO q hq
+      · rw [add_eq_app_of_ge ⟨_, _, rfl⟩ B hBO, summands_app] at hq
+        rcases List.mem_append.mp hq with hq | hq
+        · exact hBO q hq
+        · simp [summands] at hq; rw [hq]
+  set S := step a B v Y0 z with hSdef
+  set O := psi v Y0 z with hOdef
+  have hnr := no_rw_after (a := a) (B := B) hO (show 1 ≤ m' + 1 by omega)
+  rw [hfirst] at hnr
+  have hSO : ∀ q ∈ summands S, O ≤ q := by
+    intro q hq
+    rw [hSdef] at hq; unfold step at hq
+    split_ifs at hq with ht
+    · exact H_summands_ge hO q hq
+    · rw [add_eq_app_of_ge ⟨_, _, rfl⟩ B hBO, summands_app] at hq
+      rcases List.mem_append.mp hq with hq | hq
+      · exact hBO q hq
+      · simp [summands] at hq; rw [hq]
+  have hB'O : ∀ q ∈ summands (app S (mulT O m')), O ≤ q := by
+    intro q hq
+    rw [summands_app] at hq
+    rcases List.mem_append.mp hq with hq | hq
+    · exact hSO q hq
+    · rw [summands_mulT ⟨_, _, rfl⟩ m' q hq]
+  have hnew : ¬ (lt (app S (mulT O m')) y' = true ∧ lt (psi a z z) (psi s' y' z) = true) := by
+    rintro ⟨h1, h2⟩
+    by_cases hs : s' = v
+    · subst hs
+      have hyy : y' ≤ Y0 := by
+        rcases (le_iff _ _).mp hX'O with h | h
+        · rcases psi_lt_psi_z_iff.mp h with h | ⟨_, h⟩
+          · exact absurd h (lt_irrefl' _)
+          · exact le_of_lt h
+        · rw [hOdef] at h; simp only [psi.injEq] at h; rw [h.2.1]
+      exact hnr ⟨lt_of_lt_of_le h1 hyy, lt_of_lt_of_le h2 hX'O⟩
+    · have := hy' s' y' rfl hs
+      rw [this] at h1; exact T.not_lt_z _ h1
+  have hX'eq : spArg a (spArg a B (mulT O (m' + 1))) (psi s' y' z) =
+      app S (app (mulT O m') (psi s' y' z)) := by
+    rw [hfirst, spArg_single]; unfold step; rw [if_neg hnew,
+      add_eq_app_of_ge ⟨_, _, rfl⟩ _ (fun q hq => le_trans hX'O (hB'O q hq)), app_assoc']
+  rw [hX'eq]
+  set R' := app (mulT O m') (psi s' y' z) with hR'
+  have hR'z : R' ≠ z := fun h => absurd (app_eq_z h).2 (by simp)
+  set θ := psi (succ a) z z with hθ
+  by_cases hva : v ≤ a
+  · -- every copy is below `Ω_{a+1}`: class A
+    have hOθ : O < θ := lt_theta_iff.mpr hva
+    have hc'θ : psi s' y' z < θ := lt_of_le_of_lt hX'O hOθ
+    have hR'h : head R' < θ := by
+      cases m' with
+      | zero => simpa [hR', mulT, head] using hc'θ
+      | succ k => simpa [hR', mulT, head, hOdef] using hOθ
+    have hXθ : psi v (app Y0 one) z < θ := lt_theta_iff.mpr hva
+    have hOR : head (app O R') < θ := by rw [hOdef, app_psi]; exact hOθ
+    have hORz : app O R' ≠ z := fun h => hR'z (app_eq_z h).2
+    by_cases ht : lt B (app Y0 one) = true ∧ lt (psi a z z) (psi v (app Y0 one) z) = true
+    · have hav : a ≤ v := by
+        have h2 : psi a z z < psi v (app Y0 one) z := ht.2
+        rcases psi_lt_psi_z_iff.mp h2 with h | ⟨h, _⟩
+        · exact le_of_lt h
+        · rw [h]
+      have hva' : v = a := le_antisymm hva hav
+      subst hva'
+      have hone : head one < θ := by
+        show psi z z z < _; rw [psi_lt_psi_z_iff]; left
+        exact lt_of_le_of_lt (z_le _) (lt_succ_self _)
+      have hsY : split (app Y0 one) θ = ((split Y0 θ).1, app (split Y0 θ).2 one) :=
+        split_app_low (Or.inr hone)
+      have hlo1 : app (split Y0 θ).2 one ≠ z := fun h => absurd (app_eq_z h).2 (by simp [one])
+      have hXeq : spArg v B (psi v (app Y0 one) z) = app (split Y0 θ).1 (psi v (app Y0 one) z) := by
+        rw [spArg_single]; unfold step; rw [if_pos ht, H_eq hX, hsY, if_neg hlo1]
+      rw [hXeq]
+      by_cases ht1 : lt B Y0 = true ∧ lt (psi v z z) O = true
+      · have hSeq : S = app (split Y0 θ).1 (if (split Y0 θ).2 = z then z else O) := by
+          rw [hSdef]; unfold step; rw [if_pos ht1, H_eq hO]
+        rw [hSeq, app_assoc']
+        split_ifs with hl0
+        · exact clsA_app (by simp) hXθ hR'z hR'h
+        · exact clsA_app (by simp) hXθ hORz hOR
+      · -- the first copy does not rewrite: `B = Y0`, and `Y0` is its own high part
+        have hBle : B ≤ Y0 := lt_succ_iff.mp (show B < succ Y0 from ht.1)
+        have hYB : Y0 ≤ B := by
+          rcases lt_or_ge B Y0 with h | h
+          · exfalso; apply ht1; refine ⟨h, ?_⟩
+            show psi v z z < psi v Y0 z
+            apply psi_lt_psi_z_iff.mpr; right; refine ⟨rfl, ?_⟩
+            exact lt_of_le_of_lt (z_le B) h
+          · exact h
+        have hBY : B = Y0 := le_antisymm hBle hYB
+        have hhi : (split Y0 θ).1 = Y0 := by
+          have h1 : B ≤ (split (app Y0 one) θ).1 := B_le_hi hX ht.1 hBX
+          rw [hsY, hBY] at h1
+          have h2 : (split Y0 θ).1 ≤ Y0 := by
+            have := le_app_self (split Y0 θ).1 (split Y0 θ).2; rwa [split_app] at this
+          exact le_antisymm h2 h1
+        have hSeq : S = app Y0 O := by
+          rw [hSdef]; unfold step; rw [if_neg ht1, add_eq_app_of_ge ⟨_, _, rfl⟩ B hBO, hBY]
+        rw [hSeq, app_assoc', hhi]
+        exact clsA_app (by simp) hXθ hORz hOR
+    · -- the old frame does not rewrite, nor does the first copy
+      have ht1 : ¬ (lt B Y0 = true ∧ lt (psi a z z) O = true) := fun h =>
+        ht ⟨lt_trans (show B < Y0 from h.1) (lt_app_one Y0), lt_trans (show psi a z z < O from h.2) hOX⟩
+      have hXeq : spArg a B (psi v (app Y0 one) z) = app B (psi v (app Y0 one) z) := by
+        rw [spArg_single]; unfold step; rw [if_neg ht]; exact add_eq_app_of_ge ⟨_, _, rfl⟩ B hBX
+      have hSeq : S = app B O := by
+        rw [hSdef]; unfold step; rw [if_neg ht1]; exact add_eq_app_of_ge ⟨_, _, rfl⟩ B hBO
+      rw [hXeq, hSeq, app_assoc']
+      exact clsA_app (by simp) hXθ hORz hOR
+  · -- every child is at least `Ω_{a+1}`: class B0
+    have hOθ : ¬ O < θ := fun h => hva (lt_theta_iff.mp h)
+    have hXθ : ¬ psi v (app Y0 one) z < θ := fun h => hva (lt_theta_iff.mp h)
+    have hc'θ : ¬ psi s' y' z < θ := by
+      by_cases hs : s' = v
+      · subst hs; exact fun h => hva (lt_theta_iff.mp h)
+      · have hy0 := hy' s' y' rfl hs
+        subst hy0
+        exact hvch s' z rfl hs (fun h => hva (lt_theta_iff.mp h))
+    apply clsB0_high
+    · intro q hq h
+      rw [spArg_single] at hq; unfold step at hq
+      split_ifs at hq with ht
+      · exact hXθ (lt_of_le_of_lt (H_summands_ge hX q hq) h)
+      · rw [add_eq_app_of_ge ⟨_, _, rfl⟩ B hBX, summands_app] at hq
+        rcases List.mem_append.mp hq with hq | hq
+        · exact hXθ (lt_of_le_of_lt (hBX q hq) h)
+        · simp [summands] at hq; rw [hq] at h; exact hXθ h
+    · intro q hq h
+      rw [summands_app, hR', summands_app] at hq
+      rcases List.mem_append.mp hq with hq | hq
+      · exact hOθ (lt_of_le_of_lt (hSO q hq) h)
+      · rcases List.mem_append.mp hq with hq | hq
+        · rw [summands_mulT ⟨_, _, rfl⟩ m' q hq] at h; exact hOθ h
+        · simp [summands] at hq; rw [hq] at h; exact hc'θ h
+
 section
 variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)
@@ -550,8 +760,11 @@ theorem t0_S1A {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted 
     (hl : Lhd z (ρ'.o r) (ρ.o r))
     (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
     (hC1 : Cons (M.take (r + L)) ρ') (hGT : Good3 (M.take (r + L)) ρ')
-    (hm1 : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) :
-    ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true := by
+    (hm1 : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L))
+    (hvch : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
+      ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z) :
+    ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true ∧
+      ClsNode (ρ.v g) X' X := by
   have hx : r + L + 1 = M.length := hlen
   have hlN := lenN0 hlen hn (M := M) (L := L)
   have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
@@ -693,24 +906,23 @@ theorem t0_S1A {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted 
   rw [hor] at hoM hl hXot
   have hOld : isOT (psi a (spArg a (spArg a z (sumN Lv)) (psi v (app Y0 one) z)) z) = true := by
     rw [← hoM]; exact hG.ot_o g hgM
-  refine ⟨_, spArg a (spArg a (spArg a z (sumN Lv)) (mulT (psi v Y0 z) m)) (ρ'.o r), hoM,
-    by rw [hoN, hOv], ?_, ?_⟩
-  rotate_left
-  · exact isOT_spArg a _ _ (isOT_spArg a _ _ (isOT_spArg a _ _ rfl hLs.1)
-      (isOT_mulT (by rw [← hOv]; exact hsO.1) ⟨_, _, rfl⟩ m)) hsLr.1
-  apply s1_core_arg hm hOld hXot (by rw [← hOv]; exact hsO.1)
-  · apply spArg_summands_ge ⟨v, _, rfl⟩ (sumN Lv) z hLs.1
+  have hBXs : ∀ q ∈ summands (spArg a z (sumN Lv)), psi v (app Y0 one) z ≤ q := by
+    apply spArg_summands_ge ⟨v, _, rfl⟩ (sumN Lv) z hLs.1
     · rw [hLs.2]; intro q hq
       have := (List.pairwise_append.mp hpM).2.2 q hq (ρ.o r) (by simp)
       rwa [hor] at this
     · simp [summands]
-  · exact hsLr
-  · exact hl
-  · have hp1 := List.pairwise_append.mp hpN
+  have hX'O : ρ'.o r ≤ psi v Y0 z := by
+    have hp1 := List.pairwise_append.mp hpN
     rw [← hOv]
     exact hp1.2.2 (omid M r L ρ) (List.mem_append_right _ (List.mem_replicate.mpr ⟨by omega, rfl⟩))
       (ρ'.o r) (by simp)
-  · exact hy'
+  have hO0 : isOT (psi v Y0 z) = true := by rw [← hOv]; exact hsO.1
+  refine ⟨_, spArg a (spArg a (spArg a z (sumN Lv)) (mulT (psi v Y0 z) m)) (ρ'.o r), hoM,
+    by rw [hoN, hOv], s1_core_arg hm hOld hXot hO0 hBXs hsLr hl hX'O hy', ?_,
+    s1_core_cls hm hXot hO0 hBXs hsLr hX'O hy' hvch⟩
+  exact isOT_spArg a _ _ (isOT_spArg a _ _ (isOT_spArg a _ _ rfl hLs.1)
+    (isOT_mulT hO0 ⟨_, _, rfl⟩ m)) hsLr.1
 
 
 /-- **The `D` columns before `r` are standard and drop by `◁`** in `N = M[n]` (`t = 0`, `n ≥ 2`, `r` has a
@@ -742,10 +954,11 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
     (hVchg : ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
       σ.v c ≠ ρ.v c → par M 1 c ≠ some i → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
       ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z)
-    (hClsG : Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z →
-      ClsNode (ρ.v g) X' X)
+    (hVchgR : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
+      ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
-      ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true) :
+      ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true ∧
+        ClsNode (ρ.v g) X' X) :
     ∀ b i, i < r → isOT (valB σ b i) = true ∧
       (DepX M (r + L) b i → Lhd z (valB σ b i) (valB ρ b i)) ∧
       (b = true → DepX M (r + L) true i → σ.v i = ρ.v i →
@@ -1079,13 +1292,10 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
             have hig : par M 0 r = some i := (mem_children_iff.mp hc).2
             have hgi : g = i := Option.some.inj (hg.symm.trans hig)
             rw [← hgi] at hcnt hv' ⊢
-            obtain ⟨X, X', hX, hX', hl', hXo⟩ : ∃ X X', ρ.o g = psi (ρ.v g) X z ∧
-                σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true := by
-              by_cases hm1 : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
-              · exact t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hg hcnt
-                  (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl hy' hC1 hGT hm1
-              · exact hG0 hcnt (fun k hk hk' => hm1 ⟨k, hk, hk'⟩)
-            exact ⟨X, X', hX, hX', hl', hXo, hClsG hcnt X X' hX hX'⟩
+            by_cases hm1 : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
+            · exact t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hg hcnt
+                (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl hy' hC1 hGT hm1 hVchgR
+            · exact hG0 hcnt (fun k hk hk' => hm1 ⟨k, hk, hk'⟩)
           · have hcr : c < r := by omega
             rcases hOS_t1 hx hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp i (by omega) (DepX.ochild hc hcb hcu hdc) with
               ⟨hv, _⟩ | ⟨_, Lp, c0, R, hch, _, _, hR, hLnd⟩
@@ -1257,7 +1467,7 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
 end
 
 /-- **`hOTD` of `t0_core`** from the residuals: the rewrite agreement at class-B0 children (`hTrigBN`),
-a changed `v` of a child stays at least `Ω_{a+1}` (`hVchgN`), the class at `g` (`hClsGN`), and `g` when
+a changed `v` of a child stays at least `Ω_{a+1}` (`hVchgN`; also for `o′(r)` at `g`, `hVchgRN`), and `g` when
 no middle copy root counts (`hG0N`). -/
 theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
@@ -1286,11 +1496,12 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
       σ.v c ≠ ρ.v c → par M 1 c ≠ some i → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
       ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z)
-    (hClsGN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
-      Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → ClsNode (ρ.v g) X' X)
+    (hVchgRN : ∀ g, par M 0 r = some g → ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r →
+      ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0N : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
-      ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true) :
+      ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true ∧
+        ClsNode (ρ.v g) X' X) :
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true ∧ (σ.v i = ρ.v i →
         ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X) ∧
@@ -1551,13 +1762,13 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     intro i hi hd
     exact (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT hσB hσBv
       hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
-      (hVchgN n hn2 σ hCN) (hClsGN n hn2 σ hCN g hg) (hG0N n hn2 σ hCN g hg) true i hi) |> fun h =>
+      (hVchgN n hn2 σ hCN) (hVchgRN g hg) (hG0N n hn2 σ hCN g hg) true i hi) |> fun h =>
       ⟨h.1, (fun hv => let ⟨X, X', a1, a2, a3, _⟩ := h.2.2 rfl hd hv; ⟨X, X', a1, a2, a3⟩), fun hne => by
         have hdv : DepX M (r + L) false i := by
           by_contra hn'; exact hne ((hoffD i hi).2 hn')
         have hvot := (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT
           hσB hσBv hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
-          (hVchgN n hn2 σ hCN) (hClsGN n hn2 σ hCN g hg) (hG0N n hn2 σ hCN g hg) false i hi).1
+          (hVchgN n hn2 σ hCN) (hVchgRN g hg) (hG0N n hn2 σ hCN g hg) false i hi).1
         exact o_N_noc' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hi
           (cl_nil_of_depv' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hi hdv) hvot⟩
   · have hrn : par M 0 r = none := by

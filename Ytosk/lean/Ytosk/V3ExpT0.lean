@@ -167,8 +167,9 @@ def T0OTD : Prop :=
 the class of the argument pairs passes up the frames by `cls_node`): (i) at a frame before `r` whose last
 counted child keeps its `v` and whose child pair has no low part in either (class B0), a rewrite of the old
 frame is one of the new frame; (ii) a changed `v` of such a child whose row-1 parent is not `i` stays at
-least `Ω_{a+1}` when the old one is (with row-1 parent `i` it is above `v(i)`, `v_gt_par1_at`); (iii) the class of the argument pair at `g = P_0(r)`; (iv) at `g` when no middle copy root counts,
-the arguments drop by `◁` (C′ の標本で例外 0). -/
+least `Ω_{a+1}` when the old one is (with row-1 parent `i` it is above `v(i)`, `v_gt_par1_at`); (iii) the same for the value `o′(r)` of
+`M.take x` at `g = P_0(r)` (then the class at `g` is `s1_core_cls`); (iv) at `g` when no middle copy root
+counts, the arguments drop by `◁` with a class (C′ で例外 0). -/
 def T0Shape : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
     Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
@@ -182,11 +183,12 @@ def T0Shape : Prop :=
       ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
       σ.v c ≠ ρ.v c → par M 1 c ≠ some i → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
       ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z) ∧
-    (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
-      Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → ClsNode (ρ.v g) X' X) ∧
+    (∀ g, par M 0 r = some g → ∀ s' y', (drop1 M (r + L) rk).o r = psi s' y' z → s' ≠ ρ.v r →
+      ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z) ∧
     (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
-      ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true)
+      ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true ∧
+        ClsNode (ρ.v g) X' X)
 
 /-- **The `D` columns of `N` from the class residuals**: standard, and with the same `v` their
 arguments drop by `◁`. -/
