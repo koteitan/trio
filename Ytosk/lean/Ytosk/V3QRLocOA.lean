@@ -26,6 +26,15 @@ theorem diag_here_inv {a' μ b s : T}
   | arg _ _ hD => rw [← hB] at hD; exact absurd hD not_diag_br
   | sub _ _ _ => exact absurd (app_eq_z hB).2 (by simp)
 
+/-- **TP1W at counted children** (what the frame lemmas use; the field of `Inv3`). -/
+def TP1WC (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i L c R, children M i = L ++ c :: R → Counted M i c → ∀ s y, ρ.o c = psi s y z →
+    lt (preState M ρ i L) y = true → lt (psi (ρ.v i) z z) (psi s y z) = true →
+    cof y = .omega → OHole y → lt (preState M ρ i L) (fsD y one) = true
+
+theorem tp1WC_of {M : Mat} {ρ : Valn} (h : TP1W M ρ) : TP1WC M ρ :=
+  fun i L c R hch _ => h i L c R hch
+
 section
 variable {M : Mat} {x r : Nat} {ρ : Valn} {μ b seed : T} (hx : x + 1 = M.length)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
@@ -44,8 +53,9 @@ variable {M : Mat} {x r : Nat} {ρ : Valn} {μ b seed : T} (hx : x + 1 = M.lengt
     SeedOK a' (app b (psi (succ μ) z z)) μ seed)
   (hseedS : ∃ a X, seed = psi a X z)
   (hsp0 : spArg μ b seed = app b seed)
-  (hTP : TP1W M ρ) (hTPL : TPLoW M ρ)
-  (hYB : ∀ i L c R, i < x → DepX M x true i → children M i = L ++ c :: R → DepX M x true c →
+  (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ)
+  (hYB : ∀ i L c R, i < x → DepX M x true i → children M i = L ++ c :: R → Counted M i c →
+    DepX M x true c →
     ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →
     lt (preState M ρ i L) (app b (psi (succ μ) z z)) = true →
     lt (psi (ρ.v i) z z) (psi s (app b (psi (succ μ) z z)) z) = true →
@@ -142,7 +152,7 @@ theorem qr_oloc (m : Nat) : ∀ i, i < x → DepX M x true i →
         exact qr_frame_lift hC hG hiM hch hcb hcu hR hcM hb hcA
           (by rw [← gamS_succ_q]; exact gamS_ot hrot cof_br hμ (hS μ hμ hrot) (k + 1))
           ⟨htr1, htr2⟩ (gamS_lt_om hrot cof_br hμ (hS μ hμ hrot) k) hζz
-          (hYB i L c R hi hd hch hdc μ hcA htr1 htr2 k)
+          (hYB i L c R hi hd hch ⟨hcb, hcu⟩ hdc μ hcA htr1 htr2 k)
       · exact absurd hl (by omega)
     · -- no lift
       have hlo0 : lo i c = 0 := by
@@ -155,11 +165,11 @@ theorem qr_oloc (m : Nat) : ∀ i, i < x → DepX M x true i →
         by_cases hyb : y = br
         · subst hyb
           rw [fsD_eq_fs cof_br, fs_br]
-          exact hYB i L c R hi hd hch hdc s hcv htr1 htr2 k
+          exact hYB i L c R hi hd hch ⟨hcb, hcu⟩ hdc s hcv htr1 htr2 k
         · have hyz : y ≠ z := by intro h; subst h; simp [lt] at htr1
           have hDy : DiagAt a' br μ y := DiagAt.arg_inv (by rw [← hcv]; exact hDc) hyz
             (fun h => hyb h.2)
-          have h1' := hTP i L c R hch s y hcv htr1 htr2 (DiagAt.cof_omega hDy) (ohole_of_diag hDy)
+          have h1' := hTP i L c R hch ⟨hcb, hcu⟩ s y hcv htr1 htr2 (DiagAt.cof_omega hDy) (ohole_of_diag hDy)
           exact persist_of_tp1 (ohole_of_diag hDy) (one_le_of_ne_z hζz) h1'
       · -- (L)
         intro s y hcv htr1 htr2

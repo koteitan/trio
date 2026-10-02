@@ -153,12 +153,6 @@ def NoTrigU (M : Mat) (ρ : Valn) : Prop :=
   ∀ i L c R, children M i = L ++ c :: R → ¬ Counted M i c → ∀ s y, ρ.o c = psi s y z →
     ¬ (lt (preState M ρ i L) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true)
 
-/-- **TrigOm at counted children** (what the frame lemmas use). -/
-def TrigOmC (M : Mat) (ρ : Valn) : Prop :=
-  ∀ i L c R, children M i = L ++ c :: R → Counted M i c → ∀ s ν, ρ.o c = psi s (psi (succ ν) z z) z →
-    lt (preState M ρ i L) (psi (succ ν) z z) = true →
-    lt (psi (ρ.v i) z z) (psi s (psi (succ ν) z z) z) = true → preState M ρ i L = z
-
 theorem trigOmC_of {M : Mat} {ρ : Valn} (h : TrigOm M ρ) : TrigOmC M ρ :=
   fun i L c R hch _ => h i L c R hch
 

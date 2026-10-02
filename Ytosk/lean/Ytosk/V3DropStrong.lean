@@ -531,7 +531,7 @@ theorem t1_main_drop_hard {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
       lt μ (ρ.v i) = true)
     (hV : ∀ m i, i < r + L → DepX M (r + L) false i →
       VLocal M (r + L) ρ (gamS μ br ((drop1 M (r + L) rkM).o r) m) μ i)
-    (hW : ∀ m i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+    (hW : ∀ m i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R → Counted M i c →
       DepX M (r + L) true c → ∀ s y, ρ.o c = psi s y z → lt (preState M ρ i L') y = true →
       lt (psi (ρ.v i) z z) (psi s y z) = true →
       lt (preState M ρ i L') (fsD y (gamS μ br ((drop1 M (r + L) rkM).o r) m)) = true)

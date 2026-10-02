@@ -48,7 +48,7 @@ theorem t1_main (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → 
     (hS2 : ∀ i k, i ≤ r → DepX M (r + L) false i → entry M 2 i = 0 → upg M i = some k → k ≤ r)
     (hS3 : ∀ i j k, i ≤ r → j ∈ children M i → col M j = bump M i → k ∈ children M j →
       DepX M (r + L) true k → k ≤ r)
-    (hW : ∀ m i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+    (hW : ∀ m i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R → Counted M i c →
       DepX M (r + L) true c → ∀ s y, ρ.o c = psi s y z → lt (preState M ρ i L') y = true →
       lt (psi (ρ.v i) z z) (psi s y z) = true →
       lt (preState M ρ i L') (fsD y (gamS μ br seed m)) = true)

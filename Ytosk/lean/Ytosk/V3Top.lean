@@ -350,13 +350,13 @@ structure Inv3 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   td : BumpTermDec M ρ
   ad : AbsD M ρ
   au : AbsU M ρ
-  tp1 : TP1 M ρ
+  tp1 : TP1C M ρ
   tplo : TPLo M ρ
-  tp1w : TP1W M ρ
+  tp1w : TP1WC M ρ
   tplow : TPLoW M ρ
   auw : AbsUW M ρ
   adw : AbsDW M ρ
-  trig : TrigOm M ρ
+  trig : TrigOmC M ρ
   tplon : TPLoN M ρ
   adn : AbsDN M ρ
   rootS : ∀ i ∈ roots M, Single (ρ.o i)

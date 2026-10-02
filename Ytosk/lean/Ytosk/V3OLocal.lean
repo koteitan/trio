@@ -45,7 +45,7 @@ theorem olocal_of (hC : Cons M ρ) (hG : Good3 M ρ) (hx : x + 1 = M.length)
       HoleT μ br vr (valB ρ b i) ∧ DiagLe μ br vr r i (valB ρ b i))
     (hζ : ∃ X, ζ = psi μ X z) (hox : fsD (ρ.o x) ζ = ζ)
     (hok : ∀ t, isOT t = true → HoleT μ br vr t → isOT (fsD t ζ) = true)
-    (hW : ∀ i L c R, i < x → DepX M x true i → children M i = L ++ c :: R → DepX M x true c →
+    (hW : ∀ i L c R, i < x → DepX M x true i → children M i = L ++ c :: R → Counted M i c → DepX M x true c →
       ∀ s y, ρ.o c = psi s y z → lt (preState M ρ i L) y = true →
       lt (psi (ρ.v i) z z) (psi s y z) = true → lt (preState M ρ i L) (fsD y ζ) = true)
     (hL : ∀ i L c R, i < x → DepX M x true i → children M i = L ++ c :: R → DepX M x true c →
@@ -87,7 +87,7 @@ theorem olocal_of (hC : Cons M ρ) (hG : Good3 M ρ) (hx : x + 1 = M.length)
   simp only [valB, cond_true] at hHc hDc
   have hframe := o_frame hC hG hiM hch hcb hcu hR hcM
   have hpar : r < c → r ≤ i := fun h => par0_ge_of_anc hAr h hcx (mem_children_iff.mp hcmem).2
-  refine ⟨hv, L, c, R, hch, hcb, hcu, hR, hLnd, ?_, ?_, hW i L c R hi hd hch hdc,
+  refine ⟨hv, L, c, R, hch, hcb, hcu, hR, hLnd, ?_, ?_, hW i L c R hi hd hch ⟨hcb, hcu⟩ hdc,
     hL i L c R hi hd hch hdc, ?_⟩
   · -- single
     obtain ⟨X, hX⟩ := hζ

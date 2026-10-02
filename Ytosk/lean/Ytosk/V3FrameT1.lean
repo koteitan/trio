@@ -107,6 +107,15 @@ def TP1 (M : Mat) (ρ : Valn) : Prop :=
     lt (preState M ρ i L) y = true → lt (psi (ρ.v i) z z) (psi s y z) = true → OHole y →
     lt (preState M ρ i L) (fsD y (psi (holeLev y) one z)) = true
 
+/-- **TP1 at counted children** (what the frame lemmas use; the field of `Inv3`). -/
+def TP1C (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i L c R, children M i = L ++ c :: R → Counted M i c → ∀ s y, ρ.o c = psi s y z →
+    lt (preState M ρ i L) y = true → lt (psi (ρ.v i) z z) (psi s y z) = true → OHole y →
+    lt (preState M ρ i L) (fsD y (psi (holeLev y) one z)) = true
+
+theorem tp1C_of {M : Mat} {ρ : Valn} (h : TP1 M ρ) : TP1C M ρ :=
+  fun i L c R hch _ => h i L c R hch
+
 /-! ## 始点の引数は 0 でない -/
 
 theorem add_ne_z_left : ∀ {x : T} (y : T), x ≠ z → add x y ≠ z
@@ -297,14 +306,14 @@ theorem hW_of_TP1 {M : Mat} {x r : Nat} {ρ : Valn} {μ br vr seed ζ0 : T} (hx 
     (hS2 : ∀ i k, i ≤ r → DepX M x false i → entry M 2 i = 0 → upg M i = some k → k ≤ r)
     (hS3 : ∀ i j k, i ≤ r → j ∈ children M i → col M j = bump M i → k ∈ children M j →
       DepX M x true k → k ≤ r)
-    (hTP : TP1 M ρ) (hseed : psi μ one z ≤ seed) :
-    ∀ m i L' c R, i < x → DepX M x true i → children M i = L' ++ c :: R →
+    (hTP : TP1C M ρ) (hseed : psi μ one z ≤ seed) :
+    ∀ m i L' c R, i < x → DepX M x true i → children M i = L' ++ c :: R → Counted M i c →
       DepX M x true c → ∀ s y, ρ.o c = psi s y z → lt (preState M ρ i L') y = true →
       lt (psi (ρ.v i) z z) (psi s y z) = true →
       lt (preState M ρ i L') (fsD y (gamS μ br seed m)) = true := by
   have hH := t1_hole hC hG hx hrx hAr hro hcb hμr hbr (Or.inl (by rw [hox]; exact cof_omega_succ μ))
     hF1 hOS hV hS2 hS3
-  intro m i L' c R hi _ hch hdc s y hcv hlt1 hlt2
+  intro m i L' c R hi _ hch hcnt hdc s y hcv hlt1 hlt2
   have hcM : c ∈ children M i := by rw [hch]; simp
   have hcl := (mem_children hcM).2
   obtain ⟨hHc, _⟩ := hH true c hdc (by
@@ -317,7 +326,7 @@ theorem hW_of_TP1 {M : Mat} {x r : Nat} {ρ : Valn} {μ br vr seed ζ0 : T} (hx 
     intro h; rw [h] at hlt1; exact T.not_lt_z _ hlt1
   have hHy := holeT_arg hy hHc hcb
   have hOy := ohole_of_holeT hHy
-  have h0 := hTP i L' c R hch s y hcv hlt1 hlt2 hOy
+  have h0 := hTP i L' c R hch hcnt s y hcv hlt1 hlt2 hOy
   rw [holeLev_holeT hHy] at h0
   exact persist_of_tp1 hOy (gamS_ge_one hcb hseed m) h0
 
@@ -331,7 +340,7 @@ theorem t1_main_tp1 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL :
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1 M ρ)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1C M ρ)
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
@@ -835,7 +844,7 @@ theorem t1_main_tpl {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL :
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1 M ρ) (hTPL : TPL M ρ)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1C M ρ) (hTPL : TPL M ρ)
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)

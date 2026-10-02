@@ -38,13 +38,13 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsX M (r + L) ρ)
     -- value invariants
-    (hAD : AbsD M ρ) (hTP : TP1W M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUW M ρ) (hAD' : AbsDW M ρ)
+    (hAD : AbsD M ρ) (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUW M ρ) (hAD' : AbsDW M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- `q = r`
-    (hTP1 : TP1 M ρ)
+    (hTP1 : TP1C M ρ)
     (hYBs : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z →
       ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
-      DepX M (r + L) true c → ∀ s,
+      Counted M i c → DepX M (r + L) true c → ∀ s,
       ρ.o c = psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z →
       lt (preState M ρ i L') (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) = true →
       lt (psi (ρ.v i) z z) (psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
@@ -142,12 +142,12 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     exact hLs0
   -- (W) at the frames with the child `ψ_s(b_r)`: TP1 for the chain from the second term, `hYBs` at the seed
   have hYB : ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
-      DepX M (r + L) true c → ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →
+      Counted M i c → DepX M (r + L) true c → ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →
       lt (preState M ρ i L') (app b (psi (succ μ) z z)) = true →
       lt (psi (ρ.v i) z z) (psi s (app b (psi (succ μ) z z)) z) = true →
       ∀ m', lt (preState M ρ i L') (app b (gamS μ (app b (psi (succ μ) z z)) seed m')) = true := by
-    intro i L' c R hi hd hch hdc s hcv htr1 htr2 m'
-    have h0 := hTP1 i L' c R hch s _ hcv htr1 htr2 (ohole_of_cof_big cof_br)
+    intro i L' c R hi hd hch hcnt hdc s hcv htr1 htr2 m'
+    have h0 := hTP1 i L' c R hch hcnt s _ hcv htr1 htr2 (ohole_of_cof_big cof_br)
     rw [holeLev_cof cof_br, fsD_eq_fs cof_br, fs_br] at h0
     by_cases h1s : psi μ one z ≤ gamS μ (app b (psi (succ μ) z z)) seed m'
     · refine lt_of_lt_of_le (show preState M ρ i L' < app b (psi μ one z) from h0) ?_
@@ -162,7 +162,7 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
           · exact h
           · exact absurd (le_of_eq h.symm) h1s
           · exact absurd (le_of_lt h) h1s
-        exact hYBs hlt1 i L' c R hi hd hch hdc s hcv htr1 htr2
+        exact hYBs hlt1 i L' c R hi hd hch hcnt hdc s hcv htr1 htr2
   exact qr_final2 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hKD hTD
     hAD hTP hTPL hAU' hAD' hsM hpM hYB hS hsp0 hADs0 hLs
     (good3_take (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop) Pn hP1 hPs

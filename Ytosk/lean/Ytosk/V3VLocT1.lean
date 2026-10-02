@@ -1546,7 +1546,7 @@ theorem t1_main_vloc {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1 M ρ) (hTPLo : TPLo M ρ) (hAD : AbsD M ρ) (hAU : AbsU M ρ)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1C M ρ) (hTPLo : TPLo M ρ) (hAD : AbsD M ρ) (hAU : AbsU M ρ)
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)

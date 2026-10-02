@@ -24,13 +24,13 @@ structure Inv3V (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   td : BumpTermDec M ρ
   ad : AbsD M ρ
   au : AbsU M ρ
-  tp1 : TP1 M ρ
+  tp1 : TP1C M ρ
   tplo : TPLo M ρ
-  tp1w : TP1W M ρ
+  tp1w : TP1WC M ρ
   tplow : TPLoW M ρ
   auw : AbsUW M ρ
   adw : AbsDW M ρ
-  trig : TrigOm M ρ
+  trig : TrigOmC M ρ
   tplon : TPLoN M ρ
   adn : AbsDN M ρ
   rootS : ∀ i ∈ roots M, Single (ρ.o i)
@@ -127,9 +127,9 @@ theorem hLast_of
     (hRest : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       let x := M.length - 1
       let σ := drop1 M x rk
-      AbsD (M.take x) σ ∧ AbsU (M.take x) σ ∧ TP1 (M.take x) σ ∧ TPLo (M.take x) σ ∧
-      TP1W (M.take x) σ ∧ TPLoW (M.take x) σ ∧ AbsUW (M.take x) σ ∧ AbsDW (M.take x) σ ∧
-      TrigOm (M.take x) σ ∧ TPLoN (M.take x) σ ∧ AbsDN (M.take x) σ ∧
+      AbsD (M.take x) σ ∧ AbsU (M.take x) σ ∧ TP1C (M.take x) σ ∧ TPLo (M.take x) σ ∧
+      TP1WC (M.take x) σ ∧ TPLoW (M.take x) σ ∧ AbsUW (M.take x) σ ∧ AbsDW (M.take x) σ ∧
+      TrigOmC (M.take x) σ ∧ TPLoN (M.take x) σ ∧ AbsDN (M.take x) σ ∧
       (entry M 0 x = 0 → RootP (M.take x) σ) ∧ Res3A (M.take x) σ rk) :
     ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk' := by

@@ -20,8 +20,8 @@ set_option linter.unusedSectionVars false
 
 /-- **The value fields of `Inv3V` not yet carried by a proven step** (`t = 1`). -/
 def QV (N : Mat) (σ : Valn) : Prop :=
-  VSmallF N σ ∧ AbsD N σ ∧ AbsU N σ ∧ TP1 N σ ∧ TPLo N σ ∧ TP1W N σ ∧ TPLoW N σ ∧ AbsUW N σ ∧
-    AbsDW N σ ∧ TrigOm N σ ∧ TPLoN N σ ∧ AbsDN N σ
+  VSmallF N σ ∧ AbsD N σ ∧ AbsU N σ ∧ TP1C N σ ∧ TPLo N σ ∧ TP1WC N σ ∧ TPLoW N σ ∧ AbsUW N σ ∧
+    AbsDW N σ ∧ TrigOmC N σ ∧ TPLoN N σ ∧ AbsDN N σ
 
 /-- **The property carried along the `t = 1` chain.** -/
 def PT1 (N : Mat) (σ : Valn) : Prop :=
@@ -32,9 +32,9 @@ def PT1 (N : Mat) (σ : Valn) : Prop :=
 def RestT (M : Mat) (rk : Bool → Nat → Nat) : Prop :=
   let x := M.length - 1
   let σ := drop1 M x rk
-  AbsD (M.take x) σ ∧ AbsU (M.take x) σ ∧ TP1 (M.take x) σ ∧ TPLo (M.take x) σ ∧
-    TP1W (M.take x) σ ∧ TPLoW (M.take x) σ ∧ AbsUW (M.take x) σ ∧ AbsDW (M.take x) σ ∧
-    TrigOm (M.take x) σ ∧ TPLoN (M.take x) σ ∧ AbsDN (M.take x) σ
+  AbsD (M.take x) σ ∧ AbsU (M.take x) σ ∧ TP1C (M.take x) σ ∧ TPLo (M.take x) σ ∧
+    TP1WC (M.take x) σ ∧ TPLoW (M.take x) σ ∧ AbsUW (M.take x) σ ∧ AbsDW (M.take x) σ ∧
+    TrigOmC (M.take x) σ ∧ TPLoN (M.take x) σ ∧ AbsDN (M.take x) σ
 
 /-- **`Inv3V` from the chain's output.** -/
 theorem inv3V_of_PT1 {N : Mat} {σ : Valn} {rk : Bool → Nat → Nat} (hC : Cons N σ) (hR : Rk N rk)

@@ -29,6 +29,12 @@ def TrigOm (M : Mat) (ρ : Valn) : Prop :=
     lt (preState M ρ i L) (psi (succ ν) z z) = true →
     lt (psi (ρ.v i) z z) (psi s (psi (succ ν) z z) z) = true → preState M ρ i L = z
 
+/-- **TrigOm at counted children** (what the frame lemmas use; the field of `Inv3`). -/
+def TrigOmC (M : Mat) (ρ : Valn) : Prop :=
+  ∀ i L c R, children M i = L ++ c :: R → Counted M i c → ∀ s ν, ρ.o c = psi s (psi (succ ν) z z) z →
+    lt (preState M ρ i L) (psi (succ ν) z z) = true →
+    lt (psi (ρ.v i) z z) (psi s (psi (succ ν) z z) z) = true → preState M ρ i L = z
+
 /-- **Value invariant TPLoN** (`η = 1`, the subscript is not its own node). -/
 def TPLoN (M : Mat) (ρ : Valn) : Prop :=
   ∀ c, c < M.length → ∀ s y, ρ.o c = psi s y z → (split y (psi (succ s) z z)).2 = z →
@@ -67,8 +73,8 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsX M (r + L) ρ)
     -- value invariants
-    (hAD : AbsD M ρ) (hTP : TP1W M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUW M ρ) (hAD' : AbsDW M ρ)
-    (hTP1 : TP1 M ρ) (hTO : TrigOm M ρ) (hTPN : TPLoN M ρ) (hADN : AbsDN M ρ)
+    (hAD : AbsD M ρ) (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUW M ρ) (hAD' : AbsDW M ρ)
+    (hTP1 : TP1C M ρ) (hTO : TrigOmC M ρ) (hTPN : TPLoN M ρ) (hADN : AbsDN M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- the seed
     (hcs : lt (sf ((drop1 M (r + L) rkM).v r)) (ρ.v r) = true →
@@ -142,14 +148,14 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
   -- hYBs
   have hYBs : seed < psi μ one z →
       ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
-      DepX M (r + L) true c → ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →
+      Counted M i c → DepX M (r + L) true c → ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →
       lt (preState M ρ i L') (app b (psi (succ μ) z z)) = true →
       lt (psi (ρ.v i) z z) (psi s (app b (psi (succ μ) z z)) z) = true →
       lt (preState M ρ i L') (app b seed) = true := by
-    intro hlt1 i L' c R _ _ hch _ s hcv htr1 htr2
+    intro hlt1 i L' c R _ _ hch hcnt _ s hcv htr1 htr2
     have hbz := hb0 (hsmall hlt1)
     rw [hbz] at hcv htr1 htr2 ⊢
-    have h0 := hTO i L' c R hch s μ hcv htr1 htr2
+    have h0 := hTO i L' c R hch hcnt s μ hcv htr1 htr2
     rw [h0]
     show z < app z seed
     cases hs : seed with

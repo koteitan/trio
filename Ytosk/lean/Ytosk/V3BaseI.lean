@@ -297,20 +297,20 @@ theorem base_adw : AbsDW (Mlen L) (bval L β) := by
 theorem base_adn : AbsDN (Mlen L) (bval L β) := by
   intro i _ _ _ _ _ _ q hq; rw [vOpt_par1] at hq; simp [summands] at hq
 
-theorem base_tp1 : TP1 (Mlen L) (bval L β) := by
-  intro i L' c R h s y ho h1 h2 _
+theorem base_tp1 : TP1C (Mlen L) (bval L β) := by
+  intro i L' c R h _ s y ho h1 h2 _
   have hc : c ∈ children (Mlen L) i := by rw [h]; simp
   have hi : i < L := by have := (mem_children hc); simp at this; omega
   exact absurd (no_trig hF hi hc ho h1 h2) id
 
-theorem base_tp1w : TP1W (Mlen L) (bval L β) := by
-  intro i L' c R h s y ho h1 h2 _ _
+theorem base_tp1w : TP1WC (Mlen L) (bval L β) := by
+  intro i L' c R h _ s y ho h1 h2 _ _
   have hc : c ∈ children (Mlen L) i := by rw [h]; simp
   have hi : i < L := by have := (mem_children hc); simp at this; omega
   exact absurd (no_trig hF hi hc ho h1 h2) id
 
-theorem base_trig : TrigOm (Mlen L) (bval L β) := by
-  intro i L' c R h s ν ho h1 h2
+theorem base_trig : TrigOmC (Mlen L) (bval L β) := by
+  intro i L' c R h _ s ν ho h1 h2
   have hc : c ∈ children (Mlen L) i := by rw [h]; simp
   have hi : i < L := by have := (mem_children hc); simp at this; omega
   exact absurd (no_trig hF hi hc ho h1 h2) id
