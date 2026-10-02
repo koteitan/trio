@@ -579,6 +579,33 @@ theorem qn_shapes {M : Mat} {r L qp pq : Nat} (hlen : r + L + 1 = M.length)
       have := (mem_children_iff.mp hd).2; rw [hdq, hpq] at this; exact (Option.some.inj this).symm
     exact hns (Or.inr ⟨rfl, hipq⟩)
 
+/-- **The first child counts** when it is not a bump child (`UAT`: an upgrade into it would come from `p`). -/
+theorem first_child_counted {M : Mat} {p d : Nat} (hR0 : R0P M) (hUAT : UAT M) (hA : Anc0 M p d)
+    (hpd : p ≠ d) (hnb : col M (p + 1) ≠ bump M p) : p + 1 ∈ children M p ∧ Counted M p (p + 1) := by
+  have hpl := hA.le
+  have hdl : d < M.length := anc0_lt_len hA hpd
+  have hA1 : Anc0 M p (p + 1) := anc_between hA (p + 1) (by omega) (by omega)
+  obtain ⟨p1, hp1⟩ := par0_of_anc hA1 (by omega)
+  have hp1ge := (anc0_par hA1 (by omega) hp1).le
+  have hp1lt := par_lt M 0 _ _ hp1
+  have hp1e : p1 = p := by omega
+  rw [hp1e] at hp1
+  refine ⟨mem_children_iff.mpr ⟨by omega, hp1⟩, hnb, ?_⟩
+  rintro ⟨hu, ht⟩
+  unfold isUpg at hu
+  obtain ⟨k, _, hk⟩ := List.any_eq_true.mp hu
+  have hk' : upg M k = some (p + 1) := of_decide_eq_true hk
+  have hkp : k = p := by
+    by_contra hne
+    have := hUAT k (p + 1) hk' (by omega)
+    rw [ht] at this; cases this
+  rw [hkp] at hk'
+  obtain ⟨m, hm, _, hcol, _⟩ := upg_spec hk'
+  have := anc0_e0_lt (anc0_of_par M 1 m p hm) (by have := par_lt M 1 p m hm; omega)
+  have h0 : entry M 0 (p + 1) = entry M 0 m + 1 := by rw [col_eq_entries] at hcol; exact (Prod.mk.inj hcol).1
+  have := hR0 _ _ hp1
+  omega
+
 /-- `r ≠ x − 1` when `x − 1` upgrades to `x` (`r = P_2(x)`). -/
 theorem rx_of_sv {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hZ2 : Z2 M) (hZ1 : Z1C M)
     (hr : par M 2 (r + L) = some r) (hu : upg M (r + L - 1) = some (r + L)) : r ≠ r + L - 1 := by
@@ -586,6 +613,31 @@ theorem rx_of_sv {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hZ2 : Z2 M
   obtain ⟨m, hm, hmx, _, _⟩ := upg_spec hu
   rw [h1] at hmx; cases hmx
   have := par_lt M 1 _ _ hm; omega
+
+/-- **`r` counts a child** when `x − 1` upgrades to `x` (`q = r`): the first child of `r`. -/
+theorem rcl_sv {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hp : par M 0 (r + L) = some r)
+    (hr : par M 2 (r + L) = some r) (hu : upg M (r + L - 1) = some (r + L)) (hZ2 : Z2 M) (hZ1 : Z1C M)
+    (hR0 : R0P M) (hUAT : UAT M) (hBE : BumpE2 M) (he2r : entry M 2 r = 0) : CL M r ≠ [] := by
+  have hrx := rx_of_sv hlen hZ2 hZ1 hr hu
+  have hA : Anc0 M r (r + L) := Anc0.step hp (Anc0.refl r)
+  have hrl := par_lt M 0 _ _ hp
+  have hAa : Anc0 M r (r + L - 1) := anc_between hA _ (by omega) (by omega)
+  have hnb : col M (r + 1) ≠ bump M r := by
+    intro hb
+    have hc : r + 1 ∈ children M r := by
+      have hA1 : Anc0 M r (r + 1) := anc_between hA (r + 1) (by omega) (by omega)
+      obtain ⟨p1, hp1⟩ := par0_of_anc hA1 (by omega)
+      have := (anc0_par hA1 (by omega) hp1).le
+      have := par_lt M 0 _ _ hp1
+      have hpe : p1 = r := by omega
+      rw [hpe] at hp1
+      exact mem_children_iff.mpr ⟨by omega, hp1⟩
+    have := hBE r (r + 1) hc hb; omega
+  obtain ⟨hc, hcnt⟩ := first_child_counted hR0 hUAT hAa hrx hnb
+  intro hnil
+  have hin : r + 1 ∈ CL M r := by
+    unfold CL; rw [List.mem_filter]; exact ⟨hc, decide_eq_true hcnt⟩
+  rw [hnil] at hin; simp at hin
 
 /-- **The shape of `D = DepS M {o(r), v(x − 1)}`** (`q = r`, `x − 1` upgrades, `r ≠ x − 1`), from the
 structure of `M`. -/
@@ -833,7 +885,6 @@ structure T2QN (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L qp pq : Na
 
 /-- **`q = r`, `x − 1` upgrades to `x`.** -/
 structure T2SV (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Prop where
-  rcl : CL M r ≠ []
   seed1 : (drop1 M (r + L) rk).o r ≠ ρ.o r
   big : ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
     VNNcN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ SeedL ρ σ r
@@ -961,9 +1012,9 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
           have T' := T.sv hux
           obtain ⟨Sp1, _, Sdv, Sos, Svsh⟩ := sv_shapes hlen hL0 hq hux (rx_of_sv hlen I.z2 I.z1 hr hux) hrb he2r
             I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be
-          exact t2_sv_take hlen hL0 hq hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb T'.rcl hrU
+          exact t2_sv_take hlen hL0 hq hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (rcl_sv hlen hq hr hux I.z2 I.z1 I.r0p I.uat I.be he2r) hrU
             Sp1 Sdv Sos Svsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs
-            hvnn1 (hseed1 r (by omega) T'.rcl T'.seed1)
+            hvnn1 (hseed1 r (by omega) (rcl_sv hlen hq hr hux I.z2 I.z1 I.r0p I.uat I.be he2r) T'.seed1)
         · have hk : k < r + L := by omega
           have T' := T.up k hux hk
           obtain ⟨hp1, hdv, hos, hvsh⟩ :
@@ -1054,7 +1105,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
             have := (mem_children_iff.mp hd).2; rw [hdx, hq] at this; exact hcr (Option.some.inj this).symm))
             (hbN c hc)]
           exact htM
-        exact t2_sv_main hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb T'.rcl hIUt
+        exact t2_sv_main hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (rcl_sv hlen hq hr hux I.z2 I.z1 I.r0p I.uat I.be he2r) hIUt
           Sp1 Sdv Sos Svsh I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hAbs hVNN hseed
       · obtain ⟨hVNN, hseed⟩ := T.big hux n _ _ σ hn hCN
         have hIU : ∀ c, c < r + L → topped M c = true →
