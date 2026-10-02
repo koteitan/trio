@@ -7,7 +7,7 @@ N = M[n]、P = M[n − 1]（n ≥ 2）、ガード g = le1 P r。構造の仮定
 残り（明示した仮定、実測は C′ の t = 2 の 3000 行列 × n = 2..4 で例外 0）:
 - （`T2GuardKids`: g でない列の数える子・のりしろの子の子は g でない。守られた子の親は守られる（guard_par）ので証明済み。）
 - `T2GuardVal`: g の列の、g でない数える子・のりしろの子の子の v は V = v_P(r) 以下。
-- `T2RootKids`: r の数える子は g。
+- （`T2RootKids`: r の数える子は g。兄弟の減少 SibDec と R0P から証明済み、t2RootKids_gexp。）
 - `T2Base`: 写しの v が読む r より前の列の v は N と P で等しい。
 - 根: v_N(x) は標準形で V < v_N(x)。
 -/
@@ -63,6 +63,79 @@ theorem t2GuardKids_gexp : T2GuardKids (TRIO.gexp M r L d0 d1 (n - 1)) r := by
     obtain ⟨hkl, hpk⟩ := mem_children_iff.mp hk
     have hrj : Anc0 P r j := Anc0.step hpj (hanc i (by omega) h2)
     exact guard_par (hanc i (by omega) h2) hpj hjl (guard_par hrj hpk hkl hgk)
+
+omit hBEP in
+/-- **The children of `r` before `x` have row 1 above that of `r`** (siblings do not increase and the
+child of `r` towards `x` is above `r` by the guard). -/
+theorem rootKids_M (hR0 : R0P M) (hSD : SibDec M) :
+    ∀ d ∈ children M r, d < r + L → entry M 1 r < entry M 1 d := by
+  intro d hd hdx
+  have hxl : r + L < M.length := by omega
+  obtain ⟨c0, hpc0, hc0x⟩ := anc0_child hA (by omega)
+  have hrc0 : r < c0 := par_lt M 0 c0 r hpc0
+  have hc0l : c0 < M.length := by have := hc0x.le; omega
+  have hc0 : entry M 1 r < entry M 1 c0 :=
+    (le1_window hxl hA).mp hgx c0 (Anc0.step hpc0 (Anc0.refl r)) hc0x (by omega)
+  have hc0m : c0 ∈ children M r := mem_children_iff.mpr ⟨hc0l, hpc0⟩
+  have hpd := (mem_children_iff.mp hd).2
+  rcases lt_trichotomy d c0 with h | rfl | h
+  · obtain ⟨l1, l2, hl⟩ := List.append_of_mem hd
+    have hsorted : (children M r).Pairwise (· < ·) := by
+      unfold children; exact (List.pairwise_lt_range).filter _
+    have hc0in : c0 ∈ l2 := by
+      have : c0 ∈ l1 ++ d :: l2 := hl ▸ hc0m
+      rcases List.mem_append.mp this with h1 | h1
+      · rw [hl] at hsorted
+        have := (List.pairwise_append.mp hsorted).2.2 c0 h1 d (by simp)
+        omega
+      · rcases List.mem_cons.mp h1 with h2 | h2
+        · omega
+        · exact h2
+    have hle := sib_le hSD l2 l1 d hl c0 hc0in
+    rw [col_eq_entries, col_eq_entries] at hle
+    have he0 : entry M 0 c0 = entry M 0 d := by rw [hR0 c0 r hpc0, hR0 d r hpd]
+    unfold colLe at hle
+    simp only at hle
+    omega
+  · exact hc0
+  · exfalso
+    have hc0d : Anc0 M c0 d := anc_between hc0x d (le_of_lt h) (by omega)
+    obtain ⟨p, hp, hc0p⟩ := anc0_par_exists hc0d (by omega)
+    rw [hpd] at hp; cases hp
+    have := hc0p.le; omega
+
+omit hBEP in
+/-- **`T2RootKids` holds.** -/
+theorem t2RootKids_gexp (hR0 : R0P M) (hSD : SibDec M) : T2RootKids (TRIO.gexp M r L d0 d1 (n - 1)) r := by
+  set P := TRIO.gexp M r L d0 d1 (n - 1) with hP
+  have hlP : P.length = r + (n - 1) * L := TRIO.gexp_length hlen
+  have hm1 : 1 ≤ n - 1 := by omega
+  have hrP : r < P.length := by
+    have : L ≤ (n - 1) * L := Nat.le_mul_of_pos_left L (by omega)
+    omega
+  have hg0 : TRIO.le1 P r r := ⟨hrP, hrP, Relation.ReflTransGen.refl⟩
+  intro d hd _
+  obtain ⟨hdl, hpd⟩ := mem_children_iff.mp hd
+  rcases Nat.lt_or_ge d (r + L) with hdx | hdx
+  · -- before `x`: as in `M`
+    have hpdM : par M 0 d = some r := by rw [← par_gexp_pre hlen hm1 0 hdx]; exact hpd
+    have hdM : d ∈ children M r := mem_children_iff.mpr ⟨by omega, hpdM⟩
+    have h1 := rootKids_M hlen hL hA hd0e hn hd0 hd1 hgx he2r hR0 hSD d hdM hdx
+    rw [← entry_gexp_pre (d0 := d0) (d1 := d1) hlen hm1 1 (show r < r + L by omega),
+      ← entry_gexp_pre (d0 := d0) (d1 := d1) hlen hm1 1 hdx] at h1
+    exact guard_up (Anc0.refl r) hpd hdl hg0 h1
+  · -- at or after `x`: only the copy root `x` itself can be a child of `r`
+    have hn3 : 2 ≤ n - 1 := by
+      by_contra h'
+      have : n - 1 = 1 := by omega
+      rw [this, Nat.one_mul] at hlP; omega
+    obtain ⟨q, hq, _⟩ := anc0_par_exists hA (by omega)
+    rcases par0_tail2g (d1 := d1) hlen hL hA hq hd0e hn3 hdx (by omega) with ⟨hdx', _⟩ | ⟨p, hp, hpx, _⟩
+    · subst hdx'
+      have := (guard_gexp (m := n - 1) (k := 1) (q := 0) hlen hL hA hd0e hn hd0 hd1 hgx (by omega) hL).mpr
+        ⟨by omega, by omega, Relation.ReflTransGen.refl⟩
+      simpa using this
+    · rw [hpd] at hp; cases hp; omega
 
 /-- **The copy relation and Good3 at the copies of `M[n]`** (`t = 2`). -/
 theorem copy_good3_gexp {σ ρ : Valn} {rk : Bool → Nat → Nat}
@@ -183,8 +256,7 @@ end
 /-- **The remaining facts of the copy block** of every `M[n]` (`n ≥ 2`, measured with 0 exceptions). -/
 def T2CopyRes (M : Mat) (r L d0 d1 : Nat) : Prop :=
   ∀ n, 2 ≤ n → ∀ σ ρ, Cons (TRIO.gexp M r L d0 d1 n) σ → Cons (TRIO.gexp M r L d0 d1 (n - 1)) ρ →
-    T2GuardVal (TRIO.gexp M r L d0 d1 (n - 1)) ρ r ∧
-    T2RootKids (TRIO.gexp M r L d0 d1 (n - 1)) r ∧ T2Base (TRIO.gexp M r L d0 d1 (n - 1)) σ ρ r ∧
+    T2GuardVal (TRIO.gexp M r L d0 d1 (n - 1)) ρ r ∧ T2Base (TRIO.gexp M r L d0 d1 (n - 1)) σ ρ r ∧
     isOT (σ.v (r + L)) = true ∧ ρ.v r < σ.v (r + L)
 
 /-- **The part before `x`** of Good3 of `M[n]`, given standard values from `x` on (the `hOTout` of
@@ -204,6 +276,7 @@ include hlen hL hA hd0e hd0 hd1 hgx he2r
 /-- **Good3 of every `M[n]`** (`t = 2`, `n ≥ 1`), by induction on `n`: the copies by `σ` from `M[n − 1]`,
 the part before `x` from `T2BelowX`, the base `M[1] = M.take x` given. -/
 theorem good3_gexp_t2
+    (hR0 : R0P M) (hSD : SibDec M)
     (hRk : ∀ n, 1 ≤ n → ∃ rk, Rk (TRIO.gexp M r L d0 d1 n) rk)
     (hBE : ∀ n, 1 ≤ n → BumpE2 (TRIO.gexp M r L d0 d1 n))
     (hB1 : ∀ σ, Cons (TRIO.gexp M r L d0 d1 1) σ → Good3 (TRIO.gexp M r L d0 d1 1) σ)
@@ -221,8 +294,9 @@ theorem good3_gexp_t2
       have hCP : Cons (TRIO.gexp M r L d0 d1 m) (rhsIt _ (rkBound _ rk)) := cons_of_rk hRP
       have hGP := ih hm0 _ hCP
       have hm : m + 1 - 1 = m := by omega
-      obtain ⟨hKV, hRK, hB, hV', hVV⟩ := hRes (m + 1) hn2 σ _ hCN (by rw [hm]; exact hCP)
+      obtain ⟨hKV, hB, hV', hVV⟩ := hRes (m + 1) hn2 σ _ hCN (by rw [hm]; exact hCP)
       have hK := t2GuardKids_gexp hlen hL hA hd0e hn2 hd0 hd1 hgx he2r (by rw [hm]; exact hBE m hm0)
+      have hRK := t2RootKids_gexp hlen hL hA hd0e hn2 hd0 hd1 hgx he2r hR0 hSD
       rw [hm] at hK hKV hRK hB
       have hcp := copy_good3_gexp hlen hL hA hd0e hn2 hd0 hd1 hgx he2r (by rw [hm]; exact hBE m hm0)
         hCN (by rw [hm]; exact hCP) (by rw [hm]; exact hGP) (by rw [hm]; exact hRP)
