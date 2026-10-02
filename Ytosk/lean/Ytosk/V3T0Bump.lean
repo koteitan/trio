@@ -270,7 +270,7 @@ theorem bumpTermDec_N_t0 {ρ' : Valn} (hKD : BumpKidsDec M ρ) (hTD : BumpTermDe
     (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = omid M r L ρ)
     (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
     (hl : par M 0 r ≠ none → Lhd z (ρ'.o r) (ρ.o r))
-    (hG0le : ∀ g, par M 0 r = some g → col M r = bump M g →
+    (hG0le : ∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
       sumN ((children (M.take (r + L)) r).map ρ'.o) ≤ sumN ((children (M.take (r + L)) r).map ρ.o)) :
     BumpTermDec (TRIO.gexp M r L 0 0 n) σ := by
   have hx : r + L + 1 = M.length := hlen
@@ -406,7 +406,7 @@ theorem bumpTermDec_N_t0 {ρ' : Valn} (hKD : BumpKidsDec M ρ) (hTD : BumpTermDe
         have hp1 := List.pairwise_append.mp hM
         have hOle : omega G0 ≤ omega (app G0 one) :=
           omega_le_omega hG0ot (by rw [← add_one_eq_app]; exact isOT_add hG0ot rfl) (le_of_lt (lt_app_one G0))
-        have hO'le : omega G0' ≤ omega G0 := omega_le_omega hG0'ot hG0ot (hG0le i hig hrb)
+        have hO'le : omega G0' ≤ omega G0 := omega_le_omega hG0'ot hG0ot (hG0le i hig hrb he1i he2i)
         rw [← List.append_assoc]
         refine List.pairwise_append.mpr ⟨List.pairwise_append.mpr ⟨hp1.1,
           List.pairwise_replicate.mpr (Or.inr (le_refl _)), fun a ha b hb => ?_⟩, by simp,

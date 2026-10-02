@@ -6,7 +6,7 @@
 - r が根のとき: r より前は値が変わらず、M の根 r（値 ψ_v(Y0 + 1)）が N ではコピーの根
   ψ_v(Y0) × (n − 1) と M.take x での r の値に替わる（`root_N_B`）。
 -/
-import Ytosk.V3T0Root
+import Ytosk.V3T0Bump
 
 namespace Ytosk
 
@@ -218,6 +218,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       (∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true) ∧ VSmallNewN M r ρ σ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
       Good3 (TRIO.gexp M r L 0 0 n) ρN ∧ FrameOT (TRIO.gexp M r L 0 0 n) ρN ∧
+      BumpKidsDec (TRIO.gexp M r L 0 0 n) ρN ∧ BumpTermDec (TRIO.gexp M r L 0 0 n) ρN ∧
       ((roots (TRIO.gexp M r L 0 0 n)).map ρN.o).Pairwise (fun a b => b ≤ a) ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ := by
   intro n hn2
@@ -232,6 +233,9 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hVSt hF hFO hArgT
     (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hTD hAbs hWS) hUA
   have hoff := chg_off (show r + L + 1 = M.length from hlen) hC hG hC1 hRk1
+  have hVT : ValInv (M.take (r + L)) ρ' :=
+    drop_pres (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC
+      ⟨hG, hVS, hF, hFO, hKD, hTD⟩ ⟨hArgT, hVSt, hWS, hUA, hAbs⟩ hC1 hRk1
   have hnx : ¬ DepX M (r + L) false (r + L) := not_depX_v_x he1
   have hD := dep_strict0 (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop hx2 hp hnx
   -- the expansion `N`
@@ -328,6 +332,16 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
         uncnt_of_depv hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hp (by omega) hd hrc hcnt')
       exact t0_S1 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hcnt' hF
         (fun c hc hd => (hoffD c hc).1 hd) hσvg hσmid hσlast (hLast n hn2 g hg hcnt') hl hy'
+    have hG0le : ∀ g', par M 0 r = some g' → col M r = bump M g' → entry M 1 g' ≠ 0 → entry M 2 g' ≠ 0 →
+        sumN ((children (M.take (r + L)) r).map ρ'.o) ≤ sumN ((children (M.take (r + L)) r).map ρ.o) := by
+      intro g' hg' hjb h1 h2
+      have hgg : g' = g := Option.some.inj (hg'.symm.trans hg)
+      rw [hgg] at hjb h1 h2
+      exact (brelS_lhdE (g0_drop_rel (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG
+        hC1 hRk1 hKD hWS h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG)
+        (fun k _ hk => hdrop k hk)
+        (fun k hk hkx _ => v_lhd_B (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
+          hC hG hC1 hRk1 hKD hTD hAbs hWS hUA hdrop k (mem_children hk).1 hkx)).2).le
     -- seed S2
     have hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g) := by
       intro hjb h1 h2
@@ -488,6 +502,12 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           exact frameOT_g0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg' hcnt'
             (fun c hc hd => (hoffD c hc).1 hd) hσvg hσmid hσlast (hLast n hn2 g' hg' hcnt') hl hy' hFO
             (hOTD g' hgr (DepX.ochild hrc hcnt'.1 hcnt'.2 hDr))),
+      bumpKidsDec_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hKD hVT.kd hσB
+        (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => le_of_lt (hdl true d hD hd).1) hσmid hσlast
+        hOXle hO'le,
+      bumpTermDec_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hKD hTD hVT.td hσB
+        (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => le_of_lt (hdl true d hD hd).1) hσmid hσlast
+        (fun _ => hl) hG0le,
       rootP_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hR01 hR12 h00 hpM
         (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => le_of_lt (hdl true d hD hd).1)
         (fun h => absurd h (by rw [hg]; simp)) hσmid hσlast hOXle hO'le, ?_⟩
@@ -512,7 +532,15 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       hσmid hσlast (hLast n hn2) (fun g hg => absurd hg (by rw [hrn]; simp)),
       frameOT_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hFO hFOT
         (fun i hri hiN => ⟨hσB i hri hiN, hσBv i hri hiN⟩) hoffD
-        (fun g hg => absurd hg (by rw [hrn]; simp)), ?_, ?_⟩
+        (fun g hg => absurd hg (by rw [hrn]; simp)),
+      bumpKidsDec_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hKD hVT.kd hσB
+        (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => absurd hd (by
+          have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true d hD; omega))
+        hσmid hσlast hOXle hO'le,
+      bumpTermDec_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hKD hTD hVT.td hσB
+        (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => absurd hd (by
+          have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true d hD; omega))
+        hσmid hσlast (fun h => absurd hrn h) (fun g hg => absurd hg (by rw [hrn]; simp)), ?_, ?_⟩
     · exact rootP_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hR01 hR12 h00 hpM
         (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => absurd hd (by
           have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true d hD; omega))
@@ -554,7 +582,7 @@ theorem t0_main' {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ := by
   intro n hn2
-  obtain ⟨ρN, rkN, hCN, hRN, _, _, _, h⟩ := t0_core hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM
+  obtain ⟨ρN, rkN, hCN, hRN, _, _, _, _, _, h⟩ := t0_core hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM
     hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA hsM hpM hLast
     (fun n hn σ hCN => let h := hN n hn σ hCN;
       ⟨fun i hi _ => h.1.ot_o i (by rw [lenN0 hlen (by omega)]; omega), h.2.1⟩) n hn2
