@@ -357,4 +357,43 @@ theorem psi_one_le_fsD {a X η : T} (hX : X ≠ z) (hO : OHole (psi a X z)) (hη
   | succ => rw [hcb] at hO; exact fsD_ne_z_oh hO hη
   | omega => rw [hcb] at hO; exact fsD_ne_z_oh hO hη
 
+/-- **With the index `1`, the hole at a diagonal point disappears** (when `b_r[1]` is a successor). -/
+theorem diag_fsD_one {a br μ : T} (hs : isSucc (fs br one) = true) :
+    ∀ {t : T}, DiagAt a br μ t → fsD t one ≠ z ∧ isSucc (fsD t one) = false ∧
+      cof (fsD t one) = .omega ∧ ¬ OHole (fsD t one) := by
+  intro t h
+  induction h with
+  | here hb hc _ =>
+    rw [fsD_here hb hc]
+    have hF : fs br one ≠ z := fs_ne_z_big hc (by simp [one])
+    refine ⟨by simp, isSucc_psi_ne (Or.inr hF), ?_, ?_⟩
+    · unfold cof; rw [if_neg hF, if_pos hs]
+    · unfold OHole; rw [if_neg hF, if_pos hs]; exact id
+  | @rest a' b' c d e _ ih =>
+    obtain ⟨hz, hsc, hcf, hO⟩ := ih
+    rw [fsD_rest (by simp)]
+    cases hX : fsD (psi c d e) one with
+    | z => exact absurd hX hz
+    | psi p q w =>
+      rw [hX] at hsc hcf hO
+      refine ⟨by simp, ?_, ?_, ?_⟩
+      · rw [isSucc_psi_rest _ _ _ (by simp)]; exact hsc
+      · simpa [cof] using hcf
+      · exact hO
+  | @arg a' b' hb' hs' _ ih =>
+    obtain ⟨hz, hsc, hcf, hO⟩ := ih
+    rw [fsD_psi hb' hs']
+    refine ⟨by simp, isSucc_psi_ne (Or.inr hz), ?_, ?_⟩
+    · unfold cof; rw [if_neg hz, if_neg (by rw [hsc]; simp), hcf]
+    · unfold OHole; rw [if_neg hz, if_neg (by rw [hsc]; simp), hcf]; exact hO
+  | @sub a' ha hs' _ ih =>
+    obtain ⟨hz, hsc, hcf, hO⟩ := ih
+    rw [fsD_sub ha hs']
+    refine ⟨by simp, isSucc_psi_ne (Or.inl hz), ?_, ?_⟩
+    · unfold cof; rw [if_pos rfl, if_neg hz, if_neg (by rw [hsc]; simp)]; exact hcf
+    · unfold OHole; rw [if_pos rfl]
+      rintro ⟨_, h | h⟩
+      · rw [hsc] at h; cases h
+      · exact hO h
+
 end Ytosk

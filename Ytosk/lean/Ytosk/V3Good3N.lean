@@ -191,8 +191,8 @@ structure HoleData (M : Mat) (x : Nat) (ρ : Valn) (μ br vr seed : T) : Prop wh
 /-- **A property carried along the chain of expansions** (`t = 1`): it passes from `M[n − 1]` to the glued
 valuation of `M[n]`, given the facts the chains know at each step (both valuations are consistent and good,
 the `D` values `fsD(·, Z i)` are standard, lower and nonzero, and the value at `x` bounds the new root). -/
-def ExpStepT1 (Pn : Mat → Valn → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
-  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T),
+def ExpStepT1At (Pn : Mat → Valn → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) (n : Nat) : Prop :=
+  ∀ (ρP : Valn) (Z : Nat → T),
     Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP → Good3 (TRIO.gexp M r L d0 0 (n - 1)) ρP →
     Pn (TRIO.gexp M r L d0 0 (n - 1)) ρP →
     Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
@@ -205,5 +205,9 @@ def ExpStepT1 (Pn : Mat → Valn → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) 
       (∀ i, ∃ k, k0 ≤ k ∧ Z i = gamS μ br seed k) ∧ ρP.o r = gamS μ br seed k0 ∧ k0 = n - 2 ∧
       μ = vr ∧ ρ.o r = psi vr br z) →
     Pn (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z)
+
+/-- `ExpStepT1At` at every `n ≥ 2`. -/
+def ExpStepT1 (Pn : Mat → Valn → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ExpStepT1At Pn M r L d0 ρ n
 
 end Ytosk

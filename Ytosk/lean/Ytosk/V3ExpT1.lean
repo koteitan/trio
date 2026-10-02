@@ -260,7 +260,7 @@ theorem tpG_iff_tp1WC {M : Mat} {ρ : Valn} :
   ⟨fun h i L c R hch hc s y ho h1 h2 hcy hO => h i L c R hch hc s y ho h1 h2 hO _ ⟨hcy, rfl⟩,
    fun h i L c R hch hc s y ho h1 h2 hO η ⟨hcy, hη⟩ => hη ▸ h i L c R hch hc s y ho h1 h2 hcy hO⟩
 
-/-- **TPG is carried** (`t = 1`), from TP1C of `M`, except for `q = r` at `n = 2` (residual `hQR2`; there the seed
+/-- **TPG is carried** (`t = 1`), from TP1C of `M`; the case `q = r` at `n = 2` is the hypothesis `hQR2` (proven in `qr2_tpG`; there the seed
 `o_{M.take x}(r)` may be below `ψ_μ(1)`). At a `D` child below `x` the new argument is `y⟨ζ⟩`, and
 `y⟨ζ⟩⟨θ⟩ = y⟨ζ⟨θ⟩⟩` (`fsD_comp`) with `ψ_μ(1) ≤ ζ⟨θ⟩` (`psi_one_le_fsD`; the hole of `y⟨ζ⟩` comes from `ζ`,
 `ohole_of_fsD`), so TP1C of `M` persists (`persist_of_tp1`). At `x`: for `q ≠ r` no trigger (F1); for `q = r`
@@ -270,22 +270,18 @@ theorem expStep_tpG {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
-    (hQR2 : par M 0 (r + L) = some r → ∀ (ρP : Valn) (Z : Nat → T),
-      Cons (TRIO.gexp M r L d0 0 1) ρP → TPG P (TRIO.gexp M r L d0 0 1) ρP →
-      Cons (TRIO.gexp M r L d0 0 2) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
-      Good3 (TRIO.gexp M r L d0 0 2) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
-      TPG P (TRIO.gexp M r L d0 0 2) (glueZ M (r + L) ρ (shiftV ρP L) Z)) :
+    (hQR2 : par M 0 (r + L) = some r → ExpStepT1At (TPG P) M r L d0 ρ 2) :
     ExpStepT1 (TPG P) M r L d0 ρ := by
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   have hpath := hpath_of_par1 h1 hA (by omega)
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
   have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
   have hox := o_last_t1 hlen I.cons I.good h1 (by have := par1_entry_lt h1; omega) hx2
-  intro n hn ρP Z hCP _ hTPP hCN hGN _ _ hle hlex hH
+  intro n hn ρP Z hCP hGP hTPP hCN hGN hoto hotv hle hlex hH
   by_cases hq2 : q = r ∧ n = 2
   · obtain ⟨hqr, rfl⟩ := hq2
     subst hqr
-    exact hQR2 hq ρP Z hCP hTPP hCN hGN
+    exact hQR2 hq ρP Z hCP hGP hTPP hCN hGN hoto hotv hle hlex hH
   obtain ⟨μ', br', vr', seed, k0, hHD, hZ, hPr, hk0n, hμv, hro'⟩ := hH
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
@@ -533,6 +529,312 @@ theorem expStep_tpG {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
       rw [he]; simp
     exact hTPP (r + a) Lc' c' R' hsplit hcntP s y hc ht1 ht2 hOy η hPη
 
+/-- **TPG at `q = r`, `n = 2`** (the residual of `expStep_tpG`), for the two persistence invariants
+(`hP`: an index allowed by `P` is nonzero; the `M`-side facts are TP1C, TP1WC, TrigOmC and TPG P of `M`).
+At a `D` child below `x` with the seed `ζ = o_{M.take x}(r)` as index: the old argument `y₀` is either `b_r`
+(then `b = 0` and TrigOmC makes the head `0`, or `b ≠ 0`, `seed ≥ ψ_μ(1)` and TP1C persists) or `ω`-cofinal
+(TP1WC persists, or the seed is `1` and the hole disappears, `diag_fsD_one`). At `x`: the new argument
+lies between `b` and `b + seed` (`SeedOK.lt_next`), so it is `b + δ` and `fsD` keeps it above `b`. -/
+theorem qr2_tpG {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    (P : T → T → Prop) (hPz : ∀ y η, P y η → η ≠ z) (hTGM : TPG P M ρ)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r) :
+    ExpStepT1At (TPG P) M r L d0 ρ 2 := by
+  have hn : 2 ≤ 2 := le_refl 2
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
+  obtain ⟨b, hro, hbe, _⟩ := qr_o_r hlen I.r0p I.sd h1 hx2 hq I.cons I.good I.rank
+  have hox := o_last_t1 hlen I.cons I.good h1 (by have := par1_entry_lt h1; omega) hx2
+  have hbr0 : app b (psi (succ (ρ.v r)) z z) ≠ z := fun h => absurd (app_eq_z h).2 (by simp)
+  have hcbr : cof (app b (psi (succ (ρ.v r)) z z)) = .big (ρ.v r) := cof_br
+  intro ρP Z hCP _ hTPP _ _ _ _ hle hlex hH
+  obtain ⟨μ', br', vr', seed, k0, hHD, hZ, hPr, hk0n, hμv, hro'⟩ := hH
+  have hk00 : k0 = 0 := by omega
+  subst hk00
+  rw [hro] at hro'
+  obtain ⟨hvr, hbr', _⟩ := T.psi.inj hro'
+  subst hvr hμv hbr'
+  -- now `μ' = vr' = v(r)` and `br' = b + Ω_{μ+1}`
+  set μ := ρ.v r with hμ
+  set br := app b (psi (succ μ) z z) with hbrdef
+  have hot : isOT (psi μ br z) = true := by rw [← hro]; exact I.good.ot_o r (by omega)
+  have hSr := hHD.S μ (lt_irrefl' μ) hot
+  have hseedz : seed ≠ z := by obtain ⟨a, X, h⟩ := hHD.seedS; rw [h]; simp
+  have hseedP : ρP.o r = seed := hPr
+  -- the seed is `1`, or a non-successor
+  have hseed1 : seed = one ∨ isSucc seed = false := by
+    obtain ⟨a, X, h⟩ := hHD.seedS
+    by_cases ha : a = z
+    · by_cases hX : X = z
+      · left; rw [h, ha, hX]; rfl
+      · right; rw [h]; exact isSucc_psi_ne (Or.inr hX)
+    · right; rw [h]; exact isSucc_psi_ne (Or.inl ha)
+  -- `b ≠ 0` gives a big seed
+  have hbig : b ≠ z → psi μ one z ≤ seed := by
+    intro hbz
+    have hr1x : r + 1 < r + L := by
+      rcases Nat.lt_or_ge (r + 1) (r + L) with h | h
+      · exact h
+      · exfalso; apply hbz
+        rw [hbe]; unfold preState
+        have : (children M r).filter (fun d => decide (d < r + L)) = [] := by
+          rw [List.filter_eq_nil_iff]
+          intro c hc
+          have := (mem_children hc).1
+          simp; omega
+        rw [this]; rfl
+    have hg : TRIO.gexp M r L d0 0 (2 - 1) = M.take (r + L) := gexp_one_eq hlen
+    have hCP' : Cons (M.take (r + L)) ρP := hg ▸ hCP
+    have hcnt := hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat
+    have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
+    rw [← hseedP]
+    exact qr_seed_big hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 I.cons I.good hCP' hRk1 hr1x
+  set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
+  have hlN := len_N (d0 := d0) hlen hn
+  have hlP := len_P (d0 := d0) (n := 2) hlen
+  have hxnb := hxnb_t1 hlen hL hA hd0e I.z2 I.z1 h1 2 hn
+  have hiu := hiu_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn
+  have hiux := hiux_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn
+  have hSA := sameAt_lt hlen hL hA hd0e hn hpath hx2 hxnb hiu hiux
+  have hσx : σ.o (r + L) = ρP.o r := by
+    rw [hσ, glueZ_o_ge ρ (shiftV ρP L) Z (Nat.le_refl _)]
+    show ρP.o (r + L - L) = ρP.o r; rw [Nat.add_sub_cancel]
+  intro i Lc c R hch hcN s y hc ht1 ht2 hOy η hPη
+  have hcmem : c ∈ children (TRIO.gexp M r L d0 0 2) i := by rw [hch]; simp
+  have hcl := mem_children hcmem
+  have hη : η ≠ z := hPz y η hPη
+  rcases Nat.lt_or_ge i (r + L) with h | h
+  · have hS := hSA i h
+    rw [hS.ch] at hch hcmem
+    have hcM : Counted M i c := (counted_iff_of_cnt (hS.cnt c hcmem)).mp hcN
+    obtain ⟨hv, hpre⟩ := preState_lt hlen hL hA hd0e hn hpath hx2 hxnb (I.z2 r) hiu hiux (ρ := ρ) (ρP := ρP)
+      (Z := Z) hOS h hch hcM
+    rw [← hσ] at hv hpre
+    rw [hpre] at ht1 ⊢
+    rw [hv] at ht2
+    have hcm := mem_children hcmem
+    have hcx : c ≤ r + L := by have := (mem_children hcmem).2; omega
+    by_cases hd : DepX M (r + L) true c
+    · rcases Nat.lt_or_ge c (r + L) with hc' | hc'
+      · -- a `D` child below `x`
+        obtain ⟨s0, y0, h0⟩ := o_psi_form I.cons hcm.2
+        have hσc : σ.o c = fsD (psi s0 y0 z) (Z c) := by
+          rw [hσ, glueZ_o_dep ρ (shiftV ρP L) Z hc' hd, h0]
+        obtain ⟨_, a', ha', hD⟩ := qr_holeD hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 h1 hq I.cons I.good
+          I.kd I.td I.ad hro hox hOS true c hd hc'
+        simp only [valB, cond_true] at hD
+        rw [h0] at hD
+        obtain ⟨k, _, hk⟩ := hZ c
+        -- the old argument is nonzero
+        have hy0 : y0 ≠ z := by
+          intro hy0; subst hy0
+          generalize hU : psi s0 z z = U at hD
+          cases hD with
+          | here hb _ _ => exact hb (T.psi.inj hU).2.1.symm
+          | rest _ => exact absurd (T.psi.inj hU).2.2.symm (by simp)
+          | arg hb _ _ => exact hb (T.psi.inj hU).2.1.symm
+          | sub ha hs hD' =>
+            -- `ψ_{s0}(0)` with `s0` not a successor: the new argument is `0`
+            have hs0 : s0 ≠ z := by rw [(T.psi.inj hU).1]; exact ha
+            have hs0s : isSucc s0 = false := by rw [(T.psi.inj hU).1]; exact hs
+            rw [hσc, fsD_sub hs0 hs0s] at hc
+            rw [← (T.psi.inj hc).2.1] at ht1
+            exact T.not_lt_z _ ht1
+        have hHc : HoleT μ br μ (psi s0 y0 z) := Or.inr ⟨a', ha', hD⟩
+        have hy0s := not_succ_arg_of_holeT hy0 hHc
+        have hHy := holeT_arg hy0 hHc hcbr
+        have hOy0 := ohole_of_holeT hHy
+        have hlev := holeLev_holeT hHy
+        rw [hσc, fsD_psi hy0 hy0s] at hc
+        obtain ⟨hss, hyy, _⟩ := T.psi.inj hc
+        subst hss hyy
+        have hlec : psi s0 (fsD y0 (Z c)) z ≤ psi s0 y0 z := by
+          have := (hle c hc' hd).1
+          rw [h0, fsD_psi hy0 hy0s] at this; exact this
+        have hyy0 : fsD y0 (Z c) ≤ y0 := by
+          rcases (le_iff _ _).mp hlec with h' | h'
+          · rcases psi_lt_psi_z_iff.mp h' with h'' | ⟨_, h''⟩
+            · exact absurd h'' (lt_irrefl' _)
+            · exact le_of_lt h''
+          · rw [(T.psi.inj h').2.1]
+        have ht1M : lt (preState M ρ i Lc) y0 = true := lt_of_lt_of_le ht1 hyy0
+        have ht2M : lt (psi (ρ.v i) z z) (psi s0 y0 z) = true := lt_of_lt_of_le ht2 hlec
+        cases k with
+        | succ j =>
+          -- a chain term from the second on
+          rw [hk] at hOy ⊢
+          have hX : fs br (gamS μ br seed j) ≠ z := fs_ne_z_big hcbr (gamS_ne_z_gen hseedz j)
+          have hζz : gamS μ br seed (j + 1) ≠ z := gamS_ne_z_gen hseedz (j + 1)
+          have hζs : isSucc (gamS μ br seed (j + 1)) = false := isSucc_psi_ne (Or.inr hX)
+          have hOζ := ohole_of_fsD hOy0 hζz hζs hOy
+          rw [fsD_comp hOy0 hζz hζs]
+          apply persist_of_tp1 hOy0 _ (I.tp1 i Lc c R hch hcM s0 y0 h0 ht1M ht2M hOy0)
+          rw [hlev]; exact psi_one_le_fsD hX hOζ hη
+        | zero =>
+          -- the seed
+          change Z c = seed at hk
+          rw [hk] at hOy ⊢
+          -- the shape of `y₀`
+          generalize hU : psi s0 y0 z = U at hD
+          cases hD with
+          | here _ _ _ =>
+            have hyb : y0 = br := (T.psi.inj hU).2.1
+            subst hyb
+            by_cases hbz : b = z
+            · -- `b = 0`: TrigOmC makes the head `0`
+              have hbr1 : br = psi (succ μ) z z := by rw [hbrdef, hbz]; rfl
+              rw [hbr1] at h0 ht1M ht2M
+              have hB0 := I.trig i Lc c R hch hcM s0 μ h0 ht1M ht2M
+              rw [hB0]
+              have := fsD_ne_z_oh hOy hη
+              exact lt_of_le_of_ne (z_le _) (Ne.symm this)
+            · -- `b ≠ 0`: the seed is at least `ψ_μ(1)`
+              have hsb := hbig hbz
+              obtain ⟨a, X, hsX⟩ := hHD.seedS
+              have hsom := hSr.lt_om
+              rw [hsX] at hsb hsom
+              have haμ : a = μ := by
+                rcases psi_lt_psi_z_iff.mp hsom with h' | ⟨_, h'⟩
+                · rcases (le_iff _ _).mp hsb with h'' | h''
+                  · rcases psi_lt_psi_z_iff.mp h'' with h3 | ⟨h3, _⟩
+                    · exact absurd (lt_succ_iff.mp h') (fun hle' => lt_irrefl' _ (lt_of_lt_of_le h3 hle'))
+                    · exact h3.symm
+                  · exact (T.psi.inj h'').1.symm
+                · exact absurd h' (T.not_lt_z _)
+              have hXz : X ≠ z := by
+                intro hX; subst hX haμ
+                rcases (le_iff _ _).mp hsb with h'' | h''
+                · rcases psi_lt_psi_z_iff.mp h'' with h3 | ⟨_, h3⟩
+                  · exact lt_irrefl' _ h3
+                  · exact T.not_lt_z _ h3
+                · exact absurd (T.psi.inj h'').2.1 (by simp [one])
+              have hζs : isSucc seed = false := by rw [hsX]; exact isSucc_psi_ne (Or.inr hXz)
+              have hOζ := ohole_of_fsD hOy0 hseedz hζs hOy
+              rw [fsD_comp hOy0 hseedz hζs]
+              apply persist_of_tp1 hOy0 _ (I.tp1 i Lc c R hch hcM s0 _ h0 ht1M ht2M hOy0)
+              rw [hlev]
+              rw [hsX] at hOζ ⊢; rw [haμ] at hOζ ⊢
+              exact psi_one_le_fsD hXz hOζ hη
+          | rest _ => exact absurd (T.psi.inj hU).2.2.symm (by simp)
+          | arg _ _ hDy =>
+            have hyy : y0 = _ := (T.psi.inj hU).2.1
+            rw [← hyy] at hDy
+            have hcy : cof y0 = .omega := DiagAt.cof_omega hDy
+            rcases hseed1 with h1s | hζs
+            · -- the seed `1`: no hole is left
+              exfalso
+              rw [h1s] at hOy
+              have hs1 : isSucc (fs br one) = true := by
+                rw [hbrdef, fs_br, isSucc_app _ (by simp [one])]; rfl
+              exact (diag_fsD_one hs1 hDy).2.2.2 hOy
+            · have hOζ := ohole_of_fsD hOy0 hseedz hζs hOy
+              rw [fsD_comp hOy0 hseedz hζs]
+              exact persist_of_tp1 hOy0 (one_le_of_ne_z (fsD_ne_z_oh hOζ hη))
+                (I.tp1w i Lc c R hch hcM s0 y0 h0 ht1M ht2M hcy hOy0)
+          | sub _ _ _ => exact absurd (T.psi.inj hU).2.1 hy0
+      · -- the frame of `x`: the new argument is `b + δ`
+        have hcx' : c = r + L := by omega
+        subst hcx'
+        have hix : par M 0 (r + L) = some i := (mem_children_iff.mp hcmem).2
+        have hir : i = r := Option.some.inj (hix.symm.trans hq)
+        subst hir
+        rw [hσx, hseedP] at hc
+        have hR : R = [] := by
+          rcases R with _ | ⟨d, R'⟩
+          · rfl
+          · exfalso
+            have hdm : d ∈ children M i := by rw [hch]; simp
+            have hsort := children_sorted M i
+            rw [hch] at hsort
+            have hcd := (List.pairwise_cons.mp (List.pairwise_append.mp hsort).2.1).1 d (by simp)
+            have := (mem_children hdm).2; omega
+        subst hR
+        have hLc : (children M i).filter (fun d => decide (d < i + L)) = Lc := by
+          rw [hch, List.filter_append]
+          have h1' : Lc.filter (fun d => decide (d < i + L)) = Lc := by
+            rw [List.filter_eq_self]
+            intro d hd
+            have hsort := children_sorted M i
+            rw [hch] at hsort
+            simpa using (List.pairwise_append.mp hsort).2.2 d hd (i + L) (by simp)
+          rw [h1']; simp
+        rw [← hLc, ← hbe] at ht1 ⊢
+        -- the subscript of the seed is `μ`
+        have hsom := hSr.lt_om
+        have hnext := hSr.lt_next
+        rw [hc] at hsom hnext
+        have hsμ : s = μ := by
+          have h2' : ρ.v i ≤ s := by
+            rcases psi_lt_psi_z_iff.mp ht2 with h' | ⟨h', _⟩
+            · exact le_of_lt h'
+            · rw [h']
+          rcases psi_lt_psi_z_iff.mp hsom with h' | ⟨_, h'⟩
+          · have := lt_succ_iff.mp h'
+            rcases (le_iff _ _).mp this with h'' | h''
+            · exact absurd (lt_of_lt_of_le h'' h2') (lt_irrefl' _)
+            · exact h''
+          · exact absurd h' (T.not_lt_z _)
+        rw [hsμ, hbrdef, fs_br] at hnext
+        have hyb : y < app b (psi s y z) := by
+          rcases psi_lt_psi_z_iff.mp hnext with h' | ⟨_, h'⟩
+          · exact absurd h' (lt_irrefl' _)
+          · rw [hsμ]; exact h'
+        obtain ⟨c0, hc0, hc0z, _⟩ := between_app (A := b) (x := z) (y := psi s y z) (c := y)
+          (by rw [app_z_right]; exact ht1) (le_of_lt hyb)
+        have hc0z' : c0 ≠ z := by intro h'; rw [h'] at hc0z; exact T.not_lt_z _ hc0z
+        rw [hc0] at hOy ⊢
+        have hOc0 := ohole_app_inv hc0z' hOy
+        rw [fsD_app _ hc0z']
+        exact lt_app_of (fsD_ne_z_oh hOc0 hη)
+    · -- not in `D`: the frame of `M`
+      have hc' : c < r + L := by
+        rcases Nat.lt_or_ge c (r + L) with h' | h'
+        · exact h'
+        · exact absurd (show c = r + L by omega ▸ DepX.leaf) hd
+      rw [hσ, glueZ_o_lt ρ (shiftV ρP L) Z hc' hd] at hc
+      exact hTGM i Lc c R hch hcM s y hc ht1 ht2 hOy η hPη
+  · -- a copy column: the frame of `M[1]`
+    obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
+    have ha : a < (2 - 1) * L := by omega
+    have hσo : ∀ b, σ.o (r + L + b) = ρP.o (r + b) := by
+      intro b; rw [hσ, glueZ_o_ge ρ (shiftV ρP L) Z (by omega)]
+      show ρP.o (r + L + b - L) = ρP.o (r + b); congr 1; omega
+    have hσv : σ.v (r + L + a) = ρP.v (r + a) := by
+      rw [hσ, glueZ_v_ge ρ (shiftV ρP L) Z (by omega)]
+      show ρP.v (r + L + a - L) = ρP.v (r + a); congr 1; omega
+    rw [children_shift (d0 := d0) hlen hL hA hd0e hn ha] at hch
+    obtain ⟨Lc', T', hsplit, hLc, hT⟩ := List.map_eq_append_iff.mp hch
+    obtain ⟨c', R', hT', hc', hR⟩ := List.map_eq_cons_iff.mp hT
+    subst hLc hc' hR
+    rw [hT'] at hsplit
+    have hc'm : c' ∈ children (TRIO.gexp M r L d0 0 (2 - 1)) (r + a) := by rw [hsplit]; simp
+    have hc'l := mem_children hc'm
+    rw [hlP] at hc'l
+    have hpre : preState (TRIO.gexp M r L d0 0 2) σ (r + L + a) (Lc'.map (· + L)) =
+        preState (TRIO.gexp M r L d0 0 (2 - 1)) ρP (r + a) Lc' := by
+      unfold preState
+      rw [hσv, List.map_map]
+      congr 3
+      apply List.map_congr_left
+      intro d hd
+      have hdm : d ∈ children (TRIO.gexp M r L d0 0 (2 - 1)) (r + a) := by rw [hsplit]; simp [hd]
+      exact cnt_copy hlen hL hA hd0e hn hpath (I.z2 r) ha hdm
+    have hco : σ.o (c' + L) = ρP.o c' := by
+      have := hσo (c' - r)
+      rw [show r + L + (c' - r) = c' + L by omega, show r + (c' - r) = c' by omega] at this
+      exact this
+    rw [hpre] at ht1 ⊢
+    rw [hσv] at ht2
+    rw [hco] at hc
+    have hcntP : Counted (TRIO.gexp M r L d0 0 (2 - 1)) (r + a) c' := by
+      refine (counted_iff_of_cnt1 (cnt_copy hlen hL hA hd0e hn hpath (I.z2 r) (ρ := ρ) (Z := Z) ha hc'm)
+        hco ?_).mp hcN
+      obtain ⟨s1, y1, he⟩ := o_psi_form hCP (i := c') (by rw [hlP]; omega)
+      rw [he]; simp
+    exact hTPP (r + a) Lc' c' R' hsplit hcntP s y hc ht1 ht2 hOy η hPη
+
 /-- **TrigOmC is carried** (`t = 1`). -/
 theorem expStep_trigOmC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
@@ -554,38 +856,37 @@ def PT1 (N : Mat) (σ : Valn) : Prop :=
   FrameOT N σ ∧ RootP N σ ∧ BumpDec N σ ∧ FrameClosed N σ ∧ TrigOmC N σ ∧ TP1C N σ ∧ TP1WC N σ ∧
     QV N σ
 
-/-- **The residual of a carried property at `q = r`, `n = 2`** (the seed may be small there). -/
-def QR2Res (Pn : Mat → Valn → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
-  par M 0 (r + L) = some r → ∀ (ρP : Valn) (Z : Nat → T),
-    Cons (TRIO.gexp M r L d0 0 1) ρP → Pn (TRIO.gexp M r L d0 0 1) ρP →
-    Cons (TRIO.gexp M r L d0 0 2) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
-    Good3 (TRIO.gexp M r L d0 0 2) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
-    Pn (TRIO.gexp M r L d0 0 2) (glueZ M (r + L) ρ (shiftV ρP L) Z)
+theorem expStepAt_iff {P Q : Mat → Valn → Prop} (h : ∀ N σ, P N σ ↔ Q N σ) {M : Mat} {r L d0 n : Nat}
+    {ρ : Valn} (hP : ExpStepT1At P M r L d0 ρ n) : ExpStepT1At Q M r L d0 ρ n :=
+  fun ρP Z hCP hGP hQP hCN hGN ho hv hle hlex hH =>
+    (h _ _).mp (hP ρP Z hCP hGP ((h _ _).mpr hQP) hCN hGN ho hv hle hlex hH)
 
 theorem expStep_iff {P Q : Mat → Valn → Prop} (h : ∀ N σ, P N σ ↔ Q N σ) {M : Mat} {r L d0 : Nat}
     {ρ : Valn} (hP : ExpStepT1 P M r L d0 ρ) : ExpStepT1 Q M r L d0 ρ :=
   fun n hn ρP Z hCP hGP hQP hCN hGN ho hv hle hlex hH =>
     (h _ _).mp (hP n hn ρP Z hCP hGP ((h _ _).mpr hQP) hCN hGN ho hv hle hlex hH)
 
-/-- **TP1C is carried** (`t = 1`), with the residual at `q = r`, `n = 2`. -/
+/-- **TP1C is carried** (`t = 1`). -/
 theorem expStep_tp1C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
-    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hQR2 : QR2Res TP1C M r L d0 ρ) :
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) :
     ExpStepT1 TP1C M r L d0 ρ :=
+  have hPz : ∀ y η, η = psi (holeLev y) one z → η ≠ z := fun y η h => by rw [h]; simp
   expStep_iff (fun _ _ => tpG_iff_tp1C)
-    (expStep_tpG I _ (fun y η h => by rw [h]; simp) (tpG_iff_tp1C.mpr I.tp1) hlen hL hd0e h1 hx2
-      (fun hq ρP Z hC hT hCN hGN => tpG_iff_tp1C.mpr (hQR2 hq ρP Z hC (tpG_iff_tp1C.mp hT) hCN hGN)))
+    (expStep_tpG I _ hPz (tpG_iff_tp1C.mpr I.tp1) hlen hL hd0e h1 hx2
+      (fun hq => qr2_tpG I _ hPz (tpG_iff_tp1C.mpr I.tp1) hlen hL hd0e h1 hx2 hq))
 
-/-- **TP1WC is carried** (`t = 1`), from TP1C of `M`, with the residual at `q = r`, `n = 2`. -/
+/-- **TP1WC is carried** (`t = 1`). -/
 theorem expStep_tp1WC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
-    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hQR2 : QR2Res TP1WC M r L d0 ρ) :
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) :
     ExpStepT1 TP1WC M r L d0 ρ :=
+  have hPz : ∀ y η, (cof y = .omega ∧ η = one) → η ≠ z := fun y η h => by rw [h.2]; simp [one]
   expStep_iff (fun _ _ => tpG_iff_tp1WC)
-    (expStep_tpG I _ (fun y η h => by rw [h.2]; simp [one]) (tpG_iff_tp1WC.mpr I.tp1w) hlen hL hd0e h1 hx2
-      (fun hq ρP Z hC hT hCN hGN => tpG_iff_tp1WC.mpr (hQR2 hq ρP Z hC (tpG_iff_tp1WC.mp hT) hCN hGN)))
+    (expStep_tpG I _ hPz (tpG_iff_tp1WC.mpr I.tp1w) hlen hL hd0e h1 hx2
+      (fun hq => qr2_tpG I _ hPz (tpG_iff_tp1WC.mpr I.tp1w) hlen hL hd0e h1 hx2 hq))
 
 /-- The 11 value fields of `M.take x` with the drop valuation that the drop lemma does not give
 (the residual of `hLast_of`, without `rootP` and `Res3A`). -/
@@ -611,9 +912,7 @@ theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M
     (hx2 : entry M 2 (r + L) = 0)
     (hRT : RestT M rk)
     (hQs : ExpStepT1 QV M r L (entry M 0 (r + L) - entry M 0 r) ρ)
-    (hOm : ∀ (ρP : Valn) (Z : Nat → T), FrameClosedOmN M r L ρ (glueZ M (r + L) ρ (shiftV ρP L) Z))
-    (hQR2 : QR2Res TP1C M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
-      QR2Res TP1WC M r L (entry M 0 (r + L) - entry M 0 r) ρ) :
+    (hOm : ∀ (ρP : Valn) (Z : Nat → T), FrameClosedOmN M r L ρ (glueZ M (r + L) ρ (shiftV ρP L) Z)) :
     ∀ n, 2 ≤ n → ∃ ρN rkN,
       Inv3V (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN rkN ∧
       isOT (root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN) = true ∧
@@ -649,8 +948,8 @@ theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M
             ⟨I.kd, I.td⟩)
           (expStep_and (expStep_frameClosed_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq
               I.cons I.good I.fc hOm) (expStep_and (expStep_trigOmC I hlen hL0 hd0e hr hx2)
-            (expStep_and (expStep_tp1C I hlen hL0 hd0e hr hx2 hQR2.1)
-              (expStep_and (expStep_tp1WC I hlen hL0 hd0e hr hx2 hQR2.2) hQs))))))
+            (expStep_and (expStep_tp1C I hlen hL0 hd0e hr hx2)
+              (expStep_and (expStep_tp1WC I hlen hL0 hd0e hr hx2) hQs))))))
   by_cases hqr : q = r
   · subst hqr
     obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=
@@ -671,7 +970,6 @@ matrices only):
 - `hRT`: the 11 value fields of `M.take x` with the drop valuation (also the residual of `hLast_of`);
 - `hQs`: the uncarried value fields `QV` pass from `M[n − 1]` to the glued valuation of `M[n]`;
 - `hOm`: `FrameClosedOmN` of the glued valuations (the residual of `frameClosed_N_t1`);
-- `hQR2`: TP1C and TP1WC of `M[2]` when `q = r` (elsewhere they are carried, `expStep_tpG`);
 - `hRes`: `Res3A` of `M[n]` (the drop residual `DropRes` of `M[n] → M[n].take` and the seed). -/
 theorem hExp_t1
     (hRT : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
@@ -682,10 +980,6 @@ theorem hExp_t1
     (hOm : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → ∀ r L, r + L + 1 = M.length →
       par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
       ∀ (ρP : Valn) (Z : Nat → T), FrameClosedOmN M r L ρ (glueZ M (r + L) ρ (shiftV ρP L) Z))
-    (hQR2 : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → ∀ r L, r + L + 1 = M.length →
-      par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
-      QR2Res TP1C M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
-        QR2Res TP1WC M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hRes : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 → ∀ n, 2 ≤ n →
       ∀ σ rkN, Inv3 (expand M n) σ rkN → Res3A (expand M n) σ rkN) :
@@ -720,8 +1014,7 @@ theorem hExp_t1
   have hlen : r + L + 1 = M.length := by omega
   obtain ⟨ρN, rkN, V, _, _⟩ :=
     inv3V_N_t1 I R hlen hr hx2 (hRT M ρ rk hM hS I R hz h1t)
-      (hQs M ρ rk hM hS I R r L hlen hr hx2) (hOm M ρ rk hM hS I R r L hlen hr hx2)
-      (hQR2 M ρ rk hM hS I R r L hlen hr hx2) n hn
+      (hQs M ρ rk hM hS I R r L hlen hr hx2) (hOm M ρ rk hM hS I R r L hlen hr hx2) n hn
   rw [← hexp] at V
   exact ⟨ρN, rkN, V, hRes M ρ rk hM hS I R hz h1t n hn ρN rkN
     (Inv3.ofV (sInv_std (Std.exp n hM) hNS) V)⟩
