@@ -469,6 +469,40 @@ theorem cls_node {a B s s' y y' : T} (hc : isOT (psi s y z) = true) (hc' : isOT 
       add_eq_app_of_ge ⟨_, _, rfl⟩ B (fun q hq => le_trans (le_of_lt hpsi) (hBc q hq))]
     exact cls_app_pair ⟨_, _, rfl⟩ ⟨_, _, rfl⟩ (le_of_lt hpsi) hBc hhv
 
+/-- **`v` is above `v(P_1 c)`** when the values it reads are standard (no `Good3` of the whole matrix). -/
+theorem v_gt_par1_at {N : Mat} {σ : Valn} (hC : Cons N σ) {c i : Nat} (hc : c < N.length)
+    (h1 : entry N 1 c ≠ 0) (hp1 : par N 1 c = some i) (hvi : isOT (σ.v i) = true)
+    (hU : entry N 2 c = 0 → ∀ k, upg N c = some k → isOT (σ.v k) = true ∧ σ.v k ≠ z)
+    (hB : entry N 2 c ≠ 0 → ∀ j ∈ children N c, col N j = bump N c → ∀ k ∈ children N j,
+      isOT (σ.o k) = true) :
+    σ.v i < σ.v c := by
+  rw [(hC c hc).2]; unfold vRhs
+  rw [if_neg h1, hp1]
+  show σ.v i < (if entry N 2 c = 0 then sf (add (σ.v i) (match upg N c with
+      | some k => last (σ.v k)
+      | none => one)) else sf (add (σ.v i) (omega (sumN (one :: (children N c).map (bumpTerm N σ c))))))
+  split_ifs with h2
+  · cases hu : upg N c with
+    | none => exact lt_sf_add_single hvi rfl ⟨z, z, rfl⟩
+    | some k =>
+      obtain ⟨hk, hk0⟩ := hU h2 k hu
+      exact lt_sf_add_single hvi (isOT_last hk) (last_psi_form hk0)
+  · have hY : isOT (sumN (one :: (children N c).map (bumpTerm N σ c))) = true := by
+      apply isOT_sumN
+      intro t ht
+      rcases List.mem_cons.mp ht with rfl | ht
+      · rfl
+      · obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ht
+        unfold bumpTerm
+        split
+        · rename_i hjb
+          apply isOT_omega; apply isOT_sumN
+          intro t' ht'
+          obtain ⟨k, hk, rfl⟩ := List.mem_map.mp ht'
+          exact hB h2 j hj hjb k hk
+        · rfl
+    exact lt_sf_add_single hvi (isOT_omega hY) (single_omega hY).2
+
 section
 variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)
@@ -706,7 +740,7 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true)
     (hVchg : ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
-      σ.v c ≠ ρ.v c → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
+      σ.v c ≠ ρ.v c → par M 1 c ≠ some i → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
       ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z)
     (hClsG : Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z →
       ClsNode (ρ.v g) X' X)
@@ -1171,7 +1205,45 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
                   simp only [psi.injEq] at hoM hoN
                   obtain ⟨rfl, rfl, -⟩ := hoM
                   obtain ⟨rfl, rfl, -⟩ := hoN
-                  exact Or.inr ⟨rfl, rfl, hvIH.2.1 hdv, hVchg i c Lc hi hcr hclM hdc hvc⟩
+                  refine Or.inr ⟨rfl, rfl, hvIH.2.1 hdv, ?_⟩
+                  by_cases hp1 : par M 1 c = some i
+                  · -- `v(c)` is above `v(i)`, in `N`
+                    intro _ hlow
+                    have he1c : entry M 1 c ≠ 0 := by
+                      intro he; apply hvc
+                      rw [v_z_of_e1 hC hcM he, v_z_of_e1 hCN (hiN c hcr)
+                        (by rw [entry_pre0 hlen hn 1 (by omega)]; exact he)]
+                    obtain ⟨_, _, hRrc⟩ := hRM c hcM
+                    have hlt : σ.v i < σ.v c := by
+                      apply v_gt_par1_at hCN (hiN c hcr)
+                        (by rw [entry_pre0 hlen hn 1 (by omega)]; exact he1c)
+                        (by rw [par1_pre0 hlen hL hp hn hcr]; exact hp1)
+                        (by rw [hv']; exact hvot)
+                      · intro h2 k hu
+                        rw [entry_pre0 hlen hn 2 (by omega)] at h2
+                        rw [upg_pre0 hlen hL hp hn (by omega)] at hu
+                        have hkN := upg_lt (hiN c hcr) (by rw [upg_pre0 hlen hL hp hn (by omega)]; exact hu)
+                        refine ⟨hOTv k hkN (fun _ => by
+                          have := (hRrc he1c).2.1 h2 k hu; have := (hRM c hcM).1; omega), ?_⟩
+                        obtain ⟨m, _, _, hcol, _⟩ := upg_spec hu
+                        apply v_ne_z_of_e1 hCN hkN
+                        rw [entry_pre0 hlen hn 1 (by have := upg_lt hcM hu; omega), e1_of_col hcol]
+                        exact (upg_e12 hu).1
+                      · intro h2 j hj hjb k hk
+                        rw [entry_pre0 hlen hn 2 (by omega)] at h2
+                        apply hOTo k (mem_children hk).2
+                        intro hkr
+                        have hjk := (mem_children hk).1
+                        have hjr : j < r := by omega
+                        have hjM : j ∈ children M c := child_lt_r hlen hL hp hn hcr hj hjr
+                        have hkM : k ∈ children M j := child_lt_r hlen hL hp hn hjr hk hkr
+                        have hjb' : col M j = bump M c := by
+                          rw [col_pre0 hlen hL hp hn (by omega), bump_pre0 hlen hL hp hn (by omega)] at hjb
+                          exact hjb
+                        have := (hRrc he1c).2.2 h2 j hjM hjb' k hkM; have := (hRM c hcM).1; omega
+                    rw [hv'] at hlt
+                    exact absurd (lt_theta_iff.mp hlow) (not_le.mpr hlt)
+                  · exact hVchg i c Lc hi hcr hclM hdc hvc hp1
               have hch : (s' = s ∧ Lhd z y' y ∧ ClsABC B s y' y (Trig a B s y)) ∨
                   (y = z ∧ y' = z ∧ Lhd z s' s) := by
                 rcases hchC with h | ⟨h1, h2, h3, _⟩
@@ -1212,7 +1284,7 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true)
     (hVchgN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
-      σ.v c ≠ ρ.v c → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
+      σ.v c ≠ ρ.v c → par M 1 c ≠ some i → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
       ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z)
     (hClsGN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
       Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → ClsNode (ρ.v g) X' X)

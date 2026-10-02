@@ -166,8 +166,8 @@ def T0OTD : Prop :=
 /-- **The class residuals** of the `D` frames of `N = M[n]` (`t = 0`), which give `T0OTD` (`t0_otd`;
 the class of the argument pairs passes up the frames by `cls_node`): (i) at a frame before `r` whose last
 counted child keeps its `v` and whose child pair has no low part in either (class B0), a rewrite of the old
-frame is one of the new frame; (ii) a changed `v` of such a child stays at least `Ω_{a+1}` when the old one
-is; (iii) the class of the argument pair at `g = P_0(r)`; (iv) at `g` when no middle copy root counts,
+frame is one of the new frame; (ii) a changed `v` of such a child whose row-1 parent is not `i` stays at
+least `Ω_{a+1}` when the old one is (with row-1 parent `i` it is above `v(i)`, `v_gt_par1_at`); (iii) the class of the argument pair at `g = P_0(r)`; (iv) at `g` when no middle copy root counts,
 the arguments drop by `◁` (C′ の標本で例外 0). -/
 def T0Shape : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
@@ -180,7 +180,7 @@ def T0Shape : Prop :=
       lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true) ∧
     (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
-      σ.v c ≠ ρ.v c → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
+      σ.v c ≠ ρ.v c → par M 1 c ≠ some i → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
       ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z) ∧
     (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
       Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → ClsNode (ρ.v g) X' X) ∧
