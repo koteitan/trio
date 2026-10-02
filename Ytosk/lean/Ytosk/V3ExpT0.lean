@@ -13,6 +13,7 @@ N = M[n] = TRIO.gexp M r L 0 0 n（r = P_0(x)、x = r + L、Δ = 0）の評価 �
 import Ytosk.V3T0OT
 import Ytosk.V3T0Last
 import Ytosk.V3IndV
+import Ytosk.V3FsdComp
 
 namespace Ytosk
 
@@ -66,6 +67,61 @@ theorem rwc_trig {M : Mat} {ρ : Valn} : RWC PTrig M ρ ↔ TrigOmC M ρ := by
     exact h i L c R hch hcnt s ν hsy hlt htr
 
 
+/-! ## 型 A の D の枠では書き換える枠の 3 つの欄が成り立つ -/
+
+theorem ohole_app_inv0 : ∀ {P c : T}, c ≠ z → OHole (app P c) → OHole c
+  | z, c, _, h => by simpa using h
+  | psi a b P, c, hc, h => by
+    simp only [app_psi] at h
+    have hPc : app P c ≠ z := fun he => hc (app_eq_z he).2
+    have h' : OHole (app P c) := by
+      cases hX : app P c with
+      | z => exact absurd hX hPc
+      | psi => rw [hX] at h; exact h
+    exact ohole_app_inv0 hc h'
+
+/-- Class A of the pair `(y′, y)` at the level `s`. -/
+def ClsA (s y' y : T) : Prop :=
+  (split y' (psi (succ s) z z)).1 = (split y (psi (succ s) z z)).1 ∧ (split y' (psi (succ s) z z)).2 ≠ z
+
+/-- In class A with the new frame rewriting, the state is at most the common high part, below `y′`. -/
+theorem classA_state {B s y y' : T} (hc : isOT (psi s y z) = true) (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
+    (hl : y' < y) (hA : ClsA s y' y) (ht : lt B y' = true) :
+    B ≤ (split y' (psi (succ s) z z)).1 := by
+  rw [hA.1]; exact B_le_hi hc (lt_trans (show B < y' from ht) hl) hBc
+
+/-- Past the high part: a nonzero change of the low part stays above it. -/
+theorem classA_fsD {B s y' η : T} (hB : B ≤ (split y' (psi (succ s) z z)).1)
+    (hlo : (split y' (psi (succ s) z z)).2 ≠ z) (hO : OHole y') (hη : η ≠ z) :
+    lt B (fsD y' η) = true := by
+  have e := split_app (psi (succ s) z z) y'
+  rw [← e] at hO ⊢
+  rw [fsD_app _ hlo]
+  have hO' := ohole_app_inv0 hlo hO
+  exact lt_of_le_of_lt hB (lt_app_of (fsD_ne_z_oh hO' hη))
+
+theorem ptp1_classA {a B s y y' : T} (hc : isOT (psi s y z) = true) (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
+    (hl : y' < y) (hA : ClsA s y' y) (ht : lt B y' = true) : PTP1 a B s y' := fun hO =>
+  classA_fsD (classA_state hc hBc hl hA ht) hA.2 hO (by simp)
+
+theorem ptp1w_classA {a B s y y' : T} (hc : isOT (psi s y z) = true) (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
+    (hl : y' < y) (hA : ClsA s y' y) (ht : lt B y' = true) : PTP1W a B s y' := fun _ hO =>
+  classA_fsD (classA_state hc hBc hl hA ht) hA.2 hO (by simp [one])
+
+theorem ptrig_classA {a B s y y' : T} (hc : isOT (psi s y z) = true) (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
+    (hl : y' < y) (hA : ClsA s y' y) (ht : lt B y' = true) : PTrig a B s y' := by
+  intro ν hy'
+  have hB := classA_state hc hBc hl hA ht
+  have hlo := hA.2
+  rw [hy'] at hB hlo
+  unfold split at hB hlo
+  split_ifs at hB hlo with hθ
+  · simp only at hB
+    rcases (le_iff _ _).mp hB with h | h
+    · exact absurd h (T.not_lt_z _)
+    · exact h
+  · simp [split] at hlo
+
 /-- **The residual `hOTD`** of `t0_core`: the `o` values of the `D` columns before `r` are standard. -/
 def T0OTD : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
@@ -89,9 +145,15 @@ def T0Shape : Prop :=
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
       ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true)
 
-/-- **`T0OTD` from the class residuals.** -/
-theorem t0OTD_of_shape (h : T0Shape) : T0OTD := by
-  intro M ρ rk r L n hM hS I R hlen hL hp he1 hn σ hCN
+/-- **The `D` columns of `N` from the class residuals**: standard, and with the same `v` their
+arguments drop by `◁`. -/
+theorem t0_D_of_shape (h : T0Shape) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L n : Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk) (hlen : r + L + 1 = M.length)
+    (hL : 0 < L) (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0) (hn : 2 ≤ n)
+    {σ : Valn} (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) :
+    ∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true ∧ (σ.v i = ρ.v i →
+      ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X) ∧
+      (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z) := by
   obtain ⟨h1, h2⟩ := h M ρ rk r L hM hS I R hlen hL hp he1
   have hDr := R.drop
   rw [show M.length - 1 = r + L by omega] at hDr
@@ -99,6 +161,11 @@ theorem t0OTD_of_shape (h : T0Shape) : T0OTD := by
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hDr.ws hDr.vst hDr.ua I.rootS I.rootP
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
     h1 h2 n hn σ hCN
+
+/-- **`T0OTD` from the class residuals.** -/
+theorem t0OTD_of_shape (h : T0Shape) : T0OTD := by
+  intro M ρ rk r L n hM hS I R hlen hL hp he1 hn σ hCN i hi hd
+  exact (t0_D_of_shape h hM hS I R hlen hL hp he1 hn hCN i hi hd).1
 
 /-- **The residual of a rewriting-frame field `P` at `N = M[n]`** (`t = 0`): the frames before `r`
 whose last counted child is in `D`, and the first copy root of `g` (the middle value or `o′(r)` after the
@@ -112,6 +179,79 @@ def T0RWRes (P : T → T → T → T → Prop) : Prop :=
         QP P (ρ.v i) (Lc.map ρ.o) (σ.o c)) ∧
     (∀ g, par M 0 r = some g → Counted M g r → ∀ Lc, CL M g = Lc ++ [r] →
       ∀ cv, (cv = omid M r L ρ ∨ cv = (drop1 M (r + L) rk).o r) → QP P (ρ.v g) (Lc.map ρ.o) cv)
+
+/-- **The residual of a rewriting-frame field `P` outside class A**: `T0RWRes P` with the `D` frames
+only where the argument pair of the child is not of class A. -/
+def T0RWResB (P : T → T → T → T → Prop) : Prop :=
+  ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
+    Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → Good3 (TRIO.gexp M r L 0 0 n) σ →
+    (∀ i, i < r → ¬ (par M 0 r = some i ∧ Counted M i r) →
+      ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R → DepX M (r + L) true c →
+        ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z → Lhd z y' y → ¬ ClsA s y' y →
+          QP P (ρ.v i) (Lc.map ρ.o) (σ.o c)) ∧
+    (∀ g, par M 0 r = some g → Counted M g r → ∀ Lc, CL M g = Lc ++ [r] →
+      ∀ cv, (cv = omid M r L ρ ∨ cv = (drop1 M (r + L) rk).o r) → QP P (ρ.v g) (Lc.map ρ.o) cv)
+
+/-- **The class-A frames are free**: `T0RWRes P` from `T0RWResB P` when `P` holds at class-A rewrites. -/
+theorem t0RWRes_of (P : T → T → T → T → Prop)
+    (hPA : ∀ a B s y y', isOT (psi s y z) = true → (∀ q ∈ summands B, psi s y z ≤ q) → y' < y →
+      ClsA s y' y → lt B y' = true → P a B s y')
+    (hS : T0Shape) (hB : T0RWResB P) : T0RWRes P := by
+  intro M ρ rk r L n hM hSRO I R hlen hL hp he1 hn σ hCN hGN
+  obtain ⟨hD, hG0⟩ := hB M ρ rk r L n hM hSRO I R hlen hL hp he1 hn σ hCN hGN
+  refine ⟨?_, hG0⟩
+  intro i hi hng Lc c Rr hCL hDc s1 y1 hcv ht1 ht2
+  have hx : r + L + 1 = M.length := hlen
+  have he2 : entry M 2 (r + L) = 0 := I.r12 _ he1
+  have hlN := lenN0 hlen (show 1 ≤ n by omega) (M := M) (L := L)
+  have hcCL : c ∈ CL M i := by rw [hCL]; simp
+  have hcM : c ∈ children M i := cl_mem_children hcCL
+  have hccnt : Counted M i c := by unfold CL at hcCL; simpa using (List.mem_filter.mp hcCL).2
+  have hcr : c < r := by
+    by_cases hig : par M 0 r = some i
+    · have hle := children_g_le hlen hL hp hig hcM
+      rcases Nat.lt_or_ge c r with h | h
+      · exact h
+      · exfalso; have : c = r := by omega
+        rw [this] at hccnt; exact hng ⟨hig, hccnt⟩
+    · exact children_lt_r hlen hL hp hi hig hcM
+  have hcMl : c < M.length := by omega
+  have hiM : i < M.length := by omega
+  have hcN : c < (TRIO.gexp M r L 0 0 n).length := by rw [hlN]; have := Nat.le_mul_of_pos_left L (show 0 < n by omega); omega
+  -- the state's summands are at least the old child
+  set a := ρ.v i
+  set B := spArg a z (sumN (Lc.map ρ.o)) with hBdef
+  obtain ⟨hsM, hpM⟩ := cl_vals I.cons I.good hiM
+  rw [hCL] at hsM hpM
+  simp only [List.map_append, List.map_cons] at hsM hpM
+  have hpL := List.pairwise_append.mp hpM
+  have hLs := sumN_dec (Lc.map ρ.o) (fun t ht => hsM t (List.mem_append_left _ ht)) hpL.1
+  have hBc : ∀ q ∈ summands B, ρ.o c ≤ q := by
+    obtain ⟨s0, y0, hs0⟩ := (single_o I.cons I.good hcMl).2
+    rw [hs0]
+    apply spArg_summands_ge ⟨s0, y0, rfl⟩ (sumN (Lc.map ρ.o)) z hLs.1
+    · rw [hLs.2]; intro q hq
+      have := hpL.2.2 q hq (ρ.o c) (by simp)
+      rwa [hs0] at this
+    · simp [summands]
+  have hDc' := t0_D_of_shape hS hM hSRO I R hlen hL hp he1 hn hCN c hcr hDc
+  by_cases hvc : σ.v c = ρ.v c
+  · obtain ⟨_, hArg, _⟩ := t0_D_of_shape hS hM hSRO I R hlen hL hp he1 hn hCN c hcr hDc
+    obtain ⟨X, X', hX, hX', hlX⟩ := hArg hvc
+    rw [hcv] at hX'
+    simp only [psi.injEq] at hX'
+    obtain ⟨rfl, rfl, -⟩ := hX'
+    by_cases hA : ClsA (ρ.v c) y1 X
+    · have hcX : isOT (psi (ρ.v c) X z) = true := by rw [← hX]; exact I.good.ot_o c hcMl
+      exact hPA a B (ρ.v c) X y1 hcX (fun q hq => by rw [← hX]; exact hBc q hq) hlX.1 hA ht1
+    · exact hD i hi hng Lc c Rr hCL hDc (ρ.v c) X y1 hX hcv hlX hA (ρ.v c) y1 hcv ht1 ht2
+  · -- a changed `v`: the child has argument `0` and does not rewrite
+    have h0 := hDc'.2.2 hvc
+    rw [hcv] at h0
+    simp only [psi.injEq] at h0
+    rw [h0.2.1] at ht1
+    exact absurd ht1 (T.not_lt_z _)
 
 /-- **The remaining value fields of `N = M[n]`** (`t = 0`) and its `Res3A`, for the valuation built by
 `t0_core` (which already has `Cons`, `Rk`, `Good3`, `FrameOT`, `FrameClosed`, `BumpKidsDec`, `BumpTermDec`). The context
@@ -198,5 +338,21 @@ theorem hExp_t0_of_last
   intro j hj hjS hjE
   obtain ⟨τ, rkT, V, R'⟩ := hTake_of_last hLast M ρ rk hM hS hE I R j hj hjS hjE
   exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩
+
+
+/-- **`hExp` for `t = 0`, the current residuals**: the class residual `T0Shape` (for `hOTD`), the
+rewriting-frame fields outside class A (`T0RWResB` for `TP1C`・`TP1WC`・`TrigOmC`), and `T0Rest`. -/
+theorem hExp_t0_main
+    (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
+      ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
+    (hS : T0Shape) (hRest : T0Rest) (hB1 : T0RWResB PTP1) (hB1W : T0RWResB PTP1W)
+    (hBT : T0RWResB PTrig) :
+    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
+      col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN :=
+  hExp_t0_of_last hLast (t0OTD_of_shape hS) hRest
+    (t0RWRes_of PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht) hS hB1)
+    (t0RWRes_of PTP1W (fun _ _ _ _ _ hc hBc hl hA ht => ptp1w_classA hc hBc hl hA ht) hS hB1W)
+    (t0RWRes_of PTrig (fun _ _ _ _ _ hc hBc hl hA ht => ptrig_classA hc hBc hl hA ht) hS hBT)
 
 end Ytosk

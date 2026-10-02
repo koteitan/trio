@@ -528,7 +528,9 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
     (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
       ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true) :
     ∀ b i, i < r → isOT (valB σ b i) = true ∧
-      (DepX M (r + L) b i → Lhd z (valB σ b i) (valB ρ b i)) := by
+      (DepX M (r + L) b i → Lhd z (valB σ b i) (valB ρ b i)) ∧
+      (b = true → DepX M (r + L) true i → σ.v i = ρ.v i →
+        ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X) := by
   have hx : r + L + 1 = M.length := hlen
   have hlN := lenN0 hlen hn (M := M) (L := L)
   have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
@@ -975,8 +977,7 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
               have hA := node_arg_lhd (a := a) hc0 hc0' hBc hch
               exact ⟨_, _, hformM, hformN, hA, isOT_step hBot hc0'⟩
   intro b i hi
-  have h := key _ b i (le_refl _) hi
-  exact ⟨h.1, h.2.1⟩
+  exact key _ b i (le_refl _) hi
 
 end
 
@@ -1008,7 +1009,9 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
       ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true) :
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-      ∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true := by
+      ∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true ∧ (σ.v i = ρ.v i →
+        ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X) ∧
+        (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z) := by
   intro n hn2 σ hCN
   have hn : 1 ≤ n := by omega
   have hx : r + L + 1 = M.length := hlen
@@ -1265,7 +1268,14 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     intro i hi hd
     exact (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT hσB hσBv
       hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hShapeN n hn2 σ hCN)
-      (hG0N n hn2 σ hCN g hg) true i hi).1
+      (hG0N n hn2 σ hCN g hg) true i hi) |> fun h => ⟨h.1, h.2.2 rfl hd, fun hne => by
+        have hdv : DepX M (r + L) false i := by
+          by_contra hn'; exact hne ((hoffD i hi).2 hn')
+        have hvot := (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT
+          hσB hσBv hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hShapeN n hn2 σ hCN)
+          (hG0N n hn2 σ hCN g hg) false i hi).1
+        exact o_N_noc' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hi
+          (cl_nil_of_depv' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hi hdv) hvot⟩
   · have hrn : par M 0 r = none := by
       cases h : par M 0 r with
       | none => rfl
