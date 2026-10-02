@@ -1673,3 +1673,6 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - VIS: a の子孫 c まで、間の列の行 1 がすべて e1(a) 以上なら、v(a) は間の列 y の o(y) に依存しない（32 万組）。T2Tgt の r より前の行き先は VIS（c = x）、u は VIS ＋ ANC。
   - 証明の不変条件の候補（v(a) から届く祖先 z の v(z) は、z と a の間の列の行 1 がすべて e1(z) 以上、17 万組で例外 0）は、枝の最後の列 w の「次の列 w + 1 への上げ」で w + 1 が a の祖先になる場合に閉じない（そこは別の議論が要る）。
 - 変わる呼び出しの標準形: 落とす補題の isOT は argT（M.take x の Good3 から）による。M[n] には同じ源がない。M の枠で最後の数える子を基本列の項（◁）に替えると親は標準形のまま（C′ 3000 行列の 69 万件で例外 0）。FrameDom 版の isOT の枠 1 段の補題（node_ot の新版）があれば、種（o(q) など）の ◁ と標準形から伝播できる。
+- t1-exp（ff981cbd、緑）: FrameClosedOmN を鎖の穴の情報から証明（frameClosedOmN_t1）。t = 1 の M[n] の FrameClosed は残りなし。q = r の x の枠では新しい引数が b + δ（0 < δ < Ω_{μ+1}）で、(b, H] の C は b + c₀ の形なので comps(b) ⊆ comps(C)（frameDom_app）。FrameClosedHi を偽にした枠もこれで片づく。
+- 分担の変更: t = 1 の鎖での A 群の項目の受け渡しは t1-exp、◁ の下げ（1 列落としと t = 0）での保存の補題は groupA。
+- drop-fix（2b9de577）: hLast の部品、x が根のときの RootP（rootP_take_root）。
