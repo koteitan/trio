@@ -271,4 +271,276 @@ theorem os_S {i : Nat} (hi : i < x) (hns : ¬ S true i) (hD : DepS M S true i) (
 
 end
 
+/-! ## 種に v(x − 1) を許す形 -/
+
+section
+variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+  {S : Bool → Nat → Prop}
+  (hSC : ∀ b i, S b i → ChgX M x b i)
+  (hSA : ∀ b i, S b i → (Anc0 M i x ∧ i < x) ∨ (b = false ∧ i = x - 1))
+  (hXu : ∀ i, upg M i = some x → S false i)
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu
+
+omit hR0 hZ2 hSD hZ1 hUAT hUAB hSA in
+theorem depS_chgX2 {b : Bool} {i : Nat} (h : DepS M S b i) : i < x → ChgX M x b i := by
+  induction h with
+  | seed hs => intro _; exact hSC _ _ hs
+  | @ochild i c hc hcb hcu _ ih =>
+    intro _
+    have hcl := (mem_children hc).2
+    rcases Nat.lt_or_ge c x with h | h
+    · exact ChgX.ochild hc hcb hcu (ih h)
+    · have : c = x := by omega
+      subst this; exact ChgX.ochild hc hcb hcu ChgX.leaf
+  | ov _ ih => intro hi; exact ChgX.ov (ih hi)
+  | @vpar i m h1 hpm _ ih =>
+    intro hi; exact ChgX.vpar h1 hpm (ih (by have := par_lt M 1 i m hpm; omega))
+  | @vupg i k h1 h2 hu _ ih =>
+    intro hi
+    have hkl := upg_lt (by omega) hu
+    rcases Nat.lt_or_ge k x with h | h
+    · exact ChgX.vupg h1 h2 hu (ih h)
+    · have : k = x := by omega
+      subst this; exact hSC _ _ (hXu i hu)
+  | @vbump i j k h1 h2 hj hjb hk _ ih =>
+    intro _
+    have hkl := (mem_children hk).2
+    rcases Nat.lt_or_ge k x with h | h
+    · exact ChgX.vbump h1 h2 hj hjb hk (ih h)
+    · have : k = x := by omega
+      subst this; exact ChgX.vbump h1 h2 hj hjb hk ChgX.leaf
+
+theorem topC_of_depS2 {m : Nat} (hm : m < x) (h : DepS M S false m) : TopC M x m :=
+  (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depS_chgX2 hx hSC hXu h hm)).1 rfl hm
+
+/-- **The exit of `D` from a subtree** containing neither `x` nor `x − 1`. -/
+theorem dep_exitS2 {b : Bool} {d : Nat} (h : DepS M S b d) :
+    ∀ c, Anc0 M c d → ¬ Anc0 M c x → ¬ Anc0 M c (x - 1) →
+      ∃ c', NextC M c c' ∧ c' < x ∧ upg M (c' - 1) = some c' ∧ DepS M S false c' := by
+  induction h with
+  | seed hs =>
+    intro c hc hn hn1
+    rcases hSA _ _ hs with ⟨hA, _⟩ | ⟨_, rfl⟩
+    · exact absurd (Anc0.trans hc hA) hn
+    · exact absurd hc hn1
+  | @ochild i c0 hc0 _ _ _ ih =>
+    intro c hci hn hn1
+    exact ih c (Anc0.step (mem_children_iff.mp hc0).2 hci) hn hn1
+  | ov _ ih => exact ih
+  | @vpar i m _ hp hdm _ =>
+    intro c hci hn _
+    exfalso
+    have hmi := par_lt M 1 i m hp
+    have hil : i < M.length := anc0_lt_len (anc0_of_par M 1 m i hp) (by omega)
+    have hix : i < x := by
+      rcases Nat.lt_or_ge i x with h | h
+      · exact h
+      · have : i = x := by omega
+        exact absurd (this ▸ hci) hn
+    exact (topC_of_depS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu (by omega) hdm).2.2 i hix hp
+  | @vupg i k _ _ hu hdk ih =>
+    intro c hci hn hn1
+    by_cases hck : Anc0 M c k
+    · exact ih c hck hn hn1
+    · have hix : i < x := by have := upg_succ_lt hu; omega
+      obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu
+      rcases hcase with rfl | ⟨hA, hki⟩
+      · have hi1 : i + 1 < x := by
+          rcases Nat.lt_or_ge (i + 1) x with h | h
+          · exact h
+          · exfalso
+            have : i = x - 1 := by omega
+            exact hn1 (this ▸ hci)
+        exact ⟨i + 1, ⟨by have := hci.le; omega, fun e h1 h2 => anc_between hci e h1 (by omega), hck⟩,
+          hi1, by simpa using hu, hdk⟩
+      · exact (no_anc_upg hx hR0 hZ2 hSD hZ1 hUAT hUAB
+          (topC_of_depS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu (by omega) hdk) (by omega) hu hA hki).elim
+  | @vbump i j k _ _ hj _ hk _ ih =>
+    intro c hci hn hn1
+    exact ih c (Anc0.step (mem_children_iff.mp hk).2 (Anc0.step (mem_children_iff.mp hj).2 hci)) hn hn1
+
+/-- **No `D` below an earlier sibling of a column `p < x` on the path to `x`**, if `v(p)` is not in `D`. -/
+theorem nodep_sibS2 {p a : Nat} (hpa : par M 0 p = some a) (hpx : Anc0 M p x) (hpxl : p < x)
+    (hnp : ¬ DepS M S false p) :
+    ∀ n c, p - c ≤ n → c ∈ children M a → c < p → ∀ b d, DepS M S b d → ¬ Anc0 M c d := by
+  intro n
+  induction n with
+  | zero => intro c hn _ hcp; omega
+  | succ n ih =>
+    intro c hn hc hcp b d hd hcd
+    have hca : par M 0 c = some a := (mem_children_iff.mp hc).2
+    have hac := par_lt M 0 c a hca
+    have hap := par_lt M 0 p a hpa
+    have hcx : ¬ Anc0 M c x := by
+      intro hA
+      rcases anc0_total hA hpx with h | h
+      · have := (anc0_par h (by omega) hpa).le; omega
+      · have := h.le; omega
+    have hcx1 : ¬ Anc0 M c (x - 1) := by
+      intro hA
+      have h1 := anc_between hA p (by omega) (by omega)
+      have := (anc0_par h1 (by omega) hpa).le; omega
+    obtain ⟨c', hN, hc'x, _, hdc'⟩ := dep_exitS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu hd c hcd hcx hcx1
+    have hAap : Anc0 M a p := Anc0.step hpa (Anc0.refl a)
+    have hc'p : c' ≤ p := by
+      by_contra hlt
+      have hA := hN.2.1 p (by omega) (by omega)
+      have := (anc0_par hA (by omega) hpa).le; omega
+    have hAac' : Anc0 M a c' := anc_between hAap c' (by have := hN.1; omega) hc'p
+    obtain ⟨h', hph⟩ := par0_of_anc hAac' (by have := hN.1; omega)
+    obtain ⟨_, hha⟩ := next_parent hca hpa hcp hN hph
+    rw [hha] at hph
+    rcases Nat.eq_or_lt_of_le hc'p with heq | hlt
+    · subst heq; exact hnp hdc'
+    · have hc'M : c' ∈ children M a := mem_children_iff.mpr ⟨by omega, hph⟩
+      exact ih c' (by have := hN.1; omega) hc'M hlt false c' hdc' (Anc0.refl c')
+
+/-- **(P1 in `M`)** After a child in `D`, no later sibling before `x` counts. -/
+theorem p1_depS2 {i c c₂ : Nat} (hi : i < x) (hc : c ∈ children M i) (hc₂ : c₂ ∈ children M i)
+    (hcc : c < c₂) (hD : DepS M S true c) (hcnt : Counted M i c₂) (hc₂x : c₂ < x)
+    (hxc₂ : x ∈ children M c₂ → ¬ DepS M S false c₂) : False := by
+  have hpc₂ : par M 0 c₂ = some i := (mem_children_iff.mp hc₂).2
+  by_cases hxc : x ∈ children M c₂
+  · exact nodep_sibS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu hpc₂
+      (Anc0.step (mem_children_iff.mp hxc).2 (Anc0.refl c₂)) hc₂x (hxc₂ hxc) _ c (Nat.le_refl _) hc hcc
+      true c hD (Anc0.refl c)
+  · have hcT : c ∈ children (M.take x) i := mem_take_children hc (by omega)
+    have hc₂T : c₂ ∈ children (M.take x) i := mem_take_children hc₂ hc₂x
+    exact chg_last hx hR0 hZ2 hSD hZ1 hUAT hUAB hcT (depS_chgX2 hx hSC hXu hD (by omega)) c₂ hc₂T hcc
+      (cnt_take_of_M hx hi hc₂x hxc hcnt)
+
+/-- **A column whose `v` is in `D` counts no child** (in `M`), when `x` is not counted at it. -/
+theorem uncnt_of_depvS2 {i d : Nat} (hi : i < x) (hv : DepS M S false i) (hd : d ∈ children M i)
+    (hxq : x ∈ children M i → ¬ Counted M i x) : ¬ Counted M i d := by
+  have hdl := (mem_children hd).2
+  have hpd : par M 0 d = some i := (mem_children_iff.mp hd).2
+  have hid := (mem_children hd).1
+  rcases Nat.lt_or_ge d x with hdx | hdx
+  · have hT := topC_of_depS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu hi hv
+    have hdT : d ∈ children (M.take x) i := mem_take_children hd hdx
+    by_cases hxd : x ∈ children M d
+    · have hAdx : Anc0 M d x := Anc0.step (mem_children_iff.mp hxd).2 (Anc0.refl d)
+      have hmax : ∀ e ∈ children (M.take x) i, e ≤ d := by
+        intro e he
+        rw [children_take, List.mem_filter] at he
+        have hex : e < x := by simpa using he.2
+        have hpe : par M 0 e = some i := (mem_children_iff.mp he.1).2
+        by_contra hlt
+        have hA := anc_between hAdx e (by omega) (by omega)
+        have := (anc0_par hA (by omega) hpe).le; omega
+      have hsplit := split_last_max _ _ (children_sorted (M.take x) i) hdT hmax
+      have htop := hT.1
+      unfold topped at htop
+      rw [hsplit] at htop
+      simp only [List.getLast?_append, List.getLast?_singleton, Option.some_or, decide_eq_true_eq] at htop
+      rw [col_take M hdx, bump_take M hi] at htop
+      exact fun h => h.1 htop
+    · exact fun h => hT.2.1 d hdT (cnt_take_of_M hx hi hdx hxd h)
+  · have hdx' : d = x := by omega
+    subst hdx'
+    exact hxq hd
+
+/-- No `D` below a child of `p` (row 2 nonzero) that has a later child before `x`. -/
+theorem nodep_not_lastS2 {p d d' : Nat} (h2 : entry M 2 p ≠ 0) (hd : d ∈ children M p)
+    (hd' : d' ∈ children M p) (hdd : d < d') (hd'x : d' < x) {b : Bool} {e : Nat} (hD : DepS M S b e)
+    (hde : Anc0 M d e) : False := by
+  have hel : e < M.length := by
+    rcases Nat.eq_or_lt_of_le hde.le with h | h
+    · rw [← h]; have := (mem_children hd).2; omega
+    · exact anc0_lt_len hde (by omega)
+  have hex : e < x := by
+    by_contra h'
+    have : e = x := by omega
+    subst this
+    have := (mem_children hd).1
+    have := anc_between hde d' (by omega) (by omega)
+    have := (anc0_par this (by omega) (mem_children_iff.mp hd').2).le
+    omega
+  exact chg_only_last hx hR0 hZ2 hSD hZ1 hUAT hUAB h2 hd (mem_take_children hd' hd'x) hdd
+    (depS_chgX2 hx hSC hXu hD hex) hde
+
+/-- **The `v` shape of `D`** at a non-seed `v` call: the parent `q` of `x`, if its row 2 is nonzero, has
+its `v` as a seed, and `q` is not a bump child. -/
+theorem vsh_S2 (hqv : ∀ q, par M 0 x = some q → entry M 2 q ≠ 0 → S false q)
+    (hqb : ∀ q i, par M 0 x = some q → q ∈ children M i → col M q ≠ bump M i)
+    {i : Nat} (hi : i < x) (hns : ¬ S false i) (hv : DepS M S false i) :
+    (∀ m, par M 1 i = some m → ¬ DepS M S false m) ∧
+    (entry M 2 i ≠ 0 → ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ col M j = bump M i ∧
+      children M j = Kb ++ [k] ∧ (∀ d ∈ Kb, ¬ DepS M S true d) ∧
+      (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepS M S true e)) := by
+  have hpd : ∀ m, par M 1 i = some m → ¬ DepS M S false m := by
+    intro m hp hdm
+    have hmi := par_lt M 1 i m hp
+    exact (topC_of_depS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu (by omega) hdm).2.2 i hi hp
+  refine ⟨hpd, fun h2 => ?_⟩
+  have hxi : ∀ j' ∈ children M i, j' < x := by
+    intro j' hj'
+    by_contra h'
+    have : j' = x := by have := (mem_children hj').2; omega
+    subst this
+    exact hns (hqv i (mem_children_iff.mp hj').2 h2)
+  cases hv with
+  | seed h => exact absurd h hns
+  | vpar h1 hp hdm => exact absurd hdm (hpd _ hp)
+  | vupg _ h2' _ _ => exact absurd h2' h2
+  | @vbump _ j k h1 _ hj hjb hk hdk =>
+    have hj2 : entry M 2 j ≠ 0 := by
+      have := e2_of_col (show col M j = (entry M 0 i + 1, entry M 1 i, 1) from hjb); omega
+    have hAjk : Anc0 M j k := Anc0.step (mem_children_iff.mp hk).2 (Anc0.refl j)
+    have hxj : ∀ k' ∈ children M j, k' < x := by
+      intro k' hk'
+      by_contra h'
+      have : k' = x := by have := (mem_children hk').2; omega
+      subst this
+      exact hqb j i (mem_children_iff.mp hk').2 hj hjb
+    have hjmax : ∀ j' ∈ children M i, j' ≤ j := by
+      intro j' hj'; by_contra hlt
+      exact nodep_not_lastS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu h2 hj hj' (by omega) (hxi j' hj') hdk hAjk
+    have hchi := split_last_max _ _ (children_sorted M i) hj hjmax
+    have hkmax : ∀ k' ∈ children M j, k' ≤ k := by
+      intro k' hk'; by_contra hlt
+      exact nodep_not_lastS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu hj2 hk hk' (by omega) (hxj k' hk') hdk
+        (Anc0.refl k)
+    have hchj := split_last_max _ _ (children_sorted M j) hk hkmax
+    refine ⟨_, _, j, k, hchi, hjb, hchj, ?_, ?_⟩
+    · intro d hd hdD
+      have hdM : d ∈ children M j := (List.mem_filter.mp hd).1
+      have hdk' : d < k := by simpa using (List.mem_filter.mp hd).2
+      exact nodep_not_lastS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu hj2 hdM hk hdk' (hxj k hk) hdD
+        (Anc0.refl d)
+    · intro d hd e he hD
+      have hdM : d ∈ children M i := (List.mem_filter.mp hd).1
+      have hdj : d < j := by simpa using (List.mem_filter.mp hd).2
+      exact nodep_not_lastS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu h2 hdM hj hdj (hxi j hj) hD
+        (Anc0.step (mem_children_iff.mp he).2 (Anc0.refl d))
+
+/-- **The `o` shape of `D`** at a non-seed `o` call whose `v` is not in `D`. -/
+theorem os_S2 {i : Nat} (hi : i < x) (hns : ¬ S true i) (hD : DepS M S true i) (hv : ¬ DepS M S false i)
+    (hxo : par M 0 x = some i → ¬ Counted M i x)
+    (hxc : ∀ d ∈ children M i, x ∈ children M d → ¬ DepS M S false d) :
+    ∃ Lp c R, children M i = Lp ++ c :: R ∧ Counted M i c ∧ DepS M S true c ∧
+      (∀ d ∈ R, ¬ Counted M i d) ∧ (∀ d ∈ Lp, Counted M i d → ¬ DepS M S true d) := by
+  have hcx : ∀ d ∈ children M i, Counted M i d → d < x := by
+    intro d hd hcnt
+    by_contra h'
+    have : d = x := by have := (mem_children hd).2; omega
+    subst this
+    exact hxo (mem_children_iff.mp hd).2 hcnt
+  cases hD with
+  | seed h => exact absurd h hns
+  | ov h => exact absurd h hv
+  | @ochild _ c hc hcb hcu hdc =>
+    obtain ⟨L, R, hLR⟩ := List.append_of_mem hc
+    obtain ⟨hL, hR⟩ := sib_order (children_sorted M i) hLR
+    refine ⟨L, c, R, hLR, ⟨hcb, hcu⟩, hdc, fun d hd hcnt => ?_, fun d hd hcnt hdD => ?_⟩
+    · have hdM : d ∈ children M i := by rw [hLR]; simp [hd]
+      exact p1_depS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu hi hc hdM (hR d hd) hdc hcnt
+        (hcx d hdM hcnt) (hxc d hdM)
+    · have hdM : d ∈ children M i := by rw [hLR]; simp [hd]
+      exact p1_depS2 hx hR0 hZ2 hSD hZ1 hUAT hUAB hSC hSA hXu hi hdM hc (hL d hd) hdD ⟨hcb, hcu⟩
+        (hcx c hc ⟨hcb, hcu⟩) (hxc c hc)
+
+end
+
 end Ytosk
