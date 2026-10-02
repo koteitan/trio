@@ -6,7 +6,8 @@ M[n] の評価 ρN と順位 rkN で Cons・Rk・Good3・Pn を出す。ここ�
 - 残りの仮定なしで運ぶもの: FrameOT・RootP・BumpDec（t1-struct）、FrameClosed（`expStep_frameClosed_t1'`、
   `FrameClosedOmN` を鎖の穴の情報から `frameClosedOmN_t1`）、TrigOmC（`expStep_trigOmC`）、
   TP1C・TP1WC（`expStep_tpG`・`qr2_tpG`、fsD の合成 `fsD_comp`）。AbsU は AbsD から（`absU_of_absD`）。
-- 残りの値の欄の束 `QV`（VSmallF・AbsD・TPLo・TPLoW・AbsUW・AbsDW・TPLoN・AbsDN）は仮定 `hQs`。
+- TPLoN は残り `TPLoNRes`（古い最後の添字が節点か Ω 型の D の列、q = r・n = 2 の種）つきで運ぶ（`expStep_tploN`）。
+- 残りの値の欄の束 `QV`（VSmallF・AbsD・TPLo・TPLoW・AbsUW・AbsDW・AbsDN）は仮定 `hQs`。
 M.take x（鎖の始点）での値は、落とす補題（`valInv_drop1`・`rootP_drop1`）と、1 列落としの残り
 （`hLast_of` の hRest と同じ形の `RestT`）から。M[n] の `Res3A` は仮定 `hRes`。
 -/
@@ -390,6 +391,19 @@ def TPLoNAt (s y : T) : Prop :=
     ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → NotNode a →
     ¬ psi (fsD a one) z z < psi (succ s) z z
 
+/-- **The residual of the TPLoN carry** (`t = 1`): the `D` columns below `x` where the index is not
+`ψ_μ(X)` with `X ≠ 0` (only the seed at `q = r`, `n = 2`), or where the old last subscript `a₀` is a node or
+`Ω`-cofinal. -/
+def TPLoNRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T),
+    (∃ μ br vr seed k0, HoleData M (r + L) ρ μ br vr seed ∧
+      (∀ i, ∃ k, k0 ≤ k ∧ Z i = gamS μ br seed k) ∧ ρP.o r = gamS μ br seed k0 ∧ k0 = n - 2 ∧
+      μ = vr ∧ ρ.o r = psi vr br z) →
+    ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
+    (¬ (isSucc (Z c) = false ∧ ∃ μ X, Z c = psi μ X z ∧ X ≠ z) ∨
+      ∃ a0, last y0 = psi a0 z z ∧ isSucc a0 = false ∧ OHole a0 ∧ ¬ (cof a0 = .omega ∧ NotNode a0)) →
+    TPLoNAt s0 (fsD y0 (Z c))
+
 /-- **TPLoN is carried** (`t = 1`). The residual `hRes` is the `D` columns below `x` where the index is
 not of the form `ψ_μ(X)` with `X ≠ 0` (only the seed at `q = r`, `n = 2`), or where the old last subscript
 `a₀` is a node or `Ω`-cofinal (C′ の 4 万行列で D の列の約 4%). -/
@@ -397,14 +411,7 @@ theorem expStep_tploN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
-    (hRes : ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T),
-      (∃ μ br vr seed k0, HoleData M (r + L) ρ μ br vr seed ∧
-        (∀ i, ∃ k, k0 ≤ k ∧ Z i = gamS μ br seed k) ∧ ρP.o r = gamS μ br seed k0 ∧ k0 = n - 2 ∧
-        μ = vr ∧ ρ.o r = psi vr br z) →
-      ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
-      (¬ (isSucc (Z c) = false ∧ ∃ μ X, Z c = psi μ X z ∧ X ≠ z) ∨
-        ∃ a0, last y0 = psi a0 z z ∧ isSucc a0 = false ∧ OHole a0 ∧ ¬ (cof a0 = .omega ∧ NotNode a0)) →
-      TPLoNAt s0 (fsD y0 (Z c))) :
+    (hRes : TPLoNRes M r L d0 ρ) :
     ExpStepT1 TPLoN M r L d0 ρ := by
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
@@ -1302,12 +1309,12 @@ theorem expStep_trigOmC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
 
 /-- **The value fields of `Inv3V` not yet carried by a proven step** (`t = 1`). -/
 def QV (N : Mat) (σ : Valn) : Prop :=
-  VSmallF N σ ∧ AbsD N σ ∧ TPLo N σ ∧ TPLoW N σ ∧ AbsUW N σ ∧ AbsDW N σ ∧ TPLoN N σ ∧ AbsDN N σ
+  VSmallF N σ ∧ AbsD N σ ∧ TPLo N σ ∧ TPLoW N σ ∧ AbsUW N σ ∧ AbsDW N σ ∧ AbsDN N σ
 
 /-- **The property carried along the `t = 1` chain.** -/
 def PT1 (N : Mat) (σ : Valn) : Prop :=
   FrameOT N σ ∧ RootP N σ ∧ BumpDec N σ ∧ FrameClosed N σ ∧ TrigOmC N σ ∧ TP1C N σ ∧ TP1WC N σ ∧
-    QV N σ
+    TPLoN N σ ∧ QV N σ
 
 theorem expStepAt_iff {P Q : Mat → Valn → Prop} (h : ∀ N σ, P N σ ↔ Q N σ) {M : Mat} {r L d0 n : Nat}
     {ρ : Valn} (hP : ExpStepT1At P M r L d0 ρ n) : ExpStepT1At Q M r L d0 ρ n :=
@@ -1353,7 +1360,7 @@ def RestT (M : Mat) (rk : Bool → Nat → Nat) : Prop :=
 /-- **`Inv3V` from the chain's output.** -/
 theorem inv3V_of_PT1 {N : Mat} {σ : Valn} {rk : Bool → Nat → Nat} (hC : Cons N σ) (hR : Rk N rk)
     (hG : Good3 N σ) (hP : PT1 N σ) : Inv3V N σ rk :=
-  let ⟨fo, rp, ⟨kd, td⟩, fc, trig, tp1, tp1w, vs, ad, tplo, tplow, auw, adw, tplon, adn⟩ := hP
+  let ⟨fo, rp, ⟨kd, td⟩, fc, trig, tp1, tp1w, tplon, vs, ad, tplo, tplow, auw, adw, adn⟩ := hP
   ⟨hC, hG, hR, vs, fc, fo, kd, td, ad, absU_of_absD hC hG ad, tp1, tplo, tp1w, tplow, auw, adw, trig, tplon, adn,
     rootS_of_good hC hG, rp⟩
 
@@ -1363,7 +1370,8 @@ theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 1 (r + L) = some r)
     (hx2 : entry M 2 (r + L) = 0)
     (hRT : RestT M rk)
-    (hQs : ExpStepT1 QV M r L (entry M 0 (r + L) - entry M 0 r) ρ) :
+    (hQs : ExpStepT1 QV M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+    (hResN : TPLoNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN,
       Inv3V (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN rkN ∧
       isOT (root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN) = true ∧
@@ -1391,7 +1399,7 @@ theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M
   rw [show M.length - 1 = r + L by omega] at hRT'
   obtain ⟨ad, tp1, tplo, tp1w, tplow, auw, adw, trig, tplon, adn⟩ := hRT'
   have hP1 : PT1 (M.take (r + L)) (drop1 M (r + L) rk) :=
-    ⟨V1.fo, hRP1, ⟨V1.kd, V1.td⟩, V1.fc, trig, tp1, tp1w, V1.vs, ad, tplo, tplow, auw, adw, tplon, adn⟩
+    ⟨V1.fo, hRP1, ⟨V1.kd, V1.td⟩, V1.fc, trig, tp1, tp1w, tplon, V1.vs, ad, tplo, tplow, auw, adw, adn⟩
   have hPs : ExpStepT1 PT1 M r L (entry M 0 (r + L) - entry M 0 r) ρ :=
     expStep_and (expStep_frameOT_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq I.fo)
       (expStep_and (expStep_rootP_t1 hlen hL0 hd0e I.z2 I.uat I.r12 I.be I.r01 I.e00 hr hx2 I.rootP)
@@ -1399,7 +1407,8 @@ theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M
             ⟨I.kd, I.td⟩)
           (expStep_and (expStep_frameClosed_t1' I hlen hL0 hd0e hr hx2) (expStep_and (expStep_trigOmC I hlen hL0 hd0e hr hx2)
             (expStep_and (expStep_tp1C I hlen hL0 hd0e hr hx2)
-              (expStep_and (expStep_tp1WC I hlen hL0 hd0e hr hx2) hQs))))))
+              (expStep_and (expStep_tp1WC I hlen hL0 hd0e hr hx2)
+                (expStep_and (expStep_tploN I hlen hL0 hd0e hr hx2 hResN) hQs)))))))
   by_cases hqr : q = r
   · subst hqr
     obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=
@@ -1426,6 +1435,9 @@ theorem hExp_t1
     (hQs : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → ∀ r L, r + L + 1 = M.length →
       par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
       ExpStepT1 QV M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+    (hResN : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → ∀ r L, r + L + 1 = M.length →
+      par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
+      TPLoNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hRes : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 → ∀ n, 2 ≤ n →
       ∀ σ rkN, Inv3 (expand M n) σ rkN → Res3A (expand M n) σ rkN) :
@@ -1460,7 +1472,8 @@ theorem hExp_t1
   have hlen : r + L + 1 = M.length := by omega
   obtain ⟨ρN, rkN, V, _, _⟩ :=
     inv3V_N_t1 I R hlen hr hx2 (hRT M ρ rk hM hS I R hz h1t)
-      (hQs M ρ rk hM hS I R r L hlen hr hx2) n hn
+      (hQs M ρ rk hM hS I R r L hlen hr hx2)
+      (hResN M ρ rk hM hS I R r L hlen hr hx2) n hn
   rw [← hexp] at V
   exact ⟨ρN, rkN, V, hRes M ρ rk hM hS I R hz h1t n hn ρN rkN
     (Inv3.ofV (sInv_std (Std.exp n hM) hNS) V)⟩
