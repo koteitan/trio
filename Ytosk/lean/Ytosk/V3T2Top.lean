@@ -6,6 +6,7 @@
 -/
 import Ytosk.V3Top
 import Ytosk.V3T2T
+import Ytosk.V3T2QNU
 import Ytosk.V3InvPer
 import Ytosk.V3TopB
 
@@ -467,6 +468,18 @@ theorem qu_shapes {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < 
         · exact h'
         · cases h'
 
+/-- **`q ≠ r`, `x − 1` upgrades to `k`** (`n ≤ 1`): the seeds are `v(q)`, `o(q)`, `o(pq)` and `v(x − 1)`
+(`SQU`). Example (standard): `(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,1)`. -/
+structure T2QNU (M : Mat) (r L qp pq : Nat) : Prop where
+  p1 : ∀ m, par M 1 (r + qp) = some m → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) false m
+  p1a : ∀ m, par M 1 (r + L - 1) = some m → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) false m
+  qsh : ∃ Lb d Kb e, children M (r + qp) = Lb ++ [d, r + L] ∧ children M d = Kb ++ [e] ∧
+    (∀ f ∈ Kb, ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true f) ∧
+    (∀ d' ∈ Lb, ∀ e' ∈ children M d', ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true e')
+  dv : ∀ c, c < r + L → DepS M (SQU (r + qp) pq (r + L - 1)) false c → CL M c = []
+  os : OSh M (SQU (r + qp) pq (r + L - 1)) (r + L)
+  vsh : VSh M (SQU (r + qp) pq (r + L - 1)) (r + L)
+
 /-- **`q ≠ r`** (`x` a bump child of `q = r + qp`, `P_0 q = pq`). -/
 structure T2QN (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L qp pq : Nat) : Prop where
   xb : col M (r + L) = bump M (r + qp)
@@ -474,7 +487,6 @@ structure T2QN (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L qp pq : Na
   e2pq : entry M 2 pq = 0
   clq : CL M (r + qp) = []
   clpq : CL M pq ≠ []
-  un : upg M (r + L - 1) = none
   p1 : ∀ m, par M 1 (r + qp) = some m → ¬ DepS M (SQ (r + qp) pq) false m
   qL : ∀ d ∈ children M (r + qp), col M d = bump M (r + qp) → ∀ e ∈ children M d,
     ¬ DepS M (SQ (r + qp) pq) true e
@@ -482,6 +494,7 @@ structure T2QN (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L qp pq : Na
   os : OShW M (SQ (r + qp) pq) (WQ (r + qp)) (r + L)
   vsh : VSh M (SQ (r + qp) pq) (r + L)
   seed1 : (drop1 M (r + L) rk).o pq ≠ ρ.o pq
+  up : ∀ k, upg M (r + L - 1) = some k → T2QNU M r L qp pq
   big : ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ c, c < r + L → c ≠ r + qp → topped M c = true →
       isUpg (TRIO.gexp M r L d0 d1 n) c = isUpg M c) ∧ VNNcN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
@@ -649,9 +662,17 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
       have T := R2.qn r L (q - r) pq hlen hr hq' (by omega) hpq'
       have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact T.qb)
-      exact t2_qn_take hlen hL0 hA hq' (by omega) T.xb I.be I.z2 I.uat I.r12 I.r01 I.e00 hpq' T.qb T.e2pq
-        T.clq T.clpq T.un T.p1 T.qL T.dv T.os T.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd
-        hAbs hvnn1 (hseed1 pq (by have := par_lt M 0 _ _ hpq; omega) T.clpq T.seed1)
+      have hs1 := hseed1 pq (by have := par_lt M 0 _ _ hpq; omega) T.clpq T.seed1
+      cases hux : upg M (r + L - 1) with
+      | none =>
+        exact t2_qn_take hlen hL0 hA hq' (by omega) T.xb I.be I.z2 I.uat I.r12 I.r01 I.e00 hpq' T.qb T.e2pq
+          T.clq T.clpq hux T.p1 T.qL T.dv T.os T.vsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd
+          hAbs hvnn1 hs1
+      | some k =>
+        have U := T.up k hux
+        exact t2_qnu_take hlen hL0 hA hq' (by omega) T.xb I.be I.r0p I.z2 I.sd I.z1 I.uat I.r12 I.r01 I.e00
+          hpq' T.qb T.e2pq T.clq T.clpq hux U.p1 U.p1a U.qsh U.dv U.os U.vsh I.cons I.good I.rank hC1 hG1
+          hRk1 I.fc I.vs I.td I.kd hdr.ua hAbs hvnn1 hs1
   -- `n ≥ 2`
   have hbig : ∀ n, 2 ≤ n → ∀ σ rkN,
       Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
