@@ -1623,3 +1623,10 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 外した: Res3A.fch、Res3.t0 の hVr、hVNN/VNNc/VNNcN（V3DepLhd・V3T2*）。
 - 主な補題（V3NodeLhd）: node_lhdD、drop_child_lhdD、prel_tn_dom、H_mono、V3StepOT.step_ot_of_leB。
 - 残り: V3FrameClN の FrameClosedOmN（t = 1 の M[n] の FrameClosed 用の N 側の仮定）。新しい FrameClosed・VSmallF の展開での保存は hExp の仕事。
+
+### hExp の t = 1 部分と、数える子の形への切り替え（2026-10-02、t1-exp）
+
+- d5caf015 V3ExpT1: hExp_t1（hExp の t = 1 部分）。鎖が Pn = FrameOT ∧ RootP ∧ BumpDec ∧ FrameClosed ∧ QV を運ぶ。明示的な残り: RestT（M.take x の 11 欄、hLast と同じ）、QV の ExpStepT1、FrameClosedOmN、M[n] の Res3A。
+- 5c7cf30b: Inv3・Inv3V の tp1・tp1w・trig を数える子の形 TP1C・TP1WC・TrigOmC に替えた（使う側の W 型の仮定に Counted M i c → を足し、最後の使い手が数える子の前提を与える）。NoTrigU は不要。
+- 注意（t1-exp・drop-fix・t0-exp が独立に気づいた）: DropRes.argT を argT_std で出すには M[n].take の Good3 が要り、帰納法の中では循環する。drop-fix が落とす補題から argT を外す（新しい o′(i) の標準形を M 側の事実から）。t0-exp の hOTD も同じ問題で共通の補題にする。
+- t2-exp（測定）: M[n] の順位は M′ = M.take x ++ [(x0, x1, 0)] を使う段の順位で例外 0。写しの値は M や M.take x の単純なずらしではない（q ≠ r で約 68% が違う）ので、Good3 には順序数の議論が要る。M[n−1] → M[n] の鎖の構造を測る。
