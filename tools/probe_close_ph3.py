@@ -93,10 +93,112 @@ def PH3s(M):
     if f is None: return False
     return all(ph3s_kind(B, hi, lo, s) for i, c, B, hi, lo, s in f)
 
+def _sub_end(e, c):
+    n = len(e.M); k = c + 1
+    while k < n:
+        p = k
+        while p is not None and p > c: p = e.par(0, p)
+        if p != c: break
+        k += 1
+    return k
+
+def bump_kids(M):
+    import ytosk_eval2 as Y2
+    e = Y2.Ev2(M)
+    return e, [j for i in range(len(M)) for j in e.children[i] if M[i][2] == 1 and M[j] == e.bump(i)]
+
+def S5(M):
+    """のりしろの子 j の部分木 T_j（j を除く）を、前ののりしろの子 j′ の高さへずらすと T_j′ 以下（辞書式）になる j′ がある。
+    ずらし: 行 0 は e0(j) − e0(j′) 引く。行 1 は e1(j) 以上なら e1(j) − e1(j′) 引く。行 2 はそのまま。"""
+    M = list(M)
+    e, bk = bump_kids(M)
+    T = {j: M[j + 1:_sub_end(e, j)] for j in bk}
+    for j in bk:
+        if not T[j]: continue
+        cands = [j2 for j2 in bk if j2 < j and M[j2][1] <= M[j][1]]
+        ok = not cands
+        for j2 in cands:
+            d0 = M[j][0] - M[j2][0]; d1 = M[j][1] - M[j2][1]
+            sh = [(a - d0, b - d1 if b >= M[j][1] else b, c) for a, b, c in T[j]]
+            if sh <= T[j2]: ok = True; break
+        if not ok: return False
+    return True
+
+# ---- H1: 穴の欄を fsD(X, 1) で（≤ 版）----
+from probe_inv3_prefix import isOT as _isOT
+H1F = {'TP1', 'TP1W', 'AbsD', 'AbsDN', 'AbsU', 'AbsUW', 'TPLoN'}
+def d1(X):
+    return fsD(X, ONE) if X and cof(X)[0]=='omega' else None
+def hole1_fields_le(C, note):
+    """Inv3 の穴の欄を、量 X を X' = fsD(X,1)（cof X = ω のとき）に替えて評価。"""
+    M=C.M; n=len(M)
+    for i in range(n):
+        vi=C.v(i); chs=C.ch(i)
+        for idx,c in enumerate(chs):
+            P_=C.pre(i,chs[:idx]); s,y0,_=C.o(c)
+            y=d1(y0)
+            if y is None: continue
+            if not (lt(P_,y) and lt((vi,Z,Z),(s,y,Z))): continue
+            if ohole(y):
+                note('TP1', le(P_, fsD(y,(holelev(y),ONE,Z))), (i,c))
+                if cof(y)[0]=='omega': note('TP1W', le(P_, fsD(y,ONE)), (i,c))
+            if y and not y[2] and not y[1] and isSucc(y[0]): note('TrigOm', P_==Z, (i,c))
+        if C.e12(i):
+            W=d1(C.bumpW(i))
+            if W is not None and ohole(W):
+                qs=[q for q in summ(C.vOpt1(i)) if lt(q,W)]
+                note('AbsD', all(le(q,fsD(W,etaOm(holelev(W)))) for q in qs),(i,))
+                if cof(W)[0]=='omega':
+                    note('AbsDW', all(le(q,fsD(W,(holelev(W),ONE,Z))) for q in qs),(i,))
+                    if notNode(W): note('AbsDN', all(le(q,fsD(W,ONE)) for q in qs),(i,))
+        k=C.upg(i)
+        if k is not None:
+            lv=d1(last(C.v(k)))
+            if lv is not None and ohole(lv):
+                qs=[q for q in summ(C.vOpt1(i)) if lt(q,lv)]
+                note('AbsU', all(le(q,fsD(lv,etaOm(holelev(lv)))) for q in qs),(i,k))
+                if cof(lv)[0]=='omega': note('AbsUW', all(le(q,fsD(lv,ONE)) for q in qs),(i,k))
+        s,y,_=C.o(i)
+        if y and split(y,(succ(s),Z,Z))[1]==Z:
+            l=last(y)
+            if not l[1]:
+                a=d1(l[0])
+                if a is not None and not isSucc(a) and ohole(a):
+                    th=(s,Z,Z)
+                    note('TPLo', not lt((fsD(a,etaOm(holelev(y))),Z,Z),th),(i,))
+                    if cof(a)[0]=='omega':
+                        note('TPLoW', not lt((fsD(a,(holelev(y),ONE,Z)),Z,Z),th),(i,))
+                        if notNode(a): note('TPLoN', not lt((fsD(a,ONE),Z,Z),th),(i,))
+
+def H1(M):
+    """穴の欄（TP1・TP1W・AbsD・AbsDN・AbsU・AbsUW・TPLoN、≤ 版）を、量 X を fsD(X, 1)（cof X = ω のとき）に替えて評価。
+    n = 2 の展開で cof ω の成分が 1 番目の基本列の項になり穴が現れる場合の先取り。"""
+    C = Ctx(list(M))
+    if not C.ok: return False
+    bad = []
+    hole1_fields_le(C, lambda f, g, info: bad.append(f) if g is False and f in H1F else None)
+    return not bad
+
+def PF3(M):
+    """PreFC の弱い形: 最初の数える子の枠（B = 0）で書き換えが起き、v(i) = 子の添字 s が 0 か後続なら lo ≠ 0。"""
+    C = Ctx(list(M))
+    if not C.ok: return False
+    for i in range(len(M)):
+        cl = C.CL(i); vi = C.v(i)
+        if not cl: continue
+        s, y, _ = C.o(cl[0])
+        if s != vi or not lt((vi, Z, Z), (s, y, Z)) or y == Z: continue
+        if s != Z and last(s) != ONE: continue   # 添字が極限なら除外（z = 1 の W の項）
+        if split(y, (succ(s), Z, Z))[1] == Z: return False
+    return True
+
 PH = os.environ.get('PH', 'c')   # c: PH3c（既定）、s: PH3s
 def P(M):
     M = list(M)
-    return S1(M) and S2(M) and S3(M) and S4(M) and (PH3c(M) if PH == 'c' else PH3s(M))
+    return (S1(M) and S2(M) and S3(M) and S4(M) and (PH3c(M) if PH == 'c' else PH3s(M))
+            and (S5(M) if os.environ.get('S5') == '1' else True)
+            and (H1(M) if os.environ.get('H1') == '1' else True)
+            and (PF3(M) if os.environ.get('PF') == '1' else True))
 
 RELAX = os.environ.get('RELAX', '0') != '0'   # 1: 穴の欄を非厳密版に、2: さらに AbsDW・TPLoW を外す（標準形で偽）
 def world(M):
@@ -174,9 +276,14 @@ def perturb_go(seed):
     rng = random.Random(seed); cnt = Counter(); ex = []
     for _ in range(60):
         Sm = list(rng.choice(CMATS))
-        k = rng.randint(1, len(Sm))
-        M = Sm[:k]
-        for _ in range(rng.randint(1, 3)): M.append(rand_col(rng, M))
+        if os.environ.get('MID') == '1' and len(Sm) >= 3:
+            # 途中の 1 列を乱択の列に替え、その後ろを途中まで残す
+            k = rng.randint(1, len(Sm) - 1)
+            M = Sm[:k] + [rand_col(rng, Sm[:k])] + Sm[k + 1:rng.randint(k + 1, len(Sm))]
+        else:
+            k = rng.randint(1, len(Sm))
+            M = Sm[:k]
+            for _ in range(rng.randint(1, 3)): M.append(rand_col(rng, M))
         if M[-1] == (0, 0, 0) or len(M) > 30: continue
         if W(M): continue
         if std(M): cnt['std(skip)'] += 1; continue
