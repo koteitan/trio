@@ -296,20 +296,40 @@ theorem t0RWRes_of (P : T → T → T → T → Prop)
     rw [h0.2.1] at ht1
     exact absurd ht1 (T.not_lt_z _)
 
-/-- **The remaining value fields of `N = M[n]`** (`t = 0`) and its `Res3A`, for the valuation built by
-`t0_core` (which already has `Cons`, `Rk`, `Good3`, `FrameOT`, `FrameClosed`, `BumpKidsDec`, `BumpTermDec`). The context
-includes the invariants of the prefix `M.take x` (from the one-column drops in the induction). -/
-def T0Rest : Prop :=
-  ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
-    Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
-    (∃ τ rkT, Inv3 (M.take (r + L)) τ rkT ∧ Res3A (M.take (r + L)) τ rkT) →
-    2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
-      Good3 (TRIO.gexp M r L 0 0 n) σ → FrameOT (TRIO.gexp M r L 0 0 n) σ →
-      FrameClosed (TRIO.gexp M r L 0 0 n) σ →
-      BumpKidsDec (TRIO.gexp M r L 0 0 n) σ → BumpTermDec (TRIO.gexp M r L 0 0 n) σ →
-      let N := TRIO.gexp M r L 0 0 n
-      VSmallF N σ ∧ AbsD N σ ∧ AbsU N σ ∧ TPLo N σ ∧
-        TPLoW N σ ∧ AbsUW N σ ∧ AbsDW N σ ∧ TPLoN N σ ∧ AbsDN N σ ∧ Res3A N σ rkN
+/-- **The context of a residual field of `N = M[n]`** (`t = 0`): `M` with its invariants, the prefix
+`M.take x` with its invariants (from the one-column drops in the induction), and the valuation of `N` built by
+`t0_core` (which already has `Cons`, `Rk`, `Good3`, `FrameOT`, `FrameClosed`, `BumpKidsDec`, `BumpTermDec`). -/
+def T0Ctx (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat) (σ : Valn)
+    (rkN : Bool → Nat → Nat) : Prop :=
+  Std M ∧ M ≠ SRO ∧ Inv3 M ρ rk ∧ Res3A M ρ rk ∧ r + L + 1 = M.length ∧ 0 < L ∧
+    par M 0 (r + L) = some r ∧ entry M 1 (r + L) = 0 ∧
+    (∃ τ rkT, Inv3 (M.take (r + L)) τ rkT ∧ Res3A (M.take (r + L)) τ rkT) ∧
+    2 ≤ n ∧ Cons (TRIO.gexp M r L 0 0 n) σ ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
+    Good3 (TRIO.gexp M r L 0 0 n) σ ∧ FrameOT (TRIO.gexp M r L 0 0 n) σ ∧
+    FrameClosed (TRIO.gexp M r L 0 0 n) σ ∧
+    BumpKidsDec (TRIO.gexp M r L 0 0 n) σ ∧ BumpTermDec (TRIO.gexp M r L 0 0 n) σ
+
+/-- **A residual value field `F` of `N = M[n]`** (`t = 0`), in the context `T0Ctx`. -/
+def T0Field (F : Mat → Valn → Prop) : Prop :=
+  ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → F (TRIO.gexp M r L 0 0 n) σ
+
+/-- **The residual `Res3A` of `N = M[n]`** (`t = 0`). -/
+def T0Res3A : Prop :=
+  ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → Res3A (TRIO.gexp M r L 0 0 n) σ rkN
+
+/-- **The remaining value fields of `N = M[n]`** (`t = 0`) and its `Res3A`, one named residual each
+(groupA's ◁-lowering lemmas for the first seven, wip's forms of `TPLoW`・`AbsDW`, drop-fix's `Res3A`). -/
+structure T0Rest : Prop where
+  vs : T0Field VSmallF
+  ad : T0Field AbsD
+  au : T0Field AbsU
+  tplo : T0Field TPLo
+  auw : T0Field AbsUW
+  tplon : T0Field TPLoN
+  adn : T0Field AbsDN
+  tplow : T0Field TPLoW
+  adw : T0Field AbsDW
+  res : T0Res3A
 
 /-- **`hExp` for `t = 0`** (`n ≥ 2`), from the residuals `T0OTD` and `T0Rest`, with the invariants of the
 prefix `M.take x` given. -/
@@ -345,8 +365,18 @@ theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) (hR1 : T0RWRes PTP1) (hR1W : T0R
       have := congrArg List.length h
       rw [List.length_take, Nat.min_eq_left (by omega)] at this
       simp only [List.length_nil] at this; omega
-  obtain ⟨hvs, had, hau, htplo, htplow, hauw, hadw, htplon, hadn, hRN'⟩ :=
-    hRest M ρ rk r L n hM hS I R hlen hL hp he1 hTx hn2 σ rkN hCN hRN hGN hFON hFCN hKDN hTDN
+  have hctx : T0Ctx M ρ rk r L n σ rkN :=
+    ⟨hM, hS, I, R, hlen, hL, hp, he1, hTx, hn2, hCN, hRN, hGN, hFON, hFCN, hKDN, hTDN⟩
+  have hvs := hRest.vs _ _ _ _ _ _ _ _ hctx
+  have had := hRest.ad _ _ _ _ _ _ _ _ hctx
+  have hau := hRest.au _ _ _ _ _ _ _ _ hctx
+  have htplo := hRest.tplo _ _ _ _ _ _ _ _ hctx
+  have hauw := hRest.auw _ _ _ _ _ _ _ _ hctx
+  have htplon := hRest.tplon _ _ _ _ _ _ _ _ hctx
+  have hadn := hRest.adn _ _ _ _ _ _ _ _ hctx
+  have htplow := hRest.tplow _ _ _ _ _ _ _ _ hctx
+  have hadw := hRest.adw _ _ _ _ _ _ _ _ hctx
+  have hRN' := hRest.res _ _ _ _ _ _ _ _ hctx
   -- the rewriting-frame fields, with the prefix valuation `drop1`
   have hRk1 : Rk (M.take (r + L)) rk :=
     rk_take (by omega) I.rank (by
