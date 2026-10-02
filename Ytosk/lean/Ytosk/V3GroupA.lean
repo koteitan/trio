@@ -643,6 +643,33 @@ theorem lt_fsD_v (hC : Cons M ρ) (hG : Good3 M ρ) (hAD : AbsD M ρ) (hAU : Abs
     have := hAD d hd h1 h2 (by rw [hW]; exact hOW) q hq (by rw [hW]; exact hlt)
     rwa [hW] at this
 
+/-! ## 候補の不変条件 PhiX: P_1 の鎖の上の v の部分項は、のりしろの項の穴を越えない
+
+C′ の 434787 件で例外 0。長さ 9 の Good3 ∧ 構造の反例では AbsD の 2 個だけで破れる。AbsD・AbsU を含む。
+-/
+
+/-- `p` is on the row-1 parent chain of `c` (strictly above). -/
+inductive P1Chain (M : Mat) : Nat → Nat → Prop
+  | one {p c : Nat} : par M 1 c = some p → P1Chain M p c
+  | step {p m c : Nat} : par M 1 c = some m → P1Chain M p m → P1Chain M p c
+
+/-- **PhiX**: the subterms of `v(p)` for `p` on the row-1 chain of a bump column `c` stay below the
+fundamental sequence of the bump term `W_c` at its hole. -/
+def PhiX (M : Mat) (ρ : Valn) : Prop :=
+  ∀ c p, c < M.length → entry M 1 c ≠ 0 → entry M 2 c ≠ 0 → P1Chain M p c → OHole (bumpW M ρ c) →
+    Reach (SubS (ρ.v p)) (bumpW M ρ c) (etaOm (holeLev (bumpW M ρ c)))
+
+theorem absD_of_phiX (h : PhiX M ρ) : AbsD M ρ := by
+  intro i hi h1 h2 hO q hq hlt
+  cases hp : par M 1 i with
+  | none => rw [hp] at hq; simp [vOpt, summands] at hq
+  | some m =>
+    rw [hp] at hq
+    exact h i m hi h1 h2 (.one hp) hO q (summand_subS hq) hlt
+
+theorem absU_of_phiX (hC : Cons M ρ) (hG : Good3 M ρ) (h : PhiX M ρ) : AbsU M ρ :=
+  absU_of_absD hC hG (absD_of_phiX h)
+
 end
 
 end Ytosk
