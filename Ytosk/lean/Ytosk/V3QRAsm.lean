@@ -82,7 +82,7 @@ theorem qr_main (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → 
     hR0 hRlast hRd hsM hpM ?_ hHD hC1 hR1 hG1 hr1 hPv1 Pn hP1 hPs
   intro n _ ρP _ hPr
   refine ⟨zfQ M (r + L) lo lb μ br seed (n - 2), ?_, ?_, (hRt (n - 2)).1, (hRt (n - 2)).2, (hOT (n - 2)).1,
-    (hOT (n - 2)).2.1, (hOT (n - 2)).2.2, fun i => ⟨_, rfl⟩⟩
+    (hOT (n - 2)).2.1, (hOT (n - 2)).2.2, fun i => ⟨_, Nat.le_add_right _ _, rfl⟩⟩
   · unfold zfQ; rw [hdr, Nat.add_zero]
   · apply qr_path hC hG hx ?_ (hO (n - 2)) (hV (n - 2))
     show ρP.o (r + L - L) = _

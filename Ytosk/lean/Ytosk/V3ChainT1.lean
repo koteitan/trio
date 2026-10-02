@@ -126,7 +126,7 @@ theorem t1_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
     have hHD : HoleData M (r + L) ρ μ br vr seed :=
       ⟨hrot, hcb, hμ, hS, hgS 0, fun bb i hd hi => (hHt bb i hd (Or.inl hi)).1⟩
     refine ⟨_, _, hCN, hRN, hGN, hPs n hn ρP (fun _ => ζ) hCP hGP hPP hCN hGN hoto hotv hle hlex
-      ⟨μ, br, vr, seed, hHD, fun _ => ⟨n - 2, rfl⟩, ⟨n - 2, hPr⟩⟩, ?_, ?_, ?_⟩
+      ⟨μ, br, vr, seed, n - 2, hHD, fun _ => ⟨n - 2, le_refl _, rfl⟩, hPr⟩, ?_, ?_, ?_⟩
     · -- the value at `r`
       show (glue M (r + L) ρ (shiftV ρP L) ζ).o r = _
       rw [glue_o_dep ρ _ ζ (by omega) hrD, hro, fsD_here hbr hcb, ← hμr]

@@ -201,8 +201,8 @@ def ExpStepT1 (Pn : Mat → Valn → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) 
     (∀ i, i < r + L → DepX M (r + L) false i → isOT (fsD (ρ.v i) (Z i)) = true) →
     (∀ c, c < r + L → DepX M (r + L) true c → fsD (ρ.o c) (Z c) ≤ ρ.o c ∧ fsD (ρ.o c) (Z c) ≠ z) →
     (ρP.o r ≤ ρ.o (r + L) ∧ ρP.o r ≠ z) →
-    (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ (∀ i, ∃ k, Z i = gamS μ br seed k) ∧
-      ∃ k, ρP.o r = gamS μ br seed k) →
+    (∃ μ br vr seed k0, HoleData M (r + L) ρ μ br vr seed ∧
+      (∀ i, ∃ k, k0 ≤ k ∧ Z i = gamS μ br seed k) ∧ ρP.o r = gamS μ br seed k0) →
     Pn (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z)
 
 end Ytosk
