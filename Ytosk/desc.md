@@ -1653,3 +1653,9 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - t2-exp（0fc9501c、緑）: 門の補題 depS_gate・depS_rk（v(r) は o(q) にも o(p2) にも依存しない、tgt_r_t2）。順位の残り T2Tgt を r 以外の行き先に減らした。測定: 一般の補題 VIS（a とその子孫 c の間の列がすべて e1 ≥ e1(a) なら、v(a) は間の y の o(y) に依存しない）は C′ で例外 0。N の変わる呼び出しの標準形には、FrameDom の形の標準形の節点の補題 node_otD が要る（drop-fix の argT の除去と同じもの、共通化する）。
 - groupA の見立て: A 群の含意（Good3 ＋ 構造 → 項目）の証明は大域的（FC3 が効く枠は遠い）で、数日かかり見通しも不確か。決定: 保存の道に切り替える。groupA は各項目が fsD の像や ◁ の下げで保たれる汎用の順序数の補題を作り、t0-exp・t1-exp・t2-exp・drop-fix がそれぞれの仕組みに差し込む（t1-exp は fsD_comp で TP1C・TrigOmC を約 1 時間ずつで運べた前例）。
 - t1-exp（fd276284、緑）: QR2Res を外し、t = 1 の M[n] の TP1C・TP1WC を残りなしで運ぶ（q = r・n = 2 は qr2_tpG、種 = 1 で穴が消える diag_fsD_one、x の枠は SeedOK.lt_next と FS.between_app）。hExp_t1 の残り: RestT、QV（VSmallF ∧ AbsD ∧ TPLo ∧ TPLoW ∧ AbsUW ∧ AbsDW ∧ TPLoN ∧ AbsDN）、FrameClosedOmN、M[n] の Res3A。
+- t2-subst（測定）: t = 2 の写しの値の置き換えを見つけた（C′ の t = 2 の 3000 行列 × n = 2..4 で例外 0）。
+  - V = v_P(r)、V′ = v_N(x′)（V < V′）、f(s) := V′ + σ(s − V)（f(V) = V′）。
+  - σ(0) = 0、σ(ψ_s(y) + c) = ψ_{f s}(σ y) + σ c（V < s のとき）、= ψ_s(y) + σ c（s ≤ V のとき、y の中には入らない）。
+  - ガードつきの写しの列（r を含む）: v_N = f(v_P)、o_N = ψ_{f s}(σ y)。ガードなしは等しい。
+  - 値だけの写像は不可能（同じ値が 2 つに写る例がある）。「添字 ≤ V の ψ の中に入らない」がちょうどの修正。
+  - 計画（V3Subst、一般の形）: σ は加数ごとの順序の埋め込み、t ≤ σ t、標準形を保つ、add・last・sumN・omega・spArg と可換。
