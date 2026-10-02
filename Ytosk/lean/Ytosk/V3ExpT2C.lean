@@ -338,6 +338,414 @@ theorem par1_copy2 {j : Nat} (hj0 : 0 < j) (hj : j < (n - 1) * L) :
           have := hmax y ((hmemP y).mpr (Or.inr (Or.inr hy))) hay
           rw [eNlow y (by omega)]; rw [ePlow y (by omega)] at this; exact this
 
+
+end
+
+/-! ## 行 1 の鎖とガード -/
+
+theorem le1_ge {G : Mat} {r m : Nat} (h : TRIO.le1 G r m) : r ≤ m := by
+  obtain ⟨_, _, h⟩ := h
+  induction h with
+  | refl => exact le_refl _
+  | tail _ hbc ih => have := hbc.2.2.1; omega
+
+theorem le1_par1_down {G : Mat} {r c : Nat} (h : TRIO.le1 G r c) (hne : c ≠ r) :
+    ∃ m, par G 1 c = some m ∧ TRIO.le1 G r m := by
+  obtain ⟨hr, hc, h⟩ := h
+  cases h with
+  | refl => exact absurd rfl hne
+  | tail hb hbc => exact ⟨_, (par1_iff G hc).mpr hbc, hr, hbc.1, hb⟩
+
+theorem le1_par1_up {G : Mat} {r m c : Nat} (hm : TRIO.le1 G r m) (hp : par G 1 c = some m)
+    (hc : c < G.length) : TRIO.le1 G r c :=
+  ⟨hm.1, hc, Relation.ReflTransGen.tail hm.2.2 ((par1_iff G hc).mp hp)⟩
+
+/-- Two columns with the same `P_1` have the same guard (`r < c`). -/
+theorem guard_sib1 {G : Mat} {r m c c' : Nat} (hc : c < G.length) (hc' : c' < G.length)
+    (hrc : r < c) (hrc' : r < c') (hp : par G 1 c = some m) (hp' : par G 1 c' = some m) :
+    TRIO.le1 G r c ↔ TRIO.le1 G r c' := by
+  have key : ∀ y, y < G.length → r < y → par G 1 y = some m → (TRIO.le1 G r y ↔ TRIO.le1 G r m) := by
+    intro y hy hry hpy
+    constructor
+    · intro h
+      obtain ⟨m', hm', hg⟩ := le1_par1_down h (by omega)
+      rw [hpy] at hm'; cases hm'; exact hg
+    · intro h; exact le1_par1_up h hpy hy
+  rw [key c hc hrc hp, key c' hc' hrc' hp']
+
+theorem e2_gexp_d1 {M : Mat} {r L d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (i : Nat) :
+    entry (TRIO.gexp M r L d0 d1 n) 2 i = entry (TRIO.gexp M r L d0 0 n) 2 i := by
+  rcases Nat.lt_or_ge i r with h | h
+  · unfold entry; rw [TRIO.gexp_getD_low hlen h, TRIO.gexp_getD_low hlen h]
+  · rcases Nat.lt_or_ge i (r + n * L) with h' | h'
+    · rcases Nat.eq_zero_or_pos L with hL | hL
+      · subst hL; simp at h'; omega
+      obtain ⟨k, q, hk, hq, rfl⟩ := TRIO.gexp_pos_decomp (j0 := r) (Lb := L) (n := n) hL h h'
+      unfold entry
+      rw [TRIO.gexp_getD_mir hlen hk hq, TRIO.gexp_getD_mir hlen hk hq]
+      rfl
+    · rw [entry_out (by rw [TRIO.gexp_length hlen]; omega), entry_out (by rw [TRIO.gexp_length hlen]; omega)]
+
+section
+variable {M : Mat} {r L d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+  (hA : Anc0 M r (r + L)) (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (hn : 2 ≤ n)
+include hlen hL hA hd0e hn
+
+theorem e0_copy2 {a : Nat} (ha : a < (n - 1) * L) :
+    entry (TRIO.gexp M r L d0 d1 n) 0 (r + L + a) = entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 (r + a) + d0 := by
+  rw [e0_gexp_d1 hlen, e0_gexp_d1 (n := n - 1) hlen]; exact e0_copy hlen hL hn ha
+
+theorem e2_copy2 {a : Nat} (ha : a < (n - 1) * L) :
+    entry (TRIO.gexp M r L d0 d1 n) 2 (r + L + a) = entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 (r + a) := by
+  rw [e2_gexp_d1 hlen, e2_gexp_d1 (n := n - 1) hlen]; exact e2_copy hlen hL hn ha
+
+theorem copyP_not_child2 {c m : Nat} (hc0 : r < c) (hc : c < r + (n - 1) * L) (hm : m < r) :
+    par (TRIO.gexp M r L d0 d1 (n - 1)) 0 c ≠ some m := by
+  rw [par0_gexp_d1 hlen]; exact copyP_not_child hlen hL hA hd0e hn hc0 hc hm
+
+theorem copyN_not_child2 {c m : Nat} (hc0 : r + L ≤ c) (hc : c < r + L + (n - 1) * L) (hm : m < r) :
+    par (TRIO.gexp M r L d0 d1 n) 0 c ≠ some m := by
+  rw [par0_gexp_d1 hlen]; exact copyN_not_child hlen hL hA hd0e hn hc0 hc hm
+
+theorem childOn_shift2 {j m : Nat} (hj0 : 0 < j) (hj : j < (n - 1) * L) (hmr : r ≤ m) :
+    (ancL (TRIO.gexp M r L d0 d1 n) (r + L + j)).find?
+        (fun q => decide (par (TRIO.gexp M r L d0 d1 n) 0 q = some (m + L))) =
+      ((ancL (TRIO.gexp M r L d0 d1 (n - 1)) (r + j)).find?
+        (fun q => decide (par (TRIO.gexp M r L d0 d1 (n - 1)) 0 q = some m))).map (· + L) := by
+  simp only [ancL_gexp_d1 hlen, par0_gexp_d1 hlen]
+  exact childOn_shift hlen hL hA hd0e hn hj0 hj hmr
+
+theorem childOn_same2 {j m : Nat} (hj0 : 0 < j) (hj : j < (n - 1) * L) (hmr : m < r) :
+    (ancL (TRIO.gexp M r L d0 d1 n) (r + L + j)).find?
+        (fun q => decide (par (TRIO.gexp M r L d0 d1 n) 0 q = some m)) =
+      (ancL (TRIO.gexp M r L d0 d1 (n - 1)) (r + j)).find?
+        (fun q => decide (par (TRIO.gexp M r L d0 d1 (n - 1)) 0 q = some m)) := by
+  simp only [ancL_gexp_d1 hlen, par0_gexp_d1 hlen]
+  exact childOn_same hlen hL hA hd0e hn hj0 hj hmr
+
+
+end
+
+/-! ## 写しの列の上げ（t = 2） -/
+
+section
+variable {M : Mat} {r L d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+  (hA : Anc0 M r (r + L)) (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (hn : 2 ≤ n)
+  (hd0 : 0 < d0) (hd1 : 0 < d1) (hgx : TRIO.le1 M r (r + L))
+include hlen hL hA hd0e hn hd0 hd1 hgx
+
+/-- `r` is a row-0 ancestor of every copy column of `P`. -/
+theorem ancP_r {a : Nat} (ha : a < (n - 1) * L) : Anc0 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + a) := by
+  rcases Nat.eq_zero_or_pos a with h0 | h0
+  · subst h0; exact Anc0.refl _
+  · obtain ⟨S, hSP, -, -⟩ := ancL_copy2 (d1 := d1) hlen hL hA hd0e hn a h0 ha
+    exact anc0_of_mem_ancL (by rw [hSP]; simp)
+
+/-- A guarded copy column of `P` (other than `r`) is above row 1 of `r`. -/
+theorem guard_e1P {a : Nat} (ha0 : 0 < a) (ha : a < (n - 1) * L)
+    (hg : TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + a)) :
+    entry M 1 r < entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + a) := by
+  have hlP : (TRIO.gexp M r L d0 d1 (n - 1)).length = r + (n - 1) * L := TRIO.gexp_length hlen
+  have hrA := ancP_r hlen hL hA hd0e hn hd0 hd1 hgx ha
+  have := (le1_window (by omega) hrA).mp hg (r + a) hrA (Anc0.refl _) (by omega)
+  rwa [entry_gexp_pre hlen (show 1 ≤ n - 1 by omega) 1 (by omega)] at this
+
+/-- **The column of a copy**: shifted, row 1 by the guard. -/
+theorem col_copy2 {a : Nat} (ha : a < (n - 1) * L) :
+    col (TRIO.gexp M r L d0 d1 n) (r + L + a) =
+      (entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 (r + a) + d0,
+       entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + a) +
+         (if TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + a) then d1 else 0),
+       entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 (r + a)) := by
+  rw [col_eq_entries, e0_copy2 hlen hL hA hd0e hn ha, e2_copy2 hlen hL hA hd0e hn ha,
+    show r + L + a = (r + a) + L by omega, e1_shift2 hlen hL hA hd0e hn hd0 hd1 hgx (by omega) (by omega)]
+
+/-- **Upgrades of copy columns** (`t = 2`, `e2(r) = 0`). -/
+theorem upg_copy2 (he2r : entry M 2 r = 0) {j : Nat} (hj0 : 0 < j) (hj : j < (n - 1) * L) :
+    upg (TRIO.gexp M r L d0 d1 n) (r + L + j) =
+      (upg (TRIO.gexp M r L d0 d1 (n - 1)) (r + j)).map (fun t => if r ≤ t then t + L else t) := by
+  have hlN : (TRIO.gexp M r L d0 d1 n).length = r + L + (n - 1) * L := by
+    rw [TRIO.gexp_length hlen]
+    have : n * L = (n - 1) * L + L := by rw [← Nat.succ_mul, show (n - 1).succ = n by omega]
+    omega
+  have hlP : (TRIO.gexp M r L d0 d1 (n - 1)).length = r + (n - 1) * L := TRIO.gexp_length hlen
+  have hgd : ∀ a, 0 < a → a < (n - 1) * L → TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + a) →
+      0 < entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + a) := by
+    intro a h0 ha hg; have := guard_e1P hlen hL hA hd0e hn hd0 hd1 hgx h0 ha hg; omega
+  have he1 : entry (TRIO.gexp M r L d0 d1 n) 1 (r + L + j) =
+      entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j) +
+        (if TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + j) then d1 else 0) := by
+    rw [show r + L + j = (r + j) + L by omega]
+    exact e1_shift2 hlen hL hA hd0e hn hd0 hd1 hgx (by omega) (by omega)
+  have he2 := e2_copy2 (d1 := d1) hlen hL hA hd0e hn (show j < (n - 1) * L from hj)
+  have hz : entry (TRIO.gexp M r L d0 d1 n) 1 (r + L + j) = 0 ↔
+      entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j) = 0 := by
+    rw [he1]
+    by_cases hg : TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + j)
+    · have := hgd j hj0 hj hg; rw [if_pos hg]; omega
+    · rw [if_neg hg]; omega
+  unfold upg
+  by_cases hc : entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j) = 0 ∨
+      entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 (r + j) = 1 ∨
+      r + j + 1 = (TRIO.gexp M r L d0 d1 (n - 1)).length
+  · have hc' : entry (TRIO.gexp M r L d0 d1 n) 1 (r + L + j) = 0 ∨
+        entry (TRIO.gexp M r L d0 d1 n) 2 (r + L + j) = 1 ∨
+        r + L + j + 1 = (TRIO.gexp M r L d0 d1 n).length := by
+      rcases hc with h | h | h
+      · exact Or.inl (hz.mpr h)
+      · exact Or.inr (Or.inl (by rw [he2]; exact h))
+      · exact Or.inr (Or.inr (by omega))
+    rw [if_pos hc', if_pos hc]; rfl
+  · have hc' : ¬ (entry (TRIO.gexp M r L d0 d1 n) 1 (r + L + j) = 0 ∨
+        entry (TRIO.gexp M r L d0 d1 n) 2 (r + L + j) = 1 ∨
+        r + L + j + 1 = (TRIO.gexp M r L d0 d1 n).length) := by
+      intro h; apply hc
+      rcases h with h | h | h
+      · exact Or.inl (hz.mp h)
+      · exact Or.inr (Or.inl (by rw [← he2]; exact h))
+      · exact Or.inr (Or.inr (by omega))
+    rw [if_neg hc', if_neg hc]
+    have hj1 : j + 1 < (n - 1) * L := by
+      have : r + j + 1 ≠ r + (n - 1) * L := fun h => hc (Or.inr (Or.inr (by omega)))
+      omega
+    rw [par1_copy2 hlen hL hA hd0e hn hd0 hd1 hgx hj0 hj]
+    cases hm : par (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j) with
+    | none => rfl
+    | some m =>
+      simp only [Option.map_some]
+      have hmlt : m < r + j := par_lt _ 1 _ _ hm
+      have hp1 := par1_copy2 hlen hL hA hd0e hn hd0 hd1 hgx (j := j + 1) (by omega) hj1
+      have hcol1 := col_copy2 hlen hL hA hd0e hn hd0 hd1 hgx (a := j + 1) hj1
+      rw [upgClimb_find, upgClimb_find,
+        show r + L + j + 1 = r + L + (j + 1) by omega, show r + j + 1 = r + (j + 1) by omega]
+      by_cases hmr : r ≤ m
+      · rw [if_pos hmr]
+        have hma : m - r < (n - 1) * L := by omega
+        have hem0 : entry (TRIO.gexp M r L d0 d1 n) 0 (m + L) =
+            entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 m + d0 := by
+          rw [show m + L = r + L + (m - r) by omega, e0_copy2 hlen hL hA hd0e hn hma,
+            show r + (m - r) = m by omega]
+        have hem2 : entry (TRIO.gexp M r L d0 d1 n) 2 (m + L) =
+            entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 m := by
+          rw [show m + L = r + L + (m - r) by omega, e2_copy2 hlen hL hA hd0e hn hma,
+            show r + (m - r) = m by omega]
+        have he0b : entry (TRIO.gexp M r L d0 d1 n) 0 (r + L + (j + 1)) =
+            entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 (r + (j + 1)) + d0 := e0_copy2 hlen hL hA hd0e hn hj1
+        -- two columns with `P_1 = m` share the guard
+        have hsib : ∀ y, r < y → y < r + (n - 1) * L → par (TRIO.gexp M r L d0 d1 (n - 1)) 1 y = some m →
+            (TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r y ↔
+              TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + j)) := fun y h1 h2 h3 =>
+          guard_sib1 (by omega) (by omega) h1 (by omega) h3 hm
+        have hcond : (par (TRIO.gexp M r L d0 d1 n) 1 (r + L + (j + 1)) = some (m + L) ∧
+              col (TRIO.gexp M r L d0 d1 n) (r + L + (j + 1)) =
+                (entry (TRIO.gexp M r L d0 d1 n) 0 (m + L) + 1, entry (TRIO.gexp M r L d0 d1 n) 1 (r + L + j),
+                  entry (TRIO.gexp M r L d0 d1 n) 2 (m + L) + 1)) ↔
+            (par (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + (j + 1)) = some m ∧
+              col (TRIO.gexp M r L d0 d1 (n - 1)) (r + (j + 1)) =
+                (entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 m + 1, entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j),
+                  entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 m + 1)) := by
+          rw [hp1, hcol1, hem0, hem2, he1, map_phi1_eq hmr, col_eq_entries (TRIO.gexp M r L d0 d1 (n - 1))]
+          simp only [Prod.mk.injEq]
+          constructor
+          · rintro ⟨h1, h2, h3, h4⟩
+            have hg := hsib (r + (j + 1)) (by omega) (by omega) h1
+            refine ⟨h1, by omega, ?_, h4⟩
+            by_cases hgj : TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + j)
+            · rw [if_pos (hg.mpr hgj), if_pos hgj] at h3; omega
+            · rw [if_neg (fun h => hgj (hg.mp h)), if_neg hgj] at h3; omega
+          · rintro ⟨h1, h2, h3, h4⟩
+            have hg := hsib (r + (j + 1)) (by omega) (by omega) h1
+            refine ⟨h1, by omega, ?_, h4⟩
+            by_cases hgj : TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + j)
+            · rw [if_pos (hg.mpr hgj), if_pos hgj]; omega
+            · rw [if_neg (fun h => hgj (hg.mp h)), if_neg hgj]; omega
+        by_cases hP1 : par (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + (j + 1)) = some m ∧
+            col (TRIO.gexp M r L d0 d1 (n - 1)) (r + (j + 1)) =
+              (entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 m + 1, entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j),
+                entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 m + 1)
+        · rw [if_pos (hcond.mpr hP1), if_pos hP1]
+          simp only [Option.map_some, Option.some.injEq]
+          rw [if_pos (by omega)]; omega
+        · rw [if_neg (fun h => hP1 (hcond.mp h)), if_neg hP1,
+            upgFind_child _ _ (m + L) _ rfl, upgFind_child _ _ m _ rfl,
+            childOn_shift2 hlen hL hA hd0e hn hj0 hj hmr]
+          cases hco : (ancL (TRIO.gexp M r L d0 d1 (n - 1)) (r + j)).find?
+              (fun q => decide (par (TRIO.gexp M r L d0 d1 (n - 1)) 0 q = some m)) with
+          | none => rfl
+          | some c =>
+            have hcmem := List.mem_of_find?_eq_some hco
+            have hcpar : par (TRIO.gexp M r L d0 d1 (n - 1)) 0 c = some m := by
+              have := List.find?_some hco; simpa using this
+            have hcm : m < c := par_lt _ 0 c m hcpar
+            have hcj : c < r + j := mem_ancL_lt hcmem
+            have hca : c - r < (n - 1) * L := by omega
+            have hpc : par (TRIO.gexp M r L d0 d1 n) 1 (c + L) =
+                (par (TRIO.gexp M r L d0 d1 (n - 1)) 1 c).map (fun p => if r ≤ p then p + L else p) := by
+              rw [show c + L = r + L + (c - r) by omega,
+                par1_copy2 hlen hL hA hd0e hn hd0 hd1 hgx (by omega) hca, show r + (c - r) = c by omega]
+            have hcc : col (TRIO.gexp M r L d0 d1 n) (c + L) =
+                (entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 c + d0,
+                  entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 c +
+                    (if TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r c then d1 else 0),
+                  entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 c) := by
+              rw [show c + L = r + L + (c - r) by omega, col_copy2 hlen hL hA hd0e hn hd0 hd1 hgx hca,
+                show r + (c - r) = c by omega]
+            have he0c : entry (TRIO.gexp M r L d0 d1 n) 0 (c + L) =
+                entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 c + d0 := by
+              rw [show c + L = r + L + (c - r) by omega, e0_copy2 hlen hL hA hd0e hn hca,
+                show r + (c - r) = c by omega]
+            have hok : (par (TRIO.gexp M r L d0 d1 n) 1 (c + L) = some (m + L) ∧
+                  col (TRIO.gexp M r L d0 d1 n) (c + L) =
+                    (entry (TRIO.gexp M r L d0 d1 n) 0 (m + L) + 1,
+                      entry (TRIO.gexp M r L d0 d1 n) 1 (r + L + j),
+                      entry (TRIO.gexp M r L d0 d1 n) 2 (m + L) + 1) ∧
+                  entry (TRIO.gexp M r L d0 d1 n) 0 (c + L) <
+                    entry (TRIO.gexp M r L d0 d1 n) 0 (r + L + (j + 1))) ↔
+                (par (TRIO.gexp M r L d0 d1 (n - 1)) 1 c = some m ∧
+                  col (TRIO.gexp M r L d0 d1 (n - 1)) c =
+                    (entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 m + 1,
+                      entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j),
+                      entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 m + 1) ∧
+                  entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 c <
+                    entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 (r + (j + 1))) := by
+              rw [hpc, hcc, he0c, he0b, hem0, hem2, he1, map_phi1_eq hmr,
+                col_eq_entries (TRIO.gexp M r L d0 d1 (n - 1)) c]
+              simp only [Prod.mk.injEq]
+              constructor
+              · rintro ⟨h1, ⟨h2, h3, h4⟩, h5⟩
+                have hg := hsib c (by omega) (by omega) h1
+                refine ⟨h1, ⟨by omega, ?_, h4⟩, by omega⟩
+                by_cases hgj : TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + j)
+                · rw [if_pos (hg.mpr hgj), if_pos hgj] at h3; omega
+                · rw [if_neg (fun h => hgj (hg.mp h)), if_neg hgj] at h3; omega
+              · rintro ⟨h1, ⟨h2, h3, h4⟩, h5⟩
+                have hg := hsib c (by omega) (by omega) h1
+                refine ⟨h1, ⟨by omega, ?_, h4⟩, by omega⟩
+                by_cases hgj : TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + j)
+                · rw [if_pos (hg.mpr hgj), if_pos hgj]; omega
+                · rw [if_neg (fun h => hgj (hg.mp h)), if_neg hgj]; omega
+            simp only [Option.map_some, Option.filter_some]
+            by_cases hP : par (TRIO.gexp M r L d0 d1 (n - 1)) 1 c = some m ∧
+                col (TRIO.gexp M r L d0 d1 (n - 1)) c =
+                  (entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 m + 1,
+                    entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j),
+                    entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 m + 1) ∧
+                entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 c <
+                  entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 (r + (j + 1))
+            · rw [if_pos (decide_eq_true (hok.mpr hP)), if_pos (decide_eq_true hP)]
+              simp only [Option.map_some, Option.some.injEq]
+              rw [if_pos (by omega)]
+            · rw [if_neg (fun h => hP (hok.mp (of_decide_eq_true h))),
+                if_neg (fun h => hP (of_decide_eq_true h))]
+              rfl
+      · rw [if_neg hmr]
+        have hmlt' : m < r := by omega
+        have hem : ∀ y, entry (TRIO.gexp M r L d0 d1 n) y m = entry (TRIO.gexp M r L d0 d1 (n - 1)) y m := by
+          intro y
+          rw [entry_gexp_pre hlen (by omega) y (by omega), entry_gexp_pre hlen (by omega) y (by omega)]
+        -- `r + j` is unguarded: its `P_1` is before `r`
+        have hng : ¬ TRIO.le1 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + j) := by
+          intro hg
+          obtain ⟨m', hm', hg'⟩ := le1_par1_down hg (by omega)
+          rw [hm] at hm'; cases hm'
+          have := le1_ge hg'; omega
+        have he1' : entry (TRIO.gexp M r L d0 d1 n) 1 (r + L + j) =
+            entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j) := by rw [he1, if_neg hng]; omega
+        rw [hem 0, hem 2, he1']
+        -- the `i + 1` clause fails in both
+        have hno : ∀ (G : Mat) (c : Nat) (Lc : Nat × Nat × Nat), Lc.1 = entry G 0 m + 1 →
+            par G 0 c ≠ some m → ¬ (par G 1 c = some m ∧ col G c = Lc) := by
+          intro G c Lc hLc hc ⟨h1, h2⟩
+          apply hc
+          apply par0_of_upgshape h1
+          have : entry G 0 c = (col G c).1 := rfl
+          rw [this, h2, hLc]
+        rw [if_neg (hno (TRIO.gexp M r L d0 d1 n) (r + L + (j + 1)) _ (by simp [hem 0])
+            (copyN_not_child2 hlen hL hA hd0e hn (by omega) (by omega) hmlt')),
+          if_neg (hno (TRIO.gexp M r L d0 d1 (n - 1)) (r + (j + 1)) _ rfl
+            (copyP_not_child2 hlen hL hA hd0e hn (by omega) (by omega) hmlt'))]
+        rw [upgFind_child _ _ m _ (by simp [hem 0]), upgFind_child _ _ m _ rfl,
+          childOn_same2 hlen hL hA hd0e hn hj0 hj hmlt']
+        cases hco : (ancL (TRIO.gexp M r L d0 d1 (n - 1)) (r + j)).find?
+            (fun q => decide (par (TRIO.gexp M r L d0 d1 (n - 1)) 0 q = some m)) with
+        | none => rfl
+        | some c =>
+          have hcmem := List.mem_of_find?_eq_some hco
+          have hcpar : par (TRIO.gexp M r L d0 d1 (n - 1)) 0 c = some m := by
+            have := List.find?_some hco; simpa using this
+          obtain ⟨S, hSP, -, hS⟩ := ancL_copy2 (d1 := d1) hlen hL hA hd0e hn j hj0 hj
+          have hcr : c ≤ r := by
+            rw [hSP] at hcmem
+            rcases List.mem_append.mp hcmem with hcS | hcS
+            · exfalso
+              have := hS c hcS
+              exact copyP_not_child2 hlen hL hA hd0e hn (by omega) (by omega) hmlt' hcpar
+            · rcases List.mem_cons.mp hcS with hcS | hcS
+              · omega
+              · exact Nat.le_of_lt (mem_ancL_lt hcS)
+          have hcrx : c < r + L := by omega
+          obtain ⟨S1, hSP1, -, -⟩ := ancL_copy2 (d1 := d1) hlen hL hA hd0e hn (j + 1) (by omega) hj1
+          have hrA : Anc0 (TRIO.gexp M r L d0 d1 (n - 1)) r (r + (j + 1)) :=
+            anc0_of_mem_ancL (by rw [hSP1]; simp)
+          have hrlt := anc0_interval hrA (r + (j + 1)) (by omega) (Nat.le_refl _)
+          have hcle : entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 c ≤ entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 r := by
+            rw [entry_gexp_pre hlen (by omega) 0 hcrx, entry_gexp_pre hlen (by omega) 0 (by omega)]
+            rcases Nat.eq_or_lt_of_le hcr with heq | hlt
+            · rw [heq]
+            · rw [hSP] at hcmem
+              rcases List.mem_append.mp hcmem with hcS | hcS
+              · have := hS c hcS; omega
+              · rcases List.mem_cons.mp hcS with hcS | hcS
+                · omega
+                · exact Nat.le_of_lt (anc0_interval (anc0_of_mem_ancL hcS) r (mem_ancL_lt hcS) (Nat.le_refl _))
+          have he0b : entry (TRIO.gexp M r L d0 d1 n) 0 (r + L + (j + 1)) =
+              entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 (r + (j + 1)) + d0 := e0_copy2 hlen hL hA hd0e hn hj1
+          have hcN : ∀ y, entry (TRIO.gexp M r L d0 d1 n) y c = entry (TRIO.gexp M r L d0 d1 (n - 1)) y c := by
+            intro y
+            rw [entry_gexp_pre hlen (by omega) y hcrx, entry_gexp_pre hlen (by omega) y hcrx]
+          have hp1c : par (TRIO.gexp M r L d0 d1 n) 1 c = par (TRIO.gexp M r L d0 d1 (n - 1)) 1 c := by
+            rw [par_gexp_pre hlen (by omega) 1 hcrx, par_gexp_pre hlen (by omega) 1 hcrx]
+          have hok : (par (TRIO.gexp M r L d0 d1 n) 1 c = some m ∧
+                col (TRIO.gexp M r L d0 d1 n) c =
+                  (entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 m + 1,
+                    entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j),
+                    entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 m + 1) ∧
+                entry (TRIO.gexp M r L d0 d1 n) 0 c < entry (TRIO.gexp M r L d0 d1 n) 0 (r + L + (j + 1))) ↔
+              (par (TRIO.gexp M r L d0 d1 (n - 1)) 1 c = some m ∧
+                col (TRIO.gexp M r L d0 d1 (n - 1)) c =
+                  (entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 m + 1,
+                    entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j),
+                    entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 m + 1) ∧
+                entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 c <
+                  entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 (r + (j + 1))) := by
+            rw [hp1c, col_eq_entries, col_eq_entries (TRIO.gexp M r L d0 d1 (n - 1)) c, hcN 0, hcN 1, hcN 2,
+              he0b]
+            constructor
+            · rintro ⟨h1, h2, h3⟩; exact ⟨h1, h2, by omega⟩
+            · rintro ⟨h1, h2, h3⟩; exact ⟨h1, h2, by omega⟩
+          simp only [Option.filter_some]
+          by_cases hP : par (TRIO.gexp M r L d0 d1 (n - 1)) 1 c = some m ∧
+              col (TRIO.gexp M r L d0 d1 (n - 1)) c =
+                (entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 m + 1,
+                  entry (TRIO.gexp M r L d0 d1 (n - 1)) 1 (r + j),
+                  entry (TRIO.gexp M r L d0 d1 (n - 1)) 2 m + 1) ∧
+              entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 c <
+                entry (TRIO.gexp M r L d0 d1 (n - 1)) 0 (r + (j + 1))
+          · rw [if_pos (decide_eq_true (hok.mpr hP)), if_pos (decide_eq_true hP)]
+            simp only [Option.map_some, Option.some.injEq]
+            have hcr' : c ≠ r := by
+              intro hcr0
+              have h2 := hP.2.1
+              rw [col_eq_entries] at h2
+              simp only [Prod.mk.injEq] at h2
+              have := h2.2.2
+              rw [hcr0, entry_gexp_pre hlen (by omega) 2 (by omega), he2r] at this
+              omega
+            rw [if_neg (by omega)]
+          · rw [if_neg (fun h => hP (hok.mp (of_decide_eq_true h))),
+              if_neg (fun h => hP (of_decide_eq_true h))]
+            rfl
+
 end
 
 end Ytosk
