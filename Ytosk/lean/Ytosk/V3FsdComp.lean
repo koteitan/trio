@@ -206,4 +206,155 @@ theorem fsD_comp : ∀ {t ζ : T}, OHole t → ζ ≠ z → isSucc ζ = false �
           rw [hcb] at h
           rw [fsD_psi (fsD_ne_z_oh h hζ) (isSucc_fsD_oh h hζ hs), fsD_comp h hζ hs θ]
 
+/-- A hole left by `fs` at an `Ω_{μ+1}`-cofinal term comes from the index. -/
+theorem ohole_of_fs : ∀ {b μ ζ : T}, cof b = .big μ → ζ ≠ z → isSucc ζ = false →
+    OHole (fs b ζ) → OHole ζ
+  | z, _, _, h, _, _, _ => by simp [cof] at h
+  | psi a b (psi c d e), μ, ζ, h, hζ, hs, hO => by
+    have h' : cof (psi c d e) = .big μ := by simpa [cof] using h
+    rw [fs_rest (by simp)] at hO
+    have hX := fs_ne_z_big h' hζ
+    have hO' : OHole (fs (psi c d e) ζ) := by
+      cases hfs : fs (psi c d e) ζ with
+      | z => exact absurd hfs hX
+      | psi => rw [hfs] at hO; exact hO
+    exact ohole_of_fs h' hζ hs hO'
+  | psi a b z, μ, ζ, h, hζ, hs, hO => by
+    unfold cof at h
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl] at h
+      by_cases ha : a = z
+      · rw [if_pos ha] at h; cases h
+      · rw [if_neg ha] at h
+        by_cases has : isSucc a = true
+        · rw [fs_leaf' ha has] at hO; exact hO
+        · rw [if_neg has] at h
+          have has' : isSucc a = false := by simpa using has
+          rw [fs_sub' ha has'] at hO
+          unfold OHole at hO
+          rw [if_pos rfl] at hO
+          obtain ⟨_, hO⟩ := hO
+          rcases hO with hO | hO
+          · rw [isSucc_fs_big h hζ hs] at hO; cases hO
+          · exact ohole_of_fs h hζ hs hO
+    · rw [if_neg hb] at h
+      by_cases hbs : isSucc b = true
+      · rw [if_pos hbs] at h; cases h
+      · rw [if_neg hbs] at h
+        have hbs' : isSucc b = false := by simpa using hbs
+        cases hcb : cof b with
+        | big ν =>
+          rw [hcb] at h; simp only at h
+          by_cases hν : lt ν a = true
+          · rw [fs_big' hb hbs' hcb hν] at hO
+            have hX := fs_ne_z_big hcb hζ
+            unfold OHole at hO
+            rw [if_neg hX, if_neg (by rw [isSucc_fs_big hcb hζ hs]; simp)] at hO
+            cases hc2 : cof (fs b ζ) with
+            | big m =>
+              -- the cofinality of `fs b ζ` comes from `ζ`
+              exact ohole_of_fs hcb hζ hs (ohole_of_cof_big hc2)
+            | zero => rw [hc2] at hO; exact ohole_of_fs hcb hζ hs hO
+            | succ => rw [hc2] at hO; exact ohole_of_fs hcb hζ hs hO
+            | omega => rw [hc2] at hO; exact ohole_of_fs hcb hζ hs hO
+          · rw [if_neg hν] at h; cases h
+        | zero => rw [hcb] at h; cases h
+        | succ => rw [hcb] at h; cases h
+        | omega => rw [hcb] at h; cases h
+
+/-- **A hole after `fsD` at a hole comes from the index.** -/
+theorem ohole_of_fsD : ∀ {t ζ : T}, OHole t → ζ ≠ z → isSucc ζ = false → OHole (fsD t ζ) → OHole ζ
+  | z, _, h, _, _, _ => by simp [OHole] at h
+  | psi a b (psi c d e), ζ, h, hζ, hs, hO => by
+    have h' : OHole (psi c d e) := h
+    rw [fsD_rest (by simp)] at hO
+    have hX := fsD_ne_z_oh h' hζ
+    have hO' : OHole (fsD (psi c d e) ζ) := by
+      cases hfs : fsD (psi c d e) ζ with
+      | z => exact absurd hfs hX
+      | psi => rw [hfs] at hO; exact hO
+    exact ohole_of_fsD h' hζ hs hO'
+  | psi a b z, ζ, h, hζ, hs, hO => by
+    unfold OHole at h
+    by_cases hb : b = z
+    · subst hb
+      rw [if_pos rfl] at h
+      obtain ⟨ha, h⟩ := h
+      by_cases has : isSucc a = true
+      · rw [fsD_leaf has ha] at hO; exact hO
+      · have has' : isSucc a = false := by simpa using has
+        have ha' : OHole a := by rcases h with h | h; exact absurd h has; exact h
+        rw [fsD_sub ha has'] at hO
+        unfold OHole at hO
+        rw [if_pos rfl] at hO
+        obtain ⟨_, hO⟩ := hO
+        rcases hO with hO | hO
+        · rw [isSucc_fsD_oh ha' hζ hs] at hO; cases hO
+        · exact ohole_of_fsD ha' hζ hs hO
+    · rw [if_neg hb] at h
+      by_cases hbs : isSucc b = true
+      · rw [if_pos hbs] at h; exact absurd h id
+      · rw [if_neg hbs] at h
+        have hbs' : isSucc b = false := by simpa using hbs
+        rw [fsD_psi hb hbs'] at hO
+        cases hcb : cof b with
+        | big ν =>
+          rw [fsD_eq_fs hcb] at hO
+          have hX := fs_ne_z_big hcb hζ
+          unfold OHole at hO
+          rw [if_neg hX, if_neg (by rw [isSucc_fs_big hcb hζ hs]; simp)] at hO
+          cases hc2 : cof (fs b ζ) with
+          | big m => exact ohole_of_fs hcb hζ hs (ohole_of_cof_big hc2)
+          | zero => rw [hc2] at hO; exact ohole_of_fs hcb hζ hs hO
+          | succ => rw [hc2] at hO; exact ohole_of_fs hcb hζ hs hO
+          | omega => rw [hc2] at hO; exact ohole_of_fs hcb hζ hs hO
+        | zero =>
+          rw [hcb] at h
+          have hX := fsD_ne_z_oh h hζ
+          unfold OHole at hO
+          rw [if_neg hX, if_neg (by rw [isSucc_fsD_oh h hζ hs]; simp)] at hO
+          cases hc2 : cof (fsD b ζ) with
+          | big m => exact ohole_of_fsD h hζ hs (ohole_of_cof_big hc2)
+          | zero => rw [hc2] at hO; exact ohole_of_fsD h hζ hs hO
+          | succ => rw [hc2] at hO; exact ohole_of_fsD h hζ hs hO
+          | omega => rw [hc2] at hO; exact ohole_of_fsD h hζ hs hO
+        | succ =>
+          rw [hcb] at h
+          have hX := fsD_ne_z_oh h hζ
+          unfold OHole at hO
+          rw [if_neg hX, if_neg (by rw [isSucc_fsD_oh h hζ hs]; simp)] at hO
+          cases hc2 : cof (fsD b ζ) with
+          | big m => exact ohole_of_fsD h hζ hs (ohole_of_cof_big hc2)
+          | zero => rw [hc2] at hO; exact ohole_of_fsD h hζ hs hO
+          | succ => rw [hc2] at hO; exact ohole_of_fsD h hζ hs hO
+          | omega => rw [hc2] at hO; exact ohole_of_fsD h hζ hs hO
+        | omega =>
+          rw [hcb] at h
+          have hX := fsD_ne_z_oh h hζ
+          unfold OHole at hO
+          rw [if_neg hX, if_neg (by rw [isSucc_fsD_oh h hζ hs]; simp)] at hO
+          cases hc2 : cof (fsD b ζ) with
+          | big m => exact ohole_of_fsD h hζ hs (ohole_of_cof_big hc2)
+          | zero => rw [hc2] at hO; exact ohole_of_fsD h hζ hs hO
+          | succ => rw [hc2] at hO; exact ohole_of_fsD h hζ hs hO
+          | omega => rw [hc2] at hO; exact ohole_of_fsD h hζ hs hO
+
+/-- **`fsD` of a single term with a hole stays at least `ψ_a(1)`.** -/
+theorem psi_one_le_fsD {a X η : T} (hX : X ≠ z) (hO : OHole (psi a X z)) (hη : η ≠ z) :
+    psi a one z ≤ fsD (psi a X z) η := by
+  unfold OHole at hO
+  rw [if_neg hX] at hO
+  have hXs : isSucc X = false := by
+    by_contra h'; rw [if_pos (by simpa using h')] at hO; exact hO
+  rw [if_neg (by rw [hXs]; simp)] at hO
+  rw [fsD_psi hX hXs]
+  apply le_psi_arg
+  apply one_le_of_ne_z
+  cases hcb : cof X with
+  | big m => rw [fsD_eq_fs hcb]; exact fs_ne_z_big hcb hη
+  | zero => rw [hcb] at hO; exact fsD_ne_z_oh hO hη
+  | succ => rw [hcb] at hO; exact fsD_ne_z_oh hO hη
+  | omega => rw [hcb] at hO; exact fsD_ne_z_oh hO hη
+
 end Ytosk

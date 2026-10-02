@@ -96,7 +96,7 @@ theorem qr_chain (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r →
     have hGN := good3_N_t1 hlen hL hA hd0e hn hpath hx2 (hxnb n hn) hz2 (hiu n hn) (hiux n hn) hC hG hGP hOS
       hoto hotv hle hlex
     refine ⟨_, _, hCN, hRN, hGN, hPs n hn ρP Zf hCP hGP hPP hCN hGN hoto hotv hle hlex
-      ⟨μ, br, μ, seed, n - 2, hHD, hZg, hPr⟩, ?_, ?_, ?_⟩
+      ⟨μ, br, μ, seed, n - 2, hHD, hZg, hPr, rfl, rfl, hro⟩, ?_, ?_, ?_⟩
     · rw [glueZ_o_dep ρ _ Zf (by omega) hrD, hro, fsD_here hbr hcb, hZr]
       rw [show n - 1 = (n - 2) + 1 by omega]; rfl
     · intro g hg hd
