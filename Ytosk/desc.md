@@ -1602,3 +1602,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 新しい不変条件 FrameDom a B s X: max(B, Ω_s) < C ≤ X = H(s, y) の C について、comps_u(B) ∪ comps_u(s) は C :: comps_u C ++ comps_u a で支配される。証明が使うのはちょうどこれで、B が hi(y) の先頭部分、Closed、SubSmall を含む。
   - 計画: FrameClosed を「書き換えの枠 → FrameDom」、VSmallF を「comps ≤ Ω_{v c} ∨ ≤ B」、VSmallNew を同じ形（第 2 部は不要: s′ < s は Lhd(c′, c) を C = Ω_s で）に定義し直す。
 - closure: AbsDW と TPLoW は ≤ に弱めても標準形で偽（N = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(3,0,0)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,0)）。穴 Ω_1 が n = 2 の段で初めて W に現れる。使うのは t = 1・q = r の仕組みだけなので、そこで要る形に直す（wip）。PH3s も深い標準形 17 個で偽で、PH3c（π の位置の部分木を Ω_s に替え、π より右を落とした形が B = hi）に替えた（C′ と長い展開の 128150 個で例外 0）。
+- wip（dfac2444・33be3327・143e0dde）: Res3T2 の D の形の欄をすべて外した（qn_shapes・sv_shapes・qnu_shapes、種が x の祖先で ChgX に入る一般の DepS の補題 V3T2DS）。Res3T2 の残りは seed1（drop1 の o(p) が変わる）、T2SV.rcl（CL r ≠ []）、big（n ≥ 2: isUpg の一致、Counted N r x、VNNc/VNNcN、SeedL）。
