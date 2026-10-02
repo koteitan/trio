@@ -4,10 +4,10 @@
 N = M[n] = TRIO.gexp M r L 0 0 n（r = P_0(x)、x = r + L、Δ = 0）の評価 σ（`t0_core` が作るもの）について、
 `Inv3V N σ rkN ∧ Res3A N σ rkN` を組み立てる。
 
-- `t0_core` から: Cons・Rk・Good3・FrameOT・BumpKidsDec・BumpTermDec・根の順序。rootS は Good3 から。
+- `t0_core` から: Cons・Rk・Good3・FrameOT・FrameClosed・BumpKidsDec・BumpTermDec・根の順序。rootS は Good3 から。
 - 残り（明示した仮定）:
-  - `T0OTD`: r より前の D の列の o の値が標準形（`t0_core` の `hOTD`）。
-  - `T0Rest`: 値の不変条件の残りの欄（VSmallF・FrameClosed と 11 項目）と N の `Res3A`。
+  - `T0OTD`: r より前の D の列の o の値が標準形（`t0_core` の `hOTD`）。`t0OTD_of_shape` で `T0Shape` から。
+  - `T0Rest`: 値の不変条件の残りの欄（VSmallF と 11 項目）と N の `Res3A`。
     文脈として M の不変条件と、接頭辞 M.take x の不変条件（帰納法で 1 列落としから出る）を渡す。
 -/
 import Ytosk.V3T0OT
@@ -77,7 +77,7 @@ theorem t0OTD_of_shape (h : T0Shape) : T0OTD := by
     h1 h2 n hn σ hCN
 
 /-- **The remaining value fields of `N = M[n]`** (`t = 0`) and its `Res3A`, for the valuation built by
-`t0_core` (which already has `Cons`, `Rk`, `Good3`, `FrameOT`, `BumpKidsDec`, `BumpTermDec`). The context
+`t0_core` (which already has `Cons`, `Rk`, `Good3`, `FrameOT`, `FrameClosed`, `BumpKidsDec`, `BumpTermDec`). The context
 includes the invariants of the prefix `M.take x` (from the one-column drops in the induction). -/
 def T0Rest : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
@@ -85,9 +85,10 @@ def T0Rest : Prop :=
     (∃ τ rkT, Inv3 (M.take (r + L)) τ rkT ∧ Res3A (M.take (r + L)) τ rkT) →
     2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
       Good3 (TRIO.gexp M r L 0 0 n) σ → FrameOT (TRIO.gexp M r L 0 0 n) σ →
+      FrameClosed (TRIO.gexp M r L 0 0 n) σ →
       BumpKidsDec (TRIO.gexp M r L 0 0 n) σ → BumpTermDec (TRIO.gexp M r L 0 0 n) σ →
       let N := TRIO.gexp M r L 0 0 n
-      VSmallF N σ ∧ FrameClosed N σ ∧ AbsD N σ ∧ AbsU N σ ∧ TP1C N σ ∧ TPLo N σ ∧ TP1WC N σ ∧
+      VSmallF N σ ∧ AbsD N σ ∧ AbsU N σ ∧ TP1C N σ ∧ TPLo N σ ∧ TP1WC N σ ∧
         TPLoW N σ ∧ AbsUW N σ ∧ AbsDW N σ ∧ TrigOmC N σ ∧ TPLoN N σ ∧ AbsDN N σ ∧ Res3A N σ rkN
 
 /-- **`hExp` for `t = 0`** (`n ≥ 2`), from the residuals `T0OTD` and `T0Rest`, with the invariants of the
@@ -109,7 +110,7 @@ theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) {M : Mat} {ρ : Valn} {rk : Bool
     (fun n hn σ hCN => ⟨hOTD M ρ rk r L n hM hS I R hlen hL hp he1 hn σ hCN,
       t0_vsmallNewN hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.cons I.good I.rank hn hCN⟩)
     n hn2
-  obtain ⟨σ, rkN, hCN, hRN, hGN, hFON, hKDN, hTDN, hpN, _⟩ := hcore
+  obtain ⟨σ, rkN, hCN, hRN, hGN, hFON, hFCN, hKDN, hTDN, hpN, _⟩ := hcore
   -- the prefix `M.take x`
   have hTx : ∃ τ rkT, Inv3 (M.take (r + L)) τ rkT ∧ Res3A (M.take (r + L)) τ rkT := by
     apply hT (r + L) (by omega)
@@ -123,9 +124,9 @@ theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) {M : Mat} {ρ : Valn} {rk : Bool
       have := congrArg List.length h
       rw [List.length_take, Nat.min_eq_left (by omega)] at this
       simp only [List.length_nil] at this; omega
-  obtain ⟨hvs, hfc, had, hau, htp1, htplo, htp1w, htplow, hauw, hadw, htrig, htplon, hadn, hRN'⟩ :=
-    hRest M ρ rk r L n hM hS I R hlen hL hp he1 hTx hn2 σ rkN hCN hRN hGN hFON hKDN hTDN
-  exact ⟨σ, rkN, ⟨hCN, hGN, hRN, hvs, hfc, hFON, hKDN, hTDN, had, hau, htp1, htplo, htp1w, htplow, hauw,
+  obtain ⟨hvs, had, hau, htp1, htplo, htp1w, htplow, hauw, hadw, htrig, htplon, hadn, hRN'⟩ :=
+    hRest M ρ rk r L n hM hS I R hlen hL hp he1 hTx hn2 σ rkN hCN hRN hGN hFON hFCN hKDN hTDN
+  exact ⟨σ, rkN, ⟨hCN, hGN, hRN, hvs, hFCN, hFON, hKDN, hTDN, had, hau, htp1, htplo, htp1w, htplow, hauw,
     hadw, htrig, htplon, hadn, rootS_of_good hCN hGN, hpN⟩, hRN'⟩
 
 /-- **`hExp` for `t = 0` in the shape of the top theorem**, with the prefix invariants from the
