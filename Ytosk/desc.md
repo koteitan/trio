@@ -1607,3 +1607,7 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - drop-fix: 新しい VSmallNew は「comps ≤ Ω_{v′} ∨ ≤ B」だけ。V3DepLhd の補題は hVNN を使わない（hss と FrameClosed = FrameDom）。FrameDom は深い集合 D でも例外 0、新しい VSmallF も C′ と D で例外 0。
 - チームを 7 人に（ユーザーの指示: 速さ優先、ただし無駄はしない）。追加の 4 人は互いに重ならない仕事: t1-exp・t0-exp・t2-exp（hExp の t = 1, 0, 2 の部分）、groupA（A 群の欄を Good3 ＋ 構造から出す補題）。
 - wip（f8ea9e05）: AbsDW・TPLoW を言い直した。エンジンが使う値は各列の鎖の項 gamS(m + d_c)（d_c = dOf c）で、旧形の下限 ψ_μ(1) は小さすぎた（反例の c = 4 は d_c = 2）。新しい形は、最後の列が t = 1・q = r のとき D = DepX M x の列で η = gamS μ b_r 1 (max 1 (dOf c)) で評価する（使う側は gamS_lb）。始点（添字 0）は TPLoN・AbsDN から。実測: 新形は t = 1・q = r の 43.9 万件で例外 0、旧形は 11 件偽。新しい欄は行列自身の最後の列の枠に依存する。
+- closure: 候補 P = S1 ∧ S2 ∧ S3 ∧ S4 ∧ PH3c ∧ H1 ∧ PF3 は C′ と長い展開の 12.8 万個で例外 0。閉性は接頭辞で閉じた世界で測る（Std は接頭辞で閉じている）。
+  - PF3: 最初の数える子（B = 0）が書き換え、v(i) = s で s が 0 か後続なら lo ≠ 0（2 行の PreFC の 3 行版）。
+  - H1: 穴の欄（TP1・TP1W・AbsD・AbsDN・AbsU・AbsUW・TPLoN、≤）を cof X = ω のとき fsD(X, 1) で評価。
+  - 前の検査で壊れる基底 1790/1790 が閉じ、約 1.8 万段の歩みで 1 件壊れたが PF3 で除けた。より大きな検査中。
