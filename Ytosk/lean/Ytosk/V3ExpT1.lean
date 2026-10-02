@@ -5,12 +5,13 @@ t = 1 の鎖（q ≠ r は `t1_main_final`、q = r は `qr_final4`）は、運�
 M[n] の評価 ρN と順位 rkN で Cons・Rk・Good3・Pn を出す。ここでは Pn として
 - 証明済みで運べるもの: FrameOT（`expStep_frameOT_t1`）・RootP（`expStep_rootP_t1`）・
   BumpDec（`expStep_bumpDec_t1`）・FrameClosed（`expStep_frameClosed_t1`、残りは FrameClosedOmN）、
-- 残りの値の欄の束 `QV`（VSmallF と 10 項目。TrigOmC は `expStep_trigOmC` で運ぶ）
+- 残りの値の欄の束 `QV`（VSmallF と 9 項目。AbsU は AbsD から（`absU_of_absD`）、TrigOmC は `expStep_trigOmC` で運ぶ）
 を使う。M.take x（鎖の始点）での値は、落とす補題（`valInv_drop1`・`rootP_drop1`）と、1 列落としの残り
 （`hLast_of` の hRest と同じ形）から。
 -/
 import Ytosk.V3IndV
 import Ytosk.V3TrigQR
+import Ytosk.V3GroupA
 
 namespace Ytosk
 
@@ -242,7 +243,7 @@ theorem expStep_trigOmC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
 
 /-- **The value fields of `Inv3V` not yet carried by a proven step** (`t = 1`). -/
 def QV (N : Mat) (σ : Valn) : Prop :=
-  VSmallF N σ ∧ AbsD N σ ∧ AbsU N σ ∧ TP1C N σ ∧ TPLo N σ ∧ TP1WC N σ ∧ TPLoW N σ ∧ AbsUW N σ ∧
+  VSmallF N σ ∧ AbsD N σ ∧ TP1C N σ ∧ TPLo N σ ∧ TP1WC N σ ∧ TPLoW N σ ∧ AbsUW N σ ∧
     AbsDW N σ ∧ TPLoN N σ ∧ AbsDN N σ
 
 /-- **The property carried along the `t = 1` chain.** -/
@@ -254,15 +255,15 @@ def PT1 (N : Mat) (σ : Valn) : Prop :=
 def RestT (M : Mat) (rk : Bool → Nat → Nat) : Prop :=
   let x := M.length - 1
   let σ := drop1 M x rk
-  AbsD (M.take x) σ ∧ AbsU (M.take x) σ ∧ TP1C (M.take x) σ ∧ TPLo (M.take x) σ ∧
+  AbsD (M.take x) σ ∧ TP1C (M.take x) σ ∧ TPLo (M.take x) σ ∧
     TP1WC (M.take x) σ ∧ TPLoW (M.take x) σ ∧ AbsUW (M.take x) σ ∧ AbsDW (M.take x) σ ∧
     TrigOmC (M.take x) σ ∧ TPLoN (M.take x) σ ∧ AbsDN (M.take x) σ
 
 /-- **`Inv3V` from the chain's output.** -/
 theorem inv3V_of_PT1 {N : Mat} {σ : Valn} {rk : Bool → Nat → Nat} (hC : Cons N σ) (hR : Rk N rk)
     (hG : Good3 N σ) (hP : PT1 N σ) : Inv3V N σ rk :=
-  let ⟨fo, rp, ⟨kd, td⟩, fc, trig, vs, ad, au, tp1, tplo, tp1w, tplow, auw, adw, tplon, adn⟩ := hP
-  ⟨hC, hG, hR, vs, fc, fo, kd, td, ad, au, tp1, tplo, tp1w, tplow, auw, adw, trig, tplon, adn,
+  let ⟨fo, rp, ⟨kd, td⟩, fc, trig, vs, ad, tp1, tplo, tp1w, tplow, auw, adw, tplon, adn⟩ := hP
+  ⟨hC, hG, hR, vs, fc, fo, kd, td, ad, absU_of_absD hC hG ad, tp1, tplo, tp1w, tplow, auw, adw, trig, tplon, adn,
     rootS_of_good hC hG, rp⟩
 
 /-- **`t = 1`, `n ≥ 2`, in the `gexp` form**: the valuation of `M[n]` with `Inv3V`, from the chains.
@@ -299,9 +300,9 @@ theorem inv3V_N_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M
   have hRT' := hRT
   simp only [RestT] at hRT'
   rw [show M.length - 1 = r + L by omega] at hRT'
-  obtain ⟨ad, au, tp1, tplo, tp1w, tplow, auw, adw, trig, tplon, adn⟩ := hRT'
+  obtain ⟨ad, tp1, tplo, tp1w, tplow, auw, adw, trig, tplon, adn⟩ := hRT'
   have hP1 : PT1 (M.take (r + L)) (drop1 M (r + L) rk) :=
-    ⟨V1.fo, hRP1, ⟨V1.kd, V1.td⟩, V1.fc, trig, V1.vs, ad, au, tp1, tplo, tp1w, tplow, auw, adw, tplon, adn⟩
+    ⟨V1.fo, hRP1, ⟨V1.kd, V1.td⟩, V1.fc, trig, V1.vs, ad, tp1, tplo, tp1w, tplow, auw, adw, tplon, adn⟩
   have hPs : ExpStepT1 PT1 M r L (entry M 0 (r + L) - entry M 0 r) ρ :=
     expStep_and (expStep_frameOT_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq I.fo)
       (expStep_and (expStep_rootP_t1 hlen hL0 hd0e I.z2 I.uat I.r12 I.be I.r01 I.e00 hr hx2 I.rootP)
