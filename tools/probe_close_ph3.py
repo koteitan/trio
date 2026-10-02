@@ -14,7 +14,7 @@ o(c) = ψ_s(y)、書き換えが起きる（B < y かつ v(i) < ψ_s(y)）とき
   python3 probe_close_ph3.py bases <bases.pkl>            # 既存の非標準形の土台で閉じるか（n = 1..3 と 1 列落とし）
   python3 probe_close_ph3.py perturb <C.pkl> <seed0> <seed1>  # 標準形の接頭辞に乱択の列を足した非標準形の土台で、
                                                           # 閉じるかと、P の世界の中の乱択の展開の歩み
-  python3 probe_close_ph3.py deep <seed0> <seed1> <out.pkl>  # 対角列からの長い乱択の展開の鎖と接頭辞の閉包で P
+  python3 probe_close_ph3.py deep <seed0> <seed1> <out.pkl>  # SRO からの長い乱択の展開の鎖と接頭辞の閉包で P
 """
 import sys, os, pickle, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -65,21 +65,46 @@ def ph3s_kind(B, hi, lo, s):
     if k != len(sb) - 1 or k >= len(sh): return None
     return 'shadow' if sb[k] in spine(sh[k], s) else None
 
+def cuts(h, s):
+    """h の位置 π（ψ_k(γ) + 後ろ、k ≥ s）を Ω_s に替え、π より右（項の順序: 添字 → 引数 → 後ろ）をすべて落とした項。"""
+    out = set()
+    if not h: return out
+    a, x, c = h
+    if le(s, a): out.add((s, Z, Z))
+    for t in cuts(a, s): out.add((t, Z, Z))
+    for t in cuts(x, s): out.add((a, t, Z))
+    for t in cuts(c, s): out.add((a, x, t))
+    return out
+
+def ph3c_kind(B, hi, lo, s):
+    if hi == B: return 'eq' if lo != Z else None
+    sb, sh = summ(B), summ(hi)
+    if len(sb) < len(sh) and sh[:len(sb)] == sb: return 'pre'
+    if s == Z: return None
+    return 'cut' if B in cuts(hi, s) else None
+
+def PH3c(M):
+    f = frames(list(M))
+    if f is None: return False
+    return all(ph3c_kind(B, hi, lo, s) for i, c, B, hi, lo, s in f)
+
 def PH3s(M):
     f = frames(list(M))
     if f is None: return False
     return all(ph3s_kind(B, hi, lo, s) for i, c, B, hi, lo, s in f)
 
+PH = os.environ.get('PH', 'c')   # c: PH3c（既定）、s: PH3s
 def P(M):
     M = list(M)
-    return S1(M) and S2(M) and S3(M) and S4(M) and PH3s(M)
+    return S1(M) and S2(M) and S3(M) and S4(M) and (PH3c(M) if PH == 'c' else PH3s(M))
 
+RELAX = os.environ.get('RELAX', '0') != '0'   # 1: 穴の欄を非厳密版に、2: さらに AbsDW・TPLoW を外す（標準形で偽）
 def world(M):
     """構造 ∧ Inv3 ∧ P。壊れた欄の名前（空なら成立）。"""
     M = list(M)
     try:
         if not structok(M): return 'struct'
-        b = inv3_fails(M)
+        b = inv3_fails_relaxed(M) if RELAX else inv3_fails(M)
         if b: return 'Inv3:' + ','.join(sorted(b))
         if not P(M): return 'P'
     except Exception as e:
@@ -187,16 +212,16 @@ def main_perturb(path, a, b):
     for e in ex[:20]: print('EX', *e)
 
 # ---- deep ----
-def diag(v): return [(0, 0, 0)] + [(k, k, 1) if k <= 1 else (k, k, 1) for k in range(1, v + 1)]
+SRO = [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0), (2, 0, 0)]   # Ytosk BMS.lean の SRO。Std = SRO から展開で届く
 
 def deep_go(seed):
     rng = random.Random(seed); out = set()
     for _ in range(20):
-        M = diag(rng.randint(2, 3))
-        for step in range(rng.randint(10, 45)):
+        M = list(SRO)
+        for step in range(rng.randint(10, 60)):
             if M[-1] == (0, 0, 0): M = M[:-1]
             if len(M) < 2: break
-            n = rng.choice((1, 2, 2, 3, 3)) if len(M) < 28 else 1
+            n = rng.choice((1, 2, 2, 3, 3, 4)) if len(M) < 30 else 1
             N = trio.expand(M, n)
             if not N or len(N) < 2: break
             M = N
@@ -215,9 +240,72 @@ def main_deep(a, b, path):
     print('P false', len(bad))
     for m in sorted(bad, key=len)[:5]: print('  ', S(m), 'bms -s', std(list(m)))
 
+# ---- 穴の欄の非厳密版（AbsDW・TPLoW は標準形で等号の場合に偽、2026-10-02 実測）----
+from probe_inv3_prefix import (inv_fields, Ctx as _Ctx, ohole, holelev, fsD, cof, etaOm, notNode, isSucc,
+                               last, ONE, summ as _summ)
+HOLE = {'TP1', 'TP1W', 'AbsD', 'AbsDW', 'AbsDN', 'AbsU', 'AbsUW', 'TPLo', 'TPLoW', 'TPLoN'}
+def hole_relaxed(C, note):
+    """穴の欄を ≤（AbsD/AbsU/TP1 系）と fsD ≥ s（TPLo 系）で評価する。"""
+    M = C.M
+    for i in range(len(M)):
+        vi = C.v(i); chs = C.ch(i)
+        for idx, c in enumerate(chs):
+            P_ = C.pre(i, chs[:idx]); s, y, _ = C.o(c)
+            if not (lt(P_, y) and lt((vi, Z, Z), (s, y, Z))): continue
+            if ohole(y):
+                note('TP1', le(P_, fsD(y, (holelev(y), ONE, Z))))
+                if cof(y)[0] == 'omega': note('TP1W', le(P_, fsD(y, ONE)))
+        if C.e12(i):
+            Wt = C.bumpW(i)
+            if ohole(Wt):
+                qs = [q for q in _summ(C.vOpt1(i)) if lt(q, Wt)]
+                note('AbsD', all(le(q, fsD(Wt, etaOm(holelev(Wt)))) for q in qs))
+                if cof(Wt)[0] == 'omega':
+                    note('AbsDW', all(le(q, fsD(Wt, (holelev(Wt), ONE, Z))) for q in qs))
+                    if notNode(Wt): note('AbsDN', all(le(q, fsD(Wt, ONE)) for q in qs))
+        k = C.upg(i)
+        if k is not None:
+            lv = last(C.v(k))
+            if ohole(lv):
+                qs = [q for q in _summ(C.vOpt1(i)) if lt(q, lv)]
+                note('AbsU', all(le(q, fsD(lv, etaOm(holelev(lv)))) for q in qs))
+                if cof(lv)[0] == 'omega': note('AbsUW', all(le(q, fsD(lv, ONE)) for q in qs))
+        s, y, _ = C.o(i)
+        if y and split(y, (succ(s), Z, Z))[1] == Z:
+            l = last(y)
+            if not l[1]:
+                a = l[0]
+                if not isSucc(a) and ohole(a):
+                    th = (s, Z, Z)
+                    note('TPLo', not lt((fsD(a, etaOm(holelev(y))), Z, Z), th))
+                    if cof(a)[0] == 'omega':
+                        note('TPLoW', not lt((fsD(a, (holelev(y), ONE, Z)), Z, Z), th))
+                        if notNode(a): note('TPLoN', not lt((fsD(a, ONE), Z, Z), th))
+
+def inv3_fails_relaxed(M):
+    C = _Ctx(list(M))
+    if not C.ok: return {'noval'}
+    bad = set()
+    inv_fields(C, lambda f, g, info: bad.add(f) if g is False and f not in HOLE else None)
+    drop = {'AbsDW', 'TPLoW'} if os.environ.get('RELAX') == '2' else set()
+    hole_relaxed(C, lambda f, g: bad.add(f + "'") if not g and f not in drop else None)
+    return bad
+
+def main_relaxed(path):
+    mats = pickle.load(open(path, 'rb'))
+    if isinstance(mats, (dict, set)): mats = list(mats)
+    c = Counter(); ex = {}
+    with Pool(24) as p:
+        for M, b in zip(mats, p.imap(inv3_fails_relaxed, mats, chunksize=300)):
+            for f in b:
+                c[f] += 1; ex.setdefault(f, []).append(S(M))
+    print(len(mats), dict(c))
+    for f, v in ex.items(): print(f, sorted(v, key=len)[:3])
+
 if __name__ == '__main__':
     cmd = sys.argv[1]
     if cmd == 'std': main_std(sys.argv[2])
     elif cmd == 'bases': main_bases(sys.argv[2])
     elif cmd == 'perturb': main_perturb(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
     elif cmd == 'deep': main_deep(int(sys.argv[2]), int(sys.argv[3]), sys.argv[4])
+    elif cmd == 'relaxed': main_relaxed(sys.argv[2])
