@@ -346,6 +346,63 @@ theorem tploResL_lf_of_vk {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I :
     exact hVK d c (M.length - 1) r hdM hdc (by omega) (by rw [show M.length - 1 = r + L by omega]; exact h1) hμ
   · exact hRes n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ he1 (fun d hd' h => hch ⟨d, hd', h⟩)
 
+
+/-! ## seed の部分を種 < Ω_μ の場合に狭める -/
+
+/-- The seed part where the seed is below `Ω_μ` after `fsD` (`q = r` only in C′). -/
+def AbsDSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+  Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+  ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 → holeLev (bumpW M ρ i) ≠ z →
+  (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z i = seed) →
+  ¬ (isSucc (Z i) = false ∧ psi (holeLev (bumpW M ρ i)) z z ≤ fsD (Z i) (etaOm (holeLev (Z i)))) →
+  (isSucc (Z i) = false ∧
+    SeedCond (vOpt ρ (par M 1 i)) (Z i) (etaOm (holeLev (bumpW M ρ i))) (etaOm (holeLev (Z i)))) ∨
+  (OHole (fsD (bumpW M ρ i) (Z i)) → ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (bumpW M ρ i) (Z i) →
+    q < fsD (fsD (bumpW M ρ i) (Z i)) (etaOm (holeLev (fsD (bumpW M ρ i) (Z i)))))
+
+/-- The seed part where the seed is below `Ω_μ` after `fsD` (`q = r` only in C′). -/
+def AbsUWSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+  Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+  ∀ i k, i < r + L → upg M i = some k → DepX M (r + L) false k → holeLev (last (ρ.v k)) ≠ z →
+  (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z k = seed) →
+  ¬ (isSucc (Z k) = false ∧ psi (holeLev (last (ρ.v k))) z z ≤ fsD (Z k) one) →
+  (isSucc (Z k) = false ∧ SeedCond (vOpt ρ (par M 1 i)) (Z k) (etaOm (holeLev (last (ρ.v k)))) one) ∨
+    ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (last (ρ.v k)) (Z k) →
+      q < fsD (fsD (last (ρ.v k)) (Z k)) one
+
+/-- The seed part where the seed is below `Ω_μ` after `fsD` (`q = r` only in C′). -/
+def TPLoSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+  Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+  ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
+  GoodIdx (Z c) → TPLoPatN s0 y0 (Z c) → holeLev y0 ≠ z →
+  (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z c = seed) →
+  ¬ (isSucc (Z c) = false ∧ psi (holeLev y0) z z ≤ fsD (Z c) (etaOm (holeLev (Z c)))) →
+  SeedCond s0 (Z c) (etaOm (holeLev y0)) (etaOm (holeLev (Z c)))
+
+theorem absDResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : AbsDResL_lf M r L d0 ρ)
+    (hS : AbsDSeedLow M r L d0 ρ) : AbsDResL_seed M r L d0 ρ := by
+  intro n hn ρP Z hH hCN i hi hv h2 hμ hsd
+  by_cases h : isSucc (Z i) = false ∧ psi (holeLev (bumpW M ρ i)) z z ≤ fsD (Z i) (etaOm (holeLev (Z i)))
+  · exact Or.inl ⟨h.1, seedCond_of_levFree (hLF n hn ρP Z hH hCN i hi hv h2 hμ) h.2⟩
+  · exact hS n hn ρP Z hH hCN i hi hv h2 hμ hsd h
+
+theorem absUWResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : AbsUWResL_lf M r L d0 ρ)
+    (hS : AbsUWSeedLow M r L d0 ρ) : AbsUWResL_seed M r L d0 ρ := by
+  intro n hn ρP Z hH hCN i k hi hu hkv hμ hsd
+  by_cases h : isSucc (Z k) = false ∧ psi (holeLev (last (ρ.v k))) z z ≤ fsD (Z k) one
+  · exact Or.inl ⟨h.1, seedCond_of_levFree (hLF n hn ρP Z hH hCN i k hi hu hkv hμ) h.2⟩
+  · exact hS n hn ρP Z hH hCN i k hi hu hkv hμ hsd h
+
+theorem tploResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : TPLoResL_lf M r L d0 ρ)
+    (hS : TPLoSeedLow M r L d0 ρ) : TPLoResL_seed M r L d0 ρ := by
+  intro n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ hsd
+  by_cases h : isSucc (Z c) = false ∧ psi (holeLev y0) z z ≤ fsD (Z c) (etaOm (holeLev (Z c)))
+  · exact seedCond_of_levFree (hLF n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ) h.2
+  · exact hS n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ hsd h
+
 /-! ## 最後の列の枠の欄を TPLo・AbsD と LevFree から（段 μ ≠ 0） -/
 
 /-- `last v(i) = W_i` at a column with rows 1, 2 nonzero. -/
@@ -1286,6 +1343,81 @@ theorem hExp_t1W
       (tploRes_of_L ⟨hRN.1.1, tploResL_lf_of_vk I hlen hr hVK hRN.1.2.1, hRN.1.2.2.1, hRN.1.2.2.2⟩)
       (absDRes_of_L I hlen hr hx2 ⟨absDResL_lf_of_vk I hlen hr hx2 hVK, hRN.2.1.1, hRN.2.1.2⟩)
       (absUWRes_of_L hx2 ⟨absUWResL_lf_of_vk I hlen hr hx2 hVK, hRN.2.2.1.1, hRN.2.2.1.2⟩)
+      hRN.2.2.2.1 hRN.2.2.2.2 (hNGM M ρ rk hM hS I R) hVK
+      (fun n' σ rkN hn' hRk hC hG hkd htd had htplo hvk => by
+        have hexp' := hexpA n'
+        rw [← hexp'] at hRk hC hG hkd htd had htplo hvk ⊢
+        have hS' := sInv_std (Std.exp n' hM) (ne_SRO_of_rk hRk)
+        obtain ⟨h1, h2, h4, h5, h6⟩ := hFrm _ σ (Std.exp n' hM) (ne_SRO_of_rk hRk) ⟨hS', hC, hG, hkd, htd, had, htplo⟩ hvk
+        exact ⟨tplow_of_lf ⟨hS', hC, hG, hkd, htd, had, htplo⟩ (tploWLF_of_vk hC hG hvk h1) h2,
+          absDW_of_lf ⟨hS', hC, hG, hkd, htd, had, htplo⟩ (absDWLF_of_vk hC hG hvk) h4,
+          tplon_of_lf ⟨hS', hC, hG, hkd, htd, had, htplo⟩ (tploWLF_of_vk hC hG hvk h1) h5 h6⟩) n hn
+  rw [← hexp] at V NG VK
+  exact ⟨ρN, rkN, V, hRes M ρ rk hM hS I R hz h1t n hn ρN rkN
+    (Inv3.ofV (sInv_std (Std.exp n hM) hNS) V), NG, VK⟩
+
+
+
+/-- **`hExp_t1W` with the seed parts narrowed** to the seeds below `Ω_μ` after `fsD` (`TPLoSeedLow`・`AbsDSeedLow`・
+`AbsUWSeedLow`; only `q = r` in C′). -/
+theorem hExp_t1X
+    (hRT : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
+      col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 → RestT M rk)
+    (hFrm : ∀ N σ, Std N → N ≠ SRO → FrameV N σ → VKFree N σ →
+      TPLoWLFRes N σ ∧ TPLoW0 N σ ∧ AbsDW0 N σ ∧ TPLoNSeed N σ ∧ TPLoN0 N σ)
+    (hResN : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → ∀ r L, r + L + 1 = M.length →
+      par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
+      (DegRes TPLoAt M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ TPLoLFRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
+        TPLoSeedLow M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ TPLoResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
+      (AbsDSeedLow M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsDResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
+      (AbsUWSeedLow M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsUWResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
+      AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ VSFRes2 M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+    (hNGM : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ)
+    (hVKM : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → VKFree M ρ)
+    (hRes : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
+      col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 → ∀ n, 2 ≤ n →
+      ∀ σ rkN, Inv3 (expand M n) σ rkN → Res3H (expand M n) σ rkN) :
+    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
+      col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 →
+      ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
+        ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3H (expand M n) ρN rkN ∧ NoGapP (expand M n) ρN ∧
+          VKFree (expand M n) ρN := by
+  intro M ρ rk hM hS hE I R hz h1t n hn hNS _
+  obtain ⟨r, hr⟩ := parLast_of I.e00 I.r01 I.r12 hz
+  have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
+  have hlen2 : 2 ≤ M.length := by
+    by_contra h
+    have hx0 : M.length - 1 = 0 := by omega
+    apply hz
+    rw [hx0]
+    have e0 := I.e00
+    have e1 := I.r01 0 e0
+    have e2 := I.r12 0 e1
+    exact (col_zero_iff M 0).mpr ⟨e0, e1, e2⟩
+  have hx2 : entry M 2 (M.length - 1) = 0 := by
+    unfold TRIO.srow at h1t
+    by_cases ha : 0 < TRIO.entry M 2 (M.length - 1)
+    · rw [if_pos ha] at h1t; cases h1t
+    · show TRIO.entry M 2 (M.length - 1) = 0; omega
+  rw [h1t] at hr
+  have hexp := expand_eq_gexp_t1 M n hlen2 hzT (by rw [h1t]; exact hr) h1t
+  have hexpA := fun n' => expand_eq_gexp_t1 M n' hlen2 hzT (by rw [h1t]; exact hr) h1t
+  have hrx : r < M.length - 1 := par_lt M 1 _ r hr
+  obtain ⟨L, hL⟩ : ∃ L, M.length - 1 = r + L := ⟨M.length - 1 - r, by omega⟩
+  rw [hL] at hexp hexpA hr hx2
+  simp only [Nat.add_sub_cancel_left] at hexp hexpA
+  have hlen : r + L + 1 = M.length := by omega
+  have hVK := hVKM M ρ rk hM hS I R
+  have hRN := hResN M ρ rk hM hS I R r L hlen hr hx2
+  obtain ⟨ρN, rkN, V, NG, VK, _, _⟩ :=
+    inv3V_N_t1W I R hlen hr hx2 (hRT M ρ rk hM hS I R hz h1t)
+      (tploRes_of_L ⟨hRN.1.1, tploResL_lf_of_vk I hlen hr hVK hRN.1.2.1,
+        tploResL_seed_of (tploResL_lf_of_vk I hlen hr hVK hRN.1.2.1) hRN.1.2.2.1, hRN.1.2.2.2⟩)
+      (absDRes_of_L I hlen hr hx2 ⟨absDResL_lf_of_vk I hlen hr hx2 hVK,
+        absDResL_seed_of (absDResL_lf_of_vk I hlen hr hx2 hVK) hRN.2.1.1, hRN.2.1.2⟩)
+      (absUWRes_of_L hx2 ⟨absUWResL_lf_of_vk I hlen hr hx2 hVK,
+        absUWResL_seed_of (absUWResL_lf_of_vk I hlen hr hx2 hVK) hRN.2.2.1.1, hRN.2.2.1.2⟩)
       hRN.2.2.2.1 hRN.2.2.2.2 (hNGM M ρ rk hM hS I R) hVK
       (fun n' σ rkN hn' hRk hC hG hkd htd had htplo hvk => by
         have hexp' := hexpA n'
