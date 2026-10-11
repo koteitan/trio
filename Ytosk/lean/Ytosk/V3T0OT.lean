@@ -469,6 +469,86 @@ theorem cls_node {a B s s' y y' : T} (hc : isOT (psi s y z) = true) (hc' : isOT 
       add_eq_app_of_ge ⟨_, _, rfl⟩ B (fun q hq => le_trans (le_of_lt hpsi) (hBc q hq))]
     exact cls_app_pair ⟨_, _, rfl⟩ ⟨_, _, rfl⟩ (le_of_lt hpsi) hBc hhv
 
+/-- The fold of `sumN` does not go down on single or zero terms. -/
+theorem foldl_sf_ge : ∀ (l : List T) (acc : T), isOT acc = true → (∀ t ∈ l, t = z ∨ Single t) →
+    acc ≤ l.foldl (fun a b => sf (add a b)) acc ∧ isOT (l.foldl (fun a b => sf (add a b)) acc) = true
+  | [], acc, h, _ => ⟨le_refl _, h⟩
+  | t :: l, acc, h, hl => by
+    simp only [List.foldl_cons]
+    have ht := hl t (by simp)
+    have hot : isOT t = true := by rcases ht with rfl | ht; rfl; exact ht.1
+    have hacc' : isOT (sf (add acc t)) = true := by rw [sf_ot (isOT_add h hot)]; exact isOT_add h hot
+    have hle : acc ≤ sf (add acc t) := by
+      rcases ht with rfl | ht
+      · rw [add_z_right, sf_ot h]
+      · exact le_of_lt (lt_sf_add_single h ht.1 ht.2)
+    obtain ⟨h1, h2⟩ := foldl_sf_ge l _ hacc' (fun t' ht' => hl t' (by simp [ht']))
+    exact ⟨le_trans hle h1, h2⟩
+
+/-- The fold of `sumN` goes up at a nonzero single term. -/
+theorem foldl_sf_lt : ∀ (l : List T) (acc : T), isOT acc = true → (∀ t ∈ l, t = z ∨ Single t) →
+    (∃ t ∈ l, t ≠ z) → acc < l.foldl (fun a b => sf (add a b)) acc
+  | [], _, _, _, ⟨_, ht, _⟩ => by simp at ht
+  | t :: l, acc, h, hl, ⟨t0, ht0, hne⟩ => by
+    simp only [List.foldl_cons]
+    have ht := hl t (by simp)
+    have hot : isOT t = true := by rcases ht with rfl | ht; rfl; exact ht.1
+    have hacc' : isOT (sf (add acc t)) = true := by rw [sf_ot (isOT_add h hot)]; exact isOT_add h hot
+    have hl' : ∀ t' ∈ l, t' = z ∨ Single t' := fun t' ht' => hl t' (by simp [ht'])
+    rcases ht with rfl | ht
+    · have e : sf (add acc z) = acc := by rw [add_z_right, sf_ot h]
+      rw [e]
+      rcases List.mem_cons.mp ht0 with rfl | ht0
+      · exact absurd rfl hne
+      · exact foldl_sf_lt l acc h hl' ⟨t0, ht0, hne⟩
+    · exact lt_of_lt_of_le (lt_sf_add_single h ht.1 ht.2) (foldl_sf_ge l _ hacc' hl').1
+
+/-- **Two row-2-one columns with the same `P_1`**: the one without a bump child has the smaller `v`. -/
+theorem v_lt_of_bump {N : Mat} {σ : Valn} (hC : Cons N σ) {i u p : Nat} (hi : i < N.length) (hu : u < N.length)
+    (h1i : entry N 1 i ≠ 0) (h2i : entry N 2 i ≠ 0) (h1u : entry N 1 u ≠ 0) (h2u : entry N 2 u ≠ 0)
+    (hpi : par N 1 i = some p) (hpu : par N 1 u = some p) (hvp : isOT (σ.v p) = true)
+    (hnb : ∀ d ∈ children N i, col N d ≠ bump N i)
+    (hb : ∃ j ∈ children N u, col N j = bump N u)
+    (hot : ∀ j ∈ children N u, col N j = bump N u → ∀ k ∈ children N j, isOT (σ.o k) = true) :
+    σ.v i < σ.v u := by
+  rw [(hC i hi).2, (hC u hu).2]
+  unfold vRhs
+  rw [if_neg h1i, if_neg h2i, if_neg h1u, if_neg h2u, hpi, hpu]
+  show sf (add (σ.v p) (omega (sumN (one :: (children N i).map (bumpTerm N σ i))))) <
+    sf (add (σ.v p) (omega (sumN (one :: (children N u).map (bumpTerm N σ u)))))
+  have hzi : sumN (one :: (children N i).map (bumpTerm N σ i)) = one := by
+    rw [show one :: (children N i).map (bumpTerm N σ i) = [one] ++ (children N i).map (bumpTerm N σ i) from rfl,
+      sumN_append_zeros (fun t ht => by simp at ht; rw [ht]; rfl) _ (fun t ht => by
+        obtain ⟨d, hd, rfl⟩ := List.mem_map.mp ht
+        unfold bumpTerm; rw [if_neg (hnb d hd)])]
+    rfl
+  have hterm : ∀ t ∈ (children N u).map (bumpTerm N σ u), t = z ∨ Single t := by
+    intro t ht
+    obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ht
+    unfold bumpTerm
+    split
+    · rename_i hjb
+      right; apply single_omega; apply isOT_sumN
+      intro t' ht'
+      obtain ⟨k, hk, rfl⟩ := List.mem_map.mp ht'
+      exact hot j hj hjb k hk
+    · left; rfl
+  have hBu : one < sumN (one :: (children N u).map (bumpTerm N σ u)) := by
+    show one < ((children N u).map (bumpTerm N σ u)).foldl (fun a b => sf (add a b)) (sf (add z one))
+    rw [show sf (add z one) = one from rfl]
+    apply foldl_sf_lt _ one rfl hterm
+    obtain ⟨j, hj, hjb⟩ := hb
+    refine ⟨bumpTerm N σ u j, List.mem_map.mpr ⟨j, hj, rfl⟩, ?_⟩
+    unfold bumpTerm; rw [if_pos hjb]; exact omega_ne_z _
+  have hBot : isOT (sumN (one :: (children N u).map (bumpTerm N σ u))) = true := by
+    apply isOT_sumN; intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · rfl
+    · rcases hterm t ht with rfl | h; rfl; exact h.1
+  rw [hzi, sf_ot (isOT_add hvp (isOT_omega rfl)), sf_ot (isOT_add hvp (isOT_omega hBot))]
+  exact add_lt_add_left _ (omega_lt_omega rfl hBot hBu)
+
+
 /-- **`v` is above `v(P_1 c)`** when the values it reads are standard (no `Good3` of the whole matrix). -/
 theorem v_gt_par1_at {N : Mat} {σ : Valn} (hC : Cons N σ) {c i : Nat} (hc : c < N.length)
     (h1 : entry N 1 c ≠ 0) (hp1 : par N 1 c = some i) (hvi : isOT (σ.v i) = true)
@@ -1043,9 +1123,11 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
       (split y' (psi (succ s) z z)).2 = z → (split y (psi (succ s) z z)).2 = z →
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true)
-    (hVchg : ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
-      σ.v c ≠ ρ.v c → par M 1 c ≠ some i → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
-      ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z)
+    (hVchgS : ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) false c →
+      par M 1 c ≠ some i →
+      entry M 2 c = 0 ∧ upg M c = some (c + 1) ∧ c + 1 < r ∧
+      (∃ j ∈ children M (c + 1), col M j = bump M (c + 1)) ∧
+      par M 1 i = par M 1 c ∧ entry M 2 i = 1 ∧ ∀ d ∈ children M i, col M d ≠ bump M i)
     (hVchgR : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
@@ -1550,7 +1632,80 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
                         have := (hRrc he1c).2.2 h2 j hjM hjb' k hkM; have := (hRM c hcM).1; omega
                     rw [hv'] at hlt
                     exact absurd (lt_theta_iff.mp hlow) (not_le.mpr hlt)
-                  · exact hVchg i c Lc hi hcr hclM hdc hvc hp1
+                  · -- `v(c)` is the `v` of `u = c + 1` (an upgrade), above `v(i)` by the shape
+                    intro _ hlow
+                    obtain ⟨he2c, hupc, hur, hbu, hp1ic, he2i, hnb⟩ := hVchgS i c Lc hi hcr hclM hdv hp1
+                    have h12 := upg_e12 hupc
+                    obtain ⟨m, hpm, hpmu, hcolu, _⟩ := upg_spec hupc
+                    have hmc := par_lt M 1 c m hpm
+                    obtain ⟨_, _, hRrc⟩ := hRM c hcM
+                    have hucM : c + 1 < M.length := by omega
+                    obtain ⟨_, _, hRru⟩ := hRM (c + 1) hucM
+                    have h1u : entry M 1 (c + 1) ≠ 0 := by rw [e1_of_col hcolu]; exact h12.1
+                    have h2u : entry M 2 (c + 1) ≠ 0 := by rw [e2_of_col hcolu]; omega
+                    have hvp : isOT (σ.v m) = true :=
+                      hOTv m (by rw [hlN]; omega) (fun _ => by have := (hRrc h12.1).1 m hpm; omega)
+                    have hotu : ∀ j ∈ children (TRIO.gexp M r L 0 0 n) (c + 1),
+                        col (TRIO.gexp M r L 0 0 n) j = bump (TRIO.gexp M r L 0 0 n) (c + 1) →
+                        ∀ k' ∈ children (TRIO.gexp M r L 0 0 n) j, isOT (σ.o k') = true := by
+                      intro j hj hjb k' hk'
+                      apply hOTo k' (mem_children hk').2
+                      intro hk'r
+                      have hjk := (mem_children hk').1
+                      have hjr : j < r := by omega
+                      have hjM : j ∈ children M (c + 1) := child_lt_r hlen hL hp hn hur hj hjr
+                      have hk'M : k' ∈ children M j := child_lt_r hlen hL hp hn hjr hk' hk'r
+                      have hjb' : col M j = bump M (c + 1) := by
+                        rw [col_pre0 hlen hL hp hn (by omega), bump_pre0 hlen hL hp hn (by omega)] at hjb
+                        exact hjb
+                      have := (hRru h1u).2.2 h2u j hjM hjb' k' hk'M
+                      have := (hRrc h12.1).2.1 he2c (c + 1) hupc
+                      have := (hRM c hcM).1
+                      omega
+                    have ev : σ.v c = σ.v (c + 1) :=
+                      v_upg_eq hCN (hiN c hcr) (by rw [entry_pre0 hlen hn 1 (by omega)]; exact h12.1)
+                        (by rw [entry_pre0 hlen hn 2 (by omega)]; exact he2c)
+                        (by rw [upg_pre0 hlen hL hp hn (by omega)]; exact hupc)
+                        (by rw [par1_pre0 hlen hL hp hn hcr, hpm]; exact hvp) hotu
+                    have hpi : par M 1 i = some m := by rw [hp1ic]; exact hpm
+                    have h1i : entry M 1 i ≠ 0 := by have := par1_entry_lt hpi; omega
+                    have hnbN : ∀ d ∈ children (TRIO.gexp M r L 0 0 n) i,
+                        col (TRIO.gexp M r L 0 0 n) d ≠ bump (TRIO.gexp M r L 0 0 n) i := by
+                      intro d hd
+                      rw [bump_pre0 hlen hL hp hn (by omega)]
+                      by_cases hig : par M 0 r = some i
+                      · rw [children_g0 hlen hL hp hn hig] at hd
+                        rcases List.mem_append.mp hd with hd | hd
+                        · rw [col_pre0 hlen hL hp hn (by
+                            have := children_g_le hlen hL hp hig hd; omega)]
+                          exact hnb d hd
+                        · obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hd
+                          rw [col_root0 hlen hL hp hn (by have := List.mem_range.mp hk; omega)]
+                          exact hnb r (mem_children_iff.mpr ⟨by omega, hig⟩)
+                      · rw [children_pre0 hlen hL hp hn hi hig] at hd
+                        rw [col_pre0 hlen hL hp hn (by have := children_lt_r hlen hL hp hi hig hd; omega)]
+                        exact hnb d hd
+                    have hbN : ∃ j ∈ children (TRIO.gexp M r L 0 0 n) (c + 1),
+                        col (TRIO.gexp M r L 0 0 n) j = bump (TRIO.gexp M r L 0 0 n) (c + 1) := by
+                      obtain ⟨j, hj, hjb⟩ := hbu
+                      have hjle : j ≤ r := by
+                        by_cases hug : par M 0 r = some (c + 1)
+                        · exact children_g_le hlen hL hp hug hj
+                        · exact le_of_lt (children_lt_r hlen hL hp hur hug hj)
+                      refine ⟨j, ?_, by rw [col_pre0 hlen hL hp hn (by omega),
+                        bump_pre0 hlen hL hp hn (by omega)]; exact hjb⟩
+                      by_cases hug : par M 0 r = some (c + 1)
+                      · rw [children_g0 hlen hL hp hn hug]; exact List.mem_append_left _ hj
+                      · rw [children_pre0 hlen hL hp hn hur hug]; exact hj
+                    have hlt' := v_lt_of_bump hCN (hiN i hi) (hiN (c + 1) hur)
+                      (by rw [entry_pre0 hlen hn 1 (by omega)]; exact h1i)
+                      (by rw [entry_pre0 hlen hn 2 (by omega), he2i]; omega)
+                      (by rw [entry_pre0 hlen hn 1 (by omega)]; exact h1u)
+                      (by rw [entry_pre0 hlen hn 2 (by omega)]; exact h2u)
+                      (by rw [par1_pre0 hlen hL hp hn hi]; exact hpi)
+                      (by rw [par1_pre0 hlen hL hp hn hur]; exact hpmu) hvp hnbN hbN hotu
+                    have hlt : ρ.v i < σ.v c := by rw [ev]; rw [hv'] at hlt'; exact hlt'
+                    exact absurd (lt_theta_iff.mp hlow) (not_le.mpr hlt)
               have hch : (s' = s ∧ Lhd z y' y ∧ ClsABC B s y' y (Trig a B s y)) ∨
                   (y = z ∧ y' = z ∧ Lhd z s' s) := by
                 rcases hchC with h | ⟨h1, h2, h3, _⟩
@@ -1589,10 +1744,11 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       (split y' (psi (succ s) z z)).2 = z → (split y (psi (succ s) z z)).2 = z →
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true)
-    (hVchgN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-      ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
-      σ.v c ≠ ρ.v c → par M 1 c ≠ some i → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
-      ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z)
+    (hVchgSN : ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) false c →
+      par M 1 c ≠ some i →
+      entry M 2 c = 0 ∧ upg M c = some (c + 1) ∧ c + 1 < r ∧
+      (∃ j ∈ children M (c + 1), col M j = bump M (c + 1)) ∧
+      par M 1 i = par M 1 c ∧ entry M 2 i = 1 ∧ ∀ d ∈ children M i, col M d ≠ bump M i)
     (hVchgRN : ∀ g, par M 0 r = some g → ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0N : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
@@ -1859,13 +2015,13 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     intro i hi hd
     exact (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT hσB hσBv
       hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
-      (hVchgN n hn2 σ hCN) (hVchgRN g hg) (hG0N n hn2 g hg) true i hi) |> fun h =>
+      hVchgSN (hVchgRN g hg) (hG0N n hn2 g hg) true i hi) |> fun h =>
       ⟨h.1, (fun hv => let ⟨X, X', a1, a2, a3, _⟩ := h.2.2 rfl hd hv; ⟨X, X', a1, a2, a3⟩), fun hne => by
         have hdv : DepX M (r + L) false i := by
           by_contra hn'; exact hne ((hoffD i hi).2 hn')
         have hvot := (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT
           hσB hσBv hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
-          (hVchgN n hn2 σ hCN) (hVchgRN g hg) (hG0N n hn2 g hg) false i hi).1
+          hVchgSN (hVchgRN g hg) (hG0N n hn2 g hg) false i hi).1
         exact o_N_noc' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hi
           (cl_nil_of_depv' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hi hdv) hvot⟩
   · have hrn : par M 0 r = none := by

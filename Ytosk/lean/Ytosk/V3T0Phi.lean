@@ -72,14 +72,14 @@ theorem hExp_t0_mainG
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hNG : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ)
-    (hIV : T0IVRes) (hG : T0VSResG) (hS : T0ShapeR3) (hRest : T0RestG) (hC1 : T0RWResC PTP1) (hC1W : T0RWResC PTP1W)
+    (hIV : T0IVRes) (hII : T0IIRes) (hG : T0VSResG) (hS : T0ShapeR3) (hRest : T0RestG) (hC1 : T0RWResC PTP1) (hC1W : T0RWResC PTP1W)
     (hCT : T0RWResC PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN := by
   have g : ∀ F, T0FieldG F → T0Field F := fun F h M ρ rk r L n σ rkN hctx =>
     h M ρ rk r L n σ rkN hctx (hNG M ρ rk hctx.1 hctx.2.1 hctx.2.2.1 hctx.2.2.2.1)
-  exact hExp_t0_mainN2 hLast hIV hG hS hRest.vsD (fun hD =>
+  exact hExp_t0_mainN2 hLast hIV hII hG hS hRest.vsD (fun hD =>
     ⟨hD, g _ (t0_absD hRest.phi), g _ (t0_absU hRest.phi), g _ hRest.tplo, g _ hRest.auw, g _ hRest.tplon,
       g _ hRest.adn, g _ hRest.tplow, g _ hRest.adw, hRest.res⟩) hC1 hC1W hCT
 

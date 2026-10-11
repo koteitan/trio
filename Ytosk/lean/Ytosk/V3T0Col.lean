@@ -392,13 +392,13 @@ theorem hExp_t0_mainC2
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hNG : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ)
-    (hIV : T0IVRes) (hG : T0VSResG) (hS : T0ShapeR3) (hRest : T0RestC) (hC1 : T0RWResC PTP1)
+    (hIV : T0IVRes) (hII : T0IIRes) (hG : T0VSResG) (hS : T0ShapeR3) (hRest : T0RestC) (hC1 : T0RWResC PTP1)
     (hC1W : T0RWResC PTP1W) (hCT : T0RWResC PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN :=
   have f : ∀ F, T0Field F → T0FieldG F := fun _ h M ρ rk r L n σ rkN hctx _ => h M ρ rk r L n σ rkN hctx
-  hExp_t0_mainG hLast hNG hIV hG hS
+  hExp_t0_mainG hLast hNG hIV hII hG hS
     ⟨hRest.vsD, hRest.phi, f _ (t0_tplo hRest.tploR), f _ (t0_absUW hRest.auwR), hRest.tplon,
       f _ (t0_absDN hRest.adnR), hRest.tplow, hRest.adw, hRest.res⟩ hC1 hC1W hCT
 

@@ -229,11 +229,11 @@ theorem t0VSResD_of (h : T0VSResD2) : T0VSResD := by
 theorem hExp_t0_mainN2
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
-    (hIV : T0IVRes) (hG : T0VSResG) (hS : T0ShapeR3) (hVS : T0VSResD2)
+    (hIV : T0IVRes) (hII : T0IIRes) (hG : T0VSResG) (hS : T0ShapeR3) (hVS : T0VSResD2)
     (hRest : T0VSResD → T0RestH2) (hC1 : T0RWResC PTP1) (hC1W : T0RWResC PTP1W) (hCT : T0RWResC PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN :=
-  hExp_t0_mainN hLast hIV hG hS (hRest (t0VSResD_of hVS)) hC1 hC1W hCT
+  hExp_t0_mainN hLast hIV hII hG hS (hRest (t0VSResD_of hVS)) hC1 hC1W hCT
 
 end Ytosk

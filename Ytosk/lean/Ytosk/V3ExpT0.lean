@@ -180,10 +180,11 @@ def T0Shape : Prop :=
       (split y' (psi (succ s) z z)).2 = z → (split y (psi (succ s) z z)).2 = z →
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true) ∧
-    (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-      ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
-      σ.v c ≠ ρ.v c → par M 1 c ≠ some i → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
-      ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z) ∧
+    (∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) false c →
+      par M 1 c ≠ some i →
+      entry M 2 c = 0 ∧ upg M c = some (c + 1) ∧ c + 1 < r ∧
+      (∃ j ∈ children M (c + 1), col M j = bump M (c + 1)) ∧
+      par M 1 i = par M 1 c ∧ entry M 2 i = 1 ∧ ∀ d ∈ children M i, col M d ≠ bump M i) ∧
     (∀ g, par M 0 r = some g → ∀ s' y', (drop1 M (r + L) rk).o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z) ∧
     (∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
