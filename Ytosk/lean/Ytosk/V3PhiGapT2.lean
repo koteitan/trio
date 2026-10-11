@@ -290,4 +290,168 @@ theorem gapFree_of_levFree {μ V : T} (h : LevFree μ V) :
   unfold etaOm
   exact le_of_lt (by rw [T.psi_lt_psi]; exact Or.inr (Or.inl ⟨rfl, T.z_lt_psi _ _ _⟩))
 
+/-! ## 段 0 の残りの一部: 最後の項が ψ_μ(Ω_{μ+1}) そのもの
+
+W = P + ψ_μ(Ω_{μ+1}) なら fsD(W, ψ_μ(Ω_{μ+1})) = P + ψ_μ(ψ_μ(Ω_{μ+1}))。穴に届く項は P + ψ_μ(b) + …（b < Ω_{μ+1}）
+で、ψ_μ(b) が標準形なら b < ψ_μ(Ω_{μ+1})（b が隙間にあれば b の先頭の引数 ≥ Ω_{μ+1} が成分になる）。
+したがって集合の項がすべて標準形なら Reach は無条件。一般に穴が fsD の経路の先の節点 ψ_μ(Ω_{μ+1}) にあれば同じ（EtaHole、reach_etaHole: C′ で PhiX0R の 88/122 件、DropPhi0Res の 40/45 件）。
+-/
+
+theorem fsD_etaOm (μ η : T) : fsD (etaOm μ) η = psi μ η z := by
+  have hne : psi (succ μ) z z ≠ z := by simp
+  have hs : isSucc (psi (succ μ) z z) = false := isSucc_psi_ne (Or.inl (succ_ne_z μ))
+  have hc : cof (psi (succ μ) z z) = .big μ := by
+    simp [cof, succ_ne_z, isSucc_succ, init_succ]
+  unfold etaOm fsD
+  rw [if_neg hne, hs, hc]
+  simp only [Bool.false_eq_true, ↓reduceIte]
+  rw [fs_leaf' (succ_ne_z μ) (isSucc_succ μ)]
+
+theorem holeLev_etaOm (μ : T) : holeLev (etaOm μ) = μ := by
+  have hne : psi (succ μ) z z ≠ z := by simp
+  have hc : cof (psi (succ μ) z z) = .big μ := by
+    simp [cof, succ_ne_z, isSucc_succ, init_succ]
+  unfold etaOm holeLev
+  rw [if_neg hne, hc]
+
+/-- **Reach at `ψ_μ(Ω_{μ+1})` for standard terms.** -/
+theorem reach_etaOm {S : T → Prop} (hS : ∀ u, S u → isOT u = true) (μ : T) :
+    Reach S (etaOm μ) (etaOm μ) := by
+  intro u hu hlt
+  rw [fsD_etaOm]
+  cases u with
+  | z => exact T.z_lt_psi _ _ _
+  | psi a b c =>
+    unfold etaOm at hlt
+    rw [T.psi_lt_psi] at hlt ⊢
+    rcases hlt with h1 | ⟨rfl, h2⟩ | ⟨rfl, rfl, h3⟩
+    · exact Or.inl h1
+    · refine Or.inr (Or.inl ⟨rfl, ?_⟩)
+      by_contra hn
+      have hge : etaOm a ≤ b := le_of_not_gt hn
+      cases b with
+      | z => exact absurd hge (not_le_of_gt (T.z_lt_psi _ _ _))
+      | psi a2 b2 c2 =>
+        have hband : psi a z z ≤ psi a2 b2 c2 := by
+          refine le_trans (le_of_lt ?_) hge
+          unfold etaOm; rw [T.psi_lt_psi]; exact Or.inr (Or.inl ⟨rfl, T.z_lt_psi _ _ _⟩)
+        have ha2 := sub_eq_of_band hband h2
+        subst ha2
+        have hb2 : psi (succ a2) z z ≤ b2 := by
+          unfold etaOm at hge
+          rcases (le_iff _ _).mp hge with h | h
+          · rw [T.psi_lt_psi] at h
+            rcases h with h | ⟨_, h⟩ | ⟨_, h, _⟩
+            · exact absurd h (lt_irrefl' _)
+            · exact le_of_lt h
+            · rw [h]
+          · cases h; exact le_refl _
+        have hot := hS _ hu
+        rw [isOT_psi_iff] at hot
+        have hg : b2 ∈ comps a2 (psi a2 b2 c2) := by
+          simp only [comps, List.mem_append]
+          exact Or.inl (by rw [if_neg (show ¬ lt a2 a2 = true from lt_irrefl' a2)]; simp)
+        have := hot.2.2.2.2 b2 hg
+        exact absurd (lt_of_lt_of_le (lt_trans' this h2) hb2) (lt_irrefl' _)
+    · exact absurd h3 (T.not_lt_z _)
+
+theorem isOT_of_subT' {w : T} : ∀ {t : T}, SubT w t → isOT t = true → isOT w = true
+  | _, .refl _, h => h
+  | _, .sub hs, h => isOT_of_subT' hs (isOT_sub h)
+  | _, .arg hs, h => isOT_of_subT' hs (isOT_arg h)
+  | _, .rest hs, h => isOT_of_subT' hs (isOT_rest h)
+
+theorem isOT_of_subS {V u : T} (hV : isOT V = true) (hu : SubS V u) : isOT u = true := by
+  obtain ⟨w, hw, hu⟩ := hu
+  have := isOT_of_subT' hw hV
+  rcases hu with rfl | ⟨a, b, c, rfl, rfl⟩
+  · exact this
+  · exact isOT_head this
+
+/-- **Reach when the last summand of `W` is `ψ_μ(Ω_{μ+1})`**, for the subterms of a standard `V`. -/
+theorem reach_last_etaOm {V : T} (hV : isOT V = true) (P μ : T) :
+    Reach (SubS V) (app P (etaOm μ)) (etaOm (holeLev (app P (etaOm μ)))) := by
+  rw [gA_holeLev_app P (by simp [etaOm]), holeLev_etaOm]
+  apply reach_app (by simp [etaOm]) P
+  apply reach_etaOm
+  intro c hc
+  exact isOT_of_subT' (subT_app_right P c) (isOT_of_subS hV hc)
+
+/-- **The hole sits at a node `ψ_μ(Ω_{μ+1})`**: following the `fsD` path (rest, subscript, argument),
+the hole is reached as the whole argument `Ω_{μ+1}` of a `ψ_μ` with the same `μ`. -/
+def EtaHole : T → Prop
+  | z => False
+  | psi _ _ (psi c d e) => EtaHole (psi c d e)
+  | psi a b z =>
+    if b = z then (isSucc a = false ∧ EtaHole a)
+    else if b = psi (succ a) z z then True else (isSucc b = false ∧ EtaHole b)
+
+theorem holeLev_arg {a b : T} (hb : b ≠ z) : holeLev (psi a b z) = holeLev b := by
+  conv_lhs => unfold holeLev
+  rw [if_neg hb]
+  cases hc : cof b with
+  | big μ => exact (holeLev_cof hc).symm
+  | zero => rfl
+  | succ => rfl
+  | omega => rfl
+
+/-- **Reach at an `EtaHole`** for any set of standard terms: the term reaching `ψ_μ(Ω_{μ+1})` has a
+standard head `ψ_μ(b)`, so `b` is not in the gap. -/
+theorem reach_etaHole : ∀ {X : T} {S : T → Prop}, EtaHole X → (∀ u, S u → isOT u = true) →
+    Reach S X (etaOm (holeLev X))
+  | z, _, h, _ => absurd h (by simp [EtaHole])
+  | psi a b (psi c d e), S, h, hS => by
+    have h' : EtaHole (psi c d e) := h
+    rw [holeLev_rest]
+    exact reach_rest (by simp) (reach_etaHole h' (fun u hu => isOT_rest (hS _ hu)))
+  | psi a b z, S, h, hS => by
+    by_cases hb : b = z
+    · subst hb
+      have h' : isSucc a = false ∧ EtaHole a := by simpa [EtaHole] using h
+      have ha : a ≠ z := by rintro rfl; exact absurd h'.2 (by simp [EtaHole])
+      rw [holeLev_sub' h'.1]
+      exact reach_sub ha h'.1 (reach_etaHole h'.2 (fun u ⟨b', c', hu⟩ => isOT_sub (hS _ hu)))
+    by_cases he : b = psi (succ a) z z
+    · subst he
+      show Reach S (etaOm a) (etaOm (holeLev (etaOm a)))
+      rw [holeLev_etaOm]
+      exact reach_etaOm hS a
+    · have h' : isSucc b = false ∧ EtaHole b := by
+        unfold EtaHole at h; rw [if_neg hb, if_neg he] at h; exact h
+      rw [holeLev_arg hb]
+      exact reach_arg hb h'.1 (reach_etaHole h'.2 (fun u ⟨c', hu⟩ => isOT_arg (hS _ hu)))
+
+/-- **The narrowed level-0 residual of the drop**: as `DropPhi0Res`, but the hole of the new bump term is
+not an `EtaHole` (C′ で 5 件). -/
+def DropPhi0ResN (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
+  ∀ c p, c < x → entry M 1 c ≠ 0 → entry M 2 c ≠ 0 → P1Chain M p c →
+    OHole (bumpW (M.take x) ρ' c) → holeLev (bumpW (M.take x) ρ' c) = z → ¬ NoGap0 (ρ.v p) →
+    bumpW (M.take x) ρ' c ≠ bumpW M ρ c → ¬ EtaHole (bumpW (M.take x) ρ' c) →
+    Reach (SubS (ρ.v p)) (bumpW (M.take x) ρ' c) (etaOm (holeLev (bumpW (M.take x) ρ' c)))
+
+theorem dropPhi0Res_of_N {M : Mat} {x : Nat} {ρ ρ' : Valn} (hx : x + 1 = M.length) (hG : Good3 M ρ)
+    (h : DropPhi0ResN M x ρ ρ') : DropPhi0Res M x ρ ρ' := by
+  intro c p hc h1 h2 hch hO hμ hg hW
+  by_cases hE : EtaHole (bumpW (M.take x) ρ' c)
+  · have hpM : p < M.length := by
+      obtain ⟨c', hc', hp⟩ := hch.has_child (show c < M.length by omega)
+      have := par_lt M 1 c' p hp; omega
+    exact reach_etaHole hE (fun u hu => isOT_of_subS (hG.ot_v p hpM) hu)
+  · exact h c p hc h1 h2 hch hO hμ hg hW hE
+
+/-- **The narrowed level-0 residual of PhiX** (the hole is not an `EtaHole`, C′ で 34 件). -/
+def PhiX0RN (M : Mat) (ρ : Valn) : Prop :=
+  ∀ c p, c < M.length → entry M 1 c ≠ 0 → entry M 2 c ≠ 0 → P1Chain M p c → OHole (bumpW M ρ c) →
+    holeLev (bumpW M ρ c) = z → ¬ NoGap0 (ρ.v p) → ¬ EtaHole (bumpW M ρ c) →
+    Reach (SubS (ρ.v p)) (bumpW M ρ c) (etaOm (holeLev (bumpW M ρ c)))
+
+theorem phiX0R_of_N {M : Mat} {ρ : Valn} (hG : Good3 M ρ) (h : PhiX0RN M ρ) : PhiX0R M ρ := by
+  intro c p hc h1 h2 hch hO hμ hg
+  by_cases hE : EtaHole (bumpW M ρ c)
+  · have hpM : p < M.length := by
+      obtain ⟨c', hc', hp⟩ := hch.has_child hc
+      have := par_lt M 1 c' p hp; omega
+    exact reach_etaHole hE (fun u hu => isOT_of_subS (hG.ot_v p hpM) hu)
+  · exact h c p hc h1 h2 hch hO hμ hg hE
+
 end Ytosk
