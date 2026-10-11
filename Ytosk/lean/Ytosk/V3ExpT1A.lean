@@ -285,4 +285,198 @@ theorem expStep_absD {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
     rw [hW] at hlt hO ⊢
     exact hQP.2 (r + a) (by omega) he1 he2 hO q hq hlt
 
+/-- `last (fsD t ζ) = fsD (last t) ζ` when the latter is single. -/
+theorem last_fsD_single {t ζ a b : T} (ht : t ≠ z) (h : fsD (last t) ζ = psi a b z) :
+    last (fsD t ζ) = fsD (last t) ζ := by
+  rw [fsD_init_last ht, last_app' _ (by rw [h]; simp), h]; rfl
+
+/-- **Residual of the AbsUW carry** (`t = 1`): at an upgrade `i → k` with `k` a `v` call of `D` below `x`,
+the index is not a successor, and the seed condition at `η = 1` holds for the subterms of `v(P_1 i)` or
+the field holds at the new value (C′ の 2 万行列 × n = 2, 3 で 1026 件、種の条件は退化した種の 1 件を除き成立). -/
+def AbsUWRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    ∀ i k, i < r + L → upg M i = some k → DepX M (r + L) false k →
+    isSucc (Z k) = false ∧
+      (SeedCond (vOpt ρ (par M 1 i)) (Z k) (etaOm (holeLev (last (ρ.v k)))) one ∨
+        ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (last (ρ.v k)) (Z k) →
+          q < fsD (fsD (last (ρ.v k)) (Z k)) one)
+
+/-- **AbsUW is carried** (`t = 1`), with `AgrT1` from `P`. Residual `AbsUWRes`. -/
+theorem expStep_absUW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hRes : AbsUWRes M r L d0 ρ) :
+    ExpStepT1 (fun N σ => AgrT1 M r ρ N σ ∧ AbsUW N σ) M r L d0 ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  obtain ⟨q0, hq0⟩ := par0_of_anc hA (by omega)
+  intro n hn ρP Z hCP hGP hQP hCN hGN hoto hotv hle hlex hH
+  refine ⟨expStep_agr hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 n hn ρP Z hCP hGP hQP.1 hCN hGN
+    hoto hotv hle hlex hH, ?_⟩
+  have hR := hRes n hn ρP Z hH
+  obtain ⟨μ, br, vr, seed, k0, hHD, hZk, _, _, _, _⟩ := hH
+  set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
+  have hlN := len_N (d0 := d0) hlen hn
+  have hlP := len_P (d0 := d0) (n := n) hlen
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  intro i k hu hO hcof q hq hlt
+  have hiN : i < (TRIO.gexp M r L d0 0 n).length := by have := upg_succ_lt hu; omega
+  rcases Nat.lt_or_ge i (r + L) with hi' | hi'
+  · have hSA := sameAt_lt hlen hL hA hd0e hn hpath hx2
+      (hxnb_t1 hlen hL hA hd0e I.z2 I.z1 h1 n hn)
+      (hiu_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn) i hi'
+    rw [hSA.upg] at hu
+    have hkM : k < M.length := upg_lt (by omega) hu
+    have hkx : k < r + L := by
+      rcases Nat.lt_or_ge k (r + L) with h | h
+      · exact h
+      · exact absurd (by rw [show k = r + L by omega]; exact hx2) (fun h' => upg_ne_e2z hu h')
+    obtain ⟨he1, he2'⟩ := upg_e12 hu
+    have he2 : entry M 2 i = 0 := by have := I.z2 i; omega
+    have hV : vOpt σ (par (TRIO.gexp M r L d0 0 n) 1 i) = vOpt ρ (par M 1 i) := by
+      rw [hSA.par1]
+      cases hp : par M 1 i with
+      | none => rfl
+      | some m =>
+        have hm : m < i := par_lt M 1 i m hp
+        have hmD : ¬ DepX M (r + L) false m := by
+          intro hd
+          have hiv : DepX M (r + L) false i := DepX.vpar he1 hp hd
+          exact (dv_shape hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq0 hi' hiv).2.1 m hp hd
+        exact glueZ_v_lt ρ (shiftV ρP L) Z (by omega) hmD
+    rw [hV] at hq
+    by_cases hkv : DepX M (r + L) false k
+    · have hHv := hHD.hole false k hkv hkx
+      simp only [valB, cond_false] at hHv
+      have hHl := holeT_last hHv
+      obtain ⟨kk, _, hZe⟩ := hZk k
+      have hZs : ∃ s y, Z k = psi s y z := by rw [hZe]; exact gamS_single hHD.seedS kk
+      obtain ⟨a, b, hF⟩ := fsD_single_of_holeT hHl (last_single' (holeT_ne_z hHv)) hZs
+      have hlv : last (σ.v k) = fsD (last (ρ.v k)) (Z k) := by
+        rw [hσ, glueZ_v_dep ρ (shiftV ρP L) Z hkx hkv]
+        exact last_fsD_single (holeT_ne_z hHv) hF
+      rw [hlv] at hlt ⊢
+      obtain ⟨hζs, hSC⟩ := hR i k hi' hu hkv
+      rcases hSC with hSC | hFld
+      · have hOW := ohole_of_holeT hHl
+        have hζz : Z k ≠ z := by obtain ⟨s, y, h⟩ := hZs; rw [h]; simp
+        have hlt' : fsD (last (ρ.v k)) (Z k) < last (ρ.v k) := by
+          rw [hZe]; exact (hok_of_holeT hHD.rot hHD.cb hHD.hμ hHD.S (isOT_last (I.good.ot_v k hkM)) hHl kk).2
+        exact absorb_fsD_W hOW hζz hζs (I.au i k hu hOW) hlt' hSC q hq hlt
+      · exact hFld q hq hlt
+    · have hiv : ¬ DepX M (r + L) false i := by
+        intro hd
+        rcases (dv_shape hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq0 hi' hd).2.2 with
+          ⟨_, hu', _, hd'⟩ | ⟨h2', _⟩
+        · rw [hu] at hu'; cases hu'; exact hkv hd'
+        · exact h2' he2
+      have hvk : σ.v k = ρ.v k := glueZ_v_lt ρ (shiftV ρP L) Z hkx hkv
+      rw [hvk] at hO hcof hlt ⊢
+      exact I.auw i k hu hO hcof q hq hlt
+  · obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
+    have ha : a < (n - 1) * L := by omega
+    have hV := vOpt_par_copy hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 hn (Z := Z) hQP.1 ha
+    rw [← hσ] at hV
+    rw [hV] at hq
+    -- the upgrade of a copy column
+    have hup : ∃ t, upg (TRIO.gexp M r L d0 0 (n - 1)) (r + a) = some t ∧ σ.v k = ρP.v t := by
+      have hshv : ∀ t, r ≤ t → σ.v (t + L) = ρP.v t := by
+        intro t ht
+        rw [hσ, glueZ_v_ge ρ (shiftV ρP L) Z (by omega)]
+        show ρP.v (t + L - L) = ρP.v t
+        rw [Nat.add_sub_cancel]
+      have hagree := agree_copy hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 hn (Z := Z) hQP.1
+      rcases Nat.eq_zero_or_pos a with h0 | h0
+      · subst h0
+        rw [show r + L + 0 = r + L by omega, upg_root hlen hL hA hd0e hn hpath (I.z2 r)] at hu
+        refine ⟨k, by simpa using hu, ?_⟩
+        have hkr := upgP_root_lt hlen hL hA hd0e hn hu
+        exact hagree k (by omega) 0 (by omega) (Or.inr (by simpa using hu))
+      · rw [upg_copy hlen hL hA hd0e hn hpath h0 ha] at hu
+        cases ht : upg (TRIO.gexp M r L d0 0 (n - 1)) (r + a) with
+        | none => rw [ht] at hu; cases hu
+        | some t =>
+          rw [ht] at hu
+          simp only [Option.map_some, Option.some.injEq] at hu
+          refine ⟨t, rfl, ?_⟩
+          by_cases htr : r < t
+          · rw [if_pos htr] at hu; rw [← hu]; exact hshv t (by omega)
+          · rw [if_neg htr] at hu; rw [← hu]; exact hagree t (by omega) a ha (Or.inr ht)
+    obtain ⟨t, hut, hvt⟩ := hup
+    rw [hvt] at hO hcof hlt ⊢
+    exact hQP.2 (r + a) t hut hO hcof q hq hlt
+
+/-- **Residual of the AbsDN carry** (`t = 1`): at the bump columns of `D` below `x`, the index is not a
+successor, and the seed condition at `η = 1` holds or the field holds at the new value (C′ の 2 万行列 ×
+n = 2, 3 で 6112 件、欄は全件成立、種の条件は 56 件で偽: v(P_1 i) の加数が W より遥かに小さく、比較が穴まで
+降りない場合). -/
+def AbsDNRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
+    isSucc (Z i) = false ∧
+      (SeedCond (vOpt ρ (par M 1 i)) (Z i) (etaOm (holeLev (bumpW M ρ i))) one ∨
+        (cof (fsD (bumpW M ρ i) (Z i)) = .omega → NotNode (fsD (bumpW M ρ i) (Z i)) →
+          ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (bumpW M ρ i) (Z i) →
+            q < fsD (fsD (bumpW M ρ i) (Z i)) one))
+
+/-- **AbsDN is carried** (`t = 1`), with `AgrT1` from `P`. Residual `AbsDNRes`. -/
+theorem expStep_absDN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hRes : AbsDNRes M r L d0 ρ) :
+    ExpStepT1 (fun N σ => AgrT1 M r ρ N σ ∧ AbsDN N σ) M r L d0 ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  intro n hn ρP Z hCP hGP hQP hCN hGN hoto hotv hle hlex hH
+  refine ⟨expStep_agr hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 n hn ρP Z hCP hGP hQP.1 hCN hGN
+    hoto hotv hle hlex hH, ?_⟩
+  have hR := hRes n hn ρP Z hH
+  obtain ⟨μ, br, vr, seed, k0, hHD, hZk, _, _, _, _⟩ := hH
+  set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
+  have hlN := len_N (d0 := d0) hlen hn
+  have hlP := len_P (d0 := d0) (n := n) hlen
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  intro i hi he1 he2 hO hcof hNN q hq hlt
+  rcases Nat.lt_or_ge i (r + L) with hi' | hi'
+  · have hSA := sameAt_lt hlen hL hA hd0e hn hpath hx2
+      (hxnb_t1 hlen hL hA hd0e I.z2 I.z1 h1 n hn)
+      (hiu_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn) i hi'
+    rw [hSA.e1] at he1; rw [hSA.e2] at he2
+    have hiM : i < M.length := by omega
+    by_cases hv : DepX M (r + L) false i
+    · have hHv := hHD.hole false i hv hi'
+      simp only [valB, cond_false] at hHv
+      obtain ⟨k, _, hZe⟩ := hZk i
+      have hZs : ∃ s y, Z i = psi s y z := by rw [hZe]; exact gamS_single hHD.seedS k
+      obtain ⟨hW, hV, hHW, hWot⟩ := bumpW_D hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 hn
+        I.cons I.good hCN hGN hi' hv he2 hHv hZs
+      rw [← hσ] at hW hV
+      rw [hV] at hq
+      rw [hW] at hlt hO hcof hNN ⊢
+      obtain ⟨hζs, hSC⟩ := hR i hi' hv he2
+      rcases hSC with hSC | hFld
+      · have hOW := ohole_of_holeT hHW
+        have hζz : Z i ≠ z := by obtain ⟨s, y, h⟩ := hZs; rw [h]; simp
+        have hlt' : fsD (bumpW M ρ i) (Z i) < bumpW M ρ i := by
+          rw [hZe]; exact (hok_of_holeT hHD.rot hHD.cb hHD.hμ hHD.S hWot hHW k).2
+        exact absorb_fsD_W hOW hζz hζs (I.ad i hiM he1 he2 hOW) hlt' hSC q hq hlt
+      · exact hFld hcof hNN q hq hlt
+    · obtain ⟨hW, hV⟩ := bumpW_off hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 hn
+        (ρ := ρ) (ρP := ρP) (Z := Z) hi' hv he1 he2
+      rw [← hσ] at hW hV
+      rw [hV] at hq
+      rw [hW] at hlt hO hcof hNN ⊢
+      exact I.adn i hiM he1 he2 hO hcof hNN q hq hlt
+  · obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
+    have ha : a < (n - 1) * L := by omega
+    rw [e1_gexp_shift hlen hL hn ha] at he1
+    rw [e2_copy (d0 := d0) hlen hL hn ha] at he2
+    have hW := bumpW_copy hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 hn
+      (ρ := ρ) (ρP := ρP) (Z := Z) ha
+    have hV := vOpt_par_copy hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 hn (Z := Z) hQP.1 ha
+    rw [← hσ] at hW hV
+    rw [hV] at hq
+    rw [hW] at hlt hO hcof hNN ⊢
+    exact hQP.2 (r + a) (by omega) he1 he2 hO hcof hNN q hq hlt
+
 end Ytosk
