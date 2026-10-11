@@ -54,7 +54,7 @@ def T2BelowResL (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
   ∀ n, 2 ≤ n → (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L d0 d1 m) τ → Good3 (TRIO.gexp M r L d0 d1 m) τ) →
     ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true) →
-    T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ T2HardR M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ (T2Seed M r L) ∧
+    T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
     (∀ p, T2Seed M r L p → isOT (σ.o p) = true ∧
       (cvals (TRIO.gexp M r L d0 d1 n) σ p).Pairwise (fun a b => b ≤ a)) ∧
     (∀ q, par M 0 (r + L) = some q → q ≠ r → isOT (σ.o q) = true ∧

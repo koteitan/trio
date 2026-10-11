@@ -44,7 +44,7 @@ theorem t2_sv_below (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) 
     (hAbs : ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
       ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
     (hVSN : T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
-    (hHard : T2HardR M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ (fun i => SV r (r + L - 1) true i))
+    (hHard : T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
     (hOTout : ∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true)
     (hseed : Lhd z (σ.o r) (ρ.o r) ∧ isOT (σ.o r) = true)
     (hsdec : (cvals (TRIO.gexp M r L d0 d1 n) σ r).Pairwise (fun a b => b ≤ a)) :
