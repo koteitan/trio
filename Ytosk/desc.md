@@ -2549,3 +2549,32 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 実測（7 集合: C′・d3s・deep2・deep3・ext1・ext1x・expP）: 4 つとも例外 0（qr 40 万件、qn 10 万件、sv 2 万件、C 6000 件）。
 - T2BelowResL の種と q の欄から減少を外し、標準形だけにした。t2BelowXRes_of_L が 4 つの場合ごとに減少と ◁ を出す。
 - T2BelowResL に残る M[n] 側の欄: T2VSN・T2Hard・種の o の標準形・q の o の標準形（7 集合で例外 0）。
+
+### 弱い関係 WkV を親の添字の成分まで広げた（2026-10-12、drop-fix、リーダーの GO）
+
+- 新しい定義（V3DropRel・V3DropMain）:
+  - WCS a w: 段 u ≤ a の w の成分は Ω_1 未満か、a の成分以下。
+  - WkVA w′ w = w′ < w ∧ 1 ≤ w′ ∧ 標準形（CS を外した弱い関係）。WkOA・DRelOA も同じ。古い WkV・WkO・DRelO は残した（t0 の V3T0D の写しが使う）。
+  - WCSP M ρ i w = CS w ∨ (WCS (v(P_0 i)) w ∧ P_0 i がのりしろの子でない ∧ i は上げの的でない)。
+  - PO の弱い枝は WkOA、PV の弱い枝は WkVA ∧ WCSP ∧ 数える子なし。
+  - BumpWeakSrc の結論の CS(v(P_1 i)) を WCSP M ρ i (v(P_1 i)) に替えた。
+- 受け取る側:
+  - 親の枠の ◁（o_frame_weakA・lhdE_frame_weak）: 弱い子の成分は ψ_{w′}(0) 以下か、親の添字 a の成分以下。親の試す元 ψ_a(C) + R は
+    comps の定義（添字の成分も含む）で a の成分を持つので、Lhd の比較で受けられる（lhd_weak_childA、V3DropAsm）。
+  - RelR の枠（relR_frame の弱い枝）: rc_nn の hchild に「親の添字 p の成分以下」を足し、hyp（p の成分は H 未満か q の成分以下）で受けた。
+  - 子から親への受け渡し: rel_of_po_pv（子の PO・PV から o_frame_eval の関係。PV が ⊴ なら o も ⊴）、WCSP.wcs。
+  - のりしろの子の子（BWk）は CS が要るが、親がのりしろの子なので WCSP の CS でない枝は NBPar に反する（WCSP.cs_of_bump）。
+  - 上げ（v(i) = v(k)）では k は上げの的なので WCSP k は CS（WCSP の第 3 の条件）。
+  - v_weak: WCSP M ρ i V と CS W′ から WCSP M ρ i (V + W′)（WCSP.add）。
+- 呼び出しの直し（他の担当のファイル）: V3PDrop（closure、DRelOA.le）、V3StrictR（DRelOA.le）、V3T0TopR（t0-exp、PV の分解）、V3Congr・V3Base。
+
+### PH3c の切り口の文法は標準形で偽だった・G3 に広げた（2026-10-12、closure、V3PDef・V3PKindG・V3PShG、緑）
+
+- Lean の PH3c（cutsNS: 添字の側は Ω の鎖 scuts だけ、引数の側は高い道 cutsH）は標準形で偽。ext1（groupA）の t = 2 の行列の M[2]・M[3] で、Lean の形の cut に入らない書き換えの枠が 153 件（python の広い cuts では cut）。
+  - 例: M = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(5,1,0)(1,1,1)（bms -s で標準形）の M[2] の枠 (0, 10): B = Ω_{ψ_ω(ψ_ω(Ω_1))}、hi = Ω_{ψ_ω(ψ_ω(Ω_2))}、s = 1。位置は添字に入ってから引数の高い道を進む（111 件）。ほかに引数の高い道から節点の添字の鎖へ入る形（42 件）。
+  - 前任の狭めは 5 集合の枠で測ったもので、1 列伸ばしの展開を欠いていた。したがって「M の PH3c」を大域の仮定にした結論（t0-exp・drop-fix・closure の種の残り）は、今のままでは空虚になりうる。
+  - FC3 は ext1 とその展開（t = 0・1・2、計 216 万）で例外 0。
+- G3（V3PDef の cutsHG・cutsNSG・PH3cKindG・PH3cG・PInvG）: 添字には自由に入る、引数には添字が s 以上の項からだけ入る、最上位の項そのものは位置にしない。ext1 の展開の cut の枠 119607 件と 5 集合の cut の枠はすべて G3。古い定義は残した（使う側が移るまで）。
+- V3PKindG: G3 の挟み込み mem_cutsHG_squeeze・cutsNSG_squeeze・ph3cKindG_squeeze（標準形の仮定 isOT s・isOT y が増えた）、旧 ⊆ G3（cutsNS_sub_G・ph3cKindG_of・ph3cG_of）、切り口は s より大きい（cutsHG_gt）。
+- V3PShG: σ で保たれる cutsHG_sh・cutsNSG_sh・ph3cKindG_sh。新しい「添字の中」の場合は、位置を含む添字の項の先頭の添字が s 以上（cutsHG_lev）なので f = σ（shf_eq_sh、項の標準形は不要）になり帰納法に戻る。
+- 次: P の保存（1 列落とし・t = 0・t = 1・t = 2・基底・種の枠）を PH3cG で言い直す。sv の Fix も G3 の形なら ext1 で例外 0（51 件の SpotN でない例もすべて G3 の切り口）。
