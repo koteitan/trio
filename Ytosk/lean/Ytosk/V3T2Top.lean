@@ -866,13 +866,13 @@ theorem topped_eq_of {M N : Mat} {c : Nat} (hch : children N c = children M c)
 /-- **`q ≠ r`** (`x` a bump child of `q = r + qp`, `P_0 q = pq`). -/
 structure T2QN (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L qp pq : Nat) : Prop where
   seed1 : (drop1 M (r + L) rk).o pq ≠ ρ.o pq
-  big : ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
+  big : ∀ n σ, 2 ≤ n → Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
     SeedL ρ σ pq
 
 /-- **`q = r`, `x − 1` upgrades to `x`.** -/
 structure T2SV (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Prop where
   seed1 : (drop1 M (r + L) rk).o r ≠ ρ.o r
-  big : ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
+  big : ∀ n σ, 2 ≤ n → Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
     SeedL ρ σ r
 
 /-- **`q = r`, `x − 1` upgrades nowhere** (`n ≤ 1`). -/
@@ -888,7 +888,7 @@ structure T2R (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Pr
   sv : upg M (r + L - 1) = some (r + L) → T2SV M ρ rk r L
   nn : upg M (r + L - 1) = none → T2QR M ρ rk r L
   up : ∀ k, upg M (r + L - 1) = some k → k < r + L → T2QU M ρ rk r L k
-  big : upg M (r + L - 1) ≠ some (r + L) → ∀ n d0 d1 σ, 2 ≤ n → Cons (TRIO.gexp M r L d0 d1 n) σ →
+  big : upg M (r + L - 1) ≠ some (r + L) → ∀ n σ, 2 ≤ n → Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
     SeedL ρ σ r
 
 /-- **The remaining hypotheses of `t = 2`** (`x = r + L`, `r = P_2(x)`). -/
@@ -1068,7 +1068,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       · have T' := T.sv hux
         obtain ⟨Sp1, _, Sdv, Sos, Svsh⟩ := sv_shapes hlen hL0 hq hux (rx_of_sv hlen I.z2 I.z1 hr hux) hrb he2r
           I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be
-        have hseed := T'.big n _ _ σ hn hCN
+        have hseed := T'.big n σ hn hCN
         have hIUt : ∀ c, c < r + L → topped M c = true →
             isUpg (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c =
               isUpg M c := by
@@ -1091,7 +1091,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
           exact htM
         exact t2_sv_main hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (rcl_sv hlen hq hr hux I.z2 I.z1 I.r0p I.uat I.be he2r) hIUt
           Sp1 Sdv Sos Svsh I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hAbs hseed
-      · have hseed := T.big hux n _ _ σ hn hCN
+      · have hseed := T.big hux n σ hn hCN
         have hIU : ∀ c, c < r + L → topped M c = true →
             isUpg (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c =
               isUpg M c := by
@@ -1117,7 +1117,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       obtain ⟨Tp1, TqL, Tdv, Tos, Tvsh⟩ := qn_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
         I.uat I.uab I.r12 hpq' Tqb
       have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
-      have hseed := T.big n _ _ σ hn hCN
+      have hseed := T.big n σ hn hCN
       have hIUt : ∀ c, c < r + L → c ≠ r + (q - r) → topped M c = true →
           isUpg (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c =
             isUpg M c := by
