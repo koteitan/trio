@@ -106,4 +106,77 @@ theorem upg_N_x_q (hqr : q ≠ r) (hxb : col M (r + L) = bump M q) (hJ : RowJ M)
 
 end
 
+/-- **The closure of the `q ≠ r` seeds stays in the subtree of `q` or above `o(r)` in rank** (`P_0(q) = r`, `q`
+counted at `r` and topped, `e2 r = 0`): every call of `DepS M {v(q), o(r)}` is a descendant of `q` or has rank at
+least that of `o(r)`. -/
+theorem depS_SQ_inv {M : Mat} {rk : Bool → Nat → Nat} (hR : Rk M rk) {q r : Nat} (hpq : par M 0 q = some r)
+    (hqb : col M q ≠ bump M r) (hnU : ¬ (isUpg M q = true ∧ topped M q = true)) (htq : topped M q = true)
+    (he2r : entry M 2 r = 0) :
+    ∀ {b i}, DepS M (SQ q r) b i → i < M.length → Anc0 M q i ∨ rk true r ≤ rk b i := by
+  intro b i h
+  induction h with
+  | @seed b i hs =>
+    intro _
+    rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · exact Or.inl (Anc0.refl _)
+    · exact Or.inr (le_refl _)
+  | @ochild i c hc hcb hcu _ ih =>
+    intro hi
+    have hrk := (hR _ hi).2.1 _ hc hcb hcu
+    rcases ih (mem_children hc).2 with hA | hle
+    · by_cases hcq : c = q
+      · subst hcq
+        have : i = r := by rw [(mem_children_iff.mp hc).2] at hpq; exact Option.some.inj hpq
+        subst this; exact Or.inr (le_refl _)
+      · exact Or.inl (anc0_par hA (Ne.symm hcq) (mem_children_iff.mp hc).2)
+    · exact Or.inr (by omega)
+  | ov _ ih =>
+    intro hi
+    have := (hR _ hi).1
+    rcases ih hi with hA | hle
+    · exact Or.inl hA
+    · exact Or.inr (by omega)
+  | @vpar i m h1 hm _ ih =>
+    intro hi
+    have hrk := ((hR _ hi).2.2 h1).1 _ hm
+    rcases ih (by have := par_lt _ 1 _ _ hm; omega) with hA | hle
+    · exact Or.inl (Anc0.trans hA (anc0_of_par M 1 m i hm))
+    · exact Or.inr (by omega)
+  | @vupg i k h1 h2 hk _ ih =>
+    intro hi
+    have hrk := ((hR _ hi).2.2 h1).2.1 h2 _ hk
+    rcases ih (upg_lt hi hk) with hA | hle
+    · obtain ⟨_, _, _, _, hcase⟩ := upg_spec hk
+      rcases hcase with hk1 | ⟨hAk, _⟩
+      · by_cases hkq : k = q
+        · exfalso
+          apply hnU
+          refine ⟨?_, htq⟩
+          unfold isUpg; apply List.any_eq_true.mpr
+          exact ⟨i, List.mem_range.mpr hi, by rw [← hkq]; simpa using hk⟩
+        · have hqk := hA.le
+          exact Or.inl (anc_between hA i (by omega) (by omega))
+      · exact Or.inl (Anc0.trans hA hAk)
+    · exact Or.inr (by omega)
+  | @vbump i j k h1 h2 hj hjb hk _ ih =>
+    intro hi
+    have hrk := ((hR _ hi).2.2 h1).2.2 h2 _ hj hjb _ hk
+    have hjl := (mem_children hj).2
+    have hkl := (mem_children hk).2
+    rcases ih hkl with hA | hle
+    · by_cases hkq : k = q
+      · subst hkq
+        have hjr : j = r := by rw [(mem_children_iff.mp hk).2] at hpq; exact Option.some.inj hpq
+        subst hjr
+        exfalso
+        have := e2_of_col (show col M j = (entry M 0 i + 1, entry M 1 i, 1) from hjb); omega
+      · have hAj : Anc0 M q j := anc0_par hA (Ne.symm hkq) (mem_children_iff.mp hk).2
+        by_cases hjq : j = q
+        · subst hjq
+          have hir : i = r := by rw [(mem_children_iff.mp hj).2] at hpq; exact Option.some.inj hpq
+          subst hir
+          exact absurd hjb hqb
+        · exact Or.inl (anc0_par hAj (Ne.symm hjq) (mem_children_iff.mp hj).2)
+    · exact Or.inr (by omega)
+
 end Ytosk
