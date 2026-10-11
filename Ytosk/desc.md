@@ -2127,3 +2127,12 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
     M では数える）。o(ℓ) = ψ_s(y) で v(i) < s。書き換えないのは y ≤ B（B = CL(M.take x) i の後の状態）だから。
   - [ℓ, x] は出ない。
 - よって TailNR の本体は「ℓ = P_0(x) が M で新たに数えられるとき y(ℓ) ≤ B」。
+
+### t = 2・q = r の種 SeedL を M だけの残りに（2026-10-11、t2、緑）
+
+- 前提の強化（b76e5c2e）: T2BelowX・T2BelowXS・T2BelowRes は「M[m]（1 ≤ m < n）のどの評価も Good3」を前提にとる（good3_gexp_t2 は強い帰納法）。種を下の段の値から示すため。
+- 純粋な補題（V3T2SeedLhd）: seed_frame_lhd。古い最後の子が書き換えない葉 Ω_s、新しい状態 X が B + Ω_{s′} ≤ X < B + Ω_s、a < s′、s′ ◁ s、X の段 ≤ a の成分が X 以下か B・a・s′ の成分以下なら ψ_a(X) ◁ ψ_a(B + Ω_s)。
+- 漸化式（V3T2SeedRec・V3T2SeedQR・V3T2SeedQRL）: q = r・x への上げなしで、o_{M[n]}(r) = ψ_V(seqZ(n − 2))。seqZ 0 = B + ψ_{V+1}(W_1)、seqZ(k+1) = step_V(B, V + 1, σ_{V,V+1}(seqZ k))。写しの根は o_copy_root（CopyFacts・sh_spArg）、r の枠は o_r_level_qr（CL_N2・t2_off・vx_eq・o_last_form）。閉じた形 seqZ k = B + ψ_{V+k+1}(σ^k W_1)（seqZ_form、k ≥ 1 では書き換えるが加数がすべて Ω_{V+2} 以上なので H は恒等）。
+- 結論 seedL_qr: o_{M[n]}(r) ◁ o_M(r)（n ≥ 2）。残り T2SeedQRRes は M と M.take x だけの性質（σ(B) = B、V + k < s、V + 1 ◁ s、¬ B < W_1、閉じた形の成分の押さえ）。C′ 4 万行列（29854 件、閉じた形は k = 0..3 で 119416 件）で例外 0。
+- 注意: q = r・L = 1 では M.take x の v(r) が M と違う（16224/38238）。写しの最初の段だけ σ が σ_{v′(r), V+1} なので、基点を M[2]（W_1）にとった。
+- 次: q ≠ r の種（pq の枠、X_N = B + Ω_t、s′ ≤ t < s を実測）、sv（c0 の ◁ が要るので deps_lhd_otW の帰納法の中で）、T2BelowRes の種の欄への差し込み。
