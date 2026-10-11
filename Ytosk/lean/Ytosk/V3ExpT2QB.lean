@@ -7,6 +7,7 @@ x より前の o・v の標準形と数える子の減少を出す。残りは N
 -/
 import Ytosk.V3T2M
 import Ytosk.V3ExpT2BX
+import Ytosk.V3DepRW
 
 namespace Ytosk
 
@@ -35,7 +36,7 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (hAbsC : BumpAbsS M (r + L) ρ)
     (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L))
     (hVSN : T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
-    (hHard : T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
+    (hHard : T2HardR M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ (fun i => i = r))
     (hOTout : ∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true)
     (hseed : Lhd z (σ.o r) (ρ.o r) ∧ isOT (σ.o r) = true)
     (hsdec : (cvals (TRIO.gexp M r L d0 d1 n) σ r).Pairwise (fun a b => b ≤ a)) :
@@ -209,16 +210,20 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
       · exfalso; rw [show j = r + L by omega] at hjb; exact hxnbN k hjb
     refine ⟨hjM, by rw [← col_gexp_pre (d0 := d0) (d1 := d1) (m := n) hlen (by omega) hjx, ← hbumpN k hkx]; exact hjb, ?_⟩
     rw [← children_N2 hlen hL hp hd0e (by omega) hn2 hjx]; exact hk'
-  have hdl := deps_lhd_ot (S := S) (bnd := r + L) hC hG hCN hRM (by omega) (by rw [hlN]; omega)
-    hF hFO hVS hTD hKD hVSN hHard hoff hOTout
+  have hdl := deps_lhd_otW_R (S := S) (W := fun _ _ => False) (bnd := r + L) hC hG hCN hRM (by omega)
+    (by rw [hlN]; omega)
+    hF hFO hVS hTD hKD hVSN hHard.1 hHard.2.1 hHard.2.2.1 hoff hOTout (fun _ h => h)
+    (fun _ _ _ _ h => h.elim) (fun _ _ _ _ _ _ _ _ h => h.elim) (fun _ _ h => h.elim)
     (by
       rintro b i ⟨hb, hi'⟩ _ _ _
       subst hb
       rw [hi']
       exact hseed)
-    hDvNil hCLnil hOc hVc hupgK hAbs
+    (fun i hs _ _ => hHard.2.2.2 i hs.2)
+    (fun c hc _ _ hv => hDvNil c hc hv) (fun c hc _ hv => hCLnil c hc (hDvNil c hc hv))
+    (fun c hc _ h => hCLnil c hc h) (fun i hi hns _ hD hv => hOc i hi hns hD hv) hVc hupgK hAbs
   have hgb := good_below_of (W := fun _ _ => False) hC hG hCN (by omega) (by rw [hlN]; omega) hoff
-    (fun b i hd hi _ => hdl b i hd hi) (fun _ h => h) (fun _ _ _ _ h => h.elim) (fun _ _ h => h.elim)
+    (fun b i hd hi hw => (hdl b i hd hi hw).1) (fun _ h => h) (fun _ _ _ _ h => h.elim) (fun _ _ h => h.elim)
     (by
       intro i hi hs
       rcases hs with ⟨_, rfl⟩ | h

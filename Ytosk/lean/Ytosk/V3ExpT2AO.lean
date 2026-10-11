@@ -6,6 +6,7 @@ bnd より前の o・v の標準形と数える子の減少を出す（`deps_lhd
 -/
 import Ytosk.V3T2G
 import Ytosk.V3ExpT2BX
+import Ytosk.V3DepRW
 
 namespace Ytosk
 
@@ -60,7 +61,7 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
       (∀ b' i', rkM b' i' < rkM b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →
         Lhd z (valB σ b' i') (valB ρ b' i') ∧ isOT (valB σ b' i') = true) →
       Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true)
-    (hVSN : T2VSN N bnd ρ σ) (hHard : T2Hard N bnd ρ σ)
+    (hVSN : T2VSN N bnd ρ σ) (hHard : T2HardR M N bnd ρ σ (fun i => S true i))
     (hOTout : ∀ b j, bnd ≤ j → j < N.length → isOT (valB σ b j) = true)
     (hWot : (∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i)) →
       ∀ i, i < bnd → W true i → isOT (σ.o i) = true)
@@ -149,9 +150,9 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
         have hex : e < bnd := by
           by_contra h'; exact hns (hbkS i d e hi hdM (by omega) hdb he' (by omega))
         exact (hoff e hex).1 (hLnd d hd e he')
-  have hdl := deps_lhd_otW (S := S) (W := W) (bnd := bnd) hC hG hCN hRM (by omega) hbN
-    hF hFO hVS hTD hKD hVSN hHard hoff hOTout hWv hWo hWb (hWot hoff)
-    (fun b i hs hi hd ih => hSeed b i hs hi hd hoff ih) hDvNil
+  have hdl := deps_lhd_otW_R (S := S) (W := W) (bnd := bnd) hC hG hCN hRM (by omega) hbN
+    hF hFO hVS hTD hKD hVSN hHard.1 hHard.2.1 hHard.2.2.1 hoff hOTout hWv hWo hWb (hWot hoff)
+    (fun b i hs hi hd ih => hSeed b i hs hi hd hoff ih) (fun i hs _ _ => hHard.2.2.2 i hs) hDvNil
     (fun c hc hw hd => by
       by_cases hs : S true c
       · exact hDvNilS c hc hw hs hd
@@ -184,7 +185,7 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
       exact ⟨hL d hd'.1 (by simpa using hd'.2), hall d hdM⟩)
     hVc
     hupgK hAbs
-  apply good_below_of hC hG hCN (by omega) hbN hoff hdl hWv hWo (hWot hoff) (hSdec hoff)
+  apply good_below_of hC hG hCN (by omega) hbN hoff (fun b i hD hi hW => (hdl b i hD hi hW).1) hWv hWo (hWot hoff) (hSdec hoff)
   · intro i hi hns hnw hv
     exact hCLnil i hi hnw (hDvNil i hi hnw hns hv)
   · intro i hi hns hnw hv
