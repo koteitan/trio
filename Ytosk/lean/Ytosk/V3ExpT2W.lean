@@ -258,6 +258,7 @@ end
 /-- **The remaining facts of the copy block** of every `M[n]` (`n ≥ 2`, measured with 0 exceptions). -/
 def T2CopyRes (M : Mat) (r L d0 d1 : Nat) : Prop :=
   ∀ n, 2 ≤ n → ∀ σ ρ, Cons (TRIO.gexp M r L d0 d1 n) σ → Cons (TRIO.gexp M r L d0 d1 (n - 1)) ρ →
+    Good3 (TRIO.gexp M r L d0 d1 (n - 1)) ρ →
     T2GuardVal (TRIO.gexp M r L d0 d1 (n - 1)) ρ r ∧ T2Base (TRIO.gexp M r L d0 d1 (n - 1)) σ ρ r ∧
     isOT (σ.v (r + L)) = true ∧ ρ.v r < σ.v (r + L)
 
@@ -296,7 +297,7 @@ theorem good3_gexp_t2
       have hCP : Cons (TRIO.gexp M r L d0 d1 m) (rhsIt _ (rkBound _ rk)) := cons_of_rk hRP
       have hGP := ih hm0 _ hCP
       have hm : m + 1 - 1 = m := by omega
-      obtain ⟨hKV, hB, hV', hVV⟩ := hRes (m + 1) hn2 σ _ hCN (by rw [hm]; exact hCP)
+      obtain ⟨hKV, hB, hV', hVV⟩ := hRes (m + 1) hn2 σ _ hCN (by rw [hm]; exact hCP) (by rw [hm]; exact hGP)
       have hK := t2GuardKids_gexp hlen hL hA hd0e hn2 hd0 hd1 hgx he2r (by rw [hm]; exact hBE m hm0)
       have hRK := t2RootKids_gexp hlen hL hA hd0e hn2 hd0 hd1 hgx he2r hR0 hSD
       rw [hm] at hK hKV hRK hB
