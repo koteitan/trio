@@ -2595,3 +2595,11 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - `t0_dep_otH`（V3T0DepH）: t0_dep_otR から VSmallR と RClaim を外し、難しい枠は HardArgN から。`hExp_t0_topH`（V3T0TopH）: hExp_t0_topB と同じ組み立てで、VSmallR M を前提にとらない。残り: hLast・N の AbsD・AbsU・FrmLF・M の PH3c・標準形 N の PH3c と 3 つの葉の残り・T0CutResG・T0HardRes・T0TPLoRes・T0AbsUWRes・T0AbsDNRes。
 - groupA の訂正: VSmallF・FrameClosed は Lean の形では偽でない（ext1 の失敗は古い探針の定義）。
 - 一般の「深い (ii)」（D の列 c の祖先関係にある v の変わる列 e で v(e) > v(c) ⇒ v′(e) > v(c)）は偽（C′ 2・ext1 9・T2Ext 2 件、例 ext1 の (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(2,1,1)(2,0,0)(3,1,1)(4,1,1)(5,0,0)、c = 4、e = 8、v(c) = ω³、v(e) = ω^ω、v′(e) = ω³）。CutResG に要るのは右端の鎖に限った形。
+
+### t = 2 の種と q の o の標準形を閉じた形の残りに（2026-10-12、t2）
+
+- V3T2SeedOT: 種 r と q（q ≠ r）の o_{M[n]} は閉じた形なので、その標準形を残り `T2SeedQROT`・`T2SeedQNOT`・`T2SeedSVOT`・`T2SeedCOT`（M と M.take x だけ）にした（`seed_ot_qr`・`seed_ot_qn`・`seed_ot_sv`・`seed_ot_C`）。
+  - qr: ψ_V(seqZ k)。qn: ψ_V(B + Ω_{t_k}) と ψ_{s′}(B + Ω_{t_k})。sv: ψ_V(σ^k X₁)。C: ψ_V(σ^k X₁) と ψ_{s′}(step_{s′}(0, s′, σ^{k+1} X₁))。
+  - q の値は前の段の r の引数から（qn_frame・C_frame と qn_inner）。
+  - 実測（7 集合、k ≤ 5）: 例外 0。
+- **T2BelowResL は M[n] 側の T2VSN・T2Hard だけになった**。`t2BelowXRes_of_L : T2BelowXResL → T2SeedQRAll → T2SeedQNAll → T2SeedSVAll → T2SeedCAll → T2SeedOTAll → T2BelowXRes`。種と q の欄（◁・標準形・数える子の減少）はすべて M と M.take x だけの残りから出る。

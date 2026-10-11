@@ -1,14 +1,14 @@
 /-
 **3 行・t = 2: x より前の残り T2BelowXRes から、証明済みの種の ◁ を外す（`t2BelowXRes_of_L`）。**
 
-T2BelowResL は T2BelowRes の種と q の欄から ◁ と数える子の減少を外したもの。どちらも 4 つの場合ごとに M と M.take x だけの残りから出る。
+T2BelowResL は T2BelowRes から種と q の欄（◁・標準形・数える子の減少）を外し、M[n] 側の T2VSN・T2Hard だけにしたもの。種と q の欄は 4 つの場合ごとに M と M.take x だけの残りから出る。
 - q = r で x への上げがない: seedL_qr（V3T2SeedQRL）、M と M.take x だけの残り T2SeedQRRes から。
 - q ≠ r で q が r の最後の数える子: seedL_qn（V3T2SeedQNV）、残り T2SeedQNRes から。
 - sv（q = r で x − 1 が x へ上げる）: seedL_sv（V3T2SeedSV）、残り T2SeedSVRes から。
 - C（q ≠ r で q が r で数えられない）: seedL_C（V3T2SeedC）、残り T2SeedCRes から。
 4 つで t = 2 のすべての場合を尽くす（`t2_seed_cases`）。
 -/
-import Ytosk.V3T2SeedC
+import Ytosk.V3T2SeedOT
 
 namespace Ytosk
 
@@ -54,9 +54,7 @@ def T2BelowResL (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
   ∀ n, 2 ≤ n → (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L d0 d1 m) τ → Good3 (TRIO.gexp M r L d0 d1 m) τ) →
     ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true) →
-    T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
-    (∀ p, T2Seed M r L p → isOT (σ.o p) = true) ∧
-    (∀ q, par M 0 (r + L) = some q → q ≠ r → isOT (σ.o q) = true)
+    T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ
 
 /-- `T2BelowResL` for every standard `M` of type `t = 2`. -/
 def T2BelowXResL : Prop :=
@@ -103,11 +101,21 @@ theorem cl_r_split {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hq : par
   rw [hsplit, List.filter_append]
   simp [hcnt]
 
+/-- The standard-form residual of the closed forms, for every standard `M` of type `t = 2`, in the four cases. -/
+def T2SeedOTAll : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
+      (T2QRNoUpg M r L → ∀ Lc, CL M r = Lc ++ [r + L] → T2SeedQROT M ρ r L Lc) ∧
+      (∀ q Lc, par M 0 (r + L) = some q → q ≠ r → CL M r = Lc ++ [q] → T2SeedQNOT M ρ r L q Lc) ∧
+      (T2SVCase M r L → T2SeedSVOT M ρ r L) ∧
+      (∀ q, par M 0 (r + L) = some q → q ≠ r → (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCOT M ρ r L q)
+
 /-- **`T2BelowXRes` from `T2BelowXResL` and the seed residuals of the four cases.** -/
 theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQNAll) (hSV : T2SeedSVAll)
-    (hCC : T2SeedCAll) : T2BelowXRes := by
+    (hCC : T2SeedCAll) (hOTs : T2SeedOTAll) : T2BelowXRes := by
   intro M ρ rk hM hS I R hz h2 r L hlen hr n hn hGlow σ hCN hOT
-  obtain ⟨h1, h2', h3, h4⟩ := hL M ρ rk hM hS I R hz h2 r L hlen hr n hn hGlow σ hCN hOT
+  obtain ⟨h1, h2'⟩ := hL M ρ rk hM hS I R hz h2 r L hlen hr n hn hGlow σ hCN hOT
+  obtain ⟨hO1, hO2, hO3, hO4⟩ := hOTs M ρ rk hM hS I R hz h2 r L hlen hr
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   have hrx : r < r + L := par_lt M 2 _ _ hr
   have hlen2 : 2 ≤ M.length := by omega
@@ -182,10 +190,37 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
       refine ⟨hd1, fun q' hq' _ => ?_⟩
       rw [hq] at hq'; cases hq'
       rw [cvals_eq_mapC hCN]; exact hd2
-  refine ⟨h1, h2', fun p hp => ?_, fun q hq hqr => ⟨h4 q hq hqr, hD.2 q hq hqr⟩⟩
+  have hdecr : ((CL (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) r).map
+      σ.o).Pairwise (fun a b => b ≤ a) := by rw [← cvals_eq_mapC hCN]; exact hD.1
+  -- the standard form of the seed and of `q`
+  have hOTr : isOT (σ.o r) = true ∧ ∀ q, par M 0 (r + L) = some q → q ≠ r → isOT (σ.o q) = true := by
+    rcases t2_seed_cases hlen hr with hc | hc | hc | hc
+    · obtain ⟨hq, hXu⟩ := hc
+      obtain ⟨he2r, h1lt⟩ := par2_facts I.z2 (by omega) hr
+      have hxb : col M (r + L) ≠ bump M r := fun h => by
+        have := e1_of_col (show col M (r + L) = (entry M 0 r + 1, entry M 1 r, 1) from h); omega
+      obtain ⟨Lc, hCLM⟩ := cl_r_split hlen hq hXu hxb
+      refine ⟨seed_ot_qr hM hS I R hz h2 hlen hr hq hXu hCLM
+        (hQR M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hXu⟩ Lc hCLM) (hO1 ⟨hq, hXu⟩ Lc hCLM) n hn hGlow σ hCN, ?_⟩
+      intro q hq' hqr; rw [hq] at hq'; cases hq'; exact absurd rfl hqr
+    · obtain ⟨q, Lc, hq, hqr, hCLM⟩ := hc
+      obtain ⟨hqo, hro⟩ := seed_ot_qn hM hS I R hz h2 hlen hr hq hqr hCLM
+        (hQN M ρ rk hM hS I R hz h2 r L hlen hr q Lc hq hqr hCLM) (hO2 q Lc hq hqr hCLM) n hn hGlow σ hCN hdecr
+      refine ⟨hro, fun q' hq' _ => ?_⟩
+      rw [hq] at hq'; cases hq'; exact hqo
+    · obtain ⟨hq, hux⟩ := hc
+      refine ⟨seed_ot_sv hM hS I R hz h2 hlen hr hq hux (hSV M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hux⟩)
+        (hO3 ⟨hq, hux⟩) n hn hGlow σ hCN hdecr, ?_⟩
+      intro q hq' hqr; rw [hq] at hq'; cases hq'; exact absurd rfl hqr
+    · obtain ⟨q, hq, hqr, hncl⟩ := hc
+      obtain ⟨hqo, hro⟩ := seed_ot_C hM hS I R hz h2 hlen hr hq hqr
+        (hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl) (hO4 q hq hqr hncl) n hn hGlow σ hCN hdecr
+      refine ⟨hro, fun q' hq' _ => ?_⟩
+      rw [hq] at hq'; cases hq'; exact hqo
+  refine ⟨h1, h2', fun p hp => ?_, fun q hq hqr => ⟨hOTr.2 q hq hqr, hD.2 q hq hqr⟩⟩
   have hp' := hpr p hp
   subst p
-  have hot := h3 r hp
+  have hot := hOTr.1
   have hdec := hD.1
   refine ⟨?_, hot, hdec⟩
   rcases t2_seed_cases hlen hr with hc | hc | hc | hc
@@ -198,12 +233,12 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
       (hQR M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hXu⟩ Lc hCLM) n hn hGlow σ hCN
   · obtain ⟨q, Lc, hq, hqr, hCLM⟩ := hc
     exact seedL_qn hM hS I R hz h2 hlen hr hq hqr hCLM (hQN M ρ rk hM hS I R hz h2 r L hlen hr q Lc hq hqr hCLM)
-      n hn hGlow σ hCN (h4 q hq hqr) (by rw [← cvals_eq_mapC hCN]; exact hdec)
+      n hn hGlow σ hCN (hOTr.2 q hq hqr) (by rw [← cvals_eq_mapC hCN]; exact hdec)
   · obtain ⟨hq, hux⟩ := hc
     exact seedL_sv hM hS I R hz h2 hlen hr hq hux (hSV M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hux⟩)
       n hn hGlow σ hCN (by rw [← cvals_eq_mapC hCN]; exact hdec)
   · obtain ⟨q, hq, hqr, hncl⟩ := hc
     exact seedL_C hM hS I R hz h2 hlen hr hq hqr (hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl)
-      n hn hGlow σ hCN (h4 q hq hqr) (by rw [← cvals_eq_mapC hCN]; exact hdec)
+      n hn hGlow σ hCN (hOTr.2 q hq hqr) (by rw [← cvals_eq_mapC hCN]; exact hdec)
 
 end Ytosk
