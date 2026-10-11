@@ -338,7 +338,7 @@ theorem bumpFields_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool
         · by_cases hsc : T2VSeedCol M r L i
           · exact hSeed r L hlen hr (m + 1) hn2 σ hCN hGN i hsc
           · have hinfo := fun h1 h2 =>
-              (hBS (m + 1) hn2 (by rw [hm]; exact hG m hm0) σ hCN (fun j _ hj => ⟨hGN.ot_o j hj, hGN.ot_v j hj⟩) i hix).2.2.2.2.2 hsc h1 h2
+              (hBS (m + 1) hn2 (fun k hk1 _ τ hτ => hG k hk1 τ hτ) σ hCN (fun j _ hj => ⟨hGN.ot_o j hj, hGN.ot_v j hj⟩) i hix).2.2.2.2.2 hsc h1 h2
             apply bump_below (x := r + L) I.good hCN I.kd I.td (entry_gexp_pre hlen hm1 1 hix)
               (entry_gexp_pre hlen hm1 2 hix) (children_N2g hlen hL0 hA hq hd0e hn2 hix)
               (fun j _ hjx' => children_N2g hlen hL0 hA hq hd0e hn2 hjx')

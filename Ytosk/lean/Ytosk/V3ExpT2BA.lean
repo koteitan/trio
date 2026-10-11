@@ -22,7 +22,7 @@ def T2Seed (M : Mat) (r L p : Nat) : Prop :=
 
 /-- **The residual of the part before `x`** of `Good3 (M[n])`. -/
 def T2BelowRes (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
-  ∀ n, 2 ≤ n → (∀ τ, Cons (TRIO.gexp M r L d0 d1 (n - 1)) τ → Good3 (TRIO.gexp M r L d0 d1 (n - 1)) τ) →
+  ∀ n, 2 ≤ n → (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L d0 d1 m) τ → Good3 (TRIO.gexp M r L d0 d1 m) τ) →
     ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true) →
     T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
@@ -57,7 +57,7 @@ def BumpInfo (M N : Mat) (ρ σ : Valn) (i : Nat) : Prop :=
 
 /-- **Good3 before `x` and the frame shapes**, for every expansion. -/
 def T2BelowXS (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
-  ∀ n, 2 ≤ n → (∀ τ, Cons (TRIO.gexp M r L d0 d1 (n - 1)) τ → Good3 (TRIO.gexp M r L d0 d1 (n - 1)) τ) →
+  ∀ n, 2 ≤ n → (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L d0 d1 m) τ → Good3 (TRIO.gexp M r L d0 d1 m) τ) →
     ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (σ.o j) = true ∧ isOT (σ.v j) = true) →
     ∀ i, i < r + L → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
