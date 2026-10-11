@@ -361,6 +361,391 @@ theorem agree_N (he2r : entry M 2 r = 0) (h1x : entry M 1 r < entry M 1 (r + L))
     · omega
     · exact hD h
 
+/-- **The row-1 entry of the copy root** is that of `x`. -/
+theorem entry1_xN (hd1e : entry M 1 (r + L) = entry M 1 r + d1) :
+    entry (TRIO.gexp M r L d0 d1 n) 1 (r + L) = entry M 1 (r + L) := by
+  have h := TRIO.gexp_getD_mir (M := M) (j0 := r) (Lb := L) (d0 := d0) (d1 := d1) (n := n)
+    (k := 1) (q := 0) hlen (by omega) hL
+  rw [show r + (1 * L + 0) = r + L by omega, Nat.add_zero] at h
+  have h1 : entry (TRIO.gexp M r L d0 d1 n) 1 (r + L) =
+      entry M 1 r + (if TRIO.le1 M r r then 1 * d1 else 0) := by unfold entry; rw [h]; rfl
+  rw [h1, if_pos ⟨by omega, by omega, Relation.ReflTransGen.refl⟩, hd1e]; omega
+
+/-- The row-0 parent of the copy root is `q`. -/
+theorem par0_xN : par (TRIO.gexp M r L d0 d1 n) 0 (r + L) = some q := by
+  rcases par0_tail2g (d1 := d1) hlen hL hA hq hd0e hn (le_refl _)
+    (by have : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn; omega) with ⟨_, h⟩ | ⟨p, _, h1, h2⟩
+  · exact h
+  · omega
+
+/-- **`P_1` of the copy root** is that of `x` in `M`. -/
+theorem par1_xN (hd1e : entry M 1 (r + L) = entry M 1 r + d1) :
+    par (TRIO.gexp M r L d0 d1 n) 1 (r + L) = par M 1 (r + L) := by
+  set N := TRIO.gexp M r L d0 d1 n with hN
+  have hm1 : 1 ≤ n := by omega
+  have e1 : par N 1 (r + L) = climb (par N 0) (fun j => decide (entry N 1 j < entry N 1 (r + L)))
+      (r + L + 1) (par N 0 (r + L)) := rfl
+  have e2 : par M 1 (r + L) = climb (par M 0) (fun j => decide (entry M 1 j < entry M 1 (r + L)))
+      (r + L + 1) (par M 0 (r + L)) := rfl
+  rw [e1, e2, par0_xN hlen hL hA hq hd0e hn, hq, entry1_xN hlen hL hA hq hd0e hn hd1e]
+  apply climb_congr (r + L) (fun j hj => par_gexp_pre hlen hm1 0 hj)
+    (fun j hj => by rw [entry_gexp_pre hlen hm1 1 hj]) (par_lt N 0)
+  intro j h; cases h; exact par_lt M 0 _ _ hq
+
+/-- Ancestry up to `x` is the same in `N` and `M`. -/
+theorem anc0_N_iff {a b : Nat} (hb : b ≤ r + L) :
+    Anc0 (TRIO.gexp M r L d0 d1 n) a b ↔ Anc0 M a b := by
+  have hm1 : 1 ≤ n := by omega
+  apply anc0_congr_le (B := r + L) _ hb
+  intro j hj
+  rcases Nat.lt_or_ge j (r + L) with h | h
+  · exact par_gexp_pre hlen hm1 0 h
+  · rw [show j = r + L by omega, par0_xN hlen hL hA hq hd0e hn, hq]
+
+/-- **The upgrade target of the copy root** is `q` (and then `q ≠ r`): it is a child of `r = P_1(x′)` on
+the path to `x`, and a child of `r` other than `q` would make `q` the bump child of its parent (`RowJ`). -/
+theorem upg_xN (hd1e : entry M 1 (r + L) = entry M 1 r + d1) (hr1 : par M 1 (r + L) = some r)
+    (hxb : q ≠ r → col M (r + L) = bump M q) (hqb : ∀ i, par M 0 q = some i → col M q ≠ bump M i)
+    (hJ : RowJ M) (hR0 : R0P M) (hBE : BumpE2 M) {k : Nat}
+    (hk : upg (TRIO.gexp M r L d0 d1 n) (r + L) = some k) : k = q ∧ q ≠ r := by
+  set N := TRIO.gexp M r L d0 d1 n with hN
+  have hlN : N.length = r + n * L := TRIO.gexp_length hlen
+  have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn
+  have hm1 : 1 ≤ n := by omega
+  obtain ⟨m, hm, hkm, _, hcase⟩ := upg_facts hk
+  rw [par1_xN hlen hL hA hq hd0e hn hd1e, hr1] at hm
+  cases hm
+  have hkl : k < N.length := upg_lt (by omega) hk
+  rcases hcase with hk1 | ⟨hAk, hkx⟩
+  · rw [hk1] at hkm hkl
+    rw [hlN] at hkl
+    rcases par0_tail2g (d1 := d1) hlen hL hA hq hd0e hn (show r + L ≤ r + L + 1 by omega)
+      hkl with ⟨h, _⟩ | ⟨p, hp, hp1, _⟩
+    · omega
+    · rw [hkm] at hp; cases hp; omega
+  · have hkM : par M 0 k = some r := by rw [← par_gexp_pre hlen hm1 0 hkx]; exact hkm
+    have hAkM : Anc0 M k (r + L) := (anc0_N_iff hlen hL hA hq hd0e hn (le_refl _)).mp hAk
+    have hkq : Anc0 M k q := anc0_par hAkM (by omega) hq
+    have hrk : r < k := par_lt M 0 k r hkM
+    have hqr : q ≠ r := by intro h; have := hkq.le; omega
+    refine ⟨?_, hqr⟩
+    by_contra hkq'
+    obtain ⟨pq, hpq⟩ := par0_of_anc hkq hkq'
+    have hkpq : Anc0 M k pq := anc0_par hkq hkq' hpq
+    have hxb' := hxb hqr
+    have he1q : entry M 1 (r + L) = entry M 1 q :=
+      e1_of_col (show col M (r + L) = (entry M 0 q + 1, entry M 1 q, 1) from hxb')
+    have hxq : r + L ∈ children M q := mem_children_iff.mpr ⟨by omega, hq⟩
+    have he2q : entry M 2 q = 1 := hBE q (r + L) hxq hxb'
+    have hJq := hJ q pq (by omega) hpq
+    obtain ⟨_, _, _, hbet⟩ := par1_facts hr1
+    have hrpq : Anc0 M r pq := Anc0.trans (Anc0.step hkM (Anc0.refl r)) hkpq
+    have hpqx : Anc0 M pq (r + L) := Anc0.step hq (Anc0.step hpq (Anc0.refl pq))
+    have hpqlt := par_lt M 0 q pq hpq
+    have hqlt := par_lt M 0 _ q hq
+    have h1 := hbet pq hrpq hpqx (by have := hkpq.le; omega) (by omega)
+    have h0 := hR0 q pq hpq
+    apply hqb pq hpq
+    rw [col_eq_entries, h0, he2q, show entry M 1 q = entry M 1 pq by omega]
+    rfl
+
 end
+
+/-- **`P_1(x) = r`** (`t = 2`): a row-1 parent strictly after `r` would have row 2 equal to `1`, and its
+child towards `x` would have row 1 at most its own (`Z1C`), below `e1(x)`. -/
+theorem par1_x_r {M : Mat} {r x : Nat} (hxl : x < M.length) (hZ2 : Z2 M) (hZ1 : Z1C M)
+    (hr2 : par M 2 x = some r) : par M 1 x = some r := by
+  obtain ⟨_, _, hrx, he2lt, hle1, hmin⟩ := (par2_iff M hxl).mp hr2
+  obtain ⟨w, hw, hrw⟩ := le1_par1_down hle1 (by omega)
+  by_cases hwr : w = r
+  · rw [hw, hwr]
+  · exfalso
+    have hrw' : r < w := lt_of_le_of_ne (le1_ge hrw) (Ne.symm hwr)
+    have hwx : TRIO.le1 M w x := le1_par1_up ⟨hrw.2.1, hrw.2.1, Relation.ReflTransGen.refl⟩ hw hxl
+    have he2w : entry M 2 x ≤ entry M 2 w := hmin w ⟨hrw', hwx⟩
+    have he2lt' : entry M 2 r < entry M 2 x := he2lt
+    have he2x := hZ2 x
+    have he2w1 : entry M 2 w = 1 := by have := hZ2 w; omega
+    obtain ⟨hAwx, hwlt, he1w, hbet⟩ := par1_facts hw
+    obtain ⟨c, hcw, hcx⟩ := anc0_child hAwx (by omega)
+    have hcM : c ∈ children M w := mem_children_iff.mpr ⟨by have := hcx.le; omega, hcw⟩
+    have h1c := hZ1 w c he2w1 hcM
+    by_cases hcxe : c = x
+    · subst hcxe; omega
+    · have := hbet c (Anc0.step hcw (Anc0.refl w)) hcx (by have := par_lt M 0 c w hcw; omega) hcxe
+      omega
+
+section
+variable {M : Mat} {r L q d0 d1 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+  (hA : Anc0 M r (r + L)) (hq : par M 0 (r + L) = some q)
+  (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (hn : 2 ≤ n)
+  (hd1e : entry M 1 (r + L) = entry M 1 r + d1) (he2r : entry M 2 r = 0)
+  (h1x : entry M 1 r < entry M 1 (r + L)) (hqb : ∀ i, par M 0 q = some i → col M q ≠ bump M i)
+  (hr1 : par M 1 (r + L) = some r)
+include hlen hL hA hq hd0e hn hd1e he2r h1x hqb hr1
+
+/-- **`v(r)` of `N` is that of `M`** (`r` is sealed, every seed of `N` lies in its subtree). -/
+theorem vr_N (hUM : UAT M) (hUN : UAT (TRIO.gexp M r L d0 d1 n)) {ρ σ : Valn} {rkN : Bool → Nat → Nat}
+    (hCM : Cons M ρ) (hCN : Cons (TRIO.gexp M r L d0 d1 n) σ) (hRN : Rk (TRIO.gexp M r L d0 d1 n) rkN) :
+    σ.v r = ρ.v r := by
+  set N := TRIO.gexp M r L d0 d1 n with hN
+  have hlN : N.length = r + n * L := TRIO.gexp_length hlen
+  have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn
+  have hm1 : 1 ≤ n := by omega
+  have hanc := fun {a b : Nat} (hb : b ≤ r + L) => anc0_N_iff (d1 := d1) hlen hL hA hq hd0e hn (a := a) hb
+  have hr1M : Anc0 M r (r + 1) := anc_between hA (r + 1) (by omega) (by omega)
+  have hrq : Anc0 M r q := anc0_par hA (by omega) hq
+  have hqx := par_lt M 0 _ _ hq
+  have hnd : ¬ DepS N (SN M r (r + L) q) false r := by
+    apply not_depS_sealed' hRN (by omega) (by rw [entry_gexp_pre hlen hm1 2 (by omega)]; exact he2r)
+    · intro h
+      have := upg_lt_of_child ((hanc (by omega)).mpr hr1M) h; omega
+    · intro b i hs
+      rcases hs with ⟨hb, hi⟩ | ⟨hb, hi, hqr⟩ | ⟨hb, hqr, hpi⟩ | ⟨hb, hix, hu⟩
+      · by_cases hqr : q = r
+        · exact Or.inl ⟨hb, hi.trans hqr⟩
+        · subst hi; exact Or.inr ⟨(hanc (by omega)).mpr hrq, hqr⟩
+      · subst hi; exact Or.inr ⟨(hanc (by omega)).mpr hrq, hqr⟩
+      · have hri : Anc0 M r i := anc0_par hrq (Ne.symm hqr) hpi
+        have hiq := par_lt M 0 q i hpi
+        by_cases hir : i = r
+        · exact Or.inl ⟨hb, hir⟩
+        · exact Or.inr ⟨(hanc (by omega)).mpr hri, hir⟩
+      · have hir : i ≠ r := by
+          intro h; rw [h] at hu
+          have := upg_lt_of_child hr1M hu; omega
+        exact Or.inr ⟨(hanc (by omega)).mpr (anc_between hA i (by omega) (by omega)), hir⟩
+  exact (agree_N hlen hL hA hq hd0e hn he2r h1x hqb hUM hUN hCM hCN hRN r (by omega)).2 hnd
+
+/-- `P_1(q) = r` (`q ≠ r`, `x` the bump child of `q`). -/
+theorem par1_q (hqr : q ≠ r) (hxb : col M (r + L) = bump M q) : par M 1 q = some r := by
+  have hrq : Anc0 M r q := anc0_par hA (by omega) hq
+  have hqx := par_lt M 0 _ _ hq
+  have he1q : entry M 1 (r + L) = entry M 1 q :=
+    e1_of_col (show col M (r + L) = (entry M 0 q + 1, entry M 1 q, 1) from hxb)
+  obtain ⟨_, _, _, hbet⟩ := par1_facts hr1
+  rw [par1_some_iff]
+  refine ⟨mem_ancL_of_anc hrq (Ne.symm hqr), by omega, fun y hy hry => ?_⟩
+  have hyq : Anc0 M y q := anc0_of_mem_ancL hy
+  have hylt := mem_ancL_lt hy
+  have hry' : Anc0 M r y := by
+    rcases anc0_total hrq hyq with h | h
+    · exact h
+    · have := h.le; omega
+  have := hbet y hry' (Anc0.trans hyq (Anc0.step hq (Anc0.refl q))) (by omega) (by omega)
+  omega
+
+/-- **`v(q)` of `N` is standard and nonzero** (`q ≠ r`): the bump terms of `q` other than the lost `x`
+read values that the seeds of `N` do not reach (ranking). -/
+theorem vq_N (hqr : q ≠ r) (hxb : col M (r + L) = bump M q) (hBE : BumpE2 M) (hUM : UAT M)
+    (hUN : UAT (TRIO.gexp M r L d0 d1 n)) {ρ σ : Valn} {rkN : Bool → Nat → Nat}
+    (hCM : Cons M ρ) (hGM : Good3 M ρ) (hCN : Cons (TRIO.gexp M r L d0 d1 n) σ)
+    (hRN : Rk (TRIO.gexp M r L d0 d1 n) rkN) :
+    isOT (σ.v q) = true ∧ σ.v q ≠ z := by
+  set N := TRIO.gexp M r L d0 d1 n with hN
+  have hlN : N.length = r + n * L := TRIO.gexp_length hlen
+  have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn
+  have hm1 : 1 ≤ n := by omega
+  have hqx := par_lt M 0 _ _ hq
+  have hqN : q < N.length := by omega
+  have hrq : Anc0 M r q := anc0_par hA (by omega) hq
+  have he1q : entry M 1 (r + L) = entry M 1 q :=
+    e1_of_col (show col M (r + L) = (entry M 0 q + 1, entry M 1 q, 1) from hxb)
+  have hxq : r + L ∈ children M q := mem_children_iff.mpr ⟨by omega, hq⟩
+  have he2q : entry M 2 q = 1 := hBE q (r + L) hxq hxb
+  have he1N : entry N 1 q ≠ 0 := by rw [entry_gexp_pre hlen hm1 1 hqx]; omega
+  have he2N : entry N 2 q ≠ 0 := by rw [entry_gexp_pre hlen hm1 2 hqx]; omega
+  have hch : ∀ j, j < r + L → children N j = children M j := fun j hj =>
+    children_N2g hlen hL hA hq hd0e hn hj
+  obtain ⟨hx2', _⟩ := entry_xprime_g (d1 := d1) hlen hL hA hq hd0e hn
+  have hxnb : ∀ i, col N (r + L) ≠ bump N i := fun i h => by
+    have := (bump_eq h).2.2
+    have h2' : (col N (r + L)).2.2 = entry N 2 (r + L) := rfl
+    rw [h2', hx2', he2r] at this; omega
+  have hvr := vr_N hlen hL hA hq hd0e hn hd1e he2r h1x hqb hr1 hUM hUN hCM hCN hRN
+  have hag := agree_N hlen hL hA hq hd0e hn he2r h1x hqb hUM hUN hCM hCN hRN
+  -- `q` is counted at its parent in `N` (its last child `x′` is not a bump child)
+  have hlastq : (children N q).getLast? = some (r + L) := by
+    rw [hch q hqx, split_last_max _ _ (children_sorted M q) hxq
+      (fun d hd => by have := (mem_children hd).2; omega)]
+    simp
+  have htopq : topped N q = false := by
+    unfold topped; rw [hlastq]; simp only [decide_eq_false_iff_not]; exact hxnb q
+  -- the values read by the bump terms of `q` in `N`
+  have hok : ∀ j ∈ children N q, col N j = bump N q → ∀ k ∈ children N j, isOT (σ.o k) = true := by
+    intro j hj hjb k hk
+    have hjM : j ∈ children M q := by rw [← hch q hqx]; exact hj
+    have hjx : j < r + L := by
+      have := (mem_children hjM).2
+      rcases Nat.lt_or_ge j (r + L) with h | h
+      · exact h
+      · exfalso; rw [show j = r + L by omega] at hjb; exact hxnb q hjb
+    have hkM : k ∈ children M j := by rw [← hch j hjx]; exact hk
+    have hkx : k < r + L := by
+      have := (mem_children hkM).2
+      rcases Nat.lt_or_ge k (r + L) with h | h
+      · exact h
+      · exfalso
+        have hkx' : k = r + L := by omega
+        have h' := (mem_children_iff.mp hkM).2; rw [hkx', hq] at h'
+        have := (mem_children hjM).1; cases h'; omega
+    have hnd : ¬ DepS N (SN M r (r + L) q) true k := by
+      intro hD
+      obtain ⟨b', i', hs, hle⟩ := depS_rk_ex hRN hD (by omega)
+      have hrk : rkN true k < rkN false q := ((hRN q hqN).2.2 he1N).2.2 he2N j hj hjb k hk
+      have hvo := (hRN q hqN).1
+      rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl, _⟩ | ⟨rfl, _, hpi⟩ | ⟨rfl, hix, hu⟩
+      · omega
+      · omega
+      · have hiq := par_lt M 0 q i' hpi
+        have hqch : q ∈ children N i' := mem_children_iff.mpr ⟨hqN, by
+          rw [par_gexp_pre hlen hm1 0 hqx]; exact hpi⟩
+        have hnb : col N q ≠ bump N i' := by
+          rw [col_gexp_pre hlen hm1 hqx]
+          unfold bump; rw [entry_gexp_pre hlen hm1 0 (by omega), entry_gexp_pre hlen hm1 1 (by omega)]
+          exact hqb i' hpi
+        have := (hRN i' (by omega)).2.1 q hqch hnb (by rw [htopq]; simp)
+        omega
+      · exfalso
+        obtain ⟨m', _, hm2, hcol, _⟩ := upg_spec hu
+        rw [hr1] at hm2; cases hm2
+        have h0 : entry M 0 (r + L) = entry M 0 r + 1 := by
+          have : entry M 0 (r + L) = (col M (r + L)).1 := rfl; rw [this, hcol]
+        have h0' : entry M 0 (r + L) = entry M 0 q + 1 := by
+          have : entry M 0 (r + L) = (col M (r + L)).1 := rfl; rw [this, hxb]; rfl
+        have := anc0_e0_lt hrq (Ne.symm hqr)
+        omega
+    rw [(hag k hkx).1 hnd]
+    exact hGM.ot_o k (by omega)
+  have hbt : ∀ t ∈ one :: (children N q).map (bumpTerm N σ q), isOT t = true := by
+    intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · rfl
+    · obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ht
+      unfold bumpTerm
+      split
+      · rename_i hjb
+        apply isOT_omega; apply isOT_sumN
+        intro u hu
+        obtain ⟨k, hk, rfl⟩ := List.mem_map.mp hu
+        exact hok j hj hjb k hk
+      · rfl
+  have hpq1 : par N 1 q = some r := by rw [par_gexp_pre hlen hm1 1 hqx]; exact par1_q hlen hL hA hq hd0e hn hd1e he2r h1x hqb hr1 hqr hxb
+  have hot : isOT (add (vOpt σ (par N 1 q)) (omega (sumN (one :: (children N q).map (bumpTerm N σ q))))) = true := by
+    rw [hpq1]
+    exact isOT_add (by show isOT (σ.v r) = true; rw [hvr]; exact hGM.ot_v r (by omega))
+      (isOT_omega (isOT_sumN _ hbt))
+  have hv := (hCN q hqN).2
+  unfold vRhs at hv
+  rw [if_neg he1N, if_neg he2N, sf_ot hot] at hv
+  exact ⟨by rw [hv]; exact hot, v_ne_z_of_e1 hCN hqN he1N⟩
+
+/-- **`v` of the copy root is standard and above `v_M(r)`**: `v_N(x′) = v(r) + 1` (`q = r`) or
+`v(r) + last(v_N(q))` (`q ≠ r`). -/
+theorem vx_N (hxb : q ≠ r → col M (r + L) = bump M q) (hBE : BumpE2 M) (hJ : RowJ M) (hR0 : R0P M)
+    (hUM : UAT M) (hUN : UAT (TRIO.gexp M r L d0 d1 n)) {ρ σ : Valn} {rkN : Bool → Nat → Nat}
+    (hCM : Cons M ρ) (hGM : Good3 M ρ) (hCN : Cons (TRIO.gexp M r L d0 d1 n) σ)
+    (hRN : Rk (TRIO.gexp M r L d0 d1 n) rkN) :
+    isOT (σ.v (r + L)) = true ∧ ρ.v r < σ.v (r + L) := by
+  set N := TRIO.gexp M r L d0 d1 n with hN
+  have hlN : N.length = r + n * L := TRIO.gexp_length hlen
+  have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn
+  have hxN : r + L < N.length := by omega
+  obtain ⟨hx2', _⟩ := entry_xprime_g (d1 := d1) hlen hL hA hq hd0e hn
+  have he1N : entry N 1 (r + L) ≠ 0 := by
+    rw [entry1_xN hlen hL hA hq hd0e hn hd1e]; omega
+  have he2N : entry N 2 (r + L) = 0 := by rw [hx2', he2r]
+  have hvr := vr_N hlen hL hA hq hd0e hn hd1e he2r h1x hqb hr1 hUM hUN hCM hCN hRN
+  have hVot : isOT (σ.v r) = true := by rw [hvr]; exact hGM.ot_v r (by omega)
+  have hv := (hCN (r + L) hxN).2
+  unfold vRhs at hv
+  rw [if_neg he1N, if_pos he2N, par1_xN hlen hL hA hq hd0e hn hd1e, hr1] at hv
+  cases hu : upg N (r + L) with
+  | none =>
+    rw [hu] at hv
+    have hot : isOT (add (σ.v r) one) = true := isOT_add hVot rfl
+    change σ.v (r + L) = sf (add (σ.v r) one) at hv
+    rw [sf_ot hot] at hv
+    refine ⟨by rw [hv]; exact hot, ?_⟩
+    rw [hv, ← hvr]; exact lt_add_principal z z _
+  | some k =>
+    obtain ⟨rfl, hqr⟩ := upg_xN hlen hL hA hq hd0e hn hd1e hr1 hxb hqb hJ hR0 hBE hu
+    obtain ⟨hqot, hqz⟩ := vq_N hlen hL hA hq hd0e hn hd1e he2r h1x hqb hr1 hqr (hxb hqr) hBE hUM hUN
+      hCM hGM hCN hRN
+    rw [hu] at hv
+    change σ.v (r + L) = sf (add (σ.v r) (last (σ.v k))) at hv
+    have hot : isOT (add (σ.v r) (last (σ.v k))) = true := isOT_add hVot (isOT_last hqot)
+    rw [sf_ot hot] at hv
+    obtain ⟨st, u, hl⟩ := last_psi_form hqz
+    refine ⟨by rw [hv]; exact hot, ?_⟩
+    rw [hv, hl, ← hvr]; exact lt_add_principal st u _
+
+end
+
+/-- **`v(r)` of `M[1] = M.take x` is at most that of `M`** (equal unless `r = x − 1` loses its upgrade). -/
+theorem vr_take_le {M : Mat} {r L d0 d1 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hA : Anc0 M r (r + L)) (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (he2r : entry M 2 r = 0)
+    (hUM : UAT M) (hUG : UAT (TRIO.gexp M r L d0 d1 1)) {ρ τ : Valn} {rkM rkG : Bool → Nat → Nat}
+    (hCM : Cons M ρ) (hGM : Good3 M ρ) (hRM : Rk M rkM) (hCG : Cons (TRIO.gexp M r L d0 d1 1) τ)
+    (hRG : Rk (TRIO.gexp M r L d0 d1 1) rkG) : τ.v r ≤ ρ.v r := by
+  set G := TRIO.gexp M r L d0 d1 1 with hG
+  have hlG : G.length = r + 1 * L := TRIO.gexp_length hlen
+  have hag := agree_gexp hlen hL hA hd0e (le_refl 1) he2r hUM hUG hCM hCG hRG
+  have hrM : r < M.length := by omega
+  have hr1M : Anc0 M r (r + 1) := anc_between hA (r + 1) (by omega) (by omega)
+  have hnd : ∀ m, entry M 1 r ≠ 0 → (par M 1 r = some m ∨ (entry M 2 r = 0 ∧ upg M r = some m)) →
+      ¬ DepS M (SR r) false m := by
+    intro m h1 hm hd
+    rcases hm with hm | ⟨h2, hm⟩
+    · exact not_depS_v_self hRM hrM (DepS.vpar h1 hm hd)
+    · exact not_depS_v_self hRM hrM (DepS.vupg h1 h2 hm hd)
+  rw [(hCG r (by omega)).2, (hCM r hrM).2]
+  unfold vRhs
+  rw [entry_gexp_pre hlen (le_refl 1) 1 (by omega), entry_gexp_pre hlen (le_refl 1) 2 (by omega),
+    par_gexp_pre hlen (le_refl 1) 1 (by omega)]
+  by_cases h1 : entry M 1 r = 0
+  · rw [if_pos h1, if_pos h1]
+  rw [if_neg h1, if_neg h1, if_pos he2r, if_pos he2r]
+  have hV : vOpt τ (par M 1 r) = vOpt ρ (par M 1 r) := by
+    cases hm : par M 1 r with
+    | none => rfl
+    | some m =>
+      show τ.v m = ρ.v m
+      exact (hag m (par_lt M 1 r m hm)).2 (hnd m h1 (Or.inl hm))
+  have hVot : isOT (vOpt ρ (par M 1 r)) = true := by
+    cases hm : par M 1 r with
+    | none => rfl
+    | some m => exact hGM.ot_v m (by have := par_lt M 1 r m hm; omega)
+  rw [hV]
+  have hincM : ∀ k, upg M r = some k → τ.v k = ρ.v k ∧ isOT (last (ρ.v k)) = true ∧
+      one ≤ last (ρ.v k) := by
+    intro k hk
+    have hkr := upg_lt_of_child hr1M hk
+    refine ⟨(hag k hkr).2 (hnd k h1 (Or.inr ⟨he2r, hk⟩)), isOT_last (hGM.ot_v k (by omega)), ?_⟩
+    obtain ⟨_, _, _, he, _⟩ := upg_facts hk
+    exact one_le_of_ne_z (last_ne_z_bd (v_ne_z_of_e1 hCM (by omega) (by rw [he]; exact h1)))
+  by_cases hr1x : r + 1 < r + L
+  · have hu : upg G r = upg M r := by
+      rw [← upg_take G hr1x, hG, gexp_take_x hlen (le_refl 1), upg_take M hr1x]
+    rw [hu]
+    cases hk : upg M r with
+    | none => exact le_refl _
+    | some k =>
+      simp only
+      rw [(hincM k hk).1]
+  · have hu : upg G r = none := by
+      rw [hG, gexp_one_gen hlen]
+      have := upg_take_last M (k := r + L) (by omega) (by omega)
+      rwa [show r + L - 1 = r by omega] at this
+    rw [hu]
+    simp only
+    have hot1 : isOT (add (vOpt ρ (par M 1 r)) one) = true := isOT_add hVot rfl
+    cases hk : upg M r with
+    | none => exact le_refl _
+    | some k =>
+      simp only
+      obtain ⟨_, hlot, hle⟩ := hincM k hk
+      rw [sf_ot hot1, sf_ot (isOT_add hVot hlot)]
+      exact add_le_add_left _ hle
 
 end Ytosk
