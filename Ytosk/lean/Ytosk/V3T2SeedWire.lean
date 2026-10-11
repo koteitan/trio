@@ -1,7 +1,7 @@
 /-
 **3 行・t = 2: x より前の残り T2BelowXRes から、証明済みの種の ◁ を外す（`t2BelowXRes_of_L`）。**
 
-T2BelowResL は T2BelowRes から種と q の欄（◁・標準形・数える子の減少）を外し、M[n] 側の T2VSN・T2Hard・AbsWN（弱い吸収）だけにしたもの。種と q の欄は 4 つの場合ごとに M と M.take x だけの残りから出る。
+T2BelowResL は T2BelowRes から種と q の欄（◁・標準形・数える子の減少）を外し、M[n] 側の T2VSN・T2HardA（T2Hard の代わり、V3DepRWU）・AbsWN（弱い吸収）だけにしたもの。種と q の欄は 4 つの場合ごとに M と M.take x だけの残りから出る。
 - q = r で x への上げがない: seedL_qr（V3T2SeedQRL）、M と M.take x だけの残り T2SeedQRRes から。
 - q ≠ r で q が r の最後の数える子: seedL_qn（V3T2SeedQNV）、残り T2SeedQNRes から。
 - sv（q = r で x − 1 が x へ上げる）: seedL_sv（V3T2SeedSV）、残り T2SeedSVRes から。
@@ -54,7 +54,8 @@ def T2BelowResL (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
   ∀ n, 2 ≤ n → (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L d0 d1 m) τ → Good3 (TRIO.gexp M r L d0 d1 m) τ) →
     ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true) →
-    T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
+    T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
+    (∀ p, T2Seed M r L p → T2HardA M (TRIO.gexp M r L d0 d1 n) (r + L) p ρ σ) ∧
     AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ
 
 /-- `T2BelowResL` for every standard `M` of type `t = 2`. -/

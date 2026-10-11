@@ -25,7 +25,8 @@ def T2BelowRes (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
   ∀ n, 2 ≤ n → (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L d0 d1 m) τ → Good3 (TRIO.gexp M r L d0 d1 m) τ) →
     ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true) →
-    T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
+    T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
+    (∀ p, T2Seed M r L p → T2HardA M (TRIO.gexp M r L d0 d1 n) (r + L) p ρ σ) ∧
     (∀ p, T2Seed M r L p → Lhd z (σ.o p) (ρ.o p) ∧ isOT (σ.o p) = true ∧
       (cvals (TRIO.gexp M r L d0 d1 n) σ p).Pairwise (fun a b => b ≤ a)) ∧
     (∀ q, par M 0 (r + L) = some q → q ≠ r → isOT (σ.o q) = true ∧
@@ -210,7 +211,7 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
           (hbN c hc)]
         exact htM
       have hbx := t2_sv_below hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (rcl_sv hlen hq hr hux I.z2 I.z1 I.r0p I.uat I.be he2r) hIUt
-        Sp1 Sdv Sos Svsh I.cons I.good I.rank hCN hRN I.fc I.fo I.vs I.td I.kd hAbs hVSN hHard hOTout
+        Sp1 Sdv Sos Svsh I.cons I.good I.rank hCN hRN I.fc I.fo I.vs I.td I.kd hAbs hVSN (hHard r (Or.inl ⟨hq, rfl⟩)) hOTout
         ⟨hs1, hs2⟩ hs3
       intro i hi
       obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hbx i hi
@@ -247,7 +248,7 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
           obtain ⟨k0, _, hk0⟩ := List.any_eq_true.mp hiu
           have := upg_target_e2 (of_decide_eq_true hk0); omega
       have hbx := t2_qr_below hlen hL0 hq hd0e hn (hXu_of hux) hxbr hrb he2r hIU I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
-        I.be I.r01 I.e00 I.cons I.good I.rank hCN hRN I.fc I.fo I.vs I.td I.kd hAbsN hxcN hVSN hHard hOTout
+        I.be I.r01 I.e00 I.cons I.good I.rank hCN hRN I.fc I.fo I.vs I.td I.kd hAbsN hxcN hVSN (hHard r (Or.inl ⟨hq, rfl⟩)) hOTout
         ⟨hs1, hs2⟩ hs3
       intro i hi
       obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hbx i hi
@@ -301,7 +302,7 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
       rw [show r + (q - r) = q by omega]; exact hqdec
     have hbx := t2_qn_below hlen hL0 hA hq' (by omega) hd0e hn Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hpq'
       Tqb Te2pq Tclq Tclpq hIUt Tp1 TqL Tdv Tos Tvsh I.cons I.good I.rank hCN hRN
-      I.fc I.fo I.vs I.td I.kd hAbs hVSN hHard hOTout hvqot' ⟨hs1, hs2⟩ hs3 hqot' hqdec'
+      I.fc I.fo I.vs I.td I.kd hAbs hVSN (hHard pq (Or.inr ⟨q, hq, hqr, hpq⟩)) hOTout hvqot' ⟨hs1, hs2⟩ hs3 hqot' hqdec'
     intro i hi
     obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hbx i hi
     refine ⟨h1, h2, h3, fun hns => ?_, fun hnq => ?_, fun hnv he1 he2 => ?_⟩

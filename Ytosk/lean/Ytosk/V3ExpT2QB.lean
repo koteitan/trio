@@ -7,6 +7,7 @@ x より前の o・v の標準形と数える子の減少を出す。残りは N
 -/
 import Ytosk.V3T2M
 import Ytosk.V3ExpT2BX
+import Ytosk.V3DepRWU
 
 namespace Ytosk
 
@@ -35,7 +36,7 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (hAbs : AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
     (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L))
     (hVSN : T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
-    (hHard : T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
+    (hHA : T2HardA M (TRIO.gexp M r L d0 d1 n) (r + L) r ρ σ)
     (hOTout : ∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true)
     (hseed : Lhd z (σ.o r) (ρ.o r) ∧ isOT (σ.o r) = true)
     (hsdec : (cvals (TRIO.gexp M r L d0 d1 n) σ r).Pairwise (fun a b => b ≤ a)) :
@@ -199,17 +200,21 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
       · exfalso; rw [show j = r + L by omega] at hjb; exact hxnbN k hjb
     refine ⟨hjM, by rw [← col_gexp_pre (d0 := d0) (d1 := d1) (m := n) hlen (by omega) hjx, ← hbumpN k hkx]; exact hjb, ?_⟩
     rw [← children_N2 hlen hL hp hd0e (by omega) hn2 hjx]; exact hk'
-  have hdl := deps_lhd_otW (S := S) (W := fun _ _ => False) (bnd := r + L) hC hG hCN hRM (by omega)
+  have hdlR := deps_lhd_otW_RU (S := S) (W := fun _ _ => False) (bnd := r + L) hC hG hCN hRM (by omega)
     (by rw [hlN]; omega)
-    hF hFO hVS hTD hKD hVSN hHard hoff hOTout (fun _ h => h)
+    hF hFO hVS hTD hKD hVSN (hHA.1.toS S (r + L)) (hHA.vnr S) (hHA.sh S) hoff hOTout (fun _ h => h)
     (fun _ _ _ _ h => h.elim) (fun _ _ _ _ _ _ _ _ h => h.elim) (fun _ _ h => h.elim)
     (by
       rintro b i ⟨hb, hi'⟩ _ _ _
       subst hb
       rw [hi']
       exact hseed)
+    (hHA.seed S (fun i h => h.2))
     (fun c hc _ _ hv => hDvNil c hc hv) (fun c hc _ hv => hCLnil c hc (hDvNil c hc hv))
     (fun c hc _ h => hCLnil c hc h) (fun i hi hns _ hD hv => hOc i hi hns hD hv) hVc hupgK hAbs
+  have hdl : ∀ b i, DepS M S b i → i < r + L → ¬ False →
+      Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true :=
+    fun b i hD hi hW => (hdlR b i hD hi hW).1
   have hgb := good_below_of (W := fun _ _ => False) hC hG hCN (by omega) (by rw [hlN]; omega) hoff
     (fun b i hd hi hw => hdl b i hd hi hw) (fun _ h => h) (fun _ _ _ _ h => h.elim) (fun _ _ h => h.elim)
     (by
