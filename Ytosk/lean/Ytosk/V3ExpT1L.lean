@@ -382,6 +382,49 @@ def TPLoSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ¬ (isSucc (Z c) = false ∧ psi (holeLev y0) z z ≤ fsD (Z c) (etaOm (holeLev (Z c)))) →
   SeedCond s0 (Z c) (etaOm (holeLev y0)) (etaOm (holeLev (Z c)))
 
+
+/-- `AbsDSeedLow` without the seeds `Ω_{ν+1}` (`ν ≠ 0`), which `NoGapP` handles. -/
+def AbsDSeedLow2 (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+  Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+  ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 → holeLev (bumpW M ρ i) ≠ z →
+  (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z i = seed) →
+  (∀ ν, ν ≠ z → Z i ≠ psi (succ ν) z z) →
+  ¬ (isSucc (Z i) = false ∧ psi (holeLev (bumpW M ρ i)) z z ≤ fsD (Z i) (etaOm (holeLev (Z i)))) →
+  (isSucc (Z i) = false ∧
+    SeedCond (vOpt ρ (par M 1 i)) (Z i) (etaOm (holeLev (bumpW M ρ i))) (etaOm (holeLev (Z i)))) ∨
+  (OHole (fsD (bumpW M ρ i) (Z i)) → ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (bumpW M ρ i) (Z i) →
+    q < fsD (fsD (bumpW M ρ i) (Z i)) (etaOm (holeLev (fsD (bumpW M ρ i) (Z i)))))
+
+theorem holeLev_Om_succ (ν : T) : holeLev (psi (succ ν) z z) = ν := by
+  simp [holeLev, isSucc_succ, init_succ]
+
+/-- **The AbsD seed below `Ω_μ`**: a seed `Ω_{ν+1}` gives `fsD(Ω_{ν+1}, θ) = θ = ψ_ν(Ω_{ν+1})`, and the seed
+condition is `NoGap` of `v(P_1 i)` at `ν`. -/
+theorem absDSeedLow_of_noGap {M : Mat} {r L d0 : Nat} {ρ : Valn} (hlen : r + L + 1 = M.length) (hNG : NoGapP M ρ)
+    (hR : AbsDSeedLow2 M r L d0 ρ) : AbsDSeedLow M r L d0 ρ := by
+  intro n hn ρP Z hH hCN i hi hv h2 hμ hsd hlow
+  by_cases hΩ : ∃ ν, ν ≠ z ∧ Z i = psi (succ ν) z z
+  · obtain ⟨ν, hν, hZ⟩ := hΩ
+    left
+    refine ⟨by rw [hZ]; exact isSucc_psi_z (Or.inl (succ_ne_z ν)), ?_⟩
+    intro u hu h1 _
+    rw [hZ, holeLev_Om_succ, fsD_leaf (isSucc_succ ν) (succ_ne_z ν)]
+    rw [hZ] at h1
+    cases hp : par M 1 i with
+    | none =>
+      rw [hp] at hu
+      obtain ⟨w, hw, hu'⟩ := hu
+      have hwz : w = z := by cases hw; rfl
+      subst hwz
+      rcases hu' with rfl | ⟨a, b, c, h, _⟩
+      · exact T.z_lt_psi _ _ _
+      · cases h
+    | some p =>
+      rw [hp] at hu
+      exact hNG i p (by omega) hp ν hν u hu h1
+  · exact hR n hn ρP Z hH hCN i hi hv h2 hμ hsd (fun ν hν h => hΩ ⟨ν, hν, h⟩) hlow
+
 theorem absDResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : AbsDResL_lf M r L d0 ρ)
     (hS : AbsDSeedLow M r L d0 ρ) : AbsDResL_seed M r L d0 ρ := by
   intro n hn ρP Z hH hCN i hi hv h2 hμ hsd
@@ -1369,7 +1412,7 @@ theorem hExp_t1X
       par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
       (DegRes TPLoAt M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ TPLoLFRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
         TPLoSeedLow M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ TPLoResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
-      (AbsDSeedLow M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsDResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
+      (AbsDSeedLow2 M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsDResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
       (AbsUWSeedLow M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsUWResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
       AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ VSFRes2 M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hNGM : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ)
@@ -1415,7 +1458,8 @@ theorem hExp_t1X
       (tploRes_of_L ⟨hRN.1.1, tploResL_lf_of_vk I hlen hr hVK hRN.1.2.1,
         tploResL_seed_of (tploResL_lf_of_vk I hlen hr hVK hRN.1.2.1) hRN.1.2.2.1, hRN.1.2.2.2⟩)
       (absDRes_of_L I hlen hr hx2 ⟨absDResL_lf_of_vk I hlen hr hx2 hVK,
-        absDResL_seed_of (absDResL_lf_of_vk I hlen hr hx2 hVK) hRN.2.1.1, hRN.2.1.2⟩)
+        absDResL_seed_of (absDResL_lf_of_vk I hlen hr hx2 hVK)
+          (absDSeedLow_of_noGap hlen (hNGM M ρ rk hM hS I R) hRN.2.1.1), hRN.2.1.2⟩)
       (absUWRes_of_L hx2 ⟨absUWResL_lf_of_vk I hlen hr hx2 hVK,
         absUWResL_seed_of (absUWResL_lf_of_vk I hlen hr hx2 hVK) hRN.2.2.1.1, hRN.2.2.1.2⟩)
       hRN.2.2.2.1 hRN.2.2.2.2 (hNGM M ρ rk hM hS I R) hVK
