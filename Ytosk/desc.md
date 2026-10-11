@@ -2434,3 +2434,26 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - T2SeedSVFix: σ X₁ = X₁ か X₁ ∈ cutsNS (V + 1) (σ X₁)、かつ X₁ の加数は Ω_{V+2} 以上。実測（svspot.py）: 5 集合で X₁ はいつも動き、いつも SpotN（fix_of_spotN でこの形）、加数の条件も例外 0（sv の場合 10816 件）。
   - T2SeedSVFix は構造の条件だけからは出ない: 長さ 8 以下の構造の全行列で 2 件 SpotN でない（例 (0,0,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(5,1,0)(1,1,1)、非標準形。目印 Ω_{V+1} がのりしろの項の ω 冪の引数に入る）。この行列は FC3 を破る（接頭辞 (0,0,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1) で既に）。標準形では、変わるのりしろの段はいつも「のりしろの子 1 つ・その子 1 つ」。証明には FC3 か同種の値の性質を使う見込み。
 - V3PSeedO の allGe_app を allGeT_app_of に改名（V3ExpT1 の allGe_app と衝突して一緒に import できなかった）。
+
+### TP1C・TP1WC・TrigOmC を PH3c から導く・ext1 で偽の残り（2026-10-12、drop-fix、c099e785、緑）
+
+- V3TP1Cut（任意の行列と評価、公理は propext・Quot.sound）:
+  - tp1C_of_ph3c: Cons ∧ GoodOT ∧ PH3c ∧ TP1Leaf ⇒ TP1C。
+  - tp1WC_of_ph3c: … ∧ TP1WLeaf ⇒ TP1WC。trigOmC_of_ph3c: … ∧ TrigCut ⇒ TrigOmC。
+  - B = 0・eq・pre は t0-exp の prefix_fsD・ptrig_prefix。cut で lo ≠ 0 は B ≤ hi < hi + fsD(lo)。
+  - cut で lo = 0 は 3 つの帰納法（cutNS_lt・cutH_lt・scut_lt と η 一般の …G 版）。切り口の項より右か、その項の引数の中で
+    fsD が働けば、その項の添字は残るので B < fsD(y, η)。共終数が大きい項では fsD = fs（fsD_eq_fs）なので、穴の道の上で
+    fsD は同じ η で降りる（fsD_psi）。
+  - TP1（η = ψ_μ(1)、μ = holeLev y）は後続の葉 Ω_{μ+1} も純粋に閉じる（s ≤ μ なので Ω_s < η）。残り TP1Leaf は
+    「切り口の項が Ω_k、k は極限で穴が k の中」のときの s < fsD(k, η) だけ。
+  - TP1W（η = 1）は後続の葉も残り TP1WLeaf に入る（葉の組 CPair で述べる）。TrigOm は cut で y = Ω_{ν+1} の枠がないこと（TrigCut）。
+  - 実測（Lean の定義どおり）: TP1Leaf は C′ の 5 枠だけ、TP1WLeaf は C′ 49 組・ext1 139 組、TrigCut の枠は 0。5 集合と ext1 で例外 0。
+- hLast（V3RestTake）: TP1C・TP1WC・TrigOmC は M の PH3c（ph3c_drop1）と M.take x の TP1Res から。残りは TakeRest3 = TPLo・AbsUW・AbsDN。
+  trio_terminates_main_GR に hPH（t0 と同じ大域の仮定）と hTP（すべての標準形で TP1Res）を足した。
+- **ext1 で偽の大域の仮定**（allres2.py・bws.py・absS.py、ext1 108 万個）:
+  - AbsSR の t = 2 の欄 BumpAbsS: M = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(1,1,1)（標準形）、
+    i = 7、r = ω²、W = Ω_ω で ω² ◁ Ω_ω が偽。XParNB は成り立つ（x の親は根）。新しい項 W′ = Ω_1 に吸収されるので弱い形 BumpAbsW なら空。
+    ext1 で 22 件。t2 の abs_of_absC は弱い形に替える必要がある。
+  - BumpWeakSrc（Lean の前提 ¬LhdE 込み）: 1 件。M = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0)、
+    i = 11、k = x。groupA の AbsD・TPLo の反例と同じ行列（段 0 の隙間 ψ_0(Ω_{Ω_1}) 型）。
+  - ほかの欄（VSmallNew・VSmallNewR・ShadowC・TailNR・UpgAbsX・Seed・VSmallR・BumpAbsW）は ext1 で例外 0。
