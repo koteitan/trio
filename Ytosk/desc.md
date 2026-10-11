@@ -2653,6 +2653,8 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 書き換えの一致は G3 の切り口で（V3T0TrigG の `cutsNSG_split`・`trig_agreeG`）。`T0CutResGG` は T0CutResG の cutsNS を cutsNSG に替えたもの。実測（pcutG.py）: d3s 194・deep2 1602・deep3 1714 件で例外 0（残りの集合は実行中）。
 - 最上位 `hExp_t0_topU`: 残りは hLast・N の AbsD・AbsU・FrmLF・M の PH3cG・標準形 N の PH3c と 3 つの葉の残り・T0CutResGG・T0VSPRes（VSmallRP）・T0TPLoRes・T0AbsUWRes・T0AbsDNRes。T0HardRes と VSmallR は要らない。公理は標準の 3 つ。
 - hExp_t0_topH0 との違い: H0 は T0HardRes（N の側、証明の見込みなし）、U は VSmallRP（M だけ）と PH3cG(M)・T0CutResGG。
+
+### T2SeedQNFC の証明（2026-10-12、closure、V3QNFC、緑）
 - V3QNFC（緑）: 残り T2SeedQNFC を証明した（`Ytosk.G.t2SeedQNFC_holds`）。T2SeedPRes から QNFC の欄を外した。
   - 構造: q の x より前の bump 子 j の子 c は e2 c = 0・e1 c ≤ e1 r、e1 c ≠ 0 なら P_1(c) は r の真の祖先（BumpLeaf: j は q の最後の子でないので e1 c < e1 q、R1S と e1 r < e1 x = e1 q で e1 q = e1 r + 1、RowJ）。V3Tame の t_above0 を「x は r の子孫」に一般化した t_above0A で v(c) ≤ V（`qn_kid_v`）。標準形でない (0,0,0)(1,1,1)(2,1,1)(3,1,1)(2,1,1) では BumpLeaf が破れていて v(c) > V。
   - よって ω^W の添字は V 以下（`qn_omega_lev`）で σ_{V,s′} は ω^W を動かさない。
