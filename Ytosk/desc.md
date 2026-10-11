@@ -2643,3 +2643,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - `T2SeedPRes`: 場合ごとの残りをまとめた構造（t2 の QRRes・SVRes・QNRes・CRes と closure の SVFix・QNFC・CFix）。
 - `seed_frames_PF`: PH3cG・FC3 の種の枠。M.take x の評価は rk_take と cons_of_rk で作る。sv の「r の子の値が降順」は Good3.dec から。
 - `ph3c_expand_t2S`・`fc3_expand_t2S`: t2 の種の枠 T2SeedFrames QFO M と T2SeedPRes から、t = 2 の M[n]（n ≥ 1）の PH3cG・FC3。
+
+### t = 0 の難しい枠を段の集合で制限した RelR から出す（2026-10-12、t0-exp、V3RelRU・V3T0DepU・V3T0TrigG・V3T0TopU、緑）
+- 見たこと: Buchholz の補題 3.4（closed_of_relR）が使う段は u = q だけ。VSmallR が偽になるのは u < v(i) の段だけ（M13 の枠 (4,5): v(4) = 1、破れは u = 0）。
+- `RelRU U q b A`（V3RelRU）: RelR の段 u を U u のものに限ったもの。V3RelR の RelR を含む補題 23 個を U つきで写した（closed_of_relRU は U q を仮定、relR_frameU の子の主張には古い子の書き換えを前提に足した）。
+- `t0_dep_otU`（V3T0DepU）: 主張を `∀ U, (∀ u, U u → PathLv i u) → RClaimU U i` にして運ぶ。子への依頼は U を変えないので、枠 k で要る段は v(k) と `PathLv k`（D の道の上の祖先 j で、j から k までの枠がすべて M で書き換えるときの v(j)）だけ。難しい枠では U = {v(i)} で hard_of_relRU から HardArgN を出す。
+- M の不変条件 `VSmallRP`: D の道の上の枠 (k, c)（k, c < r、c は k の最後の数える子、古い子が書き換え、hi(y) ≠ 0）で、段 u = v(k) と PathLv k u の段だけの VSmallR。
+- 実測（pvsp.py、M だけ、例外 0）: d3s 2974・deep2 25685・deep3 24650・C′ 86490・T0Ext 282542・ext1 333811・T2Ext 272162 枠。同じ枠で全段の VSmallR は T2Ext で 25 件偽（M13 の族）。
+- 書き換えの一致は G3 の切り口で（V3T0TrigG の `cutsNSG_split`・`trig_agreeG`）。`T0CutResGG` は T0CutResG の cutsNS を cutsNSG に替えたもの。実測（pcutG.py）: d3s 194・deep2 1602・deep3 1714 件で例外 0（残りの集合は実行中）。
+- 最上位 `hExp_t0_topU`: 残りは hLast・N の AbsD・AbsU・FrmLF・M の PH3cG・標準形 N の PH3c と 3 つの葉の残り・T0CutResGG・T0VSPRes（VSmallRP）・T0TPLoRes・T0AbsUWRes・T0AbsDNRes。T0HardRes と VSmallR は要らない。公理は標準の 3 つ。
+- hExp_t0_topH0 との違い: H0 は T0HardRes（N の側、証明の見込みなし）、U は VSmallRP（M だけ）と PH3cG(M)・T0CutResGG。
