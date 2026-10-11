@@ -10,6 +10,7 @@ T0CutResGG の場面では切り口 κ はいつも Ω_{v(d)}（d は i の前�
 - κ < T′（`thr_cut`）: B = P + κ < y から κ < t、κ = Ω_w で ThrA。
 -/
 import Ytosk.V3T0RE
+import Ytosk.TwoRowT
 
 namespace Ytosk
 
@@ -106,7 +107,8 @@ theorem thr_step {W : T → Prop} {a B s y y' : T} (hc : isOT (psi s y z) = true
     (hBc : ∀ q ∈ summands B, psi s y z ≤ q) (hyy : y' < y) (hRE : REr y y')
     (hagree : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) →
       lt B y' = true ∧ lt (psi a z z) (psi s y' z) = true)
-    (hT : ThrA W y y') :
+    (hT : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → (split y (psi (succ s) z z)).2 = z →
+      ThrA W y y') :
     ThrA W (step a B s y z) (step a B s y' z) := by
   have hlt : psi s y' z < psi s y z := psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, hyy⟩)
   have hBc' : ∀ q ∈ summands B, psi s y' z ≤ q := fun q hq => le_trans (le_of_lt hlt) (hBc q hq)
@@ -134,7 +136,7 @@ theorem thr_step {W : T → Prop} {a B s y y' : T} (hc : isOT (psi s y z) = true
       · rw [hHy]; exact hy
       · rw [H_eq hc', hsp, app_assoc]
       · intro w hw h
-        have h1 := hT P a' x T' hy hy' w hw h
+        have h1 := hT ht hlo P a' x T' hy hy' w hw h
         have e2 := split_app θ T'
         by_cases h3 : (split T' θ).2 = z
         · rw [if_pos h3, app_z_right]
@@ -197,6 +199,25 @@ theorem thr_step {W : T → Prop} {a B s y y' : T} (hc : isOT (psi s y z) = true
     · unfold step; rw [if_neg ht]; exact add_eq_app_of_ge ⟨_, _, rfl⟩ B hBc
     · unfold step; rw [if_neg hnt']; exact add_eq_app_of_ge ⟨_, _, rfl⟩ B hBc'
     · intro w _ h; exact om_lt_same hyz hy'z h
+
+/-- **The thresholds of a column** `c` (counted child of `k`): `v` of the counted children of `k` before `c`, and
+the thresholds of `k` when the frame `(k, c)` rewrites with no low part (the last summand passes up). -/
+inductive ThrSet (M : Mat) (ρ : Valn) : Nat → T → Prop
+  | sib {k c d : Nat} {Lc R : List Nat} : CL M k = Lc ++ c :: R → d ∈ Lc → ThrSet M ρ c (ρ.v d)
+  | up {k c : Nat} {Lc R : List Nat} {s y w : T} : CL M k = Lc ++ c :: R → ρ.o c = psi s y z →
+      lt (spArg (ρ.v k) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v k) z z) (psi s y z) = true →
+      (split y (psi (succ s) z z)).2 = z → ThrSet M ρ k w → ThrSet M ρ c w
+
+/-- **The thresholds are `v` of earlier columns.** -/
+theorem ThrSet.earlier {M : Mat} {ρ : Valn} : ∀ {c : Nat} {w : T}, ThrSet M ρ c w → ∃ j, j < c ∧ w = ρ.v j
+  | _, _, @ThrSet.sib _ _ k c d Lc R h hd => by
+    have hs : (CL M k).Pairwise (· < ·) := (children_sorted M k).filter _
+    rw [h] at hs
+    exact ⟨d, (List.pairwise_append.mp hs).2.2 d hd c List.mem_cons_self, rfl⟩
+  | _, _, @ThrSet.up _ _ k c Lc R _ _ _ h _ _ _ hk => by
+    obtain ⟨j, hj, rfl⟩ := ThrSet.earlier hk
+    have hkc : k < c := (mem_children (cl_mem_children (show c ∈ CL M k by rw [h]; simp))).1
+    exact ⟨j, by omega, rfl⟩
 
 /-- **The cut below the new tail**: `B = P + κ < y`, `κ = Ω_w` with `w ∈ W`, and `ThrA W y y′`. -/
 theorem thr_cut {W : T → Prop} {B y y' P a x T' κ w : T} (hT : ThrA W y y') (hB : lt B y = true)

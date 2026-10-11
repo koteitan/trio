@@ -2,7 +2,7 @@
 **3 行・t = 0: T0CutResGG を閾値の主張 ThrA で出す（`t0_dep_otT`、2026-10-12、t0-exp）。**
 
 t0_dep_otT の RE の欄に `ThrA (WB ρ i) X X′`（前の列の v の Ω が右端の変化で保たれる）を足して運ぶ。
-切り口の仮定 hCut は、M だけの `hKap`（切り口 κ は前の列 j < c の Ω_{v(j)}）と、
+切り口の仮定 hCut は、M だけの `hKap`（切り口 κ は c の前の兄弟 d の Ω_{v(d)}）と、
 v が変わる列の閾値 `hThrV`、g での閾値 `hThrG` に替わる。
 -/
 import Ytosk.V3T0DepR
@@ -59,9 +59,9 @@ theorem t0_dep_otT {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       ∀ P a x, y = app P (psi a x z) →
       ∀ κ ∈ cutsNSG s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ →
-        ∃ j, j < c ∧ κ = psi (ρ.v j) z z)
+        ∃ d, d ∈ Lc ∧ κ = psi (ρ.v d) z z)
     (hThrV : ∀ e, e < r → DepX M (r + L) false e → ThrV (WB ρ e) (ρ.v e) (σ.v e))
-    (hThrG : ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → X' ≠ X → ThrA (WB ρ g) X X')
+    (hThrG : ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → X' ≠ X → ThrA (ThrSet M ρ g) X X')
     (hVchgR : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
@@ -71,7 +71,7 @@ theorem t0_dep_otT {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
       (DepX M (r + L) b i → Lhd z (valB σ b i) (valB ρ b i)) ∧
       (b = true → DepX M (r + L) true i → (∀ U : T → Prop, (∀ u, U u → PathLv M (r + L) r ρ i u) → RClaimU U ρ σ i)) ∧
       (b = true → DepX M (r + L) true i → σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z →
-        σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X' ∧ ThrA (WB ρ i) X X') := by
+        σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X' ∧ ThrA (ThrSet M ρ i) X X') := by
   have hx : r + L + 1 = M.length := hlen
   have hlN := lenN0 hlen hn (M := M) (L := L)
   have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
@@ -100,7 +100,7 @@ theorem t0_dep_otT {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
       isOT (valB σ b i) = true ∧ (DepX M (r + L) b i → Lhd z (valB σ b i) (valB ρ b i)) ∧
       (b = true → DepX M (r + L) true i → (∀ U : T → Prop, (∀ u, U u → PathLv M (r + L) r ρ i u) → RClaimU U ρ σ i)) ∧
       (b = true → DepX M (r + L) true i → σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z →
-        σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X' ∧ ThrA (WB ρ i) X X') := by
+        σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X' ∧ ThrA (ThrSet M ρ i) X X') := by
     intro K
     induction K using Nat.strongRecOn with
     | _ K ih =>
@@ -358,7 +358,7 @@ theorem t0_dep_otT {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
           exact ⟨by show isOT (σ.o i) = true; rw [he]; exact hG.ot_o i hiM, fun h => absurd h hD,
             fun _ h => absurd h hD, fun _ h => absurd h hD⟩
         suffices hmain : isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ (∀ U : T → Prop, (∀ u, U u → PathLv M (r + L) r ρ i u) → RClaimU U ρ σ i) ∧
-            (σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X' ∧ ThrA (WB ρ i) X X') by
+            (σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X' ∧ ThrA (ThrSet M ρ i) X X') by
           exact ⟨hmain.1, fun _ => hmain.2.1, fun _ _ => hmain.2.2.1, fun _ _ => hmain.2.2.2⟩
         have hvot : isOT (ρ.v i) = true := hG.ot_v i hiM
         cases hD with
@@ -536,7 +536,7 @@ theorem t0_dep_otT {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                 intro hvc hne
                 have hs' : s' = s := by rw [hs'v, hvc, ← hsvc]
                 exact (hIH.2.2.2 rfl hdc hvc y y' (by rw [hsy, hsvc]) (by rw [hs'y', hs', hsvc]) hne).1
-              have hTHc : σ.v c = ρ.v c → y' ≠ y → ThrA (WB ρ c) y y' := by
+              have hTHc : σ.v c = ρ.v c → y' ≠ y → ThrA (ThrSet M ρ c) y y' := by
                 intro hvc hne
                 have hs' : s' = s := by rw [hs'v, hvc, ← hsvc]
                 exact (hIH.2.2.2 rfl hdc hvc y y' (by rw [hsy, hsvc]) (by rw [hs'y', hs', hsvc]) hne).2
@@ -548,9 +548,8 @@ theorem t0_dep_otT {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                 · rw [hyy]; exact htr
                 exact trig_agreeG (hREc hvc hyy) (fun hB => hPH i hiM Lc c [] (by rw [hclM]) s y hsy hB htr)
                   (fun hlo hB P a' x T' e1 e2 κ hκ hBk => by
-                    obtain ⟨j, hj, hκj⟩ := hKap i c Lc hi hcr hclM hdc s y hsy hlo hB htr P a' x e1 κ hκ hBk
-                    exact thr_cut (hTHc hvc hyy) htr.1 e1 e2 hBk hκj
-                      ⟨j, hj, rfl⟩) htr
+                    obtain ⟨d, hd, hκd⟩ := hKap i c Lc hi hcr hclM hdc s y hsy hlo hB htr P a' x e1 κ hκ hBk
+                    exact thr_cut (hTHc hvc hyy) htr.1 e1 e2 hBk hκd (ThrSet.sib hclM hd)) htr
               have hyarg : ∀ s0, ρ.o c = psi s0 z z → ∃ s1, σ.o c = psi s1 z z := by
                 intro s0 hs0
                 have hclc : CL M c = [] := by
@@ -649,7 +648,7 @@ theorem t0_dep_otT {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                     · exact h
                   exact ⟨re_step hc0 hc0' hBc hlt (hREc hvc hyy') (hagree hvc),
                     thr_step hc0 hc0' hBc hlt (hREc hvc hyy') (hagree hvc)
-                      ((hTHc hvc hyy').mono (WB.mono (le_of_lt hci)))⟩
+                      (fun htr hlo => (hTHc hvc hyy').mono (fun w hw => ThrSet.up hclM hsy htr hlo hw))⟩
                 · obtain ⟨hy0, hy'0⟩ := hchv hvc
                   have hdv : DepX M (r + L) false c := by
                     by_contra hn'; exact hvc ((hoffD c hcr).2 hn')
@@ -659,7 +658,8 @@ theorem t0_dep_otT {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                   rw [hs'v, hsvc]
                   rw [hsvc] at hBc
                   exact ⟨re_leaf hlv.1 hBc,
-                    thr_leaf hlv.1 hBc ((hThrV c hcr hdv).mono (WB.mono (le_of_lt hci)))⟩
+                    thr_leaf hlv.1 hBc ((hThrV c hcr hdv).mono (fun w hw => by
+                      obtain ⟨j, hj, rfl⟩ := ThrSet.earlier hw; exact ⟨j, by omega, rfl⟩))⟩
 
   intro b i hi
   exact key _ b i (le_refl _) hi
@@ -694,11 +694,11 @@ theorem t0_otdT {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       ∀ P a x, y = app P (psi a x z) →
       ∀ κ ∈ cutsNSG s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ →
-        ∃ j, j < c ∧ κ = psi (ρ.v j) z z)
+        ∃ d, d ∈ Lc ∧ κ = psi (ρ.v d) z z)
     (hThrVN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ e, e < r → DepX M (r + L) false e → ThrV (WB ρ e) (ρ.v e) (σ.v e))
     (hThrGN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
-      ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → X' ≠ X → ThrA (WB ρ g) X X')
+      ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → X' ≠ X → ThrA (ThrSet M ρ g) X X')
     (hVchgRN : ∀ g, par M 0 r = some g → ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0N : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
