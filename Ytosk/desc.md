@@ -1839,3 +1839,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 実測（C′、n = 1..3）: t = 0・1 では M[n] の行 1 の子を持つ列の v は M か M[n−1] の対応する列（行 1 の子を持つ）の v と等しい（写しは 1 ブロックずれ）。t = 2 では最後の写しの守られた列だけが f(v_P) で新しい値。V′ = v_N(r + L) は 18720 件すべて NoGap。NoGap(W_k) は一般ののりしろの列では偽（1.6 万件）で、行 1 の子を持つ列の上げの先でだけ真。
 - groupA（V3PhiGapT0、緑）: noGapP_t0。t = 0 の M[n] の NoGapP を NoGapP M・NoGapP (M.take x)（noGapP_take）と、V3T0M にある 2 つの値の一致（r より前で DepX でなければ v_N = v_M、r 以後は tauN）から。行 1 の子 c の写し元 r + q は M で x より前にあり、その行 1 の親が p の写し元（par1_copy0）。r より前の p は chg_struct から DepX に入らない（not_depX_of_par1）。
 - 運ぶ形は NoGapP ∧ PhiX0R（V3PhiGap の phiX_of_noGapR で PhiX、さらに AbsD・AbsU）。NoGapP の保存: 1 列落とし（noGapP_take）・t = 0（noGapP_t0）は残りなし、t = 2 は noGapP_of_copy ＋ noGap_copy_t2（仮定は写しの構造と r より前の値の一致、V′ の NoGap）、t = 1 は値の一致（実測）で noGapP_of_copy に入る。PhiX0R は段 0 の穴で v(p) ∈ [ψ_0(Ω_1), Ω_1) の場面だけで、純粋な順序数の補題では閉じない（標準形の V ≥ W で [W[η], W) に部分項を持つ例がある）。展開で新しく出る PhiX0R の場面は 20 万行列の標本で t = 0 が 6・t = 1 が 3・t = 2 が 112。
+
+### P の保存: 1 列落とし・t = 0・t = 1（2026-10-11、closure、緑）
+
+- V3PKind（caa60a57）: 引数を下から挟むと保たれる。ph3cKind_squeeze（B < y′ ≤ y・同じ s なら PH3cKind が保たれる）、fc3_squeeze（FC3 の結論が保たれる）。辞書式の性質だけで、標準形の仮定なし。部品: app_squeeze（B < y ≤ B + R なら y = B + r、r ≠ 0）、mem_cuts_squeeze・mem_scuts_squeeze（切り口は間の項でも切り口）。
+- V3PDrop（1de19ff8）: ph3c_take・fc3_take（1 列落とし。仮定は落とす補題の結論 PO・PV だけ、frameClosed_take と同じ並び）。
+- V3PStruct（81d78f88）: S1_take・s4_take（接頭辞）。
+- V3PT0（90e607ed）: ph3c_N_t0・fc3_N_t0（t = 0 の M[n]、frameClosed_N_t0 と同じ仮定 + PH3c/FC3 の M と M.take x）。一般形 frameQd_N_t0（子が添字を保って下がっても保たれ、書き換えない枠で成り立つ枠の性質 Q）。
+- V3PT1（f67426c2）: expStep_ph3c_t1・expStep_fc3_t1（t = 1 の鎖 ExpStepT1、残りなし）。一般形 frameQR_N_t1・frameQROmN_t1。x の枠（もとの子が Ω_{t+1}）では q = r のとき新しい引数が「状態 b + δ」（b の項は Ω_{s+1} 以上、0 < δ < Ω_{s+1}）で、これは PH3c の eq、FC3 では b = 0 なので空。q ≠ r は書き換えなし（F1）。
+- 実測（deepA、n = 2, 3）: t = 0・t = 1 の N の B ≠ 0 の書き換えの枠は、x より前は M の枠の y が下がったもの（同じ種類）、写しは M[n − 1] と同じ、t = 1 の x の枠は 284/284 が eq。t = 2 は σ の置き換えの写し（164）、x より前の新しい枠（cut 130・328）、もとが書き換えない枠からの pre（131）が出る。
+- 残り: t = 2、基底 SRO[n]、S1・S4 の展開での保存（構造だけ）。
