@@ -2800,3 +2800,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - VSmallRA の生産者はどの枝にもない（今は最上位の大域の仮定、t2 の実測では 7 集合と expP で例外 0）。
   - 最上位 main_GH の大域の仮定 hNG（NoGapP）・hP0（PhiX0R）・hD0 は AbsD・AbsU を出すためだけにある。NoGapP は ext1x・T2Ext で偽なので、AbsDS・AbsUS に替えれば外せる。
 - 実測（新しい形、q ≠ r・q = r の枠のみ、例外の数）: 下の追記に。
+
+### VSmallRAll の 1 列落としでの保存（2026-10-12、drop-fix、V3VSRAllDrop、緑）
+
+- `vsmallRAll_take`: VSmallRAll M ρ ⇒ VSmallRAll (M.take x) ρ′（ρ′ = drop1 M x rk）。仮定は落とす補題の結論 hdrop（∀ i < x, PO ∧ PV）と構造の不変条件だけで、新しい大域の仮定はない。
+- 理由: M.take x の枠 (k, c)（c は k の数える子で、新しい c が書き換える）は M の枠と同じ（`frame_take_rw`）。
+  - v′(k) = v(k)、前の子の o は同じ、CL M k = Lc ++ c :: (R ++ Tl)（`frame_take`）。
+  - 古い c も書き換える（`rewrite_take`）。添字は同じで、引数は y′ ≤ y（`new_rewrite_same_v` と PO）。
+  - y′ の高い部分が 0 でなければ y の高い部分も 0 でない（`split_hi_ne_z_of_le`、`split_mono` から）。
+  - 段の道も枠ごとに M の道へ写る（`pathLvAll_take`）。
+- これで Inv3V2 の欄 vra の drop 側の生産者がそろった。t = 0・t = 2・t = 1 の展開側は別。
