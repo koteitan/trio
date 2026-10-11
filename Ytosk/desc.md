@@ -1974,3 +1974,5 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - T0TPLoRes: o が変わる列と中間の写しの根。
 - 現在の最上位: hExp_t0_mainC2。仮定は hNG（M の NoGapP）、T0IVRes、T0VSResG、T0ShapeR3（(i) の B ≠ 0、(ii)）、T0RestC（T0VSResD2・PhiX0R・T0TPLoRes・T0AbsUWRes・T0AbsDNRes・TPLoN・TPLoW・AbsDW・T0Res3H）、T0RWResC×3。
 - groupA: **NoGap0PosP は標準形で偽**（2026-10-11）。d3s で 1 件、deep3 で 5 件（deep2・C′・T0Ext では 0）。例: SRO より下の標準形 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,0,0)(7,1,0)(8,0,0)(9,1,0)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,1)(7,2,1) の列 28（行 1 の子を持つ）で v = ψ_0(ψ_1(ψ_0(Ω_1)))。破れはすべて「ψ_a（a ≠ 0）の引数の加数がちょうど ψ_0(Ω_1)」。PhiX・Z0Link・NoGapP・VKFree はこれらの集合（T0Ext 18 万・d3s 1.5 万を含む）で例外 0。したがって phiX_of_z0 の仮定 NoGap0PosP は差し替えが要る（reach_z0 は補題として正しい）。段 0 の扱いは未解決に戻す。
+- V3PInt: つなぎ。ph3c_congr・fc3_congr（評価の取り替え）、ph3c_drop1・fc3_drop1（M.take x の drop1 評価、落とす補題の結論 PO・PV を受け取る形）、ph3c_take_any・fc3_take_any（M.take x のどの Cons の評価でも、t = 2 の hT の形）。
+- T0Ext（deepA の接頭辞に (e0 a + 1, 0, 0) を足した標準形の接頭辞閉包、203497 個）でも P は例外 0（SRO と SRO より上の 2 個を除く）、閉性（基底 160、歩み 1898 段）も壊れる例 0。
