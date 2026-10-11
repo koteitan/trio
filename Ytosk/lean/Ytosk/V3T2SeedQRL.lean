@@ -3,9 +3,10 @@
 
 n の強い帰納法で、M[n] の r の値は ψ_V(seqZ V B W_1 (n − 2))（o_r_level_qr）。W_1 は M.take x の r の引数の
 σ_{v′(r), V+1} 像。seqZ_lhd で ψ_V(seqZ …) ◁ ψ_V(B + Ω_s) = o_M(r)。
-残り `T2SeedQRRes` は M と M.take x だけの性質: σ(B) = B、V + k < s、V + 1 ◁ s、¬ B < W_1、閉じた形の成分の押さえ。
+残り `T2SeedQRRes` は M と M.take x だけの性質: V + k < s（σ(B) = B は closure の tame_sigmaB_std）、V + 1 ◁ s、¬ B < W_1、閉じた形の成分の押さえ。
 -/
 import Ytosk.V3T2SeedQR
+import Ytosk.V3Tame
 
 namespace Ytosk
 
@@ -23,7 +24,6 @@ def t2W1 (P : Mat) (V : T) (τ : Valn) (r : Nat) : T :=
 
 /-- **The residual of the seed `r`** (`t = 2`, `q = r`, no upgrade into `x`): properties of `M` and `M.take x`. -/
 structure T2SeedQRRes (M : Mat) (ρ : Valn) (r L : Nat) (Lc : List Nat) : Prop where
-  σB : sh (ρ.v r) (succ (ρ.v r)) (t2B (ρ.v r) ρ Lc) = t2B (ρ.v r) ρ Lc
   ks : ∀ k, addN (ρ.v r) k < ρ.v (r + L)
   vs : succ (ρ.v r) = ρ.v (r + L) ∨ Lhd z (succ (ρ.v r)) (ρ.v (r + L))
   w1 : ∀ τ, Cons (M.take (r + L)) τ → ¬ t2B (ρ.v r) ρ Lc < t2W1 (M.take (r + L)) (ρ.v r) τ r
@@ -202,6 +202,6 @@ theorem seedL_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
   have hC0 := cons_of_rk hRk1
   rw [seed_r_value_qr hM hS I R hz h2 hlen hr hq hXu hCLM hRes hC0 ⟨rk, hRk1⟩ n hn hGlow σ hCN, hoM]
-  exact seqZ_lhd (I.good.ot_v r hrM) hRes.σB hBc hRes.ks hRes.vs (hRes.dom _ hC0) (n - 2)
+  exact seqZ_lhd (I.good.ot_v r hrM) (tame_sigmaB_std hM hS I hlen hr hq hXu hCLM) hBc hRes.ks hRes.vs (hRes.dom _ hC0) (n - 2)
 
 end Ytosk

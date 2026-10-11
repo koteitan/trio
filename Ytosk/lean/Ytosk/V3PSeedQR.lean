@@ -320,7 +320,7 @@ theorem seed_frames_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       rw [← hform.1, ← h21, show n - 1 - 2 = n - 3 by omega] at hox
       exact ⟨_, hox, Or.inr ⟨hn3, rfl⟩, hCLN, hvr, hLc⟩
   obtain ⟨hox, hcase, hCLN, hvr, hLc⟩ := hYl
-  have hσB := hRes.σB
+  have hσB := tame_sigmaB_std hM hS I hlen hr hq hXu hCLM
   refine ⟨seed_frames_lift hCLM hCLN hvr hLc (fun Lc' c R' h => (hQM1 Lc' c R' h).2) ?_ Lc' c R' hCL,
     seed_frames_lift hCLM hCLN hvr hLc (fun Lc' c R' h => (hQM2 Lc' c R' h).2) ?_ Lc' c R' hCL⟩
   · -- PH3c at the last frame
