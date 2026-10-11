@@ -454,4 +454,36 @@ theorem phiX0R_of_N {M : Mat} {ρ : Valn} (hG : Good3 M ρ) (h : PhiX0RN M ρ) :
     exact reach_etaHole hE (fun u hu => isOT_of_subS (hG.ot_v p hpM) hu)
   · exact h c p hc h1 h2 hch hO hμ hg hE
 
+/-! ## t = 2 の M[n] の NoGapP（t2 の補題に合わせた形）
+
+t2 の側にある部品: hbase は `t2Base_gexp`（V3ExpT2B）、r の写しの行 1 の親は r（`par1_xN`・`par1_x_r`）で
+v_N(r) = v_M(r)（`vr_N`、V3ExpT2X）、写しの関係は `copy_rel`（V3ExpT2V）、V′ の形は `vx_eq`・`vq_eq_gexp`。
+残る仮定は hpre（r + L より前の列）と NoGap V′。
+-/
+
+theorem noGap_add {A X : T} (hA : NoGap A) (hX : NoGap X) : NoGap (add A X) := by
+  rw [noGap_iff_noGapS] at *; exact noGapS_add hA hX
+
+theorem noGap_one : NoGap one := by
+  rw [noGap_iff_noGapS]
+  intro μ b c h hμ
+  cases h with
+  | refl => exact absurd rfl hμ
+  | sub h => cases h
+  | arg h => cases h
+  | rest h => cases h
+
+/-- **NoGapP of the t = 2 expansion** from the copy relation (`copy_rel`'s conclusion form). -/
+theorem noGapP_t2 {N P : Mat} {σ ρ : Valn} {r L : Nat} {V' : T} (hNl : N.length = P.length + L)
+    (hp1 : ∀ i, r < i → i < P.length → par N 1 (i + L) = (par P 1 i).map (sft r L))
+    (hpre : ∀ c p, c < r + L → par N 1 c = some p → NoGap (σ.v p))
+    (hx' : ∀ p, par N 1 (r + L) = some p → NoGap (σ.v p))
+    (hbase : ∀ c p, r < c → c < P.length → par P 1 c = some p → p < r → σ.v p = ρ.v p)
+    (hrel : ∀ i, r ≤ i → i < P.length → σ.v (i + L) = shf (ρ.v r) V' (ρ.v i) ∨ σ.v (i + L) = ρ.v i)
+    (hGP : Good3 P ρ) (hrP : r < P.length) (hV' : isOT V' = true) (hVV : ρ.v r < V')
+    (hNV' : NoGap V') (hNP : NoGapP P ρ) : NoGapP N σ :=
+  noGapP_of_copy hNl hp1 hpre hx' hbase
+    (fun i _ hri hi _ _ _ hN => noGap_copy_t2 (hGP.ot_v r hrP) hV' hVV (hGP.ot_v i hi) hNV' (hrel i hri hi) hN)
+    hNP
+
 end Ytosk
