@@ -1990,3 +1990,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 種 < Ω_μ: TPLoSeedLow・AbsDSeedLow2（種が Ω_{ν+1}、ν ≠ 0 でない）・AbsUWSeedLow・AbsDNSeedLow、TPLoNSeed（M[n] の枠）。
   - 行 1 の子のない D の列: TPLoLFRes・TPLoWLFRes。
   - VSFRes2: 止まっている。M の VSmallF からは Ω_{v(c)} 以下しか出ず、要るのはそれより小さい Ω_{v′(c)}。「成分の頭の添字 < 最後の加数」を全部の枠の不変条件にする形は偽（段 0 の ψ_0(Ω_{Ω_1}) 型、C′ 10 万行列で 11 件）。
+- VSFRes2 の道筋（実測、C′ 10 万行列の全枠 43 万件）: W = last v(c) = ψ_a(X) の段 v(i) の成分 g について「lev(lev g) ≤ a」（成分の頭の添字の添字が a 以下）は「lev g < W」とちょうど同値に出て、偽は段 v(i) = 0 の 11 件だけ（ψ_0(Ω_{Ω_1}) 型、その枠では VSmallF の B 側が効く）。理由: lev(h) < a なら h < Ω_a ≤ W、lev(h) = a なら h = ψ_a(Y) で Y ∈ comps_a(X) < X（W の標準形）。形式化の壁: comps_u（u ≤ a）は添字が u 以上 a 未満の ψ を通って降りるが comps_a は降りないので、Y ∈ comps_a(X) をそのままは言えない。
