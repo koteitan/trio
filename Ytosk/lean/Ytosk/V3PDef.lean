@@ -98,6 +98,10 @@ def PH3c (M : Mat) (ρ : Valn) : Prop :=
     lt (stB ρ i L) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
     PH3cKind (stB ρ i L) (split y (psi (succ s) z z)).1 (split y (psi (succ s) z z)).2 s
 
+/-- The conclusion of `FC3` at a frame. -/
+def FC3c (a s y : T) : Prop :=
+  (s = a → s ≠ z ∧ last s ≠ one) ∧ (s ≠ a → ∃ X, X ≠ z ∧ lev (split y (psi (succ s) z z)).1 = app s X)
+
 /-- **FC3**: in the frame of the first counted child, when it rewrites and `hi ≠ 0`: `v(i) = s` forces `s` to be a
 limit; `v(i) < s` forces the head subscript of `hi` to be `s + X` with `X ≠ 0`. -/
 def FC3 (M : Mat) (ρ : Valn) : Prop :=

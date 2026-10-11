@@ -194,4 +194,96 @@ theorem ph3cKind_sh {B y : T} (hB : isOT B = true) (hy : isOT y = true)
 
 end
 
+/-! ## FC3 の結論と σ -/
+
+theorem last_mem_summands : ∀ {t : T}, t ≠ z → last t ∈ summands t
+  | z, h => absurd rfl h
+  | psi a b z, _ => by simp [last, summands]
+  | psi a b (psi c d e), _ => by
+    have := last_mem_summands (t := psi c d e) (by simp)
+    simp only [last, summands, List.mem_cons] at this ⊢
+    exact Or.inr this
+
+theorem isOT_headT : ∀ {x : T}, isOT x = true → isOT (head x) = true
+  | z, _ => rfl
+  | psi _ _ _, h => isOT_head h
+
+theorem last_le_head : ∀ {x : T}, isOT x = true → last x ≤ head x
+  | z, _ => le_refl _
+  | psi a b z, _ => le_refl _
+  | psi a b (psi c d e), h => by
+    have h1 := last_le_head (isOT_rest h)
+    have h2 : head (psi c d e) ≤ psi a b z := (isOT_psi_iff.mp h).2.2.2.1
+    simp only [last, head] at h1 h2 ⊢
+    exact le_trans h1 h2
+
+/-- Adding a term whose head is at most the last summand is concatenation. -/
+theorem add_eq_app_of_last : ∀ {x y : T}, isOT x = true → head y ≤ last x → add x y = app x y
+  | z, y, _, _ => by simp [add, app]
+  | psi a b z, y, _, h => by
+    cases y with
+    | z => rfl
+    | psi d e f =>
+      rw [add_psi_psi, if_neg (not_lt_of_ge (by simpa [head, last] using h))]; rfl
+  | psi a b (psi c d e), y, hx, h => by
+    cases y with
+    | z => simp [add, app]
+    | psi f g k =>
+      have hl : last (psi c d e) ≤ psi a b z :=
+        le_trans (last_le_head (isOT_rest hx)) ((isOT_psi_iff.mp hx).2.2.2.1)
+      have hn : ¬ psi a b z < psi f g z := not_lt_of_ge (le_trans (by simpa [head, last] using h) hl)
+      rw [add_psi_psi, if_neg hn]
+      show psi a b (add (psi c d e) (psi f g k)) = psi a b (app (psi c d e) (psi f g k))
+      rw [add_eq_app_of_last (isOT_rest hx) (by simpa [last] using h)]
+
+section
+variable {V V' : T} (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+include hV hV' hVV
+
+/-- **The FC3 conclusion is kept by `σ`** (`V ≤ a`, `V < s`). -/
+theorem fc3c_sh {a s y : T} (ha : isOT a = true) (hVa : V ≤ a) (hs : isOT s = true) (hVs : V < s)
+    (hy : isOT y = true) (h : (split y (psi (succ s) z z)).1 ≠ z → FC3c a s y)
+    (hhi : (split (sh V V' y) (psi (succ (shf V V' s)) z z)).1 ≠ z) :
+    FC3c (shf V V' a) (shf V V' s) (sh V V' y) := by
+  unfold FC3c
+  rw [sh_split hV hV' hVV (sh_lt_om_succ hV hV' hVV hs hVs) hy] at hhi ⊢
+  simp only at hhi ⊢
+  set hi := (split y (psi (succ s) z z)).1 with hhidef
+  have hhiz : hi ≠ z := fun e => hhi (by rw [e, sh_z])
+  obtain ⟨hA, hB⟩ := h hhiz
+  have happ : app hi (split y (psi (succ s) z z)).2 = y := split_app _ y
+  have hhiot : isOT hi = true := isOT_app_left (by rw [happ]; exact hy)
+  refine ⟨fun he => ?_, fun hne => ?_⟩
+  · have hsa : s = a := (shf_eq_iff hV hV' hVV hs ha (le_of_lt hVs) hVa).mp he
+    obtain ⟨h1, h2⟩ := hA hsa
+    refine ⟨fun e => by
+      have := lt_shf hV hV' (le_of_lt hVV) hs hVs
+      rw [e] at this; exact T.not_lt_z _ this, fun e => h2 ?_⟩
+    rw [last_shf hV hV' hVV hs hVs, ← sh_one (V := V) (V' := V')] at e
+    exact sh_inj hV hV' (le_of_lt hVV) (isOT_last hs) isOT_one e
+  · have hsa : s ≠ a := fun e => hne (by rw [e])
+    obtain ⟨X, hX, hlev⟩ := hB hsa
+    cases hhic : hi with
+    | z => exact absurd hhic hhiz
+    | psi k b c =>
+      rw [← hhidef, hhic] at hlev
+      rw [hhic] at hhiot
+      simp only [lev] at hlev
+      have hkot : isOT k = true := isOT_sub hhiot
+      have hsX : isOT (app s X) = true := by rw [← hlev]; exact hkot
+      have hXot : isOT X = true := isOT_app_right hsX
+      have hVk : V < k := by rw [hlev]; exact lt_of_lt_of_le hVs (le_of_lt (lt_app_of hX))
+      rw [sh_psi_gt hVk]
+      simp only [lev]
+      refine ⟨sh V V' X, fun e => hX (sh_eq_z_iff.mp e), ?_⟩
+      rw [hlev, ← add_eq_app hsX, shf_add hV hV' hVV hs hXot (le_of_lt hVs)]
+      apply add_eq_app_of_last (isOT_shf hV hV' hVV hs)
+      rw [last_shf hV hV' hVV hs hVs, head_sh]
+      have hs0 : s ≠ z := fun e => by rw [e] at hVs; exact T.not_lt_z _ hVs
+      have hlast : head X ≤ last s := by
+        exact summand_ge_of_app hsX (last_mem_summands hs0)
+      exact sh_le_sh hV hV' (le_of_lt hVV) (isOT_headT hXot) (isOT_last hs) hlast
+
+end
+
 end Ytosk

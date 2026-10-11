@@ -25,10 +25,6 @@ abbrev QPH (a : T) (Lv : List T) (cv : T) : Prop :=
     spArg a z (sumN Lv) ≠ z →
     PH3cKind (spArg a z (sumN Lv)) (split y (psi (succ s) z z)).1 (split y (psi (succ s) z z)).2 s
 
-/-- The conclusion of `FC3` at a frame. -/
-def FC3c (a s y : T) : Prop :=
-  (s = a → s ≠ z ∧ last s ≠ one) ∧ (s ≠ a → ∃ X, X ≠ z ∧ lev (split y (psi (succ s) z z)).1 = app s X)
-
 /-- The frame property of `FC3`. -/
 abbrev QF3 (a : T) (Lv : List T) (cv : T) : Prop :=
   ∀ s y, cv = psi s y z → lt (spArg a z (sumN Lv)) y = true ∧ lt (psi a z z) (psi s y z) = true →
