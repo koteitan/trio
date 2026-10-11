@@ -196,4 +196,69 @@ theorem seqY_lhd (hVs : succ V = s ∨ Lhd z (succ V) s)
 
 end
 
+/-! ## 基点を M[2] にとる形（M.take x の v(r) が M と違う場合、L = 1 で起きる） -/
+
+/-- **The seed recursion from `Y_1 = B + ψ_{V+1}(W_1)`.** -/
+def seqZ (V B W1 : T) : Nat → T
+  | 0 => app B (psi (succ V) W1 z)
+  | k + 1 => step V B (succ V) (sh V (succ V) (seqZ V B W1 k)) z
+
+section
+variable {V B W1 s : T} (hV : isOT V = true)
+  (hσB : sh V (succ V) B = B)
+  (hBc : ∀ q ∈ summands B, psi s z z ≤ q) (hks : ∀ k, addN V k < s)
+include hV hσB hBc hks
+
+/-- **The closed form** `Y_{k+1} = B + ψ_{V+k+1}(σ^k(W_1))`. -/
+theorem seqZ_form : ∀ k, seqZ V B W1 k = app B (psi (addN V (k + 1)) (shN V k W1) z) := by
+  intro k
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    show step V B (succ V) (sh V (succ V) (seqZ V B W1 k)) z = _
+    rw [ih, sh_app, hσB, sh_psi_addN hV (by omega)]
+    have hne : psi (addN V (k + 1 + 1)) (sh V (succ V) (shN V k W1)) z ≠ z := by simp
+    unfold step
+    rw [if_pos ⟨lt_app_of hne, by
+      show psi V z z < psi (succ V) _ z
+      rw [psi_lt_psi_z_iff]; left; exact lt_app_of (by simp [one])⟩]
+    rw [H_of_high (isOT_succ hV)]
+    · rfl
+    · intro q hq
+      rw [summands_app] at hq
+      have hV2 : succ (succ V) = addN V 2 := by
+        unfold succ addN; rw [app_assoc]; rfl
+      rcases List.mem_append.mp hq with hq | hq
+      · intro hlt
+        have h1 := hBc q hq
+        have h2 : psi (succ (succ V)) z z < psi s z z := by
+          rw [psi_lt_psi_z_iff, hV2]; left; exact hks 2
+        exact lt_irrefl' _ (lt_of_le_of_lt h1 (lt_trans hlt h2))
+      · simp [summands] at hq; rw [hq]
+        intro hlt
+        rw [psi_lt_psi_z_iff] at hlt
+        rcases hlt with hlt | ⟨_, hlt2⟩
+        · rw [hV2] at hlt
+          exact lt_irrefl' _ (lt_of_lt_of_le hlt (addN_le (by omega)))
+        · exact T.not_lt_z _ hlt2
+
+/-- **The seed ◁** for every level: `ψ_V(Y_{k+1}) ◁ ψ_V(B + Ω_s)`. -/
+theorem seqZ_lhd (hVs : succ V = s ∨ Lhd z (succ V) s)
+    (hdom : ∀ k u, ¬ lt V u = true →
+      ∀ g ∈ comps u (app B (psi (addN V (k + 1)) (shN V k W1) z)),
+        g ≤ app B (psi (addN V (k + 1)) (shN V k W1) z) ∨
+        ∃ d ∈ comps u B ++ comps u V ++ comps u (succ V), g ≤ d) :
+    ∀ k, Lhd z (psi V (seqZ V B W1 k) z) (psi V (app B (psi s z z)) z) := by
+  intro k
+  rw [seqZ_form hV hσB hBc hks k]
+  apply seed_frame_lhd (s' := succ V) (lt_app_of (by simp [one]))
+  · apply app_le_app_left
+    rw [succ_eq_addN_one]
+    exact le_trans (le_psi_sub (addN_le (by omega))) (le_psi_arg (z_le _))
+  · exact app_lt_app_left B (psi_lt_psi_z_iff.mpr (Or.inl (hks (k + 1))))
+  · exact hVs
+  · exact hdom k
+
+end
+
 end Ytosk
