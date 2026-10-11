@@ -2464,3 +2464,28 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - データ（CL_N(r) = Lc ++ [q]、CL_N(q) = [x′]、v_N(r)、前の子の o、o_N(q)）は o_r_level_qn の前半を写した seed_frame_data_qn。
   - r の q の枠: y = B + Ω_{f(t)}（t = t_{n−2}、σ_{V,s′}(B) = B と加数の条件から H は恒等）で pre 型。q の枠は状態 0 の最初の枠だけで、FC3 は s = v_N(x′) = v_N(q) = V + ω^W の最後の加数 ω^W ≠ 1 から。
   - T2SeedQNFC: q が r のただ一つの数える子なら、t_{k+1} = f(t_k) はいつも s′ を先頭に持つ（FC3 の r の q の枠のため）。実測（qnfc3.py）: deepA・d3s・deep3 の q ≠ r の主の場合 6176 件のうち 6125 件で Lc = []、そこで X₁ = Ω_{s′} と先頭の条件は例外 0。中身は「q の前ののりしろの項 ω^{W′} が σ_{V,s′} で動かない」で、q の前ののりしろの子の子は行 1 が e1 r 以下なので v ≤ V（t_above0 型）から出る見込み。
+
+### 訂正と 7 集合の表: Lean と同じ形の欄（2026-10-12、groupA）
+
+- **訂正**: 前の節で偽とした欄のうち VSmallF・FrameClosed・AbsDW・TPLoW・TPLoN は、probe（tools/probe_inv3_prefix.py の inv_fields）の古い定義での破れだった。Lean の現在の定義では偽でない。
+  - VSmallF（V3DropMain: g ≤ Ω_{v(c)} または g ≤ 状態 B）: 破れた行列すべての枠で例外 0。
+  - FrameClosed（V3DropRel: 発火の枠で FrameDom）: C を標本にとって例外 0（標本なので確定ではない）。
+  - AbsDW・TPLoW・TPLoN（最後の列の枠、gamS・dOf、t1-exp の frm3.py の inst）: ext1 全体と T2Ext の破れた行列で例外 0。
+  - Inv3 の欄は TrigOmC（数える子だけ）。probe の TrigOm は全部の子で測るが、T2Ext の 2 行列の破れは数える子なので本物。
+- 新しい集合 T2Ext: 30ae12c5…/scratchpad/groupA/t2ext.pkl（1207960 個、長さ 40 以下、接頭辞で閉じる）。C′・d3s・deep2・deep3 の t = 2 の行列の M[2]・M[3]（長さ 40 以下）と、ext1 の t = 2 の行列の M[2]・M[3]（長さ 20 以下）のすべての接頭辞。ext1 は SRO より上の 12 行列を除いて 1082667 個。
+- Desc3（値は標準形で、n = 0..3 の M[n] の値 < M の値）: ext1 で 4330668 件、ext1x で 479896 件、例外 0。破れた ext1 の行列 337 個は、SRO からの展開の道（各段で S[n] ≥ X となる最小の n）で実際にたどれた。
+- Lean と同じ形で偽の欄（行列の数、5 集合はどれも 0）:
+
+| 欄 | ext1 | ext1x | T2Ext |
+|---|---|---|---|
+| AbsD | 1 | 0 | 0 |
+| TPLo | 1 | 0 | 0 |
+| AbsUW | 0 | 2 | 43 |
+| TrigOmC | 0 | 0 | 2 |
+| PhiX | 1 | 0 | 114 |
+| NoGapP | 0 | 364 | 4049 |
+| LevLeafInv | 0 | 110 | 1617 |
+| 狭い LevFree | 0 | 88 | 571 |
+| Z0Link | 11 | 154 | 1121 |
+
+- 分類（最後の列 x への依存 DepX）: AbsD・TPLo は t = 1・q ≠ r の DepX の枠。AbsD の破れ（(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0)、i = 11）は v_bump_D（V3VLocT1.lean の hAD i …）でまさに使う場面: i ののりしろの子 12 の子が x。v(P_1 i) = ψ_0(Ω_{Ω_1}) は W = Ω_1 に吸収されて v_M(i) = Ω_1 だが、fsD(W, η) = ψ_0(Ω_1) より大きい。PhiX の破れはすべて段 0・t = 1 で、c は x に依存し p は依存しない（鎖の遠い p）。AbsUW は DepX の外が多い（T2Ext 43 のうち DepX は 14）。TrigOmC は t = 1・q = r の DepX。
