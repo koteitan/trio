@@ -51,6 +51,7 @@ def BumpInfo (M N : Mat) (ρ σ : Valn) (i : Nat) : Prop :=
   (∃ Lb Kb j k, children M i = Lb ++ [j] ∧ children N i = Lb ++ [j] ∧ col M j = bump M i ∧
     col N j = bump N i ∧ children M j = Kb ++ [k] ∧ children N j = Kb ++ [k] ∧
     (∀ d ∈ Kb, σ.o d = ρ.o d) ∧ (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d) ∧
+    (∀ d ∈ Lb, col M d = bump M i → ∀ e ∈ children M d, σ.o e = ρ.o e) ∧
     Lhd z (σ.o k) (ρ.o k) ∧ isOT (σ.o k) = true)
 
 /-- **Good3 before `x` and the frame shapes**, for every expansion. -/
@@ -213,10 +214,12 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
       refine ⟨h1, h2, h3, fun hns => ?_, fun hnq => ?_, fun hnv he1 he2 => ?_⟩
       rotate_left 2
       · by_cases hDv : DepS M (SV r (r + L - 1)) false i
-        · exact Or.inr (h6 (fun h => by
+        · obtain ⟨Lb, Kb, j, k, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h6 (fun h => by
             rcases h with ⟨h', _⟩ | ⟨_, hi'⟩
             · cases h'
-            · exact hnv (Or.inr ⟨by omega, by rw [hi']; exact hux⟩)) hDv he1 he2)
+            · exact hnv (Or.inr ⟨by omega, by rw [hi']; exact hux⟩)) hDv he1 he2
+          exact Or.inr ⟨Lb, Kb, j, k, a1, a2, a3, a4, a5, a6, a7, a8, fun d hd hdb e he =>
+            a9 d hd e he (hkx i d e hi (by rw [a1]; exact List.mem_append_left _ hd) hdb he), a10, a11⟩
         · exact Or.inl (fun j hj hjb k hk => h7 hDv he1 he2 j hj hjb k hk (hkx i j k hi hj hjb hk))
       apply h4
       · rintro (⟨_, rfl⟩ | ⟨h, _⟩)
@@ -248,7 +251,9 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
       refine ⟨h1, h2, h3, fun hns => ?_, fun hnq => ?_, fun hnv he1 he2 => ?_⟩
       rotate_left 2
       · by_cases hDv : DepS M (fun b i => b = true ∧ i = r) false i
-        · exact Or.inr (h6 hDv he1 he2)
+        · obtain ⟨Lb, Kb, j, k, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h6 hDv he1 he2
+          exact Or.inr ⟨Lb, Kb, j, k, a1, a2, a3, a4, a5, a6, a7, a8, fun d hd hdb e he =>
+            a9 d hd e he (hkx i d e hi (by rw [a1]; exact List.mem_append_left _ hd) hdb he), a10, a11⟩
         · exact Or.inl (fun j hj hjb k hk => h7 hDv he1 he2 j hj hjb k hk (hkx i j k hi hj hjb hk))
       · apply h4
         rintro rfl
@@ -299,10 +304,12 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
     refine ⟨h1, h2, h3, fun hns => ?_, fun hnq => ?_, fun hnv he1 he2 => ?_⟩
     rotate_left 2
     · by_cases hDv : DepS M (SQ (r + (q - r)) pq) false i
-      · exact Or.inr (h6 (fun h => by
+      · obtain ⟨Lb, Kb, j, k, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h6 (fun h => by
           rcases h with ⟨_, hi'⟩ | ⟨h', _⟩
           · exact hnv (Or.inl ⟨q, hq, hqr, by omega⟩)
-          · cases h') hDv he1 he2)
+          · cases h') hDv he1 he2
+        exact Or.inr ⟨Lb, Kb, j, k, a1, a2, a3, a4, a5, a6, a7, a8, fun d hd hdb e he =>
+          a9 d hd e he (hkx i d e hi (by rw [a1]; exact List.mem_append_left _ hd) hdb he), a10, a11⟩
       · exact Or.inl (fun j hj hjb k hk => h7 hDv he1 he2 j hj hjb k hk (hkx i j k hi hj hjb hk))
     apply h4
     · rintro (⟨h, _⟩ | ⟨_, rfl⟩)

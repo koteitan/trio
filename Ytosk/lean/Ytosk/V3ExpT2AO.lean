@@ -73,6 +73,7 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
         ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ children N i = Lb ++ [j] ∧ col M j = bump M i ∧
           col N j = bump N i ∧ children M j = Kb ++ [k] ∧ children N j = Kb ++ [k] ∧
           (∀ d ∈ Kb, σ.o d = ρ.o d) ∧ (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d) ∧
+          (∀ d ∈ Lb, ∀ e ∈ children M d, e < bnd → σ.o e = ρ.o e) ∧
           Lhd z (σ.o k) (ρ.o k) ∧ isOT (σ.o k) = true) ∧
       (¬ DepS M S false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
         ∀ k ∈ children M j, k < bnd → σ.o k = ρ.o k) := by

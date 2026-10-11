@@ -48,6 +48,7 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
           children M j = Kb ++ [k] ∧ children (TRIO.gexp M r L d0 d1 n) j = Kb ++ [k] ∧
           (∀ d ∈ Kb, σ.o d = ρ.o d) ∧
           (∀ d ∈ Lb, bumpTerm (TRIO.gexp M r L d0 d1 n) σ i d = bumpTerm M ρ i d) ∧
+          (∀ d ∈ Lb, ∀ e ∈ children M d, e < r + L → σ.o e = ρ.o e) ∧
           Lhd z (σ.o k) (ρ.o k) ∧ isOT (σ.o k) = true) ∧
       (¬ DepS M ((fun b i => b = true ∧ i = r)) false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
         ∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < r + L → σ.o k = ρ.o k) := by

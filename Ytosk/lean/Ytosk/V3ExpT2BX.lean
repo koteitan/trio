@@ -74,6 +74,7 @@ theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
         ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ children N i = Lb ++ [j] ∧ col M j = bump M i ∧
           col N j = bump N i ∧ children M j = Kb ++ [k] ∧ children N j = Kb ++ [k] ∧
           (∀ d ∈ Kb, σ.o d = ρ.o d) ∧ (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d) ∧
+          (∀ d ∈ Lb, ∀ e ∈ children M d, e < bnd → σ.o e = ρ.o e) ∧
           Lhd z (σ.o k) (ρ.o k) ∧ isOT (σ.o k) = true) ∧
       (¬ DepS M S false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
         ∀ k ∈ children M j, k < bnd → σ.o k = ρ.o k) := by
@@ -169,7 +170,8 @@ theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
     have hWk : ¬ W true k := fun hw => hns (hWb i j k h1 h2 hj hjb hk hw)
     obtain ⟨hl, hot⟩ := hD true k hdk hkb hWk
     exact ⟨Lb, Kb, j, k, hch, hchN, hjb, hjbN, hchj, hchjN,
-      fun d hd => (hoff d (hKnd d hd).2).1 (hKnd d hd).1, hbL, hl, hot⟩
+      fun d hd => (hoff d (hKnd d hd).2).1 (hKnd d hd).1, hbL,
+      fun d hd e he heb => (hoff e heb).1 (hLnd d hd e he), hl, hot⟩
   · exact (hoff k hkb).1 (fun hdk => hnd (DepS.vbump h1 h2 hj hjb hk hdk))
 
 /-- **`N`-side hypothesis of `deps_lhd_ot`**: the subscript bound of a changed last child (`VSmallNew` form). -/
