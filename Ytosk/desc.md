@@ -2324,3 +2324,46 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 系 t_child_fix・t_sigmaB（spArg の段は加数の添字より低ければ効かない spArg_level）。
 - tame_sigmaB_std: t2 の T2SeedQRRes.σB（Std M・Inv3 と t2 の設定、x への上げなし、CL M r = Lc ++ [x]）そのもの。t2B の定義のままで型が合うことを確認した。
 - x へ上げる場合のための仮定 hux（x へ上げる列があれば f(v x) = v x）を t_main に入れてある。x が最後の列なら v(x) = V + ω で成り立つ。
+
+### TailNR を証明・hLast の 11 欄の縮小（2026-10-12、drop-fix、ee9c092f・48603a57、緑）
+
+- 前任の WIP（TailNRL → TailY の狭め、V3TailNR）をビルドしてコミット（ee9c092f、全体ビルド緑）。
+- **TailNR は仮定なしで成り立つ**（V3TailY: tailY_holds・tailNR_holds、公理は標準の 3 つ）。
+  - 尾の子 t（M で数えられ M.take x で数えられない、t ≠ x）: x が t の子でなければ topped も isUpg も変わらない
+    （topped_take_eq・isUpg_take）ので数え方は変わらない。よって t = P_0(x)。
+  - M.take x で t は上げの先で topped。上げの先の行 2 は 1（Z2）。M.take x での t の最後の子は bump(t) なので、
+    SibDec・Z1C から t の子はすべて bump(t)（all_bump_of_last）。よって M での t の数える子は x だけか、なし。
+    o(t) = ψ_{v(t)}(Ω_{v(x)}) か ψ_{v(t)}(0)。
+  - v(x) ≤ v(t)（v_le_of_leaf_child）: x の行 1 ≤ t の行 1（Z1C）なので v(P_1 x) ≤ v(P_1 t)（vOpt_par1_le_child、v_find_lt）。
+    v(x) = v(P_1 x) + 1 か v(P_1 x) + ω、v(t) = v(P_1 t) + W_t（W_t ≥ ω）。
+  - DropResR から tnr を外した DropResS を置いた（V3RestTake、DropResS.toR）。
+- **hLast の 11 欄**（V3RestTake: rest_take_of）:
+  - AbsD・AbsU: PhiX (M.take x) から（absD_of_phiX・absU_of_phiX）。PhiX は groupA の phiX_take（M の NoGapP・PhiX0R、段 0 の残り DropPhi0Res）。
+  - TPLoW・AbsDW・TPLoN: M.take x 自身の FrameV と行列ごとの FrmLF から（tplow_of_lf・absDW_of_lf・tplon_of_lf）。
+  - 残り TakeRest6 = M.take x の TPLo・TP1C・TP1WC・TrigOmC・AbsUW・AbsDN。
+  - 最上位 trio_terminates_main_GR（main_GP の hRest を FrmLF・hNG・hP0（PhiX0R）・hD0（DropPhi0Res）・h6（TakeRest6）に、
+    hDR を DropResS に）。
+- 実測: 1 列落としでは x の祖先の鎖の値がすべて変わるので、6 欄の場面はほとんど M の場面と値が違う（d3s で TP1C の
+  自明でない場面 2637 件中 1 件だけ同じ）。M の欄からそのまま運ぶ形は使えない。
+- **注意: TakeRest6.tplo は偽**。groupA の ext1 の反例 T = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0)
+  （TPLo が偽）に (1,0,0) を足すと標準形なので、M.take x = T となる M がある。main_GP の hRest も同じく偽。
+- TP1・TP1W・TrigOm を PH3c から導く筋（実測、5 集合）: 書き換える枠（B ≠ 0）で PH3c の種類が eq・pre なら t0-exp の
+  prefix_fsD、cut で lo ≠ 0 か切り口が hi の最後の加数より前なら fsD は右端しか変えないので B < fsD(y, η)。
+  最後の加数の中の cut では、切り口の位置 π と fsD の穴の道の関係は「π より右」「π の項の引数の中」「π の項そのもの
+  （後続の葉 Ω_{μ+1}、TP1 だけ、k > s なので μ ≥ s で η = ψ_μ(1) > Ω_s）」の 3 つで、どれも純粋に成り立つ。
+  例外は C′ の 5 枠（穴が π の項の添字 k の中）で、どれも k = s + X（X ≠ 0）なので fsD(k) > s。
+  TrigOm は PH3c から ν < s なら B = 0。ν ≥ s で B ≠ 0 は cut（B = Ω_t、t ∈ scuts s (ν+1)）だけで、その枠は 5 集合に 1 つもない。
+
+### t = 2 の種の 4 つの場合を M と M.take x だけの残りに（2026-10-12、t2、緑）
+
+- **sv**（V3T2SeedSV、ae0d20fd）: q = r で x − 1 が x へ上げる場合。
+  - `sv_agree`: M.take x = M[n].take x で、x より前で右辺が違うのは o(r) だけ（r の子 x′）。agree_off_at を E = 「M.take x の順位が o(r) 以上」で使い、o(r) より下の呼び出しは M[n] と M.take x で同じ値。
+  - `o_r_level_sv`: CL_N(r) = CL_{M.take x}(r) ++ [x′]、o_N(r) = ψ_V(step(X₁, V + 1, σ(X_{n−1})))。X₁ は M.take x での r の引数。
+  - `seed_r_value_sv`: o_{M[n]}(r) = ψ_V(σ^{n−1} X₁)（σ = σ_{V,V+1}）。残り `T2SeedSVRes`: M.take x で r の最後の子はのりしろでない・v_{M.take x}(r) = V・各段が書き換えて σ X になる・ψ_V(σ^k X₁) ◁ o_M(r)。
+- **C**（V3T2SeedC、da3019cd）: q ≠ r で q − 1 が q へ上げ、q は r で数えられない場合。
+  - `agree_by_rank`: agree_off_at の一般形（各呼び出しの一致を「読む先が一致すれば一致」の形で受け取る）。v(q) は右辺が M[n] でだけ末尾に 0 の項（x′ はのりしろでない）を持ち、0 を消すには標準形が要るので、値の式（M[n] では qnS、M.take x では残り）で合わせる。
+  - E = 「順位 ≥ rk o(r)」∪ {o(q)}。o(q) を読む呼び出しは M.take x にない（q は r で数えられず、r はのりしろの子でない）。
+  - `o_r_level_C`・`seed_r_value_C`: o_{M[n]}(r) = ψ_V(σ^{n−1} X₁)（σ = σ_{V,s′}、s′ = v_N(q)）。残り `T2SeedCRes`: M.take x で q は r で数えられない・upg_M(x − 1) なし・v_{M.take x}(r) = V・v_{M.take x}(q) = s′・V + last(s′) = s′・書き換えの式・◁。
+- `t2_seed_cases`: qr（x への上げなし）・qn（q が r の最後の数える子）・sv・C の 4 つで t = 2 を尽くす。T2BelowResL から種の ◁ の欄を外し、`t2BelowXRes_of_L : T2BelowXResL → T2SeedQRAll → T2SeedQNAll → T2SeedSVAll → T2SeedCAll → T2BelowXRes`。
+- 実測（C′・d3s・deep2・deep3、k ≤ 4）: T2SeedSVRes（3243 + 153 + 1343 + 1324 件）・T2SeedCRes（1166 + 61 + 540 + 523 件）とも例外 0。◁ は標本による近似判定。
+- 4 つの残りはどれも M と M.take x の値の性質。書き換えの式と ◁ は σ の反復の値についての主張で、q = r の T2SeedQRRes と同じく閉じた形（σ^k が添字を 1 つずつずらす）に直せば純粋な順序数の補題になる見込み（qr は seqZ_form・seqZ_lhd で済んでいる）。
