@@ -89,7 +89,8 @@ def T0ShapeR2 : Prop :=
       ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z) ∧
     (∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
-      (drop1 M (r + L) rk).o r = omid M r L ρ)
+      ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
+        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true))
 
 theorem t0ShapeR_of (h : T0ShapeR2) : T0ShapeR := by
   intro M ρ rk r L hM hS I R hlen hL hp he1

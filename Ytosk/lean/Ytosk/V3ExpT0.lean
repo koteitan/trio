@@ -169,8 +169,8 @@ counted child keeps its `v` and whose child pair has no low part in either (clas
 frame is one of the new frame; (ii) a changed `v` of such a child whose row-1 parent is not `i` stays at
 least `Ω_{a+1}` when the old one is (with row-1 parent `i` it is above `v(i)`, `v_gt_par1_at`); (iii) the same for the value `o′(r)` of
 `M.take x` at `g = P_0(r)` (then the class at `g` is `s1_core_cls`; proved, `t0_shape3`); (iv) at `g` when no
-middle copy root counts, the value `o′(r)` of `M.take x` is the middle value `omid` (then the frame of `g` takes one
-fundamental-sequence step, `t0_S1A`; C′ で 383 件、例外 0). -/
+middle copy root counts, the old frame of `g` does not rewrite at `r` (then `o′(r)` replaces `o(r)` in the frame,
+`s0_core`; C′ と Std の追加の 8 件で例外 0). -/
 def T0Shape : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
     Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
@@ -188,7 +188,8 @@ def T0Shape : Prop :=
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z) ∧
     (∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
-      (drop1 M (r + L) rk).o r = omid M r L ρ)
+      ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
+        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true))
 
 /-- **The `D` columns of `N` from the class residuals**: standard, and with the same `v` their
 arguments drop by `◁`. -/

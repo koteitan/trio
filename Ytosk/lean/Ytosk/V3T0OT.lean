@@ -713,6 +713,60 @@ theorem s1_core_cls {a B v Y0 X' : T} {m : Nat} (hm : 1 ≤ m)
         · rw [summands_mulT ⟨_, _, rfl⟩ m' q hq] at h; exact hOθ h
         · simp [summands] at hq; rw [hq] at h; exact hc'θ h
 
+/-- **The frame of `g` with no middle copy counted and no rewrite at `r`** (`m = 0`): the old child
+`ψ_v(Y0 + 1)` is replaced by `X′ ◁ ψ_v(Y0 + 1)`; both are appended to `B`. -/
+theorem s0_core {a B v Y0 X' : T}
+    (hBX : ∀ q ∈ summands B, psi v (app Y0 one) z ≤ q)
+    (hX' : Single X') (hl : Lhd z X' (psi v (app Y0 one) z))
+    (hy' : ∀ s' y', X' = psi s' y' z → s' ≠ v → y' = z)
+    (hvch : ∀ s' y', X' = psi s' y' z → s' ≠ v → ¬ psi v z z < psi (succ a) z z →
+      ¬ psi s' z z < psi (succ a) z z)
+    (hnt : ¬ (lt B (app Y0 one) = true ∧ lt (psi a z z) (psi v (app Y0 one) z) = true)) :
+    Lhd z (spArg a B X') (spArg a B (psi v (app Y0 one) z)) ∧
+      ClsNode a (spArg a B X') (spArg a B (psi v (app Y0 one) z)) := by
+  obtain ⟨s', y', rfl⟩ := hX'.2
+  have hlt : psi s' y' z < psi v (app Y0 one) z := hl.1
+  have hXeq : spArg a B (psi v (app Y0 one) z) = app B (psi v (app Y0 one) z) := by
+    rw [spArg_single]; unfold step; rw [if_neg hnt]; exact add_eq_app_of_ge ⟨_, _, rfl⟩ B hBX
+  have hnew : ¬ (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) := by
+    rintro ⟨h1, h2⟩
+    by_cases hs : s' = v
+    · subst hs
+      have hyy : y' < app Y0 one := by
+        rcases psi_lt_psi_z_iff.mp hlt with h | ⟨_, h⟩
+        · exact absurd h (lt_irrefl' _)
+        · exact h
+      exact hnt ⟨lt_trans (show B < y' from h1) hyy, lt_trans (show psi a z z < psi s' y' z from h2) hlt⟩
+    · have := hy' s' y' rfl hs
+      rw [this] at h1; exact T.not_lt_z _ h1
+  have hX'eq : spArg a B (psi s' y' z) = app B (psi s' y' z) := by
+    rw [spArg_single]; unfold step; rw [if_neg hnew]
+    exact add_eq_app_of_ge ⟨_, _, rfl⟩ B (fun q hq => le_trans (le_of_lt hlt) (hBX q hq))
+  rw [hX'eq, hXeq]
+  refine ⟨lhd_app B hl, ?_⟩
+  by_cases hva : v ≤ a
+  · have hXθ : psi v (app Y0 one) z < psi (succ a) z z := lt_theta_iff.mpr hva
+    exact clsA_app (by simp) (by simpa [head] using hXθ) (by simp)
+      (by simpa [head] using lt_trans hlt hXθ)
+  · have hXθ : ¬ psi v (app Y0 one) z < psi (succ a) z z := fun h => hva (lt_theta_iff.mp h)
+    have hc'θ : ¬ psi s' y' z < psi (succ a) z z := by
+      by_cases hs : s' = v
+      · subst hs; exact fun h => hva (lt_theta_iff.mp h)
+      · have hy0 := hy' s' y' rfl hs
+        subst hy0
+        exact hvch s' z rfl hs (fun h => hva (lt_theta_iff.mp h))
+    apply clsB0_high
+    · intro q hq h
+      rw [summands_app] at hq
+      rcases List.mem_append.mp hq with hq | hq
+      · exact hXθ (lt_of_le_of_lt (hBX q hq) h)
+      · simp [summands] at hq; rw [hq] at h; exact hXθ h
+    · intro q hq h
+      rw [summands_app] at hq
+      rcases List.mem_append.mp hq with hq | hq
+      · exact hXθ (lt_of_le_of_lt (hBX q hq) h)
+      · simp [summands] at hq; rw [hq] at h; exact hc'θ h
+
 /-- `Y ◁ Y + 1`. -/
 theorem lhd_pred_succ {Y : T} (h : isOT (app Y one) = true) : Lhd z Y (app Y one) := by
   have hone : one ≠ z := by simp [one]
@@ -777,7 +831,7 @@ theorem cl_nil_of_depv' {c : Nat} (hc : c < r) (hv : DepX M (r + L) false c) : C
     (by omega) hv hd
 
 /-- **The seed at `g` at the level of the arguments**: some middle copy root counts at `g`, or none does and
-the value `o′(r)` of `M.take x` is the middle value (then the frame of `g` takes one fundamental-sequence step). -/
+the old frame of `g` does not rewrite at `r` (then `o′(r)` is appended in place of `o(r)`, `s0_core`). -/
 theorem t0_S1A {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted M g r)
     (hσG : ∀ c, c < r → ¬ DepX M (r + L) true c → σ.o c = ρ.o c)
     (hσvg : σ.v g = ρ.v g)
@@ -787,7 +841,9 @@ theorem t0_S1A {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted 
     (hl : Lhd z (ρ'.o r) (ρ.o r))
     (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
     (hC1 : Cons (M.take (r + L)) ρ') (hGT : Good3 (M.take (r + L)) ρ')
-    (hm1 : (∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) ∨ ρ'.o r = omid M r L ρ)
+    (hm1 : (∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) ∨
+      ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
+        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true))
     (hvch : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z) :
     ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true ∧
@@ -943,15 +999,13 @@ theorem t0_S1A {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted 
   have hOT' : isOT (spArg a (spArg a (spArg a z (sumN Lv)) (mulT (psi v Y0 z) m)) (ρ'.o r)) = true :=
     isOT_spArg a _ _ (isOT_spArg a _ _ (isOT_spArg a _ _ rfl hLs.1) (isOT_mulT hO0 ⟨_, _, rfl⟩ m)) hsLr.1
   by_cases hm0 : m = 0
-  · -- no middle copy root counts: `o′(r)` is the middle value, one step of the frame
-    have hω : ρ'.o r = omid M r L ρ := hm1.resolve_left (fun h => by have := hm1' h; omega)
-    rw [hω, hOv] at hOT'
-    refine ⟨_, spArg a (spArg a (spArg a z (sumN Lv)) (mulT (psi v Y0 z) m)) (psi v Y0 z), hoM,
-      by rw [hoN, hOv, hω, hOv], ?_, hOT', ?_⟩
-    · rw [hm0]
-      exact node_arg_lhd hXot hO0 hBXs (Or.inl ⟨rfl, lhd_pred_succ (isOT_arg hXot), cls_pred_succ⟩)
-    · rw [hm0]
-      exact cls_node hXot hO0 hBXs (Or.inl ⟨rfl, lhd_pred_succ (isOT_arg hXot), cls_pred_succ⟩)
+  · -- no middle copy root counts and the old frame does not rewrite: `o′(r)` replaces `o(r)`
+    have hnt := hm1.resolve_left (fun h => by have := hm1' h; omega) Lc hclM _ _ hor
+    have hcore := s0_core (a := a) hBXs hsLr hl hy' hvch hnt
+    refine ⟨_, spArg a (spArg a (spArg a z (sumN Lv)) (mulT (psi v Y0 z) m)) (ρ'.o r), hoM,
+      by rw [hoN, hOv], ?_, hOT', ?_⟩
+    · rw [hm0]; exact hcore.1
+    · rw [hm0]; exact hcore.2
   have hm : 1 ≤ m := by omega
   have hX'O : ρ'.o r ≤ psi v Y0 z := by
     have hp1 := List.pairwise_append.mp hpN
@@ -995,7 +1049,8 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
     (hVchgR : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
-      ρ'.o r = omid M r L ρ) :
+      ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
+        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true)) :
     ∀ b i, i < r → isOT (valB σ b i) = true ∧
       (DepX M (r + L) b i → Lhd z (valB σ b i) (valB ρ b i)) ∧
       (b = true → DepX M (r + L) true i → σ.v i = ρ.v i →
@@ -1330,7 +1385,9 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
             have hgi : g = i := Option.some.inj (hg.symm.trans hig)
             rw [← hgi] at hcnt hv' ⊢
             have hm1 : (∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) ∨
-                ρ'.o r = omid M r L ρ := by
+                ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
+                  ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧
+                    lt (psi (ρ.v g) z z) (psi s y z) = true) := by
               by_cases h : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
               · exact Or.inl h
               · exact Or.inr (hG0 hcnt (fun k hk hk' => h ⟨k, hk, hk'⟩))
@@ -1508,7 +1565,7 @@ end
 
 /-- **`hOTD` of `t0_core`** from the residuals: the rewrite agreement at class-B0 children (`hTrigBN`),
 a changed `v` of a child stays at least `Ω_{a+1}` (`hVchgN`; also for `o′(r)` at `g`, `hVchgRN`), and `g` when
-no middle copy root counts, where `o′(r)` is the middle value (`hG0N`). -/
+no middle copy root counts, where the old frame of `g` does not rewrite at `r` (`hG0N`). -/
 theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
@@ -1540,7 +1597,8 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0N : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
-      (drop1 M (r + L) rkM).o r = omid M r L ρ) :
+      ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
+        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true)) :
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true ∧ (σ.v i = ρ.v i →
         ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X) ∧
