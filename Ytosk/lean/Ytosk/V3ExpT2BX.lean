@@ -57,10 +57,10 @@ theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
       CL N i = CL M i ∧ ∀ c ∈ CL M i, c < bnd) :
     ∀ i, i < bnd → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
       (cvals N σ i).Pairwise (fun a b => b ≤ a) ∧
-      (¬ S true i → ¬ W true i → FrameShape M N ρ σ i) := by
+      (¬ S true i → ¬ W true i → FrameShape M N ρ σ i) ∧ (¬ W true i → σ.o i ≤ ρ.o i) := by
   intro i hi
   have hiM : i < M.length := by omega
-  refine ⟨?_, ?_, ?_, fun hns hnw => ?_⟩
+  refine ⟨?_, ?_, ?_, fun hns hnw => ?_, fun hnw => ?_⟩
   · by_cases hd : DepS M S true i
     · by_cases hw : W true i
       · exact hWot i hi hw
@@ -121,6 +121,9 @@ theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
       have hcch := cl_mem_children hc
       have hcnt : Counted M i c := by unfold CL at hc; simpa using (List.mem_filter.mp hc).2
       exact DepS.ochild hcch hcnt.1 hcnt.2 hdc
+  · by_cases hd : DepS M S true i
+    · exact le_of_lt (hD true i hd hi hnw).1.1
+    · rw [(hoff i hi).1 hd]
 
 /-- **`N`-side hypothesis of `deps_lhd_ot`**: the subscript bound of a changed last child (`VSmallNew` form). -/
 def T2VSN (N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=

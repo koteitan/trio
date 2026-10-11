@@ -41,7 +41,7 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (hsdec : (cvals (TRIO.gexp M r L d0 d1 n) σ r).Pairwise (fun a b => b ≤ a)) :
     ∀ i, i < r + L → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
       (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) ∧
-      (i ≠ r → FrameShape M (TRIO.gexp M r L d0 d1 n) ρ σ i) := by
+      (i ≠ r → FrameShape M (TRIO.gexp M r L d0 d1 n) ρ σ i) ∧ σ.o i ≤ ρ.o i := by
   set N := TRIO.gexp M r L d0 d1 n with hN
   set S : Bool → Nat → Prop := fun b i => b = true ∧ i = r with hS
   have hXbD : ∀ p, par M 0 (r + L) = some p → col M (r + L) ≠ bump M p := by
@@ -229,8 +229,8 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
       rw [hcx, hp] at hpc; cases hpc
       exact hns ⟨rfl, rfl⟩)
   intro i hi
-  obtain ⟨h1, h2, h3, h4⟩ := hgb i hi
-  exact ⟨h1, h2, h3, fun hir => h4 (fun h => hir h.2) (fun h => h)⟩
+  obtain ⟨h1, h2, h3, h4, h5⟩ := hgb i hi
+  exact ⟨h1, h2, h3, fun hir => h4 (fun h => hir h.2) (fun h => h), h5 (fun h => h)⟩
 
 end
 

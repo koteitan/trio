@@ -242,7 +242,7 @@ theorem clField_expand_t2 {Q : T → List T → T → Prop}
         rcases Nat.lt_or_ge i (r + L) with hix | hix
         · by_cases hsc : T2SeedCol M r L i
           · exact hSeed r L hlen hr (m + 1) hn2 σ hCN hGN i hsc Lc c R hCL
-          · have hsh := (hBS (m + 1) hn2 σ hCN (fun j _ hj => ⟨hGN.ot_o j hj, hGN.ot_v j hj⟩) i hix).2.2.2 hsc
+          · have hsh := (hBS (m + 1) hn2 σ hCN (fun j _ hj => ⟨hGN.ot_o j hj, hGN.ot_v j hj⟩) i hix).2.2.2.1 hsc
             exact clField_of_shape hQlow hsh (fun Lc c R h => hQM i (by omega) Lc c R h) Lc c R hCL
         · obtain ⟨a, rfl⟩ : ∃ a, i = r + a + L := ⟨i - L - r, by omega⟩
           exact hcopy (r + a) (by omega) (by omega) Lc c R hCL

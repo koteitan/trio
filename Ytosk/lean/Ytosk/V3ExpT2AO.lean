@@ -68,7 +68,7 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
       ∀ i, i < bnd → (S true i ∨ W true i) → (cvals N σ i).Pairwise (fun a b => b ≤ a)) :
     ∀ i, i < bnd → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
       (cvals N σ i).Pairwise (fun a b => b ≤ a) ∧
-      (¬ S true i → ¬ W true i → FrameShape M N ρ σ i) := by
+      (¬ S true i → ¬ W true i → FrameShape M N ρ σ i) ∧ (¬ W true i → σ.o i ≤ ρ.o i) := by
   have hch : ∀ i, i < bnd → i ≠ p → children N i = children M i := fun i hi _ => hchA i hi
   have hcol : ∀ i, i < bnd → col N i = col M i := fun i hi => by
     rw [col_eq_entries, col_eq_entries, he 0 i hi, he 1 i hi, he 2 i hi]
