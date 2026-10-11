@@ -2719,3 +2719,5 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - AbsUW → AbsUWL（最後の列の枠）＋ 種の場合 AbsUW0（hAUs0 の形、o_{M.take x}(r) での吸収）。消費は qr_vloc の上げの枠だけ。t = 1 の運び（expStep_absUW・AbsUWRes）は要らなくなる。M[n] の AbsUWL は最後の列の枠の欄（TPLoW・AbsDW と同じく hFrm の残り）として出す。
   - AbsD → q ≠ r の最後の列の枠の吸収 AbsDS（D の bump の列で q < W なら q < fsD(W, o_{M.take x}(r))。ζ ≥ 種なので fsD の単調性で鎖の全部の添字に効く）。消費は vlocal_t1 の hADζ だけ（t1_hole0・v_bump_D・qr_holeD は受け渡すだけ）。q = r 側は AbsDW（既に鎖の下限の形）と hADs0。
   - TPLo: 運びの残りは TPLoPathRes（道の形、全集合で例外 0）。TPLo の欄そのもの（ext1 で 1 件偽）の替わりは groupA の表に合わせる。消費は expStep_tploP の M 側（tploAt_of I.tplo）と tplon_of_lf・qr の TPLoW。
+- AbsUW0（種での AbsUW、添字 0）と qr_final4L（AbsUW でなく AbsUWL・AbsUW0 を受ける、50e0ee8b）。実測（auws.py、全体）: AbsUW_L・AbsUW0 とも C′・t1ext・d3s・deep2・deep3・ext1・ext1x・T2Ext・expP で例外 0（T2Ext 62009・24389 件、expP 38680・14057 件）。
+- q ≠ r 側の AbsD は、t1_main_final の中で hADζ を作っている所だけを AbsDS（種での吸収）に替えれば足りる。ただし AbsD は t1_hole0・v_bump_D・qr_holeD の節の仮定に（受け渡しだけで）入っているので、外すと型の変更が連鎖する。一括の作り直しのときに omit する。
