@@ -2741,3 +2741,62 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - `T2SeedCNext`: M.take x で r の数えない子 d < q の次の兄弟 dn が数える子（dn < q）なら、dn は dn − 1 から上げられる。実測（cbig.py）: 7 集合で d < q の数えない子の次の兄弟はいつも dn − 1 から上げられる（数える dn は deep2・deep3 で 2 件ずつ）。
 - `upg_next_lt`: 数えない（topped）子 d の次の兄弟 dn が dn − 1 から上げられるなら v(dn) < v(d)。dn − 1 は d の部分木の最後の列で P_1 = r・行 1 = e1 r + 1・行 2 = 0。d の最後の子 jl は bump 子、jl の最後の子 kl は行 1 = e1 r + 1 なので BumpLeaf で葉、kl = dn − 1。o(kl) = Ω_{v(dn)}（上げで v(kl) = v(dn)）から v(d) ≥ ω^{W_d} ≥ W_d ≥ Ω_{v(dn)} > v(dn)（le_omega_big）。
 - dn = q と数えない dn は上げの的で topped なので UAT で dn − 1 から上げられる。兄弟を右から帰納し、q は vqP で s′、数える子は decP と o の減少で s′ より上。
+
+### Inv3V2 の下書き: 欄の一覧と生産者・消費者の表（2026-10-12、t1-exp、V3Inv2）
+
+- 方針: 偽の欄は、本当に使う所（消費者）が要る形に狭める。調べると、偽だった欄の本当の消費者はどれも t = 1 の最後の列の枠だけだった。そこで「最後の列の枠の欄」（TPLoW・AbsDW・TPLoN と同じ種類）に替える。枠の欄はその行列ごとの主張なので、M から M[n] へ運ぶ必要がない（運び expStep_* が要らない）。生産者は各行列の枠の残りになる。
+- 下書きのファイル V3Inv2.lean（緑、どこからも使わない）: 定義 AbsDS・AbsUS・TPLoS・TrigS、structure Inv3V2、hADζ_of_absDS（AbsDS ⇒ vlocal_t1 の hADζ、ζ ≥ 種で fsD_mono_eta）。
+- 種 = o_{M.take x}(r) = (drop1 M x rk).o r（AbsUW0 と同じ）。鎖の添字 ζ はどれも種以上なので、種での主張から ζ での主張が fsD の単調性で出る。
+
+**欄の一覧**（Inv3V → Inv3V2）
+
+| Inv3V | Inv3V2 | 理由 |
+|---|---|---|
+| cons・good・rank・vs・fc・fo・kd・td | そのまま | 偽でない（VSmallF・FrameClosed は Lean の形で真、groupA の訂正） |
+| ad : AbsD | ads : AbsDS（q ≠ r の枠、種での吸収） | AbsD は ext1 で偽。本当の消費は t1_main_vloc の hADζ だけ |
+| au : AbsU | aus : AbsUS（q ≠ r の枠、上げ i → k、種での吸収） | AbsU は偽でないが、生産者 absU_of_absD・absU_of_phiX の元（AbsD・PhiX）が偽。本当の消費は vlocal_t1 の上げの枠だけ |
+| tplo : TPLo | tplos : TPLoS（q ≠ r の枠の DepX の o の列、種での比較） | TPLo は ext1 で偽。本当の消費は vlocal_t1（hTPLY）と hLo_of_TPL（t1_main_tpl 経由）だけ |
+| auw : AbsUW | auwl : AbsUWL ＋ auw0 : AbsUW0 | AbsUW は T2Ext で偽。消費は qr_vloc と qr_final4 の hAUs0 だけ |
+| trig : TrigOmC | trigs : TrigS（q = r の枠、種 < ψ_μ(1) のとき状態 < b + 種） | TrigOmC は T2Ext で偽（2 行列、この枠）。本当の消費は qr_final4 の hYBs と qr2_tpG（TP1C の運び） |
+| tp1・tp1w・tplow・adw・tplon・adn・rootS・rootP | そのまま | 偽でない |
+| （大域の仮定 hPH） | ph : PH3cG ・ fc3 : FC3 | 最上位 main_GH の大域の仮定を帰納法の欄にする |
+| （大域の仮定） | vra : VSmallRA | t = 2 の T2HardB と t = 0 の T0VSPRes（t0VSPRes_of_RA）が M の VSmallRA を使う |
+
+**消費者**（D = 証明で本当に使う、S = 自分の欄の運びにだけ使う）
+
+| 欄 | t = 1・q ≠ r | t = 1・q = r | t = 0 | t = 2・drop・base |
+|---|---|---|---|---|
+| AbsD | t1_main_vloc（hADζ を作る）D。expStep_absD S、expStep_absDN D | qr_* の節の仮定に入るが使わない | なし | なし |
+| AbsU | vlocal_t1:898 D | expStep_absUW D（AbsUW の運び） | なし | なし |
+| TPLo | vlocal_t1:958 D、hLo_of_TPL D | なし | t0_tplo S | なし |
+| AbsUW | なし | qr_final4（hAUs0）・qr_vloc（AbsUWL）D、expStep_absUW S | t0_absUW S | なし |
+| TrigOmC | なし | qr_final4（hYBs）D、qr2_tpG D、expStep_trigOmC_qr/qn S | hExp_t0・hExp_t0A S | なし |
+| TPLoW・AbsDW・TPLoN・AbsDN | なし | qr_oloc・qr_lkeep・qr_vloc・qr_final4（hLs0・hADs0）D | t0_absDN S | なし |
+| TP1C・TP1WC | hW_of_TP1 D | qr_final3・qr_oloc D、expStep_tpG・qr2_tpG D | hExp_t0 S | なし |
+| vs・fc・fo・kd・td | 落とす補題（drop_all・bump_drop）と各枝の運び。多数 | 同 | 同 | 同 |
+
+- 新しい欄の消費者: PH3cG は rest_take_ofG（TP1C・TP1WC・TrigOmC を M.take x で出す）・t0 の t0DF_ofU/ofT・t2 の T2HardB。FC3 は closure の帰納法そのもの。VSmallRA は t2 の T2HardB と t0VSPRes_of_RA。
+
+**生産者**（今の補題名。「残り」は名前つきの仮定）
+
+| 欄 | base | drop（M.take x） | t = 0 | t = 1 | t = 2 |
+|---|---|---|---|---|---|
+| cons・rank | bval_cons・brk_rk | rk_take・cons_of_rk | t0_core | inv3V_N_t1* | rk_expand_t2 |
+| good・vs・fc・fo・kd・td | base_good3 ほか（V3BaseI） | valInv_drop1（R.drop） | t0_core、vs は t0_vsmallF_at | expStep_*（V3ExpT1A/V） | good3_expand_t2・frameOT_expand_t2・bumpFields_expand_t2（残り T2BelowXRes）、vs・fc は残り T2Rest3 |
+| PH3cG・FC3 | base_ph3c・base_fc3（V3PBaseG） | G.ph3c_drop1・G.fc3_drop1（V3PIntG） | G.ph3c_N_t0・fc3_N_t0（V3PT0G、側条件つき、未接続） | expStep_ph3c_t1・expStep_fc3_t1（V3PT1G、未接続） | G.ph3c_expand_t2S・fc3_expand_t2S（残り T2BelowXRes・T2SeedFrames QFO・T2SeedPRes） |
+| VSmallRA | なし（要る） | なし（要る） | なし（要る） | なし（要る） | なし（要る） |
+| AbsDS・AbsUS・TPLoS・TrigS | 新しい（base は最後の列の枠が空かを見る） | 新しい | 新しい | 新しい | 新しい |
+| AbsUWL・AbsUW0 | 新しい | 新しい | 新しい | 新しい | 新しい |
+| TP1C・TP1WC | base_tp1・base_tp1w | tp1C_of_ph3cG・tp1WC_of_ph3cG（残り TP1ResG） | G 版（topU・topT・topH0） | expStep_tpG・qr2_tpG（TrigOmC を使う） | 残り T2Rest3 |
+| TPLoW・AbsDW・TPLoN | base_* | *_of_lf（残り FrmLF、FrameV に AbsD・TPLo が入る） | t0_frameFields（FrmLF） | hFrm の残り | tplow・adw は *_of_lf、tplon は残り T2Rest3 |
+| AbsDN | base_adn | 残り TakeRest3.adn | t0_absDN（残り T0AbsDNRes） | expStep_absDN（I.ad を使う） | 残り T2Rest3 |
+| rootS・rootP | base_* | rootS_of_good・rootP_drop1 | t0_core | 運び | rootS_of_good・rootP_expand_t2 |
+
+- 作り直しで消える運び: expStep_absD・expStep_absU（absU_of_absD）・expStep_tplo/tploP（TPLoPathRes も）・expStep_absUW・expStep_trigOmC_qr/qn・t0_tplo・t0_absUW・hExp_t0 の TrigOmC の運び・TakeRest3 の tplo・auw。
+- 作り直しで要る変更:
+  - FrameV（tplow_of_lf・absDW_of_lf・tplon_of_lf の仮定）に AbsD・TPLo が入っている。使うのは q = r の最後の列の枠の D の列（frame_hole で穴の段 = μ）だけで、AbsD・TPLo の破れ（ext1）は q ≠ r の枠。FrameV の ad・tplo を「q = r の枠の D の列での AbsD・TPLo」に狭めれば、TPLoW・AbsDW・TPLoN の lf の残りの一部にできる。
+  - expStep_absDN が I.ad を使う。AbsDN の運びを AbsDS からにするか、AbsDN も枠の欄にする。
+  - TP1C の t = 1 の運び（expStep_tpG・qr2_tpG）は TrigOmC を使う。TP1C・TP1WC を PH3cG ＋ TP1LeafG・TP1WLeafG から出す形（drop-fix の V3TP1CutG、drop と t = 0 で既に使用）に揃えれば TrigOmC は要らない。ただし TP1ResG の第 3 項 TrigCutG は TrigOmC を出すためのもので、TrigOmC が T2Ext で偽なので TrigCutG（または PH3cG）も T2Ext で偽のはず。TP1ResG から TrigCutG を外す。
+  - VSmallRA の生産者はどの枝にもない（今は最上位の大域の仮定、t2 の実測では 7 集合と expP で例外 0）。
+  - 最上位 main_GH の大域の仮定 hNG（NoGapP）・hP0（PhiX0R）・hD0 は AbsD・AbsU を出すためだけにある。NoGapP は ext1x・T2Ext で偽なので、AbsDS・AbsUS に替えれば外せる。
+- 実測（新しい形、q ≠ r・q = r の枠のみ、例外の数）: 下の追記に。
