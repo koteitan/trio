@@ -83,10 +83,10 @@ theorem t0_dep_otR {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
       Lhd z (σ.v p) (ρ.v p))
     (hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g))
     (hTrig : ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
-      ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z →
+      ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z →
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       (¬ ∃ R, (split y (psi (succ s) z z)).1 = app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) R) →
-      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s' y')
+      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y')
     (hVchgR : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
@@ -607,7 +607,12 @@ theorem t0_dep_otR {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                   exfalso
                   have hvc : σ.v c ≠ ρ.v c := fun h => hne (by rw [hs'v, h, ← hsvc])
                   have := ht.1; rw [(hchv hvc).1] at this; exact T.not_lt_z _ this)
-                (fun ht hnt hnp => absurd (hTrig i c Lc hi hcr hclM hdc s y s' y' hsy hs'y' ht hnp) hnt)
+                (fun ht hnt hnp => by
+                  by_cases hvc : σ.v c = ρ.v c
+                  · have es : s' = s := by rw [hs'v, hvc, ← hsvc]
+                    rw [es] at hs'y' hnt
+                    exact absurd (hTrig i c Lc hi hcr hclM hdc s y y' hsy hs'y' ht hnp) hnt
+                  · have := ht.1; rw [(hchv hvc).1] at this; exact absurd this (T.not_lt_z _))
                 hqp hhyp
 
   intro b i hi
@@ -639,10 +644,10 @@ theorem t0_otdR {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hVR : VSmallR M ρ)
     (hTrigN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
-      ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z →
+      ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z →
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       (¬ ∃ R, (split y (psi (succ s) z z)).1 = app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) R) →
-      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s' y')
+      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y')
     (hVchgRN : ∀ g, par M 0 r = some g → ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0N : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →

@@ -23,10 +23,10 @@ def T0TrigRes : Prop :=
     Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
-      ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z →
+      ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z →
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       (¬ ∃ R, (split y (psi (succ s) z z)).1 = app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) R) →
-      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s' y'
+      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y'
 
 /-- **The `D` columns before `r` of `N = M[n]`** at one matrix: standard, `◁`, `RClaim`, and `ψ_v(0)` when
 `v` changes. -/
