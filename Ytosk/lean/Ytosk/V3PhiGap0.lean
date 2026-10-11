@@ -2,7 +2,9 @@
 **段 0 の穴の PhiX を値の不変条件から。**
 
 - NoGap0Pos V: V の部分項 ψ_a(b) + c で、a の加数、または a ≠ 0 のときの b の加数に [ψ_0(Ω_1), Ω_1) の項がない
-  （行 1 の子を持つ列 p の v(p) について C′ で 226 万件、例外 0）。
+  （行 1 の子を持つ列 p の v(p) について C′ で 226 万件、T0Ext で 107 万件、例外 0。**ただし標準形で偽**:
+  d3s・deep3 で 6 件、v(p) = ψ_0(ψ_1(ψ_0(Ω_1))) のように ψ_a（a ≠ 0）の引数の加数がちょうど ψ_0(Ω_1)。
+  reach_z0 は補題として正しいが、NoGap0PosP は不変条件として使えない。）
 - Z0Hole X: fsD の経路で、段 0 の穴 Ω_1 の直前の（残りでない）段階が添字か ψ_a（a ≠ 0）の引数、
   または穴の節点が ψ_μ(Ω_{μ+1}) そのもの（EtaHole の終端）。
 - reach_z0: 標準形の V で NoGap0Pos V なら、Z0Hole X（段 0）について Reach (SubS V) X ψ_0(Ω_1)。
@@ -209,7 +211,7 @@ theorem reach_z0_inst {V X : T} (hV : isOT V = true) (hP : NoGap0Pos V) (hX : Z0
 
 /-! ## 段 0 を値の不変条件で -/
 
-/-- **Value invariant** (C′ で 226 万件、例外 0). -/
+/-- **Not an invariant**: false on 6 standard matrices (d3s・deep3、引数の加数が ψ_0(Ω_1) そのもの). -/
 def NoGap0PosP (M : Mat) (ρ : Valn) : Prop := VP NoGap0Pos M ρ
 
 /-- **The level-0 link**: an unsafe level-0 hole (`W = Ω_1`, or `Ω_1` after a prefix in a `ψ_0` argument)
