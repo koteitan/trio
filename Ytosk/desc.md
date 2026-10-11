@@ -1866,3 +1866,21 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - T2VSN（変わった最後の数える子の v の成分の上界、VSmallNew の N 版）、T2Hard（drop-fix の HardArg の N 版）。
 - VSFRes の中身（実測、C′ 2 万行列）: c が D の v の列のとき、σ.v c = init(v(c)) ++ W′（W′ = fsD(last v(c), ζ)）で、前の部分 init(v(c))（v(P_1 c) の残った加数）は親の段 v(i) で成分を持たない（v(P_1 c) ≤ v(i) と、加数 ψ_a(b) の添字 a < ψ_a(b) から出る見込み）。成分は W′ からだけ来て、その頭の添字 h は W′ の添字 a を超えることが多い（8940/10392、例 W′ = ψ_1(ψ_ω(…)) で h = ω）が、h < W′ なので g < Ω_{h+1} ≤ Ω_{W′}。必要なのは「W′ の成分の頭の添字は W′ より小さい」という値の層の条件で、ψ_0(Ω_{Ω_1}) 型では偽なので、一般の補題ではなく不変条件が要る。c = x（親は q、v_N(x) = v_{M[n−1]}(r)）の枠は 1.6 万件中 3436 件で成分があり、すべて頭の添字 ≤ a。
 - まとめ: t = 1 の残り（QV2・TPLoRes・AbsDRes・AbsUWRes・AbsDNRes・VSFRes）はどれも、v(P_1 i) や W′ の部分項がある範囲を避けるという値の層の主張で、groupA の隙間の不変条件（NoGapP と、その下の半分 [Ω_μ, min(o(r), ψ_μ(Ω_{μ+1})))）と同じ種類。構造（どの列のどの値が変わるか）は t = 1 では全部 Lean で片づいた。
+
+### t = 0 の残りを狭めた: NoVB・VSmallF・Res3H（2026-10-11、t0-exp）
+
+- 現在の t = 0 の最上位: hExp_t0_mainN（V3T0NoVB、6de9a80f、公理は標準の 3 つ）。仮定は
+  - T0NoVB（構造）: t = 0（x = r + L、P_0(x) = r、e1(x) = 0）で e2(r) ≠ 0 なら 1 列落としで v(r) は変わらない。C′・deep2・deep3 の 35482 件で例外 0。
+  - T0ShapeR3: (i) の B ≠ 0 の枠、(ii)。
+  - T0RestH2: T0VSResD（VSmallF の残り）、AbsD・AbsU・TPLo・AbsUW・TPLoN・AbsDN・TPLoW・AbsDW、T0Res3H。
+  - T0RWResC（影の枠、TP1C・TP1WC・TrigOmC）。
+- (iv) は NoVB から（t0_iv_of_noVB）: 最初の写しの根 r は N で上げの先かつ topped。上げの先は行 2 が 1 以上なので NoVB で v′(r) = v(r)。topped (M.take x) r から r の数える子は 1 列落としで変わらない（変わる子は ICC で次の列が r の行 0 の子かつ上げの先になり行 2 が 2、または x − 1 の祖先で r の最後の子 = r の上げの子）。よって o′(r) = omid。
+  - NoVB の場合分け: 変わるなら vbump の場合だけ（r の最後の子 j = bump(r)、j の子 k は x − 1 の祖先、x − 1 の上げの先は g 以上の祖先 q）。前に書いた非標準形の反例はこの形。今の不変条件（PInv を含む）からは出ず、FC3 だけが反例を除く。
+- VSmallF（V3T0VS、e4dafe99）: 枠の性質 QVS を frameQ_N_t0・g_frames_t0 で運ぶ。残りは T0VSResD（r より前の D の子で v が変わる枠、C′ で 15 万件、いつも comps ≤ Ω_{v′(c)} の側）と T0VSResG（g の枠で o′(r) の添字が変わる）。T0VSResG は NoVB と落とす補題の VSmallNew から（t0VSResG_of_noVB: e2(r) = 0 なら r は M.take x でも数えられ、g の数える子の並びは M と同じ）。
+  - T0VSResD の形: comps_{v(i)}(v(P_1 c)) はいつも空で、新しい成分は ω 型の部分 W_N = ω^{β_N} からだけ来る。
+- Res3H（V3ExpT0H、bb317af3）: T0Rest の res を「N の Inv3V のもとで Res3H」に替えた（Res3A.ofH で戻す、std_gexp_t0）。
+- 測定で分かったこと:
+  - D の子の v が変わる枠では、古い枠はいつも書き換えない（VSmallNewN は空）。
+  - (ii) は「v(i) ≤ v(p) + ω」だけから出る（v_N(c) = v(p) + ω^{β_N}、β_N ≥ ω）。C′ の (ii) の場面ではいつも i = (·, e1 c, 1) で上げの子なし。ただし「c が次の列へ上げ P_1 c ≠ P_0 c」の場面全体では、i が上げの子を持つ例（87 件）がある。そこでは S1（兄弟の部分木は増えない）が u の上げの子の下に x を置くことを禁じる。(ii) の理由は「兄弟の部分木の辞書式の順序と v の大小の対応」で、今の道具にない。
+  - 影の枠（T0RWResC）: closure の ph3c_N_t0 で N の枠の PH3c が使えるので、影の枠は PH3c の cut 型。ただし「cut 型なら TP1・TP1W・TrigOm」は純粋な順序数の補題としては偽（実在の引数 y と、y の cut のすべての B で、TP1 549 件・TP1W 1.9 万件・TrigOm 4114 件が偽。例 y = Ω_1、B = 1）。実在の枠の情報（変化の位置）が要る。
+  - TPLo: N の D の列で TPLo の前提が成り立つのは 45426 件、そのとき M の同じ列では前提が成り立たない（新しい値で初めて TPLo の形）。t = 1 の TPLoRes と同じ種類。
