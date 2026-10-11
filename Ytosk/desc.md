@@ -2377,3 +2377,7 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 書き換えの一致（`trig_agree`）: PH3c の eq・pre は B ≤ P、cut は P の中なら B ≤ P、t の中なら CutResG。B = 0 なら y′ ≠ 0。
 - これで T0TrigRes・T0RE2 は仮定から消え、hExp_t0_topR・hVSRexp_t0_topR の (i) の内容は「M の PH3c（closure の大域の仮定）と T0CutResG」だけ。T0CutResG の場面は t = Ω_k、T′ = Ω_{k′}、κ は添字の鎖の深い切り口（前節）。
 - 残り（hExp_t0_topR）: hLast・hNG・FrmLF・T0IVRes・PH3c・T0CutResG・T0RestV（PhiX0R・T0TPLoRes・T0AbsUWRes・T0AbsDNRes）・T0RWResCR×3。hVSRexp_t0_topR: hLast・T0IVRes・PH3c・T0CutResG。
+- V3PSeedQR（緑）: q = r・x への上げなしの種 r の枠の PH3c・FC3（seed_frames_qr）。仮定は M の PH3c・FC3、t2 の残り T2SeedQRRes（σB は tame_sigmaB_std）、下の段 M[m]（1 ≤ m < n）の Good3。
+  - N の r の数える子は Lc ++ [x′]。x′ より前の枠は M の枠そのもの（seed_frames_lift）。データ（CL_N(r)・v_N(r)・前の子の o・o_N(x′)）は t2 の o_r_level_qr の前半を写した seed_frame_data_qr。
+  - 最後の枠: n = 2 は w1 で書き換えない。n ≥ 3 は y = σ(seqZ(n − 3)) = B + ψ_{V+n−1}(…)（sh_seqZ、σB = B を使う）。加数はすべて Ω_{V+2} 以上で hi = y・lo = 0、種類は pre（seed_last_kind）。FC3 は B = 0 で lev(hi) = (V + 1) + (n − 2)（seed_last_fc3）。
+  - T2SeedFrames の今の定義には下の段の Good3 の前提がないので、t2 に足すよう頼んだ。
