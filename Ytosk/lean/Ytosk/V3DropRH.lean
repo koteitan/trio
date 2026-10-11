@@ -8,6 +8,7 @@
   `VSmallR` はすべての標準形について成り立つことを仮定 `hVSR` にする。
 -/
 import Ytosk.V3DropR
+import Ytosk.V3TailNR
 import Ytosk.V3DropH
 import Ytosk.V3HLast
 
@@ -23,7 +24,8 @@ structure DropResR (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
   ab : BumpAbsC N x σ
   vnr : VSmallNewR N x σ σ'
   sh : ShadowC N x σ σ'
-  tnr : TailNR N x σ
+  /-- `TailNR` narrowed to the tail without `x` (`tailNR_of`) -/
+  tnr : TailNRL N x σ
 
 /-- **The drop lemma from `DropResR`.** -/
 theorem drop_all_RR {N : Mat} {x : Nat} (hx : x + 1 = N.length)
@@ -33,7 +35,7 @@ theorem drop_all_RR {N : Mat} {x : Nat} (hx : x + 1 = N.length)
     ∀ i, i < x → PO σ σ' i ∧ PV N σ σ' i := by
   intro i hi
   have h := drop_all_R hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.vs hD.vst hI.fc hI.fo hVR hD.vnr
-    hD.sh hD.tnr (bump_drop hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.kd hI.td hD.ab hD.ws) hD.ua i hi
+    hD.sh (tailNR_of hx hC hI.g hD.tnr) (bump_drop hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.kd hI.td hD.ab hD.ws) hD.ua i hi
   exact ⟨h.1.1, h.2⟩
 
 /-- **`DropRes` from `DropResR`** and `VSmallR`. -/

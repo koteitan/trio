@@ -2136,3 +2136,6 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 結論 seedL_qr: o_{M[n]}(r) ◁ o_M(r)（n ≥ 2）。残り T2SeedQRRes は M と M.take x だけの性質（σ(B) = B、V + k < s、V + 1 ◁ s、¬ B < W_1、閉じた形の成分の押さえ）。C′ 4 万行列（29854 件、閉じた形は k = 0..3 で 119416 件）で例外 0。
 - 注意: q = r・L = 1 では M.take x の v(r) が M と違う（16224/38238）。写しの最初の段だけ σ が σ_{v′(r), V+1} なので、基点を M[2]（W_1）にとった。
 - 次: q ≠ r の種（pq の枠、X_N = B + Ω_t、s′ ≤ t < s を実測）、sv（c0 の ◁ が要るので deps_lhd_otW の帰納法の中で）、T2BelowRes の種の欄への差し込み。
+- Lean（V3TailNR）: Tl に x が入るとき x は Tl の最後で o(x) = ψ_{v(x)}(0)、引数 0 の子は書き換えないので足すだけ
+  （`spArg_leaf`）。よって TailNR は TailNRL（x を含まない尾 Tl′ だけ、CL M i = Lc ++ [cs] ++ Tl′ ++ R）から出る
+  （`tailNR_of`）。`DropResR.tnr` を TailNRL に替えた。残りの本体は Tl′ = [P_0(x)] の場合の y(ℓ) ≤ B。
