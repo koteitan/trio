@@ -481,162 +481,6 @@ theorem expStep_absDN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
     rw [hW] at hlt hO hcof hNN ⊢
     exact hQP.2 (r + a) (by omega) he1 he2 hO hcof hNN q hq hlt
 
-/-! ## VSmallF -/
-
-/-- **Residual of the VSmallF carry** (`t = 1`): the frames below `x` whose counted child `c` has a changed
-`v` (`c` a `v` call of `D`, or `c = x`). The parent's `v` and the earlier counted children do not change there.
-実測（C′ の 2 万行列 × n = 2, 3、36 万成分）: 新しい成分はすべて Ω_{v′(c)} 以下（B 側は不要）。v′(c) の前の部分
-（v(P_1 c) の残った加数）は親の段で成分を持たず、成分は最後の加数 fsD(W, ζ) から来て Ω_{fsD(W, ζ)} 以下. -/
-def VSFRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
-  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
-    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
-    ∀ i, i < r + L → ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R →
-    (DepX M (r + L) false c ∨ c = r + L) →
-    ∀ g ∈ comps (ρ.v i) ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c),
-      g ≤ psi ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))
-
-/-- **VSmallF is carried** (`t = 1`): the frames off the changed children are those of `M` (the parent's
-`v` and the earlier counted children do not change, as for FrameOT), the copy frames those of `P`.
-Residual `VSFRes`. -/
-theorem expStep_vsmallF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
-    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
-    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
-    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
-    (hRes : VSFRes M r L d0 ρ) :
-    ExpStepT1 VSmallF M r L d0 ρ := by
-  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
-  obtain ⟨q0, hq0⟩ := par0_of_anc hA (by omega)
-  have hpath := hpath_of_par1 h1 hA (by omega)
-  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq0
-  intro n hn ρP Z hCP _ hQP hCN _ _ _ _ _ hH
-  have hR := hRes n hn ρP Z hH hCN
-  set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
-  have hlN := len_N (d0 := d0) hlen hn
-  have hlP := len_P (d0 := d0) (n := n) hlen
-  have hSA := sameAt_lt hlen hL hA hd0e hn hpath hx2
-    (hxnb_t1 hlen hL hA hd0e I.z2 I.z1 h1 n hn)
-    (hiu_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn)
-  have hσo : ∀ a, σ.o (r + L + a) = ρP.o (r + a) := by
-    intro a; rw [hσ, glueZ_o_ge ρ (shiftV ρP L) Z (by omega)]
-    show ρP.o (r + L + a - L) = ρP.o (r + a); congr 1; omega
-  have hσv : ∀ a, σ.v (r + L + a) = ρP.v (r + a) := by
-    intro a; rw [hσ, glueZ_v_ge ρ (shiftV ρP L) Z (by omega)]
-    show ρP.v (r + L + a - L) = ρP.v (r + a); congr 1; omega
-  intro i hi Lc c R hCL
-  rcases Nat.lt_or_ge i (r + L) with h | h
-  · have hS := hSA i h
-    have hCLe : CL (TRIO.gexp M r L d0 0 n) i = CL M i := by
-      unfold CL; rw [hS.ch]
-      apply List.filter_congr
-      intro c hc
-      exact decide_eq_decide.mpr (counted_iff_of_cnt (hS.cnt c hc))
-    rw [hCLe] at hCL
-    have hcCL : c ∈ CL M i := by rw [hCL]; simp
-    have hcch : c ∈ children M i := (List.mem_filter.mp hcCL).1
-    have hccnt : Counted M i c := by simpa using (List.mem_filter.mp hcCL).2
-    have hvd : ¬ DepX M (r + L) false i := by
-      intro hv
-      rcases hOS i h (DepX.ov hv) with ⟨_, hnc⟩ | ⟨hnv, _⟩
-      · rcases hnc c hcch with h' | h'
-        · exact hccnt.1 h'
-        · exact hccnt.2 h'
-      · exact hnv hv
-    have hLd : ∀ d ∈ Lc, ¬ DepX M (r + L) true d := by
-      intro d hd hdD
-      have hdCL : d ∈ CL M i := by rw [hCL]; simp [hd]
-      have hdch : d ∈ children M i := (List.mem_filter.mp hdCL).1
-      have hdcnt : Counted M i d := by simpa using (List.mem_filter.mp hdCL).2
-      have hdc : d < c := by
-        have hs : (CL M i).Pairwise (· < ·) := (children_sorted M i).filter _
-        rw [hCL] at hs
-        exact (List.pairwise_append.mp hs).2.2 d hd c List.mem_cons_self
-      have hiD : DepX M (r + L) true i := DepX.ochild hdch hdcnt.1 hdcnt.2 hdD
-      rcases hOS i h hiD with ⟨hv, _⟩ | ⟨_, L', c', R', hch, _, _, hR', hL'⟩
-      · exact hvd hv
-      · have hdc' : d = c' := by
-          rw [hch] at hdch
-          rcases List.mem_append.mp hdch with h' | h'
-          · exact absurd hdD (hL' d h' hdcnt)
-          · rcases List.mem_cons.mp h' with h' | h'
-            · exact h'
-            · rcases hR' d h' with h'' | h''
-              · exact absurd h'' hdcnt.1
-              · exact absurd h'' hdcnt.2
-        subst hdc'
-        have hsort := children_sorted M i
-        rw [hch] at hsort hcch
-        rcases List.mem_append.mp hcch with h' | h'
-        · have := (List.pairwise_append.mp hsort).2.2 c h' d List.mem_cons_self
-          omega
-        · rcases List.mem_cons.mp h' with h' | h'
-          · omega
-          · rcases hR' c h' with h'' | h''
-            · exact hccnt.1 h''
-            · exact hccnt.2 h''
-    have hLo : Lc.map σ.o = Lc.map ρ.o := by
-      apply List.map_congr_left
-      intro d hd
-      have hdCL : d ∈ CL M i := by rw [hCL]; simp [hd]
-      have hdM := (mem_children (List.mem_filter.mp hdCL).1).2
-      have hdx : d < r + L := by
-        rcases Nat.lt_or_ge d (r + L) with h' | h'
-        · exact h'
-        · exfalso
-          have : d = r + L := by omega
-          exact hLd d hd (this ▸ DepX.leaf)
-      rw [hσ, glueZ_o_lt ρ (shiftV ρP L) Z hdx (hLd d hd)]
-    rw [hσ, glueZ_v_lt ρ (shiftV ρP L) Z h hvd, ← hσ, hLo]
-    have hcM := (mem_children hcch).2
-    by_cases hcv : DepX M (r + L) false c ∨ c = r + L
-    · exact hR i h Lc c R hCL hcv
-    · push_neg at hcv
-      have hcx : c < r + L := by omega
-      rw [hσ, glueZ_v_lt ρ (shiftV ρP L) Z hcx hcv.1]
-      exact I.vs i (by omega) Lc c R hCL
-  · obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
-    have ha : a < (n - 1) * L := by omega
-    have hCLs : CL (TRIO.gexp M r L d0 0 n) (r + L + a) =
-        (CL (TRIO.gexp M r L d0 0 (n - 1)) (r + a)).map (· + L) := by
-      unfold CL
-      rw [children_shift (d0 := d0) hlen hL hA hd0e hn ha, List.filter_map]
-      congr 1
-      apply List.filter_congr
-      intro d hd
-      have hdc := mem_children hd
-      rw [hlP] at hdc
-      show decide (Counted (TRIO.gexp M r L d0 0 n) (r + L + a) (d + L)) =
-        decide (Counted (TRIO.gexp M r L d0 0 (n - 1)) (r + a) d)
-      apply decide_eq_decide.mpr
-      apply counted_iff_of_cnt1 (cnt_copy hlen hL hA hd0e hn hpath (I.z2 r) (ρ := ρ) (Z := Z) ha hd)
-      · have := hσo (d - r); rw [show r + L + (d - r) = d + L by omega,
-          show r + (d - r) = d by omega] at this
-        exact this
-      · obtain ⟨s, y, he⟩ := o_psi_form hCP (i := d) (by rw [hlP]; omega)
-        rw [he]; simp
-    rw [hCLs] at hCL
-    obtain ⟨Lc', T', hsplit, hLc, hT⟩ := List.map_eq_append_iff.mp hCL
-    obtain ⟨c', R', hT', hc', hR'⟩ := List.map_eq_cons_iff.mp hT
-    subst hLc hc' hR'
-    rw [hT'] at hsplit
-    have hLo : (Lc'.map (· + L)).map σ.o = Lc'.map ρP.o := by
-      rw [List.map_map]
-      apply List.map_congr_left
-      intro d hd
-      have hdCL : d ∈ CL (TRIO.gexp M r L d0 0 (n - 1)) (r + a) := by rw [hsplit]; simp [hd]
-      have hdc := mem_children (List.mem_filter.mp hdCL).1
-      have := hσo (d - r)
-      rw [show r + L + (d - r) = d + L by omega, show r + (d - r) = d by omega] at this
-      exact this
-    have hc'c := mem_children (List.mem_filter.mp (show c' ∈ CL (TRIO.gexp M r L d0 0 (n - 1)) (r + a) by
-      rw [hsplit]; simp)).1
-    rw [hlP] at hc'c
-    have hvc : σ.v (c' + L) = ρP.v c' := by
-      have := hσv (c' - r)
-      rw [show r + L + (c' - r) = c' + L by omega, show r + (c' - r) = c' by omega] at this
-      exact this
-    rw [hσv, hLo, hvc]
-    exact hQP (r + a) (by rw [hlP]; omega) Lc' c' R' hsplit
-
 /-! ## VSmallF の残りを最後の加数に縮める -/
 
 theorem init_app_psi : ∀ (B : T) (a b : T), init (app B (psi a b z)) = B
@@ -761,38 +605,285 @@ theorem comps_init_v_nil {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hC :
     rw [hW, sf_ot (isOT_add hVot (by rw [← hW]; exact isOT_omega hY))] at hv
     rw [hv]; exact comps_init_add_nil hVot hVu
 
+/-! ## c = x の枠: v(r) は増えない -/
+
+/-- A standard term at or below `u` has no components at the level `u`. -/
+theorem comps_nil_of_le {u t : T} (ht : isOT t = true) (hle : t ≤ u) : comps u t = [] := by
+  apply comps_eq_nil_of_lev
+  intro q hq
+  obtain ⟨s, y, rfl⟩ := mem_summands hq
+  show s < u
+  exact lt_of_lt_of_le (sub_lt_psi s y z) (le_trans (summands_le_head ht _ hq) (le_trans (head_le_self t) hle))
+
+/-- If `v(r)` is in `D`, so is `v(s)` for every `s` on the path from `r` (row 1 above `r`): the row-1
+parent chain of `s` passes through `r`. -/
+theorem depX_v_path {M : Mat} {x r : Nat}
+    (hpath : ∀ s, Anc0 M r s → Anc0 M s x → s ≠ r → s ≠ x → entry M 1 r < entry M 1 s)
+    (hr : DepX M x false r) :
+    ∀ s, Anc0 M r s → Anc0 M s x → s ≠ x → DepX M x false s := by
+  intro s
+  induction s using Nat.strong_induction_on with
+  | _ s ih =>
+  intro hrs hsx hsne
+  by_cases hsr : s = r
+  · subst hsr; exact hr
+  have he := hpath s hrs hsx hsr hsne
+  obtain ⟨S, hS, hSp⟩ := ancL_through hrs (Ne.symm hsr)
+  have hsome : ((ancL M s).find? (fun q => decide (entry M 1 q < entry M 1 s))).isSome := by
+    rw [List.find?_isSome]; exact ⟨r, by rw [hS]; simp, by simpa using he⟩
+  obtain ⟨m, hm⟩ := Option.isSome_iff_exists.mp hsome
+  have hpar : par M 1 s = some m := by rw [par1_find]; exact hm
+  have hms : m < s := par_lt M 1 s m hpar
+  have he1 : entry M 1 s ≠ 0 := by omega
+  have hmD : DepX M x false m := by
+    rw [hS, List.find?_append] at hm
+    cases hf : S.find? (fun q => decide (entry M 1 q < entry M 1 s)) with
+    | some m' =>
+      rw [hf] at hm
+      simp only [Option.some_or, Option.some.injEq] at hm
+      subst hm
+      obtain ⟨h1, h2, h3, h4⟩ := hSp _ (List.mem_of_find?_eq_some hf)
+      exact ih _ h2 h3 (Anc0.trans h4 hsx) (by have := hsx.le; omega)
+    | none =>
+      rw [hf, Option.none_or, List.find?_cons, decide_eq_true he] at hm
+      cases hm; exact hr
+  exact DepX.vpar he1 hpar hmD
+
+/-- `r ≤ x`'s row-0 parent `q`, and `v(r)` is not in `D` (`t = 1`). -/
+theorem not_depX_v_r1 {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) : ¬ DepX M (r + L) false r := by
+  intro hD
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by have := par_lt M 1 _ r h1; omega)
+  have hpath := hpath_of_par1 h1 hA (by have := par_lt M 1 _ r h1; omega)
+  have hqx : q < r + L := par_lt M 0 _ q hq
+  have hrq : Anc0 M r q := anc0_par hA (by have := par_lt M 1 _ r h1; omega) hq
+  exact nodep_v_q hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq
+    (depX_v_path hpath hD q hrq (Anc0.step hq (Anc0.refl q)) (by omega))
+
+/-- `v(r)` does not grow (carried along the `t = 1` chain). -/
+def VrLe (r : Nat) (ρ : Valn) (_N : Mat) (σ : Valn) : Prop := σ.v r ≤ ρ.v r
+
+theorem expStep_vrle {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) : ExpStepT1 (VrLe r ρ) M r L d0 ρ := by
+  intro n hn ρP Z _ _ _ _ _ _ _ _ _ _
+  have hrx : r < r + L := par_lt M 1 _ r h1
+  show (glueZ M (r + L) ρ (shiftV ρP L) Z).v r ≤ ρ.v r
+  rw [glueZ_v_lt ρ (shiftV ρP L) Z hrx (not_depX_v_r1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2)]
+
+/-- `v(r)` does not grow by the drop (the drop lemma, `PV`). -/
+theorem vrle_base {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    {r L : Nat} (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) :
+    VrLe r ρ (M.take (r + L)) (drop1 M (r + L) rk) := by
+  have hrx : r < r + L := par_lt M 1 _ r h1
+  have hdr := R.drop
+  rw [show M.length - 1 = r + L by omega] at hdr
+  have hcnt := hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat
+  have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rk) := cons_of_rk hRk1
+  have hdrop := drop_all (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs hdr.vst I.fc I.fo
+    hdr.argT (bump_drop (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hdr.ab hdr.ws)
+    hdr.ua
+  rcases (hdrop r hrx).2.1 with h | ⟨h, _⟩
+  · exact h.le
+  · exact (le_iff _ _).mpr (Or.inl h.1)
+
+/-! ## VSmallF -/
+
+/-- **Residual of the VSmallF carry** (`t = 1`): the frames below `x` whose counted child `c` has a changed
+`v` and is a `v` call of `D` (the frame of `c = x` is done by `VrLe`). The parent's `v` and the earlier counted children do not change there.
+実測（C′ の 2 万行列 × n = 2, 3、36 万成分）: 新しい成分はすべて Ω_{v′(c)} 以下（B 側は不要）。v′(c) の前の部分
+（v(P_1 c) の残った加数）は親の段で成分を持たず、成分は最後の加数 fsD(W, ζ) から来て Ω_{fsD(W, ζ)} 以下. -/
+def VSFRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+    ∀ i, i < r + L → ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R →
+    DepX M (r + L) false c → c < r + L →
+    ∀ g ∈ comps (ρ.v i) ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c),
+      g ≤ psi ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))
+
+/-- **VSmallF is carried** (`t = 1`): the frames off the changed children are those of `M` (the parent's
+`v` and the earlier counted children do not change, as for FrameOT), the copy frames those of `P`.
+Residual `VSFRes`. -/
+theorem expStep_vsmallF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hRes : VSFRes M r L d0 ρ) :
+    ExpStepT1 (fun N σ => VrLe r ρ N σ ∧ VSmallF N σ) M r L d0 ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  obtain ⟨q0, hq0⟩ := par0_of_anc hA (by omega)
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq0
+  intro n hn ρP Z hCP hGP hQP0 hCN hGN hoto hotv hle hlex hH
+  refine ⟨expStep_vrle I hlen h1 hx2 n hn ρP Z hCP hGP hQP0.1 hCN hGN hoto hotv hle hlex hH, ?_⟩
+  have hQP := hQP0.2
+  have hR := hRes n hn ρP Z hH hCN
+  set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
+  have hlN := len_N (d0 := d0) hlen hn
+  have hlP := len_P (d0 := d0) (n := n) hlen
+  have hSA := sameAt_lt hlen hL hA hd0e hn hpath hx2
+    (hxnb_t1 hlen hL hA hd0e I.z2 I.z1 h1 n hn)
+    (hiu_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn)
+  have hσo : ∀ a, σ.o (r + L + a) = ρP.o (r + a) := by
+    intro a; rw [hσ, glueZ_o_ge ρ (shiftV ρP L) Z (by omega)]
+    show ρP.o (r + L + a - L) = ρP.o (r + a); congr 1; omega
+  have hσv : ∀ a, σ.v (r + L + a) = ρP.v (r + a) := by
+    intro a; rw [hσ, glueZ_v_ge ρ (shiftV ρP L) Z (by omega)]
+    show ρP.v (r + L + a - L) = ρP.v (r + a); congr 1; omega
+  intro i hi Lc c R hCL
+  rcases Nat.lt_or_ge i (r + L) with h | h
+  · have hS := hSA i h
+    have hCLe : CL (TRIO.gexp M r L d0 0 n) i = CL M i := by
+      unfold CL; rw [hS.ch]
+      apply List.filter_congr
+      intro c hc
+      exact decide_eq_decide.mpr (counted_iff_of_cnt (hS.cnt c hc))
+    rw [hCLe] at hCL
+    have hcCL : c ∈ CL M i := by rw [hCL]; simp
+    have hcch : c ∈ children M i := (List.mem_filter.mp hcCL).1
+    have hccnt : Counted M i c := by simpa using (List.mem_filter.mp hcCL).2
+    have hvd : ¬ DepX M (r + L) false i := by
+      intro hv
+      rcases hOS i h (DepX.ov hv) with ⟨_, hnc⟩ | ⟨hnv, _⟩
+      · rcases hnc c hcch with h' | h'
+        · exact hccnt.1 h'
+        · exact hccnt.2 h'
+      · exact hnv hv
+    have hLd : ∀ d ∈ Lc, ¬ DepX M (r + L) true d := by
+      intro d hd hdD
+      have hdCL : d ∈ CL M i := by rw [hCL]; simp [hd]
+      have hdch : d ∈ children M i := (List.mem_filter.mp hdCL).1
+      have hdcnt : Counted M i d := by simpa using (List.mem_filter.mp hdCL).2
+      have hdc : d < c := by
+        have hs : (CL M i).Pairwise (· < ·) := (children_sorted M i).filter _
+        rw [hCL] at hs
+        exact (List.pairwise_append.mp hs).2.2 d hd c List.mem_cons_self
+      have hiD : DepX M (r + L) true i := DepX.ochild hdch hdcnt.1 hdcnt.2 hdD
+      rcases hOS i h hiD with ⟨hv, _⟩ | ⟨_, L', c', R', hch, _, _, hR', hL'⟩
+      · exact hvd hv
+      · have hdc' : d = c' := by
+          rw [hch] at hdch
+          rcases List.mem_append.mp hdch with h' | h'
+          · exact absurd hdD (hL' d h' hdcnt)
+          · rcases List.mem_cons.mp h' with h' | h'
+            · exact h'
+            · rcases hR' d h' with h'' | h''
+              · exact absurd h'' hdcnt.1
+              · exact absurd h'' hdcnt.2
+        subst hdc'
+        have hsort := children_sorted M i
+        rw [hch] at hsort hcch
+        rcases List.mem_append.mp hcch with h' | h'
+        · have := (List.pairwise_append.mp hsort).2.2 c h' d List.mem_cons_self
+          omega
+        · rcases List.mem_cons.mp h' with h' | h'
+          · omega
+          · rcases hR' c h' with h'' | h''
+            · exact hccnt.1 h''
+            · exact hccnt.2 h''
+    have hLo : Lc.map σ.o = Lc.map ρ.o := by
+      apply List.map_congr_left
+      intro d hd
+      have hdCL : d ∈ CL M i := by rw [hCL]; simp [hd]
+      have hdM := (mem_children (List.mem_filter.mp hdCL).1).2
+      have hdx : d < r + L := by
+        rcases Nat.lt_or_ge d (r + L) with h' | h'
+        · exact h'
+        · exfalso
+          have : d = r + L := by omega
+          exact hLd d hd (this ▸ DepX.leaf)
+      rw [hσ, glueZ_o_lt ρ (shiftV ρP L) Z hdx (hLd d hd)]
+    rw [hσ, glueZ_v_lt ρ (shiftV ρP L) Z h hvd, ← hσ, hLo]
+    have hcM := (mem_children hcch).2
+    by_cases hcxe : c = r + L
+    · -- the frame of `x`: `v_N(x) = v_P(r) ≤ v(r) ≤ v(q)`, no components at the level `v(q)`
+      intro g hg
+      exfalso
+      have h0 : par M 0 c = some i := (mem_children_iff.mp hcch).2
+      have hvx : σ.v c = ρP.v r := by
+        rw [hcxe, hσ, glueZ_v_ge ρ (shiftV ρP L) Z (le_refl _)]
+        show ρP.v (r + L - L) = ρP.v r; rw [Nat.add_sub_cancel]
+      have hle' : ρP.v r ≤ ρ.v i :=
+        le_trans hQP0.1 (v_par1_le_par0 I.cons I.good I.rank hcM h0 (by rw [hcxe]; exact h1))
+      have hot : isOT (ρP.v r) = true := hGP.ot_v r (by rw [hlP]; have := Nat.mul_pos (show 0 < n - 1 by omega) hL; omega)
+      rw [hvx, comps_nil_of_le hot hle'] at hg
+      simp at hg
+    · have hcx : c < r + L := by omega
+      by_cases hcv : DepX M (r + L) false c
+      · exact hR i h Lc c R hCL hcv hcx
+      · rw [hσ, glueZ_v_lt ρ (shiftV ρP L) Z hcx hcv]
+        exact I.vs i (by omega) Lc c R hCL
+  · obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
+    have ha : a < (n - 1) * L := by omega
+    have hCLs : CL (TRIO.gexp M r L d0 0 n) (r + L + a) =
+        (CL (TRIO.gexp M r L d0 0 (n - 1)) (r + a)).map (· + L) := by
+      unfold CL
+      rw [children_shift (d0 := d0) hlen hL hA hd0e hn ha, List.filter_map]
+      congr 1
+      apply List.filter_congr
+      intro d hd
+      have hdc := mem_children hd
+      rw [hlP] at hdc
+      show decide (Counted (TRIO.gexp M r L d0 0 n) (r + L + a) (d + L)) =
+        decide (Counted (TRIO.gexp M r L d0 0 (n - 1)) (r + a) d)
+      apply decide_eq_decide.mpr
+      apply counted_iff_of_cnt1 (cnt_copy hlen hL hA hd0e hn hpath (I.z2 r) (ρ := ρ) (Z := Z) ha hd)
+      · have := hσo (d - r); rw [show r + L + (d - r) = d + L by omega,
+          show r + (d - r) = d by omega] at this
+        exact this
+      · obtain ⟨s, y, he⟩ := o_psi_form hCP (i := d) (by rw [hlP]; omega)
+        rw [he]; simp
+    rw [hCLs] at hCL
+    obtain ⟨Lc', T', hsplit, hLc, hT⟩ := List.map_eq_append_iff.mp hCL
+    obtain ⟨c', R', hT', hc', hR'⟩ := List.map_eq_cons_iff.mp hT
+    subst hLc hc' hR'
+    rw [hT'] at hsplit
+    have hLo : (Lc'.map (· + L)).map σ.o = Lc'.map ρP.o := by
+      rw [List.map_map]
+      apply List.map_congr_left
+      intro d hd
+      have hdCL : d ∈ CL (TRIO.gexp M r L d0 0 (n - 1)) (r + a) := by rw [hsplit]; simp [hd]
+      have hdc := mem_children (List.mem_filter.mp hdCL).1
+      have := hσo (d - r)
+      rw [show r + L + (d - r) = d + L by omega, show r + (d - r) = d by omega] at this
+      exact this
+    have hc'c := mem_children (List.mem_filter.mp (show c' ∈ CL (TRIO.gexp M r L d0 0 (n - 1)) (r + a) by
+      rw [hsplit]; simp)).1
+    rw [hlP] at hc'c
+    have hvc : σ.v (c' + L) = ρP.v c' := by
+      have := hσv (c' - r)
+      rw [show r + L + (c' - r) = c' + L by omega, show r + (c' - r) = c' by omega] at this
+      exact this
+    rw [hσv, hLo, hvc]
+    exact hQP (r + a) (by rw [hlP]; omega) Lc' c' R' hsplit
+
 /-- **The residual of VSmallF on the last summand**: at a frame below `x` whose counted child `c` is a `v`
-call of `D`, the components of the new last summand `fsD(last v(c), Z c)`; at `c = x`, as in `VSFRes`. -/
+call of `D`, the components of the new last summand `fsD(last v(c), Z c)`. -/
 def VSFRes2 (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
     Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ i, i < r + L → ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R →
-    (DepX M (r + L) false c → c < r + L →
+    DepX M (r + L) false c → c < r + L →
       ∀ g ∈ comps (ρ.v i) (fsD (last (ρ.v c)) (Z c)),
-        g ≤ psi ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))) ∧
-    (c = r + L →
-      ∀ g ∈ comps (ρ.v i) ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c),
-        g ≤ psi ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
+        g ≤ psi ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))
 
 /-- **`VSFRes` from the last-summand form.** -/
 theorem vsfRes_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
-    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h2 : VSFRes2 M r L d0 ρ) : VSFRes M r L d0 ρ := by
-  intro n hn ρP Z hH hCN i hi Lc c R hCL hcv g hg
+    {r L d0 : Nat} (h2 : VSFRes2 M r L d0 ρ) : VSFRes M r L d0 ρ := by
+  intro n hn ρP Z hH hCN i hi Lc c R hCL hcd hcx g hg
   have hcCL : c ∈ CL M i := by rw [hCL]; simp
   have hcch : c ∈ children M i := (List.mem_filter.mp hcCL).1
   have hcM := (mem_children hcch).2
   have h0 : par M 0 c = some i := (mem_children_iff.mp hcch).2
-  obtain ⟨hW, hX⟩ := h2 n hn ρP Z hH hCN i hi Lc c R hCL
-  by_cases hcx : c = r + L
-  · exact hX hcx g hg
-  have hcx' : c < r + L := by omega
-  rcases hcv with hcd | hcx''
-  · rw [glueZ_v_dep ρ (shiftV ρP L) Z hcx' hcd] at hg
-    by_cases hz : ρ.v c = z
-    · rw [hz] at hg; simp [fsD, comps] at hg
-    rw [fsD_init_last hz, comps_app, comps_init_v_nil I.cons I.good I.rank hcM h0] at hg
-    exact hW hcd hcx' g hg
-  · exact absurd hcx'' hcx
+  rw [glueZ_v_dep ρ (shiftV ρP L) Z hcx hcd] at hg
+  by_cases hz : ρ.v c = z
+  · rw [hz] at hg; simp [fsD, comps] at hg
+  rw [fsD_init_last hz, comps_app, comps_init_v_nil I.cons I.good I.rank hcM h0] at hg
+  have := h2 n hn ρP Z hH hCN i hi Lc c R hCL hcd hcx g hg
+  rwa [glueZ_v_dep ρ (shiftV ρP L) Z hcx hcd] at this ⊢
 
 /-! ## 組み立て: AbsD・AbsUW・AbsDN を運んだ形の hExp（t = 1） -/
 
@@ -804,12 +895,12 @@ def QV2 (N : Mat) (σ : Valn) : Prop := TPLoW N σ ∧ AbsDW N σ ∧ TPLoN N σ
 def PT1A (M : Mat) (r : Nat) (ρ : Valn) (N : Mat) (σ : Valn) : Prop :=
   FrameOT N σ ∧ RootP N σ ∧ BumpDec N σ ∧ FrameClosed N σ ∧ TrigOmC N σ ∧ TP1C N σ ∧ TP1WC N σ ∧
     TPLo N σ ∧ (AgrT1 M r ρ N σ ∧ AbsD N σ) ∧ (AgrT1 M r ρ N σ ∧ AbsUW N σ) ∧
-    (AgrT1 M r ρ N σ ∧ AbsDN N σ) ∧ VSmallF N σ ∧ QV2 N σ
+    (AgrT1 M r ρ N σ ∧ AbsDN N σ) ∧ (VrLe r ρ N σ ∧ VSmallF N σ) ∧ QV2 N σ
 
 /-- **`Inv3V` from the chain's output.** -/
 theorem inv3V_of_PT1A {M N : Mat} {r : Nat} {ρ σ : Valn} {rk : Bool → Nat → Nat} (hC : Cons N σ)
     (hR : Rk N rk) (hG : Good3 N σ) (hP : PT1A M r ρ N σ) : Inv3V N σ rk :=
-  let ⟨fo, rp, ⟨kd, td⟩, fc, trig, tp1, tp1w, tplo, ⟨_, ad⟩, ⟨_, auw⟩, ⟨_, adn⟩, vs, tplow, adw, tplon⟩ := hP
+  let ⟨fo, rp, ⟨kd, td⟩, fc, trig, tp1, tp1w, tplo, ⟨_, ad⟩, ⟨_, auw⟩, ⟨_, adn⟩, ⟨_, vs⟩, tplow, adw, tplon⟩ := hP
   ⟨hC, hG, hR, vs, fc, fo, kd, td, ad, absU_of_absD hC hG ad, tp1, tplo, tp1w, tplow, auw, adw, trig, tplon, adn,
     rootS_of_good hC hG, rp⟩
 
@@ -854,7 +945,7 @@ theorem inv3V_N_t1A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
   have hAg := agr_base hlen hL0 hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 I.cons I.good I.rank
   have hP1 : PT1A M r ρ (M.take (r + L)) (drop1 M (r + L) rk) :=
     ⟨V1.fo, hRP1, ⟨V1.kd, V1.td⟩, V1.fc, trig, tp1, tp1w, tplo, ⟨hAg, ad⟩, ⟨hAg, auw⟩, ⟨hAg, adn⟩,
-      V1.vs, tplow, adw, tplon⟩
+      ⟨vrle_base I R hlen hr, V1.vs⟩, tplow, adw, tplon⟩
   have hPs : ExpStepT1 (PT1A M r ρ) M r L (entry M 0 (r + L) - entry M 0 r) ρ :=
     expStep_and (expStep_frameOT_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq I.fo)
       (expStep_and (expStep_rootP_t1 hlen hL0 hd0e I.z2 I.uat I.r12 I.be I.r01 I.e00 hr hx2 I.rootP)
@@ -868,7 +959,7 @@ theorem inv3V_N_t1A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
                     (expStep_and (expStep_absD I hlen hL0 hd0e hr hx2 hResD)
                       (expStep_and (expStep_absUW I hlen hL0 hd0e hr hx2 hResU)
                         (expStep_and (expStep_absDN I hlen hL0 hd0e hr hx2 hResDN)
-                          (expStep_and (expStep_vsmallF I hlen hL0 hd0e hr hx2 (vsfRes_of I hlen hResV)) hQs)))))))))))
+                          (expStep_and (expStep_vsmallF I hlen hL0 hd0e hr hx2 (vsfRes_of I hResV)) hQs)))))))))))
   by_cases hqr : q = r
   · subst hqr
     obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=
