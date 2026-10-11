@@ -1,16 +1,16 @@
 /-
 **3 行・t = 0: 右端の変化で閾値 Ω_w が保たれる（ThrA・ThrV、2026-10-12、t0-exp）。**
 
-T0CutResGG の場面では切り口 κ はいつも Ω_{v(d)}（d は i の前の数える子で葉、d < c）。
+T0CutResGG の場面では切り口 κ はいつも Ω_u で、u は c の行 0 の祖先の v の上の Ω の塔（`TowSet`）。
 そこで o の列 c の引数の右端の変化 y = P + t ↦ y′ = P + T′ について
-「W の w で Ω_w < t なら Ω_w < T′」（`ThrA W y y′`）を運ぶ。
+「W の w で Ω_w < t なら Ω_w < T′」（`ThrA W y y′`）を W = TowSet で運ぶ。
 - 子の枠の 1 段（`thr_step`、re_step と同じ場合分け）: 両方書き換え lo(y) = 0 なら子の ThrA から、
   lo(y) ≠ 0 と書き換えなしは尾が ψ_s(y) ↦ ψ_s(y′)（添字が同じ、引数は 0 でない）なので無条件。
 - 葉の添字の変化（`thr_leaf`）: 尾 Ω_s ↦ Ω_{s′} は v の閾値 `ThrV W s s′` から。
 - κ < T′（`thr_cut`）: B = P + κ < y から κ < t、κ = Ω_w で ThrA。
 -/
 import Ytosk.V3T0RE
-import Ytosk.TwoRowT
+import Ytosk.Path
 
 namespace Ytosk
 
@@ -200,24 +200,18 @@ theorem thr_step {W : T → Prop} {a B s y y' : T} (hc : isOT (psi s y z) = true
     · unfold step; rw [if_neg hnt']; exact add_eq_app_of_ge ⟨_, _, rfl⟩ B hBc'
     · intro w _ h; exact om_lt_same hyz hy'z h
 
-/-- **The thresholds of a column** `c` (counted child of `k`): `v` of the counted children of `k` before `c`, and
-the thresholds of `k` when the frame `(k, c)` rewrites with no low part (the last summand passes up). -/
-inductive ThrSet (M : Mat) (ρ : Valn) : Nat → T → Prop
-  | sib {k c d : Nat} {Lc R : List Nat} : CL M k = Lc ++ c :: R → d ∈ Lc → ThrSet M ρ c (ρ.v d)
-  | up {k c : Nat} {Lc R : List Nat} {s y w : T} : CL M k = Lc ++ c :: R → ρ.o c = psi s y z →
-      lt (spArg (ρ.v k) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v k) z z) (psi s y z) = true →
-      (split y (psi (succ s) z z)).2 = z → ThrSet M ρ k w → ThrSet M ρ c w
+/-- `Ω` tower: `tower w 0 = w`, `tower w (q+1) = Ω_{tower w q}`. -/
+def tower (w : T) : Nat → T
+  | 0 => w
+  | q + 1 => psi (tower w q) z z
 
-/-- **The thresholds are `v` of earlier columns.** -/
-theorem ThrSet.earlier {M : Mat} {ρ : Valn} : ∀ {c : Nat} {w : T}, ThrSet M ρ c w → ∃ j, j < c ∧ w = ρ.v j
-  | _, _, @ThrSet.sib _ _ k c d Lc R h hd => by
-    have hs : (CL M k).Pairwise (· < ·) := (children_sorted M k).filter _
-    rw [h] at hs
-    exact ⟨d, (List.pairwise_append.mp hs).2.2 d hd c List.mem_cons_self, rfl⟩
-  | _, _, @ThrSet.up _ _ k c Lc R _ _ _ h _ _ _ hk => by
-    obtain ⟨j, hj, rfl⟩ := ThrSet.earlier hk
-    have hkc : k < c := (mem_children (cl_mem_children (show c ∈ CL M k by rw [h]; simp))).1
-    exact ⟨j, by omega, rfl⟩
+/-- **Tower thresholds of a column**: `Ω`-towers of height `≥ 1` over `v` of its row-0 ancestors (itself included). -/
+def TowSet (M : Mat) (ρ : Valn) (c : Nat) (w : T) : Prop := ∃ j q, Anc0 M j c ∧ w = tower (ρ.v j) (q + 1)
+
+theorem TowSet.child {M : Mat} {ρ : Valn} {c e : Nat} {w : T} (h : TowSet M ρ c w) (hp : par M 0 e = some c) :
+    TowSet M ρ e w := by
+  obtain ⟨j, q, ha, rfl⟩ := h
+  exact ⟨j, q, Anc0.step hp ha, rfl⟩
 
 /-- **The cut below the new tail**: `B = P + κ < y`, `κ = Ω_w` with `w ∈ W`, and `ThrA W y y′`. -/
 theorem thr_cut {W : T → Prop} {B y y' P a x T' κ w : T} (hT : ThrA W y y') (hB : lt B y = true)

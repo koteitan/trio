@@ -2,9 +2,9 @@
 **3 行・t = 0: T0CutResGG を閾値の残りに替えた最上位（2026-10-12、t0-exp）。**
 
 t0_otdT（V3T0DepT）は ThrA を運ぶので、切り口の残り T0CutResGG の代わりに
-- `T0CutKappa`（M だけ）: 切り口 κ（B = P + κ、κ ∈ cutsNSG s t）は c の前の兄弟 d の Ω_{v(d)}、
-- `T0ThrVRes`: v が変わる D の列 e で、前の列の v は v(e) より小さければ v_N(e) より小さい、
-- `T0ThrGRes`: g（r の親）の引数の右端の変化で g の閾値の集合 ThrSet の Ω_w が保たれる、
+- `T0CutKappa`（M だけ）: 切り口 κ（B = P + κ、κ ∈ cutsNSG s t）は Ω_u で、u は c の行 0 の祖先（c を含む）の v の上の塔（高さ 1 以上、TowSet）、
+- `T0ThrVRes`: v が変わる D の列 e で、親の TowSet の w は v(e) より小さければ v_N(e) より小さい、
+- `T0ThrGRes`: g（r の親）の引数の右端の変化で g の TowSet の Ω_w が保たれる、
 をとる。
 -/
 import Ytosk.V3T0DepT
@@ -16,7 +16,7 @@ open T
 
 set_option linter.unusedSectionVars false
 
-/-- **Residual (M only): the cut is `Ω_{v(d)}` of a counted sibling `d` before `c`.** -/
+/-- **Residual (M only): the cut is `Ω_u` with `u` a tower over `v` of a row-0 ancestor of `c`.** -/
 def T0CutKappa : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
     Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
@@ -26,21 +26,21 @@ def T0CutKappa : Prop :=
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       ∀ P a x, y = app P (psi a x z) →
       ∀ κ ∈ cutsNSG s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ →
-        ∃ d, d ∈ Lc ∧ κ = psi (ρ.v d) z z
+        ∃ u, TowSet M ρ c u ∧ κ = psi u z z
 
 /-- **Residual: the thresholds of a changed `v`.** -/
 def T0ThrVRes : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
     Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-      ∀ e, e < r → DepX M (r + L) false e → ThrV (WB ρ e) (ρ.v e) (σ.v e)
+      ∀ e, e < r → DepX M (r + L) false e → ∀ i, par M 0 e = some i → ThrV (TowSet M ρ i) (ρ.v e) (σ.v e)
 
 /-- **Residual: the thresholds at `g`.** -/
 def T0ThrGRes : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
     Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
-      ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → X' ≠ X → ThrA (ThrSet M ρ g) X X'
+      ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → X' ≠ X → ThrA (TowSet M ρ g) X X'
 
 theorem t0DF_ofT (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3cG M ρ)
     (hKap : T0CutKappa) (hTV : T0ThrVRes) (hTG : T0ThrGRes) (hVP : T0VSPRes) {M : Mat} {ρ : Valn}
