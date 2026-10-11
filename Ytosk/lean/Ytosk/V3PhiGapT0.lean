@@ -30,12 +30,12 @@ theorem not_depX_of_par1 {p d : Nat} (hd : d < r + L) (hpd : par M 1 d = some p)
   exact ((chg_struct (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB
     (depX_chgX hD)).1 rfl (by omega)).2.2 d hd hpd
 
-/-- **`NoGapP` of the t = 0 expansion.** `hlow` is the agreement before `r` outside `DepX` (`hoffD` in
+/-- **Any `VP Q` of the t = 0 expansion.** `hlow` is the agreement before `r` outside `DepX` (`hoffD` in
 `V3T0M`), `hσBv` the agreement with `tauN` from `r` on. -/
-theorem noGapP_t0 {ρ ρ' σ : Valn} {oMid : T} (hN : NoGapP M ρ) (hN' : NoGapP (M.take (r + L)) ρ')
+theorem vP_t0 {Q : T → Prop} {ρ ρ' σ : Valn} {oMid : T} (hN : VP Q M ρ) (hN' : VP Q (M.take (r + L)) ρ')
     (hlow : ∀ i, i < r → ¬ DepX M (r + L) false i → σ.v i = ρ.v i)
     (hσBv : ∀ i, r ≤ i → i < (TRIO.gexp M r L 0 0 n).length → σ.v i = (tauN r L n ρ ρ' oMid).v i) :
-    NoGapP (TRIO.gexp M r L 0 0 n) σ := by
+    VP Q (TRIO.gexp M r L 0 0 n) σ := by
   intro c p hc hpc
   rw [lenN0 hlen hn] at hc
   -- the column of `M` copied by `c` and its row-1 parent there
@@ -78,6 +78,13 @@ theorem noGapP_t0 {ρ ρ' σ : Valn} {oMid : T} (hN : NoGapP M ρ) (hN' : NoGapP
     split
     · exact hN d a hdM hda
     · exact hN' d a (by rw [List.length_take]; omega) (by rw [par_take M 1 d hd]; exact hda)
+
+/-- **`NoGapP` of the t = 0 expansion.** -/
+theorem noGapP_t0 {ρ ρ' σ : Valn} {oMid : T} (hN : NoGapP M ρ) (hN' : NoGapP (M.take (r + L)) ρ')
+    (hlow : ∀ i, i < r → ¬ DepX M (r + L) false i → σ.v i = ρ.v i)
+    (hσBv : ∀ i, r ≤ i → i < (TRIO.gexp M r L 0 0 n).length → σ.v i = (tauN r L n ρ ρ' oMid).v i) :
+    NoGapP (TRIO.gexp M r L 0 0 n) σ :=
+  vP_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hN hN' hlow hσBv
 
 end
 

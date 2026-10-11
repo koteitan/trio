@@ -22,9 +22,12 @@ def NoGap (V : T) : Prop :=
 def NoGap0 (V : T) : Prop :=
   ∀ u, SubS V u → u < psi (succ z) z z → u < etaOm z
 
+/-- **A value predicate on every column with a row-1 child.** -/
+def VP (Q : T → Prop) (M : Mat) (ρ : Valn) : Prop :=
+  ∀ c p, c < M.length → par M 1 c = some p → Q (ρ.v p)
+
 /-- **Value invariant**: every column with a row-1 child has a `v` without gaps at positive levels. -/
-def NoGapP (M : Mat) (ρ : Valn) : Prop :=
-  ∀ c p, c < M.length → par M 1 c = some p → NoGap (ρ.v p)
+def NoGapP (M : Mat) (ρ : Valn) : Prop := VP NoGap M ρ
 
 /-- **PhiX at holes of level 0.** -/
 def PhiX0 (M : Mat) (ρ : Valn) : Prop :=
@@ -112,15 +115,20 @@ theorem v_take_of_par1 {ρ ρ' : Valn} {rk' : Bool → Nat → Nat} (hC : Cons M
   exact (chg_off hx hC hG hC' hR' p (by omega)).2 (fun hch =>
     ((chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hch).1 rfl (by omega)).2.2 c hc hp)
 
-/-- **`NoGapP` passes to `M.take x`.** -/
-theorem noGapP_take {ρ ρ' : Valn} {rk' : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
-    (hC' : Cons (M.take x) ρ') (hR' : Rk (M.take x) rk') (hN : NoGapP M ρ) : NoGapP (M.take x) ρ' := by
+/-- **Any `VP Q` passes to `M.take x`.** -/
+theorem vP_take {Q : T → Prop} {ρ ρ' : Valn} {rk' : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hC' : Cons (M.take x) ρ') (hR' : Rk (M.take x) rk') (hN : VP Q M ρ) : VP Q (M.take x) ρ' := by
   intro c p hc hp
   have hlen : (M.take x).length = x := by rw [List.length_take]; omega
   rw [hlen] at hc
   rw [par_take M 1 c hc] at hp
   rw [v_take_of_par1 hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hR' hc hp]
   exact hN c p (by omega) hp
+
+/-- **`NoGapP` passes to `M.take x`.** -/
+theorem noGapP_take {ρ ρ' : Valn} {rk' : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hC' : Cons (M.take x) ρ') (hR' : Rk (M.take x) rk') (hN : NoGapP M ρ) : NoGapP (M.take x) ρ' :=
+  vP_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hR' hN
 
 omit hR0 hZ2 hSD hZ1 hUAT hUAB in
 /-- The row-1 chain of a column of `M.take x` is its chain in `M`. -/

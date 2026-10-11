@@ -1891,3 +1891,10 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 注意（import の衝突）: V3GroupA と V3ExpT2G がどちらも `Ytosk.SubT` を定義していて、両方を import できない（V3ExpT1A → V3GroupA と、V3DropH → … → V3ExpT2G）。V3T0VS2 では comps_init_v_nil・upg_target_val などを t0c_ の名前で写した。どちらかの名前を変えると写しは消せる。
 - PH3c の cut をもう一段狭めた（2026-10-11、`cutsH`）: 引数の側の位置への道は「引数に入る項の添字が s 以上」の高い道だけ。標準形の cut の枠 28.8 万件（deepA・deep2・deep3）はすべてこの形、閉性（基底 472、歩み 5584 段）も壊れる例 0。理由: t = 2 の写しの枠は σ の像そのもの（B・y・s が一致、169/169）で、σ は添字が V 以下の項の引数の中に入らないので、低い項の引数の中の位置は σ で保たれない。V3PKind・V3PDrop・V3PT0・V3PT1 はそのまま緑。
 - 追記（t0-exp、57475753）: AbsD・AbsU を groupA の形に（V3T0Phi）。NoGapP N は M の NoGapP から証明（noGapP_take・noGapP_t0）、AbsD・AbsU は absD_of_phiX・absU_of_phiX ∘ phiX_of_noGapR。残りは PhiX0R N。最上位 hExp_t0_mainG（仮定に M の NoGapP、T0RestG = T0VSResD2・PhiX0R・TPLo・AbsUW・TPLoN・AbsDN・TPLoW・AbsDW・T0Res3H）。V3T0Sh3 から V3Spine の import を外した（SubT の衝突を避けて V3PhiGap 系と一緒に使えるようにした）。
+- groupA（V3PhiGap0、緑）: 段 0 の穴を値の不変条件に置き換えた。
+  - NoGap0Pos V: V の部分項 ψ_a(b) + c で、a の加数と、a ≠ 0 のときの b の加数に [ψ_0(Ω_1), Ω_1) の項がない。行 1 の子を持つ列の v について C′ で 226 万件、例外 0（NoGap0PosP = VP NoGap0Pos）。
+  - Z0Hole X: fsD の経路で段 0 の穴 Ω_1 の直前の（残りでない）段階が添字か ψ_a（a ≠ 0）の引数、または節点 ψ_μ(Ω_{μ+1}) そのもの。reach_z0: 標準形の V で NoGap0Pos V なら、Z0Hole X（段 0）について Reach (SubS V) X ψ_0(Ω_1)。
+  - Z0Link: Z0Hole でない段 0 の穴（W = Ω_1 と、ψ_0 の引数で前置きのある Ω_1）では v(p) が NoGap0（C′ で 210826 件、例外 0）。段 0 の残り 122 件はすべて Z0Hole。
+  - phiX_of_z0: Good3 ∧ NoGapP ∧ NoGap0PosP ∧ Z0Link ⇒ PhiX。
+  - 保存の部品を値の述語 Q 一般にした（VP Q、vP_take・vP_t0）。NoGap0PosP は 1 列落とし・t = 0 で NoGapP と同じ証明で運べる。t = 2 では V′ = v_N(r + L) が [ψ_0(Ω_1), Ω_1) の加数を持つことがある（3.7 万件中 144 件）ので、σ だけの補題にはならない（未着手）。
+  - 残り: Z0Link の保存（1 列落とし・t = 0・t = 2）。PhiX0R より狭い形の条件（穴の形と v(p) の値の関係）だが、まだ関係の条件。
