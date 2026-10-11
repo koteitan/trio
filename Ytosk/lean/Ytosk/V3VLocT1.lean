@@ -866,8 +866,11 @@ variable {M : Mat} {x r : Nat} {ρ : Valn} {μ br vr ζ X : T} (hx : x + 1 = M.l
   (hTPLo : TPLo M ρ) (hAU : AbsU M ρ) (hbrl : last br ≠ psi (succ μ) z z)
   (hζ : ζ = psi μ X z) (hXz : X ≠ z) (hζfix : omega ζ = ζ) (hζΩ : etaOm μ ≤ ζ)
   (hok : ∀ t, isOT t = true → HoleT μ br vr t → isOT (fsD t ζ) = true ∧ fsD t ζ < t)
+  (hADζ : ∀ i, i < x → DepX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → OHole (bumpW M ρ i) →
+    holeLev (bumpW M ρ i) = μ → ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+      q < fsD (bumpW M ρ i) ζ)
 include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hrx hAr hro hcb hμr hbr hHx hF1 hOS hS2 hS3
-  hTPLo hAU hbrl hζ hXz hζfix hζΩ hok
+  hTPLo hAU hbrl hζ hXz hζfix hζΩ hok hADζ
 
 /-- **`VLocal` on `D`** from the invariants. -/
 theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i := by
@@ -971,9 +974,8 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
         fsD_app _ hωGz ζ, hωGfs]
     -- absorption
     have hOW : OHole (bumpW M ρ i) := by rw [hBD.W]; exact ohole_of_holeT hHW
-    have hA2 := hAD i (by omega) h1 h2 hOW
+    have hA2 := hADζ i hi hv h1 h2 hOW (by rw [hBD.W]; exact holeLev_holeT hHW)
     rw [hBD.W] at hA2
-    rw [holeLev_holeT hHW] at hA2
     refine ⟨L, K, j, k, h2, hch, hjb, hchj, hKnd, hLnd, hfkS, hBD.sK, hBD.pK, hBD.sL, hBD.pp, ?_,
       hBD.gt, ?_, hωp, ?_, hBD.passG, hBD.passP⟩
     · -- pairwise with `ω^{G'}`
@@ -989,7 +991,7 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
         exact omega_lt_omega rfl hG'ot (lt_of_le_of_ne (z_le _) (Ne.symm hG'z))
     · intro t ht hlt
       rw [← hωp]
-      exact lt_of_lt_of_le (hA2 t ht hlt) (fsD_mono_eta (ohole_of_holeT hHW) hζΩ)
+      exact hA2 t ht hlt
 
 end
 
@@ -1636,6 +1638,8 @@ theorem t1_main_vloc {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
     | zero =>
       exact vlocal_t1 (X := σ) hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hrx hA hro hcb hμr
         hbr hHx hF1 hOS hS2 hS3 hTPLo hAU hbrl hs hσz hζfix hζΩ hok
+        (fun i hi _ h1 h2 hO hl q hq hlt => lt_of_lt_of_le
+          (by have h := hAD i (by omega) h1 h2 hO q hq hlt; rwa [hl] at h) (fsD_mono_eta hO hζΩ))
     | succ m =>
       have hne' : gamS μ br ((drop1 M (r + L) rkM).o r) m ≠ z := by
         intro h
@@ -1645,6 +1649,8 @@ theorem t1_main_vloc {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
       exact vlocal_t1 (X := fs br (gamS μ br ((drop1 M (r + L) rkM).o r) m)) hlen hR0 hZ2 hSD hZ1 hUAT
         hUAB hx2 hq hC hG hKD hTD hAD hrx hA hro hcb hμr hbr hHx hF1 hOS hS2 hS3 hTPLo hAU hbrl rfl
         (fs_ne_z_big hcb hne') hζfix hζΩ hok
+        (fun i hi _ h1 h2 hO hl q hq hlt => lt_of_lt_of_le
+          (by have h := hAD i (by omega) h1 h2 hO q hq hlt; rwa [hl] at h) (fsD_mono_eta hO hζΩ))
   exact t1_main_tpl hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
     hVS hF hFO hTP (TPL_of_TPLo hTPLo) hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hseedΩ hV hsM hpM hG1 Pn hP1 hPs
 

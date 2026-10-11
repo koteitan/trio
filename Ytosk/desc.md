@@ -2709,3 +2709,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - P_1(c) が r より上は v(c) ≤ V（t_above0A・t_aboveA: V3Tame の t_above0・t_above を「x は r の子孫」に一般化）。P_1(c) = r・行 2 = 0・c ≠ x − 1 は上げる（t_upg_ne）。
   - r の枠: 状態 B は動かず、レベル V と V′ = V + 1 で sp は同じ（子の v は V + 1 より上、spArg_level）。最後の子の切り口を step_cut で運び、加数がすべて Ω_{V+2} 以上なので cutsHG から cutsNSG へ（`hg_to_nsg`）。
 - 実測（rs.py・rs2.py）: sv の M.take x の見える列すべてで上の不変条件が 7 集合で例外 0。C（V′ = s′）では bump 子の v で破れるので、CFix には別の形が要る。
+
+### AbsUW_L・AbsD の吸収の分岐を t = 1 側に用意（2026-10-12、t1-exp、V3QRLocV・V3VLocT1）
+
+- AbsUWL（V3QRLocV、28134060）: groupA の auwl.py と行ごとに一致（groupA 確認済み）。最後の列の枠（t = 1・q = r）の D の v の列 i で、上げ先 k の last v(k) に吸収される v(P_1 i) の加数は、添字 gamS μ b_r 1 (max 1 d_i) でも吸収される。添字 0（種そのもの）は別の仮定 hAUs0（q < fsD(last v(k), o_{M.take x}(r))）。qr_vloc・qr_final〜qr_final3 は AbsUW でなく AbsUWL・hAUs0 で受ける。qr_final4 は型を変えず、中で AbsUW から両方を作る（absUWL_of_absUW）。
+  - 実測（auws.py）: AbsUW_L・種の場合とも、C′・deep2・t1ext・d3s で例外 0（ほかの集合は測定中、groupA の 8 集合の表にも載る）。
+- AbsD の吸収の分岐（V3VLocT1）: vlocal_t1 の bump の枠は AbsD（最小の η = ψ_μ(Ω_{μ+1})）でなく、仮定 hADζ「穴の段が μ の bump の枠で、q < W なら q < fsD(W, ζ)（ζ は鎖の実際の添字）」を使う。groupA の AbsD_N（実際の種での吸収）と同じ形で、7 集合で例外 0。呼ぶ側（t1_main_final の中）は今は AbsD と hζΩ から作る。
+- **Inv3V の作り直しで t = 1 が要る欄の変更**（リーダーの一括の作り直し用）:
+  - AbsUW → AbsUWL（最後の列の枠）＋ 種の場合 AbsUW0（hAUs0 の形、o_{M.take x}(r) での吸収）。消費は qr_vloc の上げの枠だけ。t = 1 の運び（expStep_absUW・AbsUWRes）は要らなくなる。M[n] の AbsUWL は最後の列の枠の欄（TPLoW・AbsDW と同じく hFrm の残り）として出す。
+  - AbsD → q ≠ r の最後の列の枠の吸収 AbsDS（D の bump の列で q < W なら q < fsD(W, o_{M.take x}(r))。ζ ≥ 種なので fsD の単調性で鎖の全部の添字に効く）。消費は vlocal_t1 の hADζ だけ（t1_hole0・v_bump_D・qr_holeD は受け渡すだけ）。q = r 側は AbsDW（既に鎖の下限の形）と hADs0。
+  - TPLo: 運びの残りは TPLoPathRes（道の形、全集合で例外 0）。TPLo の欄そのもの（ext1 で 1 件偽）の替わりは groupA の表に合わせる。消費は expStep_tploP の M 側（tploAt_of I.tplo）と tplon_of_lf・qr の TPLoW。
