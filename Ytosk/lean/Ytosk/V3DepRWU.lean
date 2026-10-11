@@ -11,6 +11,7 @@ import Ytosk.V3DepR
 import Ytosk.V3DepOTW
 import Ytosk.V3RelRU
 import Ytosk.V3T0OT
+import Ytosk.V3T0DepU
 import Ytosk.V3VSF
 
 namespace Ytosk
@@ -18,51 +19,6 @@ namespace Ytosk
 open T
 
 set_option linter.unusedSectionVars false
-
-/-- **The claim at a column, at the levels `U`** (the same body as `RClaimU` of V3T0DepU; kept here so that
-the `t = 2` files do not import the `t = 0` files). -/
-def RClaimUS (U : T → Prop) (ρ ρ' : Valn) (i : Nat) : Prop :=
-  ∀ p y y' q, ρ.o i = psi p y z → ρ'.o i = psi p y' z → ¬ lt p q = true →
-    (∀ u, U u → ¬ lt q u = true → ∀ g ∈ comps u p, g ≤ psi p z z ∨ g < H p y' ∨ ∃ d ∈ comps u q, g ≤ d) →
-    RelRU U q (H p y') (H p y)
-
-theorem rclaim_zeroUS {U : T → Prop} {ρ ρ' : Valn} {i : Nat} {p' : T} (h : ρ'.o i = psi p' z z) :
-    RClaimUS U ρ ρ' i := by
-  intro p y y' q _ hy' _ _
-  rw [h] at hy'; simp only [psi.injEq] at hy'; rw [← hy'.2.1, H_z]
-  intro u _ _ c _ _ g hg; simp [comps] at hg
-
-/-- **`RClaimUS` from the class of the argument pair** (A, B0 or C) and `X′ ◁ X` (copy of `rclaim_of_clsU`). -/
-theorem rclaim_of_clsUS {U : T → Prop} {ρ σ : Valn} {i : Nat} {a X X' : T} (hX : ρ.o i = psi a X z) (hX' : σ.o i = psi a X' z)
-    (hot : isOT (psi a X z) = true) (hot' : isOT (psi a X' z) = true) (hl : Lhd z X' X)
-    (hcls : ClsNode a X' X) : RClaimUS U ρ σ i := by
-  intro p y y' q hy hy' _ _
-  rw [hX] at hy; rw [hX'] at hy'
-  simp only [psi.injEq] at hy hy'
-  obtain ⟨rfl, rfl, -⟩ := hy
-  obtain ⟨-, rfl, -⟩ := hy'
-  rcases hcls with ⟨hhi, hlo'⟩ | ⟨h1, h2⟩ | hC
-  · have e := split_app (psi (succ a) z z) X
-    have e' := split_app (psi (succ a) z z) X'
-    have hlt : (split X' (psi (succ a) z z)).2 < (split X (psi (succ a) z z)).2 := by
-      have h := hl.1
-      rw [← e, ← e', hhi] at h
-      exact (app_lt_app_left_iff _).mp h
-    exact relR_H_samehiU hot' hot (Or.inr (lhd_psi a hl)) hhi hlt
-  · rw [H_of_lo_z hot h2, H_of_lo_z hot' h1]
-    have := relR_prefix_lhdU (U := U) (q := q) (P := z) hl
-    simpa [app] using this
-  · have hlo : (split X (psi (succ a) z z)).2 ≠ z := by
-      intro h
-      have e := split_app (psi (succ a) z z) X
-      rw [h, app_z_right, ← hC] at e
-      rw [e] at hl; exact lt_irrefl' _ hl.1
-    have hHX' : H a X' = X' := H_all_hi hot' (by rw [hC]; exact split_fst_ge _ X)
-    rw [hHX', H_eq hot, if_neg hlo, hC]
-    apply relR_self_prefixU
-    intro c hc1 hc2
-    exact prefix_tests (e := z) c (by rw [app_z_right]; exact hc1) hc2
-
 
 /-- **The levels carried down the `D` path** (`DepS` form of `PathLv`): `u = v(k)` for a frame `(k, c)` whose old
 child rewrites, and the levels of `k` when the frame `(k, c)` rewrites. -/
@@ -112,7 +68,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
         Lhd z (valB σ b' i') (valB ρ b' i') ∧ isOT (valB σ b' i') = true) →
       Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true)
     (hSeedR : ∀ i, S true i → i < bnd → DepS M S true i →
-      ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimUS U ρ σ i)
+      ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i)
     (hDvNil : ∀ c, c < bnd → ¬ W true c → ¬ S true c → DepS M S false c → CL M c = [])
     (hDvNilN : ∀ c, c < bnd → ¬ W true c → DepS M S false c → CL N c = [])
     (hCLnil : ∀ c, c < bnd → ¬ W true c → CL M c = [] → CL N c = [])
@@ -133,7 +89,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
       ∀ k' ∈ children N j, k' < bnd → j ∈ children M k ∧ col M j = bump M k ∧ k' ∈ children M j)
     (hAbs : AbsWN M N bnd ρ σ) :
     ∀ b i, DepS M S b i → i < bnd → ¬ W b i →
-      (Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true) ∧ (b = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimUS U ρ σ i) := by
+      (Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true) ∧ (b = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i) := by
   -- standard values outside `D` (below `bnd`) and from `bnd` on
   have hOTo : ∀ j, j < N.length → (j < bnd → ¬ DepS M S true j) → isOT (σ.o j) = true := by
     intro j hj hnd
@@ -146,7 +102,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
     · rw [(hoff j h).2 (hnd h)]; exact hG.ot_v j (by omega)
     · exact hOTout false j h hj
   have key : ∀ K, ∀ b i, rk b i ≤ K → DepS M S b i → i < bnd → ¬ W b i →
-      (Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true) ∧ (b = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimUS U ρ σ i) := by
+      (Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true) ∧ (b = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i) := by
     intro K
     induction K using Nat.strongRecOn with
     | _ K ih =>
@@ -174,7 +130,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
         subst hb; exact hSeedR i hs hi hD
       cases b with
       | true =>
-        show (Lhd z (σ.o i) (ρ.o i) ∧ isOT (σ.o i) = true) ∧ (true = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimUS U ρ σ i)
+        show (Lhd z (σ.o i) (ρ.o i) ∧ isOT (σ.o i) = true) ∧ (true = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i)
         by_cases hv : DepS M S false i
         · -- through `v`
           obtain ⟨⟨hIH, hIHot⟩, -⟩ := ih _ (by omega) false i (le_refl _) hv hi (hWv i)
@@ -183,7 +139,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
           have hclM := hDvNil i hi hWi hs hv
           have ho : σ.o i = psi (σ.v i) z z :=
             o_of_no_counted hCN hiN hIHot (no_cnt_of_cl_nil (hDvNilN i hi hWi hv))
-          refine ⟨?_, fun _ _ _ => rclaim_zeroUS ho⟩
+          refine ⟨?_, fun _ _ _ => rclaim_zeroU ho⟩
           rw [ho, o_of_no_counted hC hiM (hG.ot_v i hiM) (no_cnt_of_cl_nil hclM)]
           refine ⟨lhd_of_lhdE_lt (lhdE_oq_v (Or.inr hIH)) (psi_lt_psi_z_iff.mpr (Or.inl hIH.1)), ?_⟩
           rw [isOT_psi_iff]
@@ -375,7 +331,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
             (fun ht hnt _ => absurd (hTA i Lc c hi hcb hclN hv' hsame s y s' y' hsy hs'y' ht) hnt)
             hqp hhyp
       | false =>
-        show (Lhd z (σ.v i) (ρ.v i) ∧ isOT (σ.v i) = true) ∧ (false = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimUS U ρ σ i)
+        show (Lhd z (σ.v i) (ρ.v i) ∧ isOT (σ.v i) = true) ∧ (false = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i)
         refine ⟨?_, fun h => by cases h⟩
         obtain ⟨he1, he2, hpar, hpnd, hupg, hupgb, hbsh⟩ := hVc i hi hs hD
         have hVot : isOT (vOpt ρ (par M 1 i)) = true := by
@@ -538,10 +494,10 @@ theorem VSmallRA.toS {M : Mat} {ρ : Valn} (h : VSmallRA M ρ) (S : Bool → Nat
   fun k c Lc s y _ _ hcl _ _ hsy ht hhz u hu => h k c Lc s y hcl hsy ht hhz u (hu.imp id PathLvS.toA)
 
 /-- **The replacement of `T2Hard` and `T2VSN`** (one seed `p`, residual part): `VSmallRA` of `M`, the
-hypothesis `T2TrigN` (the rewrites agree), and `RClaimUS` at the seed. (`T2VSN` and `VSmallNewR` are not needed:
+hypothesis `T2TrigN` (the rewrites agree), and `RClaimU` at the seed. (`T2VSN` and `VSmallNewR` are not needed:
 off the seeds a changed `v(c)` has no counted child, and `v` of the seed does not change.) -/
 def T2HardB (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
-  VSmallRA M ρ ∧ T2TrigN N bnd ρ σ ∧ ∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimUS U ρ σ p
+  VSmallRA M ρ ∧ T2TrigN N bnd ρ σ ∧ ∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimU U ρ σ p
 
 /-- `T2HardB` and an unchanged `v` of the seed. -/
 def T2HardA (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
@@ -553,7 +509,7 @@ theorem T2HardA.of_B {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardB M N b
 theorem T2HardA.seed {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop)
     (hSp : ∀ i, S true i → i = p) :
     ∀ i, S true i → i < bnd → DepS M S true i →
-      ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimUS U ρ σ i := by
+      ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i := by
   intro i hs _ _ U hU
   have := hSp i hs; subst this
   exact h.1.2.2 U (fun u hu => (hU u hu).toA)
