@@ -3,10 +3,11 @@
 
 u と fsD(X, ξ) の比較は、fsD の再帰に沿って X の穴の位置まで降り、そこで u の 1 本の部分項と ξ の比較になる。
 groupA の fsD_transfer は条件を u のすべての部分項（部分項で閉じた集合 S）に課すが、使うのはこの 1 本の道だけ。
-PathOK P X u: X の穴に並ぶ u の部分項（頭が一致するところだけ降りる）が P を満たす。
+groupA の Al X s u（X の穴に並ぶ s の部分項、V3AlignT）と fsD_transfer_al を使う。
 t = 1 の TPLo の種の条件は ext1x・expP で偽になる（s0 の深い部分項が帯に入る）が、道の条件は成り立つ。
 -/
 import Ytosk.V3ExpT1N
+import Ytosk.V3AlignT
 
 namespace Ytosk
 
@@ -14,98 +15,13 @@ open T
 
 set_option linter.unusedSectionVars false
 
-/-- **The path condition**: the subterm of `u` aligned with the hole of `X` satisfies `P`. -/
-def PathOK (P : T → Prop) : T → T → Prop
-  | z, _ => True
-  | psi a b (psi c d e), u => match u with
-      | z => True
-      | psi a' b' c' => a' = a → b' = b → PathOK P (psi c d e) c'
-  | psi a b z, u =>
-      if b = z then
-        (if isSucc a = true then P u else match u with
-          | z => True
-          | psi a' _ _ => PathOK P a a')
-      else match u with
-        | z => True
-        | psi a' b' _ => a' = a → PathOK P b b'
-
-/-- **`fsD_transfer` along the path.** -/
-theorem fsD_transfer_path {ξ₀ ξ₁ ξ₂ : T} :
-    ∀ {X : T}, OHole X → ∀ u, PathOK (fun w => w < ξ₁ → w < ξ₀ → w < ξ₂) X u →
-      u < fsD X ξ₁ → u < fsD X ξ₀ → u < fsD X ξ₂
-  | z, hO, _, _, _, _ => absurd hO (by simp [OHole])
-  | psi a b (psi c d e), hO, u, hu, h1, h0 => by
-    have hO' : OHole (psi c d e) := hO
-    have hf : ∀ ξ, fsD (psi a b (psi c d e)) ξ = psi a b (fsD (psi c d e) ξ) := fun _ => rfl
-    rw [hf] at h1 h0 ⊢
-    cases u with
-    | z => exact T.z_lt_psi _ _ _
-    | psi a' b' c' =>
-      rw [T.psi_lt_psi] at h1 h0 ⊢
-      rcases h1 with h1 | ⟨rfl, h2⟩ | ⟨rfl, rfl, h3⟩
-      · exact Or.inl h1
-      · exact Or.inr (Or.inl ⟨rfl, h2⟩)
-      · rcases h0 with h0 | ⟨_, h0⟩ | ⟨_, _, h0⟩
-        · exact absurd h0 (lt_irrefl' _)
-        · exact absurd h0 (lt_irrefl' _)
-        · have hu' : PathOK (fun w => w < ξ₁ → w < ξ₀ → w < ξ₂) (psi c d e) c' := hu rfl rfl
-          exact Or.inr (Or.inr ⟨rfl, rfl, fsD_transfer_path hO' c' hu' h3 h0⟩)
-  | psi a b z, hO, u, hu, h1, h0 => by
-    by_cases hb : b = z
-    · subst hb
-      have h2 : a ≠ z ∧ (isSucc a = true ∨ OHole a) := by simpa [OHole] using hO
-      by_cases hs : isSucc a = true
-      · rw [fsD_leaf hs h2.1] at h1 h0 ⊢
-        have hu' : u < ξ₁ → u < ξ₀ → u < ξ₂ := by
-          simpa [PathOK, hs] using hu
-        exact hu' h1 h0
-      · have hs' : isSucc a = false := by simpa using hs
-        have hOa : OHole a := by simpa [hs] using h2.2
-        rw [fsD_sub h2.1 hs'] at h1 h0 ⊢
-        cases u with
-        | z => exact T.z_lt_psi _ _ _
-        | psi a' b' c' =>
-          have hu' : PathOK (fun w => w < ξ₁ → w < ξ₀ → w < ξ₂) a a' := by simpa [PathOK, hs'] using hu
-          rw [T.psi_lt_psi] at h1 h0 ⊢
-          rcases h1 with h1 | ⟨_, h1⟩ | ⟨_, _, h1⟩
-          · rcases h0 with h0 | ⟨_, h0⟩ | ⟨_, _, h0⟩
-            · exact Or.inl (fsD_transfer_path hOa a' hu' h1 h0)
-            · exact absurd h0 (T.not_lt_z _)
-            · exact absurd h0 (T.not_lt_z _)
-          · exact absurd h1 (T.not_lt_z _)
-          · exact absurd h1 (T.not_lt_z _)
-    · have hs : isSucc b = false := by
-        by_contra hc
-        have : isSucc b = true := by simpa using hc
-        simp [OHole, hb, this] at hO
-      have hOb : OHole b := by
-        cases hcb : cof b with
-        | big μ => exact ohole_of_cof_big hcb
-        | zero => simpa [OHole, hb, hs, hcb] using hO
-        | succ => simpa [OHole, hb, hs, hcb] using hO
-        | omega => simpa [OHole, hb, hs, hcb] using hO
-      rw [fsD_psi hb hs] at h1 h0 ⊢
-      cases u with
-      | z => exact T.z_lt_psi _ _ _
-      | psi a' b' c' =>
-        rw [T.psi_lt_psi] at h1 h0 ⊢
-        rcases h1 with h1 | ⟨rfl, h2⟩ | ⟨rfl, _, h3⟩
-        · exact Or.inl h1
-        · rcases h0 with h0 | ⟨_, h0⟩ | ⟨_, _, h0⟩
-          · exact absurd h0 (lt_irrefl' _)
-          · have hu' : PathOK (fun w => w < ξ₁ → w < ξ₀ → w < ξ₂) b b' := by
-              simpa [PathOK, hb] using hu
-            exact Or.inr (Or.inl ⟨rfl, fsD_transfer_path hOb b' hu' h2 h0⟩)
-          · exact absurd h0 (T.not_lt_z _)
-        · exact absurd h3 (T.not_lt_z _)
-
 /-- **`tplo_fsD_gen` along the path.** -/
 theorem tplo_fsD_path {s a0 ζ θ η0 : T} (hOa0 : OHole a0) (hζ : ζ ≠ z) (hζs : isSucc ζ = false)
     (hM : s < fsD a0 η0) (hN : s < fsD a0 ζ)
-    (hpath : PathOK (fun w => w < ζ → w < η0 → w < fsD ζ θ) a0 s) :
+    (hpath : ∀ u, Al a0 s u → u < ζ → u < η0 → u < fsD ζ θ) :
     s < fsD (fsD a0 ζ) θ := by
   rw [fsD_comp hOa0 hζ hζs θ]
-  exact fsD_transfer_path hOa0 s hpath hN hM
+  exact fsD_transfer_al hOa0 s hpath hN hM
 
 
 /-- **Residual (TPLo, the path form)**: the subterm of `s₀` aligned with the hole of the old last subscript `a₀`
@@ -116,11 +32,11 @@ def TPLoPathRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
     Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
     GoodIdx (Z c) → TPLoPatN s0 y0 (Z c) → ∀ a0, last y0 = psi a0 z z →
-    PathOK (fun w => w < Z c → w < etaOm (holeLev y0) → w < fsD (Z c) (etaOm (holeLev (Z c)))) a0 s0
+    ∀ u, Al a0 s0 u → u < Z c → u < etaOm (holeLev y0) → u < fsD (Z c) (etaOm (holeLev (Z c)))
 
 theorem tplo_new_path {s0 y0 ζ θ : T} (hO : OHole y0) (hζz : ζ ≠ z) (hζs : isSucc ζ = false)
     (hζ1 : ∃ μ X, ζ = psi μ X z ∧ X ≠ z) (hle : fsD y0 ζ ≤ y0) (hM : TPLoAt s0 y0)
-    (hS : ∀ a0, last y0 = psi a0 z z → PathOK (fun w => w < ζ → w < etaOm (holeLev y0) → w < fsD ζ θ) a0 s0) :
+    (hS : ∀ a0, last y0 = psi a0 z z → ∀ u, Al a0 s0 u → u < ζ → u < etaOm (holeLev y0) → u < fsD ζ θ) :
     (split (fsD y0 ζ) (psi (succ s0) z z)).2 = z → ∀ a, last (fsD y0 ζ) = psi a z z →
       ¬ psi (fsD a θ) z z < psi (succ s0) z z := by
   intro hsplit a hl
@@ -137,7 +53,7 @@ theorem tplo_new_path {s0 y0 ζ θ : T} (hO : OHole y0) (hζz : ζ ≠ z) (hζs 
 theorem tploAt_new_path {s0 y0 ζ : T} (hO : OHole y0) (hζz : ζ ≠ z) (hζs : isSucc ζ = false)
     (hζ1 : ∃ μ X, ζ = psi μ X z ∧ X ≠ z) (hle : fsD y0 ζ ≤ y0) (hM : TPLoAt s0 y0)
     (hS : ∀ a0, last y0 = psi a0 z z →
-      PathOK (fun w => w < ζ → w < etaOm (holeLev y0) → w < fsD ζ (etaOm (holeLev ζ))) a0 s0) :
+      ∀ u, Al a0 s0 u → u < ζ → u < etaOm (holeLev y0) → u < fsD ζ (etaOm (holeLev ζ))) :
     TPLoAt s0 (fsD y0 ζ) := by
   intro hsplit a hl _ _
   rw [holeLev_fsD hO hζz hζs]
