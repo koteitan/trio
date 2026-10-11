@@ -52,7 +52,7 @@ theorem hExp_t0_topH
   have hFF := t0_frameFieldsF hFrm hAD (t0_tplo hTPR)
   have H2 : T0RestNV := ⟨hAD, hAU, t0_tplo hTPR, t0_absUW hAUWR, hFF.2.2, t0_absDN hADNR, hFF.1, hFF.2.1⟩
   have hDF := t0DF_ofH hPH hCut hHard hM hS I R
-  apply hExp_t0B hDF (t0_vsmallF_at (t0VSD_at hDF) hIV) H2
+  apply hExp_t0B hDF.toH (t0_vsmallF_at (t0VSD_at hDF.toH) hIV) H2
     (fun N σ hN hNS hC hO => by
       obtain ⟨h1, h2, h3, h4⟩ := hPHN N σ hN hNS hC hO
       exact ⟨tp1C_of_ph3c hC hO h1 h2, tp1WC_of_ph3c hC hO h1 h3, trigOmC_of_ph3c hC hO h1 h4⟩)

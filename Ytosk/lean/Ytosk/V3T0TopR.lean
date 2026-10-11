@@ -54,6 +54,20 @@ def T0DF (M : Mat) (ρ : Valn) : Prop :=
         (σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X')) ∧
         (DepX M (r + L) false i → isOT (σ.v i) = true ∧ Lhd z (σ.v i) (ρ.v i))
 
+/-- `T0DF` without the RE slot (enough for `VSmallF` and the standard form of `N`). -/
+def T0DFH (M : Mat) (ρ : Valn) : Prop :=
+  ∀ r L, r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
+      ∀ i, i < r → (DepX M (r + L) true i → isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ True ∧
+        (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z) ∧ True) ∧
+        (DepX M (r + L) false i → isOT (σ.v i) = true ∧ Lhd z (σ.v i) (ρ.v i))
+
+theorem T0DF.toH {M : Mat} {ρ : Valn} (h : T0DF M ρ) : T0DFH M ρ := by
+  intro r L h1 h2 h3 h4 n hn σ hC i hi
+  refine ⟨fun hd => ?_, (h r L h1 h2 h3 h4 n hn σ hC i hi).2⟩
+  obtain ⟨a, b, c, d, _⟩ := (h r L h1 h2 h3 h4 n hn σ hC i hi).1 hd
+  exact ⟨a, b, c, d, trivial⟩
+
 /-- **`T0DF` from the residuals and `VSmallR` of `M`.** -/
 theorem t0DF_of (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
     (hCut : T0CutResG) (hIV : T0IVRes) {M : Mat} {ρ : Valn}
@@ -343,7 +357,7 @@ theorem t0RWResAt_of (P : T → T → T → T → Prop)
 /-- **The `D` part of `VSmallF` of `N = M[n]`** at one matrix (`T0VSResD` for this `M`), from `T0DF`: a counted
 child `c` whose `v` changes is the last counted child, has no counted child (`o = Ω_v`), and `v′(c) ◁ v(c)`
 (`vs_changed_bound`). -/
-theorem t0VSD_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hDF : T0DF M ρ) :
+theorem t0VSD_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hDF : T0DFH M ρ) :
     ∀ r L n σ rkN, T0Ctx M ρ rk r L n σ rkN →
     ∀ i (Lc : List Nat) c (R : List Nat), i < r → c < r → CL M i = Lc ++ c :: R → σ.v c ≠ ρ.v c →
       ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) := by
@@ -781,7 +795,7 @@ theorem hExp_t0_topR
   have H2 : T0RestNV := ⟨g _ (t0_absD hRest.phi), g _ (t0_absU hRest.phi), g _ (f _ (t0_tplo hRest.tploR)),
     g _ (f _ (t0_absUW hRest.auwR)), g _ hFF.2.2, g _ (f _ (t0_absDN hRest.adnR)), g _ hFF.1, g _ hFF.2.1⟩
   have hDF := t0DF_of hPH hCut hIV hM hS I R hVR
-  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF) hIV) H2
+  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF.toH) hIV) H2
     (t0RWResAt_of PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht)
       (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) hC1 hDF)
     (t0RWResAt_of PTP1W (fun _ _ _ _ _ hc hBc hl hA ht => ptp1w_classA hc hBc hl hA ht)

@@ -182,7 +182,7 @@ theorem hExp_t0_topS
   have H2 : T0RestNV := ⟨g _ (t0_absD hRest.phi), g _ (t0_absU hRest.phi), g _ (f _ (t0_tplo hRest.tploR)),
     g _ (f _ (t0_absUW hRest.auwR)), g _ hFF.2.2, g _ (f _ (t0_absDN hRest.adnR)), g _ hFF.1, g _ hFF.2.1⟩
   have hDF := t0DF_of hPH hCut hIV hM hS I R hVR
-  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF) hIV) H2
+  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF.toH) hIV) H2
     (t0RWResAt_of2 PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht)
       (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) (fun _ _ _ _ _ h1 h2 => ptp1_gt h1 h2) hD1 hG1
       (hPH M ρ rk hM hS I R) hDF)
@@ -233,7 +233,7 @@ theorem hExp_t0_topA
   have hFF := t0_frameFieldsF hFrm hAD (t0_tplo hTPR)
   have H2 : T0RestNV := ⟨hAD, hAU, t0_tplo hTPR, t0_absUW hAUWR, hFF.2.2, t0_absDN hADNR, hFF.1, hFF.2.1⟩
   have hDF := t0DF_of hPH hCut hIV hM hS I R hVR
-  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF) hIV) H2
+  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF.toH) hIV) H2
     (t0RWResAt_of2 PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht)
       (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) (fun _ _ _ _ _ h1 h2 => ptp1_gt h1 h2) hD1 hG1
       (hPH M ρ rk hM hS I R) hDF)
@@ -249,7 +249,7 @@ theorem hExp_t0_topA
   exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩
 
 
-theorem hExp_t0B {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hOTD : T0DF M ρ)
+theorem hExp_t0B {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hOTD : T0DFH M ρ)
     (hVSF : ∀ r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → VSmallF (TRIO.gexp M r L 0 0 n) σ) (hRest : T0RestNV)
     (hRW : ∀ N σ, Std N → N ≠ SRO → Cons N σ → GoodOT N σ → TP1C N σ ∧ TP1WC N σ ∧ TrigOmC N σ)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
@@ -327,7 +327,7 @@ theorem hExp_t0_topB
   have hFF := t0_frameFieldsF hFrm hAD (t0_tplo hTPR)
   have H2 : T0RestNV := ⟨hAD, hAU, t0_tplo hTPR, t0_absUW hAUWR, hFF.2.2, t0_absDN hADNR, hFF.1, hFF.2.1⟩
   have hDF := t0DF_of hPH hCut hIV hM hS I R hVR
-  apply hExp_t0B hDF (t0_vsmallF_at (t0VSD_at hDF) hIV) H2
+  apply hExp_t0B hDF.toH (t0_vsmallF_at (t0VSD_at hDF.toH) hIV) H2
     (fun N σ hN hNS hC hO => by
       obtain ⟨h1, h2, h3, h4⟩ := hPHN N σ hN hNS hC hO
       exact ⟨tp1C_of_ph3c hC hO h1 h2, tp1WC_of_ph3c hC hO h1 h3, trigOmC_of_ph3c hC hO h1 h4⟩)

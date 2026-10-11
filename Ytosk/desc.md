@@ -2621,3 +2621,10 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - P の保存の G 版を名前空間 Ytosk.G に写した（定理の名前は旧と同じ、PH3c → PH3cG・PH3cKind → PH3cKindG）: V3PDropG（1 列落とし）・V3PBaseG（基底）・V3PT0G（t = 0）・V3PT1G（t = 1）・V3PT2G・V3PT2CG（t = 2）・V3PIntG（つなぎ）・V3PSeedOG（seed_kind・seed_ext、切り口の補題 cutsNS_same_sh などを G3 で証明し直し）・V3PSeedQRG・V3PSeedSVG・V3PSeedQNG（種の枠）。公理は標準の 3 つ。
   - V3PSeedSVG の残り Ytosk.G.T2SeedSVFix は G3 の形（X₁ ∈ cutsNSG (V + 1) (σ X₁)）。ext1 の SpotN でない 51 件も含めて例外 0。
   - 使う側（t0-exp・drop-fix・t2 の T2SeedFrames）は PH3c を PH3cG に替える必要がある。
+
+### t = 0 で PH3c(M) と T0CutResG を使わない（2026-10-12、t0-exp、V3T0DepH0・V3T0TopH0、緑）
+- t0_dep_otH で木の位置の閾値の一致（trig_agree、PH3c(M) と T0CutResG が要る）を使うのは RE を運ぶためだけ。RE を使うのは影の枠の還元 hExp_t0_topS だけで、hExp_t0_topH は N の TP1C・TP1WC・TrigOmC を V3TP1Cut から取るので RE を使わない。
+- `T0DFH`（V3T0TopR）: T0DF から RE の欄を外したもの（`T0DF.toH`）。t0VSD_at と hExp_t0B は T0DFH をとる形にした。
+- `t0_dep_otH0`・`t0_otdH0`（V3T0DepH0）: t0_dep_otH から RE・trig_agree・PH3c(M)・T0CutResG を外したもの。`t0DFH_of`・`hExp_t0_topH0`（V3T0TopH0）。
+- hExp_t0_topH0 の残り: hLast・N の AbsD・AbsU・FrmLF・標準形 N の PH3c と 3 つの葉の残り（TP1Leaf・TP1WLeaf・TrigCut）・T0HardRes・T0TPLoRes・T0AbsUWRes・T0AbsDNRes。M の PH3c・T0CutResG・VSmallR は要らない。公理は propext・Classical.choice・Quot.sound だけ。
+- したがって T0CutResG の核 R（前節）はこの道では要らない。
