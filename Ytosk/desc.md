@@ -2628,3 +2628,10 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - `t0_dep_otH0`・`t0_otdH0`（V3T0DepH0）: t0_dep_otH から RE・trig_agree・PH3c(M)・T0CutResG を外したもの。`t0DFH_of`・`hExp_t0_topH0`（V3T0TopH0）。
 - hExp_t0_topH0 の残り: hLast・N の AbsD・AbsU・FrmLF・標準形 N の PH3c と 3 つの葉の残り（TP1Leaf・TP1WLeaf・TrigCut）・T0HardRes・T0TPLoRes・T0AbsUWRes・T0AbsDNRes。M の PH3c・T0CutResG・VSmallR は要らない。公理は propext・Classical.choice・Quot.sound だけ。
 - したがって T0CutResG の核 R（前節）はこの道では要らない。
+
+### 種の残りの構造の欄を証明で外した（2026-10-12、t2、緑）
+
+- `topP_sv`（8f141eab）: sv で M.take x の r の最後の子はのりしろでない。最後の子は x − 1 の祖先 p で、p がのりしろなら行 1 が r と同じになり P_1(x − 1) = r に反する（p = x − 1 なら行 2 が 1 で上げない）。
+- `v_take_of_untopped`（f0f17c7c）: M.take x で topped でない列の v は M と同じ（chg_off と chg_struct: v が変わる列は TopC で topped）。sv（topP_sv）と q ≠ r（`topP_C`: r の最後の子は q でのりしろでない）に使い、T2SeedSVRes・T2SeedCRes の vP と T2SeedQNRes.base の v(r) を外した（074a9f89）。
+- `qP_C`: C で M.take x の q は r で数えられない。q は M で数えられず（r の最後の子で、C の条件）のりしろでないので上げの的かつ topped。M.take x でも上げの的（欄 un から isUpg_take_eq）で、q の子はすべてのりしろ（all_bump_of_last、x がのりしろで最後）なので topped のまま。T2SeedCRes から qP を外した。
+- 残る構造の欄: T2SeedCRes.un（q ≠ r で x − 1 は上げない）。x − 1 → x は行 0 の比較（e0 q = e0 r になる）で、x − 1 → q は UAT（上げの的は topped でない、q は x がのりしろで topped）で消えるが、q の真の祖先への上げはまだ消せていない（7 集合で例外 0）。T2SeedCRes.vqP（v_{M.take x}(q) = s′）も残り。
