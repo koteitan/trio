@@ -197,4 +197,55 @@ theorem hExp_t0_topS
   exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩
 
 
+/-- `t0_frameFields` without `NoGapP` (with `AbsD`・`TPLo` of `N` given). -/
+theorem t0_frameFieldsF (hF : FrmLF) (hAD : T0Field AbsD) (hTP : T0Field TPLo) :
+    T0Field TPLoW ∧ T0Field AbsDW ∧ T0Field TPLoN := by
+  have key : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN →
+      TPLoW (TRIO.gexp M r L 0 0 n) σ ∧ AbsDW (TRIO.gexp M r L 0 0 n) σ ∧ TPLoN (TRIO.gexp M r L 0 0 n) σ := by
+    intro M ρ rk r L n σ rkN hctx
+    obtain ⟨hM, _, I, _, hlen, hL, hp, he1, _, _, hCN, hRN, hGN, _, _, hKD, hTD⟩ := id hctx
+    have FV : FrameV (TRIO.gexp M r L 0 0 n) σ :=
+      ⟨sInv_std (std_gexp_t0 hM I hlen hL hp he1 n) (ne_SRO_of_rk hRN), hCN, hGN, hKD, hTD,
+        hAD M ρ rk r L n σ rkN hctx, hTP M ρ rk r L n σ rkN hctx⟩
+    obtain ⟨h1, h2, h3, h4, h5, h6⟩ :=
+      hF _ σ (std_gexp_t0 hM I hlen hL hp he1 n) (ne_SRO_of_rk hRN) FV
+    exact ⟨tplow_of_lf FV h1 h2, absDW_of_lf FV h3 h4, tplon_of_lf FV h1 h5 h6⟩
+  exact ⟨fun M ρ rk r L n σ rkN hctx => (key M ρ rk r L n σ rkN hctx).1,
+    fun M ρ rk r L n σ rkN hctx => (key M ρ rk r L n σ rkN hctx).2.1,
+    fun M ρ rk r L n σ rkN hctx => (key M ρ rk r L n σ rkN hctx).2.2⟩
+
+/-- **`hExp` for `t = 0` without `NoGapP`**: `AbsD`・`AbsU` of `N` are explicit hypotheses (NoGapP is false on
+standard matrices, groupA 2026-10-12). -/
+theorem hExp_t0_topA
+    (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
+      ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
+    (hAD : T0Field AbsD) (hAU : T0Field AbsU) (hFrm : FrmLF)
+    (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
+    (hCut : T0CutResG) (hTPR : T0TPLoRes) (hAUWR : T0AbsUWRes) (hADNR : T0AbsDNRes)
+    (hD1 : T0ShCutRes PTP1) (hD1W : T0ShCutRes PTP1W) (hDT : T0ShCutRes PTrig)
+    (hG1 : T0ShGRes PTP1) (hG1W : T0ShGRes PTP1W) (hGT : T0ShGRes PTrig) :
+    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
+      col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
+  intro M ρ rk hM hS hE I R hVR hz hs0 n hn2
+  have hIV := t0IVRes_holds
+  have hFF := t0_frameFieldsF hFrm hAD (t0_tplo hTPR)
+  have H2 : T0RestNV := ⟨hAD, hAU, t0_tplo hTPR, t0_absUW hAUWR, hFF.2.2, t0_absDN hADNR, hFF.1, hFF.2.1⟩
+  have hDF := t0DF_of hPH hCut hIV hM hS I R hVR
+  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF) hIV) H2
+    (t0RWResAt_of2 PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht)
+      (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) (fun _ _ _ _ _ h1 h2 => ptp1_gt h1 h2) hD1 hG1
+      (hPH M ρ rk hM hS I R) hDF)
+    (t0RWResAt_of2 PTP1W (fun _ _ _ _ _ hc hBc hl hA ht => ptp1w_classA hc hBc hl hA ht)
+      (fun _ _ _ _ hlt hpre => ptp1w_prefix hlt hpre) (fun _ _ _ _ _ h1 h2 => ptp1w_gt h1 h2) hD1W hG1W
+      (hPH M ρ rk hM hS I R) hDF)
+    (t0RWResAt_of2 PTrig (fun _ _ _ _ _ hc hBc hl hA ht => ptrig_classA hc hBc hl hA ht)
+      (fun _ _ _ _ hlt hpre => ptrig_prefix hlt hpre) (fun _ _ _ _ _ h1 h2 => ptrig_gt h1 h2) hDT hGT
+      (hPH M ρ rk hM hS I R) hDF)
+    hM hS I R hz hs0 _ n hn2
+  intro j hj hjS hjE
+  obtain ⟨τ, rkT, V, R'⟩ := hTake_of_last hLast M ρ rk hM hS hE I R j hj hjS hjE
+  exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩
+
+
 end Ytosk

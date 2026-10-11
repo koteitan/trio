@@ -2406,3 +2406,9 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 
 - ext1（groupA、t = 0 の行列 460180 個、n = 2, 3）で t = 0 の残りと前提をすべて測った（scratchpad/t0-exp/pext.py）。例外 0:
   (i) の枠 27320・T0CutResG 8022（新しい引数の低い部分はいつも 0）・RE（T0RERes の形）312 万・T0IVRes 1687・旧 T0VSResG 6609・T0TPLoRes（D 335 万、中間の根 138 万）・T0AbsDNRes 21 万・T0AbsUWRes（13026・15350）・影の枠 TP1/TP1W/TrigOm（D 10778、g 5616）。
+
+### NoGapP を使わない最上位（2026-10-12、t0-exp、V3T0Shadow）
+
+- NoGapP が標準形で偽（groupA）なので、AbsD・AbsU を NoGapP ∧ PhiX0R から出す道（t0_absD・t0_absU）を最上位から外した。
+- `hExp_t0_topA`: N の AbsD・AbsU（T0Field）を明示の仮定にとる。t0_frameFieldsF（NoGapP なしの t0_frameFields）。残り: hLast・hAD・hAU・FrmLF・PH3c・T0CutResG・T0TPLoRes・T0AbsUWRes・T0AbsDNRes・T0ShCutRes×3・T0ShGRes×3。
+- closure への回答: T0IIRes は今の最上位で使わない（不要）。T0RERes（最後の加数の形）は証明済み。残る T0CutResG には v の値の道つき RE が要る（closure が純粋な 2 つの補題、t0-exp が帰納法で運ぶ分担）。
