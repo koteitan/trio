@@ -2193,3 +2193,9 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - t1-exp: VSFRes2 の 2 点（P_1 c ≠ i での v′(c) ≥ v(i)、S > 0 での g < S）、TPLoLFRes・TPLoWLFRes、段 0 の残り（Z0Link と同種）、q = r で種 < Ω_μ の場合。
   - t0-exp: T0Shape (i)（RE 待ち）・(ii)（T0IIRes、RClaim 方式に替えれば不要の見込み）、T0VSResD2、影の枠 3 つ、t0_dep_ot の deps_lhd_ot_R への切り替え。
   - t2: T2BelowXRes（q = r の種は seedL_qr で M だけの残り T2SeedQRRes に、q ≠ r・sv はこれから）、T2Rest3 の値の欄（fsD と σ の入れ替えの補題が要る）、VSmallR の t = 2。
+
+### LostKids の証明（2026-10-12、groupA、V3PhiLevDrop、緑）
+
+- lostKids（残りなし）: 1 列落としで数える子をすべて失う列 i は P_0 x。levLeaf_take から仮定 LostKids を外した（LevLeafInv の 1 列落としは PrefLast だけを仮定）。
+- 筋: i が x の親でないなら、失った子 c は M.take x で上げられて topped（c の最後の子が x）。M.take x の UAT（UAT_take）から上げは c − 1 から（c = k + 1）。
+- earlier_counted: c が i の子で c − 1 が c へ上げるなら、P_1(c − 1) = i（行 0 が一致する祖先は 1 つ）。c − 1 を含む i の子 p は行 1 が v の段より高いので bump ではなく、数えられるか、p − 1 から上げられる（UAT で祖先型の上げは topped に来ない）。後者なら p で繰り返す。こうして c より前に数える子 d が残り、d は最後の子でないので M.take x でも数える（cnt_change_last）。
