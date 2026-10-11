@@ -31,6 +31,7 @@ theorem deps_lhd_ot_R {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ
     (hVR : VSmallR M ρ)
     (hVNRN : ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v c ≠ ρ.v c → ∀ s y, ρ.o c = psi s y z →
       (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+      ¬ ((split y (psi (succ s) z z)).1 = spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ∧ ρ.v i < σ.v c) →
       ∀ u, ¬ lt (ρ.v i) u = true → ∀ g ∈ comps u (σ.v c),
         g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ∨ ∃ d ∈ comps u (ρ.v i), g ≤ d)
     (hShN : ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → ∀ s y s' y', ρ.o c = psi s y z →
@@ -266,11 +267,11 @@ theorem deps_lhd_ot_R {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ
             (Or.inr hLi')
             (fun hss0 q' hq' hyp' => by subst hss0; exact hIHR s' y y' q' hsy hs'y' hq' hyp')
             (hVR i hiM Lc c [] (by rw [hclM]) s y hsy)
-            (fun ht hne u hu g hg => by
+            (fun ht hne hup u hu g hg => by
               have hvs : s = ρ.v c := hvM s y hsy
               have hne' : σ.v c ≠ ρ.v c := by rw [← hs'v, ← hvs]; exact hne
-              rw [hs'v] at hg ⊢
-              exact hVNRN i Lc c hi hclN hne' s y hsy ht u hu g hg)
+              rw [hs'v] at hg hup ⊢
+              exact hVNRN i Lc c hi hclN hne' s y hsy ht hup u hu g hg)
             (hShN i Lc c hi hclN s y s' y' hsy hs'y') hqp hhyp
       | false =>
         show (Lhd z (σ.v i) (ρ.v i) ∧ isOT (σ.v i) = true) ∧ (false = true → RClaim ρ σ i)

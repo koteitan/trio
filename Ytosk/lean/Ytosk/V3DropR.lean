@@ -36,6 +36,7 @@ def VSmallNewR (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
   ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (M.take x) i = Lc ++ [cs] → ρ'.v cs ≠ ρ.v cs →
     ∀ s y, ρ.o cs = psi s y z →
     (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+    ¬ ((split y (psi (succ s) z z)).1 = spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ∧ ρ.v i < ρ'.v cs) →
     ∀ u, ¬ lt (ρ.v i) u = true → ∀ g ∈ comps u (ρ'.v cs),
       g ≤ psi (ρ'.v cs) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ∨ ∃ d ∈ comps u (ρ.v i), g ≤ d
 
@@ -367,12 +368,12 @@ theorem po_of_R {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
       have hRF := relR_frame (q := q) hc hc' hBc hrel hSi hY0 hN
         (fun hss q' hq' hyp' => by subst hss; exact hRCc s' y y' q' hsy hs'y' hq' hyp')
         (hVR i hiM Lc cs Tl hCL s y hsy)
-        (fun ht hne u hu g hg => by
+        (fun ht hne hup u hu g hg => by
           have hv's : s' = ρ'.v cs := hvT s' y' hs'y'
           have hvs : s = ρ.v cs := hvM s y hsy
           have hne' : ρ'.v cs ≠ ρ.v cs := by rw [← hv's, ← hvs]; exact hne
-          rw [hv's] at hg ⊢
-          exact hVNR i hi Lc cs hcl hne' s y hsy ht u hu g hg)
+          rw [hv's] at hg hup ⊢
+          exact hVNR i hi Lc cs hcl hne' s y hsy ht hup u hu g hg)
         (hSh i hi Lc cs hcl s y s' y' hsy hs'y') hqp hhyp
       by_cases hTl : Tl = []
       · subst hTl
