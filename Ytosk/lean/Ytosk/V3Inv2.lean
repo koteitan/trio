@@ -9,7 +9,7 @@
 - `AbsU`（偽ではないが生産者 absU_of_absD・absU_of_phiX の元が偽）→ `AbsUS`（q ≠ r の最後の列の枠、種での吸収）。
   本当に使うのは vlocal_t1 の上げの枠だけ。
 - `TrigOmC`（T2Ext で 2 行列偽、t = 1・q = r の DepX）→ `TrigS`（qr_final3 の hYBs の形: 種 < ψ_μ(1) のとき状態 < b + 種）。
-- 新しい欄: `PH3cG`・`FC3`（closure、今は最上位の大域の仮定 hPH）、`VSmallRA`（t2・t0-exp、今は大域の仮定）。
+- 新しい欄: `PH3cG`・`FC3`（closure、今は最上位の大域の仮定 hPH）、`VSmallRAll`（t0-exp の V3VSRAll、全部の数える子の枠。t2 の VSmallRA は VSmallRAll.toLast）。
 - そのまま: Cons・Good3・Rk・VSmallF・FrameClosed・FrameOT・BumpKidsDec・BumpTermDec・TP1C・TP1WC・
   TPLoW・AbsDW・TPLoN・AbsDN・rootS・rootP。
 
@@ -21,6 +21,7 @@ import Ytosk.V3IndV
 import Ytosk.V3QRFinal4
 import Ytosk.V3PDef
 import Ytosk.V3DepRWU
+import Ytosk.V3VSRAll
 
 namespace Ytosk
 
@@ -178,7 +179,7 @@ structure Inv3V2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   td : BumpTermDec M ρ
   ph : PH3cG M ρ
   fc3 : FC3 M ρ
-  vra : VSmallRA M ρ
+  vra : VSmallRAll M ρ
   ads : AbsDS M ρ rk
   aus : AbsUS M ρ rk
   tp1 : TP1C M ρ
