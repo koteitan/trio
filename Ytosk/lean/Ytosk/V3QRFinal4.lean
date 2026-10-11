@@ -43,21 +43,28 @@ def TPLoNAll (M : Mat) (ρ : Valn) : Prop :=
     ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → NotNode a →
     ¬ psi (fsD a one) z z < psi (succ s) z z
 
-/-- **Value invariant TPLoN** (2026-10-11 言い直し、`TPLoW` と同じ枠の形): in the frame of the last column `x`
-(`t = 1`, `q = r`, `o(r) = ψ_μ(b + Ω_{μ+1})`), at a `D` column `c` with `dOf c = 0` (no lift), the TPL-type
-comparison holds at `η = 1` when the last subscript `a` is not its own node. This is what `hLs0` uses
-(C′ の長さ 22 以下の行列の M[2]・M[3] の接頭辞で例外 0). -/
+/-- **Value invariant TPLoN** (2026-10-11 二度目の言い直し、hLs0 が使う形そのもの): in the frame of the last
+column `x` (`t = 1`, `q = r`, `o(r) = ψ_μ(b + Ω_{μ+1})`), at a `D` column `c` with `dOf c = 0` (no lift), the
+TPL-type comparison holds at the seed index `η = o′(r)` (`o′` any valuation of `M.take x`, the drop), when the
+last subscript `a` is not its own node. Weaker than the former frame form at `η = 1` (`1 ≤ o′(r)`). -/
 def TPLoN (M : Mat) (ρ : Valn) : Prop :=
+  ∀ (ρ' : Valn) (rk' : Bool → Nat → Nat), Cons (M.take (M.length - 1)) ρ' → Rk (M.take (M.length - 1)) rk' →
   ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
     entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ (app b (psi (succ μ) z z)) z →
     ∀ c, c < M.length - 1 → DepX M (M.length - 1) true c →
     dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
     ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) → (split y (psi (succ s) z z)).2 = z →
     ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → NotNode a →
-    ¬ psi (fsD a one) z z < psi (succ s) z z
+    ¬ psi (fsD a (ρ'.o r)) z z < psi (succ s) z z
 
-theorem tplon_of_all {M : Mat} {ρ : Valn} (h : TPLoNAll M ρ) : TPLoN M ρ :=
-  fun _ _ _ _ _ _ _ c hc _ _ s y ho _ hl a hla hs hOa hca hNa => h c (by omega) s y ho hl a hla hs hOa hca hNa
+theorem tplon_of_all {M : Mat} {ρ : Valn} (h : TPLoNAll M ρ) : TPLoN M ρ := by
+  intro ρ' rk' hC' _ r _ _ h1 _ _ _ c hc _ _ s y ho _ hl a hla hs hOa hca hNa hlt
+  have hrT : r < (M.take (M.length - 1)).length := by
+    rw [List.length_take]; have := par_lt M 1 _ r h1; omega
+  obtain ⟨s1, y1, hs1⟩ := o_psi_form hC' hrT
+  have h1s : one ≤ ρ'.o r := one_le_of_ne_z (by rw [hs1]; simp)
+  apply h c (by omega) s y ho hl a hla hs hOa hca hNa
+  exact lt_of_le_of_lt (le_psi_sub (fsD_mono_eta hOa h1s)) hlt
 
 /-- **Value invariant AbsDN** (`η = 1`, the bump term is not its own node). -/
 def AbsDN (M : Mat) (ρ : Valn) : Prop :=
@@ -205,7 +212,7 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     obtain ⟨hD, hNA, _⟩ := hdiag true c hc hdc hd0
     simp only [valB, cond_true] at hD
     rw [hcv] at hD
-    refine lo_keep_Q hD hyz hyb ?_ h1s hl
+    refine lo_keep_Q hD hyz hyb ?_ (le_refl _) hl
     intro hl' a hla hns hOa hca
     have hDy : DiagAt μ _ μ y := DiagAt.arg_inv hD hyz (fun h => hyb h.2)
     have hDl := hDy.last_g
@@ -217,7 +224,8 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       | arg hb' _ _ => exact absurd rfl hb'
       | sub _ _ h => exact h
     have hxl : M.length - 1 = r + L := by omega
-    exact hTPN r μ b (by rw [hxl]; exact h1) (by rw [hxl]; exact hq) (by rw [hxl]; exact hx2) hro c
+    have hTPN' := hTPN (drop1 M (r + L) rkM) rkM (by rw [hxl]; exact hC1) (by rw [hxl]; exact hRk1)
+    exact hTPN' r μ b (by rw [hxl]; exact h1) (by rw [hxl]; exact hq) (by rw [hxl]; exact hx2) hro c
       (by rw [hxl]; exact hc) (by rw [hxl]; exact hdc) (by rw [hxl]; exact hd0) s y hcv hyb hl' a hla hns hOa hca
       (notNode_of_diag hDa (hNA rfl s y hcv a hla))
   -- hADs0
