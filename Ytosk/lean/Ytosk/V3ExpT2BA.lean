@@ -22,7 +22,8 @@ def T2Seed (M : Mat) (r L p : Nat) : Prop :=
 
 /-- **The residual of the part before `x`** of `Good3 (M[n])`. -/
 def T2BelowRes (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
-  ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
+  ∀ n, 2 ≤ n → (∀ τ, Cons (TRIO.gexp M r L d0 d1 (n - 1)) τ → Good3 (TRIO.gexp M r L d0 d1 (n - 1)) τ) →
+    ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true) →
     T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
     (∀ p, T2Seed M r L p → Lhd z (σ.o p) (ρ.o p) ∧ isOT (σ.o p) = true ∧
@@ -56,7 +57,8 @@ def BumpInfo (M N : Mat) (ρ σ : Valn) (i : Nat) : Prop :=
 
 /-- **Good3 before `x` and the frame shapes**, for every expansion. -/
 def T2BelowXS (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
-  ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
+  ∀ n, 2 ≤ n → (∀ τ, Cons (TRIO.gexp M r L d0 d1 (n - 1)) τ → Good3 (TRIO.gexp M r L d0 d1 (n - 1)) τ) →
+    ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (σ.o j) = true ∧ isOT (σ.v j) = true) →
     ∀ i, i < r + L → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
       (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) ∧
@@ -136,7 +138,7 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
   have hrq : r ≤ q := (anc0_par hA (by omega) hq).le
   have hqx : q < r + L := par_lt M 0 _ q hq
   -- `n ≥ 2`
-  intro n hn σ hCN hOTx
+  intro n hn hGP σ hCN hOTx
   obtain ⟨rkN, hRN⟩ : ∃ rkN, Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
       (entry M 1 (r + L) - entry M 1 r) n) rkN := by
     obtain ⟨rk', h'⟩ := rk_expand_t2 hX hJ hz h2 I.rank n (by omega)
@@ -147,7 +149,7 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
     cases b
     · exact (hOTx j h1 h2').2
     · exact (hOTx j h1 h2').1
-  obtain ⟨hVSN, hHard, hSeedP, hW⟩ := hRes M ρ rk hM hS I R hz h2 r L hlen hr n hn σ hCN hOTout
+  obtain ⟨hVSN, hHard, hSeedP, hW⟩ := hRes M ρ rk hM hS I R hz h2 r L hlen hr n hn hGP σ hCN hOTout
   have hT : (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n).take
       (r + L) = M.take (r + L) := gexp_take_x hlen (by omega)
   have hUN : UAT (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) := by
@@ -327,8 +329,8 @@ namespace Ytosk
 
 /-- **`T2BelowXAll` from `T2BelowXRes`.** -/
 theorem t2BelowXAll_of (hRes : T2BelowXRes) : T2BelowXAll := by
-  intro M ρ rk hM hS I R hz h2 r L hlen hr n hn σ hCN hOTx i hi
-  obtain ⟨h1, h2', h3, _, _, _⟩ := t2BelowXS_of hRes hM hS I R hz h2 hlen hr n hn σ hCN hOTx i hi
+  intro M ρ rk hM hS I R hz h2 r L hlen hr n hn hGP σ hCN hOTx i hi
+  obtain ⟨h1, h2', h3, _, _, _⟩ := t2BelowXS_of hRes hM hS I R hz h2 hlen hr n hn hGP σ hCN hOTx i hi
   exact ⟨h1, h2', h3⟩
 
 /-- **`hExp` for `t = 2`, current residuals**: the seeds and the two `N`-side bounds before `x`

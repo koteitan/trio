@@ -265,7 +265,8 @@ def T2CopyRes (M : Mat) (r L d0 d1 : Nat) : Prop :=
 /-- **The part before `x`** of Good3 of `M[n]`, given standard values from `x` on (the `hOTout` of
 `deps_lhd_ot`): the `D` calls by `◁`, the seeds `q`, `p2`, and the unchanged calls from `M`. -/
 def T2BelowX (M : Mat) (r L d0 d1 : Nat) : Prop :=
-  ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
+  ∀ n, 2 ≤ n → (∀ τ, Cons (TRIO.gexp M r L d0 d1 (n - 1)) τ → Good3 (TRIO.gexp M r L d0 d1 (n - 1)) τ) →
+    ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (σ.o j) = true ∧ isOT (σ.v j) = true) →
     ∀ i, i < r + L → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
       (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a)
@@ -314,7 +315,7 @@ theorem good3_gexp_t2
         obtain ⟨a, rfl⟩ : ∃ a, j = r + L + a := ⟨j - (r + L), by omega⟩
         obtain ⟨_, _, h3, h4, h5⟩ := hcp a (by omega)
         exact ⟨h3, h4, h5⟩
-      have hbx := hBX (m + 1) hn2 σ hCN (fun j h1 h2 => ⟨(hcopy j h1 h2).1, (hcopy j h1 h2).2.1⟩)
+      have hbx := hBX (m + 1) hn2 (by rw [hm]; exact ih hm0) σ hCN (fun j h1 h2 => ⟨(hcopy j h1 h2).1, (hcopy j h1 h2).2.1⟩)
       have hall : ∀ i, i < (TRIO.gexp M r L d0 d1 (m + 1)).length →
           isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
           (cvals (TRIO.gexp M r L d0 d1 (m + 1)) σ i).Pairwise (fun a b => b ≤ a) := by

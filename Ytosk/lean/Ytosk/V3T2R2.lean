@@ -64,7 +64,20 @@ theorem hR2_t2 (hB : T2BelowXRes) (hSV : T2Seed1SV) (hQC : T2Seed1C) :
       cases b
       · exact hGN.ot_v j hj
       · exact hGN.ot_o j hj
-    exact ((hB M ρ rk hM hS I RA hz h2 r L hlen hr n hn σ hCN hOT).2.2.1 p hp).1
+    have hGP : ∀ τ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+        (entry M 1 (r + L) - entry M 1 r) (n - 1)) τ → Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+        (entry M 1 (r + L) - entry M 1 r) (n - 1)) τ := by
+      intro τ hτ
+      have hexp1 : expand M (n - 1) = TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+          (entry M 1 (r + L) - entry M 1 r) (n - 1) := by
+        have h := expand_eq_gexp M (n - 1) hlen2 hzT (by rw [h2, show M.length - 1 = r + L by omega]; exact hr)
+        rw [h2, show M.length - 1 = r + L by omega] at h
+        simp only [show (0 < 2) from by omega, show (1 < 2) from by omega, if_true,
+          Nat.add_sub_cancel_left] at h
+        exact h
+      have := hGall (n - 1) (by omega) τ (by rw [hexp1]; exact hτ)
+      rwa [hexp1] at this
+    exact ((hB M ρ rk hM hS I RA hz h2 r L hlen hr n hn hGP σ hCN hOT).2.2.1 p hp).1
   -- the drop to `M.take x`
   have hdropOf : ∀ r L, r + L + 1 = M.length →
       ∀ i, i < r + L → PO ρ (drop1 M (r + L) rk) i ∧ PV M ρ (drop1 M (r + L) rk) i := by
