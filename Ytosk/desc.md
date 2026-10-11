@@ -2682,3 +2682,16 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - T0ThrVRes の証明の手がかり（標本）:
   - TV: v が変わる列 k の行 1 の祖先 j（v は変わらない）について、T_q(v(j)) < v(k) ⇒ T_q(v(j)) < v_N(k)、≤ でも同じ（q = 0..3、例外 0）。行 1 の祖先の v は変わらない。
   - 行 0 の祖先の塔の閾値で v(e) より小さいもののうち、行 1 の鎖の上の j のものは約 55%、行 1 の祖先の塔で上から押さえられるものは約 35%、残りの約 10% は v(e) よりずっと小さい（例 w = Ω_ω、v(e) = Ω_{ψ_0(…)}）。下へ降りると閾値は ω、1 のような小さな部分項になるので、証明には降下で閉じた閾値の集まりが要る。
+
+### t = 2 の T2Hard・T2VSN を段の集合つきの RClaim で置き換える（2026-10-12、t2、V3DepRWU、緑）
+- `deps_lhd_otW_RU`（V3DepRWU）: deps_lhd_otW_R（RClaim を運ぶ形）の RClaim を t0-exp の RelRU（段 u を集合 U に限る）に替えたもの。主張は `∀ U, (∀ u, U u → PathLvS i u) → RClaimUS U i`。子への依頼は U を変えないので、要る段は D の道の上で書き換える枠 (k, c) の祖先 k の v(k)（`PathLvS`）と枠自身の v(i) だけ。難しい枠では U = {v(i)} で hard_of_relRU。
+- `RClaimUS`・`rclaim_zeroUS`・`rclaim_of_clsUS` は t0-exp の RClaimU・rclaim_zeroU・rclaim_of_clsU と同じ中身。V3T0DepU を読み込むと V3T0Cut の cutsNS_app が closure の V3PSeedO の cutsNS_app と衝突して V3PSeedSV が壊れるので、写しを置いた。
+- D に依らない形 `PathLvA`（M のすべての書き換える枠で段を運ぶ）と `VSmallRA M ρ`（その段だけの VSmallR、M だけの不変条件）。PathLvS ⊆ PathLvA なので VSmallRA から D の形 VSmallRS が出る（`VSmallRA.toS`）。t0-exp の VSmallRP も VSmallRA から出るので、t = 0 と t = 2 で共通の不変条件にできる。M13 は VSmallRA を満たす（全段の VSmallR は偽）。
+- T2VSN（v が変わる最後の子の添字の成分）は要らない: 種でない列 c で v(c) が変わるなら c は数える子を持たず o(c) = ψ_{v(c)}(0) なので、M の VSmallF と v(c) の ◁ から `vs_changed_bound`（t0-exp）で出る。種 r の v は M[n] で変わらない（qr_frame・qn_frame・sv_frame・C_frame）。
+- hVNRN（VSmallNewR 型）も要らない: v(c) が変わる枠では y = 0 なので古い子は書き換えない。
+- 影の枠の仮定は「書き換えの一致」`T2TrigN` に替えた: v と前の子が同じ枠 (i, c)（i, c < x）で、古い子が書き換えるなら新しい子も書き換える。実測（hardu.py）: d3s・deep2 で o(c) が変わり古い子が書き換える 546678 枠すべてで新しい子も書き換える。
+- T2BelowResL の M[n] 側の欄は `T2HardB = VSmallRA M ∧ T2TrigN ∧ 種 r の RClaimUS` と AbsWN だけ（T2Hard・T2VSN を外した）。t2BelowXRes_of_L で T2HardA = T2HardB ∧ σ.v r = ρ.v r。
+- 種の RClaimUS: d3s・deep2 で種 r の引数の組はすべて B0 の種類（新旧とも Ω_{V+1} より下の部分が 0）。B0 なら rclaim_of_clsUS で出る（要るのは引数の ◁ と B0）。
+- **訂正（t0-exp）: T0CutKappa は偽**。切り口 κ は Ω の葉とは限らず、引数の中の切り口 ψ_a(Ω_s) にもなる。例: M = (0,0,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,0)(5,0,0)(6,1,1)(7,1,0)(6,1,1)(7,0,0)(8,1,1)(9,1,0)(8,1,0)(9,2,1)(10,1,0)(11,2,1)(12,1,0)(13,0,0)(14,1,1)(15,1,0)(14,1,0)(15,2,1)(16,1,0)(17,2,1)(18,1,0)(19,0,0) の枠 (10, 13)、s = v(13) = 1、B = o(11) = ψ_ω(Ω_1)、y = ψ_ω(ψ_1(…))。前の兄弟の形（κ = Ω_{v(d)}）の偽は C′ 44・T0Ext 140・ext1 412・T2Ext 62 件（d3s・deep2・deep3 では 0）。
+  - 「t のすべての切り口 κ < t は T′ より小さい」も偽（s = 0 で d3s 標本 99 件、s > 0 でも 5 件、どれも κ = T′）。真なのは B の尾としての κ だけ（T0CutResGG、7 集合で例外 0）。
+  - したがって hExp_t0_topT は偽の残りの上にある。主線は hExp_t0_topU（T0CutResGG を仮定）のまま。閾値の考え（V3T0Thr の ThrA・thr_step）を使うには、引数の中の切り口 ψ_a(t′) も閾値に入れ、arg の段で t′ < x ⇒ t′ < x′ を運ぶ入れ子の形が要る。
