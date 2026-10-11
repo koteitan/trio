@@ -5,9 +5,11 @@ VSmallR（全段 u ≤ v(i)）は標準形で偽（M13）。難しい枠で使�
 主張を段の集合 U に制限した `RClaimU`（V3RelRU）で運ぶ。子への依頼は U を変えないので、必要な段は
 D の道の上で、そこまでの枠がすべて書き換える祖先 j の v(j)（`PathLv`）と、その枠自身の v(k) だけ。
 M の不変条件 `VSmallRP` はその段だけの VSmallR。難しい枠の HardArgN（T0HardRes）は要らない。
+書き換えの一致は G3 の切り口（PH3cG・cutsNSG、trig_agreeG）で。
 -/
 import Ytosk.V3T0DepR
 import Ytosk.V3RelRU
+import Ytosk.V3T0TrigG
 
 namespace Ytosk
 
@@ -111,14 +113,14 @@ theorem t0_dep_otU {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
     (hS3 : ∀ p, par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 → col M g = bump M p →
       Lhd z (σ.v p) (ρ.v p))
     (hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g))
-    (hPH : PH3c M ρ)
+    (hPH : PH3cG M ρ)
     (hCut : ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
       ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z →
       (split y (psi (succ s) z z)).2 = z →
       spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ≠ z →
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       ∀ P a x T', y = app P (psi a x z) → y' = app P T' →
-      ∀ κ ∈ cutsNS s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ → κ < T')
+      ∀ κ ∈ cutsNSG s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ → κ < T')
     (hVchgR : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
@@ -598,7 +600,7 @@ theorem t0_dep_otU {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                 have hs' : s' = s := by rw [hs'v, hvc, ← hsvc]
                 by_cases hyy : y' = y
                 · rw [hyy]; exact htr
-                exact trig_agree (hREc hvc hyy) (fun hB => hPH i hiM Lc c [] (by rw [hclM]) s y hsy hB htr)
+                exact trig_agreeG (hREc hvc hyy) (fun hB => hPH i hiM Lc c [] (by rw [hclM]) s y hsy hB htr)
                   (fun hlo hB P a' x T' e1 e2 κ hκ hBk => hCut i c Lc hi hcr hclM hdc s y y' hsy
                     (by rw [hs'y', hs']) hlo hB htr P a' x T' e1 e2 κ hκ hBk) htr
               have hyarg : ∀ s0, ρ.o c = psi s0 z z → ∃ s1, σ.o c = psi s1 z z := by
@@ -714,7 +716,7 @@ theorem t0_dep_otU {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
 end
 
 /-- **`hOTD` in the RClaim scheme** (`t = 0`): the `D` columns before `r` of `N = M[n]` are standard, drop
-by `◁`, and carry `RClaim`; a changed `v` gives `ψ_{v}(0)`. Residuals: PH3c of `M` and `hCutN` (the cut in the
+by `◁`, and carry `RClaim`; a changed `v` gives `ψ_{v}(0)`. Residuals: PH3cG of `M` and `hCutN` (the cut in the
 last summand), with which the right-end change RE is carried and a rewriting frame keeps rewriting. -/
 theorem t0_otdU {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
@@ -734,7 +736,7 @@ theorem t0_otdU {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hLast : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
     (hVR : VSmallRP M (r + L) r ρ)
-    (hPH : PH3c M ρ)
+    (hPH : PH3cG M ρ)
     (hCutN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
       ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z →
@@ -742,7 +744,7 @@ theorem t0_otdU {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ≠ z →
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
       ∀ P a x T', y = app P (psi a x z) → y' = app P T' →
-      ∀ κ ∈ cutsNS s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ → κ < T')
+      ∀ κ ∈ cutsNSG s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ → κ < T')
     (hVchgRN : ∀ g, par M 0 r = some g → ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0N : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →

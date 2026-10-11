@@ -3,7 +3,7 @@
 
 t0_otdU（V3T0DepU）は RClaim を段の集合 U に制限して運ぶので、難しい枠の HardArgN を自分で出す。
 残りの M 側の仮定は VSmallRP（D の道の上の段だけの VSmallR、`T0VSPRes`）と、
-書き換えの一致に使う M の PH3c と T0CutResG。
+書き換えの一致に使う M の PH3cG と G3 の切り口の T0CutResGG（PH3c の cutsNS は標準形で偽なので G3 で）。
 -/
 import Ytosk.V3T0DepU
 import Ytosk.V3T0TopH
@@ -14,6 +14,19 @@ open T
 
 set_option linter.unusedSectionVars false
 
+/-- **The cut residual with the G3 cut** (`T0CutResG` with `cutsNSG`). -/
+def T0CutResGG : Prop :=
+  ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
+    Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
+      ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
+      ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z →
+      (split y (psi (succ s) z z)).2 = z →
+      spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ≠ z →
+      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
+      ∀ P a x T', y = app P (psi a x z) → y' = app P T' →
+      ∀ κ ∈ cutsNSG s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ → κ < T'
+
 /-- **Residual: `VSmallRP` of `M`** at the last column of type `t = 0`. -/
 def T0VSPRes : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
@@ -21,8 +34,8 @@ def T0VSPRes : Prop :=
     VSmallRP M (r + L) r ρ
 
 /-- **`T0DF` without `VSmallR` and without `T0HardRes`.** -/
-theorem t0DF_ofU (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
-    (hCut : T0CutResG) (hVP : T0VSPRes) {M : Mat} {ρ : Valn}
+theorem t0DF_ofU (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3cG M ρ)
+    (hCut : T0CutResGG) (hVP : T0VSPRes) {M : Mat} {ρ : Valn}
     {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk) :
     T0DF M ρ := by
   intro r L hlen hL hp he1 n hn σ hCN
@@ -45,10 +58,10 @@ theorem hExp_t0_topU
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hAD : T0Field AbsD) (hAU : T0Field AbsU) (hFrm : FrmLF)
-    (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
+    (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3cG M ρ)
     (hPHN : ∀ N σ, Std N → N ≠ SRO → Cons N σ → GoodOT N σ →
       PH3c N σ ∧ TP1Leaf N σ ∧ TP1WLeaf N σ ∧ TrigCut N σ)
-    (hCut : T0CutResG) (hVP : T0VSPRes) (hTPR : T0TPLoRes) (hAUWR : T0AbsUWRes) (hADNR : T0AbsDNRes) :
+    (hCut : T0CutResGG) (hVP : T0VSPRes) (hTPR : T0TPLoRes) (hAUWR : T0AbsUWRes) (hADNR : T0AbsDNRes) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
