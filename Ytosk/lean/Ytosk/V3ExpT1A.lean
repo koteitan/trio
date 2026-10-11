@@ -637,6 +637,163 @@ theorem expStep_vsmallF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
     rw [hσv, hLo, hvc]
     exact hQP (r + a) (by rw [hlP]; omega) Lc' c' R' hsplit
 
+/-! ## VSmallF の残りを最後の加数に縮める -/
+
+theorem init_app_psi : ∀ (B : T) (a b : T), init (app B (psi a b z)) = B
+  | z, _, _ => rfl
+  | psi a1 b1 c1, a, b => by
+    show init (psi a1 b1 (app c1 (psi a b z))) = psi a1 b1 c1
+    have hne : app c1 (psi a b z) ≠ z := by cases c1 <;> simp [app]
+    cases hc : app c1 (psi a b z) with
+    | z => exact absurd hc hne
+    | psi a2 b2 c2 => simp only [init]; rw [← hc, init_app_psi c1 a b]
+
+/-- `v` grows along the row-1 parent chain: the first row-0 ancestor of `i` below a threshold `t ≤ e1 i`
+has a smaller `v`. -/
+theorem v_find_lt {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ) (hR : Rk M rk) :
+    ∀ i, i < M.length → ∀ t p, t ≤ entry M 1 i →
+      (ancL M i).find? (fun q => decide (entry M 1 q < t)) = some p → ρ.v p < ρ.v i := by
+  intro i
+  induction i using Nat.strong_induction_on with
+  | _ i ih =>
+  intro hi t p ht hp
+  have hpmem := List.mem_of_find?_eq_some hp
+  have hpt : entry M 1 p < t := by simpa using List.find?_some hp
+  have he1 : entry M 1 i ≠ 0 := by omega
+  have hsome : ((ancL M i).find? (fun q => decide (entry M 1 q < entry M 1 i))).isSome := by
+    rw [List.find?_isSome]; exact ⟨p, hpmem, by simp; omega⟩
+  obtain ⟨m, hm⟩ := Option.isSome_iff_exists.mp hsome
+  have hpar : par M 1 i = some m := by rw [par1_find]; exact hm
+  have hmi : m < i := par_lt M 1 i m hpar
+  have hvm : ρ.v m < ρ.v i :=
+    v_par1_lt_ot hC (fun j hj => hG.ot_v j hj) (fun j hj => hG.ot_o j hj) hR (rk false i) i m (le_refl _) hi he1 hpar
+  have hmem := List.mem_of_find?_eq_some hm
+  obtain ⟨S, hS, hSp⟩ := ancL_through (anc0_of_mem_ancL hmem) (by omega)
+  -- the elements before `m` are at or above row 1 of `i`
+  have hSn : ∀ s ∈ S, ¬ entry M 1 s < entry M 1 i := by
+    intro s hs hlt
+    rw [hS, List.find?_append] at hm
+    cases hf : S.find? (fun q => decide (entry M 1 q < entry M 1 i)) with
+    | none =>
+      rw [List.find?_eq_none] at hf
+      exact absurd (by simpa using hlt) (hf s hs)
+    | some s' =>
+      rw [hf] at hm
+      simp only [Option.some_or, Option.some.injEq] at hm
+      subst hm
+      have := (hSp _ (List.mem_of_find?_eq_some hf)).1
+      omega
+  rw [hS, List.find?_append] at hp
+  have hSt : S.find? (fun q => decide (entry M 1 q < t)) = none := by
+    rw [List.find?_eq_none]
+    intro s hs; have := hSn s hs; simp; omega
+  rw [hSt, Option.none_or, List.find?_cons] at hp
+  by_cases hmt : entry M 1 m < t
+  · simp only [decide_eq_true hmt] at hp
+    cases hp; exact hvm
+  · simp only [decide_eq_false hmt] at hp
+    exact lt_trans' (ih m hmi (by omega) t p (by omega) hp) hvm
+
+/-- **`v(P_1 c) ≤ v(P_0 c)`.** -/
+theorem v_par1_le_par0 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hR : Rk M rk) {c i p : Nat} (hc : c < M.length) (h0 : par M 0 c = some i) (h1 : par M 1 c = some p) :
+    ρ.v p ≤ ρ.v i := by
+  have hic : i < c := par_lt M 0 c i h0
+  rw [par1_find, ancL_eq h0, List.find?_cons] at h1
+  by_cases hit : entry M 1 i < entry M 1 c
+  · simp only [decide_eq_true hit] at h1
+    cases h1; exact (le_iff _ _).mpr (Or.inr rfl)
+  · simp only [decide_eq_false hit] at h1
+    exact (le_iff _ _).mpr (Or.inl (v_find_lt hC hG hR i (by omega) _ p (by omega) h1))
+
+/-- The prefix of `add V (single)` has no components at a level at or above `V`. -/
+theorem comps_init_add_nil {u V a b : T} (hVot : isOT V = true) (hVu : V ≤ u) :
+    comps u (init (add V (psi a b z))) = [] := by
+  obtain ⟨B, X, hV, _, hadd⟩ := add_prefix a b V
+  rw [hadd, init_app_psi]
+  apply comps_eq_nil_of_lev
+  intro q hq
+  have hqV : q ∈ summands V := by rw [hV, summands_app]; exact List.mem_append_left _ hq
+  obtain ⟨s, y, rfl⟩ := mem_summands hq
+  show s < u
+  have h1 : psi s y z ≤ head V := summands_le_head hVot _ hqV
+  exact lt_of_lt_of_le (sub_lt_psi s y z) (le_trans h1 (le_trans (head_le_self V) hVu))
+
+/-- **The prefix of `v(c)` has no components at the level `v(P_0 c)`.** -/
+theorem comps_init_v_nil {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hR : Rk M rk) {c i : Nat} (hc : c < M.length) (h0 : par M 0 c = some i) :
+    comps (ρ.v i) (init (ρ.v c)) = [] := by
+  have hic : i < c := par_lt M 0 c i h0
+  have hVot : isOT (vOpt ρ (par M 1 c)) = true := vOpt_ot hG hc
+  have hVu : vOpt ρ (par M 1 c) ≤ ρ.v i := by
+    cases hp : par M 1 c with
+    | none => exact z_le _
+    | some p => exact v_par1_le_par0 hC hG hR hc h0 hp
+  have hv := (hC c hc).2
+  unfold vRhs at hv
+  by_cases he1 : entry M 1 c = 0
+  · rw [if_pos he1] at hv; rw [hv]; rfl
+  rw [if_neg he1] at hv
+  by_cases he2 : entry M 2 c = 0
+  · rw [if_pos he2] at hv
+    cases hu : upg M c with
+    | none =>
+      rw [hu] at hv; simp only at hv
+      rw [sf_ot (isOT_add hVot rfl)] at hv
+      rw [hv, show one = psi z z z from rfl]
+      exact comps_init_add_nil hVot hVu
+    | some k =>
+      rw [hu] at hv; simp only at hv
+      obtain ⟨_, _, _, _, _, hWs⟩ := upg_target_val hC hG hc hu
+      obtain ⟨hWot, sW, yW, hW⟩ := hWs
+      rw [upg_target_last hC hG hc hu, hW] at hv
+      rw [sf_ot (isOT_add hVot (by rw [← hW]; exact hWot))] at hv
+      rw [hv]; exact comps_init_add_nil hVot hVu
+  · rw [if_neg he2] at hv
+    have hY : isOT (sumN (one :: (children M c).map (bumpTerm M ρ c))) = true := by
+      apply isOT_sumN
+      intro t ht
+      rcases List.mem_cons.mp ht with rfl | ht
+      · rfl
+      · obtain ⟨j, _, rfl⟩ := List.mem_map.mp ht
+        exact isOT_bumpTerm_of (fun k hk => hG.ot_o k hk) c j
+    obtain ⟨_, sW, yW, hW⟩ := single_omega hY
+    rw [hW, sf_ot (isOT_add hVot (by rw [← hW]; exact isOT_omega hY))] at hv
+    rw [hv]; exact comps_init_add_nil hVot hVu
+
+/-- **The residual of VSmallF on the last summand**: at a frame below `x` whose counted child `c` is a `v`
+call of `D`, the components of the new last summand `fsD(last v(c), Z c)`; at `c = x`, as in `VSFRes`. -/
+def VSFRes2 (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+    ∀ i, i < r + L → ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R →
+    (DepX M (r + L) false c → c < r + L →
+      ∀ g ∈ comps (ρ.v i) (fsD (last (ρ.v c)) (Z c)),
+        g ≤ psi ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))) ∧
+    (c = r + L →
+      ∀ g ∈ comps (ρ.v i) ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c),
+        g ≤ psi ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
+
+/-- **`VSFRes` from the last-summand form.** -/
+theorem vsfRes_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h2 : VSFRes2 M r L d0 ρ) : VSFRes M r L d0 ρ := by
+  intro n hn ρP Z hH hCN i hi Lc c R hCL hcv g hg
+  have hcCL : c ∈ CL M i := by rw [hCL]; simp
+  have hcch : c ∈ children M i := (List.mem_filter.mp hcCL).1
+  have hcM := (mem_children hcch).2
+  have h0 : par M 0 c = some i := (mem_children_iff.mp hcch).2
+  obtain ⟨hW, hX⟩ := h2 n hn ρP Z hH hCN i hi Lc c R hCL
+  by_cases hcx : c = r + L
+  · exact hX hcx g hg
+  have hcx' : c < r + L := by omega
+  rcases hcv with hcd | hcx''
+  · rw [glueZ_v_dep ρ (shiftV ρP L) Z hcx' hcd] at hg
+    by_cases hz : ρ.v c = z
+    · rw [hz] at hg; simp [fsD, comps] at hg
+    rw [fsD_init_last hz, comps_app, comps_init_v_nil I.cons I.good I.rank hcM h0] at hg
+    exact hW hcd hcx' g hg
+  · exact absurd hcx'' hcx
+
 /-! ## 組み立て: AbsD・AbsUW・AbsDN を運んだ形の hExp（t = 1） -/
 
 /-- **The value fields of `Inv3V` still not carried** (`t = 1`): the three fields of the frame of the last column
@@ -667,7 +824,7 @@ theorem inv3V_N_t1A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
     (hResD : AbsDRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hResU : AbsUWRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hResDN : AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
-    (hResV : VSFRes M r L (entry M 0 (r + L) - entry M 0 r) ρ) :
+    (hResV : VSFRes2 M r L (entry M 0 (r + L) - entry M 0 r) ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN,
       Inv3V (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN rkN ∧
       isOT (root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN) = true ∧
@@ -711,7 +868,7 @@ theorem inv3V_N_t1A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
                     (expStep_and (expStep_absD I hlen hL0 hd0e hr hx2 hResD)
                       (expStep_and (expStep_absUW I hlen hL0 hd0e hr hx2 hResU)
                         (expStep_and (expStep_absDN I hlen hL0 hd0e hr hx2 hResDN)
-                          (expStep_and (expStep_vsmallF I hlen hL0 hd0e hr hx2 hResV) hQs)))))))))))
+                          (expStep_and (expStep_vsmallF I hlen hL0 hd0e hr hx2 (vsfRes_of I hlen hResV)) hQs)))))))))))
   by_cases hqr : q = r
   · subst hqr
     obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=
@@ -729,7 +886,7 @@ theorem inv3V_N_t1A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
 
 /-- **The `t = 1` part of `hExp`** with AbsD・AbsUW・AbsDN carried. Residuals (each for the `t = 1`
 matrices only): `hRT` (the base, shared with `hLast`), `hQs` (`QV2` = TPLoW・AbsDW・TPLoN), the
-residuals of the carried fields (`TPLoRes`・`AbsDRes`・`AbsUWRes`・`AbsDNRes`・`VSFRes`), and `hRes`
+residuals of the carried fields (`TPLoRes`・`AbsDRes`・`AbsUWRes`・`AbsDNRes`・`VSFRes2`), and `hRes`
 (`Res3A` of `M[n]`). -/
 theorem hExp_t1A
     (hRT : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
@@ -741,7 +898,7 @@ theorem hExp_t1A
       par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
       TPLoRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
       AbsDRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsUWRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
-      AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ VSFRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+      AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ VSFRes2 M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hRes : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 → ∀ n, 2 ≤ n →
       ∀ σ rkN, Inv3 (expand M n) σ rkN → Res3A (expand M n) σ rkN) :
