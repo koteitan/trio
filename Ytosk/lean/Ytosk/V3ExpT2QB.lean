@@ -2,7 +2,7 @@
 **3 行・t = 2・q = r（主の場合）: x より前の Good3（Good3 N を仮定しない）。**
 
 `t2_qr_main`（V3T2M）の構造の部分をそのまま使い、`deps_lhd_gen` を `deps_lhd_ot` に替え、`good_below_of` で
-x より前の o・v の標準形と数える子の減少を出す。残りは N 側の 2 つ（`T2VSN`・`T2Hard`）、x 以後の標準形、
+x より前の o・v の標準形と数える子の減少を出す。残りは N 側の `T2HardA`（V3DepRWU）、x 以後の標準形、
 種 o(r) の ◁・標準形・数える子の減少。
 -/
 import Ytosk.V3T2M
@@ -35,7 +35,6 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (hKD : BumpKidsDec M ρ)
     (hAbs : AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
     (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L))
-    (hVSN : T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
     (hHA : T2HardA M (TRIO.gexp M r L d0 d1 n) (r + L) r ρ σ)
     (hOTout : ∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true)
     (hseed : Lhd z (σ.o r) (ρ.o r) ∧ isOT (σ.o r) = true)
@@ -202,7 +201,7 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     rw [← children_N2 hlen hL hp hd0e (by omega) hn2 hjx]; exact hk'
   have hdlR := deps_lhd_otW_RU (S := S) (W := fun _ _ => False) (bnd := r + L) hC hG hCN hRM (by omega)
     (by rw [hlN]; omega)
-    hF hFO hVS hTD hKD hVSN (hHA.1.toS S (r + L)) (hHA.vnr S) (hHA.sh S) hoff hOTout (fun _ h => h)
+    hF hFO hVS hTD hKD (hHA.vsn S (fun i h => h.2)) (hHA.1.toS S (r + L)) (hHA.vnr S) (hHA.sh S) hoff hOTout (fun _ h => h)
     (fun _ _ _ _ h => h.elim) (fun _ _ _ _ _ _ _ _ h => h.elim) (fun _ _ h => h.elim)
     (by
       rintro b i ⟨hb, hi'⟩ _ _ _

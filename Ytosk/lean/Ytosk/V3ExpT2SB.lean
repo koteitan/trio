@@ -42,7 +42,6 @@ theorem t2_sv_below (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) 
     (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ)
     (hKD : BumpKidsDec M ρ)
     (hAbs : AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
-    (hVSN : T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
     (hHA : T2HardA M (TRIO.gexp M r L d0 d1 n) (r + L) r ρ σ)
     (hOTout : ∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true)
     (hseed : Lhd z (σ.o r) (ρ.o r) ∧ isOT (σ.o r) = true)
@@ -163,7 +162,7 @@ theorem t2_sv_below (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) 
       exact absurd hjb (hrb i (mem_children_iff.mp hj).2))
     (fun i h => h.elim) (fun i h => h) (fun i c _ _ h => h.elim) (fun i j c _ _ _ _ _ h => h.elim)
     (fun c hc _ _ hd => hDvNil c hc hd) (fun c hc hw _ hd => hCLnil c hc hw (hDvNil c hc hd))
-    hCLnil (fun i hi hns _ hD hv => hOS i hi hns hD hv) hVSh hAbs hSeed hVSN hHA
+    hCLnil (fun i hi hns _ hD hv => hOS i hi hns hD hv) hVSh hAbs hSeed hHA
     (fun i h => by rcases h with h | h; exact h.2; exact absurd h.1 (by decide)) hOTout
     (fun _ i _ h => h.elim)
     (fun _ i _ hs => by

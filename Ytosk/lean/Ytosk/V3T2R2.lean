@@ -80,7 +80,7 @@ theorem hR2_t2 (hB : T2BelowXRes) (hSV : T2Seed1SV) (hQC : T2Seed1C) :
       have := hGall m hm1 τ (by rw [hexp1]; exact hτ)
       rwa [hexp1] at this
     have hBR := hB M ρ rk hM hS I RA hz h2 r L hlen hr n hn hGP σ hCN hOT
-    exact ⟨fun p hp => (hBR.2.2.1 p hp).1, hBR.2.2.2.2⟩
+    exact ⟨fun p hp => (hBR.2.1 p hp).1, hBR.2.2.2⟩
   -- the drop to `M.take x`
   have hdropOf : ∀ r L, r + L + 1 = M.length →
       ∀ i, i < r + L → PO ρ (drop1 M (r + L) rk) i ∧ PV M ρ (drop1 M (r + L) rk) i := by

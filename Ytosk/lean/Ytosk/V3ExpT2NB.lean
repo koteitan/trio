@@ -48,7 +48,6 @@ theorem t2_qn_below (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) 
     (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ)
     (hKD : BumpKidsDec M ρ)
     (hAbs : AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
-    (hVSN : T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
     (hHA : T2HardA M (TRIO.gexp M r L d0 d1 n) (r + L) pq ρ σ)
     (hOTout : ∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true)
     (hvqot : isOT (σ.v (r + qp)) = true)
@@ -223,7 +222,7 @@ theorem t2_qn_below (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) 
       have := e2_of_col (show col M _ = (entry M 0 i + 1, entry M 1 i, 1) from hjb)
       omega)
     (fun c hc _ _ hd => hDvNil c hc hd) (fun c hc hw _ hd => hCLnil c hc hw (hDvNil c hc hd))
-    hCLnil hOS hVSh hAbs hSeed hVSN hHA
+    hCLnil hOS hVSh hAbs hSeed hHA
     (fun i h => by rcases h with h | h; exact absurd h.1 (by decide); exact h.2) hOTout
     (fun _ i _ h => by obtain ⟨-, hi⟩ := h; rw [hi]; exact hqot)
     (fun _ i _ hs => by

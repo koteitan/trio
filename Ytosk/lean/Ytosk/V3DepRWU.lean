@@ -9,6 +9,8 @@ D の道の上の祖先 k の v(k)（`PathLvS`、t = 0 の PathLv を DepS で�
 import Ytosk.V3DepR
 import Ytosk.V3DepOTW
 import Ytosk.V3RelRU
+import Ytosk.V3T0OT
+import Ytosk.V3VSF
 
 namespace Ytosk
 
@@ -28,6 +30,38 @@ theorem rclaim_zeroUS {U : T → Prop} {ρ ρ' : Valn} {i : Nat} {p' : T} (h : �
   intro p y y' q _ hy' _ _
   rw [h] at hy'; simp only [psi.injEq] at hy'; rw [← hy'.2.1, H_z]
   intro u _ _ c _ _ g hg; simp [comps] at hg
+
+/-- **`RClaimUS` from the class of the argument pair** (A, B0 or C) and `X′ ◁ X` (copy of `rclaim_of_clsU`). -/
+theorem rclaim_of_clsUS {U : T → Prop} {ρ σ : Valn} {i : Nat} {a X X' : T} (hX : ρ.o i = psi a X z) (hX' : σ.o i = psi a X' z)
+    (hot : isOT (psi a X z) = true) (hot' : isOT (psi a X' z) = true) (hl : Lhd z X' X)
+    (hcls : ClsNode a X' X) : RClaimUS U ρ σ i := by
+  intro p y y' q hy hy' _ _
+  rw [hX] at hy; rw [hX'] at hy'
+  simp only [psi.injEq] at hy hy'
+  obtain ⟨rfl, rfl, -⟩ := hy
+  obtain ⟨-, rfl, -⟩ := hy'
+  rcases hcls with ⟨hhi, hlo'⟩ | ⟨h1, h2⟩ | hC
+  · have e := split_app (psi (succ a) z z) X
+    have e' := split_app (psi (succ a) z z) X'
+    have hlt : (split X' (psi (succ a) z z)).2 < (split X (psi (succ a) z z)).2 := by
+      have h := hl.1
+      rw [← e, ← e', hhi] at h
+      exact (app_lt_app_left_iff _).mp h
+    exact relR_H_samehiU hot' hot (Or.inr (lhd_psi a hl)) hhi hlt
+  · rw [H_of_lo_z hot h2, H_of_lo_z hot' h1]
+    have := relR_prefix_lhdU (U := U) (q := q) (P := z) hl
+    simpa [app] using this
+  · have hlo : (split X (psi (succ a) z z)).2 ≠ z := by
+      intro h
+      have e := split_app (psi (succ a) z z) X
+      rw [h, app_z_right, ← hC] at e
+      rw [e] at hl; exact lt_irrefl' _ hl.1
+    have hHX' : H a X' = X' := H_all_hi hot' (by rw [hC]; exact split_fst_ge _ X)
+    rw [hHX', H_eq hot, if_neg hlo, hC]
+    apply relR_self_prefixU
+    intro c hc1 hc2
+    exact prefix_tests (e := z) c (by rw [app_z_right]; exact hc1) hc2
+
 
 /-- **The levels carried down the `D` path** (`DepS` form of `PathLv`): `u = v(k)` for a frame `(k, c)` whose old
 child rewrites, and the levels of `k` when the frame `(k, c)` rewrites. -/
@@ -77,7 +111,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
     (hbM : bnd ≤ M.length) (hbN : bnd ≤ N.length)
     (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ)
     (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
-    (hVSN : ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v c ≠ ρ.v c →
+    (hVSN : ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → S true c → σ.v c ≠ ρ.v c →
       ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
     (hVR : VSmallRS M S bnd ρ) (hVNRN : T2VNRU M N S bnd ρ σ) (hShN : T2ShU M N S bnd ρ σ)
     (hoff : ∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i))
@@ -263,7 +297,26 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
               g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) := by
             by_cases hvc : σ.v c = ρ.v c
             · rw [hs'v, hvc, ← hsvc]; exact hsub
-            · rw [hs'v]; exact hVSN i Lc c hi hclN hvc
+            · rw [hs'v]
+              by_cases hsc : S true c
+              · exact hVSN i Lc c hi hclN hsc hvc
+              · -- a changed `v(c)` off the seeds: `c` has no counted child, `vs_changed_bound`
+                have hdv : DepS M S false c := by by_contra hn'; exact hvc ((hoff c hcb).2 hn')
+                obtain ⟨⟨hlv, hvot⟩, -⟩ := ih _ (by have := hRM c hcM; omega) false c (le_refl _) hdv hcb (hWv c)
+                change Lhd z (σ.v c) (ρ.v c) at hlv
+                change isOT (σ.v c) = true at hvot
+                have hclc := hDvNil c hcb hWc hsc hdv
+                have hoc := o_of_no_counted hC hcM (hG.ot_v c hcM) (no_cnt_of_cl_nil hclc)
+                rw [hsy] at hoc; simp only [psi.injEq] at hoc
+                have hy0 : y = z := hoc.2.1
+                rw [← hsvc] at hlv
+                have hot0 : isOT (psi (ρ.v i) (step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s z z) z) = true := by
+                  have hfm := o_last_form hC hiM (hG.ot_v i hiM) hclM (fun d hd => single_o hC hG
+                    (mem_children (cl_mem_children hd)).2) (by
+                      rw [hclM, List.map_append, List.map_singleton]; exact hpM) hsy
+                  rw [hy0] at hfm; rw [← hfm]
+                  exact hG.ot_o i hiM
+                exact vs_changed_bound hvot hlv (by rw [hy0] at hBc; exact hBc) hsub hot0
           have hot : isOT (psi (ρ.v i) (step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z) z) = true := by
             rw [← o_last_form hC hiM (hG.ot_v i hiM) hclM (fun d hd => single_o hC hG
               (mem_children (cl_mem_children hd)).2) (by
@@ -512,11 +565,17 @@ def T2ShA (M N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
       ∀ g ∈ comps u (app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) (psi s' y' z)),
         g < app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) (psi s' y' z) ∨ ∃ d ∈ comps u (ρ.v i), g ≤ d
 
-/-- **The replacement of `T2Hard`** (one seed `p`): `VSmallRA` of `M`, the two `N`-side hypotheses at the
-levels of the path, and `RClaimU` at the seed. -/
+/-- **`T2VSN` at the seed only**: a changed `v` of the seed `p` as the last counted child of a frame. (Off the
+seeds a changed `v(c)` has no counted child and the bound comes from `VSmallF M` by `vs_changed_bound`.) -/
+def T2VSNP (N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
+  ∀ i (Lc : List Nat), i < bnd → CL N i = Lc ++ [p] → σ.v p ≠ ρ.v p →
+    ∀ g ∈ comps (ρ.v i) (σ.v p), g ≤ psi (σ.v p) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))
+
+/-- **The replacement of `T2Hard` and `T2VSN`** (one seed `p`): `VSmallRA` of `M`, the two `N`-side hypotheses
+at the levels of the path, `RClaimUS` at the seed, and `T2VSN` at the seed. -/
 def T2HardA (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
   VSmallRA M ρ ∧ T2VNRA M N bnd ρ σ ∧ T2ShA M N bnd ρ σ ∧
-    ∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimUS U ρ σ p
+    (∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimUS U ρ σ p) ∧ T2VSNP N bnd p ρ σ
 
 theorem T2HardA.vnr {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop) :
     T2VNRU M N S bnd ρ σ :=
@@ -532,6 +591,14 @@ theorem T2HardA.seed {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N b
       ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimUS U ρ σ i := by
   intro i hs _ _ U hU
   have := hSp i hs; subst this
-  exact h.2.2.2 U (fun u hu => (hU u hu).toA)
+  exact h.2.2.2.1 U (fun u hu => (hU u hu).toA)
+
+theorem T2HardA.vsn {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop)
+    (hSp : ∀ i, S true i → i = p) :
+    ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → S true c → σ.v c ≠ ρ.v c →
+      ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) := by
+  intro i Lc c hi hcl hs hvc
+  have := hSp c hs; subst this
+  exact h.2.2.2.2 i Lc hi hcl hvc
 
 end Ytosk

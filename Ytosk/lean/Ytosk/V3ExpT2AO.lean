@@ -60,7 +60,7 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
       (∀ b' i', rkM b' i' < rkM b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →
         Lhd z (valB σ b' i') (valB ρ b' i') ∧ isOT (valB σ b' i') = true) →
       Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true)
-    (hVSN : T2VSN N bnd ρ σ) {sd : Nat} (hHA : T2HardA M N bnd sd ρ σ) (hSp : ∀ i, S true i → i = sd)
+    {sd : Nat} (hHA : T2HardA M N bnd sd ρ σ) (hSp : ∀ i, S true i → i = sd)
     (hOTout : ∀ b j, bnd ≤ j → j < N.length → isOT (valB σ b j) = true)
     (hWot : (∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i)) →
       ∀ i, i < bnd → W true i → isOT (σ.o i) = true)
@@ -150,7 +150,7 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
           by_contra h'; exact hns (hbkS i d e hi hdM (by omega) hdb he' (by omega))
         exact (hoff e hex).1 (hLnd d hd e he')
   have hdlR := deps_lhd_otW_RU (S := S) (W := W) (bnd := bnd) hC hG hCN hRM (by omega) hbN
-    hF hFO hVS hTD hKD hVSN (hHA.1.toS S bnd) (hHA.vnr S) (hHA.sh S) hoff hOTout hWv hWo hWb (hWot hoff)
+    hF hFO hVS hTD hKD (hHA.vsn S hSp) (hHA.1.toS S bnd) (hHA.vnr S) (hHA.sh S) hoff hOTout hWv hWo hWb (hWot hoff)
     (fun b i hs hi hd ih => hSeed b i hs hi hd hoff ih) (hHA.seed S hSp) hDvNil
     (fun c hc hw hd => by
       by_cases hs : S true c
