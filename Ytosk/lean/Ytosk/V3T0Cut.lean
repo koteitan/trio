@@ -35,7 +35,7 @@ theorem cutsNS_le {s : T} : ∀ {h t : T}, t ∈ cutsNS s h → t ≤ h
       · exact le_refl _
 
 /-- **A cut of `P + t`** is a cut of `P` or `P` followed by a cut of `t`. -/
-theorem cutsNS_app {s t : T} : ∀ {P B : T}, B ∈ cutsNS s (app P t) →
+theorem cutsNS_split {s t : T} : ∀ {P B : T}, B ∈ cutsNS s (app P t) →
     B ∈ cutsNS s P ∨ ∃ κ ∈ cutsNS s t, B = app P κ
   | z, B, h => Or.inr ⟨B, by simpa using h, by simp [app]⟩
   | psi a x c, B, h => by
@@ -43,7 +43,7 @@ theorem cutsNS_app {s t : T} : ∀ {P B : T}, B ∈ cutsNS s (app P t) →
     rcases h with (⟨u, hu, rfl⟩ | ⟨u, hu, rfl⟩) | ⟨u, hu, rfl⟩
     · left; simp only [cutsNS, List.mem_append, List.mem_map]; exact Or.inl (Or.inl ⟨u, hu, rfl⟩)
     · left; simp only [cutsNS, List.mem_append, List.mem_map]; exact Or.inl (Or.inr ⟨u, hu, rfl⟩)
-    · rcases cutsNS_app hu with h' | ⟨κ, hκ, rfl⟩
+    · rcases cutsNS_split hu with h' | ⟨κ, hκ, rfl⟩
       · left; simp only [cutsNS, List.mem_append, List.mem_map]; exact Or.inr ⟨u, h', rfl⟩
       · right; exact ⟨κ, hκ, rfl⟩
 
@@ -76,7 +76,7 @@ theorem lt_new_of_kind {B s P a x T' : T} (hT : T' ≠ z)
   · obtain ⟨R0, rfl⟩ := prefix_of_app_single hhi.symm hR
     rw [app_assoc]
     exact lt_app_ne (fun h => hT (app_eq_z h).2)
-  · rcases cutsNS_app hc with h | ⟨κ, hκ, rfl⟩
+  · rcases cutsNS_split hc with h | ⟨κ, hκ, rfl⟩
     · exact lt_of_le_of_lt (cutsNS_le h) (lt_app_ne hT)
     · exact app_lt_app_left P (hcut κ hκ rfl)
 

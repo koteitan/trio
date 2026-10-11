@@ -53,7 +53,7 @@ theorem trig_agree {a B s y y' : T} (hRE : REr y y')
       · have e' := e
         rw [hlo, app_z_right] at e'
         rw [e'] at hc
-        rcases cutsNS_app hc with h | ⟨κ, hκ, hBk⟩
+        rcases cutsNS_split hc with h | ⟨κ, hκ, hBk⟩
         · exact lt_of_le_of_lt (cutsNS_le h) hPT
         · rw [hBk]; exact app_lt_app_left P (hcut hlo hB P a' x T' rfl rfl κ hκ hBk)
       · obtain ⟨R0, hR0⟩ := prefix_of_app_single e hlo

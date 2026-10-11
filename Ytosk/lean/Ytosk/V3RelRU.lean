@@ -3,6 +3,7 @@
 Buchholz の補題 3.4（closed_of_relRU）は段 q だけを使うので、U = {q} でよい。
 -/
 import Ytosk.V3RelR
+import Ytosk.V3DropR
 
 namespace Ytosk
 
@@ -1080,5 +1081,19 @@ theorem relR_tailU {q p b Y0 T0 : T} (hR : RelRU U q b (H p Y0)) (hb : b ≤ H p
     · exact ⟨d, hmem d (List.mem_cons_of_mem _ (List.mem_append_right _ hd)), le_refl _⟩
 
 
+
+/-! ## 列での主張（t0-exp・t2 で共通） -/
+
+/-- **The claim at a column, at the levels `U`.** -/
+def RClaimU (U : T → Prop) (ρ ρ' : Valn) (i : Nat) : Prop :=
+  ∀ p y y' q, ρ.o i = psi p y z → ρ'.o i = psi p y' z → ¬ lt p q = true →
+    (∀ u, U u → ¬ lt q u = true → ∀ g ∈ comps u p, g ≤ psi p z z ∨ g < H p y' ∨ ∃ d ∈ comps u q, g ≤ d) →
+    RelRU U q (H p y') (H p y)
+
+theorem rclaim_zeroU {ρ ρ' : Valn} {i : Nat} {p' : T} (h : ρ'.o i = psi p' z z) :
+    RClaimU U ρ ρ' i := by
+  intro p y y' q _ hy' _ _
+  rw [h] at hy'; simp only [psi.injEq] at hy'; rw [← hy'.2.1, H_z]
+  intro u _ _ c _ _ g hg; simp [comps] at hg
 
 end Ytosk

@@ -134,7 +134,7 @@ theorem t0RWResAt_of2 (P : T → T → T → T → Prop)
       · by_cases hlo : (split X θ).2 = z
         · rw [hlo, app_z_right] at e
           rw [e, hXe] at hc
-          rcases cutsNS_app hc with h | ⟨κ, hκ, hBk⟩
+          rcases cutsNS_split hc with h | ⟨κ, hκ, hBk⟩
           · have hBP : B < P0 := by
               rcases (le_iff _ _).mp (cutsNS_le h) with h' | h'
               · exact h'

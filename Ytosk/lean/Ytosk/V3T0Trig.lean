@@ -46,7 +46,7 @@ theorem trig_keep {a B s P a' x T' : T} (hT : T' ≠ z) (hB : B ≠ z)
       · have e := split_app θ y
         rw [hlo, app_z_right] at e
         rw [e, hy] at hc
-        rcases cutsNS_app hc with h | ⟨κ, hκ, rfl⟩
+        rcases cutsNS_split hc with h | ⟨κ, hκ, rfl⟩
         · exact lt_of_le_of_lt (cutsNS_le h) hPT
         · exact app_lt_app_left P (hcut hlo κ hκ rfl)
       · have e := split_app θ y
