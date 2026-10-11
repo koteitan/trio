@@ -2265,3 +2265,16 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - t0_dep_otR から仮定 hVSN を外した（v が変わる子は引数 0 で書き換えないので、node_ot_hard の「古い方だけ書き換える」枝に来ない。hsub′ は vs_changed_bound から）。
 - T0DF に v の呼び出しの事実（標準形と v′ ◁ v）を足した。`t0VSD_at`: N の VSmallF の D の部分を T0DF と vs_changed_bound から（c が最後の数える子であることは hOS_t1 と CL の並びから）。`t0_vsmallF_at` で N の VSmallF を行列ごとに。
 - hExp_t0_topR の仮定から T0VSNRes（= T0VSResD2）が消えた。残りは hLast・hNG・FrmLF・T0IVRes・T0VSResG・T0TrigRes・T0RestV・T0RWResCR×3。hVSRexp_t0_topR の仮定は hLast・T0IVRes・T0TrigRes。
+
+### VKFree の置き換えの確認と VSFRes2 の除去（2026-10-12、t1-exp、V3ExpT1V）
+
+- (1) VKFree（偽）に頼る所: 前の t1-exp が b6409beb（V3ExpT1Y、hExp_t1Y）で groupA の LevLeafInv に置き換え済み。最後の列 x は葉で v(x) = v(r) + 1（leaf_last）なので、行 1 の子を持つどの列 p にも LevFree (v(r)) (v(p))（levFree_vOpt_of_leaf）。AbsD・AbsUW・AbsDN・TPLo の lf と M[n] の AbsDWLF・TPLoWLF はこれから出る。VKFree を仮定にとる古い定理（V3ExpT1L の hExp_t1X など）は最上位から使われていない。
+- (2) VSFRes2 を外した（V3ExpT1V、vsf_frame・expStep_vsmallF2）。枠 (i, c)、c は i の数える子で v(c) が x に依る（D の v の列）、c < x。示すこと: 成分 g ∈ comps_{v(i)}(v_N(c)) について g ≤ Ω_{v_N(c)} か g ≤ B。
+  - v_N(c) < v(i) なら成分はない。前任が残した点「P_1 c ≠ i で v′(c) ≥ v(i) の理由」は要らない。
+  - c は i の最後の数える子（p1_dep）で、c は数える子を持たない（uncnt_of_depv）ので o_N(c) = Ω_{v_N(c)}。
+  - c より前に数える子がない（B = 0）: o_N(i) = ψ_{v(i)}(Ω_{v_N(c)}) が標準形なので g < Ω_{v_N(c)}。
+  - 前に数える子がある（B ≠ 0）: 穴の ◁（lhd_fs・fsD_seed）から、新しい成分 g は古い成分か 0 か添字 ζ = Z c の成分以下（hole_dom）。古い成分は M の VSmallF で Ω_{v(c)} 以下か B 以下。数える子の値は左から減る（Good3）ので B の加数はどれも Ω_{v(c)} 以上で Ω_{v(c)} ≤ B（om_le_state）。
+  - ζ の成分が効くのは共終数が通過する場合（cof last v(c) = Ω_{μ+1} 型、μ = v(r)）だけ。そのとき μ < v(i) なら ζ の成分は段 v(i) で空（comps_gamS_nil）。μ < v(i) の証明（mu_lt_vi）: c ≤ r なら位置つきの穴（t1_hole0 の DiagLe）で v(c) は対角の点を持ち共終数が ω 型で矛盾。よって r < c、r ≤ i。r < i なら hF1_t1。
+  - i = r で c の前に数える子がある場合だけ残る。名前つきの残り PassRootRes（r の数える子 c が通過する D の v の列なら c は r の最初の数える子）。実測（t = 1 の行列: C′ 195711・T0Ext 由来 112277・d3s 9103・deep2 79172・deep3 74939）で、通過する子 c が r の子になる場合（計約 1.6 万件）はいつも前に数える子がない。前に数える子を置いた形（例: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(4,1,0)(5,2,1)(6,2,1)(7,1,0)(8,2,1)(9,2,1)(10,1,0)(11,0,0)(12,1,1)(13,1,1)(14,1,0)(12,1,1)(13,1,1)(14,1,0)）は bms で非標準。局所的な理由はまだない。
+  - 前任の (b)「S > 0 で g < S の理由」は上の B ≠ 0 の筋（◁ と Good3 の減少）で済んだ。
+- 組み立て hExp_t1GP（trio_terminates_main_GP の hExp の t = 1 部分、M[n] の Inv3V ∧ NoGapP。Res3H と hRes はない、公理は標準の 3 つ）。仮定は hRT・hFrm・hResN（種 < Ω_μ の欄・段 0 の欄・TPLoLFRes・PassRootRes）・hNGM・hLL（LevLeafInv）。
