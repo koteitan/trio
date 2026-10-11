@@ -1899,3 +1899,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 保存の部品を値の述語 Q 一般にした（VP Q、vP_take・vP_t0）。NoGap0PosP は 1 列落とし・t = 0 で NoGapP と同じ証明で運べる。t = 2 では V′ = v_N(r + L) が [ψ_0(Ω_1), Ω_1) の加数を持つことがある（3.7 万件中 144 件）ので、σ だけの補題にはならない（未着手）。
   - 残り: Z0Link の保存（1 列落とし・t = 0・t = 2）。PhiX0R より狭い形の条件（穴の形と v(p) の値の関係）だが、まだ関係の条件。
 - groupA（V3PhiGapBase、緑）: 基底 SRO[n] = Mlen (1 + 3n) で NoGapP・NoGap0PosP・Z0Link（行 1 の親の v はすべて 0、vOpt_par1）。
+
+### t = 2 の欄 FrameOT・RootP・BumpKidsDec・BumpTermDec（2026-10-11、t2、V3ExpT2CF・CG・FO・RP・BD・M2、緑）
+
+- x より前の結論 T2BelowXS に、枠の形 FrameShape（M と同じ／最後の数える子だけ ◁ で下がる／数える子なし）、o_N ≤ o_M、のりしろの形 BumpInfo を足した（種の列 T2SeedCol・v の種の列 T2VSeedCol を除く）。
+- 写しの枠の事実 CopyFacts・BumpCopyFacts（copy_facts_gexp・bump_copy_facts_gexp）: 守られた枠は v と値が σ で移る、ほかは等しい。
+- clField_expand_t2: 数える子の枠の性質 Q を M[n] へ運ぶ骨組み（写しは Q の σ 不変性、x より前は FrameShape と「最後の子を ◁ で下げても保つ」、種の列は残り T2SeedFrames、M[1] は接頭辞）。
+- FrameOT: frameOT_expand_t2（σ 不変性 qFO_sh は sh_spArg・isOT_shTop から）。残りは種の列の枠だけ。
+- RootP: rootP_expand_t2（残りなし。Rt より前の根は N の依存の閉包で種に届かない）。
+- BumpKidsDec・BumpTermDec: bumpFields_expand_t2、v の種の列も証明（t2SeedBump_holds）。残りなし（接頭辞の欄だけ）。
+- 最上位: hExp_t2_of_last : hLast → T2BelowXRes → T2Rest2 → hExp（t = 2）。T2Rest2 = 13 欄（VSmallF・FrameClosed・AbsD・AbsU・TP1C・TPLo・TP1WC・TPLoW・AbsUW・AbsDW・TrigOmC・TPLoN・AbsDN）と N の Res3A と FrameOT の種の列の枠。
