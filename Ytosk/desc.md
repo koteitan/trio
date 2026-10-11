@@ -2381,3 +2381,12 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - N の r の数える子は Lc ++ [x′]。x′ より前の枠は M の枠そのもの（seed_frames_lift）。データ（CL_N(r)・v_N(r)・前の子の o・o_N(x′)）は t2 の o_r_level_qr の前半を写した seed_frame_data_qr。
   - 最後の枠: n = 2 は w1 で書き換えない。n ≥ 3 は y = σ(seqZ(n − 3)) = B + ψ_{V+n−1}(…)（sh_seqZ、σB = B を使う）。加数はすべて Ω_{V+2} 以上で hi = y・lo = 0、種類は pre（seed_last_kind）。FC3 は B = 0 で lev(hi) = (V + 1) + (n − 2)（seed_last_fc3）。
   - T2SeedFrames の今の定義には下の段の Good3 の前提がないので、t2 に足すよう頼んだ。
+
+### T0IVRes を証明した（2026-10-12、t0-exp、V3T0IV、緑）
+
+- 実測（d3s・deep2・deep3 の全件）: 中間の写しの根がどれも数えられない場面では、r を上げの的にするのはいつも直前の列 r − 1、M.take x での r の子は「なし」か「すべて bump」、g には r より前の数える子がある。
+- 証明（`t0IVRes_holds`）:
+  - N で r（k = 0 の写しの根）は数えられないので isUpg N r ∧ topped N r（列と bump は N でも同じ）。UAT(N)（N は標準形で SRO でない、rk_N0）で r への上げは r − 1 から。upg_pre0 で M でも upg (r − 1) = r。
+  - topped N r = topped (M.take x) r（topped_copy0）。r は上げの的なので行 2 は 1、all_bump_of_last で M.take x での r の子はすべて bump で数えられない。よって M での r の数える子は x だけで o(r) = ψ_{v(r)}(1)（o_x_one0）。
+  - cnt_before_next_upg（前任の V3T0Res）で g には r より前の数える子があり、状態 B ≠ 0。B ≥ 1 = y なので古い枠は r で書き換えない。
+- hExp_t0_topR の残り: hLast・hNG・FrmLF・PH3c・T0CutResG・T0RestV（PhiX0R・T0TPLoRes・T0AbsUWRes・T0AbsDNRes）・T0RWResCR×3。hVSRexp_t0_topR: hLast・PH3c・T0CutResG。

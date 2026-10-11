@@ -11,6 +11,7 @@ D の列は `t0_otdR`（V3T0DepR）から。型（ClsNode）を運ばないの�
 import Ytosk.V3T0DepR
 import Ytosk.V3T0Top
 import Ytosk.V3T0FrmJ
+import Ytosk.V3T0IV
 
 namespace Ytosk
 
@@ -755,18 +756,19 @@ theorem hExp_t0A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hOTD : T0DF 
   exact ⟨σ, rkN, V⟩
 
 /-- **`hExp` for `t = 0` in the `RClaim` scheme** (`VSmallR M ρ` given, as carried by main_GP). Residuals:
-`T0IVRes`, PH3c of `M` and `T0CutResG` (the `D` frames), `T0RestV`・`FrmLF`・`hNG` (value fields), and the
+PH3c of `M` and `T0CutResG` (the `D` frames; `T0IVRes` is proved, V3T0IV), `T0RestV`・`FrmLF`・`hNG` (value fields), and the
 shadow frames `T0RWResCR`. No class residual (`T0IIRes`, `T0ShapeR3`). -/
 theorem hExp_t0_topR
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hNG : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ) (hFrm : FrmLF)
-    (hIV : T0IVRes) (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
+    (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
     (hCut : T0CutResG) (hRest : T0RestV) (hC1 : T0RWResCR PTP1) (hC1W : T0RWResCR PTP1W) (hCT : T0RWResCR PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
   intro M ρ rk hM hS hE I R hVR hz hs0 n hn2
+  have hIV := t0IVRes_holds
   have f : ∀ F, T0Field F → T0FieldG F := fun _ h M ρ rk r L n σ rkN hctx _ => h M ρ rk r L n σ rkN hctx
   have g : ∀ F, T0FieldG F → T0Field F := fun F h M ρ rk r L n σ rkN hctx =>
     h M ρ rk r L n σ rkN hctx (hNG M ρ rk hctx.1 hctx.2.1 hctx.2.2.1 hctx.2.2.2.1)
@@ -790,12 +792,13 @@ theorem hExp_t0_topR
 theorem hVSRexp_t0_topR
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
-    (hIV : T0IVRes) (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
+    (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
     (hCut : T0CutResG) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∀ ρN rkN, Inv3V (expand M n) ρN rkN → VSmallR (expand M n) ρN := by
   intro M ρ rk hM hSRO hE I R hVR hz hs0 n hn2 ρN rkN V
+  have hIV := t0IVRes_holds
   obtain ⟨r, L, hlen, hL, hp, he1, hexp⟩ := t0_shape I hz hs0
   rw [hexp n] at V ⊢
   have hTx : ∃ τ rkT, Inv3 (M.take (r + L)) τ rkT ∧ Res3A (M.take (r + L)) τ rkT := by
