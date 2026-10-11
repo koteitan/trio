@@ -13,6 +13,7 @@ g の枠では型 A・B0・C が `t0_S1A` で出ているので、`RClaim` は�
 -/
 import Ytosk.V3T0OT
 import Ytosk.V3DepR
+import Ytosk.V3VSF
 
 namespace Ytosk
 
@@ -81,8 +82,6 @@ theorem t0_dep_otR {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
     (hS3 : ∀ p, par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 → col M g = bump M p →
       Lhd z (σ.v p) (ρ.v p))
     (hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g))
-    (hVSN : ∀ i (Lc : List Nat) c, i < r → c < r → CL M i = Lc ++ [c] → σ.v c ≠ ρ.v c →
-      ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
     (hTrig : ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
       ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z →
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
@@ -557,12 +556,20 @@ theorem t0_dep_otR {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                   exact hss hy2) hpN0
               have hsub : ∀ g ∈ comps a s, g ≤ psi s z z ∨ g ≤ B := by
                 rw [hsvc]; exact hVS i hiM Lc c [] (by rw [hclM])
+              have hot : isOT (psi a (step a B s y z) z) = true := by
+                rw [← hformM]; exact hG.ot_o i hiM
               have hsub' : ∀ g ∈ comps a s', g ≤ psi s' z z ∨ g ≤ B := by
                 by_cases hvc : σ.v c = ρ.v c
                 · rw [hs'v, hvc, ← hsvc]; exact hsub
-                · rw [hs'v]; exact hVSN i Lc c hi hcr hclM hvc
-              have hot : isOT (psi a (step a B s y z) z) = true := by
-                rw [← hformM]; exact hG.ot_o i hiM
+                · obtain ⟨hy0, -⟩ := hchv hvc
+                  have hdv : DepX M (r + L) false c := by
+                    by_contra hn'; exact hvc ((hoffD c hcr).2 hn')
+                  have hlv : Lhd z (σ.v c) (ρ.v c) :=
+                    (ih _ (by have := (hRM c hcM).1; omega) false c (le_refl _) hcr).2.1 hdv
+                  rw [← hsvc] at hlv
+                  rw [hs'v]
+                  subst hy0
+                  exact vs_changed_bound hvcot hlv hBc hsub hot
               have hBot' : isOT (psi a B z) = true := hFO i hiM Lc c [] (by rw [hclM])
               have hlc' : Lhd z (psi s' y' z) (psi s y z) := by rw [← hs'y', ← hsy]; exact hlc
               have hSi : isOT (psi a (step a B s' y' z) z) = true := by
@@ -630,9 +637,6 @@ theorem t0_otdR {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hLast : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
     (hVR : VSmallR M ρ)
-    (hVSNN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-      ∀ i (Lc : List Nat) c, i < r → c < r → CL M i = Lc ++ [c] → σ.v c ≠ ρ.v c →
-      ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
     (hTrigN : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
       ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z →
@@ -646,8 +650,9 @@ theorem t0_otdR {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
         ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true)) :
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-      ∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ RClaim ρ σ i ∧
-        (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z) := by
+      ∀ i, i < r → (DepX M (r + L) true i → isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ RClaim ρ σ i ∧
+        (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z)) ∧
+        (DepX M (r + L) false i → isOT (σ.v i) = true ∧ Lhd z (σ.v i) (ρ.v i)) := by
   intro n hn2 σ hCN
   have hn : 1 ≤ n := by omega
   have hx : r + L + 1 = M.length := hlen
@@ -901,10 +906,11 @@ theorem t0_otdR {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           by_cases hkn : k + 1 < n
           · rw [hσmid k hkn]; exact isOT_omid hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN
           · rw [show k = n - 1 by omega, hσlast]; exact hGT.ot_o r (by rw [List.length_take]; omega)
-    intro i hi hd
+    intro i hi
     have hdep := t0_dep_otR hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT hσB hσBv
-      hoffD hσmid hσlast hF hVS hVR hFO hTD hKD hAbsS hl hy' (hLast n hn2 g hg) hS3 hS2 (hVSNN n hn2 σ hCN)
+      hoffD hσmid hσlast hF hVS hVR hFO hTD hKD hAbsS hl hy' (hLast n hn2 g hg) hS3 hS2
       (hTrigN n hn2 σ hCN) (hVchgRN g hg) (hG0N n hn2 g hg)
+    refine ⟨fun hd => ?_, fun hd => ⟨(hdep false i hi).1, (hdep false i hi).2.1 hd⟩⟩
     obtain ⟨hot, hlt, hR⟩ := hdep true i hi
     refine ⟨hot, hlt hd, hR rfl hd, fun hne => ?_⟩
     have hdv : DepX M (r + L) false i := by
@@ -915,8 +921,11 @@ theorem t0_otdR {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       cases h : par M 0 r with
       | none => rfl
       | some g => exact absurd ⟨g, h⟩ hrg
-    intro i hi hd
-    have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true i hd
-    omega
+    intro i hi
+    refine ⟨fun hd => ?_, fun hd => ?_⟩
+    · have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true i hd
+      omega
+    · have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn false i hd
+      omega
 
 end Ytosk

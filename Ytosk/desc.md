@@ -2255,3 +2255,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - `T2HardR M N bnd ρ σ Sd = VSmallR M ∧ T2VNRN ∧ T2ShN ∧ (種で RClaim)`。T2BelowRes の 2 つ目の欄を T2Hard からこれに替え、t2_assembleOT・t2_qr_below（deps_lhd_ot から deps_lhd_otW_R へ）・t2_sv_below・t2_qn_below・t2BelowXS_of を直した。
   - VSmallR M は使う側の署名を変えないよう残りの欄の中に入れた。main_G の形では大域の hVSR から出る。main_GP の形では hExp に前提 VSmallR M を足す必要がある。
   - 実測（t = 2 の全行列 × n = 2, 3、4 集合）: 種の RClaim（q によらない強い形 relR_full）は例外 0（331k 件）。T2VNRN・T2ShN は前件が一度も起きない（C′ 3000 行列で o(c) が変わる枠 3.4 万件はすべて v(c) が同じで新しい側も書き換える。t0-exp の t = 0 と同じ）。
+
+### T0VSResD2 を証明した（2026-10-12、t0-exp、V3VSF・V3T0TopR、緑）
+
+- 純粋な補題 `vs_changed_bound`（V3VSF、t1-exp の VSFRes2 と共通の核）: 枠 i の子が Ω_s から Ω_{s′}（s′ ◁ s）に替わるとき、段 a = v(i) の s′ の成分は Ω_{s′} 以下か状態 B 以下。
+  - B ≠ 0: s′ ◁ s の試しに C = s をとると、成分 g は s の成分 d か 0 以下。古い VSmallF で d ≤ Ω_s か d ≤ B。B の加数はどれも Ω_s 以上なので Ω_s ≤ B。
+  - B = 0: 古い o(i) = ψ_a(Ω_s) が標準形で Ω_{s′} ◁ Ω_s なので ψ_a(Ω_{s′}) も標準形（ot_parent_lhd）。s′ ≥ a なら成分は Ω_{s′} より小さい。s′ < a なら成分はない（comps_nil_of_lt）。
+  - v′(c) ≥ v(i) は使わない。
+- t0_dep_otR から仮定 hVSN を外した（v が変わる子は引数 0 で書き換えないので、node_ot_hard の「古い方だけ書き換える」枝に来ない。hsub′ は vs_changed_bound から）。
+- T0DF に v の呼び出しの事実（標準形と v′ ◁ v）を足した。`t0VSD_at`: N の VSmallF の D の部分を T0DF と vs_changed_bound から（c が最後の数える子であることは hOS_t1 と CL の並びから）。`t0_vsmallF_at` で N の VSmallF を行列ごとに。
+- hExp_t0_topR の仮定から T0VSNRes（= T0VSResD2）が消えた。残りは hLast・hNG・FrmLF・T0IVRes・T0VSResG・T0TrigRes・T0RestV・T0RWResCR×3。hVSRexp_t0_topR の仮定は hLast・T0IVRes・T0TrigRes。
