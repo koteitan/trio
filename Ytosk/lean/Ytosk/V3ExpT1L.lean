@@ -446,6 +446,60 @@ theorem tploResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : TPLoResL_lf
   · exact seedCond_of_levFree (hLF n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ) h.2
   · exact hS n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ hsd h
 
+
+/-! ## AbsDN の残りも LevFree（VKFree）から -/
+
+/-- The AbsDN residual at a positive level when the index is the seed and `fsD(seed, 1) < Ω_μ`. -/
+def AbsDNSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+    ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
+    holeLev (bumpW M ρ i) ≠ z → (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z i = seed) →
+    ¬ (isSucc (Z i) = false ∧ psi (holeLev (bumpW M ρ i)) z z ≤ fsD (Z i) one) →
+    (isSucc (Z i) = false ∧ SeedCond (vOpt ρ (par M 1 i)) (Z i) (etaOm (holeLev (bumpW M ρ i))) one) ∨
+      (cof (fsD (bumpW M ρ i) (Z i)) = .omega → NotNode (fsD (bumpW M ρ i) (Z i)) →
+        ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (bumpW M ρ i) (Z i) →
+          q < fsD (fsD (bumpW M ρ i) (Z i)) one)
+
+/-- The AbsDN residual at the level `0`. -/
+def AbsDNZero (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+    ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
+    holeLev (bumpW M ρ i) = z →
+    (isSucc (Z i) = false ∧ SeedCond (vOpt ρ (par M 1 i)) (Z i) (etaOm (holeLev (bumpW M ρ i))) one) ∨
+      (cof (fsD (bumpW M ρ i) (Z i)) = .omega → NotNode (fsD (bumpW M ρ i) (Z i)) →
+        ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (bumpW M ρ i) (Z i) →
+          q < fsD (fsD (bumpW M ρ i) (Z i)) one)
+
+/-- **`AbsDNRes` from `VKFree`** (and the seed-below and level-0 residuals). -/
+theorem absDNRes_of_vk {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hVK : VKFree M ρ) (hS : AbsDNSeedLow M r L d0 ρ) (h0 : AbsDNZero M r L d0 ρ) : AbsDNRes M r L d0 ρ := by
+  intro n hn ρP Z hH hCN i hi hv h2
+  by_cases hμ : holeLev (bumpW M ρ i) = z
+  · exact h0 n hn ρP Z hH hCN i hi hv h2 hμ
+  obtain ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, hμv, hro⟩ := hH
+  have hlev := holeLev_bumpW_D I hlen h1 hx2 hHD hi hv h2
+  have hLF : LevFree (holeLev (bumpW M ρ i)) (vOpt ρ (par M 1 i)) := by
+    have hμ' := hμ
+    rw [hlev, hμv, chain_level I.cons I.good (by omega) hro] at hμ' ⊢
+    exact levFree_vOpt_of_vk hVK (by rw [show M.length - 1 = r + L by omega]; exact h1) hμ' (by omega)
+  obtain ⟨k, _, hZe⟩ := hZk i
+  cases k with
+  | zero =>
+    by_cases h : isSucc (Z i) = false ∧ psi (holeLev (bumpW M ρ i)) z z ≤ fsD (Z i) one
+    · exact Or.inl ⟨h.1, seedCond_of_levFree hLF h.2⟩
+    · exact hS n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, hμv, hro⟩ hCN i hi hv h2 hμ
+        ⟨μ, br, vr, seed, hHD, hZe⟩ h
+  | succ k' =>
+    have hseedz : seed ≠ z := by obtain ⟨a, X, h⟩ := hHD.seedS; rw [h]; simp
+    have hμz : μ ≠ z := by rw [← hlev]; exact hμ
+    left
+    refine ⟨by rw [hZe]; exact isSucc_psi_z (Or.inl hμz), seedCond_of_levFree hLF ?_⟩
+    rw [hlev, hZe]
+    exact om_le_gamS_succ hHD.cb hseedz (by simp [one]) k'
+
 /-! ## 最後の列の枠の欄を TPLo・AbsD と LevFree から（段 μ ≠ 0） -/
 
 /-- `last v(i) = W_i` at a column with rows 1, 2 nonzero. -/
@@ -1414,7 +1468,7 @@ theorem hExp_t1X
         TPLoSeedLow M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ TPLoResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
       (AbsDSeedLow2 M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsDResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
       (AbsUWSeedLow M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsUWResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
-      AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ VSFRes2 M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+      (AbsDNSeedLow M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsDNZero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧ VSFRes2 M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hNGM : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ)
     (hVKM : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → VKFree M ρ)
     (hRes : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
@@ -1462,7 +1516,7 @@ theorem hExp_t1X
           (absDSeedLow_of_noGap hlen (hNGM M ρ rk hM hS I R) hRN.2.1.1), hRN.2.1.2⟩)
       (absUWRes_of_L hx2 ⟨absUWResL_lf_of_vk I hlen hr hx2 hVK,
         absUWResL_seed_of (absUWResL_lf_of_vk I hlen hr hx2 hVK) hRN.2.2.1.1, hRN.2.2.1.2⟩)
-      hRN.2.2.2.1 hRN.2.2.2.2 (hNGM M ρ rk hM hS I R) hVK
+      (absDNRes_of_vk I hlen hr hx2 hVK hRN.2.2.2.1.1 hRN.2.2.2.1.2) hRN.2.2.2.2 (hNGM M ρ rk hM hS I R) hVK
       (fun n' σ rkN hn' hRk hC hG hkd htd had htplo hvk => by
         have hexp' := hexpA n'
         rw [← hexp'] at hRk hC hG hkd htd had htplo hvk ⊢
