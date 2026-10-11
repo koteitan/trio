@@ -145,7 +145,10 @@ open T Classical
 /-- The residual of a frame property at the seed columns of `M[n]`. -/
 def T2SeedFrames (Q : T → List T → T → Prop) (M : Mat) : Prop :=
   ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
-    ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+    ∀ n, 2 ≤ n →
+    (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+      (entry M 1 (r + L) - entry M 1 r) m) τ → Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+      (entry M 1 (r + L) - entry M 1 r) m) τ) → ∀ σ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
       (entry M 1 (r + L) - entry M 1 r) n) σ →
       Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
       ∀ i, T2SeedCol M r L i → ∀ (Lc : List Nat) (c : Nat) (R : List Nat),
@@ -241,7 +244,7 @@ theorem clField_expand_t2 {Q : T → List T → T → Prop}
         intro i hi Lc c R hCL
         rcases Nat.lt_or_ge i (r + L) with hix | hix
         · by_cases hsc : T2SeedCol M r L i
-          · exact hSeed r L hlen hr (m + 1) hn2 σ hCN hGN i hsc Lc c R hCL
+          · exact hSeed r L hlen hr (m + 1) hn2 (fun k hk1 _ τ hτ => hG k hk1 τ hτ) σ hCN hGN i hsc Lc c R hCL
           · have hsh := (hBS (m + 1) hn2 (fun k hk1 _ τ hτ => hG k hk1 τ hτ) σ hCN (fun j _ hj => ⟨hGN.ot_o j hj, hGN.ot_v j hj⟩) i hix).2.2.2.1 hsc
             exact clField_of_shape hQlow hsh (fun Lc c R h => hQM i (by omega) Lc c R h) Lc c R hCL
         · obtain ⟨a, rfl⟩ : ∃ a, i = r + a + L := ⟨i - L - r, by omega⟩
