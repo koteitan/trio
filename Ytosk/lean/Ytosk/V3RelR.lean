@@ -1036,4 +1036,79 @@ theorem relR_frame {q a B s y s' y' : T}
       exact lt_of_lt_of_le (lt_of_le_of_ne h1 hne) (le_app_psi hBc')
     · intro hθ; exact psi_lt_psi_app hθ (z_lt_app_psi _ _ _)
 
+/-- **A non-rewriting tail `T` only raises the top** (general form of `relR_tl`). -/
+theorem relR_tail {q p b Y0 T0 : T} (hR : RelR q b (H p Y0)) (hb : b ≤ H p Y0)
+    (hY0 : isOT (psi p Y0 z) = true) (hY : isOT (psi p (app Y0 T0) z) = true) (hT0 : T0 ≠ z)
+    (hge : ∀ q' ∈ summands Y0, head T0 ≤ q') :
+    RelR q b (H p (app Y0 T0)) := by
+  apply relR_ext_dom hR hb
+  intro u c h1 h2 d hd
+  set θ := psi (succ p) z z with hθ
+  set P := (split Y0 θ).1 with hPdef
+  set L := (split Y0 θ).2 with hLdef
+  have eY0 : app P L = Y0 := split_app θ Y0
+  have hP : ∀ r ∈ summands P, ¬ r < θ := split_fst_ge θ Y0
+  have hL : L = z ∨ head L < θ := split_snd_head θ Y0
+  have hHY0 := H_eq hY0
+  rw [← hPdef, ← hLdef] at hHY0
+  by_cases hL0 : L = z
+  · -- `Y0` is all high: the tests start with `Y0`
+    rw [if_pos hL0, app_z_right] at hHY0
+    have hY0P : Y0 = P := by rw [← eY0, hL0, app_z_right]
+    have hallY0 : ∀ r ∈ summands Y0, ¬ r < θ := by rw [hY0P]; exact hP
+    have hHY := H_eq hY
+    have hs := split_app_hi (θ := θ) (B := Y0) T0 hallY0
+    rw [hs] at hHY
+    rw [hHY, app_assoc] at h2
+    rw [hHY0, ← hY0P] at h1 hd
+    obtain ⟨c0, rfl, _, _⟩ := between_app (A := Y0) (x := z) (by rw [app_z_right]; exact h1) h2
+    unfold Gc at hd
+    rcases List.mem_cons.mp hd with rfl | hd
+    · exact ⟨z, List.mem_cons_self, le_refl _⟩
+    · exact ⟨d, gc_app_left d hd, le_refl _⟩
+  · -- `Y0` has a low part, so `T0` is low
+    have hlast : ∃ r ∈ summands Y0, r < θ := by
+      rcases hL with h | h
+      · exact absurd h hL0
+      · exact ⟨head L, split_snd_suffix Y0 _ (head_mem_summands hL0), h⟩
+    obtain ⟨r, hr, hrθ⟩ := hlast
+    have hT0θ : head T0 < θ := lt_of_le_of_lt (hge r hr) hrθ
+    have eY : app Y0 T0 = app P (app L T0) := by rw [← eY0, app_assoc]
+    obtain ⟨hr0, hrl⟩ := head_app_low hL hT0θ hT0
+    have hHY : H p (app Y0 T0) = app P (psi p (app Y0 T0) z) := by
+      rw [eY] at hY ⊢; exact H_hi_low hY hP hr0 hrl
+    rw [hHY] at h2
+    rw [if_neg hL0] at hHY0
+    rw [hHY0] at h1 hd
+    obtain ⟨c0, rfl, hc1, hc2⟩ := between_app h1 h2
+    obtain ⟨W, c1, rfl, hW1, hW2⟩ := between_psi hc1 hc2
+    unfold Gc at hd
+    rcases List.mem_cons.mp hd with rfl | hd
+    · exact ⟨z, List.mem_cons_self, le_refl _⟩
+    rw [comps_app] at hd
+    rcases List.mem_append.mp hd with hd | hd
+    · exact ⟨d, gc_app_left d hd, le_refl _⟩
+    simp only [comps, List.mem_append] at hd
+    rcases hd with hd | hd
+    swap
+    · simp [comps] at hd
+    split at hd
+    · simp at hd
+    rename_i hpu
+    have hmem : ∀ e ∈ W :: (comps u W ++ comps u p), e ∈ Gc u (app P (psi p W c1)) := by
+      intro e he
+      apply gc_app_right
+      unfold Gc; apply List.mem_cons_of_mem
+      simp only [comps]; rw [if_neg hpu]
+      exact List.mem_append_left _ he
+    simp only [List.mem_cons, List.mem_append] at hd
+    rcases hd with rfl | hd | hd
+    · exact ⟨W, hmem W List.mem_cons_self, hW1⟩
+    · rcases (le_iff _ _).mp hW1 with hlt | rfl
+      · obtain ⟨W0, rfl, _, _⟩ := between_app (A := Y0) (x := z) (by rw [app_z_right]; exact hlt) hW2
+        refine ⟨d, hmem d (List.mem_cons_of_mem _ (List.mem_append_left _ ?_)), le_refl _⟩
+        rw [comps_app]; exact List.mem_append_left _ hd
+      · exact ⟨d, hmem d (List.mem_cons_of_mem _ (List.mem_append_left _ hd)), le_refl _⟩
+    · exact ⟨d, hmem d (List.mem_cons_of_mem _ (List.mem_append_right _ hd)), le_refl _⟩
+
 end Ytosk
