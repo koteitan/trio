@@ -239,7 +239,7 @@ theorem seed_ot_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hG0 : Good3 (M.take (r + L)) (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rk)) := by
     have h := hGlow 1 (le_refl 1) (by omega) _ (by rw [hP1]; exact hC0)
     rwa [hP1] at h
-  have hv0 := hRes.vP _ hC0
+  have hv0 := v_take_of_untopped I hlen (par_lt M 2 _ _ hr) (topP_C hM hS I hlen hr hq hqr) hC0
   set V := ρ.v r with hVdef
   set s' := qnS M ρ r L q with hs'def
   set X1 := t2X1 M r L (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rk)) with hX1def

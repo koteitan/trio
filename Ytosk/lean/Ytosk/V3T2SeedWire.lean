@@ -185,7 +185,7 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
       have hRes := hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl
       have hvq := vq_eq_gexp hM hS I hz h2 hlen hr hn hCN hq hqr
       obtain ⟨hd1, hd2⟩ := seed_dec_C hM hS I R hz h2 hlen hr hq hqr hRes.qP hRes.un hn hCN hRN hCP hGP hRP
-        hC0 hG0 hRk1 (hRes.vP _ hC0) (by rw [hvq]; exact hRes.vqP _ hC0)
+        hC0 hG0 hRk1 (v_take_of_untopped I hlen hrx (topP_C hM hS I hlen hr hq hqr) hC0) (by rw [hvq]; exact hRes.vqP _ hC0)
         (fun Lc c0 h => by rw [hvq]; exact hRes.decP _ hC0 Lc c0 h)
       refine ⟨hd1, fun q' hq' _ => ?_⟩
       rw [hq] at hq'; cases hq'

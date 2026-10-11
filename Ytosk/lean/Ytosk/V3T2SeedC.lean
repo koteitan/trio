@@ -84,6 +84,39 @@ theorem par0_q_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
     (d1 := entry M 1 (r + L) - entry M 1 r) (by omega) he2r' h1lt' hqb'
     (par1_x_r (by omega) I.z2 I.z1 hr) hqr Txb0 hJ hX.r0p I.be
 
+/-- **C: `r` is not topped in `M.take x`** (its last child is `q`, not a bump child). -/
+theorem topP_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+    {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) : topped (M.take (r + L)) r = false := by
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  have hpq := par0_q_t2 hM hS I hlen hr hq hqr
+  have hrq : r < q := par_lt M 0 _ _ hpq
+  have hqx : q < r + L := par_lt M 0 _ _ hq
+  obtain ⟨qp, rfl⟩ : ∃ qp, q = r + qp := ⟨q - r, by omega⟩
+  obtain ⟨_, Tqb, _, _, _⟩ := t2_qn_struct hX hJ hlen hr hq (by omega) hpq
+  have hqc : r + qp ∈ children M r := mem_children_iff.mpr ⟨by omega, hpq⟩
+  have hall : ∀ d ∈ children M r, d < r + L := by
+    intro d hd
+    by_contra h'
+    have := (mem_children hd).2
+    have hd' : d = r + L := by omega
+    rw [hd'] at hd; have h' := (mem_children_iff.mp hd).2; rw [hq] at h'; have := Option.some.inj h'; omega
+  have hqlast : children M r = (children M r).filter (fun d => decide (d < r + qp)) ++ [r + qp] := by
+    apply split_last_max _ _ (children_sorted M r) hqc
+    intro d hd
+    by_contra hlt
+    have hdx := hall d hd
+    have hAq : Anc0 M (r + qp) (r + L) := Anc0.step hq (Anc0.refl _)
+    have hAd : Anc0 M (r + qp) d := anc_between hAq d (by omega) (by omega)
+    have hAr := anc0_par hAd (by omega) (mem_children_iff.mp hd).2
+    have := hAr.le; omega
+  unfold topped
+  rw [children_take, List.filter_eq_self.mpr (fun d hd => by simpa using hall d hd), hqlast,
+    List.getLast?_append, List.getLast?_singleton]
+  simp only [Option.some_or]
+  rw [col_take M hqx, bump_take M (by omega)]
+  exact decide_eq_false Tqb
+
 /-- **The frame of the seed `r` in `M[n]`** (C case, `n ≥ 2`): the counted children of `r` are those of
 `M.take x` with the values of `M.take x`, then `q` with `o_N(q)` as in the main `q ≠ r` case. -/
 theorem C_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
@@ -508,7 +541,6 @@ structure T2SeedCRes (M : Mat) (ρ : Valn) (r L q : Nat) : Prop where
   decP : ∀ τ, Cons (M.take (r + L)) τ → ∀ Lc c0, CL (M.take (r + L)) r = Lc ++ [c0] →
     ∃ s y, τ.o c0 = psi s y z ∧ qnS M ρ r L q < s
   un : upg M (r + L - 1) = none
-  vP : ∀ τ, Cons (M.take (r + L)) τ → τ.v r = ρ.v r
   vqP : ∀ τ, Cons (M.take (r + L)) τ → τ.v q = qnS M ρ r L q
   rw : ∀ τ, Cons (M.take (r + L)) τ → ∀ k,
     step (ρ.v r) (t2X1 M r L τ) (qnS M ρ r L q) (step (qnS M ρ r L q) z (qnS M ρ r L q)
@@ -552,7 +584,7 @@ theorem seed_r_value_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     obtain ⟨rk', h'⟩ := rk_expand_t2 hX hJ hz h2 I.rank m hm
     rw [hexp m] at h'; exact ⟨rk', h'⟩
   have hP1 : TRIO.gexp M r L d0 d1 1 = M.take (r + L) := gexp_one_gen hlen
-  have hv0 := hRes.vP τ0 hC0
+  have hv0 : τ0.v r = ρ.v r := v_take_of_untopped I hlen (par_lt M 2 _ _ hr) (topP_C hM hS I hlen hr hq hqr) hC0
   intro n hn
   induction n using Nat.strong_induction_on with
   | _ n ihs =>

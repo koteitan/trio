@@ -498,6 +498,17 @@ theorem topP_sv {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hZ2 : Z2 M)
   · have := hbet p (Anc0.step hpr (Anc0.refl r)) hpx (by omega) hpe
     omega
 
+/-- **`v` of a column that is not topped in `M.take x` is that of `M`** (`chg_off` and `chg_struct`). -/
+theorem v_take_of_untopped {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) {x i : Nat}
+    (hx : x + 1 = M.length) (hi : i < x) (ht : topped (M.take x) i = false) {τ : Valn}
+    (hτ : Cons (M.take x) τ) : τ.v i = ρ.v i := by
+  have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+  rw [show M.length - 1 = x by omega] at hcnt
+  have hRk1 : Rk (M.take x) rk := rk_take (by omega) I.rank hcnt
+  refine (chg_off hx I.cons I.good hτ hRk1 i hi).2 (fun h => ?_)
+  have := ((chg_struct hx I.r0p I.z2 I.sd I.z1 I.uat I.uab h).1 rfl hi).1
+  rw [ht] at this; cases this
+
 /-- The iterate `σ^k(X)` of `σ = σ_{V, V′}`. -/
 def shIt (V V' X : T) : Nat → T
   | 0 => X
@@ -513,7 +524,6 @@ def t2X1 (M : Mat) (r L : Nat) (τ : Valn) : T :=
 structure T2SeedSVRes (M : Mat) (ρ : Valn) (r L : Nat) : Prop where
   decP : ∀ τ, Cons (M.take (r + L)) τ → ∀ Lc c0, CL (M.take (r + L)) r = Lc ++ [c0] →
     ∃ s y, τ.o c0 = psi s y z ∧ succ (ρ.v r) < s
-  vP : ∀ τ, Cons (M.take (r + L)) τ → τ.v r = ρ.v r
   rw : ∀ τ, Cons (M.take (r + L)) τ → ∀ k,
     step (ρ.v r) (t2X1 M r L τ) (succ (ρ.v r))
       (sh (ρ.v r) (succ (ρ.v r)) (shIt (ρ.v r) (succ (ρ.v r)) (t2X1 M r L τ) k)) z =
@@ -555,7 +565,7 @@ theorem seed_r_value_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     obtain ⟨rk', h'⟩ := rk_expand_t2 hX hJ hz h2 I.rank m hm
     rw [hexp m] at h'; exact ⟨rk', h'⟩
   have hP1 : TRIO.gexp M r L d0 d1 1 = M.take (r + L) := gexp_one_gen hlen
-  have hv0 := hRes.vP τ0 hC0
+  have hv0 : τ0.v r = ρ.v r := v_take_of_untopped I hlen (par_lt M 0 _ _ hq) (topP_sv hlen I.z2 I.z1 hr hq hux) hC0
   intro n hn
   induction n using Nat.strong_induction_on with
   | _ n ihs =>
