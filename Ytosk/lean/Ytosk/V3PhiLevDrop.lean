@@ -149,4 +149,17 @@ theorem levLeaf_take {ρ ρ' : Valn} {rk' : Bool → Nat → Nat} (hC : Cons M �
 
 end
 
+/-! ## 基底 -/
+
+theorem levFree_z (μ : T) : LevFree μ z := by intro a b c h; cases h
+
+theorem base_levLeaf {L : Nat} {β : T} : LevLeafInv (Mlen L) (bval L β) := by
+  intro c p i μ _ hp _ _ _ _
+  rw [base_v_par1 hp]; exact levFree_z μ
+
+theorem base_prefLast {L : Nat} {β : T} : PrefLast (Mlen L) (bval L β) := by
+  intro j c p _ _ hp
+  rw [base_v_par1 hp]
+  exact ⟨fun _ _ _ => levFree_z _, fun _ _ _ _ _ => levFree_z _⟩
+
 end Ytosk
