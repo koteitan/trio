@@ -4,7 +4,7 @@
 `deps_lhd_otW_R`（V3DepRW）の RClaim を t0-exp の `RClaimU`（段 u を集合 U に限った RelRU）に替えたもの。
 VSmallR（全段）は標準形で偽（M13）なので、要る段だけにする。子への依頼は U を変えないので、要る段は
 D の道の上の祖先 k の v(k)（`PathLvS`、t = 0 の PathLv を DepS で一般にしたもの）と、枠自身の v(i) だけ。
-仮定: VSmallR の代わりに道の段だけの `hVR`、hShN も道の段だけ、種の RClaimU、種の v は変わらない（hSv）。
+仮定: VSmallR の代わりに道の段だけの `hVR`、書き換えの一致 hTA（T2TrigN）、種の RClaimU、種の v は変わらない（hSv）。
 hVSN・hVNRN は要らない: 種でない列 c で v(c) が変わるなら c は数える子を持たず o(c) = ψ_{v(c)}(0)（vs_changed_bound、書き換えない）。
 -/
 import Ytosk.V3DepR
@@ -85,17 +85,13 @@ def VSmallRS (M : Mat) (S : Bool → Nat → Prop) (bnd : Nat) (ρ : Valn) : Pro
     ∀ u, (u = ρ.v k ∨ PathLvS M S bnd ρ k u) → ¬ lt (ρ.v k) u = true → ∀ g ∈ comps u s,
       g ≤ psi s z z ∨ g ≤ spArg (ρ.v k) z (sumN (Lc.map ρ.o)) ∨ ∃ d ∈ comps u (ρ.v k), g ≤ d
 
-/-- **`N`-side hypothesis**: in a shadow frame the new state is closed, at the levels of the path. -/
-def T2ShU (M N : Mat) (S : Bool → Nat → Prop) (bnd : Nat) (ρ σ : Valn) : Prop :=
+/-- **`N`-side hypothesis: the rewrites agree** — at a frame whose `v` and earlier children are unchanged, if the
+old last child rewrites, so does the new one (the `t = 0` analogue is `trig_agreeG`). -/
+def T2TrigN (N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
   ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v i = ρ.v i → (∀ d ∈ Lc, σ.o d = ρ.o d) →
-    ∀ s y s' y', ρ.o c = psi s y z →
-    σ.o c = psi s' y' z →
+    ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z →
     (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-    ¬ (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true) →
-    (¬ ∃ R, (split y (psi (succ s) z z)).1 = app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) R) →
-    ∀ u, PathLvS M S bnd ρ i u → ¬ lt (ρ.v i) u = true →
-      ∀ g ∈ comps u (app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) (psi s' y' z)),
-        g < app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) (psi s' y' z) ∨ ∃ d ∈ comps u (ρ.v i), g ≤ d
+    (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true)
 
 theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ : Valn} {rk : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hCN : Cons N σ) (hRM : Rk M rk)
@@ -103,7 +99,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
     (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ)
     (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hSv : ∀ c, S true c → σ.v c = ρ.v c)
-    (hVR : VSmallRS M S bnd ρ) (hShN : T2ShU M N S bnd ρ σ)
+    (hVR : VSmallRS M S bnd ρ) (hTA : T2TrigN N bnd ρ σ)
     (hoff : ∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i))
     (hOTout : ∀ b j, bnd ≤ j → j < N.length → isOT (valB σ b j) = true)
     (hWv : ∀ i, ¬ W false i)
@@ -376,7 +372,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
                 have hoc := o_of_no_counted hC hcM (hG.ot_v c hcM) (no_cnt_of_cl_nil hclc)
                 rw [hsy] at hoc; simp only [psi.injEq] at hoc
                 have := ht.1; rw [hoc.2.1] at this; exact T.not_lt_z _ this)
-            (fun ht hnt hnp u hu => hShN i Lc c hi hclN hv' hsame s y s' y' hsy hs'y' ht hnt hnp u (hU u hu))
+            (fun ht hnt _ => absurd (hTA i Lc c hi hclN hv' hsame s y s' y' hsy hs'y' ht) hnt)
             hqp hhyp
       | false =>
         show (Lhd z (σ.v i) (ρ.v i) ∧ isOT (σ.v i) = true) ∧ (false = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimUS U ρ σ i)
@@ -541,23 +537,11 @@ theorem VSmallRA.toS {M : Mat} {ρ : Valn} (h : VSmallRA M ρ) (S : Bool → Nat
     VSmallRS M S bnd ρ :=
   fun k c Lc s y _ _ hcl _ _ hsy ht hhz u hu => h k c Lc s y hcl hsy ht hhz u (hu.imp id PathLvS.toA)
 
-/-- `T2ShU` at the levels `PathLvA`. -/
-def T2ShA (M N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
-  ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v i = ρ.v i → (∀ d ∈ Lc, σ.o d = ρ.o d) →
-    ∀ s y s' y', ρ.o c = psi s y z →
-    σ.o c = psi s' y' z →
-    (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-    ¬ (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true) →
-    (¬ ∃ R, (split y (psi (succ s) z z)).1 = app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) R) →
-    ∀ u, PathLvA M ρ i u → ¬ lt (ρ.v i) u = true →
-      ∀ g ∈ comps u (app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) (psi s' y' z)),
-        g < app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) (psi s' y' z) ∨ ∃ d ∈ comps u (ρ.v i), g ≤ d
-
-/-- **The replacement of `T2Hard` and `T2VSN`** (one seed `p`, residual part): `VSmallRA` of `M`, the shadow
-hypothesis at the levels of the path, and `RClaimUS` at the seed. (`T2VSN` and `VSmallNewR` are not needed:
+/-- **The replacement of `T2Hard` and `T2VSN`** (one seed `p`, residual part): `VSmallRA` of `M`, the
+hypothesis `T2TrigN` (the rewrites agree), and `RClaimUS` at the seed. (`T2VSN` and `VSmallNewR` are not needed:
 off the seeds a changed `v(c)` has no counted child, and `v` of the seed does not change.) -/
 def T2HardB (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
-  VSmallRA M ρ ∧ T2ShA M N bnd ρ σ ∧ ∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimUS U ρ σ p
+  VSmallRA M ρ ∧ T2TrigN N bnd ρ σ ∧ ∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimUS U ρ σ p
 
 /-- `T2HardB` and an unchanged `v` of the seed. -/
 def T2HardA (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
@@ -565,10 +549,6 @@ def T2HardA (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
 
 theorem T2HardA.of_B {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardB M N bnd p ρ σ) (hv : σ.v p = ρ.v p) :
     T2HardA M N bnd p ρ σ := ⟨h, hv⟩
-
-theorem T2HardA.sh {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop) :
-    T2ShU M N S bnd ρ σ :=
-  fun i Lc c hi hcl hv hL s y s' y' hsy hs'y' ht hnt hnp u hu => h.1.2.1 i Lc c hi hcl hv hL s y s' y' hsy hs'y' ht hnt hnp u hu.toA
 
 theorem T2HardA.seed {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop)
     (hSp : ∀ i, S true i → i = p) :

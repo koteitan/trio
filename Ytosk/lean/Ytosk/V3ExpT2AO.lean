@@ -150,7 +150,7 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
           by_contra h'; exact hns (hbkS i d e hi hdM (by omega) hdb he' (by omega))
         exact (hoff e hex).1 (hLnd d hd e he')
   have hdlR := deps_lhd_otW_RU (S := S) (W := W) (bnd := bnd) hC hG hCN hRM (by omega) hbN
-    hF hFO hVS hTD hKD (hHA.sv S hSp) (hHA.1.1.toS S bnd) (hHA.sh S) hoff hOTout hWv hWo hWb (hWot hoff)
+    hF hFO hVS hTD hKD (hHA.sv S hSp) (hHA.1.1.toS S bnd) hHA.1.2.1 hoff hOTout hWv hWo hWb (hWot hoff)
     (fun b i hs hi hd ih => hSeed b i hs hi hd hoff ih) (hHA.seed S hSp) hDvNil
     (fun c hc hw hd => by
       by_cases hs : S true c
