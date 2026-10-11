@@ -315,9 +315,10 @@ def T0Ctx (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat) (σ : 
 def T0Field (F : Mat → Valn → Prop) : Prop :=
   ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → F (TRIO.gexp M r L 0 0 n) σ
 
-/-- **The residual `Res3A` of `N = M[n]`** (`t = 0`). -/
+/-- **The residual `Res3A` of `N = M[n]`** (`t = 0`), given the value invariants of `N`. -/
 def T0Res3A : Prop :=
-  ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → Res3A (TRIO.gexp M r L 0 0 n) σ rkN
+  ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → Inv3V (TRIO.gexp M r L 0 0 n) σ rkN →
+    Res3A (TRIO.gexp M r L 0 0 n) σ rkN
 
 /-- **The remaining value fields of `N = M[n]`** (`t = 0`) and its `Res3A`, one named residual each
 (groupA's ◁-lowering lemmas for the first seven, wip's forms of `TPLoW`・`AbsDW`, drop-fix's `Res3A`). -/
@@ -378,7 +379,6 @@ theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) (hR1 : T0RWRes PTP1) (hR1W : T0R
   have hadn := hRest.adn _ _ _ _ _ _ _ _ hctx
   have htplow := hRest.tplow _ _ _ _ _ _ _ _ hctx
   have hadw := hRest.adw _ _ _ _ _ _ _ _ hctx
-  have hRN' := hRest.res _ _ _ _ _ _ _ _ hctx
   -- the rewriting-frame fields, with the prefix valuation `drop1`
   have hRk1 : Rk (M.take (r + L)) rk :=
     rk_take (by omega) I.rank (by
@@ -396,8 +396,9 @@ theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) (hR1 : T0RWRes PTP1) (hR1W : T0R
   have htp1w : TP1WC (TRIO.gexp M r L 0 0 n) σ := hP PTP1W I.tp1w IT.tp1w hR1W
   have htrig : TrigOmC (TRIO.gexp M r L 0 0 n) σ :=
     rwc_trig.mp (hP PTrig (rwc_trig.mpr I.trig) (rwc_trig.mpr IT.trig) hRT)
-  exact ⟨σ, rkN, ⟨hCN, hGN, hRN, hvs, hFCN, hFON, hKDN, hTDN, had, hau, htp1, htplo, htp1w, htplow, hauw,
-    hadw, htrig, htplon, hadn, rootS_of_good hCN hGN, hpN⟩, hRN'⟩
+  have V : Inv3V (TRIO.gexp M r L 0 0 n) σ rkN := ⟨hCN, hGN, hRN, hvs, hFCN, hFON, hKDN, hTDN, had, hau, htp1,
+    htplo, htp1w, htplow, hauw, hadw, htrig, htplon, hadn, rootS_of_good hCN hGN, hpN⟩
+  exact ⟨σ, rkN, V, hRest.res _ _ _ _ _ _ _ _ hctx V⟩
 
 /-- **`hExp` for `t = 0` in the shape of the top theorem**, with the prefix invariants from the
 one-column drop `hLast` (`hTake_of_last`). -/
