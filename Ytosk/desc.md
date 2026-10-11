@@ -1909,3 +1909,8 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - RootP: rootP_expand_t2（残りなし。Rt より前の根は N の依存の閉包で種に届かない）。
 - BumpKidsDec・BumpTermDec: bumpFields_expand_t2、v の種の列も証明（t2SeedBump_holds）。残りなし（接頭辞の欄だけ）。
 - 最上位: hExp_t2_of_last : hLast → T2BelowXRes → T2Rest2 → hExp（t = 2）。T2Rest2 = 13 欄（VSmallF・FrameClosed・AbsD・AbsU・TP1C・TPLo・TP1WC・TPLoW・AbsUW・AbsDW・TrigOmC・TPLoN・AbsDN）と N の Res3A と FrameOT の種の列の枠。
+- groupA（V3PhiLev、緑）: LevFree を運ぶ形 VKFree。VK(M) = {v(q) : q は行 1 の子を持つ列}。
+  - 実測: VKFree（行 1 の子を持つ列 p, q、v(q) ≠ 0 なら v(p) は添字 v(q) の部分項を持たない）226 万件、例外 0。段の結び LevLink（どの列の o・v に現れる Ω_{μ+1}（μ ≠ 0）も μ ∈ VK）48 万件、例外 0。のりしろの項の穴の段、c の部分木の段もすべて VK に入る。
+  - 1 列落としで c の部分木に新しい段が出る（6 万行列で 4.3 万件）が、どれも v(q)（q = p、p の部分木の中、p の行 1 の祖先、q は行 1 の子を持つ）。VKFree はこの形の全部を含む。
+  - Lean: VKFree・InVK、levFree_of_vk・levFree_chain_of_vk（VKFree ∧ μ ∈ VK ⇒ LevFree μ v(p)）、base_vKFree、vKFree_take（1 列落とし）、corr_t0（t = 0 の M[n] の行 1 の子を持つ列の v は M の同じ種類の列の v）、vKFree_t0。
+  - 残り: LevLink の証明（値の節点の出どころの補題が要る: sf・sp・omega が作る ψ の節点の添字は既存）、t = 2 の VKFree（σ は添字の上で単射なので写しどうしは移るが、V′ の部分項と混ざる組が要る）。
