@@ -2401,3 +2401,8 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - g の枠の残り `T0ShGRes P` は T0RWResCR の g の部分そのまま。
 - 最上位 `hExp_t0_topS`（公理は標準の 3 つ）: hLast・hNG・FrmLF・PH3c・T0CutResG・T0RestV・T0ShCutRes×3・T0ShGRes×3。
 - 実測: T0ShCutRes は影の枠 D（5 集合で例外 0、前節）の部分集合。
+
+### ext1 での測り直し（2026-10-12、t0-exp）
+
+- ext1（groupA、t = 0 の行列 460180 個、n = 2, 3）で t = 0 の残りと前提をすべて測った（scratchpad/t0-exp/pext.py）。例外 0:
+  (i) の枠 27320・T0CutResG 8022（新しい引数の低い部分はいつも 0）・RE（T0RERes の形）312 万・T0IVRes 1687・旧 T0VSResG 6609・T0TPLoRes（D 335 万、中間の根 138 万）・T0AbsDNRes 21 万・T0AbsUWRes（13026・15350）・影の枠 TP1/TP1W/TrigOm（D 10778、g 5616）。
