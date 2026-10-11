@@ -2139,3 +2139,29 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - Lean（V3TailNR）: Tl に x が入るとき x は Tl の最後で o(x) = ψ_{v(x)}(0)、引数 0 の子は書き換えないので足すだけ
   （`spArg_leaf`）。よって TailNR は TailNRL（x を含まない尾 Tl′ だけ、CL M i = Lc ++ [cs] ++ Tl′ ++ R）から出る
   （`tailNR_of`）。`DropResR.tnr` を TailNRL に替えた。残りの本体は Tl′ = [P_0(x)] の場合の y(ℓ) ≤ B。
+
+### hVSRexp（t = 0）・最後の列の枠の欄・(i) の分解（2026-10-11、t0-exp）
+
+- hVSRexp の t = 0 部分を証明（f8bc6e4a、V3T0VSR）。t0_vsmallR: VSmallR は M → M[n]（n ≥ 2）で保たれる（T0Shape だけを仮定）。
+  - VSmallR を枠の性質 QVR として frameQ_N_t0 で運ぶ。M.take x の枠は vsmallR_take。
+  - r より前の D の子: v が同じなら X′ ◁ X なので、発火と hi ≠ 0 の前提が古い枠へ移る（t0v_split_fst_ne_of_le）。v が変われば引数は 0 で発火しない。
+  - g の枠: 状態は中間の写しで増えるだけ。子 omid = ψ_v(Y0) と o′(r) ≤ o(r) = ψ_v(Y0 + 1) の前提は古い枠の前提へ移る（添字が変われば引数 0）。
+  - hVSRexp_t0 は main_GP の hVSRexp の形（srow = 0）。残りは T0Shape の残り（T0IVRes・T0IIRes・T0ShapeR3）だけ。
+- 最後の列の枠の 3 欄 TPLoW・AbsDW・TPLoN を運ばない（0875737b、V3T0LF）。
+  - N 自身の FrameV（AbsD・TPLo は V3T0Phi・V3T0Col で出したもの）と、行列ごとの残り FrmLF から出す。FrmLF は t1-exp の hFrm から VKFree（偽）を外したもの。
+  - 最上位 hExp_t0_mainF の T0RestF は T0VSResD2・PhiX0R・T0TPLoRes・T0AbsUWRes・T0AbsDNRes の 5 欄。
+- RClaim 方式への切り替えは t = 0 では得がない（実測、5 集合）。
+  - r より前の D の枠（g の枠を除く）で古い側が書き換える枠は、d3s 3.0 万・deep2 24.6 万・deep3 24.3 万・C′ 59.5 万件ある。そのどれでも子の v は変わらず、新しい側も書き換える。
+  - したがって deps_lhd_ot_R の hShN・hVNRN は前件が起きない。中身は (i)（新しい側も書き換える）と同じ。
+- (i)（T0ShapeR3、B ≠ 0）を PH3c と右端の変化に分けた（V3T0Cut、緑）。
+  - (i) の枠では両方の低い部分が 0 なので、PH3c の種類は pre か cut。
+  - t0ShapeR3_of: PH3c(M) ∧ T0RERes ∧ T0CutRes ⇒ T0ShapeR3。
+    - T0RERes: 同じ添字で引数が ◁ で下がる D の列では、引数は最後の加数だけ違う（y = P + t、y′ = P + T′、T′ ≠ 0）。
+    - T0CutRes: 状態 B が t の中の切り口 P + κ のとき κ < T′。
+  - 純粋な補題: cutsNS_le（切り口は元の項以下）、cutsNS_app（P + t の切り口は P の切り口か P + (t の切り口)）、prefix_of_app_single、lt_new_of_kind。
+  - 実測（T0Ext 3 万行列、(i) の枠 10812 件）: pre 1456、P の中の cut 2906、t の中の cut 6450。t の中の cut ではどれも κ < T′。
+  - 「t のすべての切り口 < T′」は列ごとには偽（1545 件。s = 0 か、B として現れない切り口）。
+  - 典型: B = Ω_μ（兄弟の葉）、t = Ω_ν、T′ = Ω_{ν′}、μ < ν′ < ν。v の段で同じ問いになる。
+  - RE の鎖（D の連鎖で右端だけ変わること）は closure の V3RE（324205ca）と方針が同じ。T0RERes はその結論の最後の加数の形。
+- Fix の扱いを σ と恒等の比較に切り替えた（2026-10-11、closure）: M と M.take x を比べると書き換えの判定・吸収が変わりうるが、M.take x の値 w とその σ 像を比べれば σ は順序の埋め込みで評価器の演算と交換するので判定は自動で一致する。実測（q = r、deepA・deep3・d3s）: 悪い部分の値はすべて「σ で動かないか、右端の 1 か所の目印 Ω_{V′}（V′ = v_T(x−1) = v_N(x′)）だけ動く」（使われない、のりしろの子の o 76 件を除く）。r の状態はいつもこの形（cutsNS の文法に沿う）。
+- V3PSeedE（緑）: 目印の形 SpotC（添字の鎖）・SpotH（引数の中、cutsH の文法）・SpotN（状態、cutsNS の文法）と fix_of_spotN（SpotN B ⇒ B ∈ cutsNS V′ (σB)）。残りは「r の状態が SpotN か σ で動かない」を M.take x の悪い部分の連鎖で示すこと。連鎖は短く規則的: 1279/1423 は「r のただ一つの数える子 d の v が、ただ一つののりしろの子を通して x − 1 の o に依る」、残りは最後の子の引数を通す段が 1〜2 回。
