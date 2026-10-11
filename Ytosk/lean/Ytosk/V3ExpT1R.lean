@@ -49,12 +49,13 @@ theorem split_fst_ne_of_le {y' y θ : T} (h : (split y' θ).1 ≠ z) (hle : y' �
       simp [split, hn']
 
 /-- **Residual of the VSmallR carry** (`t = 1`): the frames below `x` whose counted child is a `v` call of `D`
-or `x` itself. -/
+(実測: そのような枠は M[n] で一度も書き換えない。C′ 1.9 万件・T0Ext 由来 10.8 万件). The frame of `x` is proved:
+`v_N(x) = v_P(r) ≤ v(r) ≤ v(q)`, and a rewriting child has subscript `≥ v(q)`, so it is `v(q)`. -/
 def VSRRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
     Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ i, i < r + L → ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R →
-    (DepX M (r + L) false c ∨ c = r + L) →
+    DepX M (r + L) false c → c < r + L →
     ∀ s y, (glueZ M (r + L) ρ (shiftV ρP L) Z).o c = psi s y z →
     (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
     (split y (psi (succ s) z z)).1 ≠ z →
@@ -152,13 +153,39 @@ theorem expStep_vsmallR {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
       rw [hσ, glueZ_o_lt ρ (shiftV ρP L) Z hdx (hLd d hd)]
     rw [hσ, glueZ_v_lt ρ (shiftV ρP L) Z h hvd, ← hσ, hLo]
     have hcM := (mem_children hcch).2
-    by_cases hcv : DepX M (r + L) false c ∨ c = r + L
-    · exact hR i h Lc c R hCL hcv
+    by_cases hcxe : c = r + L
+    · -- the frame of `x`: the subscript is `v(q)`
+      intro s y hso hrw _ u _ g hg
+      right; right
+      have h0 : par M 0 c = some i := (mem_children_iff.mp hcch).2
+      have hvx : σ.v c = ρP.v r := by
+        rw [hcxe, hσ, glueZ_v_ge ρ (shiftV ρP L) Z (le_refl _)]
+        show ρP.v (r + L - L) = ρP.v r; rw [Nat.add_sub_cancel]
+      have hs : s = σ.v c := o_sub_eq_v hCN hGN (by have := Nat.mul_pos (show 0 < n - 1 by omega) hL; omega) hso
+      have hle1 : s ≤ ρ.v i := by
+        rw [hs, hvx]
+        exact le_trans hQP0.1 (v_par1_le_par0 I.cons I.good I.rank hcM h0 (by rw [hcxe]; exact h1))
+      have hge : ¬ s < ρ.v i := by
+        intro hlt
+        have h2 := hrw.2
+        have : psi s y z < psi (ρ.v i) z z := psi_lt_psi_z_iff.mpr (Or.inl hlt)
+        exact lt_irrefl' _ (T.lt_trans' this h2)
+      have hseq : s = ρ.v i := by
+        rcases (le_iff _ _).mp hle1 with h' | h'
+        · exact absurd h' hge
+        · exact h'
+      rw [hseq] at hg
+      exact ⟨g, hg, le_refl _⟩
+    by_cases hcv : DepX M (r + L) false c
+    · exact hR i h Lc c R hCL hcv (by
+        rcases Nat.lt_or_ge c (r + L) with h' | h'
+        · exact h'
+        · exfalso; exact hcxe (by omega))
     have hcx : c < r + L := by
       rcases Nat.lt_or_ge c (r + L) with h' | h'
       · exact h'
-      · exfalso; exact hcv (Or.inr (by omega))
-    have hcv' : ¬ DepX M (r + L) false c := fun h' => hcv (Or.inl h')
+      · exfalso; exact hcxe (by omega)
+    have hcv' : ¬ DepX M (r + L) false c := hcv
     intro s y hso hrw hhi u hu g hg
     obtain ⟨s0, y0, h0⟩ := o_psi_form I.cons (show c < M.length by omega)
     have hs0 : s0 = ρ.v c := o_sub_eq_v I.cons I.good (by omega) h0
@@ -229,6 +256,33 @@ theorem expStep_vsmallR {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
     rw [hσv, hLo, hoc]
     exact hQP (r + a) (by rw [hlP]; omega) Lc' c' R' hsplit
 
+/-- **`VSRRes` holds**: a counted child `c` of `D`'s `v` calls has no counted children (`OShape`), so
+`o(c) = ψ_{v(c)}(0)` and `o_N(c) = ψ_{fsD(v(c), ζ)}(0)` (`v(c)` has a hole, not a successor): the argument is
+`0`, so the child never rewrites. -/
+theorem vsrRes_holds {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) :
+    VSRRes M r L d0 ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hrx := par_lt M 1 _ r h1
+  obtain ⟨q0, hq0⟩ := par0_of_anc hA (by omega)
+  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq0
+  intro n hn ρP Z hH hCN i hi Lc c R hCL hcv hcx s y hso hrw
+  exfalso
+  obtain ⟨μ, br, vr, seed, k0, hHD, _, _, _, _, _⟩ := hH
+  have hcM : c < M.length := by omega
+  have hnc : ∀ d ∈ children M c, col M d = bump M c ∨ (isUpg M d = true ∧ topped M d = true) := by
+    rcases hOS c hcx (DepX.ov hcv) with ⟨_, hnc⟩ | ⟨hnv, _⟩
+    · exact hnc
+    · exact absurd hcv hnv
+  have hoc := o_nocnt I.cons I.good hcM hnc
+  have hHv := hHD.hole false c hcv hcx
+  simp only [valB, cond_false] at hHv
+  rw [glueZ_o_dep ρ (shiftV ρP L) Z hcx (DepX.ov hcv), hoc,
+    fsD_sub (holeT_ne_z hHv) (holeT_not_succ hHv)] at hso
+  have hy : y = z := (T.psi.inj hso).2.1.symm
+  rw [hy] at hrw
+  exact T.not_lt_z _ hrw.1
+
 /-- `VSmallR` depends only on the values on the columns. -/
 theorem vSmallR_congr {N : Mat} {σ τ : Valn} (h : Agree N σ τ) (hV : VSmallR N σ) : VSmallR N τ := by
   intro i hi Lc c R hCL s y ho hrw hhi u hu g hg
@@ -293,10 +347,8 @@ theorem vsmallR_gexp_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
         V1.g (fun N σ => VrLe r ρ N σ ∧ VSmallR N σ) hP1 hPs n hn
     exact ⟨ρN, rkN, hCN, hRN, hPN.2⟩
 
-/-- **`hVSRexp` of `trio_terminates_main_GP`, the `t = 1` part**, with the residual `VSRRes`. -/
-theorem hVSRexp_t1
-    (hRes : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → ∀ r L, r + L + 1 = M.length →
-      par M 1 (r + L) = some r → entry M 2 (r + L) = 0 → VSRRes M r L (entry M 0 (r + L) - entry M 0 r) ρ) :
+/-- **`hVSRexp` of `trio_terminates_main_GP`, the `t = 1` part** (no residual). -/
+theorem hVSRexp_t1 :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 →
       ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
@@ -327,7 +379,7 @@ theorem hVSRexp_t1
   simp only [Nat.add_sub_cancel_left] at hexp
   have hlen : r + L + 1 = M.length := by omega
   obtain ⟨ρN, rkN, hCN, hRN, hVN⟩ :=
-    vsmallR_gexp_t1 I R hlen hr hx2 P (hRes M ρ rk hM hS I R r L hlen hr hx2) n hn
+    vsmallR_gexp_t1 I R hlen hr hx2 P (vsrRes_holds I hlen hr hx2) n hn
   rw [← hexp] at hCN hRN hVN
   exact vSmallR_congr (agree_of_cons hCN V.cons hRN) hVN
 
