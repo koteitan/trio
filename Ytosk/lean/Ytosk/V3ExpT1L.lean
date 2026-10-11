@@ -183,6 +183,49 @@ theorem absUWRes_of_L {M : Mat} {ρ : Valn} {r L d0 : Nat} (hx2 : entry M 2 (r +
     rw [hHlev, hZe]
     exact om_le_gamS_succ hHD.cb hseedz (by simp [one]) k'
 
+/-- **The TPLo residual in the `LevFree` form** (the seed condition of `TPLoRes` is on the subterms of the
+subscript `s₀` of `o(c)`; at a positive hole level it follows from `LevFree μ s₀`). -/
+structure TPLoResL (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop where
+  deg : DegRes TPLoAt M r L d0 ρ
+  lf : ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+    ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
+    GoodIdx (Z c) → TPLoPatN s0 y0 (Z c) → holeLev y0 ≠ z → LevFree (holeLev y0) s0
+  seed : ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+    ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
+    GoodIdx (Z c) → TPLoPatN s0 y0 (Z c) → holeLev y0 ≠ z →
+    (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z c = seed) →
+    SeedCond s0 (Z c) (etaOm (holeLev y0)) (etaOm (holeLev (Z c)))
+  zero : ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+    ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
+    GoodIdx (Z c) → TPLoPatN s0 y0 (Z c) → holeLev y0 = z →
+    SeedCond s0 (Z c) (etaOm (holeLev y0)) (etaOm (holeLev (Z c)))
+
+/-- **`TPLoRes` from the `LevFree` form.** -/
+theorem tploRes_of_L {M : Mat} {ρ : Valn} {r L d0 : Nat} (hL : TPLoResL M r L d0 ρ) : TPLoRes M r L d0 ρ := by
+  refine ⟨hL.deg, ?_⟩
+  intro n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat
+  by_cases hμ : holeLev y0 = z
+  · exact hL.zero n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ
+  obtain ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, h5, h6⟩ := hH
+  have hHc := hHD.hole true c hd hc
+  simp only [valB, cond_true] at hHc
+  rw [h0] at hHc
+  have hHlev : holeLev y0 = μ := by rw [← holeLev_psi_arg (a := s0) hy0]; exact holeLev_holeT hHc
+  obtain ⟨kk, _, hZe⟩ := hZk c
+  cases kk with
+  | zero =>
+    exact hL.seed n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, h5, h6⟩ hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ
+      ⟨μ, br, vr, seed, hHD, hZe⟩
+  | succ k' =>
+    have hLF := hL.lf n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, h5, h6⟩ hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ
+    have hseedz : seed ≠ z := by obtain ⟨a, X, h⟩ := hHD.seedS; rw [h]; simp
+    apply seedCond_of_levFree hLF
+    rw [hHlev, hZe]
+    exact om_le_gamS_succ hHD.cb hseedz (by simp [etaOm]) k'
+
 /-- **The `t = 1` part of `hExp` for `trio_terminates_main_H`** (`Res3H` for `M[n]`), with the seed residuals of
 AbsD・AbsUW in the `LevFree` form. -/
 theorem hExp_t1L
@@ -193,7 +236,7 @@ theorem hExp_t1L
       ExpStepT1 QV2 M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hResN : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → ∀ r L, r + L + 1 = M.length →
       par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
-      TPLoRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
+      TPLoResL M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
       AbsDResL M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsUWResL M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
       AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ VSFRes2 M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hRes : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
@@ -231,7 +274,7 @@ theorem hExp_t1L
   obtain ⟨ρN, rkN, V, _, _⟩ :=
     inv3V_N_t1A I R hlen hr hx2 (hRT M ρ rk hM hS I R hz h1t)
       (hQs M ρ rk hM hS I R r L hlen hr hx2)
-      (hResN M ρ rk hM hS I R r L hlen hr hx2).1
+      (tploRes_of_L (hResN M ρ rk hM hS I R r L hlen hr hx2).1)
       (absDRes_of_L I hlen hr hx2 (hResN M ρ rk hM hS I R r L hlen hr hx2).2.1)
       (absUWRes_of_L hx2 (hResN M ρ rk hM hS I R r L hlen hr hx2).2.2.1)
       (hResN M ρ rk hM hS I R r L hlen hr hx2).2.2.2.1
