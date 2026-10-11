@@ -2080,3 +2080,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - PrefLast: どの列 j と、j より前に行 1 の子を持つ列 p についても、v(p) は添字 v(P_1 j)・v(P_1 (P_0 j)) の部分項を持たない（各接頭辞の最後の列についての LastLev を M の値で書いたもの。5 集合で約 7000 万組、例外 0）。VKFree の破れ（行 1 の子が j より後）は入らない。
   - prefLast_take（残りなし）、levLeaf_take（仮定 LostKids だけ: 数える子をすべて失う列は P_0 x、5 集合で 52 万件、例外 0）。新しい後続の葉は上げを失った x − 1（PrefLast の j = x − 1、p = P_1 (x−1) のときは levFree_self）か P_0 x（PrefLast の j = x の 2 番目の項）。部品: v_succ_form（v(i) = μ + 1 なら行 2 は 0・上げなし・μ = v(P_1 i)）、levFree_self（V は添字 V の部分項を持たない）。
   - 残り: LostKids の証明（cnt_change から: 数える子の数え方が変わるのは P_0 x と x − 1 の上げの先だけ）、展開（t = 0・1・2）での LevLeafInv ∧ PrefLast、基底。
+- groupA: LevLeafInv ∧ PrefLast の展開での実測（t = 0、T0Ext の 2 万行列 × n = 2, 3）: M[n] の LevLeafInv の組（μ, v(p)）はすべて M か M.take x の LevLeafInv・PrefLast の組（3 万組）。PrefLast の組は 2368 組が新しい（写しで順序が変わる。q と p は大半が無関係な列）。したがって PrefLast は値の対応だけでは t = 0 で運べない（構造の議論か、別の閉じた形が要る）。LostKids: P_0 x が数えられなくなる場合（C′ 2782・d3s 125）でも、その親は必ず他の数える子を持つ（証明はまだ）。
