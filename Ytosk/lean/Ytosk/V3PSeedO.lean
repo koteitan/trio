@@ -160,7 +160,7 @@ theorem cutsNS_self {s : T} : ∀ {h B : T}, B ∈ cutsNS s h → B ∈ cutsNS s
     · simp only [cutsNS, List.mem_append, List.mem_map]
       exact Or.inr ⟨u, cutsNS_self hu, rfl⟩
 
-theorem allGe_app {θ B R : T} (hB : AllGeT θ B) (hR : AllGeT θ R) : AllGeT θ (app B R) := by
+theorem allGeT_app_of {θ B R : T} (hB : AllGeT θ B) (hR : AllGeT θ R) : AllGeT θ (app B R) := by
   intro q hq
   rw [summands_app, List.mem_append] at hq
   rcases hq with h | h
@@ -222,7 +222,7 @@ theorem seedExt_allGe {B Y : T} (hBhi : AllGeT (psi (succ V') z z) B) (hE : Seed
     AllGeT (psi V' z z) Y := by
   rcases hE with rfl | ⟨R, _, hR, rfl⟩ | ⟨_, _, h⟩
   · exact allGe_mono (om_le_succ hV hV' hVV V') hBhi
-  · exact allGe_app (allGe_mono (om_le_succ hV hV' hVV V') hBhi) hR
+  · exact allGeT_app_of (allGe_mono (om_le_succ hV hV' hVV V') hBhi) hR
   · exact h
 
 /-- **The kind of the seed's last frame** `(B, σ Y)` at level `V′`, from `Fix(B)` and `SeedExt`. -/

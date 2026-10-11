@@ -2429,3 +2429,8 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 残りの定義 SeedRes・AbsDRes・TPLoResL_seed・AbsDResL_seed・TPLoSeedLow・AbsDSeedLow・AbsDSeedLow2 に前提「M[n − 1] の評価 ρP の Cons」を足した（expStep で手に入る hCP を渡すだけ）。
 - seed_shape_qr: 種 = o_{M.take x}(r) が ψ_{v(r)}(1) より小さいなら L = 1（qr_seed_big）で、M.take x では r は最後の列なので子も上げもなく、r の行 2 は 0（Z1C: x は行 1 が r より大きい子）。よって 種 = Ω_{v(P_1 r)+1}。実測（d3s・ext1）でも種 < Ω_μ の場面はすべて q = r・L = 1・種 = Ω_{v(P_1 r)+1}（ext1 の 1 件の例外 (0,0,0)(1,1,1)(2,2,0) は SRO より上）。
 - これで種 < Ω_μ の欄は、ν = v(P_1 r) として、ν ≠ 0 なら段 ν の隙間 [ψ_ν(Ω_{ν+1}), Ω_{ν+1}) に v(c)（TPLo）・v(P_1 i)（AbsD）の部分項がないこと、ν = 0 なら段 0（groupA）になる。実測（d3s）で隙間の条件は TPLo 44214 件・AbsD 4239 件すべて成立。Lean での差し込みはまだ。
+- V3PSeedSV（緑）: sv（q = r・x − 1 が x へ上げる）の種 r の枠の PH3c・FC3（seed_frames_sv）。仮定は M.take x の FrameOT・PH3c・FC3、t2 の残り T2SeedSVRes、名前つきの残り T2SeedSVFix、下の段の Good3。
+  - 最後の枠は状態 X₁（M.take x での r の引数）と子 ψ_{V+1}(σ^{n−1} X₁)。T2SeedSVRes.rw で各段の状態は σ の繰り返しになるので、SeedExt を k の帰納法で運び（seed_ext）、種類は seed_kind。
+  - T2SeedSVFix: σ X₁ = X₁ か X₁ ∈ cutsNS (V + 1) (σ X₁)、かつ X₁ の加数は Ω_{V+2} 以上。実測（svspot.py）: 5 集合で X₁ はいつも動き、いつも SpotN（fix_of_spotN でこの形）、加数の条件も例外 0（sv の場合 10816 件）。
+  - T2SeedSVFix は構造の条件だけからは出ない: 長さ 8 以下の構造の全行列で 2 件 SpotN でない（例 (0,0,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(5,1,0)(1,1,1)、非標準形。目印 Ω_{V+1} がのりしろの項の ω 冪の引数に入る）。この行列は FC3 を破る（接頭辞 (0,0,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1) で既に）。標準形では、変わるのりしろの段はいつも「のりしろの子 1 つ・その子 1 つ」。証明には FC3 か同種の値の性質を使う見込み。
+- V3PSeedO の allGe_app を allGeT_app_of に改名（V3ExpT1 の allGe_app と衝突して一緒に import できなかった）。
