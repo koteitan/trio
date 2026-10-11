@@ -1950,3 +1950,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - groupA（V3PhiLevLink、緑）: 段の結び LevLink を無条件に証明（levLink: Cons ∧ Good3 ∧ Rk ⇒ どの列の o・v の節点 ψ_{μ+1}(0) + c（μ ≠ 0）も μ ∈ VK）。項の演算（add・app・sub・cut・split・H・step・spArg・omega・sumN・last）は引数 0 の節点の添字を入力から受け継ぎ、評価で新しく出る ψ_a(0) は o(i) の a = v(i) だけ。v(i) = μ + 1 なら増分は 1（上げの増分とのりしろの項は ω^… で 1 でない、bumpOmega_ne_one）で μ = v(P_1 i)（zPairOK_v）。
   - hole_node: 穴の段 μ の項は Ω_{μ+1} + c を部分項に持つ。holeLev_inVK: のりしろの項の穴の段は VK に入る。
   - levFree_hole: VKFree ⇒ のりしろの列 c の鎖の上の p で、穴の段 μ ≠ 0 について LevFree μ v(p)（t1-exp の種の条件の μ > 0 の部分。lt_Om_of_levFree と合わせて使う）。残りは VKFree の t = 1・t = 2 での保存だけ。
+
+### P の保存: 基底と t = 2（2026-10-11、closure、緑）
+
+- V3PBase（3aeda0e0）: base_ph3c・base_fc3（基底 SRO[n] は書き換えがない）。
+- PH3c の cut の定義を確定（64617a7f・2dd465b0）: 引数の側の位置は高い道（`cutsH`: 引数に入る項の添字は s 以上、添字の中には入らない）。標準形の cut の枠 28.8 万件はすべてこの形、閉性も同じ。
+- V3PSh（2dd465b0・b2062a29）: σ で保たれる。ph3cKind_sh（V < s なら PH3cKind B hi lo s → PH3cKind σB σhi σlo f(s)）、fc3c_sh（V ≤ a・V < s）。部品: cut の要素は Ω_s 以上、添字が V より大きい項では f は先頭の添字を f で移す（shf_psi）、scuts_shf・cutsH_sh・cutsNS_sh。
+- V3PT2C（d5e9c355）: copy_ph3c・copy_fc3（CopyFacts から写しの枠。s ≤ V の子は書き換えない）。
+- V3PT2（0477aa9b）: ph3c_expand_t2・fc3_expand_t2 — t = 2 の一般形 clField_expand_t2 に差し込んだ。枠の性質は FrameOT と組（QT2P・QT2F）。◁ での下げ: ψ_{s′}(y′) ◁ ψ_s(y) で s′ < s なら ◁ の定義に C = Ω_{s′+1} を入れて y′ = 0（lhd_sub_drop）なので書き換えない。添字が同じなら挟み込み。
+- t = 2 の残りは clField_expand_t2 の仮定と同じ: T2BelowXRes（t2 の残り）、M.take x の枠（ph3c_take をどの Cons の評価にも）、種の列の枠 T2SeedFrames QT2P M（p = r か P_0 q と、q ≠ r の q）。実測の「新しく数えられる子」（cut 328）と「添字の変わる子」（pre 131）はここに入る。例: q = r・n = 2 では r の新しい最後の子 x′ の値は ψ_{V′}(σ(B))（B = r の前の数える子の状態 = o_{M.take x}(r) の引数）で、B は σ(B) の切り口になる。
+- これで PH3c・FC3 は、1 列落とし・基底・t = 0・t = 1 は残りなし、t = 2 は種の列の枠を除いて Lean で保存が示せた。証明に S1・S3・S4 は使っていない。
