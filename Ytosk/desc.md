@@ -1947,3 +1947,6 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 最上位 trio_terminates_main_R: hVSR と、hLast・hExp が Inv3V ∧ Res3R（Res3A の drop を DropResR に）を出せばよい。
 - t2 の hHard・t0 の hOTD にも同じ仕組みが使える: DepS の順位の帰納法で RClaim を運び、枠ごとに relR_frame、使う所で hard_of_relR。
 - 測定の注意: R の測定は試す元を基本列の標本と部分項からの ψ_t(w)・A の先頭部分＋別の尾で取った（3.3 万列で例外 0）。
+- groupA（V3PhiLevLink、緑）: 段の結び LevLink を無条件に証明（levLink: Cons ∧ Good3 ∧ Rk ⇒ どの列の o・v の節点 ψ_{μ+1}(0) + c（μ ≠ 0）も μ ∈ VK）。項の演算（add・app・sub・cut・split・H・step・spArg・omega・sumN・last）は引数 0 の節点の添字を入力から受け継ぎ、評価で新しく出る ψ_a(0) は o(i) の a = v(i) だけ。v(i) = μ + 1 なら増分は 1（上げの増分とのりしろの項は ω^… で 1 でない、bumpOmega_ne_one）で μ = v(P_1 i)（zPairOK_v）。
+  - hole_node: 穴の段 μ の項は Ω_{μ+1} + c を部分項に持つ。holeLev_inVK: のりしろの項の穴の段は VK に入る。
+  - levFree_hole: VKFree ⇒ のりしろの列 c の鎖の上の p で、穴の段 μ ≠ 0 について LevFree μ v(p)（t1-exp の種の条件の μ > 0 の部分。lt_Om_of_levFree と合わせて使う）。残りは VKFree の t = 1・t = 2 での保存だけ。
