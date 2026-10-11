@@ -4,9 +4,10 @@
 T2BelowResL は T2BelowRes の種の欄の ◁ を、次の 2 つの場合を除く形に弱めたもの（`T2SeedDone`）。
 - q = r で x への上げがない: seedL_qr（V3T2SeedQRL）、M と M.take x だけの残り T2SeedQRRes から。
 - q ≠ r で q が r の最後の数える子: seedL_qn（V3T2SeedQNV）、残り T2SeedQNRes から。
-残る種の ◁ は sv（q = r で x − 1 が x へ上げる）と C（q ≠ r で q が r で数えられない）だけ。
+- sv（q = r で x − 1 が x へ上げる）: seedL_sv（V3T2SeedSV）、残り T2SeedSVRes から。
+残る種の ◁ は C（q ≠ r で q が r で数えられない）だけ。
 -/
-import Ytosk.V3T2SeedQNV
+import Ytosk.V3T2SeedSV
 
 namespace Ytosk
 
@@ -21,8 +22,11 @@ def T2QRNoUpg (M : Mat) (r L : Nat) : Prop := par M 0 (r + L) = some r ∧ ∀ i
 def T2QNLast (M : Mat) (r L : Nat) : Prop :=
   ∃ q Lc, par M 0 (r + L) = some q ∧ q ≠ r ∧ CL M r = Lc ++ [q]
 
+/-- `q = r` and `x − 1` upgrades to `x` (the sv case). -/
+def T2SVCase (M : Mat) (r L : Nat) : Prop := par M 0 (r + L) = some r ∧ upg M (r + L - 1) = some (r + L)
+
 /-- The seed cases whose ◁ is proved from residuals of `M` and `M.take x`. -/
-def T2SeedDone (M : Mat) (r L : Nat) : Prop := T2QRNoUpg M r L ∨ T2QNLast M r L
+def T2SeedDone (M : Mat) (r L : Nat) : Prop := T2QRNoUpg M r L ∨ T2QNLast M r L ∨ T2SVCase M r L
 
 /-- **`T2BelowRes` without the ◁ of the seed in the cases `T2SeedDone`.** -/
 def T2BelowResL (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
@@ -53,6 +57,12 @@ def T2SeedQNAll : Prop :=
     TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       ∀ q Lc, par M 0 (r + L) = some q → q ≠ r → CL M r = Lc ++ [q] → T2SeedQNRes M ρ r L q Lc
 
+/-- The seed residual of the sv case, for every standard `M` of type `t = 2`. -/
+def T2SeedSVAll : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
+      T2SVCase M r L → T2SeedSVRes M ρ r L
+
 /-- `x` is the last counted child of `r` (`q = r`, nothing upgrades into `x`). -/
 theorem cl_r_split {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hq : par M 0 (r + L) = some r)
     (hXu : ∀ i, upg M i ≠ some (r + L)) (hxb : col M (r + L) ≠ bump M r) :
@@ -69,7 +79,8 @@ theorem cl_r_split {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hq : par
   simp [hcnt]
 
 /-- **`T2BelowXRes` from `T2BelowXResL` and the seed residuals of `q = r` and `q ≠ r`.** -/
-theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQNAll) : T2BelowXRes := by
+theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQNAll) (hSV : T2SeedSVAll) :
+    T2BelowXRes := by
   intro M ρ rk hM hS I R hz h2 r L hlen hr n hn hGlow σ hCN hOT
   obtain ⟨h1, h2', h3, h4⟩ := hL M ρ rk hM hS I R hz h2 r L hlen hr n hn hGlow σ hCN hOT
   refine ⟨h1, h2', fun p hp => ?_, h4⟩
@@ -87,6 +98,15 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
     subst p
     exact seedL_qn hM hS I R hz h2 hlen hr hq hqr hCLM (hQN M ρ rk hM hS I R hz h2 r L hlen hr q Lc hq hqr hCLM)
       n hn hGlow σ hCN (h4 q hq hqr).1 (by rw [← cvals_eq_mapC hCN]; exact hdec)
+  by_cases hsv : T2SVCase M r L
+  · obtain ⟨hq, hux⟩ := hsv
+    have hp' : p = r := by
+      rcases hp with ⟨_, rfl⟩ | ⟨q, hq', hqr, _⟩
+      · rfl
+      · rw [hq] at hq'; cases hq'; exact absurd rfl hqr
+    subst p
+    exact seedL_sv hM hS I R hz h2 hlen hr hq hux (hSV M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hux⟩)
+      n hn hGlow σ hCN (by rw [← cvals_eq_mapC hCN]; exact hdec)
   by_cases hnu : T2QRNoUpg M r L
   · obtain ⟨hq, hXu⟩ := hnu
     have hp' : p = r := by
@@ -100,6 +120,6 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
     obtain ⟨Lc, hCLM⟩ := cl_r_split hlen hq hXu hxb
     exact seedL_qr hM hS I R hz h2 hlen hr hq hXu hCLM
       (hQR M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hXu⟩ Lc hCLM) n hn hGlow σ hCN
-  · exact hl (fun h => h.elim hnu hqn)
+  · exact hl (fun h => h.elim hnu (fun h' => h'.elim hqn hsv))
 
 end Ytosk
