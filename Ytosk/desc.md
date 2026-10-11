@@ -2603,3 +2603,7 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - q の値は前の段の r の引数から（qn_frame・C_frame と qn_inner）。
   - 実測（7 集合、k ≤ 5）: 例外 0。
 - **T2BelowResL は M[n] 側の T2VSN・T2Hard だけになった**。`t2BelowXRes_of_L : T2BelowXResL → T2SeedQRAll → T2SeedQNAll → T2SeedSVAll → T2SeedCAll → T2SeedOTAll → T2BelowXRes`。種と q の欄（◁・標準形・数える子の減少）はすべて M と M.take x だけの残りから出る。
+- 種の条件（実際の添字 ζ での SeedCond）の偽の分類（seedfail.py、ext1x 全体・T2Ext と expP は各 10 万の標本）:
+  - AbsD: SeedCond の偽は ext1x 503・T2Ext 1047・expP 2426 件、すべて q = r。どれも AbsDRes の吸収の側は真で、M[n] の AbsD も真。大半は段 0 の退化した添字 ψ_0(後続)（expP 2011）。よって AbsDRes（選言）は真。
+  - TPLo: SeedRes（吸収の選択肢なし）の偽は ext1x 12・expP 137・T2Ext 0 件。すべて q = r・鎖の 1・2 項目・段 μ ≠ 0・添字は GoodIdx。M[n] の TPLo は真。例: (0,0,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,0)(6,2,0)(7,1,0)(8,2,0)(9,1,0)(10,1,0)(11,0,0)(12,1,1)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,1)(7,1,0)(8,2,0)(9,1,0)(10,2,0)(11,1,0)(12,1,0)(13,0,0)(14,1,1)(4,2,0)(5,3,1)(6,3,1)(7,0,0)(8,1,1)(9,1,0)(10,2,0)、n = 2、c = 1、μ = ω、ζ = ψ_ω(ψ_ω(Ω_1))。s0 の深い部分項 u = ψ_ω(ψ_ω(ψ_0(Ω_ω))) が [fsD(ζ, ψ_0(Ω_1)), ζ) に入る。fsD_transfer は s0 のすべての部分項に条件を課すが、実際の比較はもっと上で決まる。比べる道に沿った移し替えの補題を groupA と相談中。
+- 組み立て hExp_t1O（V3ExpT1N）: 元の形の残り（TPLoRes・AbsDRes・AbsUWRes・AbsDNRes・PassRootRes）と M[n] の TPLoW・AbsDW・TPLoN を受け取る。BandLast・LevLeafInv・NoGapP を使わない。hExp_t1GP8 は TPLoSeedLow を tploSeedLow_holds で外した版。ビルド緑。
