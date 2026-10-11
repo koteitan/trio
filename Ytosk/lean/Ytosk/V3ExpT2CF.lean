@@ -18,6 +18,16 @@ def CopyFacts (N P : Mat) (σ ρ : Valn) (r L : Nat) (V' : T) (g : Nat → Prop)
       ∀ d ∈ CL P i, σ.o (d + L) = sh (ρ.v r) V' (ρ.o d) ∧ (i = r → ρ.v r < ρ.v d)) ∧
     (¬ g i → σ.v (i + L) = ρ.v i ∧ ∀ d ∈ CL P i, σ.o (d + L) = ρ.o d)
 
+/-- **The bump structure of the copy frames**: row 2, children and bump children shift; the children of
+a bump child move by `σ` under a guarded column, are equal under the others. -/
+def BumpCopyFacts (N P : Mat) (σ ρ : Valn) (r L : Nat) (V' : T) (g : Nat → Prop) : Prop :=
+  ∀ i, r ≤ i → i < P.length →
+    entry N 2 (i + L) = entry P 2 i ∧ children N (i + L) = (children P i).map (· + L) ∧
+    ∀ j ∈ children P i, (col N (j + L) = bump N (i + L) ↔ col P j = bump P i) ∧
+      children N (j + L) = (children P j).map (· + L) ∧
+      (r < i → col P j = bump P i → ∀ k ∈ children P j,
+        (g i → σ.o (k + L) = sh (ρ.v r) V' (ρ.o k)) ∧ (¬ g i → σ.o (k + L) = ρ.o k))
+
 section
 variable {N P : Mat} {r L : Nat} {σ ρ : Valn} {g : Nat → Prop} {V' : T} {rk : Bool → Nat → Nat}
   (hCN : Cons N σ) (hCP : Cons P ρ) (hGP : Good3 P ρ) (hRP : Rk P rk)
@@ -179,6 +189,32 @@ theorem copy_facts : CopyFacts N P σ ρ r L V' g := by
   have hcnt' : Counted P i d := by unfold CL at hdC; simpa using (List.mem_filter.mp hdC).2
   rw [hir] at hdch hcnt'
   exact (h3 d hd).2.1 (hgcr d hdch hcnt')
+
+include hCN hNl hrP hch hcnt hbmp he2 he1 hp1 hup hg0 hgpn hgun hgc hgb hgcV hgbV hbase hroot hV' hVV
+  hgcr hCP hGP hRP hge1 hgp hgu in
+/-- **`BumpCopyFacts` hold.** -/
+theorem bump_copy_facts : BumpCopyFacts N P σ ρ r L V' g := by
+  set V := ρ.v r with hVdef
+  have rel := fun b j (hrj : r ≤ j) (hj : j < P.length) =>
+    copy_rel hCN hCP hGP hRP hNl hrP hch hcnt hbmp he2 he1 hp1 hup hg0 hge1 hgp hgpn hgu hgun hgc hgb hgcV
+      hgbV hbase hroot hV' hVV hgcr _ b j (Nat.lt_succ_self _) hrj hj
+  intro i hri hi
+  refine ⟨he2 i hri hi, hch i hri hi, fun j hj => ?_⟩
+  have hjl := (mem_children hj).2
+  have hij := (mem_children hj).1
+  refine ⟨hbmp i j hri hi hj, hch j (by omega) hjl, fun hri' hjb k hk => ?_⟩
+  have hkl := (mem_children hk).2
+  have hjk := (mem_children hk).1
+  obtain ⟨y', hy'⟩ := o_form hCP hGP hkl
+  refine ⟨fun hg => ?_, fun hg => (rel true k (by omega) hkl).2 (hgb i j k hri' hi hj hjb hk hg)⟩
+  by_cases hgk : g k
+  · have e : σ.o (k + L) = shO V V' (ρ.o k) := (rel true k (by omega) hkl).1 hgk
+    have hvk := gv_gt hCP hGP hRP hge1 hgp hgu _ k (Nat.lt_succ_self _) (by omega) hkl hgk
+    rw [e, hy']; exact shO_eq_sh hvk
+  · have e : σ.o (k + L) = ρ.o k := (rel true k (by omega) hkl).2 hgk
+    have hle := hgbV i j k hri' hi hj hjb hk hg hgk
+    rw [e, hy']
+    exact (sh_fix (hy' ▸ hGP.ot_o k hkl) (by simpa using hle)).symm
 
 end
 
