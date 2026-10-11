@@ -1927,3 +1927,23 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - hResN: TPLoResL・AbsDResL・AbsUWResL（lf・seed・zero）、AbsDNRes（種の条件 η = 1 か新しい値での欄）、VSFRes2。
   - hRes: M[n] の Res3H。
 - VSFRes2 は NoGapP・LevFree からは出ない。実測（2 万件、例外 0）では「段 v(i) の成分の頭の添字は W′ = fsD(last v(c), ζ) より小さい」で、これから g < Ω_{h+1} ≤ Ω_{v′(c)}。W の全部の部分項の添字が W 未満とは限らない（743 件で偽、段 v(i) より下の部分）。
+
+### 落とす補題から HardArg を外した（2026-10-11、drop-fix、d11ffa17〜3b5ef324、緑）
+
+- 関係 RelR q b A（V3RelR）: 段 u ≤ q と b < c ≤ A のすべての c で、G_u b の元は b より小さいか、{0} ∪ G_u c ∪ G_u q の元以下。
+  Buchholz の b ◁_z A で、z の役を「b より小さいもの」と親の添字 q の成分にしたもの。
+- closed_of_relR（Buchholz の補題 3.4 の形）: b ≤ A、RelR q b A、G_q A < A、G_q q < b ⇒ G_q b < b。
+  hard_of_relR: RelR a (H(s, y′)) (H(s, y)) と古い枠の標準形 ψ_a(H(s, y)) から HardArg の結論 comps_a y′ ≤ H(s, y′)。
+- 枠 1 段の受け渡し relR_frame（子の主張から親の主張）: 両方書き換え（p < s は子のまま rc_tt_gt、s = p は H の H の relR_HH）・
+  書き換えなし（rc_nn）・古い方だけ（B が hi(y) の先頭部分なら試す元 ψ_s(B + 1) で rc_tn_prefix、子の添字が変わるなら rc_tn_core、
+  影の枠は新しい状態の閉性）・弱い子。末尾の子（x か数え方が変わる子 ℓ）は relR_tail で上端を伸ばす。
+- 落とす補題（V3DropR）: 各列で主張 RClaim（値が変わる列の新旧の状態 H(p, y′)・H(p, y) が RelR）を順位の帰納法で運ぶ
+  po_of_R・pv_of_R・drop_all_R。難しい枠は子の RClaim と hard_of_relR から。
+- 残りの仮定（V3DropRH、すべて C′ で例外 0）:
+  - VSmallR（1 行列の値の不変条件、すべての標準形で仮定 hVSR）: 子が書き換える枠で、子の添字の成分が親の段以下のすべての段で
+    Ω_s 以下・状態 B 以下・親の添字の成分以下（VSmallF を全段に広げた形。書き換えない枠では全段の形は偽、2103 件）。38.8 万件。
+  - DropResR = VSmallNew・BumpWeakSrc・UpgAbsX・BumpAbsC ＋ VSmallNewR（添字が変わった子について同じ、古い子が書き換える枠だけ。
+    全枠の形は偽 1979 件）・ShadowC（影の枠で新しい状態が閉じている、136 件）・TailNR（末尾の子は書き換えない）。argT も HardArg もない。
+- 最上位 trio_terminates_main_R: hVSR と、hLast・hExp が Inv3V ∧ Res3R（Res3A の drop を DropResR に）を出せばよい。
+- t2 の hHard・t0 の hOTD にも同じ仕組みが使える: DepS の順位の帰納法で RClaim を運び、枠ごとに relR_frame、使う所で hard_of_relR。
+- 測定の注意: R の測定は試す元を基本列の標本と部分項からの ψ_t(w)・A の先頭部分＋別の尾で取った（3.3 万列で例外 0）。
