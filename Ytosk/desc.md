@@ -1770,3 +1770,14 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 偽と分かったこと（PhiX を ◁ で閉じる道は不可）: 「X ◁ W なら Reach」は偽（X = Ω_1 ◁ W = Ω_{ψ_0(Ω_{Ω_1})·2}、v(p) = ψ_0(Ω_{Ω_1})）。段 0 では隙間の形の条件（u ≥ W の例外つき、u ∈ SubS(W) の例外つきも）は偽で、比較が穴の位置に届くかどうかの議論が要る。0 でない穴の部分を持つ近い部分項は、W = Ω_{μ+1} のとき（6.2 万件）と W = ψ_a(Ω_{s+1}) 型（24 件）にしか出ない。
 - 提案: Inv3V の ad・au（AbsD・AbsU）を NoGapP ∧ PhiX0 に替える（absD_of_phiX・absU_of_phiX・phiX_of_noGap で戻る）。各仕組みの仕事は NoGapP（値 1 つの条件）と、段 0 の穴の PhiX0。
 - さらに狭めた（`cutsNS`）: 添字の側の位置は添字の鎖（`scuts`: Ω_s、Ω_{Ω_s}、…）だけ、引数の側は任意。実測は同じ（deepA・deep2・deep3 で真、閉性で壊れる例 0）。この形だと 1 列落としの順序数の補題は、添字の鎖の要素が Ω_s 以上であること（標準形の仮定なし）と、「s < a′ なら s + 1 ≤ a′」（標準形）だけで済む。
+
+### t = 2 の写しの境界の事実を証明（2026-10-11、t2、V3ExpT2B・X・GV・CR・Main、緑）
+
+- 前任の途中の作業 V3ExpT2W（good3_expand_t2）・V3ExpT2F（rootP_of_below）をコミット（7cb07409）。
+- V3ExpT2Main: hExp の t = 2 の部分を、Good3 の 2 つの残り（T2BelowXAll・T2CopyResAll）と欄ごとの残り T2Rest（t = 0 の T0Rest と同じ形）から組み立てる（t2ExpRes_of・hExp_t2_main）。rootS は Good3 から。
+- **T2CopyResAll を証明**（t2CopyResAll_holds、仮定は M の Std・Inv3 だけ、公理は標準の 3 つ）。
+  - T2Base（V3ExpT2B）: r より前で o(r) に依存しない呼び出しは M[m] と M で同じ値（agree_outside、cons_agree）。写しの読む先 t < r は背骨の補題で o(r) に依存しない。
+  - x′ の v（V3ExpT2X）: P_1(x) = r（行 2 が 1 の列の子は行 1 が自分以下、Z1C）。x′ の上げの先は q ≠ r のときの q だけ（ほかの r の子なら RowJ で q が親ののりしろの子になり Tqb に反する）。N の依存の閉包で種 SN に依存しない呼び出しは M と同じ値（agree_N）。v_N(r) = v_M(r)（門）、v_N(q) は標準形（のりしろの項が読む値は順位で種に届かない）。v_{M.take x}(r) ≤ v_M(r)（L = 1 で上げを失う場合だけ <）。
+  - T2GuardVal（V3ExpT2GV）: 守られない子孫 d の v は v(r) 以下。d と、r の P_1 の鎖の上で同じ P_1 = m を持つ列 w を比べる。d の上げの先 k は m の子で、k が w より上なら e2(w) = 0（行 2 が 1 なら RowJ で親ののりしろの子、BumpE2 で親も行 2 が 1、k まで登ると UAB に反する）で、w も k へ上げるので v(d) = v(w)。
+- 定義の変更: T2CopyRes に「P の Good3」を前提として足した（使う側 good3_gexp_t2 は帰納法の仮定を渡す）。
+- 残り（Good3 N）: T2BelowXAll（x より前、deps_lhd_ot で。種 o(r)/o(P_0 q) の SeedL・標準形・減少と hHard・hVSN）。
