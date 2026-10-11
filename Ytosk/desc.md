@@ -2732,3 +2732,12 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - P_1(c) が r より上は t_above0B・t_aboveB（最後の列までの版）。
 - 実測（crs2.py）: C の見える bump でない列すべてで不変条件が 7 集合で例外 0。
 - closure の名前つきの残りは T2SeedCBig だけになった（QNFC・SVFix は証明済み）。
+- 書き換えの一致は仮定にせず、t0_dep_otU と同じく右端の変化 REr を deps_lhd_otW_RU で運んで trig_agreeG から出す（re_step・re_leaf）。要るのは M の PH3cG（closure の G3）と切り口の条件 `T2CutA`（t = 0 の hCutN と同じ形、D の条件なし）と種の REr。T2HardB = VSmallRA ∧ PH3cG ∧ T2CutA ∧ 種の RClaimU ∧ 種の REr（54fe234a）。
+- 実測（M だけ、例外 0）: VSmallRA は 7 集合と expP のすべての行列で（C′ 947048・T0Ext 492806・d3s 61556・deep2 537241・deep3 502804・ext1 1605092・ext1x 349583・expP 2045191・T2Ext 3592933 枠）。t0-exp が VSmallRP を VSmallRA から出す形にした（88770837）ので t = 0 と t = 2 で共通。
+- 種 r の引数: qr では o_M(r) = ψ_V(B + Ω_s)、o_N(r) = ψ_V(B + ψ_{V+k+1}(W))（seqZ_form）なので REr（P = B）と B0（どちらの加数も Ω_{V+1} 以上）は閉じた形から読める。RClaimU は引数の ◁ がないので rclaim_of_clsU は使えない（seed_frame_lhd は ψ の段で ◁ を出す）。残りとして名前つき。
+
+### T2SeedCBig を構造の残り T2SeedCNext に帰着（2026-10-12、closure、V3CBig、緑）
+- `Ytosk.G.t2SeedCBig_of`: T2SeedCBig を T2SeedCRes（decP・vqP・un）と構造だけの残り `T2SeedCNext` から証明。T2SeedPRes の C の欄は CRes ∧ CNext に替えた。closure の残りは値を含まない CNext だけ。
+- `T2SeedCNext`: M.take x で r の数えない子 d < q の次の兄弟 dn が数える子（dn < q）なら、dn は dn − 1 から上げられる。実測（cbig.py）: 7 集合で d < q の数えない子の次の兄弟はいつも dn − 1 から上げられる（数える dn は deep2・deep3 で 2 件ずつ）。
+- `upg_next_lt`: 数えない（topped）子 d の次の兄弟 dn が dn − 1 から上げられるなら v(dn) < v(d)。dn − 1 は d の部分木の最後の列で P_1 = r・行 1 = e1 r + 1・行 2 = 0。d の最後の子 jl は bump 子、jl の最後の子 kl は行 1 = e1 r + 1 なので BumpLeaf で葉、kl = dn − 1。o(kl) = Ω_{v(dn)}（上げで v(kl) = v(dn)）から v(d) ≥ ω^{W_d} ≥ W_d ≥ Ω_{v(dn)} > v(dn)（le_omega_big）。
+- dn = q と数えない dn は上げの的で topped なので UAT で dn − 1 から上げられる。兄弟を右から帰納し、q は vqP で s′、数える子は decP と o の減少で s′ より上。
