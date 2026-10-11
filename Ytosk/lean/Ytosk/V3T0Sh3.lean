@@ -250,10 +250,9 @@ def T0ShapeR : Prop :=
       ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
       σ.v c ≠ ρ.v c → par M 1 c ≠ some i → ¬ psi (ρ.v c) z z < psi (succ (ρ.v i)) z z →
       ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z) ∧
-    (∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
+    (∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
-      ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true ∧
-        ClsNode (ρ.v g) X' X)
+      (drop1 M (r + L) rk).o r = omid M r L ρ)
 
 theorem t0Shape_of (h : T0ShapeR) : T0Shape := by
   intro M ρ rk r L hM hS I R hlen hL hp he1

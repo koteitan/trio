@@ -713,6 +713,32 @@ theorem s1_core_cls {a B v Y0 X' : T} {m : Nat} (hm : 1 ≤ m)
         · rw [summands_mulT ⟨_, _, rfl⟩ m' q hq] at h; exact hOθ h
         · simp [summands] at hq; rw [hq] at h; exact hc'θ h
 
+/-- `Y ◁ Y + 1`. -/
+theorem lhd_pred_succ {Y : T} (h : isOT (app Y one) = true) : Lhd z Y (app Y one) := by
+  have hone : one ≠ z := by simp [one]
+  have hf : fs (app Y one) z = Y := by
+    rw [fs_app Y hone]; simp [fs, one, app_z_right]
+  have hv : ValidLt (app Y one) z := by
+    unfold ValidLt; rw [cof_app Y hone]; simp [cof, one]
+  have := lhd_fs h hv
+  rwa [hf] at this
+
+/-- The pair `(Y, Y + 1)` at the level `v` is of class A (a low part in `Y`) or C (`Y` is the high part). -/
+theorem cls_pred_succ {B v Y : T} {P : Prop} : ClsABC B v Y (app Y one) P := by
+  have hone : head one < psi (succ v) z z := by
+    show psi z z z < _; rw [psi_lt_psi_z_iff]; left
+    exact lt_of_le_of_lt (z_le _) (lt_succ_self _)
+  have hs : split (app Y one) (psi (succ v) z z) =
+      ((split Y (psi (succ v) z z)).1, app (split Y (psi (succ v) z z)).2 one) := split_app_low (Or.inr hone)
+  unfold ClsABC
+  rw [hs]
+  by_cases hlo : (split Y (psi (succ v) z z)).2 = z
+  · right; right
+    have e := split_app (psi (succ v) z z) Y
+    rw [hlo, app_z_right] at e
+    exact e.symm
+  · left; exact ⟨rfl, hlo⟩
+
 section
 variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)
@@ -750,7 +776,8 @@ theorem cl_nil_of_depv' {c : Nat} (hc : c < r) (hv : DepX M (r + L) false c) : C
   exact uncnt_of_depv (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp
     (by omega) hv hd
 
-/-- **The seed at `g` at the level of the arguments** (some middle copy root counts at `g`). -/
+/-- **The seed at `g` at the level of the arguments**: some middle copy root counts at `g`, or none does and
+the value `o′(r)` of `M.take x` is the middle value (then the frame of `g` takes one fundamental-sequence step). -/
 theorem t0_S1A {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted M g r)
     (hσG : ∀ c, c < r → ¬ DepX M (r + L) true c → σ.o c = ρ.o c)
     (hσvg : σ.v g = ρ.v g)
@@ -760,7 +787,7 @@ theorem t0_S1A {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted 
     (hl : Lhd z (ρ'.o r) (ρ.o r))
     (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
     (hC1 : Cons (M.take (r + L)) ρ') (hGT : Good3 (M.take (r + L)) ρ')
-    (hm1 : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L))
+    (hm1 : (∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) ∨ ρ'.o r = omid M r L ρ)
     (hvch : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z) :
     ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true ∧
@@ -897,8 +924,8 @@ theorem t0_S1A {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted 
     simp only [List.map_append, List.map_singleton]
     rw [hsumM, spArg_app]
   have hLs := sumN_dec Lv (fun t ht => hsM t (List.mem_append_left _ ht)) (List.pairwise_append.mp hpM).1
-  have hm : 1 ≤ m := by
-    obtain ⟨k, hk, hkc⟩ := hm1
+  have hm1' : (∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) → 1 ≤ m := by
+    rintro ⟨k, hk, hkc⟩
     have : r + k * L ∈ Cm := List.mem_filter.mpr ⟨List.mem_map.mpr ⟨k, List.mem_range.mpr (by omega), rfl⟩,
       by simpa using hkc⟩
     rw [hm]; exact List.length_pos_of_mem this
@@ -912,17 +939,28 @@ theorem t0_S1A {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted 
       have := (List.pairwise_append.mp hpM).2.2 q hq (ρ.o r) (by simp)
       rwa [hor] at this
     · simp [summands]
+  have hO0 : isOT (psi v Y0 z) = true := by rw [← hOv]; exact hsO.1
+  have hOT' : isOT (spArg a (spArg a (spArg a z (sumN Lv)) (mulT (psi v Y0 z) m)) (ρ'.o r)) = true :=
+    isOT_spArg a _ _ (isOT_spArg a _ _ (isOT_spArg a _ _ rfl hLs.1) (isOT_mulT hO0 ⟨_, _, rfl⟩ m)) hsLr.1
+  by_cases hm0 : m = 0
+  · -- no middle copy root counts: `o′(r)` is the middle value, one step of the frame
+    have hω : ρ'.o r = omid M r L ρ := hm1.resolve_left (fun h => by have := hm1' h; omega)
+    rw [hω, hOv] at hOT'
+    refine ⟨_, spArg a (spArg a (spArg a z (sumN Lv)) (mulT (psi v Y0 z) m)) (psi v Y0 z), hoM,
+      by rw [hoN, hOv, hω, hOv], ?_, hOT', ?_⟩
+    · rw [hm0]
+      exact node_arg_lhd hXot hO0 hBXs (Or.inl ⟨rfl, lhd_pred_succ (isOT_arg hXot), cls_pred_succ⟩)
+    · rw [hm0]
+      exact cls_node hXot hO0 hBXs (Or.inl ⟨rfl, lhd_pred_succ (isOT_arg hXot), cls_pred_succ⟩)
+  have hm : 1 ≤ m := by omega
   have hX'O : ρ'.o r ≤ psi v Y0 z := by
     have hp1 := List.pairwise_append.mp hpN
     rw [← hOv]
     exact hp1.2.2 (omid M r L ρ) (List.mem_append_right _ (List.mem_replicate.mpr ⟨by omega, rfl⟩))
       (ρ'.o r) (by simp)
-  have hO0 : isOT (psi v Y0 z) = true := by rw [← hOv]; exact hsO.1
-  refine ⟨_, spArg a (spArg a (spArg a z (sumN Lv)) (mulT (psi v Y0 z) m)) (ρ'.o r), hoM,
-    by rw [hoN, hOv], s1_core_arg hm hOld hXot hO0 hBXs hsLr hl hX'O hy', ?_,
+  exact ⟨_, spArg a (spArg a (spArg a z (sumN Lv)) (mulT (psi v Y0 z) m)) (ρ'.o r), hoM,
+    by rw [hoN, hOv], s1_core_arg hm hOld hXot hO0 hBXs hsLr hl hX'O hy', hOT',
     s1_core_cls hm hXot hO0 hBXs hsLr hX'O hy' hvch⟩
-  exact isOT_spArg a _ _ (isOT_spArg a _ _ (isOT_spArg a _ _ rfl hLs.1)
-    (isOT_mulT hO0 ⟨_, _, rfl⟩ m)) hsLr.1
 
 
 /-- **The `D` columns before `r` are standard and drop by `◁`** in `N = M[n]` (`t = 0`, `n ≥ 2`, `r` has a
@@ -957,8 +995,7 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
     (hVchgR : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
-      ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true ∧
-        ClsNode (ρ.v g) X' X) :
+      ρ'.o r = omid M r L ρ) :
     ∀ b i, i < r → isOT (valB σ b i) = true ∧
       (DepX M (r + L) b i → Lhd z (valB σ b i) (valB ρ b i)) ∧
       (b = true → DepX M (r + L) true i → σ.v i = ρ.v i →
@@ -1292,10 +1329,13 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
             have hig : par M 0 r = some i := (mem_children_iff.mp hc).2
             have hgi : g = i := Option.some.inj (hg.symm.trans hig)
             rw [← hgi] at hcnt hv' ⊢
-            by_cases hm1 : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
-            · exact t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hg hcnt
-                (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl hy' hC1 hGT hm1 hVchgR
-            · exact hG0 hcnt (fun k hk hk' => hm1 ⟨k, hk, hk'⟩)
+            have hm1 : (∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) ∨
+                ρ'.o r = omid M r L ρ := by
+              by_cases h : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
+              · exact Or.inl h
+              · exact Or.inr (hG0 hcnt (fun k hk hk' => h ⟨k, hk, hk'⟩))
+            exact t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hg hcnt
+              (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl hy' hC1 hGT hm1 hVchgR
           · have hcr : c < r := by omega
             rcases hOS_t1 hx hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp i (by omega) (DepX.ochild hc hcb hcu hdc) with
               ⟨hv, _⟩ | ⟨_, Lp, c0, R, hch, _, _, hR, hLnd⟩
@@ -1468,7 +1508,7 @@ end
 
 /-- **`hOTD` of `t0_core`** from the residuals: the rewrite agreement at class-B0 children (`hTrigBN`),
 a changed `v` of a child stays at least `Ω_{a+1}` (`hVchgN`; also for `o′(r)` at `g`, `hVchgRN`), and `g` when
-no middle copy root counts (`hG0N`). -/
+no middle copy root counts, where `o′(r)` is the middle value (`hG0N`). -/
 theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
@@ -1498,10 +1538,9 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       ¬ psi (σ.v c) z z < psi (succ (ρ.v i)) z z)
     (hVchgRN : ∀ g, par M 0 r = some g → ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
-    (hG0N : ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
+    (hG0N : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
-      ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true ∧
-        ClsNode (ρ.v g) X' X) :
+      (drop1 M (r + L) rkM).o r = omid M r L ρ) :
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i, i < r → DepX M (r + L) true i → isOT (σ.o i) = true ∧ (σ.v i = ρ.v i →
         ∃ X X', ρ.o i = psi (ρ.v i) X z ∧ σ.o i = psi (ρ.v i) X' z ∧ Lhd z X' X) ∧
@@ -1762,13 +1801,13 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     intro i hi hd
     exact (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT hσB hσBv
       hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
-      (hVchgN n hn2 σ hCN) (hVchgRN g hg) (hG0N n hn2 σ hCN g hg) true i hi) |> fun h =>
+      (hVchgN n hn2 σ hCN) (hVchgRN g hg) (hG0N n hn2 g hg) true i hi) |> fun h =>
       ⟨h.1, (fun hv => let ⟨X, X', a1, a2, a3, _⟩ := h.2.2 rfl hd hv; ⟨X, X', a1, a2, a3⟩), fun hne => by
         have hdv : DepX M (r + L) false i := by
           by_contra hn'; exact hne ((hoffD i hi).2 hn')
         have hvot := (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT
           hσB hσBv hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
-          (hVchgN n hn2 σ hCN) (hVchgRN g hg) (hG0N n hn2 σ hCN g hg) false i hi).1
+          (hVchgN n hn2 σ hCN) (hVchgRN g hg) (hG0N n hn2 g hg) false i hi).1
         exact o_N_noc' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hi
           (cl_nil_of_depv' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hi hdv) hvot⟩
   · have hrn : par M 0 r = none := by
