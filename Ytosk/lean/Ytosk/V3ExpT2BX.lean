@@ -54,13 +54,32 @@ theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
       ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ DepS M S true c ∧ c < bnd ∧
         ∀ d ∈ Lc, ¬ DepS M S true d ∧ d < bnd)
     (hCLeq : ∀ i, i < bnd → ¬ S true i → ¬ W true i → ¬ DepS M S true i →
-      CL N i = CL M i ∧ ∀ c ∈ CL M i, c < bnd) :
+      CL N i = CL M i ∧ ∀ c ∈ CL M i, c < bnd)
+    (hWb : ∀ i j c, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → j ∈ children M i → col M j = bump M i →
+      c ∈ children M j → W true c → S false i)
+    (hVc : ∀ i, i < bnd → ¬ S false i → DepS M S false i →
+      entry N 1 i = entry M 1 i ∧ entry N 2 i = entry M 2 i ∧ par N 1 i = par M 1 i ∧
+      (∀ m, par M 1 i = some m → ¬ DepS M S false m) ∧ upg N i = upg M i ∧
+      (∀ k, upg M i = some k → DepS M S false k → k < bnd) ∧
+      (entry M 2 i ≠ 0 → ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ children N i = Lb ++ [j] ∧
+        col M j = bump M i ∧ col N j = bump N i ∧ children M j = Kb ++ [k] ∧
+        children N j = Kb ++ [k] ∧ k < bnd ∧ entry N 1 k = entry M 1 k ∧
+        (∀ d ∈ Kb, ¬ DepS M S true d ∧ d < bnd) ∧
+        (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepS M S true e) ∧
+        (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d))) :
     ∀ i, i < bnd → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
       (cvals N σ i).Pairwise (fun a b => b ≤ a) ∧
-      (¬ S true i → ¬ W true i → FrameShape M N ρ σ i) ∧ (¬ W true i → σ.o i ≤ ρ.o i) := by
+      (¬ S true i → ¬ W true i → FrameShape M N ρ σ i) ∧ (¬ W true i → σ.o i ≤ ρ.o i) ∧
+      (¬ S false i → DepS M S false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+        ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ children N i = Lb ++ [j] ∧ col M j = bump M i ∧
+          col N j = bump N i ∧ children M j = Kb ++ [k] ∧ children N j = Kb ++ [k] ∧
+          (∀ d ∈ Kb, σ.o d = ρ.o d) ∧ (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d) ∧
+          Lhd z (σ.o k) (ρ.o k) ∧ isOT (σ.o k) = true) ∧
+      (¬ DepS M S false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
+        ∀ k ∈ children M j, k < bnd → σ.o k = ρ.o k) := by
   intro i hi
   have hiM : i < M.length := by omega
-  refine ⟨?_, ?_, ?_, fun hns hnw => ?_, fun hnw => ?_⟩
+  refine ⟨?_, ?_, ?_, fun hns hnw => ?_, fun hnw => ?_, fun hns hDv h1 h2 => ?_, fun hnd h1 h2 j hj hjb k hk hkb => ?_⟩
   · by_cases hd : DepS M S true i
     · by_cases hw : W true i
       · exact hWot i hi hw
@@ -124,6 +143,34 @@ theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
   · by_cases hd : DepS M S true i
     · exact le_of_lt (hD true i hd hi hnw).1.1
     · rw [(hoff i hi).1 hd]
+  · obtain ⟨_, _, _, hpnd, _, _, hbsh⟩ := hVc i hi hns hDv
+    obtain ⟨Lb, Kb, j, k, hch, hchN, hjb, hjbN, hchj, hchjN, hkb, _, hKnd, hLnd, hbL⟩ := hbsh h2
+    have hdk : DepS M S true k := by
+      cases hDv with
+      | seed h => exact absurd h hns
+      | vpar _ hpm hdm => exact absurd hdm (hpnd _ hpm)
+      | vupg _ h2' _ _ => exact absurd h2' h2
+      | @vbump _ j0 k0 _ _ hj0 _ hk0 hdk0 =>
+        have hjj : j0 = j := by
+          rw [hch] at hj0
+          rcases List.mem_append.mp hj0 with h | h
+          · exact absurd hdk0 (hLnd j0 h k0 hk0)
+          · exact List.mem_singleton.mp h
+        subst hjj
+        have hkk : k0 = k := by
+          rw [hchj] at hk0
+          rcases List.mem_append.mp hk0 with h | h
+          · exact absurd hdk0 (hKnd k0 h).1
+          · exact List.mem_singleton.mp h
+        subst hkk
+        exact hdk0
+    have hj : j ∈ children M i := by rw [hch]; simp
+    have hk : k ∈ children M j := by rw [hchj]; simp
+    have hWk : ¬ W true k := fun hw => hns (hWb i j k h1 h2 hj hjb hk hw)
+    obtain ⟨hl, hot⟩ := hD true k hdk hkb hWk
+    exact ⟨Lb, Kb, j, k, hch, hchN, hjb, hjbN, hchj, hchjN,
+      fun d hd => (hoff d (hKnd d hd).2).1 (hKnd d hd).1, hbL, hl, hot⟩
+  · exact (hoff k hkb).1 (fun hdk => hnd (DepS.vbump h1 h2 hj hjb hk hdk))
 
 /-- **`N`-side hypothesis of `deps_lhd_ot`**: the subscript bound of a changed last child (`VSmallNew` form). -/
 def T2VSN (N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=

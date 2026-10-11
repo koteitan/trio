@@ -61,7 +61,16 @@ theorem t2_qn_below (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) 
       (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) ∧
       (¬ SQ (r + qp) pq true i → ¬ WQ (r + qp) true i →
         FrameShape M (TRIO.gexp M r L d0 d1 n) ρ σ i) ∧
-      (¬ WQ (r + qp) true i → σ.o i ≤ ρ.o i) := by
+      (¬ WQ (r + qp) true i → σ.o i ≤ ρ.o i) ∧
+      (¬ SQ (r + qp) pq false i → DepS M (SQ (r + qp) pq) false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+        ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ children (TRIO.gexp M r L d0 d1 n) i = Lb ++ [j] ∧
+          col M j = bump M i ∧ col (TRIO.gexp M r L d0 d1 n) j = bump (TRIO.gexp M r L d0 d1 n) i ∧
+          children M j = Kb ++ [k] ∧ children (TRIO.gexp M r L d0 d1 n) j = Kb ++ [k] ∧
+          (∀ d ∈ Kb, σ.o d = ρ.o d) ∧
+          (∀ d ∈ Lb, bumpTerm (TRIO.gexp M r L d0 d1 n) σ i d = bumpTerm M ρ i d) ∧
+          Lhd z (σ.o k) (ρ.o k) ∧ isOT (σ.o k) = true) ∧
+      (¬ DepS M (SQ (r + qp) pq) false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+        ∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < r + L → σ.o k = ρ.o k) := by
   have hlN : (TRIO.gexp M r L d0 d1 n).length = r + n * L := TRIO.gexp_length hlen
   have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn2
   have hqx : r + qp < r + L := by omega

@@ -40,6 +40,19 @@ def T2BelowXRes : Prop :=
 def T2SeedCol (M : Mat) (r L i : Nat) : Prop :=
   T2Seed M r L i ∨ (∃ q, par M 0 (r + L) = some q ∧ q ≠ r ∧ i = q)
 
+/-- The columns before `x` whose `v` is a seed: `q` when `q ≠ r`, and `x − 1` when it upgrades to `x`. -/
+def T2VSeedCol (M : Mat) (r L i : Nat) : Prop :=
+  (∃ q, par M 0 (r + L) = some q ∧ q ≠ r ∧ i = q) ∨ (i + 1 = r + L ∧ upg M i = some (r + L))
+
+/-- **The bump terms of a column of `N` against `M`**: the children of the bump children have the values of
+`M`, or the last bump child's last child is lowered by `◁`. -/
+def BumpInfo (M N : Mat) (ρ σ : Valn) (i : Nat) : Prop :=
+  (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, σ.o k = ρ.o k) ∨
+  (∃ Lb Kb j k, children M i = Lb ++ [j] ∧ children N i = Lb ++ [j] ∧ col M j = bump M i ∧
+    col N j = bump N i ∧ children M j = Kb ++ [k] ∧ children N j = Kb ++ [k] ∧
+    (∀ d ∈ Kb, σ.o d = ρ.o d) ∧ (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d) ∧
+    Lhd z (σ.o k) (ρ.o k) ∧ isOT (σ.o k) = true)
+
 /-- **Good3 before `x` and the frame shapes**, for every expansion. -/
 def T2BelowXS (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
   ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
@@ -47,7 +60,9 @@ def T2BelowXS (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
     ∀ i, i < r + L → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
       (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) ∧
       (¬ T2SeedCol M r L i → FrameShape M (TRIO.gexp M r L d0 d1 n) ρ σ i) ∧
-      ((∀ q, par M 0 (r + L) = some q → q ≠ r → i ≠ q) → σ.o i ≤ ρ.o i)
+      ((∀ q, par M 0 (r + L) = some q → q ≠ r → i ≠ q) → σ.o i ≤ ρ.o i) ∧
+      (¬ T2VSeedCol M r L i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+        BumpInfo M (TRIO.gexp M r L d0 d1 n) ρ σ i)
 
 /-- **`T2BelowXS` from `T2BelowXRes`.** -/
 theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
@@ -143,6 +158,26 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
   have hbN : ∀ c, c < r + L →
       bump (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c = bump M c :=
     fun c hc => by unfold bump; rw [entry_gexp_pre hlen (by omega) 0 hc, entry_gexp_pre hlen (by omega) 1 hc]
+  have hkx : ∀ i j k, i < r + L → j ∈ children M i → col M j = bump M i → k ∈ children M j → k < r + L := by
+    intro i j k hi hj hjb hk
+    have hkl := (mem_children hk).2
+    by_contra h'
+    have hkx' : k = r + L := by omega
+    have hpk := (mem_children_iff.mp hk).2
+    rw [hkx', hq] at hpk
+    have hjq : q = j := Option.some.inj hpk
+    subst hjq
+    have hpj := (mem_children_iff.mp hj).2
+    have hrq' := (anc0_par hA (by omega) hq).le
+    by_cases hqr' : q = r
+    · rw [hqr'] at hjb; exact hrb i (by rw [← hqr']; exact hpj) hjb
+    · obtain ⟨pq, hpq⟩ := par0_of_anc (anc0_par hA (by omega) hq) (fun h => hqr' h.symm)
+      have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
+      have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
+      obtain ⟨_, Tqb, _⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+      rw [show r + (q - r) = q by omega] at Tqb
+      rw [hpj] at hpq; cases hpq
+      exact Tqb hjb
   by_cases hqr : q = r
   · rw [hqr] at hq
     have hAbs := abs_of_absC hdr.ab hq hrb
@@ -174,8 +209,15 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
         Sp1 Sdv Sos Svsh I.cons I.good I.rank hCN hRN I.fc I.fo I.vs I.td I.kd hAbs hVSN hHard hOTout
         ⟨hs1, hs2⟩ hs3
       intro i hi
-      obtain ⟨h1, h2, h3, h4, h5⟩ := hbx i hi
-      refine ⟨h1, h2, h3, fun hns => ?_, fun hnq => ?_⟩
+      obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hbx i hi
+      refine ⟨h1, h2, h3, fun hns => ?_, fun hnq => ?_, fun hnv he1 he2 => ?_⟩
+      rotate_left 2
+      · by_cases hDv : DepS M (SV r (r + L - 1)) false i
+        · exact Or.inr (h6 (fun h => by
+            rcases h with ⟨h', _⟩ | ⟨_, hi'⟩
+            · cases h'
+            · exact hnv (Or.inr ⟨by omega, by rw [hi']; exact hux⟩)) hDv he1 he2)
+        · exact Or.inl (fun j hj hjb k hk => h7 hDv he1 he2 j hj hjb k hk (hkx i j k hi hj hjb hk))
       apply h4
       · rintro (⟨_, rfl⟩ | ⟨h, _⟩)
         · exact hns (Or.inl (Or.inl ⟨hq, rfl⟩))
@@ -202,8 +244,12 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
         I.be I.r01 I.e00 I.cons I.good I.rank hCN hRN I.fc I.fo I.vs I.td I.kd hdr.ab hxcN hVSN hHard hOTout
         ⟨hs1, hs2⟩ hs3
       intro i hi
-      obtain ⟨h1, h2, h3, h4, h5⟩ := hbx i hi
-      refine ⟨h1, h2, h3, fun hns => ?_, fun hnq => ?_⟩
+      obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hbx i hi
+      refine ⟨h1, h2, h3, fun hns => ?_, fun hnq => ?_, fun hnv he1 he2 => ?_⟩
+      rotate_left 2
+      · by_cases hDv : DepS M (fun b i => b = true ∧ i = r) false i
+        · exact Or.inr (h6 hDv he1 he2)
+        · exact Or.inl (fun j hj hjb k hk => h7 hDv he1 he2 j hj hjb k hk (hkx i j k hi hj hjb hk))
       · apply h4
         rintro rfl
         exact hns (Or.inl (Or.inl ⟨hq, rfl⟩))
@@ -249,8 +295,15 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
       Tqb Te2pq Tclq Tclpq hIUt Tp1 TqL Tdv Tos Tvsh I.cons I.good I.rank hCN hRN
       I.fc I.fo I.vs I.td I.kd hAbs hVSN hHard hOTout hvqot' ⟨hs1, hs2⟩ hs3 hqot' hqdec'
     intro i hi
-    obtain ⟨h1, h2, h3, h4, h5⟩ := hbx i hi
-    refine ⟨h1, h2, h3, fun hns => ?_, fun hnq => ?_⟩
+    obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hbx i hi
+    refine ⟨h1, h2, h3, fun hns => ?_, fun hnq => ?_, fun hnv he1 he2 => ?_⟩
+    rotate_left 2
+    · by_cases hDv : DepS M (SQ (r + (q - r)) pq) false i
+      · exact Or.inr (h6 (fun h => by
+          rcases h with ⟨_, hi'⟩ | ⟨h', _⟩
+          · exact hnv (Or.inl ⟨q, hq, hqr, by omega⟩)
+          · cases h') hDv he1 he2)
+      · exact Or.inl (fun j hj hjb k hk => h7 hDv he1 he2 j hj hjb k hk (hkx i j k hi hj hjb hk))
     apply h4
     · rintro (⟨h, _⟩ | ⟨_, rfl⟩)
       · cases h
@@ -266,7 +319,7 @@ namespace Ytosk
 /-- **`T2BelowXAll` from `T2BelowXRes`.** -/
 theorem t2BelowXAll_of (hRes : T2BelowXRes) : T2BelowXAll := by
   intro M ρ rk hM hS I R hz h2 r L hlen hr n hn σ hCN hOTx i hi
-  obtain ⟨h1, h2', h3, _, _⟩ := t2BelowXS_of hRes hM hS I R hz h2 hlen hr n hn σ hCN hOTx i hi
+  obtain ⟨h1, h2', h3, _, _, _⟩ := t2BelowXS_of hRes hM hS I R hz h2 hlen hr n hn σ hCN hOTx i hi
   exact ⟨h1, h2', h3⟩
 
 /-- **`hExp` for `t = 2`, current residuals**: the seeds and the two `N`-side bounds before `x`

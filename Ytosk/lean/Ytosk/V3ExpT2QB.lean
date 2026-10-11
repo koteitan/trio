@@ -41,7 +41,16 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (hsdec : (cvals (TRIO.gexp M r L d0 d1 n) σ r).Pairwise (fun a b => b ≤ a)) :
     ∀ i, i < r + L → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
       (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) ∧
-      (i ≠ r → FrameShape M (TRIO.gexp M r L d0 d1 n) ρ σ i) ∧ σ.o i ≤ ρ.o i := by
+      (i ≠ r → FrameShape M (TRIO.gexp M r L d0 d1 n) ρ σ i) ∧ σ.o i ≤ ρ.o i ∧
+      (DepS M ((fun b i => b = true ∧ i = r)) false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+        ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ children (TRIO.gexp M r L d0 d1 n) i = Lb ++ [j] ∧
+          col M j = bump M i ∧ col (TRIO.gexp M r L d0 d1 n) j = bump (TRIO.gexp M r L d0 d1 n) i ∧
+          children M j = Kb ++ [k] ∧ children (TRIO.gexp M r L d0 d1 n) j = Kb ++ [k] ∧
+          (∀ d ∈ Kb, σ.o d = ρ.o d) ∧
+          (∀ d ∈ Lb, bumpTerm (TRIO.gexp M r L d0 d1 n) σ i d = bumpTerm M ρ i d) ∧
+          Lhd z (σ.o k) (ρ.o k) ∧ isOT (σ.o k) = true) ∧
+      (¬ DepS M ((fun b i => b = true ∧ i = r)) false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+        ∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < r + L → σ.o k = ρ.o k) := by
   set N := TRIO.gexp M r L d0 d1 n with hN
   set S : Bool → Nat → Prop := fun b i => b = true ∧ i = r with hS
   have hXbD : ∀ p, par M 0 (r + L) = some p → col M (r + L) ≠ bump M p := by
@@ -228,9 +237,11 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
       have hpc := (mem_children_iff.mp hcch).2
       rw [hcx, hp] at hpc; cases hpc
       exact hns ⟨rfl, rfl⟩)
+    (fun _ _ _ _ _ _ _ _ h => h.elim) hVc
   intro i hi
-  obtain ⟨h1, h2, h3, h4, h5⟩ := hgb i hi
-  exact ⟨h1, h2, h3, fun hir => h4 (fun h => hir h.2) (fun h => h), h5 (fun h => h)⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hgb i hi
+  exact ⟨h1, h2, h3, fun hir => h4 (fun h => hir h.2) (fun h => h), h5 (fun h => h),
+    h6 (fun h => absurd h.1 (by simp)), h7⟩
 
 end
 

@@ -119,7 +119,7 @@ theorem rootP_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → 
   have hle : σ.o Rt ≤ ρ.o Rt := by
     have hRx : Rt < r + L := by have := hRA.le; have : Rt ≠ r + L := fun h => by rw [h] at hR0; exact hz hR0
                                 omega
-    refine (hBS n hn σ hCN (fun j _ hj => ⟨hGN.ot_o j hj, hGN.ot_v j hj⟩) Rt hRx).2.2.2.2 ?_
+    refine (hBS n hn σ hCN (fun j _ hj => ⟨hGN.ot_o j hj, hGN.ot_v j hj⟩) Rt hRx).2.2.2.2.1 ?_
     intro q' hq' hqr' hRq
     rw [hq] at hq'; cases hq'
     -- `q ≠ r` has row 2 equal to `1`, a root has row 2 equal to `0`

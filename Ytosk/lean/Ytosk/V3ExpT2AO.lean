@@ -68,7 +68,14 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
       ∀ i, i < bnd → (S true i ∨ W true i) → (cvals N σ i).Pairwise (fun a b => b ≤ a)) :
     ∀ i, i < bnd → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
       (cvals N σ i).Pairwise (fun a b => b ≤ a) ∧
-      (¬ S true i → ¬ W true i → FrameShape M N ρ σ i) ∧ (¬ W true i → σ.o i ≤ ρ.o i) := by
+      (¬ S true i → ¬ W true i → FrameShape M N ρ σ i) ∧ (¬ W true i → σ.o i ≤ ρ.o i) ∧
+      (¬ S false i → DepS M S false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+        ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ children N i = Lb ++ [j] ∧ col M j = bump M i ∧
+          col N j = bump N i ∧ children M j = Kb ++ [k] ∧ children N j = Kb ++ [k] ∧
+          (∀ d ∈ Kb, σ.o d = ρ.o d) ∧ (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d) ∧
+          Lhd z (σ.o k) (ρ.o k) ∧ isOT (σ.o k) = true) ∧
+      (¬ DepS M S false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
+        ∀ k ∈ children M j, k < bnd → σ.o k = ρ.o k) := by
   have hch : ∀ i, i < bnd → i ≠ p → children N i = children M i := fun i hi _ => hchA i hi
   have hcol : ∀ i, i < bnd → col N i = col M i := fun i hi => by
     rw [col_eq_entries, col_eq_entries, he 0 i hi, he 1 i hi, he 2 i hi]
@@ -100,6 +107,47 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
       have := (mem_children hj).1
       have := (mem_children hk').1
       omega
+  have hVc : ∀ i, i < bnd → ¬ S false i → DepS M S false i →
+      entry N 1 i = entry M 1 i ∧ entry N 2 i = entry M 2 i ∧ par N 1 i = par M 1 i ∧
+      (∀ m, par M 1 i = some m → ¬ DepS M S false m) ∧ upg N i = upg M i ∧
+      (∀ k, upg M i = some k → DepS M S false k → k < bnd) ∧
+      (entry M 2 i ≠ 0 → ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ children N i = Lb ++ [j] ∧
+        col M j = bump M i ∧ col N j = bump N i ∧ children M j = Kb ++ [k] ∧
+        children N j = Kb ++ [k] ∧ k < bnd ∧ entry N 1 k = entry M 1 k ∧
+        (∀ d ∈ Kb, ¬ DepS M S true d ∧ d < bnd) ∧
+        (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepS M S true e) ∧
+        (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d)) := by
+    intro i hi hns hD
+    obtain ⟨hpnd, hbsh⟩ := hVSh i hi hns hD
+    refine ⟨he 1 i hi, he 2 i hi, hpar1 i hi, hpnd, hupg i hi hns, fun k hk _ => ?_, fun h2 => ?_⟩
+    · by_contra h'
+      exact hns (hupS i k hi hk (by omega))
+    · obtain ⟨Lb, Kb, j, k, hchi, hjb, hchj, hKnd, hLnd⟩ := hbsh h2
+      have hj : j ∈ children M i := by rw [hchi]; simp
+      have hjx : j < bnd := by
+        by_contra h'; exact hns (hbjS i j hi hj (by omega) hjb)
+      have hk : k ∈ children M j := by rw [hchj]; simp
+      have hkx : k < bnd := by
+        by_contra h'; exact hns (hbkS i j k hi hj hjx hjb hk (by omega))
+      have hKk : ∀ d ∈ Kb, d < k := (sib_order (children_sorted M j) (R := []) (by rw [hchj])).1
+      have hLj : ∀ d ∈ Lb, d < j := (sib_order (children_sorted M i) (R := []) (by rw [hchi])).1
+      have hip : i ≠ p := by
+        rintro rfl; rcases hp2 with h | h; exact h2 h; exact hns h
+      refine ⟨Lb, Kb, j, k, hchi, by rw [hch i hi hip, hchi], hjb,
+        by rw [hcol j hjx, hbump i hi]; exact hjb, hchj,
+        by rw [hch j hjx (by rintro rfl; exact hpb i hj hjb), hchj], hkx, he 1 k hkx,
+        fun d hd => ⟨hKnd d hd, by have := hKk d hd; omega⟩, hLnd, fun d hd => ?_⟩
+      have hdj := hLj d hd
+      have hdM : d ∈ children M i := by rw [hchi]; simp [hd]
+      apply bumpTerm_eq_of
+      · rw [hcol d (by omega), hbump i hi]
+      · intro hdb
+        rw [hch d (by omega) (by rintro rfl; exact hpb i hdM hdb)]
+        apply List.map_congr_left
+        intro e he'
+        have hex : e < bnd := by
+          by_contra h'; exact hns (hbkS i d e hi hdM (by omega) hdb he' (by omega))
+        exact (hoff e hex).1 (hLnd d hd e he')
   have hdl := deps_lhd_otW (S := S) (W := W) (bnd := bnd) hC hG hCN hRM (by omega) hbN
     hF hFO hVS hTD hKD hVSN hHard hoff hOTout hWv hWo hWb (hWot hoff)
     (fun b i hs hi hd ih => hSeed b i hs hi hd hoff ih) hDvNil
@@ -133,38 +181,7 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
       have hd' := List.mem_filter.mp hd
       have hdM : d ∈ children M i := by rw [hch']; simp [hd'.1]
       exact ⟨hL d hd'.1 (by simpa using hd'.2), hall d hdM⟩)
-    (by
-      intro i hi hns hD
-      obtain ⟨hpnd, hbsh⟩ := hVSh i hi hns hD
-      refine ⟨he 1 i hi, he 2 i hi, hpar1 i hi, hpnd, hupg i hi hns, fun k hk _ => ?_, fun h2 => ?_⟩
-      · by_contra h'
-        exact hns (hupS i k hi hk (by omega))
-      · obtain ⟨Lb, Kb, j, k, hchi, hjb, hchj, hKnd, hLnd⟩ := hbsh h2
-        have hj : j ∈ children M i := by rw [hchi]; simp
-        have hjx : j < bnd := by
-          by_contra h'; exact hns (hbjS i j hi hj (by omega) hjb)
-        have hk : k ∈ children M j := by rw [hchj]; simp
-        have hkx : k < bnd := by
-          by_contra h'; exact hns (hbkS i j k hi hj hjx hjb hk (by omega))
-        have hKk : ∀ d ∈ Kb, d < k := (sib_order (children_sorted M j) (R := []) (by rw [hchj])).1
-        have hLj : ∀ d ∈ Lb, d < j := (sib_order (children_sorted M i) (R := []) (by rw [hchi])).1
-        have hip : i ≠ p := by
-          rintro rfl; rcases hp2 with h | h; exact h2 h; exact hns h
-        refine ⟨Lb, Kb, j, k, hchi, by rw [hch i hi hip, hchi], hjb,
-          by rw [hcol j hjx, hbump i hi]; exact hjb, hchj,
-          by rw [hch j hjx (by rintro rfl; exact hpb i hj hjb), hchj], hkx, he 1 k hkx,
-          fun d hd => ⟨hKnd d hd, by have := hKk d hd; omega⟩, hLnd, fun d hd => ?_⟩
-        have hdj := hLj d hd
-        have hdM : d ∈ children M i := by rw [hchi]; simp [hd]
-        apply bumpTerm_eq_of
-        · rw [hcol d (by omega), hbump i hi]
-        · intro hdb
-          rw [hch d (by omega) (by rintro rfl; exact hpb i hdM hdb)]
-          apply List.map_congr_left
-          intro e he'
-          have hex : e < bnd := by
-            by_contra h'; exact hns (hbkS i d e hi hdM (by omega) hdb he' (by omega))
-          exact (hoff e hex).1 (hLnd d hd e he'))
+    hVc
     hupgK hAbs
   apply good_below_of hC hG hCN (by omega) hbN hoff hdl hWv hWo (hWot hoff) (hSdec hoff)
   · intro i hi hns hnw hv
@@ -213,5 +230,7 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
     apply List.filter_congr
     intro d hd
     simp only [hcnt i d hi hns hd (hall d hd)]
+  · exact hWb
+  · exact hVc
 
 end Ytosk
