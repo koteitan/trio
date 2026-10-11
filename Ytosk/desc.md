@@ -1853,3 +1853,14 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - VSmallF も運んだ（expStep_vsmallF、96ece8c7）。枠の親の v と前の数える子の o は変わらない（FrameOT と同じ議論）。残り VSFRes は数える子 c の v が変わる枠（c が D の v の列か c = x）。hExp_t1A の残りの欄 QV2 は最後の列の枠の 3 欄（TPLoW・AbsDW・TPLoN）だけ。
 - 最後の列の枠の欄の M[n] での実測（C′ 4 万行列）: M[n] の最後の列が t = 1・q = r のときは M[n − 1] もそう（r′ ≥ x）。枠の D は M[n − 1] の D のずらしに x より前の o の列が加わる。欄の場合の約 9 割は r より前の列（根など）で、値は M[n − 1] の同じ列とも違う。したがってずらしだけでは運べない。TPLoW の中身は「展開後の行列で、枠の D の列 c の v(c) が子 d（o(d) = Ω_{v(d)}）の新しい v より小さい」で、η ≥ ψ_μ(Ω_{μ+1}) なら TPLo から添字の単調性で出る（約 4 割）。残りは種の条件と同じ種類の主張。
 - 種の条件と近い部分項（groupA に連絡済み）: AbsD・AbsUW の種の条件で効く部分項は Ω_μ ≤ u < min(ζ, ψ_μ(Ω_{μ+1})) のものだけ（u < Ω_μ なら fsD(ζ, θ) = ψ_μ(…) ≥ Ω_μ で自動）。μ > 0 ではそのような部分項は一度も出ない（2.6 万件）。μ = 0 では出る（6030 件、u = 1 か ω）が、比較が穴まで降りないので条件は成り立つ。
+
+### t = 2 の x より前の Good3 を種の事実に帰着（2026-10-11、t2、V3DepOTW・V3ExpT2BX・AO・QB・SB・NB・BA、緑）
+
+- deps_lhd_otW: deps_lhd_ot に弱い呼び出し W（◁ を主張しない D の呼び出し、読むのは種だけ）を足した版。
+- good_below_of: D の外の一致・D の中の ◁ と標準形・種の仮定から、bnd より前の o・v の標準形と数える子の減少。t2_assembleOT: t2_assemble の Good3 N を仮定しない版。
+- 3 つの場合（q = r の主の場合 t2_qr_below、x − 1 が x へ上げる t2_sv_below、q ≠ r の t2_qn_below）を、t2_drops と同じ構造の補題で Good3 N なしに写した。v(x − 1) の種の標準形は V + 1、q ≠ r の v(q) の標準形は vq_N。
+- t2BelowXAll_of: T2BelowXAll ⟸ T2BelowXRes。hExp_t2_res: hExp の t = 2 部分 ⟸ T2BelowXRes ∧ T2Rest（写しの境界の事実は証明済み）。
+- T2BelowXRes の中身（どれも N = M[n] の値の事実、C′ の t = 2 の 8000 行列と qnu 族 3000 行列 × n = 2, 3 で例外 0）:
+  - 種 p（q = r なら r、q ≠ r なら P_0 q）: o_N(p) ◁ o_M(p)（SeedL）、o_N(p) は標準形、p の数える子の減少。
+  - q ≠ r の o_N(q) の標準形と数える子の減少。
+  - T2VSN（変わった最後の数える子の v の成分の上界、VSmallNew の N 版）、T2Hard（drop-fix の HardArg の N 版）。
