@@ -2650,7 +2650,7 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - `t0_dep_otU`（V3T0DepU）: 主張を `∀ U, (∀ u, U u → PathLv i u) → RClaimU U i` にして運ぶ。子への依頼は U を変えないので、枠 k で要る段は v(k) と `PathLv k`（D の道の上の祖先 j で、j から k までの枠がすべて M で書き換えるときの v(j)）だけ。難しい枠では U = {v(i)} で hard_of_relRU から HardArgN を出す。
 - M の不変条件 `VSmallRP`: D の道の上の枠 (k, c)（k, c < r、c は k の最後の数える子、古い子が書き換え、hi(y) ≠ 0）で、段 u = v(k) と PathLv k u の段だけの VSmallR。
 - 実測（pvsp.py、M だけ、例外 0）: d3s 2974・deep2 25685・deep3 24650・C′ 86490・T0Ext 282542・ext1 333811・T2Ext 272162 枠。同じ枠で全段の VSmallR は T2Ext で 25 件偽（M13 の族）。
-- 書き換えの一致は G3 の切り口で（V3T0TrigG の `cutsNSG_split`・`trig_agreeG`）。`T0CutResGG` は T0CutResG の cutsNS を cutsNSG に替えたもの。実測（pcutG.py）: d3s 194・deep2 1602・deep3 1714 件で例外 0（残りの集合は実行中）。
+- 書き換えの一致は G3 の切り口で（V3T0TrigG の `cutsNSG_split`・`trig_agreeG`）。`T0CutResGG` は T0CutResG の cutsNS を cutsNSG に替えたもの。実測（pcutG.py）: 7 集合すべてで例外 0（d3s 194・deep2 1602・deep3 1714・C′ 4562・T0Ext 37784・ext1 8022・T2Ext 12662 件）。
 - 最上位 `hExp_t0_topU`: 残りは hLast・N の AbsD・AbsU・FrmLF・M の PH3cG・標準形 N の PH3c と 3 つの葉の残り・T0CutResGG・T0VSPRes（VSmallRP）・T0TPLoRes・T0AbsUWRes・T0AbsDNRes。T0HardRes と VSmallR は要らない。公理は標準の 3 つ。
 - hExp_t0_topH0 との違い: H0 は T0HardRes（N の側、証明の見込みなし）、U は VSmallRP（M だけ）と PH3cG(M)・T0CutResGG。
 
@@ -2661,3 +2661,16 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - M.take x では CL(q) = []・CL(r) = [q]（cl_prefix）なので o(q) = Ω_{v(q)}、t1 = v_T(q) = V + ω^{W_T}。落とす補題 drop_all（Res3A.drop）の o_T ≤ o_M で ω^{W_T} ≤ ω^W（`qn_take_t1`）。
   - f(t1) = s′ + ω^{W_T}、以後 f(s′ + X) = s′ + ω^W + σX（k の帰納法）。
   - 実測（qnt1.py・qnkid.py・qnkid2.py）: 7 集合で t1 = v_T(q)・o_T(q) = Ω_{v_T(q)}・CL_T(r) = [q]・v(c) ≤ V に例外 0。
+
+### T0CutResGG を閾値の主張 ThrA に帰着（2026-10-12、t0-exp、V3T0Thr・V3T0DepT・V3T0TopT、緑）
+- CutResGG の場面の形（d3s 194 件すべて）: B = P + o(d)（d は i の最後の前の数える子で葉 o(d) = Ω_{v(d)}、d の前の状態は P、d の枠は書き換えない）。t は c の最後の子 e の o（e は葉で v が変わる）か、lo = 0 の書き換えで下から上がってくる最後の加数。
+- `ThrA W X X′`: X = P + ψ_a(x)、X′ = P + T′ のとき、W の w で Ω_w < ψ_a(x) なら Ω_w < T′。`ThrV W v v′`: W の w で w < v なら w < v′。W = `WB ρ i`（列 i より前の列の v）。
+- V3T0Thr（純粋な補題）: `thr_step`（re_step と同じ場合分け。両方書き換え lo(y) = 0 は子の ThrA から、新しい尾 hi(T′) + ψ_s(y′) でも Ω_w は保たれる。lo(y) ≠ 0 と書き換えなしは尾が ψ_s(y) ↦ ψ_s(y′) なので無条件）、`thr_leaf`（尾 Ω_s ↦ Ω_{s′} は ThrV から）、`thr_cut`（κ = Ω_w なら κ < T′）、`app_last_inj`（最後の加数の一意性）。
+- `t0_dep_otT`（V3T0DepT）: t0_dep_otU の RE の欄に ThrA (WB ρ i) を足して運ぶ。hCut の代わりに hKap・hThrV・hThrG。
+- 最上位 `hExp_t0_topT`（V3T0TopT）: T0CutResGG の代わりに
+  - `T0CutKappa`（M だけ）: 切り口 κ は前の列 j < c の Ω_{v(j)}。
+  - `T0ThrVRes`: v が変わる D の列 e で、j < e の v(j) < v(e) なら v(j) < v_N(e)。
+  - `T0ThrGRes`: g の引数の右端の変化で Ω_{v(j)}（j < g）が保たれる。
+  公理は標準の 3 つ。
+- 実測: T0CutKappa は d3s の標本 22 件で例外 0。v の閾値（j < e）と引数の閾値（j < 列）は d3s の標本で例外 0。7 集合は実行中。任意の o(j) を閾値にすると偽（d3s 標本 3 件）、j が列より後ろでも偽（1 件）。
+- v が変わる D の列の型（d3s 標本）: bump 2775・upg 405（P_1 の親だけが変わる型はない）。変化は v の深い右端で、j < e の v(j) で v(e) より小さいものは小さい（例 ψ_0(1)）。
