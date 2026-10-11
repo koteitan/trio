@@ -2234,3 +2234,24 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - **NoGapP は標準形で偽**。M = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,1,0)(5,2,0)(3,2,1)（bms -s で標準形、t = 2、r = 4、q = 5）。M[2] = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,1,0)(5,2,0)(3,2,0)(4,3,1)(5,3,1)(6,1,0)(7,2,0)（標準形）の列 9（= x′、行 1 の子 10・11）で v = ψ_1(Ω_2)。x′ は q へ上げ、のりしろの子 6 の子 7 の o(7) = ψ_1(Ω_2) が v_N(q) を通って入る。長さ 11 の接頭辞から偽。
   - 同じ族で LevLeafInv（葉 8、v = 2）、PrefLast（長さ 14）、t1-exp の狭い形（のりしろの列 c = 10 の鎖の p = 9、W_c = ψ_1(Ω_2)、段 1）も偽。PhiX と Inv3 の欄（AbsD・AbsU・TPLo ほか）はこの族のすべての接頭辞で成り立つ（BumpWeakSrc だけ偽）。
   - 5 集合が見落とした形: のりしろの子 j の後ろに兄弟がある（j が最後の子でない）とき、j の子の o に隙間がある。5 集合ではこの形の o は 3 万件すべて隙間なしだった。
+
+### t = 2 の種（q ≠ r）と T2Hard の置き換え（2026-10-12、t2）
+
+- V3T2SeedQNL（前任の未コミット分、緑、f7322493）: q ≠ r の種の 1 段 `qn_step`（B + Ω_t ↦ B + Ω_{σ(t)}）。
+- **seedL_qn**（V3T2SeedQNV、緑、e4924cbc）: q ≠ r で q が r の最後の数える子のとき、o_{M[n]}(r) ◁ o_M(r)（n ≥ 2）。
+  - o_{M[n]}(r) = ψ_V(B + Ω_{t_{n−1}})、t_0 は M.take x での r の最後の子の添字、t_{k+1} = σ_{V,s′}(t_k)、s′ = v_N(q) = V + ω^{1+Σ}（`qnS`、どの段でも同じ）。
+  - o_M(r) = ψ_V(B + Ω_s)、s = v(q)（CL(q) = [] から）。◁ は seed_frame_lhd を s′ := t_{n−1} で使う（成分の条件は自動）。
+  - 残り `T2SeedQNRes`（M と M.take x だけ）: s′ の標準形・V < s′・σ(B) = B・B の加数 ≥ Ω_{s′+1}・V + last(s′) = s′・M.take x の v(r) = V と r の引数 = B + Ω_{t_0}・各 k で V < t_k、σ(t_k) ≥ s′ + 1、k ≥ 1 で t_k < s かつ t_k ◁ s。
+  - 実測（C′・d3s・deep2・deep3 の t = 2 の全行列、T0Ext は t = 2 なし）: 例外 0（主の場合 32786 件、k = 0..4）。
+  - T2SeedQRRes も同じ 4 集合で例外 0（123519 件）。
+- V3T2SeedWire: T2BelowResL の種の ◁ を `T2SeedDone`（qr: x への上げなし、qn: q が最後の数える子）の外だけにした。`t2BelowXRes_of_L : T2BelowXResL → T2SeedQRAll → T2SeedQNAll → T2BelowXRes`。
+- 残る種の ◁ は sv（q = r で x − 1 が x へ上げる）と C（q ≠ r で q − 1 が q へ上げ、q は r で数えられない）。実測（C′ 2 万行列、sv 579・C 219 件、全件）:
+  - CL_N(r) = CL_M(r) ++ [新しい子]（sv は x′、C は q）。c0 = CL_M(r) の最後の値は変わり、o_N(c0) = o_{M.take x}(c0)（n = 2, 3, 4）。
+  - M.take x での r の引数 X_1 = B + o_{M.take x}(c0)、X_n = σ_{V,V′}(X_{n−1})（新しい子はいつも書き換え、H は恒等）。V′ = V + 1（sv）、v_N(q)（C）。
+  - o_M(c0) は葉とは限らない（sv で 181/579）。seed_frame_lhd の証明は古い子 Ω_s を ψ_s(y) に替えても通る（使うのは頭の添字 ≤ s だけ）。
+  - Lean で要る構造の補題: o_N(c0) = o_{M.take x}(c0)（agree_off_at を N と M.take x で、E = 順位 ≥ rk o(r) の閉包で）、CL_N(r) の形。まだ書いていない。
+- **T2Hard を T2HardR に置き換え**（V3DepRW、緑、4868f312、Ytosk 全体のビルド緑）:
+  - `deps_lhd_otW_R`: drop-fix の deps_lhd_ot_R に弱い呼び出し W を足したもの。hVNRN・hShN に前提 σ.v i = ρ.v i・Lc の値が同じを足した（使う所で手に入る）。
+  - `T2HardR M N bnd ρ σ Sd = VSmallR M ∧ T2VNRN ∧ T2ShN ∧ (種で RClaim)`。T2BelowRes の 2 つ目の欄を T2Hard からこれに替え、t2_assembleOT・t2_qr_below（deps_lhd_ot から deps_lhd_otW_R へ）・t2_sv_below・t2_qn_below・t2BelowXS_of を直した。
+  - VSmallR M は使う側の署名を変えないよう残りの欄の中に入れた。main_G の形では大域の hVSR から出る。main_GP の形では hExp に前提 VSmallR M を足す必要がある。
+  - 実測（t = 2 の全行列 × n = 2, 3、4 集合）: 種の RClaim（q によらない強い形 relR_full）は例外 0（331k 件）。T2VNRN・T2ShN は前件が一度も起きない（C′ 3000 行列で o(c) が変わる枠 3.4 万件はすべて v(c) が同じで新しい側も書き換える。t0-exp の t = 0 と同じ）。
