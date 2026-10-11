@@ -12,7 +12,6 @@
 -/
 import Ytosk.V3ExpT0
 import Ytosk.V3InvJ
-import Ytosk.V3Spine
 import Ytosk.V3ExpT2C
 import Ytosk.V3ValT1R
 
@@ -21,6 +20,23 @@ namespace Ytosk
 open T
 
 set_option linter.unusedSectionVars false
+
+/-- `par1_facts`（V3Spine）の写し（V3Spine の import は V3GroupA と衝突するので避ける）。 -/
+theorem t0s_par1_facts {M : Mat} {i m : Nat} (hm : par M 1 i = some m) :
+    Anc0 M m i ∧ m < i ∧ entry M 1 m < entry M 1 i ∧
+      ∀ w, Anc0 M m w → Anc0 M w i → w ≠ m → w ≠ i → entry M 1 i ≤ entry M 1 w := by
+  obtain ⟨hmem, hlt, hmax⟩ := (par1_some_iff M i m).mp hm
+  refine ⟨anc0_of_mem_ancL hmem, mem_ancL_lt hmem, hlt, fun w h1 h2 h3 h4 => hmax w (mem_ancL_of_anc h2 h4) ?_⟩
+  have := h1.le; omega
+
+/-- `upg_facts`（V3Spine）の写し。 -/
+theorem t0s_upg_facts {M : Mat} {i k : Nat} (hk : upg M i = some k) :
+    ∃ m, par M 1 i = some m ∧ par M 0 k = some m ∧ entry M 1 k = entry M 1 i ∧
+      (k = i + 1 ∨ (Anc0 M k i ∧ k < i)) := by
+  obtain ⟨m, hm1, hm2, hcol, hcase⟩ := upg_spec hk
+  refine ⟨m, hm1, par0_of_upgshape hm2 ?_, ?_, hcase⟩
+  · have : entry M 0 k = (col M k).1 := rfl; rw [this, hcol]
+  · have : entry M 1 k = (col M k).2.1 := rfl; rw [this, hcol]
 
 /-- **The upgrade to an ancestor target, from the shape.** -/
 theorem upg_of_anc_target {M : Mat} {y k m : Nat} (hyM : y + 1 < M.length) (h1 : entry M 1 y ≠ 0)
@@ -52,8 +68,8 @@ theorem upg_anc_spine {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     ∀ y, Anc0 M k y → Anc0 M y r → y ≠ r →
       (y ≠ k → entry M 1 y = entry M 1 k → entry M 2 y = 1 → False) ∧ ρ.v k ≤ ρ.v y := by
   obtain ⟨m, hm1, hmk, hcol, _⟩ := upg_spec hu
-  have hpf := par1_facts hm1
-  have hpk := par1_facts hmk
+  have hpf := t0s_par1_facts hm1
+  have hpk := t0s_par1_facts hmk
   have hek1 : entry M 1 k = entry M 1 r := e1_of_col hcol
   have hek0 : entry M 0 k = entry M 0 m + 1 := e0_of_col hcol
   have hek2 : entry M 2 k = entry M 2 m + 1 := e2_of_col hcol
@@ -71,7 +87,7 @@ theorem upg_anc_spine {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   rcases Nat.lt_or_ge (entry M 1 k) (entry M 1 y) with hlt | hge
   · -- a larger row 1: through `P_1`
     obtain ⟨m', hm', hkm', hAkm'⟩ := par1_near hky (Ne.symm hyk) hlt
-    have hm'y := par1_facts hm'
+    have hm'y := t0s_par1_facts hm'
     have hm'r : Anc0 M m' r := Anc0.trans hm'y.1 hyr
     have hIH := (ih m' hm'y.2.1 hAkm' hm'r (by have := hm'y.2.1; omega)).2
     have hlt' := v_par1_lt hC hG hR (rk false y) y m' (le_refl _) (by omega) (by omega) hm'
@@ -191,7 +207,7 @@ theorem t0_shape3 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat} 
       have hL1 : L = 1 := by omega
       rw [← hrx] at hup
       obtain ⟨k, hu⟩ := Option.ne_none_iff_exists'.mp hup
-      obtain ⟨m, hm1, _, hek, hcase⟩ := upg_facts hu
+      obtain ⟨m, hm1, _, hek, hcase⟩ := t0s_upg_facts hu
       have h12 := upg_e12 hu
       have h20 : entry M 2 r = 0 := by have := I.z2 r; omega
       rcases hcase with hk1 | ⟨hkA, hkr⟩
@@ -213,7 +229,7 @@ theorem t0_shape3 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat} 
       exact absurd hm ((chg_struct hx I.r0p I.z2 I.sd I.z1 I.uat I.uab hcm).1 rfl (by omega) |>.2.2 r
         (by omega))
     · -- an upgrade of `r` with a changed target: impossible
-      obtain ⟨_, _, _, _, hcase⟩ := upg_facts hu
+      obtain ⟨_, _, _, _, hcase⟩ := t0s_upg_facts hu
       rcases hcase with hk1 | ⟨hkA, hkr⟩
       · subst hk1
         have := leaf_of_upg_next I.r0p hu (r + L) (Anc0.step hp (Anc0.refl r))

@@ -37,7 +37,7 @@ theorem counted_take_r {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hR0 
     hx | hu
   · have := (mem_children_iff.mp hx).2
     rw [hp] at this; cases this; omega
-  · obtain ⟨m, hm1, hm0, _, _⟩ := upg_facts hu
+  · obtain ⟨m, hm1, hm0, _, _⟩ := t0s_upg_facts hu
     obtain ⟨m', hm1', _, hcol, _⟩ := upg_spec hu
     rw [hm1] at hm1'; cases hm1'
     rw [(mem_children_iff.mp hc).2] at hm0; cases hm0
@@ -112,7 +112,7 @@ theorem t0_iv_of_noVB (hN : T0NoVB) {M : Mat} {ρ : Valn} {rk : Bool → Nat →
       exact hcc.1 htop'
     · obtain ⟨c', hNc, hc'x, hu, _⟩ := (chg_struct hx I.r0p I.z2 I.sd I.z1 I.uat I.uab hch).2 c hcx
         (Anc0.refl c) hA
-      obtain ⟨m, hm1, hm0, _, _⟩ := upg_facts hu
+      obtain ⟨m, hm1, hm0, _, _⟩ := t0s_upg_facts hu
       obtain ⟨m', hm1', _, hcol, _⟩ := upg_spec hu
       rw [hm1] at hm1'; cases hm1'
       obtain ⟨_, hmr⟩ := next_parent hcpr hp hcx hNc hm0
@@ -172,7 +172,7 @@ theorem t0VSResG_of_noVB (hN : T0NoVB) : T0VSResG := by
           (by omega) h with hxd | hu
       · have := (mem_children_iff.mp hxd).2
         rw [hp] at this; cases this; exact hdr' rfl
-      · obtain ⟨_, _, _, _, hcase⟩ := upg_facts hu
+      · obtain ⟨_, _, _, _, hcase⟩ := t0s_upg_facts hu
         rcases hcase with h1 | ⟨hA, _⟩
         · omega
         · have hdr2 : d < r := by omega
