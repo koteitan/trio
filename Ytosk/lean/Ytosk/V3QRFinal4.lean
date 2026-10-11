@@ -271,7 +271,13 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     have h0 := hADN i hiM h1' h2 (ohole_of_diag hDW) (DiagAt.cof_omega hDW)
       (notNode_of_diag hDW hWne) q hq hlt
     exact lt_of_lt_of_le h0 (fsD_mono_eta (ohole_of_diag hDW) h1s)
+  have hAUL : AbsUWL M ρ := absUWL_of_absUW hAU'
+  have hAUs0 : ∀ i k, i < r + L → DepX M (r + L) false i → upg M i = some k →
+      dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) i = 0 →
+      OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) → q < fsD (last (ρ.v k)) seed :=
+    fun i k _ _ hu _ hO hc q hq hlt => lt_of_lt_of_le (hAU' i k hu hO hc q hq hlt) (fsD_mono_eta hO h1s)
   exact qr_final3 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hVS hF hFO
-    hArgT hKD hTD hAbs hWS hVSt hUA hAD hTP hTPL hAU' hAD' hsM hpM hTP1 hYBs hcs hADs0 hLs0 Pn hP1 hPs
+    hArgT hKD hTD hAbs hWS hVSt hUA hAD hTP hTPL hAUL hAD' hsM hpM hTP1 hYBs hcs hADs0 hAUs0 hLs0 Pn hP1 hPs
 
 end Ytosk

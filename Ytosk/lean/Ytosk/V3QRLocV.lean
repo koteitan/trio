@@ -21,6 +21,19 @@ def AbsUW (M : Mat) (ρ : Valn) : Prop :=
   ∀ i k, upg M i = some k → OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
     ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) → q < fsD (last (ρ.v k)) one
 
+/-- **AbsUW at the chain lower bound** (groupA's `AbsUW_L`, scratchpad/groupA/auwl.py): in the frame of the last
+column `x` (`t = 1`, `q = r`, `o(r) = ψ_μ(b + Ω_{μ+1})`), at a `v` call `i` of `D` upgrading to `k`, the summands of
+`v(P_1 i)` absorbed by `last v(k)` stay absorbed at the index `gamS μ b_r 1 (max 1 d_i)`. The form `AbsUW` (index `1`)
+is false on T2Ext (43 matrices, 14 at `DepX` here). The index `0` (the seed) is the separate hypothesis `hAUs0`. -/
+def AbsUWL (M : Mat) (ρ : Valn) : Prop :=
+  ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
+    entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ (app b (psi (succ μ) z z)) z →
+    ∀ i k, i < M.length - 1 → DepX M (M.length - 1) false i → upg M i = some k →
+    OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
+    ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) →
+      q < fsD (last (ρ.v k)) (gamS μ (app b (psi (succ μ) z z)) one
+        (max 1 (dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) i)))
+
 /-- **Value invariant AbsDW**: in the frame of the last column `x` (`t = 1`, `q = r`,
 `o(r) = ψ_μ(b + Ω_{μ+1})`), at a `v` call `i` of `D` the absorption holds at the lower bound
 `gamS μ b_r 1 (max 1 d_i)` of its chain term (the index `0` is the seed, handled by `AbsDN`). The
@@ -172,11 +185,14 @@ theorem qr_lkeep (m : Nat) {c : Nat} (hc : c < x) (hdc : DepX M x true c) {s y :
 
 variable (hS : ∀ a', ¬ lt μ a' = true → isOT (psi a' (app b (psi (succ μ) z z)) z) = true →
     SeedOK a' (app b (psi (succ μ) z z)) μ seed)
-  (hAU' : AbsUW M ρ) (hAD' : AbsDW M ρ)
+  (hAU' : AbsUWL M ρ)
+  (hAUs0 : ∀ i k, i < x → DepX M x false i → upg M i = some k → dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) i = 0 →
+    OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega → ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) → q < fsD (last (ρ.v k)) seed)
+  (hAD' : AbsDW M ρ)
   (hADs0 : ∀ i, i < x → DepX M x false i → entry M 2 i ≠ 0 →
     dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) i = 0 →
     ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i → q < fsD (bumpW M ρ i) seed)
-include hS hAU' hAD' hADs0
+include hS hAU' hAUs0 hAD' hADs0
 
 /-- **`VLocZ` on all `v` calls of `D`** (`t = 1`, `q = r`). -/
 theorem qr_vloc (m : Nat) : ∀ i, i < x → DepX M x false i →
@@ -223,8 +239,20 @@ theorem qr_vloc (m : Nat) : ∀ i, i < x → DepX M x false i →
         (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hHl)) (hgS _) hokl.1
     · intro q hq hlt
       have hOl := ohole_of_diag hDl
-      have h0 := hAU' i (i + 1) hu hOl (DiagAt.cof_omega hDl) q hq hlt
-      exact lt_of_lt_of_le h0 (fsD_mono_eta hOl (one_le_of_ne_z (hgz _)))
+      have hdu : dOf M x lo lb i = dOf M x lo lb (i + 1) :=
+        dOf_upg hx hxv hOS hVS hi h1' h2 hu (by omega) hdk
+      unfold zfQ
+      by_cases hk0 : m + dOf M x lo lb (i + 1) = 0
+      · rw [hk0]
+        exact hAUs0 i (i + 1) hi hv hu (by omega) hOl (DiagAt.cof_omega hDl) q hq hlt
+      · have hxl : M.length - 1 = x := by omega
+        have hT := hAU'
+        unfold AbsUWL at hT
+        rw [hxl] at hT
+        have h0 := hT r μ b h1 hqx0 hx2 hro i (i + 1) hi hv hu hOl (DiagAt.cof_omega hDl) q hq hlt
+        exact lt_of_lt_of_le h0 (fsD_mono_eta hOl
+          (gamS_lb (one_le_of_ne_z hseedz) (max 1 (dOf M x lo lb i)) (m + dOf M x lo lb (i + 1))
+            (le_max_left _ _) (max_le (by omega) (by omega))))
   · -- the bump frame
     right
     have hj : j ∈ children M i := by rw [hch]; simp
@@ -386,5 +414,11 @@ theorem qr_vloc (m : Nat) : ∀ i, i < x → DepX M x false i →
             (le_max_left _ _) (max_le (by omega) (by omega))))
 
 end
+
+
+/-- `AbsUW` (index `1`) gives `AbsUWL` (`fsD` is monotone in the index). -/
+theorem absUWL_of_absUW {M : Mat} {ρ : Valn} (h : AbsUW M ρ) : AbsUWL M ρ := by
+  intro r μ b _ _ _ _ i k _ _ hu hO hc q hq hlt
+  exact lt_of_lt_of_le (h i k hu hO hc q hq hlt) (fsD_mono_eta hO (one_le_of_ne_z (gamS_ne_z_q (by simp [one]) _)))
 
 end Ytosk

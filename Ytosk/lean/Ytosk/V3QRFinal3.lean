@@ -38,7 +38,7 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsX M (r + L) ρ)
     -- value invariants
-    (hAD : AbsD M ρ) (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUW M ρ) (hAD' : AbsDW M ρ)
+    (hAD : AbsD M ρ) (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUWL M ρ) (hAD' : AbsDW M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- `q = r`
     (hTP1 : TP1C M ρ)
@@ -59,6 +59,11 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
       ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
         q < fsD (bumpW M ρ i) ((drop1 M (r + L) rkM).o r))
+    (hAUs0 : ∀ i k, i < r + L → DepX M (r + L) false i → upg M i = some k →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
+      OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) →
+        q < fsD (last (ρ.v k)) ((drop1 M (r + L) rkM).o r))
     (hLs0 : ∀ c, c < r + L → DepX M (r + L) true c →
       dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c = 0 →
       ∀ s y, ρ.o c = psi s y z → y ≠ app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z) →
@@ -164,7 +169,7 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
           · exact absurd (le_of_lt h) h1s
         exact hYBs hlt1 i L' c R hi hd hch hcnt hdc s hcv htr1 htr2
   exact qr_final2 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hKD hTD
-    hAD hTP hTPL hAU' hAD' hsM hpM hYB hS hsp0 hADs0 hLs
+    hAD hTP hTPL hAU' hAD' hsM hpM hYB hS hsp0 hADs0 hAUs0 hLs
     (good3_take (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop) Pn hP1 hPs
 
 end Ytosk

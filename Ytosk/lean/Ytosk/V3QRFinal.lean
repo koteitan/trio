@@ -27,7 +27,7 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAD : AbsD M ρ)
-    (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUW M ρ) (hAD' : AbsDW M ρ)
+    (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUWL M ρ) (hAD' : AbsDW M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- `A = o(r) = ψ_μ(b + Ω_{μ+1})`
     {b : T} (hro : ρ.o r = psi (ρ.v r) (app b (psi (succ (ρ.v r)) z z)) z)
@@ -50,6 +50,11 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) i = 0 →
       ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
         q < fsD (bumpW M ρ i) ((drop1 M (r + L) rkM).o r))
+    (hAUs0 : ∀ i k, i < r + L → DepX M (r + L) false i → upg M i = some k →
+      dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) i = 0 →
+      OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) →
+        q < fsD (last (ρ.v k)) ((drop1 M (r + L) rkM).o r))
     (hLs : ∀ c, c < r + L → DepX M (r + L) true c →
       dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) c = 0 →
       ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ (ρ.v r)) z z) →
@@ -191,7 +196,7 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       (fun m => qr_oloc hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro rfl hb hpre hox
         hOS hVS hBk hxv hS hseedS hsp0 hTP hTPL hYB hLs m)
       (fun m => qr_vloc hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS hb hVS
-        hBk hxv hseedS hTPL hLs hS hAU' hAD' hADs0 m)
+        hBk hxv hseedS hTPL hLs hS hAU' hAUs0 hAD' hADs0 m)
       hRt hOT ⟨hrot, cof_br, lt_irrefl' μ, hS, hseedS, fun bb i hd hi =>
         (qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS bb i hd hi).1⟩
       (ρ1 := drop1 M (r + L) rkM) (rk1 := rkM) (by rw [gexp_one_eq hlen]; exact hC1)
