@@ -364,10 +364,12 @@ theorem base_tplow : TPLoW (Mlen L) (bval L β) := by
   obtain ⟨k, _, rfl, _⟩ := tplo_shape hF (by simp at hc; omega) ho hl hOa
   rw [cof_tw_one] at hcof; cases hcof
 
-theorem base_tplon : TPLoN (Mlen L) (bval L β) := by
+theorem base_tplonAll : TPLoNAll (Mlen L) (bval L β) := by
   intro c hc s y ho _ a hl _ hOa hcof
   obtain ⟨k, _, rfl, _⟩ := tplo_shape hF (by simpa using hc) ho hl hOa
   rw [cof_tw_one] at hcof; cases hcof
+
+theorem base_tplon : TPLoN (Mlen L) (bval L β) := tplon_of_all (base_tplonAll hF)
 
 theorem base_rootS (hL : 1 ≤ L) : ∀ i ∈ roots (Mlen L), Single ((bval L β).o i) := by
   intro i hi

@@ -35,11 +35,29 @@ def TrigOmC (M : Mat) (ρ : Valn) : Prop :=
     lt (preState M ρ i L) (psi (succ ν) z z) = true →
     lt (psi (ρ.v i) z z) (psi s (psi (succ ν) z z) z) = true → preState M ρ i L = z
 
-/-- **Value invariant TPLoN** (`η = 1`, the subscript is not its own node). -/
-def TPLoN (M : Mat) (ρ : Valn) : Prop :=
+/-- The former all-column form of TPLoN (`η = 1`, the subscript is not its own node). **False on standard
+matrices** (M[n] の接頭辞で 41 件、例: o(c) = ψ_s(ψ_a(0))、s = X + ψ(1)、a = X + ψ(Ω_1) で fsD(a, 1) = s).
+Kept for the base; the invariant is `TPLoN` (the frame form). -/
+def TPLoNAll (M : Mat) (ρ : Valn) : Prop :=
   ∀ c, c < M.length → ∀ s y, ρ.o c = psi s y z → (split y (psi (succ s) z z)).2 = z →
     ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → NotNode a →
     ¬ psi (fsD a one) z z < psi (succ s) z z
+
+/-- **Value invariant TPLoN** (2026-10-11 言い直し、`TPLoW` と同じ枠の形): in the frame of the last column `x`
+(`t = 1`, `q = r`, `o(r) = ψ_μ(b + Ω_{μ+1})`), at a `D` column `c` with `dOf c = 0` (no lift), the TPL-type
+comparison holds at `η = 1` when the last subscript `a` is not its own node. This is what `hLs0` uses
+(C′ の長さ 22 以下の行列の M[2]・M[3] の接頭辞で例外 0). -/
+def TPLoN (M : Mat) (ρ : Valn) : Prop :=
+  ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
+    entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ (app b (psi (succ μ) z z)) z →
+    ∀ c, c < M.length - 1 → DepX M (M.length - 1) true c →
+    dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
+    ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) → (split y (psi (succ s) z z)).2 = z →
+    ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → NotNode a →
+    ¬ psi (fsD a one) z z < psi (succ s) z z
+
+theorem tplon_of_all {M : Mat} {ρ : Valn} (h : TPLoNAll M ρ) : TPLoN M ρ :=
+  fun _ _ _ _ _ _ _ c hc _ _ s y ho _ hl a hla hs hOa hca hNa => h c (by omega) s y ho hl a hla hs hOa hca hNa
 
 /-- **Value invariant AbsDN** (`η = 1`, the bump term is not its own node). -/
 def AbsDN (M : Mat) (ρ : Valn) : Prop :=
@@ -198,7 +216,9 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       | here hb' _ _ => exact absurd rfl hb'
       | arg hb' _ _ => exact absurd rfl hb'
       | sub _ _ h => exact h
-    exact hTPN c (by omega) s y hcv hl' a hla hns hOa hca
+    have hxl : M.length - 1 = r + L := by omega
+    exact hTPN r μ b (by rw [hxl]; exact h1) (by rw [hxl]; exact hq) (by rw [hxl]; exact hx2) hro c
+      (by rw [hxl]; exact hc) (by rw [hxl]; exact hdc) (by rw [hxl]; exact hd0) s y hcv hyb hl' a hla hns hOa hca
       (notNode_of_diag hDa (hNA rfl s y hcv a hla))
   -- hADs0
   have hADs0 : ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
