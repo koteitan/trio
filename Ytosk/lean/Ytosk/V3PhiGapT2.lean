@@ -231,4 +231,63 @@ theorem noGap_copy_t2 {V V' t t' : T} (hV : isOT V = true) (hV' : isOT V' = true
   · exact noGap_shf hV hV' hVV ht hN hNV'
   · exact hN
 
+/-! ## 段 μ の項がない（下半分も含む）
+
+実測（C′、2026-10-11）: のりしろの列 c、鎖の上の p、c の行 0 の子孫の値に Ω_{μ+1} が現れる μ ≠ 0 について、
+v(p) は ψ_μ(…) の部分項を持たない（27 万件、例外 0）。したがって [Ω_μ, Ω_{μ+1}) の全体が空
+（上半分は NoGap、下半分は t = 1 の種の条件）。
+-/
+
+/-- **No subterm with subscript `μ`.** -/
+def LevFree (μ V : T) : Prop := ∀ a b c, SubT (psi a b c) V → a ≠ μ
+
+/-- A term in `[Ω_μ, Ω_{μ+1})` has subscript `μ`. -/
+theorem sub_eq_of_band {μ a b c : T} (h1 : psi μ z z ≤ psi a b c) (h2 : psi a b c < psi (succ μ) z z) :
+    a = μ := by
+  have ha : a ≤ μ := by
+    rw [T.psi_lt_psi] at h2
+    rcases h2 with h | ⟨_, h⟩ | ⟨_, _, h⟩
+    · exact lt_succ_iff.mp h
+    · exact absurd h (T.not_lt_z _)
+    · exact absurd h (T.not_lt_z _)
+  rcases (le_iff _ _).mp h1 with h | h
+  · rw [T.psi_lt_psi] at h
+    rcases h with h | ⟨rfl, _⟩ | ⟨rfl, _, _⟩
+    · exact absurd (lt_of_lt_of_le h ha) (lt_irrefl' _)
+    · rfl
+    · rfl
+  · cases h; rfl
+
+/-- **`LevFree` empties the band `[Ω_μ, Ω_{μ+1})`** among the subterms (and heads) of `V`. -/
+theorem band_empty_of_levFree {μ V : T} (h : LevFree μ V) {u : T} (hu : SubS V u)
+    (h1 : psi μ z z ≤ u) (h2 : u < psi (succ μ) z z) : False := by
+  obtain ⟨w, hw, hu⟩ := hu
+  cases u with
+  | z => exact absurd h1 (not_le_of_gt (T.z_lt_psi _ _ _))
+  | psi a b c =>
+    have hs : ∃ c', SubT (psi a b c') V := by
+      rcases hu with rfl | ⟨a', b', c', rfl, he⟩
+      · exact ⟨c, hw⟩
+      · cases he; exact ⟨c', hw⟩
+    obtain ⟨c', hs⟩ := hs
+    exact h a b c' hs (sub_eq_of_band h1 h2)
+
+/-- **The t = 1 seed condition at a positive level** (t1-exp の AbsDRes・AbsUWRes): with `LevFree μ V`, a
+subterm of `V` below `ψ_μ(Ω_{μ+1})` is below `Ω_μ`. -/
+theorem lt_Om_of_levFree {μ V u : T} (h : LevFree μ V) (hu : SubS V u) (hlt : u < etaOm μ) :
+    u < psi μ z z := by
+  by_contra hn
+  refine band_empty_of_levFree h hu (le_of_not_gt hn) (lt_trans' hlt ?_)
+  unfold etaOm; rw [T.psi_lt_psi]; exact Or.inl (lt_succ_iff.mpr (le_refl _))
+
+/-- `LevFree` also gives the upper half (`NoGap` at `μ`). -/
+theorem gapFree_of_levFree {μ V : T} (h : LevFree μ V) :
+    ∀ u, SubS V u → u < psi (succ μ) z z → u < etaOm μ := by
+  intro u hu hlt
+  by_contra hn
+  refine band_empty_of_levFree h hu ?_ hlt
+  refine le_trans ?_ (le_of_not_gt hn)
+  unfold etaOm
+  exact le_of_lt (by rw [T.psi_lt_psi]; exact Or.inr (Or.inl ⟨rfl, T.z_lt_psi _ _ _⟩))
+
 end Ytosk
