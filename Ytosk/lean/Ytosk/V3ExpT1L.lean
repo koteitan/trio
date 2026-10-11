@@ -482,6 +482,50 @@ theorem absDW_of_lf {M : Mat} {ρ : Valn} (I : FrameV M ρ)
   exact lt_of_lt_of_le (lt_Om_of_levFree hLFs hu h1') (om_le_psi μ _ z)
 
 
+/-! ## TPLoN（種の添字）を TPLo と LevFree から -/
+
+/-- The TPLoN residual where the seed is below `Ω_μ` (`μ ≠ 0`; the drop lowers `v(r)`). -/
+def TPLoNSeed (M : Mat) (ρ : Valn) : Prop :=
+  ∀ (ρ' : Valn) (rk' : Bool → Nat → Nat), Cons (M.take (M.length - 1)) ρ' → Rk (M.take (M.length - 1)) rk' →
+  ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
+    entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ (app b (psi (succ μ) z z)) z →
+    ∀ c, c < M.length - 1 → DepX M (M.length - 1) true c →
+    dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
+    ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) → (split y (psi (succ s) z z)).2 = z →
+    ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → NotNode a →
+    μ ≠ z → ¬ psi μ z z ≤ ρ'.o r → ¬ psi (fsD a (ρ'.o r)) z z < psi (succ s) z z
+
+/-- The TPLoN residual at the level `0`. -/
+def TPLoN0 (M : Mat) (ρ : Valn) : Prop :=
+  ∀ (ρ' : Valn) (rk' : Bool → Nat → Nat), Cons (M.take (M.length - 1)) ρ' → Rk (M.take (M.length - 1)) rk' →
+  ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
+    entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ (app b (psi (succ μ) z z)) z →
+    ∀ c, c < M.length - 1 → DepX M (M.length - 1) true c →
+    dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
+    ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) → (split y (psi (succ s) z z)).2 = z →
+    ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → NotNode a →
+    μ = z → ¬ psi (fsD a (ρ'.o r)) z z < psi (succ s) z z
+
+/-- **TPLoN from TPLo and `LevFree`** when the seed is at least `Ω_μ` (`μ ≠ 0`). -/
+theorem tplon_of_lf {M : Mat} {ρ : Valn} (I : FrameV M ρ) (hLF : TPLoWLF M ρ) (hS : TPLoNSeed M ρ)
+    (h0 : TPLoN0 M ρ) : TPLoN M ρ := by
+  intro ρ' rk' hC' hR' r μ b h1 hq hx2 hro c hc hd hd0 s y ho hyb hspl a hla hns hOa hca hNa
+  by_cases hμ : μ = z
+  · exact h0 ρ' rk' hC' hR' r μ b h1 hq hx2 hro c hc hd hd0 s y ho hyb hspl a hla hns hOa hca hNa hμ
+  by_cases hsd : psi μ z z ≤ ρ'.o r
+  · have hLFs := hLF r μ b h1 hq hx2 hro c hc hd s y ho hyb hspl a hla hns hOa hca hμ
+    have hH := frame_hole I h1 hq hx2 hro true c hd hc
+    simp only [valB, cond_true] at hH
+    rw [ho] at hH
+    have hyz : y ≠ z := by intro h; rw [h] at hla; simp [last] at hla
+    have hlev : holeLev y = μ := by rw [← holeLev_psi_arg (a := s) hyz]; exact holeLev_holeT hH
+    have hT := tpl_iff.mp (I.tplo c (by omega) s y ho hspl a hla hns hOa)
+    rw [hlev] at hT
+    apply tpl_iff.mpr
+    refine fsD_transfer (subClosed_subS s) (fun u hu h1' _ => ?_) hOa s (subT_subS (.refl s)) hT hT
+    exact lt_of_lt_of_le (lt_Om_of_levFree hLFs hu h1') hsd
+  · exact hS ρ' rk' hC' hR' r μ b h1 hq hx2 hro c hc hd hd0 s y ho hyb hspl a hla hns hOa hca hNa hμ hsd
+
 /-! ## NoGapP（行 1 の子を持つ列の v の述語）を鎖で運ぶ -/
 
 /-- **A predicate on the `v` of every column with a row-1 child is carried** (`t = 1`, with `AgrT1`): below `x`
@@ -857,6 +901,119 @@ theorem inv3V_N_t1V {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
       vKFree_of_corr hVK hPN.2.2, hot, hlt⟩
 
 
+
+/-- **The property carried along the `t = 1` chain** without the frame fields. -/
+def PT1C (M : Mat) (r : Nat) (ρ : Valn) (N : Mat) (σ : Valn) : Prop :=
+  FrameOT N σ ∧ RootP N σ ∧ BumpDec N σ ∧ FrameClosed N σ ∧ TrigOmC N σ ∧ TP1C N σ ∧ TP1WC N σ ∧
+    TPLo N σ ∧ (AgrT1 M r ρ N σ ∧ AbsD N σ) ∧ (AgrT1 M r ρ N σ ∧ AbsUW N σ) ∧
+    (AgrT1 M r ρ N σ ∧ AbsDN N σ) ∧ (VrLe r ρ N σ ∧ VSmallF N σ)
+
+theorem inv3V_of_PT1C {M N : Mat} {r : Nat} {ρ σ : Valn} {rk : Bool → Nat → Nat} (hC : Cons N σ)
+    (hR : Rk N rk) (hG : Good3 N σ) (hP : PT1C M r ρ N σ) (hF : TPLoW N σ ∧ AbsDW N σ ∧ TPLoN N σ) :
+    Inv3V N σ rk :=
+  let ⟨fo, rp, ⟨kd, td⟩, fc, trig, tp1, tp1w, tplo, ⟨_, ad⟩, ⟨_, auw⟩, ⟨_, adn⟩, ⟨_, vs⟩⟩ := hP
+  ⟨hC, hG, hR, vs, fc, fo, kd, td, ad, absU_of_absD hC hG ad, tp1, tplo, tp1w, hF.1, auw, hF.2.1, trig, hF.2.2,
+    adn, rootS_of_good hC hG, rp⟩
+
+theorem inv3V_N_t1W {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 1 (r + L) = some r)
+    (hx2 : entry M 2 (r + L) = 0)
+    (hRT : RestT M rk)
+    (hResL : TPLoRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+    (hResD : AbsDRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+    (hResU : AbsUWRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+    (hResDN : AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+    (hResV : VSFRes2 M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+    (hNG : NoGapP M ρ) (hVK : VKFree M ρ)
+    (hFr : ∀ n σ rkN, 2 ≤ n → Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) rkN →
+      Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) σ →
+      Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) σ →
+      BumpKidsDec (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) σ →
+      BumpTermDec (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) σ →
+      AbsD (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) σ →
+      TPLo (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) σ →
+      VKFree (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) σ →
+      TPLoW (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) σ ∧
+      AbsDW (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) σ ∧ TPLoN (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) σ) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN,
+      Inv3V (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN rkN ∧
+      NoGapP (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN ∧
+      VKFree (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN ∧
+      isOT (root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN) = true ∧
+      root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN < root M ρ := by
+  intro n hn
+  have hL0 : 0 < L := by
+    rcases Nat.eq_zero_or_pos L with h | h
+    · subst h; have := par_lt M 1 _ r hr; omega
+    · exact h
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) hr
+  have hd0e : entry M 0 (r + L) = entry M 0 r + (entry M 0 (r + L) - entry M 0 r) := by
+    have := anc0_e0_lt hA (by omega); omega
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
+  have hdr := R.drop
+  have hsd := R.seed
+  rw [show M.length - 1 = r + L by omega] at hdr hsd
+  have hVI : ValInv M ρ := ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩
+  have V1 := valInv_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank hVI hdr
+  have hx0 : entry M 0 (r + L) ≠ 0 := by
+    have := anc0_interval hA (r + L) (by omega) (Nat.le_refl _); omega
+  have hRP1 := rootP_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r01 I.r12 I.e00 hx0 I.cons I.rank hVI hdr
+    I.rootP
+  have hRT' := hRT
+  simp only [RestT] at hRT'
+  rw [show M.length - 1 = r + L by omega] at hRT'
+  obtain ⟨ad, tp1, tplo, tp1w, tplow, auw, adw, trig, tplon, adn⟩ := hRT'
+  have hcntG := hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat
+  have hRk1' : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcntG
+  have hC1' : Cons (M.take (r + L)) (drop1 M (r + L) rk) := cons_of_rk hRk1'
+  have hAg := agr_base hlen hL0 hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 I.cons I.good I.rank
+  have hP1 : (fun N σ => (PT1C M r ρ N σ ∧ (AgrT1 M r ρ N σ ∧ NoGapP N σ)) ∧ (AgrT1 M r ρ N σ ∧ VP (InVKv M ρ) N σ))
+      (M.take (r + L)) (drop1 M (r + L) rk) := ⟨⟨
+    ⟨V1.fo, hRP1, ⟨V1.kd, V1.td⟩, V1.fc, trig, tp1, tp1w, tplo, ⟨hAg, ad⟩, ⟨hAg, auw⟩, ⟨hAg, adn⟩,
+      ⟨vrle_base I R hlen hr, V1.vs⟩⟩, hAg,
+      vP_take (show r + L + 1 = M.length from hlen) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1' hRk1' hNG⟩, hAg,
+      vP_take (show r + L + 1 = M.length from hlen) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1' hRk1'
+        (Q := InVKv M ρ) (fun c p hc hp => ⟨c, p, hc, hp, rfl⟩)⟩
+  have hPs : ExpStepT1 (fun N σ => (PT1C M r ρ N σ ∧ (AgrT1 M r ρ N σ ∧ NoGapP N σ)) ∧
+      (AgrT1 M r ρ N σ ∧ VP (InVKv M ρ) N σ)) M r L
+      (entry M 0 (r + L) - entry M 0 r) ρ := expStep_and (expStep_and (
+    expStep_and (expStep_frameOT_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq I.fo)
+      (expStep_and (expStep_rootP_t1 hlen hL0 hd0e I.z2 I.uat I.r12 I.be I.r01 I.e00 hr hx2 I.rootP)
+        (expStep_and (expStep_bumpDec_t1 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab hr hx2 hq I.good
+            ⟨I.kd, I.td⟩)
+          (expStep_and (expStep_frameClosed_t1' I hlen hL0 hd0e hr hx2)
+            (expStep_and (expStep_trigOmC I hlen hL0 hd0e hr hx2)
+              (expStep_and (expStep_tp1C I hlen hL0 hd0e hr hx2)
+                (expStep_and (expStep_tp1WC I hlen hL0 hd0e hr hx2)
+                  (expStep_and (expStep_tplo I hlen hL0 hd0e hr hx2 hResL)
+                    (expStep_and (expStep_absD I hlen hL0 hd0e hr hx2 hResD)
+                      (expStep_and (expStep_absUW I hlen hL0 hd0e hr hx2 hResU)
+                        (expStep_and (expStep_absDN I hlen hL0 hd0e hr hx2 hResDN)
+                          (expStep_vsmallF I hlen hL0 hd0e hr hx2 (vsfRes_of I hResV)))))))))))))
+    (expStep_VP NoGap I hlen hL0 hd0e hr hx2 hNG))
+    (expStep_VP (InVKv M ρ) I hlen hL0 hd0e hr hx2 (fun c p hc hp => ⟨c, p, hc, hp, rfl⟩))
+  by_cases hqr : q = r
+  · subst hqr
+    obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=
+      qr_final4 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2 hq
+        I.cons I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.ad I.tp1w
+        I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (hsd q hr hq) (fun N σ => (PT1C M q ρ N σ ∧ (AgrT1 M q ρ N σ ∧ NoGapP N σ)) ∧ (AgrT1 M q ρ N σ ∧ VP (InVKv M ρ) N σ))
+        hP1 hPs n hn
+    exact ⟨ρN, rkN, inv3V_of_PT1C hCN hRN hGN hPN.1.1 (hFr n ρN rkN hn hRN hCN hGN hPN.1.1.2.2.1.1 hPN.1.1.2.2.1.2
+      hPN.1.1.2.2.2.2.2.2.2.2.1.2 hPN.1.1.2.2.2.2.2.2.2.1 (vKFree_of_corr hVK hPN.2.2)), hPN.1.2.2,
+      vKFree_of_corr hVK hPN.2.2, hot, hlt⟩
+  · obtain ⟨s0, y0, h0⟩ := o_psi_form I.cons (show r < M.length by omega)
+    obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=
+      t1_main_final hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2
+        (fun h' => hqr (Option.some.inj (hq.symm.trans h'))) I.cons I.good I.rank I.vs I.fc I.fo
+        I.tp1 I.tplo I.ad I.au hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua rfl h0 I.rootS I.rootP
+        V1.g (fun N σ => (PT1C M r ρ N σ ∧ (AgrT1 M r ρ N σ ∧ NoGapP N σ)) ∧ (AgrT1 M r ρ N σ ∧ VP (InVKv M ρ) N σ))
+        hP1 hPs n hn
+    exact ⟨ρN, rkN, inv3V_of_PT1C hCN hRN hGN hPN.1.1 (hFr n ρN rkN hn hRN hCN hGN hPN.1.1.2.2.1.1 hPN.1.1.2.2.1.2
+      hPN.1.1.2.2.2.2.2.2.2.2.1.2 hPN.1.1.2.2.2.2.2.2.2.1 (vKFree_of_corr hVK hPN.2.2)), hPN.1.2.2,
+      vKFree_of_corr hVK hPN.2.2, hot, hlt⟩
+
+
 /-- **The `t = 1` part of `hExp` for `trio_terminates_main_H`** (`Res3H` for `M[n]`). The seed residuals of
 TPLo・AbsD・AbsUW are in the `LevFree` form; of the frame fields only TPLoN is carried (`hQs`), TPLoW・AbsDW of
 `M[n]` come from its own TPLo・AbsD and `LevFree` at a positive level (`tplow_of_lf`・`absDW_of_lf`), with the
@@ -1066,6 +1223,78 @@ theorem hExp_t1V
         obtain ⟨h1, h2, h4⟩ := hFrm _ σ (Std.exp n' hM) (ne_SRO_of_rk hRk) ⟨hS', hC, hG, hkd, htd, had, htplo⟩ hvk
         exact ⟨tplow_of_lf ⟨hS', hC, hG, hkd, htd, had, htplo⟩ (tploWLF_of_vk hC hG hvk h1) h2,
           absDW_of_lf ⟨hS', hC, hG, hkd, htd, had, htplo⟩ (absDWLF_of_vk hC hG hvk) h4⟩) n hn
+  rw [← hexp] at V NG VK
+  exact ⟨ρN, rkN, V, hRes M ρ rk hM hS I R hz h1t n hn ρN rkN
+    (Inv3.ofV (sInv_std (Std.exp n hM) hNS) V), NG, VK⟩
+
+
+
+/-- **`hExp_t1V` without carrying TPLoN**: all three frame fields of `M[n]` (TPLoW・AbsDW・TPLoN) come from
+`M[n]`'s own TPLo・AbsD and `VKFree`, with the residuals `TPLoWLFRes`・`TPLoW0`・`AbsDW0`・`TPLoNSeed`・`TPLoN0`. -/
+theorem hExp_t1W
+    (hRT : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
+      col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 → RestT M rk)
+    (hFrm : ∀ N σ, Std N → N ≠ SRO → FrameV N σ → VKFree N σ →
+      TPLoWLFRes N σ ∧ TPLoW0 N σ ∧ AbsDW0 N σ ∧ TPLoNSeed N σ ∧ TPLoN0 N σ)
+    (hResN : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → ∀ r L, r + L + 1 = M.length →
+      par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
+      (DegRes TPLoAt M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ TPLoLFRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
+        TPLoResL_seed M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ TPLoResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
+      (AbsDResL_seed M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsDResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
+      (AbsUWResL_seed M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsUWResL_zero M r L (entry M 0 (r + L) - entry M 0 r) ρ) ∧
+      AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ VSFRes2 M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+    (hNGM : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ)
+    (hVKM : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → VKFree M ρ)
+    (hRes : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
+      col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 → ∀ n, 2 ≤ n →
+      ∀ σ rkN, Inv3 (expand M n) σ rkN → Res3H (expand M n) σ rkN) :
+    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
+      col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 →
+      ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
+        ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3H (expand M n) ρN rkN ∧ NoGapP (expand M n) ρN ∧
+          VKFree (expand M n) ρN := by
+  intro M ρ rk hM hS hE I R hz h1t n hn hNS _
+  obtain ⟨r, hr⟩ := parLast_of I.e00 I.r01 I.r12 hz
+  have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
+  have hlen2 : 2 ≤ M.length := by
+    by_contra h
+    have hx0 : M.length - 1 = 0 := by omega
+    apply hz
+    rw [hx0]
+    have e0 := I.e00
+    have e1 := I.r01 0 e0
+    have e2 := I.r12 0 e1
+    exact (col_zero_iff M 0).mpr ⟨e0, e1, e2⟩
+  have hx2 : entry M 2 (M.length - 1) = 0 := by
+    unfold TRIO.srow at h1t
+    by_cases ha : 0 < TRIO.entry M 2 (M.length - 1)
+    · rw [if_pos ha] at h1t; cases h1t
+    · show TRIO.entry M 2 (M.length - 1) = 0; omega
+  rw [h1t] at hr
+  have hexp := expand_eq_gexp_t1 M n hlen2 hzT (by rw [h1t]; exact hr) h1t
+  have hexpA := fun n' => expand_eq_gexp_t1 M n' hlen2 hzT (by rw [h1t]; exact hr) h1t
+  have hrx : r < M.length - 1 := par_lt M 1 _ r hr
+  obtain ⟨L, hL⟩ : ∃ L, M.length - 1 = r + L := ⟨M.length - 1 - r, by omega⟩
+  rw [hL] at hexp hexpA hr hx2
+  simp only [Nat.add_sub_cancel_left] at hexp hexpA
+  have hlen : r + L + 1 = M.length := by omega
+  have hVK := hVKM M ρ rk hM hS I R
+  have hRN := hResN M ρ rk hM hS I R r L hlen hr hx2
+  obtain ⟨ρN, rkN, V, NG, VK, _, _⟩ :=
+    inv3V_N_t1W I R hlen hr hx2 (hRT M ρ rk hM hS I R hz h1t)
+      (tploRes_of_L ⟨hRN.1.1, tploResL_lf_of_vk I hlen hr hVK hRN.1.2.1, hRN.1.2.2.1, hRN.1.2.2.2⟩)
+      (absDRes_of_L I hlen hr hx2 ⟨absDResL_lf_of_vk I hlen hr hx2 hVK, hRN.2.1.1, hRN.2.1.2⟩)
+      (absUWRes_of_L hx2 ⟨absUWResL_lf_of_vk I hlen hr hx2 hVK, hRN.2.2.1.1, hRN.2.2.1.2⟩)
+      hRN.2.2.2.1 hRN.2.2.2.2 (hNGM M ρ rk hM hS I R) hVK
+      (fun n' σ rkN hn' hRk hC hG hkd htd had htplo hvk => by
+        have hexp' := hexpA n'
+        rw [← hexp'] at hRk hC hG hkd htd had htplo hvk ⊢
+        have hS' := sInv_std (Std.exp n' hM) (ne_SRO_of_rk hRk)
+        obtain ⟨h1, h2, h4, h5, h6⟩ := hFrm _ σ (Std.exp n' hM) (ne_SRO_of_rk hRk) ⟨hS', hC, hG, hkd, htd, had, htplo⟩ hvk
+        exact ⟨tplow_of_lf ⟨hS', hC, hG, hkd, htd, had, htplo⟩ (tploWLF_of_vk hC hG hvk h1) h2,
+          absDW_of_lf ⟨hS', hC, hG, hkd, htd, had, htplo⟩ (absDWLF_of_vk hC hG hvk) h4,
+          tplon_of_lf ⟨hS', hC, hG, hkd, htd, had, htplo⟩ (tploWLF_of_vk hC hG hvk h1) h5 h6⟩) n hn
   rw [← hexp] at V NG VK
   exact ⟨ρN, rkN, V, hRes M ρ rk hM hS I R hz h1t n hn ρN rkN
     (Inv3.ofV (sInv_std (Std.exp n hM) hNS) V), NG, VK⟩
