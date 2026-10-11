@@ -7,6 +7,7 @@ t0_otdU（V3T0DepU）は RClaim を段の集合 U に制限して運ぶので、
 -/
 import Ytosk.V3T0DepU
 import Ytosk.V3T0TopH
+import Ytosk.V3TP1CutG
 
 namespace Ytosk
 
@@ -60,7 +61,7 @@ theorem hExp_t0_topU
     (hAD : T0Field AbsD) (hAU : T0Field AbsU) (hFrm : FrmLF)
     (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3cG M ρ)
     (hPHN : ∀ N σ, Std N → N ≠ SRO → Cons N σ → GoodOT N σ →
-      PH3c N σ ∧ TP1Leaf N σ ∧ TP1WLeaf N σ ∧ TrigCut N σ)
+      PH3cG N σ ∧ TP1LeafG N σ ∧ TP1WLeafG N σ ∧ TrigCutG N σ)
     (hCut : T0CutResGG) (hVP : T0VSPRes) (hTPR : T0TPLoRes) (hAUWR : T0AbsUWRes) (hADNR : T0AbsDNRes) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
@@ -73,7 +74,7 @@ theorem hExp_t0_topU
   apply hExp_t0B hDF.toH (t0_vsmallF_at (t0VSD_at hDF.toH) hIV) H2
     (fun N σ hN hNS hC hO => by
       obtain ⟨h1, h2, h3, h4⟩ := hPHN N σ hN hNS hC hO
-      exact ⟨tp1C_of_ph3c hC hO h1 h2, tp1WC_of_ph3c hC hO h1 h3, trigOmC_of_ph3c hC hO h1 h4⟩)
+      exact ⟨tp1C_of_ph3cG hC hO h1 h2, tp1WC_of_ph3cG hC hO h1 h3, trigOmC_of_ph3cG hC hO h1 h4⟩)
     hM hS I R hz hs0 _ n hn2
   intro j hj hjS hjE
   obtain ⟨τ, rkT, V, R'⟩ := hTake_of_last hLast M ρ rk hM hS hE I R j hj hjS hjE
