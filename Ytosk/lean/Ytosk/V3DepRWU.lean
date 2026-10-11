@@ -88,7 +88,7 @@ def VSmallRS (M : Mat) (S : Bool → Nat → Prop) (bnd : Nat) (ρ : Valn) : Pro
 /-- **`N`-side hypothesis: the rewrites agree** — at a frame whose `v` and earlier children are unchanged, if the
 old last child rewrites, so does the new one (the `t = 0` analogue is `trig_agreeG`). -/
 def T2TrigN (N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
-  ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v i = ρ.v i → (∀ d ∈ Lc, σ.o d = ρ.o d) →
+  ∀ i (Lc : List Nat) c, i < bnd → c < bnd → CL N i = Lc ++ [c] → σ.v i = ρ.v i → (∀ d ∈ Lc, σ.o d = ρ.o d) →
     ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z →
     (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
     (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true)
@@ -372,7 +372,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
                 have hoc := o_of_no_counted hC hcM (hG.ot_v c hcM) (no_cnt_of_cl_nil hclc)
                 rw [hsy] at hoc; simp only [psi.injEq] at hoc
                 have := ht.1; rw [hoc.2.1] at this; exact T.not_lt_z _ this)
-            (fun ht hnt _ => absurd (hTA i Lc c hi hclN hv' hsame s y s' y' hsy hs'y' ht) hnt)
+            (fun ht hnt _ => absurd (hTA i Lc c hi hcb hclN hv' hsame s y s' y' hsy hs'y' ht) hnt)
             hqp hhyp
       | false =>
         show (Lhd z (σ.v i) (ρ.v i) ∧ isOT (σ.v i) = true) ∧ (false = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimUS U ρ σ i)
