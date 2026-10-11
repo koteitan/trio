@@ -2017,3 +2017,14 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - t = 2 の種の列の枠: q = r では x′ は r の最後の数える子で、x′ の値は ψ_{V′}(σ(Y_P))（Y_P = M[n − 1] での r の引数、全件）、B は M.take x での r の引数（1 件を除く）。ただし「どの枠の状態 B でも PH3cKind(B, σ_{V,V+1}(B), V + 1)」は偽（σ(B) > B の 3.7 万件中 3.3 万件）。種の列の枠には r に特有の構造が要る（FrameOT の種の列の枠と同じ残り）。
 - t0 の影の枠（T0RWResC）の TP1: N の枠の PH3c で種類は cut に決まるが、「cut ⇒ TP1」は純粋な順序数の補題としては偽（s が穴の段 μ より大きい反例）。実際の cut の枠では穴は切り口の位置 π より下に来ない（5552/5552）。この形の事実を足せば出る見込み。TrigOm は cut だけからは出ない。
 - T0Shape (i)（B ≠ 0）: T0Ext で 16.6 万件。c の数える子が 2 つ以上なら y′ > Bc ≥ B で済む（3.4 万）。数える子が 1 つの場合（13.2 万）は変化が d の v の側から来るので、「新しい値は古い値と右端でだけ違う」を o と v の連鎖で運ぶ不変条件（RE）が要る。y′ ◁ y・型 B0 だけでは偽。
+
+### t = 2 の hR2 を T2BelowXRes だけから、hExp を main_G の形で（2026-10-11、t2）
+
+- 最上位が main_G（展開は M[n] の Inv3V だけ）になったので、t = 2 の hExp を Inv3V だけの形にした（V3ExpT2M3 の hExp_t2_V・hExp_t2_of_lastV、T2Rest3 から Res3H の欄を外した）。接頭辞 M.take x の Inv3 ∧ Res3A は main_G の大域の仮定 hVSR・hDR・hSeed・hRest から（V3ExpT2M4 の hLastA_of_G、hExp_t2_G）。
+- hR2（Res3T2）: big（n ≥ 2 の SeedL）は T2BelowXRes の種の欄から（N の Good3 は good3_expand_t2）。Res3T2 の big は使う所が M[n] だけなので d0・d1 を M[n] の値に固定した（V3T2Top）。
+- seed1（M.take x で種の o が実際に変わる）は落としの狭義性から、仮定なしで証明（V3T2Seed1・V3T2Seed1G・V3T2R3、hR2_t2_of: T2BelowXRes ⇒ hR2、公理は標準の 3 つ）。
+  - q = r で upg(x − 1) ≠ x: x は r の数える子で、o_strict_frame（c = x）。
+  - q ≠ r: x は q の bump 子で、M′ では q は bump 子を失う。v(q) の ω の和の最後の項 1 が消えるので v′(q) < v(q)（v_strict_bump_x）。q が pq の数える子なら（C′ で 4221/4436）o_strict_frame。
+  - 残りの 2 つ（sv: upg(x − 1) = x、C: q が pq で数えられない、q は q − 1 の上げの的）は、部分木の右端 e で v が真に下がると祖先の o が真に下がる strict_up（e − a の強い帰納法）で。段の種類は数える子・bump 子（v_strict_bump_R: bump 子の後ろに数えない子があってよい）・上げの的（c − 1 の v が下がり、直前の兄弟の部分木で帰納法）。sv は v′(x − 1) = V + 1 < V + ω = v(x)、C は v′(q − 1) = v′(q) < v(q) = v(q − 1)。
+  - 実測（C′ 6 万行列）: 鎖の中の段は数える子と bump 子だけ、上げの的は最上段の子だけ（C 19 件、sv 73 件）で、そのとき直前の兄弟は数える子。証明は一般の形で、この実測には頼らない。
+- t = 2 の残り: T2BelowXRes（T2VSN・T2Hard・種の ◁/OT/dec・q の OT/dec）と T2Rest3 の値の欄（FrameClosed・TP1C・TP1WC・TrigOmC などの σ 不変性、最後の列の枠の欄、foSeed）。
