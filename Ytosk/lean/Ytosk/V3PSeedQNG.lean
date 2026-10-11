@@ -309,7 +309,8 @@ theorem seed_frames_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hs'ot : isOT s' = true := qnS_ot I hrM L q
   have hVs' : V < s' := qnS_gt M ρ r L q
   have hP1 : TRIO.gexp M r L d0 d1 1 = M.take (r + L) := gexp_one_gen hlen
-  obtain ⟨hv0, t1, ht1, hch⟩ := hRes.base τ0 hC0
+  have hv0 := v_take_of_untopped I hlen (par_lt M 2 _ _ hr) (topP_C hM hS I hlen hr hq hqr) hC0
+  obtain ⟨t1, ht1, hch⟩ := hRes.base τ0 hC0
   have hQM1 := clField_qT2P I.cons I.fo hP r hrM
   have hQM2 := clField_qT2F I.cons I.fo hF r hrM
   intro n hn hGlow σ hCN hGN i hi Lc' c R' hCL

@@ -222,7 +222,7 @@ theorem seed_frames_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hP1 : TRIO.gexp M r L d0 d1 1 = M.take (r + L) := gexp_one_gen hlen
   have hlT : (M.take (r + L)).length = r + L := by rw [List.length_take]; omega
   have hrT : r < (M.take (r + L)).length := by omega
-  have hvP : τ0.v r = V := hRes.vP τ0 hC0
+  have hvP : τ0.v r = V := v_take_of_untopped I hlen (par_lt M 0 _ _ hq) (topP_sv hlen I.z2 I.z1 hr hq hux) hC0
   have hQT1 := clField_qT2P hC0 hT.1 hT.2.1 r hrT
   have hQT2 := clField_qT2F hC0 hT.1 hT.2.2 r hrT
   have hX1e : X1 = spArg V z (sumN ((CL (M.take (r + L)) r).map τ0.o)) := by
@@ -247,7 +247,7 @@ theorem seed_frames_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       have hGP : Good3 (TRIO.gexp M r L d0 d1 (2 - 1)) τ0 := hGlow 1 (le_refl 1) (by omega) τ0 hCP
       have hRP : Rk (TRIO.gexp M r L d0 d1 (2 - 1)) rk0 := by rw [show (2 - 1 : Nat) = 1 from rfl, hP1]; exact hR0
       obtain ⟨hCLN, hvr, hval, hox⟩ :=
-        seed_frame_data_sv hM hS I R hz h2 hlen hr hq hux hRes.topP (le_refl 2) hCN hRN hCP hGP hRP hC0 hG0 hR0
+        seed_frame_data_sv hM hS I R hz h2 hlen hr hq hux (topP_sv hlen I.z2 I.z1 hr hq hux) (le_refl 2) hCN hRN hCP hGP hRP hC0 hG0 hR0
       rw [← hd0def, ← hd1def] at hCLN hox
       rw [show (2 - 1 : Nat) = 1 from rfl, hP1, hvP, ← hX1e] at hox
       exact ⟨hox, hCLN, hvr, hval⟩
@@ -255,7 +255,7 @@ theorem seed_frames_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       have hCP : Cons (TRIO.gexp M r L d0 d1 (n - 1)) (rhsIt _ (rkBound _ rkP)) := cons_of_rk hRP
       have hGP := hGlow (n - 1) (by omega) (by omega) _ hCP
       obtain ⟨hCLN, hvr, hval, hox⟩ :=
-        seed_frame_data_sv hM hS I R hz h2 hlen hr hq hux hRes.topP hn hCN hRN hCP hGP hRP hC0 hG0 hR0
+        seed_frame_data_sv hM hS I R hz h2 hlen hr hq hux (topP_sv hlen I.z2 I.z1 hr hq hux) hn hCN hRN hCP hGP hRP hC0 hG0 hR0
       rw [← hd0def, ← hd1def] at hCLN hox
       have hlP : (TRIO.gexp M r L d0 d1 (n - 1)).length = r + (n - 1) * L := TRIO.gexp_length hlen
       have hrP : r < (TRIO.gexp M r L d0 d1 (n - 1)).length := by
