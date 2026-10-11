@@ -481,17 +481,173 @@ theorem expStep_absDN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
     rw [hW] at hlt hO hcof hNN ⊢
     exact hQP.2 (r + a) (by omega) he1 he2 hO hcof hNN q hq hlt
 
+/-! ## VSmallF -/
+
+/-- **Residual of the VSmallF carry** (`t = 1`): the frames below `x` whose counted child `c` has a changed
+`v` (`c` a `v` call of `D`, or `c = x`). The parent's `v` and the earlier counted children do not change there.
+実測（C′ の 2 万行列 × n = 2, 3、36 万成分）: 新しい成分はすべて Ω_{v′(c)} 以下（B 側は不要）。v′(c) の前の部分
+（v(P_1 c) の残った加数）は親の段で成分を持たず、成分は最後の加数 fsD(W, ζ) から来て Ω_{fsD(W, ζ)} 以下. -/
+def VSFRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
+  ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
+    ∀ i, i < r + L → ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R →
+    (DepX M (r + L) false c ∨ c = r + L) →
+    ∀ g ∈ comps (ρ.v i) ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c),
+      g ≤ psi ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))
+
+/-- **VSmallF is carried** (`t = 1`): the frames off the changed children are those of `M` (the parent's
+`v` and the earlier counted children do not change, as for FrameOT), the copy frames those of `P`.
+Residual `VSFRes`. -/
+theorem expStep_vsmallF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hRes : VSFRes M r L d0 ρ) :
+    ExpStepT1 VSmallF M r L d0 ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  obtain ⟨q0, hq0⟩ := par0_of_anc hA (by omega)
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq0
+  intro n hn ρP Z hCP _ hQP hCN _ _ _ _ _ hH
+  have hR := hRes n hn ρP Z hH hCN
+  set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
+  have hlN := len_N (d0 := d0) hlen hn
+  have hlP := len_P (d0 := d0) (n := n) hlen
+  have hSA := sameAt_lt hlen hL hA hd0e hn hpath hx2
+    (hxnb_t1 hlen hL hA hd0e I.z2 I.z1 h1 n hn)
+    (hiu_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn)
+  have hσo : ∀ a, σ.o (r + L + a) = ρP.o (r + a) := by
+    intro a; rw [hσ, glueZ_o_ge ρ (shiftV ρP L) Z (by omega)]
+    show ρP.o (r + L + a - L) = ρP.o (r + a); congr 1; omega
+  have hσv : ∀ a, σ.v (r + L + a) = ρP.v (r + a) := by
+    intro a; rw [hσ, glueZ_v_ge ρ (shiftV ρP L) Z (by omega)]
+    show ρP.v (r + L + a - L) = ρP.v (r + a); congr 1; omega
+  intro i hi Lc c R hCL
+  rcases Nat.lt_or_ge i (r + L) with h | h
+  · have hS := hSA i h
+    have hCLe : CL (TRIO.gexp M r L d0 0 n) i = CL M i := by
+      unfold CL; rw [hS.ch]
+      apply List.filter_congr
+      intro c hc
+      exact decide_eq_decide.mpr (counted_iff_of_cnt (hS.cnt c hc))
+    rw [hCLe] at hCL
+    have hcCL : c ∈ CL M i := by rw [hCL]; simp
+    have hcch : c ∈ children M i := (List.mem_filter.mp hcCL).1
+    have hccnt : Counted M i c := by simpa using (List.mem_filter.mp hcCL).2
+    have hvd : ¬ DepX M (r + L) false i := by
+      intro hv
+      rcases hOS i h (DepX.ov hv) with ⟨_, hnc⟩ | ⟨hnv, _⟩
+      · rcases hnc c hcch with h' | h'
+        · exact hccnt.1 h'
+        · exact hccnt.2 h'
+      · exact hnv hv
+    have hLd : ∀ d ∈ Lc, ¬ DepX M (r + L) true d := by
+      intro d hd hdD
+      have hdCL : d ∈ CL M i := by rw [hCL]; simp [hd]
+      have hdch : d ∈ children M i := (List.mem_filter.mp hdCL).1
+      have hdcnt : Counted M i d := by simpa using (List.mem_filter.mp hdCL).2
+      have hdc : d < c := by
+        have hs : (CL M i).Pairwise (· < ·) := (children_sorted M i).filter _
+        rw [hCL] at hs
+        exact (List.pairwise_append.mp hs).2.2 d hd c List.mem_cons_self
+      have hiD : DepX M (r + L) true i := DepX.ochild hdch hdcnt.1 hdcnt.2 hdD
+      rcases hOS i h hiD with ⟨hv, _⟩ | ⟨_, L', c', R', hch, _, _, hR', hL'⟩
+      · exact hvd hv
+      · have hdc' : d = c' := by
+          rw [hch] at hdch
+          rcases List.mem_append.mp hdch with h' | h'
+          · exact absurd hdD (hL' d h' hdcnt)
+          · rcases List.mem_cons.mp h' with h' | h'
+            · exact h'
+            · rcases hR' d h' with h'' | h''
+              · exact absurd h'' hdcnt.1
+              · exact absurd h'' hdcnt.2
+        subst hdc'
+        have hsort := children_sorted M i
+        rw [hch] at hsort hcch
+        rcases List.mem_append.mp hcch with h' | h'
+        · have := (List.pairwise_append.mp hsort).2.2 c h' d List.mem_cons_self
+          omega
+        · rcases List.mem_cons.mp h' with h' | h'
+          · omega
+          · rcases hR' c h' with h'' | h''
+            · exact hccnt.1 h''
+            · exact hccnt.2 h''
+    have hLo : Lc.map σ.o = Lc.map ρ.o := by
+      apply List.map_congr_left
+      intro d hd
+      have hdCL : d ∈ CL M i := by rw [hCL]; simp [hd]
+      have hdM := (mem_children (List.mem_filter.mp hdCL).1).2
+      have hdx : d < r + L := by
+        rcases Nat.lt_or_ge d (r + L) with h' | h'
+        · exact h'
+        · exfalso
+          have : d = r + L := by omega
+          exact hLd d hd (this ▸ DepX.leaf)
+      rw [hσ, glueZ_o_lt ρ (shiftV ρP L) Z hdx (hLd d hd)]
+    rw [hσ, glueZ_v_lt ρ (shiftV ρP L) Z h hvd, ← hσ, hLo]
+    have hcM := (mem_children hcch).2
+    by_cases hcv : DepX M (r + L) false c ∨ c = r + L
+    · exact hR i h Lc c R hCL hcv
+    · push_neg at hcv
+      have hcx : c < r + L := by omega
+      rw [hσ, glueZ_v_lt ρ (shiftV ρP L) Z hcx hcv.1]
+      exact I.vs i (by omega) Lc c R hCL
+  · obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
+    have ha : a < (n - 1) * L := by omega
+    have hCLs : CL (TRIO.gexp M r L d0 0 n) (r + L + a) =
+        (CL (TRIO.gexp M r L d0 0 (n - 1)) (r + a)).map (· + L) := by
+      unfold CL
+      rw [children_shift (d0 := d0) hlen hL hA hd0e hn ha, List.filter_map]
+      congr 1
+      apply List.filter_congr
+      intro d hd
+      have hdc := mem_children hd
+      rw [hlP] at hdc
+      show decide (Counted (TRIO.gexp M r L d0 0 n) (r + L + a) (d + L)) =
+        decide (Counted (TRIO.gexp M r L d0 0 (n - 1)) (r + a) d)
+      apply decide_eq_decide.mpr
+      apply counted_iff_of_cnt1 (cnt_copy hlen hL hA hd0e hn hpath (I.z2 r) (ρ := ρ) (Z := Z) ha hd)
+      · have := hσo (d - r); rw [show r + L + (d - r) = d + L by omega,
+          show r + (d - r) = d by omega] at this
+        exact this
+      · obtain ⟨s, y, he⟩ := o_psi_form hCP (i := d) (by rw [hlP]; omega)
+        rw [he]; simp
+    rw [hCLs] at hCL
+    obtain ⟨Lc', T', hsplit, hLc, hT⟩ := List.map_eq_append_iff.mp hCL
+    obtain ⟨c', R', hT', hc', hR'⟩ := List.map_eq_cons_iff.mp hT
+    subst hLc hc' hR'
+    rw [hT'] at hsplit
+    have hLo : (Lc'.map (· + L)).map σ.o = Lc'.map ρP.o := by
+      rw [List.map_map]
+      apply List.map_congr_left
+      intro d hd
+      have hdCL : d ∈ CL (TRIO.gexp M r L d0 0 (n - 1)) (r + a) := by rw [hsplit]; simp [hd]
+      have hdc := mem_children (List.mem_filter.mp hdCL).1
+      have := hσo (d - r)
+      rw [show r + L + (d - r) = d + L by omega, show r + (d - r) = d by omega] at this
+      exact this
+    have hc'c := mem_children (List.mem_filter.mp (show c' ∈ CL (TRIO.gexp M r L d0 0 (n - 1)) (r + a) by
+      rw [hsplit]; simp)).1
+    rw [hlP] at hc'c
+    have hvc : σ.v (c' + L) = ρP.v c' := by
+      have := hσv (c' - r)
+      rw [show r + L + (c' - r) = c' + L by omega, show r + (c' - r) = c' by omega] at this
+      exact this
+    rw [hσv, hLo, hvc]
+    exact hQP (r + a) (by rw [hlP]; omega) Lc' c' R' hsplit
+
 /-! ## 組み立て: AbsD・AbsUW・AbsDN を運んだ形の hExp（t = 1） -/
 
-/-- **The value fields of `Inv3V` still not carried** (`t = 1`): VSmallF and the three fields of the frame of the
-last column (TPLoW・AbsDW・TPLoN). -/
-def QV2 (N : Mat) (σ : Valn) : Prop := VSmallF N σ ∧ TPLoW N σ ∧ AbsDW N σ ∧ TPLoN N σ
+/-- **The value fields of `Inv3V` still not carried** (`t = 1`): the three fields of the frame of the last column
+(TPLoW・AbsDW・TPLoN). -/
+def QV2 (N : Mat) (σ : Valn) : Prop := TPLoW N σ ∧ AbsDW N σ ∧ TPLoN N σ
 
 /-- **The property carried along the `t = 1` chain** (with the A-group fields). -/
 def PT1A (M : Mat) (r : Nat) (ρ : Valn) (N : Mat) (σ : Valn) : Prop :=
   FrameOT N σ ∧ RootP N σ ∧ BumpDec N σ ∧ FrameClosed N σ ∧ TrigOmC N σ ∧ TP1C N σ ∧ TP1WC N σ ∧
     TPLo N σ ∧ (AgrT1 M r ρ N σ ∧ AbsD N σ) ∧ (AgrT1 M r ρ N σ ∧ AbsUW N σ) ∧
-    (AgrT1 M r ρ N σ ∧ AbsDN N σ) ∧ QV2 N σ
+    (AgrT1 M r ρ N σ ∧ AbsDN N σ) ∧ VSmallF N σ ∧ QV2 N σ
 
 /-- **`Inv3V` from the chain's output.** -/
 theorem inv3V_of_PT1A {M N : Mat} {r : Nat} {ρ σ : Valn} {rk : Bool → Nat → Nat} (hC : Cons N σ)
@@ -510,7 +666,8 @@ theorem inv3V_N_t1A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
     (hResL : TPLoRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hResD : AbsDRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hResU : AbsUWRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
-    (hResDN : AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ) :
+    (hResDN : AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+    (hResV : VSFRes M r L (entry M 0 (r + L) - entry M 0 r) ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN,
       Inv3V (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN rkN ∧
       isOT (root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN) = true ∧
@@ -553,7 +710,8 @@ theorem inv3V_N_t1A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
                   (expStep_and (expStep_tplo I hlen hL0 hd0e hr hx2 hResL)
                     (expStep_and (expStep_absD I hlen hL0 hd0e hr hx2 hResD)
                       (expStep_and (expStep_absUW I hlen hL0 hd0e hr hx2 hResU)
-                        (expStep_and (expStep_absDN I hlen hL0 hd0e hr hx2 hResDN) hQs))))))))))
+                        (expStep_and (expStep_absDN I hlen hL0 hd0e hr hx2 hResDN)
+                          (expStep_and (expStep_vsmallF I hlen hL0 hd0e hr hx2 hResV) hQs)))))))))))
   by_cases hqr : q = r
   · subst hqr
     obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=
@@ -570,8 +728,8 @@ theorem inv3V_N_t1A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
     exact ⟨ρN, rkN, inv3V_of_PT1A hCN hRN hGN hPN, hot, hlt⟩
 
 /-- **The `t = 1` part of `hExp`** with AbsD・AbsUW・AbsDN carried. Residuals (each for the `t = 1`
-matrices only): `hRT` (the base, shared with `hLast`), `hQs` (`QV2` = VSmallF・TPLoW・AbsDW・TPLoN), the
-residuals of the carried fields (`TPLoRes`・`AbsDRes`・`AbsUWRes`・`AbsDNRes`), and `hRes`
+matrices only): `hRT` (the base, shared with `hLast`), `hQs` (`QV2` = TPLoW・AbsDW・TPLoN), the
+residuals of the carried fields (`TPLoRes`・`AbsDRes`・`AbsUWRes`・`AbsDNRes`・`VSFRes`), and `hRes`
 (`Res3A` of `M[n]`). -/
 theorem hExp_t1A
     (hRT : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
@@ -583,7 +741,7 @@ theorem hExp_t1A
       par M 1 (r + L) = some r → entry M 2 (r + L) = 0 →
       TPLoRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
       AbsDRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ AbsUWRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧
-      AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
+      AbsDNRes M r L (entry M 0 (r + L) - entry M 0 r) ρ ∧ VSFRes M r L (entry M 0 (r + L) - entry M 0 r) ρ)
     (hRes : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 → ∀ n, 2 ≤ n →
       ∀ σ rkN, Inv3 (expand M n) σ rkN → Res3A (expand M n) σ rkN) :
@@ -620,9 +778,11 @@ theorem hExp_t1A
     inv3V_N_t1A I R hlen hr hx2 (hRT M ρ rk hM hS I R hz h1t)
       (hQs M ρ rk hM hS I R r L hlen hr hx2)
       (hResN M ρ rk hM hS I R r L hlen hr hx2).1 (hResN M ρ rk hM hS I R r L hlen hr hx2).2.1
-      (hResN M ρ rk hM hS I R r L hlen hr hx2).2.2.1 (hResN M ρ rk hM hS I R r L hlen hr hx2).2.2.2 n hn
+      (hResN M ρ rk hM hS I R r L hlen hr hx2).2.2.1 (hResN M ρ rk hM hS I R r L hlen hr hx2).2.2.2.1
+      (hResN M ρ rk hM hS I R r L hlen hr hx2).2.2.2.2 n hn
   rw [← hexp] at V
   exact ⟨ρN, rkN, V, hRes M ρ rk hM hS I R hz h1t n hn ρN rkN
     (Inv3.ofV (sInv_std (Std.exp n hM) hNS) V)⟩
+
 
 end Ytosk
