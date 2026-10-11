@@ -80,7 +80,7 @@ def TPLoLFRes2 (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   GoodIdx (Z c) → TPLoPatN s0 y0 (Z c) → holeLev y0 ≠ z →
   entry M 1 c ≠ 0 → (∀ d, d < M.length → par M 1 d ≠ some c) →
   ¬ ((entry M 2 c = 0 ∧ upg M c = none) ∨ (entry M 2 c ≠ 0 ∧ ∀ j ∈ children M c, col M j ≠ bump M c)) →
-  LevFree (holeLev y0) s0
+  BandS (holeLev y0) s0
 
 theorem tploLFRes_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
@@ -97,7 +97,7 @@ theorem tploLFRes_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
     rw [hlev] at hμ ⊢
     rw [hμv, chain_level I.cons I.good (by omega) hro] at hμ ⊢
     rw [o_sub_eq_v I.cons I.good hcM h0]
-    exact levFree_v_plain I.cons I.good hVK (by rw [show M.length - 1 = r + L by omega]; exact h1)
+    exact bandS_of_levFree <| levFree_v_plain I.cons I.good hVK (by rw [show M.length - 1 = r + L by omega]; exact h1)
       (by rw [show M.length - 1 = r + L by omega]; exact hx2) hμ hcM hs
   · exact hRes n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ he1 hnc hs
 
@@ -110,7 +110,7 @@ def TPLoWLFRes2 (M : Mat) (ρ : Valn) : Prop :=
     ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → μ ≠ z →
     entry M 1 c ≠ 0 → (∀ d, d < M.length → par M 1 d ≠ some c) →
     ¬ ((entry M 2 c = 0 ∧ upg M c = none) ∨ (entry M 2 c ≠ 0 ∧ ∀ j ∈ children M c, col M j ≠ bump M c)) →
-    LevFree μ s
+    BandS μ s
 
 theorem tploWLFRes_of {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) (hVK : LevLeafInv M ρ)
     (hRes : TPLoWLFRes2 M ρ) : TPLoWLFRes M ρ := by
@@ -121,7 +121,7 @@ theorem tploWLFRes_of {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) (
     have hrM : r < M.length := by have := par_lt M 1 _ r h1; omega
     rw [chain_level hC hG hrM hro] at hμ ⊢
     rw [o_sub_eq_v hC hG hcM ho]
-    exact levFree_v_plain hC hG hVK h1 hx2 hμ hcM hs
+    exact bandS_of_levFree <| levFree_v_plain hC hG hVK h1 hx2 hμ hcM hs
   · exact hRes r μ b h1 hq hx2 hro c hc hd s y ho hyb hspl a hla hns hOa hca hμ he1 hnc hs
 
 /-- **`hExp_t1GP` with `TPLoLFRes2`・`TPLoWLFRes2`** (the `LevFree` residuals only at columns with a bump child). -/

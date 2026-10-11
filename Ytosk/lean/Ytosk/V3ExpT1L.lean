@@ -13,6 +13,7 @@ import Ytosk.V3ExpT1A
 import Ytosk.V3PhiGapT2
 import Ytosk.V3DropH
 import Ytosk.V3PhiLev
+import Ytosk.V3BandS
 
 namespace Ytosk
 
@@ -55,10 +56,11 @@ def AbsDResL_lf (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
   Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
   ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 → holeLev (bumpW M ρ i) ≠ z →
-  LevFree (holeLev (bumpW M ρ i)) (vOpt ρ (par M 1 i))
+  BandS (holeLev (bumpW M ρ i)) (vOpt ρ (par M 1 i))
 
 def AbsDResL_seed (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+  Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
   Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
   ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 → holeLev (bumpW M ρ i) ≠ z →
   (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z i = seed) →
@@ -119,7 +121,7 @@ theorem holeLev_bumpW_D {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
 theorem absDRes_of_L {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
     (hL : AbsDResL M r L d0 ρ) : AbsDRes M r L d0 ρ := by
-  intro n hn ρP Z hH hCN i hi hv h2
+  intro n hn ρP Z hH hCP hCN i hi hv h2
   by_cases hμ : holeLev (bumpW M ρ i) = z
   · exact hL.zero n hn ρP Z hH hCN i hi hv h2 hμ
   obtain ⟨μ, br, vr, seed, k0, hHD, hZk, _, _, _, _⟩ := hH
@@ -128,7 +130,7 @@ theorem absDRes_of_L {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
   cases k with
   | zero =>
     exact hL.seed n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, by assumption, by assumption, by assumption,
-      by assumption⟩ hCN i hi hv h2 hμ ⟨μ, br, vr, seed, hHD, hZe⟩
+      by assumption⟩ hCP hCN i hi hv h2 hμ ⟨μ, br, vr, seed, hHD, hZe⟩
   | succ k' =>
     left
     have hLF := hL.lf n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, by assumption, by assumption, by assumption,
@@ -136,7 +138,7 @@ theorem absDRes_of_L {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
     have hseedz : seed ≠ z := by obtain ⟨a, X, h⟩ := hHD.seedS; rw [h]; simp
     have hμz : μ ≠ z := by rw [← hHlev]; exact hμ
     refine ⟨by rw [hZe]; exact isSucc_psi_z (Or.inl hμz), ?_⟩
-    apply seedCond_of_levFree hLF
+    apply seedCond_of_bandS hLF
     rw [hHlev, hZe]
     exact om_le_gamS_succ hHD.cb hseedz (by simp [etaOm]) k'
 
@@ -144,7 +146,7 @@ def AbsUWResL_lf (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
   Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
   ∀ i k, i < r + L → upg M i = some k → DepX M (r + L) false k → holeLev (last (ρ.v k)) ≠ z →
-  LevFree (holeLev (last (ρ.v k))) (vOpt ρ (par M 1 i))
+  BandS (holeLev (last (ρ.v k))) (vOpt ρ (par M 1 i))
 
 def AbsUWResL_seed (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
@@ -198,7 +200,7 @@ theorem absUWRes_of_L {M : Mat} {ρ : Valn} {r L d0 : Nat} (hx2 : entry M 2 (r +
     have hseedz : seed ≠ z := by obtain ⟨a, X, h⟩ := hHD.seedS; rw [h]; simp
     have hμz : μ ≠ z := by rw [← hHlev]; exact hμ
     refine ⟨by rw [hZe]; exact isSucc_psi_z (Or.inl hμz), ?_⟩
-    apply seedCond_of_levFree hLF
+    apply seedCond_of_bandS hLF
     rw [hHlev, hZe]
     exact om_le_gamS_succ hHD.cb hseedz (by simp [one]) k'
 
@@ -206,10 +208,11 @@ def TPLoResL_lf (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
   Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
   ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
-  GoodIdx (Z c) → TPLoPatN s0 y0 (Z c) → holeLev y0 ≠ z → LevFree (holeLev y0) s0
+  GoodIdx (Z c) → TPLoPatN s0 y0 (Z c) → holeLev y0 ≠ z → BandS (holeLev y0) s0
 
 def TPLoResL_seed (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+  Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
   Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
   ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
   GoodIdx (Z c) → TPLoPatN s0 y0 (Z c) → holeLev y0 ≠ z →
@@ -234,7 +237,7 @@ structure TPLoResL (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop where
 /-- **`TPLoRes` from the `LevFree` form.** -/
 theorem tploRes_of_L {M : Mat} {ρ : Valn} {r L d0 : Nat} (hL : TPLoResL M r L d0 ρ) : TPLoRes M r L d0 ρ := by
   refine ⟨hL.deg, ?_⟩
-  intro n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat
+  intro n hn ρP Z hH hCP hCN c hc hd s0 y0 h0 hy0 hgood hpat
   by_cases hμ : holeLev y0 = z
   · exact hL.zero n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ
   obtain ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, h5, h6⟩ := hH
@@ -245,12 +248,12 @@ theorem tploRes_of_L {M : Mat} {ρ : Valn} {r L d0 : Nat} (hL : TPLoResL M r L d
   obtain ⟨kk, _, hZe⟩ := hZk c
   cases kk with
   | zero =>
-    exact hL.seed n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, h5, h6⟩ hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ
+    exact hL.seed n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, h5, h6⟩ hCP hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ
       ⟨μ, br, vr, seed, hHD, hZe⟩
   | succ k' =>
     have hLF := hL.lf n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, h5, h6⟩ hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ
     have hseedz : seed ≠ z := by obtain ⟨a, X, h⟩ := hHD.seedS; rw [h]; simp
-    apply seedCond_of_levFree hLF
+    apply seedCond_of_bandS hLF
     rw [hHlev, hZe]
     exact om_le_gamS_succ hHD.cb hseedz (by simp [etaOm]) k'
 
@@ -283,7 +286,7 @@ theorem absDResL_lf_of_vk {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I :
   have hlev := holeLev_bumpW_D I hlen h1 hx2 hHD hi hv h2
   rw [hlev] at hμ ⊢
   rw [hμv, chain_level I.cons I.good (by omega) hro] at hμ ⊢
-  exact levFree_vOpt_of_vk hVK (by rw [show M.length - 1 = r + L by omega]; exact h1) hμ (by omega)
+  exact bandS_of_levFree <| levFree_vOpt_of_vk hVK (by rw [show M.length - 1 = r + L by omega]; exact h1) hμ (by omega)
 
 theorem absUWResL_lf_of_vk {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
@@ -303,7 +306,7 @@ theorem absUWResL_lf_of_vk {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I 
   have hlev : holeLev (last (ρ.v k)) = μ := holeLev_holeT (holeT_last hHv)
   rw [hlev] at hμ ⊢
   rw [hμv, chain_level I.cons I.good (by omega) hro] at hμ ⊢
-  exact levFree_vOpt_of_vk hVK (by rw [show M.length - 1 = r + L by omega]; exact h1) hμ (by omega)
+  exact bandS_of_levFree <| levFree_vOpt_of_vk hVK (by rw [show M.length - 1 = r + L by omega]; exact h1) hμ (by omega)
 
 /-- **The TPLo `lf` residual after `VKFree`**: only the `D` columns with row 1 nonzero and no row-1 child
 (otherwise `v(c) = 0` or `VKFree` applies). -/
@@ -312,7 +315,7 @@ def TPLoLFRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
   ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
   GoodIdx (Z c) → TPLoPatN s0 y0 (Z c) → holeLev y0 ≠ z →
-  entry M 1 c ≠ 0 → (∀ d, d < M.length → par M 1 d ≠ some c) → LevFree (holeLev y0) s0
+  entry M 1 c ≠ 0 → (∀ d, d < M.length → par M 1 d ≠ some c) → BandS (holeLev y0) s0
 
 /-- The subscript of `o(c)` is `v(c)`. -/
 theorem o_sub_eq_v {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) {c : Nat} (hc : c < M.length)
@@ -332,7 +335,7 @@ theorem tploResL_lf_of_vk {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I :
   intro n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ
   have hcM : c < M.length := by omega
   by_cases he1 : entry M 1 c = 0
-  · rw [o_sub_eq_v I.cons I.good hcM h0, v_z_of_e1L I.cons hcM he1]; exact levFree_z _
+  · rw [o_sub_eq_v I.cons I.good hcM h0, v_z_of_e1L I.cons hcM he1]; exact bandS_z _
   by_cases hch : ∃ d, d < M.length ∧ par M 1 d = some c
   · obtain ⟨d, hdM, hdc⟩ := hch
     obtain ⟨μ, br, vr, seed, k0, hHD, _, _, _, hμv, hro⟩ := hH
@@ -343,7 +346,7 @@ theorem tploResL_lf_of_vk {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I :
     rw [hlev] at hμ ⊢
     rw [hμv, chain_level I.cons I.good (by omega) hro] at hμ ⊢
     rw [o_sub_eq_v I.cons I.good hcM h0]
-    exact hVK d c (M.length - 1) r hdM hdc (by omega) (by rw [show M.length - 1 = r + L by omega]; exact h1) hμ
+    exact bandS_of_levFree <| hVK d c (M.length - 1) r hdM hdc (by omega) (by rw [show M.length - 1 = r + L by omega]; exact h1) hμ
   · exact hRes n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ he1 (fun d hd' h => hch ⟨d, hd', h⟩)
 
 
@@ -352,6 +355,7 @@ theorem tploResL_lf_of_vk {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I :
 /-- The seed part where the seed is below `Ω_μ` after `fsD` (`q = r` only in C′). -/
 def AbsDSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+  Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
   Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
   ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 → holeLev (bumpW M ρ i) ≠ z →
   (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z i = seed) →
@@ -375,6 +379,7 @@ def AbsUWSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
 /-- The seed part where the seed is below `Ω_μ` after `fsD` (`q = r` only in C′). -/
 def TPLoSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+  Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
   Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
   ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
   GoodIdx (Z c) → TPLoPatN s0 y0 (Z c) → holeLev y0 ≠ z →
@@ -386,6 +391,7 @@ def TPLoSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
 /-- `AbsDSeedLow` without the seeds `Ω_{ν+1}` (`ν ≠ 0`), which `NoGapP` handles. -/
 def AbsDSeedLow2 (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+  Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
   Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
   ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 → holeLev (bumpW M ρ i) ≠ z →
   (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z i = seed) →
@@ -403,7 +409,7 @@ theorem holeLev_Om_succ (ν : T) : holeLev (psi (succ ν) z z) = ν := by
 condition is `NoGap` of `v(P_1 i)` at `ν`. -/
 theorem absDSeedLow_of_noGap {M : Mat} {r L d0 : Nat} {ρ : Valn} (hlen : r + L + 1 = M.length) (hNG : NoGapP M ρ)
     (hR : AbsDSeedLow2 M r L d0 ρ) : AbsDSeedLow M r L d0 ρ := by
-  intro n hn ρP Z hH hCN i hi hv h2 hμ hsd hlow
+  intro n hn ρP Z hH hCP hCN i hi hv h2 hμ hsd hlow
   by_cases hΩ : ∃ ν, ν ≠ z ∧ Z i = psi (succ ν) z z
   · obtain ⟨ν, hν, hZ⟩ := hΩ
     left
@@ -423,28 +429,28 @@ theorem absDSeedLow_of_noGap {M : Mat} {r L d0 : Nat} {ρ : Valn} (hlen : r + L 
     | some p =>
       rw [hp] at hu
       exact hNG i p (by omega) hp ν hν u hu h1
-  · exact hR n hn ρP Z hH hCN i hi hv h2 hμ hsd (fun ν hν h => hΩ ⟨ν, hν, h⟩) hlow
+  · exact hR n hn ρP Z hH hCP hCN i hi hv h2 hμ hsd (fun ν hν h => hΩ ⟨ν, hν, h⟩) hlow
 
 theorem absDResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : AbsDResL_lf M r L d0 ρ)
     (hS : AbsDSeedLow M r L d0 ρ) : AbsDResL_seed M r L d0 ρ := by
-  intro n hn ρP Z hH hCN i hi hv h2 hμ hsd
+  intro n hn ρP Z hH hCP hCN i hi hv h2 hμ hsd
   by_cases h : isSucc (Z i) = false ∧ psi (holeLev (bumpW M ρ i)) z z ≤ fsD (Z i) (etaOm (holeLev (Z i)))
-  · exact Or.inl ⟨h.1, seedCond_of_levFree (hLF n hn ρP Z hH hCN i hi hv h2 hμ) h.2⟩
-  · exact hS n hn ρP Z hH hCN i hi hv h2 hμ hsd h
+  · exact Or.inl ⟨h.1, seedCond_of_bandS (hLF n hn ρP Z hH hCN i hi hv h2 hμ) h.2⟩
+  · exact hS n hn ρP Z hH hCP hCN i hi hv h2 hμ hsd h
 
 theorem absUWResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : AbsUWResL_lf M r L d0 ρ)
     (hS : AbsUWSeedLow M r L d0 ρ) : AbsUWResL_seed M r L d0 ρ := by
   intro n hn ρP Z hH hCN i k hi hu hkv hμ hsd
   by_cases h : isSucc (Z k) = false ∧ psi (holeLev (last (ρ.v k))) z z ≤ fsD (Z k) one
-  · exact Or.inl ⟨h.1, seedCond_of_levFree (hLF n hn ρP Z hH hCN i k hi hu hkv hμ) h.2⟩
+  · exact Or.inl ⟨h.1, seedCond_of_bandS (hLF n hn ρP Z hH hCN i k hi hu hkv hμ) h.2⟩
   · exact hS n hn ρP Z hH hCN i k hi hu hkv hμ hsd h
 
 theorem tploResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : TPLoResL_lf M r L d0 ρ)
     (hS : TPLoSeedLow M r L d0 ρ) : TPLoResL_seed M r L d0 ρ := by
-  intro n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ hsd
+  intro n hn ρP Z hH hCP hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ hsd
   by_cases h : isSucc (Z c) = false ∧ psi (holeLev y0) z z ≤ fsD (Z c) (etaOm (holeLev (Z c)))
-  · exact seedCond_of_levFree (hLF n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ) h.2
-  · exact hS n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ hsd h
+  · exact seedCond_of_bandS (hLF n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ) h.2
+  · exact hS n hn ρP Z hH hCP hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ hsd h
 
 
 /-! ## AbsDN の残りも LevFree（VKFree）から -/
@@ -526,7 +532,7 @@ def TPLoWLF (M : Mat) (ρ : Valn) : Prop :=
       entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ (app b (psi (succ μ) z z)) z →
       ∀ c, c < M.length - 1 → DepX M (M.length - 1) true c → ∀ s y, ρ.o c = psi s y z →
       y ≠ app b (psi (succ μ) z z) → (split y (psi (succ s) z z)).2 = z →
-      ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → μ ≠ z → LevFree μ s
+      ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → μ ≠ z → BandS μ s
 
 /-- The residual `h0` of `tplow_of_lf`. -/
 def TPLoW0 (M : Mat) (ρ : Valn) : Prop :=
@@ -543,7 +549,7 @@ def AbsDWLF (M : Mat) (ρ : Valn) : Prop :=
   ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
       entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ (app b (psi (succ μ) z z)) z →
       ∀ i, i < M.length - 1 → DepX M (M.length - 1) false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
-      OHole (bumpW M ρ i) → cof (bumpW M ρ i) = .omega → μ ≠ z → LevFree μ (vOpt ρ (par M 1 i))
+      OHole (bumpW M ρ i) → cof (bumpW M ρ i) = .omega → μ ≠ z → BandS μ (vOpt ρ (par M 1 i))
 
 /-- The residual `h0` of `absDW_of_lf`. -/
 def AbsDW0 (M : Mat) (ρ : Valn) : Prop :=
@@ -610,7 +616,7 @@ theorem tplow_of_lf {M : Mat} {ρ : Valn} (I : FrameV M ρ)
       have := le_max_left 1 (dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) c); omega⟩
   rw [hk]
   refine fsD_transfer (subClosed_subS s) (fun u hu h1' _ => ?_) hOa s (subT_subS (.refl s)) hT hT
-  exact lt_of_lt_of_le (lt_Om_of_levFree hLFs hu h1') (om_le_psi μ _ z)
+  exact lt_of_lt_of_le (lt_Om_of_bandS hLFs hu h1') (om_le_psi μ _ z)
 
 /-- **AbsDW from AbsD and `LevFree`** at a positive level; the level `0` is the residual `h0`. -/
 theorem absDW_of_lf {M : Mat} {ρ : Valn} (I : FrameV M ρ)
@@ -633,7 +639,7 @@ theorem absDW_of_lf {M : Mat} {ρ : Valn} (I : FrameV M ρ)
       have := le_max_left 1 (dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) i); omega⟩
   rw [hk]
   refine fsD_transfer (subClosed_subS _) (fun u hu h1' _ => ?_) hO q (summand_subS hqm) hA hA
-  exact lt_of_lt_of_le (lt_Om_of_levFree hLFs hu h1') (om_le_psi μ _ z)
+  exact lt_of_lt_of_le (lt_Om_of_bandS hLFs hu h1') (om_le_psi μ _ z)
 
 
 /-! ## TPLoN（種の添字）を TPLo と LevFree から -/
@@ -677,7 +683,7 @@ theorem tplon_of_lf {M : Mat} {ρ : Valn} (I : FrameV M ρ) (hLF : TPLoWLF M ρ)
     rw [hlev] at hT
     apply tpl_iff.mpr
     refine fsD_transfer (subClosed_subS s) (fun u hu h1' _ => ?_) hOa s (subT_subS (.refl s)) hT hT
-    exact lt_of_lt_of_le (lt_Om_of_levFree hLFs hu h1') hsd
+    exact lt_of_lt_of_le (lt_Om_of_bandS hLFs hu h1') hsd
   · exact hS ρ' rk' hC' hR' r μ b h1 hq hx2 hro c hc hd hd0 s y ho hyb hspl a hla hns hOa hca hNa hμ hsd
 
 /-! ## NoGapP（行 1 の子を持つ列の v の述語）を鎖で運ぶ -/
@@ -740,7 +746,7 @@ theorem absDWLF_of_vk {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) (
   intro r μ b h1 _ _ hro i hi _ _ _ _ _ hμ
   have hrM : r < M.length := by have := par_lt M 1 _ r h1; omega
   rw [chain_level hC hG hrM hro] at hμ ⊢
-  exact levFree_vOpt_of_vk hVK h1 hμ (by omega)
+  exact bandS_of_levFree <| levFree_vOpt_of_vk hVK h1 hμ (by omega)
 
 /-- **The TPLoWLF residual after `VKFree`**: the `D` columns with row 1 nonzero and no row-1 child. -/
 def TPLoWLFRes (M : Mat) (ρ : Valn) : Prop :=
@@ -749,7 +755,7 @@ def TPLoWLFRes (M : Mat) (ρ : Valn) : Prop :=
     ∀ c, c < M.length - 1 → DepX M (M.length - 1) true c → ∀ s y, ρ.o c = psi s y z →
     y ≠ app b (psi (succ μ) z z) → (split y (psi (succ s) z z)).2 = z →
     ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega → μ ≠ z →
-    entry M 1 c ≠ 0 → (∀ d, d < M.length → par M 1 d ≠ some c) → LevFree μ s
+    entry M 1 c ≠ 0 → (∀ d, d < M.length → par M 1 d ≠ some c) → BandS μ s
 
 theorem tploWLF_of_vk {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) (hVK : VKFree M ρ)
     (hRes : TPLoWLFRes M ρ) : TPLoWLF M ρ := by
@@ -757,12 +763,12 @@ theorem tploWLF_of_vk {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) (
   have hcM : c < M.length := by omega
   have hrM : r < M.length := by have := par_lt M 1 _ r h1; omega
   by_cases he1 : entry M 1 c = 0
-  · rw [o_sub_eq_v hC hG hcM ho, v_z_of_e1L hC hcM he1]; exact levFree_z _
+  · rw [o_sub_eq_v hC hG hcM ho, v_z_of_e1L hC hcM he1]; exact bandS_z _
   by_cases hch : ∃ d, d < M.length ∧ par M 1 d = some c
   · obtain ⟨d, hdM, hdc⟩ := hch
     rw [chain_level hC hG hrM hro] at hμ ⊢
     rw [o_sub_eq_v hC hG hcM ho]
-    exact hVK d c (M.length - 1) r hdM hdc (by omega) h1 hμ
+    exact bandS_of_levFree <| hVK d c (M.length - 1) r hdM hdc (by omega) h1 hμ
   · exact hRes r μ b h1 hq hx2 hro c hc hd s y ho hyb hspl a hla hns hOa hca hμ he1
       (fun d hd' h => hch ⟨d, hd', h⟩)
 

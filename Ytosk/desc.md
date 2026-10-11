@@ -2412,3 +2412,20 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - NoGapP が標準形で偽（groupA）なので、AbsD・AbsU を NoGapP ∧ PhiX0R から出す道（t0_absD・t0_absU）を最上位から外した。
 - `hExp_t0_topA`: N の AbsD・AbsU（T0Field）を明示の仮定にとる。t0_frameFieldsF（NoGapP なしの t0_frameFields）。残り: hLast・hAD・hAU・FrmLF・PH3c・T0CutResG・T0TPLoRes・T0AbsUWRes・T0AbsDNRes・T0ShCutRes×3・T0ShGRes×3。
 - closure への回答: T0IIRes は今の最上位で使わない（不要）。T0RERes（最後の加数の形）は証明済み。残る T0CutResG には v の値の道つき RE が要る（closure が純粋な 2 つの補題、t0-exp が帰納法で運ぶ分担）。
+- TPLoLFRes・TPLoWLFRes を狭めた（3ac9b23d、V3ExpT1W）: 行 1 の子のない列 c は v(c) = v(P_1 c) ⊕ t。t = 1（行 2 = 0・上げなし）と t = ω（行 2 ≠ 0・bump の子なし）なら P_1 c の値から出る（levFree_v_plain）。残り TPLoLFRes2・TPLoWLFRes2 は bump の子を持つ c だけ（C′ で TPLo の場面 14956 件中 1036 件）。行 2 = 0 で上げを持つ c は実測 0 件。
+
+### LevFree をやめて帯の条件 BandS に、NoGapP を外した（2026-10-12、t1-exp、V3BandS・V3ExpT1Bd）
+
+- groupA の t = 2 の族 M[2] = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,1,0)(5,2,0)(3,2,0)(4,3,1)(5,3,1)(6,1,0)(7,2,0)（t = 1）では、LevLeafInv も私の TPLoLFRes（LevFree 形、c = 5）も偽。ただし本来の TPLo の種の条件 SeedCond は真。
+- 種の条件で使うのは「帯 [Ω_μ, ψ_μ(Ω_{μ+1})) に部分項がない」ことだけ。節点ごとの形 BandS μ V（添字 μ の節点 ψ_μ(b) はどれも b ≥ Ω_{μ+1}）でこれが出る（lt_Om_of_bandS。順序は添字を先に比べるので OT は要らない）。bandS_add、seedCond_of_bandS。
+- V3ExpT1L の lf の欄（AbsDResL_lf・AbsUWResL_lf・TPLoResL_lf・TPLoLFRes・TPLoWLF・AbsDWLF・TPLoWLFRes）の結論を LevFree から BandS に替えた（弱めた）。T1Y・T1W も合わせた。
+- 大域の仮定 BandLast（最後の列 x が t = 1 の葉、r = P_1 x、v(r) ≠ 0 なら、行 1 の子を持つどの列 p でも BandS (v(r)) (v(p))）を LevLeafInv の代わりに。実測: C′・t1ext・d3s・deep2・deep3・ext1 と上の族で例外 0（行 1 の親 計 260 万件）。
+- NoGapP も同じ族で偽なので、t = 1 の鎖で NoGapP を運ぶのをやめ（inv3V_N_t1Bd）、AbsD の種 < Ω_μ は absDSeedLow_of_noGap を使わずに残り AbsDSeedLow のまま渡す。
+- 新しい組み立て hExp_t1GP4（main_GP 用、M[n] の Inv3V だけ。公理は標準の 3 つ）。仮定: hRT、hFrm（TPLoWLFRes2・TPLoW0・AbsDW0・TPLoNSeed・TPLoN0）、hResN（DegRes・TPLoLFRes2・TPLoSeedLow・TPLoResL_zero・AbsDSeedLow・AbsDResL_zero・AbsUWSeedLow・AbsUWResL_zero・AbsDNSeedLow・AbsDNZero・PassRootRes）、hLL（BandLast）。NoGapP・LevLeafInv・VKFree は使わない。
+- TPLoLFRes2（BandS 形）は 6 集合で例外 0（LevFree 形でも 6 集合では例外 0、族では LevFree は偽で BandS は真）。PassRootRes も ext1 で例外 0。
+
+### q = r で種 < Ω_μ の場合の種の形（2026-10-12、t1-exp、V3ExpT1S）
+
+- 残りの定義 SeedRes・AbsDRes・TPLoResL_seed・AbsDResL_seed・TPLoSeedLow・AbsDSeedLow・AbsDSeedLow2 に前提「M[n − 1] の評価 ρP の Cons」を足した（expStep で手に入る hCP を渡すだけ）。
+- seed_shape_qr: 種 = o_{M.take x}(r) が ψ_{v(r)}(1) より小さいなら L = 1（qr_seed_big）で、M.take x では r は最後の列なので子も上げもなく、r の行 2 は 0（Z1C: x は行 1 が r より大きい子）。よって 種 = Ω_{v(P_1 r)+1}。実測（d3s・ext1）でも種 < Ω_μ の場面はすべて q = r・L = 1・種 = Ω_{v(P_1 r)+1}（ext1 の 1 件の例外 (0,0,0)(1,1,1)(2,2,0) は SRO より上）。
+- これで種 < Ω_μ の欄は、ν = v(P_1 r) として、ν ≠ 0 なら段 ν の隙間 [ψ_ν(Ω_{ν+1}), Ω_{ν+1}) に v(c)（TPLo）・v(P_1 i)（AbsD）の部分項がないこと、ν = 0 なら段 0（groupA）になる。実測（d3s）で隙間の条件は TPLo 44214 件・AbsD 4239 件すべて成立。Lean での差し込みはまだ。

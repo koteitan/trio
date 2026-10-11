@@ -466,6 +466,7 @@ def DegRes (F : T → T → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
 hole). -/
 def SeedRes (G : T → T → T → Prop) (θf : T → T) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
     Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
     GoodIdx (Z c) → G s0 y0 (Z c) → SeedCond s0 (Z c) (etaOm (holeLev y0)) (θf (Z c))
@@ -602,7 +603,7 @@ theorem expStep_tplo {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
   have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
   intro n hn ρP Z hCP _ hTPP hCN _ _ _ hle _ hH
   have hDeg := hRes.1 n hn ρP Z hH hCN
-  have hSd := hRes.2 n hn ρP Z hH hCN
+  have hSd := hRes.2 n hn ρP Z hH hCP hCN
   obtain ⟨μ', br', vr', seed, k0, hHD, _, _, _, _, _⟩ := hH
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn

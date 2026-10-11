@@ -53,7 +53,7 @@ theorem absDResL_lf_of_leaf {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I
   have hlev := holeLev_bumpW_D I hlen h1 hx2 hHD hi hv h2
   rw [hlev] at hμ ⊢
   rw [hμv, chain_level I.cons I.good (by omega) hro] at hμ ⊢
-  exact levFree_vOpt_of_leaf I.cons I.good hVK (by rw [show M.length - 1 = r + L by omega]; exact h1)
+  exact bandS_of_levFree <| levFree_vOpt_of_leaf I.cons I.good hVK (by rw [show M.length - 1 = r + L by omega]; exact h1)
     (by rw [show M.length - 1 = r + L by omega]; exact hx2) hμ (by omega)
 
 theorem absUWResL_lf_of_leaf {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
@@ -74,7 +74,7 @@ theorem absUWResL_lf_of_leaf {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (
   have hlev : holeLev (last (ρ.v k)) = μ := holeLev_holeT (holeT_last hHv)
   rw [hlev] at hμ ⊢
   rw [hμv, chain_level I.cons I.good (by omega) hro] at hμ ⊢
-  exact levFree_vOpt_of_leaf I.cons I.good hVK (by rw [show M.length - 1 = r + L by omega]; exact h1)
+  exact bandS_of_levFree <| levFree_vOpt_of_leaf I.cons I.good hVK (by rw [show M.length - 1 = r + L by omega]; exact h1)
     (by rw [show M.length - 1 = r + L by omega]; exact hx2) hμ (by omega)
 
 theorem tploResL_lf_of_leaf {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
@@ -83,7 +83,7 @@ theorem tploResL_lf_of_leaf {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I
   intro n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ
   have hcM : c < M.length := by omega
   by_cases he1 : entry M 1 c = 0
-  · rw [o_sub_eq_v I.cons I.good hcM h0, v_z_of_e1L I.cons hcM he1]; exact levFree_z _
+  · rw [o_sub_eq_v I.cons I.good hcM h0, v_z_of_e1L I.cons hcM he1]; exact bandS_z _
   by_cases hch : ∃ d, d < M.length ∧ par M 1 d = some c
   · obtain ⟨d, hdM, hdc⟩ := hch
     obtain ⟨μ, br, vr, seed, k0, hHD, _, _, _, hμv, hro⟩ := hH
@@ -96,7 +96,7 @@ theorem tploResL_lf_of_leaf {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I
     rw [o_sub_eq_v I.cons I.good hcM h0]
     obtain ⟨hcv, hvs⟩ := leaf_last I.cons I.good (by rw [show M.length - 1 = r + L by omega]; exact h1)
       (by rw [show M.length - 1 = r + L by omega]; exact hx2)
-    exact hVK d c (M.length - 1) (ρ.v r) hdM hdc (by omega) hcv hvs hμ
+    exact bandS_of_levFree <| hVK d c (M.length - 1) (ρ.v r) hdM hdc (by omega) hcv hvs hμ
   · exact hRes n hn ρP Z hH hCN c hc hd s0 y0 h0 hy0 hgood hpat hμ he1 (fun d hd' h => hch ⟨d, hd', h⟩)
 
 /-- **`AbsDNRes` from `LevLeafInv`** (and the seed-below and level-0 residuals). -/
@@ -134,7 +134,7 @@ theorem absDWLF_of_leaf {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ)
   intro r μ b h1 _ hx2 hro i hi _ _ _ _ _ hμ
   have hrM : r < M.length := by have := par_lt M 1 _ r h1; omega
   rw [chain_level hC hG hrM hro] at hμ ⊢
-  exact levFree_vOpt_of_leaf hC hG hVK h1 hx2 hμ (by omega)
+  exact bandS_of_levFree <| levFree_vOpt_of_leaf hC hG hVK h1 hx2 hμ (by omega)
 
 theorem tploWLF_of_leaf {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) (hVK : LevLeafInv M ρ)
     (hRes : TPLoWLFRes M ρ) : TPLoWLF M ρ := by
@@ -142,13 +142,13 @@ theorem tploWLF_of_leaf {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ)
   have hcM : c < M.length := by omega
   have hrM : r < M.length := by have := par_lt M 1 _ r h1; omega
   by_cases he1 : entry M 1 c = 0
-  · rw [o_sub_eq_v hC hG hcM ho, v_z_of_e1L hC hcM he1]; exact levFree_z _
+  · rw [o_sub_eq_v hC hG hcM ho, v_z_of_e1L hC hcM he1]; exact bandS_z _
   by_cases hch : ∃ d, d < M.length ∧ par M 1 d = some c
   · obtain ⟨d, hdM, hdc⟩ := hch
     rw [chain_level hC hG hrM hro] at hμ ⊢
     rw [o_sub_eq_v hC hG hcM ho]
     obtain ⟨hcv, hvs⟩ := leaf_last hC hG h1 hx2
-    exact hVK d c (M.length - 1) (ρ.v r) hdM hdc (by omega) hcv hvs hμ
+    exact bandS_of_levFree <| hVK d c (M.length - 1) (ρ.v r) hdM hdc (by omega) hcv hvs hμ
   · exact hRes r μ b h1 hq hx2 hro c hc hd s y ho hyb hspl a hla hns hOa hca hμ he1
       (fun d hd' h => hch ⟨d, hd', h⟩)
 

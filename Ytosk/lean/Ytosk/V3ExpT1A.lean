@@ -222,6 +222,7 @@ successor and the seed condition holds for the subterms of `v(P_1 i)`, or the fi
 (C′ の 4 万行列 × 鎖の項 k = 0..4 で 64190 件。種の条件で成り立たないのは種 = 1（q = r・n = 2）の 1232 件だけ). -/
 def AbsDRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
     Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
     (isSucc (Z i) = false ∧
@@ -240,7 +241,7 @@ theorem expStep_absD {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
   intro n hn ρP Z hCP hGP hQP hCN hGN hoto hotv hle hlex hH
   refine ⟨expStep_agr hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 n hn ρP Z hCP hGP hQP.1 hCN hGN
     hoto hotv hle hlex hH, ?_⟩
-  have hR := hRes n hn ρP Z hH hCN
+  have hR := hRes n hn ρP Z hH hCP hCN
   obtain ⟨μ, br, vr, seed, k0, hHD, hZk, _, _, _, _⟩ := hH
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
