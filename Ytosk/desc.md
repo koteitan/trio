@@ -1898,3 +1898,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - phiX_of_z0: Good3 ∧ NoGapP ∧ NoGap0PosP ∧ Z0Link ⇒ PhiX。
   - 保存の部品を値の述語 Q 一般にした（VP Q、vP_take・vP_t0）。NoGap0PosP は 1 列落とし・t = 0 で NoGapP と同じ証明で運べる。t = 2 では V′ = v_N(r + L) が [ψ_0(Ω_1), Ω_1) の加数を持つことがある（3.7 万件中 144 件）ので、σ だけの補題にはならない（未着手）。
   - 残り: Z0Link の保存（1 列落とし・t = 0・t = 2）。PhiX0R より狭い形の条件（穴の形と v(p) の値の関係）だが、まだ関係の条件。
+- groupA（V3PhiGapBase、緑）: 基底 SRO[n] = Mlen (1 + 3n) で NoGapP・NoGap0PosP・Z0Link（行 1 の親の v はすべて 0、vOpt_par1）。
