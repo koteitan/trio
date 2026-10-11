@@ -4,7 +4,8 @@
 `deps_lhd_otW_R`（V3DepRW）の RClaim を t0-exp の `RClaimU`（段 u を集合 U に限った RelRU）に替えたもの。
 VSmallR（全段）は標準形で偽（M13）なので、要る段だけにする。子への依頼は U を変えないので、要る段は
 D の道の上の祖先 k の v(k)（`PathLvS`、t = 0 の PathLv を DepS で一般にしたもの）と、枠自身の v(i) だけ。
-仮定: VSmallR の代わりに道の段だけの `hVR`、hVNRN・hShN も道の段だけ、種の RClaimU。
+仮定: VSmallR の代わりに道の段だけの `hVR`、hShN も道の段だけ、種の RClaimU、種の v は変わらない（hSv）。
+hVSN・hVNRN は要らない: 種でない列 c で v(c) が変わるなら c は数える子を持たず o(c) = ψ_{v(c)}(0)（vs_changed_bound、書き換えない）。
 -/
 import Ytosk.V3DepR
 import Ytosk.V3DepOTW
@@ -84,16 +85,6 @@ def VSmallRS (M : Mat) (S : Bool → Nat → Prop) (bnd : Nat) (ρ : Valn) : Pro
     ∀ u, (u = ρ.v k ∨ PathLvS M S bnd ρ k u) → ¬ lt (ρ.v k) u = true → ∀ g ∈ comps u s,
       g ≤ psi s z z ∨ g ≤ spArg (ρ.v k) z (sumN (Lc.map ρ.o)) ∨ ∃ d ∈ comps u (ρ.v k), g ≤ d
 
-/-- **`N`-side hypothesis**: the subscript components of a changed last child where the old child rewrites,
-at the levels of the path. -/
-def T2VNRU (M N : Mat) (S : Bool → Nat → Prop) (bnd : Nat) (ρ σ : Valn) : Prop :=
-  ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v i = ρ.v i → (∀ d ∈ Lc, σ.o d = ρ.o d) →
-    σ.v c ≠ ρ.v c → ∀ s y, ρ.o c = psi s y z →
-    (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-    ¬ ((split y (psi (succ s) z z)).1 = spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ∧ ρ.v i < σ.v c) →
-    ∀ u, PathLvS M S bnd ρ i u → ¬ lt (ρ.v i) u = true → ∀ g ∈ comps u (σ.v c),
-      g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ∨ ∃ d ∈ comps u (ρ.v i), g ≤ d
-
 /-- **`N`-side hypothesis**: in a shadow frame the new state is closed, at the levels of the path. -/
 def T2ShU (M N : Mat) (S : Bool → Nat → Prop) (bnd : Nat) (ρ σ : Valn) : Prop :=
   ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v i = ρ.v i → (∀ d ∈ Lc, σ.o d = ρ.o d) →
@@ -111,9 +102,8 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
     (hbM : bnd ≤ M.length) (hbN : bnd ≤ N.length)
     (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ)
     (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
-    (hVSN : ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → S true c → σ.v c ≠ ρ.v c →
-      ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
-    (hVR : VSmallRS M S bnd ρ) (hVNRN : T2VNRU M N S bnd ρ σ) (hShN : T2ShU M N S bnd ρ σ)
+    (hSv : ∀ c, S true c → σ.v c = ρ.v c)
+    (hVR : VSmallRS M S bnd ρ) (hShN : T2ShU M N S bnd ρ σ)
     (hoff : ∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i))
     (hOTout : ∀ b j, bnd ≤ j → j < N.length → isOT (valB σ b j) = true)
     (hWv : ∀ i, ¬ W false i)
@@ -299,7 +289,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
             · rw [hs'v, hvc, ← hsvc]; exact hsub
             · rw [hs'v]
               by_cases hsc : S true c
-              · exact hVSN i Lc c hi hclN hsc hvc
+              · exact absurd (hSv c hsc) hvc
               · -- a changed `v(c)` off the seeds: `c` has no counted child, `vs_changed_bound`
                 have hdv : DepS M S false c := by by_contra hn'; exact hvc ((hoff c hcb).2 hn')
                 obtain ⟨⟨hlv, hvot⟩, -⟩ := ih _ (by have := hRM c hcM; omega) false c (le_refl _) hdv hcb (hWv c)
@@ -374,11 +364,18 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
               subst hss0
               exact hIHR U (fun u hu => PathLvS.step hi hcb hclM hD hdc hsy htr (hU u hu)) s' y y' q' hsy hs'y' hq' hyp')
             (fun htr hhz u hu => hVR i c Lc s y hi hcb hclM hD hdc hsy htr hhz u (Or.inr (hU u hu)))
-            (fun ht hne hup u hUu hu g hg => by
+            (fun ht hne _ => by
+              -- a changed `v(c)`: off the seeds `c` has no counted child, so `y = 0` and the old child does not rewrite
+              exfalso
               have hvs : s = ρ.v c := hvM s y hsy
               have hne' : σ.v c ≠ ρ.v c := by rw [← hs'v, ← hvs]; exact hne
-              rw [hs'v] at hg hup ⊢
-              exact hVNRN i Lc c hi hclN hv' hsame hne' s y hsy ht hup u (hU u hUu) hu g hg)
+              by_cases hsc : S true c
+              · exact hne' (hSv c hsc)
+              · have hdv : DepS M S false c := by by_contra hn'; exact hne' ((hoff c hcb).2 hn')
+                have hclc := hDvNil c hcb hWc hsc hdv
+                have hoc := o_of_no_counted hC hcM (hG.ot_v c hcM) (no_cnt_of_cl_nil hclc)
+                rw [hsy] at hoc; simp only [psi.injEq] at hoc
+                have := ht.1; rw [hoc.2.1] at this; exact T.not_lt_z _ this)
             (fun ht hnt hnp u hu => hShN i Lc c hi hclN hv' hsame s y s' y' hsy hs'y' ht hnt hnp u (hU u hu))
             hqp hhyp
       | false =>
@@ -544,15 +541,6 @@ theorem VSmallRA.toS {M : Mat} {ρ : Valn} (h : VSmallRA M ρ) (S : Bool → Nat
     VSmallRS M S bnd ρ :=
   fun k c Lc s y _ _ hcl _ _ hsy ht hhz u hu => h k c Lc s y hcl hsy ht hhz u (hu.imp id PathLvS.toA)
 
-/-- `T2VNRU` at the levels `PathLvA`. -/
-def T2VNRA (M N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
-  ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v i = ρ.v i → (∀ d ∈ Lc, σ.o d = ρ.o d) →
-    σ.v c ≠ ρ.v c → ∀ s y, ρ.o c = psi s y z →
-    (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-    ¬ ((split y (psi (succ s) z z)).1 = spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ∧ ρ.v i < σ.v c) →
-    ∀ u, PathLvA M ρ i u → ¬ lt (ρ.v i) u = true → ∀ g ∈ comps u (σ.v c),
-      g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ∨ ∃ d ∈ comps u (ρ.v i), g ≤ d
-
 /-- `T2ShU` at the levels `PathLvA`. -/
 def T2ShA (M N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
   ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v i = ρ.v i → (∀ d ∈ Lc, σ.o d = ρ.o d) →
@@ -565,25 +553,22 @@ def T2ShA (M N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
       ∀ g ∈ comps u (app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) (psi s' y' z)),
         g < app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) (psi s' y' z) ∨ ∃ d ∈ comps u (ρ.v i), g ≤ d
 
-/-- **`T2VSN` at the seed only**: a changed `v` of the seed `p` as the last counted child of a frame. (Off the
-seeds a changed `v(c)` has no counted child and the bound comes from `VSmallF M` by `vs_changed_bound`.) -/
-def T2VSNP (N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
-  ∀ i (Lc : List Nat), i < bnd → CL N i = Lc ++ [p] → σ.v p ≠ ρ.v p →
-    ∀ g ∈ comps (ρ.v i) (σ.v p), g ≤ psi (σ.v p) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))
+/-- **The replacement of `T2Hard` and `T2VSN`** (one seed `p`, residual part): `VSmallRA` of `M`, the shadow
+hypothesis at the levels of the path, and `RClaimUS` at the seed. (`T2VSN` and `VSmallNewR` are not needed:
+off the seeds a changed `v(c)` has no counted child, and `v` of the seed does not change.) -/
+def T2HardB (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
+  VSmallRA M ρ ∧ T2ShA M N bnd ρ σ ∧ ∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimUS U ρ σ p
 
-/-- **The replacement of `T2Hard` and `T2VSN`** (one seed `p`): `VSmallRA` of `M`, the two `N`-side hypotheses
-at the levels of the path, `RClaimUS` at the seed, and `T2VSN` at the seed. -/
+/-- `T2HardB` and an unchanged `v` of the seed. -/
 def T2HardA (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
-  VSmallRA M ρ ∧ T2VNRA M N bnd ρ σ ∧ T2ShA M N bnd ρ σ ∧
-    (∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimUS U ρ σ p) ∧ T2VSNP N bnd p ρ σ
+  T2HardB M N bnd p ρ σ ∧ σ.v p = ρ.v p
 
-theorem T2HardA.vnr {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop) :
-    T2VNRU M N S bnd ρ σ :=
-  fun i Lc c hi hcl hv hL hvc s y hsy ht hn u hu => h.2.1 i Lc c hi hcl hv hL hvc s y hsy ht hn u hu.toA
+theorem T2HardA.of_B {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardB M N bnd p ρ σ) (hv : σ.v p = ρ.v p) :
+    T2HardA M N bnd p ρ σ := ⟨h, hv⟩
 
 theorem T2HardA.sh {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop) :
     T2ShU M N S bnd ρ σ :=
-  fun i Lc c hi hcl hv hL s y s' y' hsy hs'y' ht hnt hnp u hu => h.2.2.1 i Lc c hi hcl hv hL s y s' y' hsy hs'y' ht hnt hnp u hu.toA
+  fun i Lc c hi hcl hv hL s y s' y' hsy hs'y' ht hnt hnp u hu => h.1.2.1 i Lc c hi hcl hv hL s y s' y' hsy hs'y' ht hnt hnp u hu.toA
 
 theorem T2HardA.seed {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop)
     (hSp : ∀ i, S true i → i = p) :
@@ -591,23 +576,12 @@ theorem T2HardA.seed {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N b
       ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimUS U ρ σ i := by
   intro i hs _ _ U hU
   have := hSp i hs; subst this
-  exact h.2.2.2.1 U (fun u hu => (hU u hu).toA)
+  exact h.1.2.2 U (fun u hu => (hU u hu).toA)
 
-theorem T2HardA.vsn {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop)
-    (hSp : ∀ i, S true i → i = p) :
-    ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → S true c → σ.v c ≠ ρ.v c →
-      ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) := by
-  intro i Lc c hi hcl hs hvc
+theorem T2HardA.sv {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop)
+    (hSp : ∀ i, S true i → i = p) : ∀ c, S true c → σ.v c = ρ.v c := by
+  intro c hs
   have := hSp c hs; subst this
-  exact h.2.2.2.2 i Lc hi hcl hvc
-
-/-- `T2HardA` without the seed field `T2VSNP` (which holds when `v` of the seed does not change). -/
-def T2HardB (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
-  VSmallRA M ρ ∧ T2VNRA M N bnd ρ σ ∧ T2ShA M N bnd ρ σ ∧
-    (∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimUS U ρ σ p)
-
-theorem T2HardA.of_B {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardB M N bnd p ρ σ) (hv : σ.v p = ρ.v p) :
-    T2HardA M N bnd p ρ σ :=
-  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, fun _ _ _ _ hne => absurd hv hne⟩
+  exact h.2
 
 end Ytosk
