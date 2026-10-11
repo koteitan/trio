@@ -150,6 +150,7 @@ def AbsUWResL_lf (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
 
 def AbsUWResL_seed (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+  Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
   Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
   ∀ i k, i < r + L → upg M i = some k → DepX M (r + L) false k → holeLev (last (ρ.v k)) ≠ z →
   (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z k = seed) →
@@ -174,7 +175,7 @@ structure AbsUWResL (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop where
 /-- **`AbsUWRes` from the `LevFree` form.** -/
 theorem absUWRes_of_L {M : Mat} {ρ : Valn} {r L d0 : Nat} (hx2 : entry M 2 (r + L) = 0)
     (hL : AbsUWResL M r L d0 ρ) : AbsUWRes M r L d0 ρ := by
-  intro n hn ρP Z hH hCN i k hi hu hkv
+  intro n hn ρP Z hH hCP hCN i k hi hu hkv
   by_cases hμ : holeLev (last (ρ.v k)) = z
   · exact hL.zero n hn ρP Z hH hCN i k hi hu hkv hμ
   obtain ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, h5, h6⟩ := hH
@@ -192,7 +193,7 @@ theorem absUWRes_of_L {M : Mat} {ρ : Valn} {r L d0 : Nat} (hx2 : entry M 2 (r +
   obtain ⟨kk, _, hZe⟩ := hZk k
   cases kk with
   | zero =>
-    exact hL.seed n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, h5, h6⟩ hCN i k hi hu hkv hμ
+    exact hL.seed n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, h5, h6⟩ hCP hCN i k hi hu hkv hμ
       ⟨μ, br, vr, seed, hHD, hZe⟩
   | succ k' =>
     left
@@ -368,6 +369,7 @@ def AbsDSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
 /-- The seed part where the seed is below `Ω_μ` after `fsD` (`q = r` only in C′). -/
 def AbsUWSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+  Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
   Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
   ∀ i k, i < r + L → upg M i = some k → DepX M (r + L) false k → holeLev (last (ρ.v k)) ≠ z →
   (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z k = seed) →
@@ -440,10 +442,10 @@ theorem absDResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : AbsDResL_lf
 
 theorem absUWResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : AbsUWResL_lf M r L d0 ρ)
     (hS : AbsUWSeedLow M r L d0 ρ) : AbsUWResL_seed M r L d0 ρ := by
-  intro n hn ρP Z hH hCN i k hi hu hkv hμ hsd
+  intro n hn ρP Z hH hCP hCN i k hi hu hkv hμ hsd
   by_cases h : isSucc (Z k) = false ∧ psi (holeLev (last (ρ.v k))) z z ≤ fsD (Z k) one
   · exact Or.inl ⟨h.1, seedCond_of_bandS (hLF n hn ρP Z hH hCN i k hi hu hkv hμ) h.2⟩
-  · exact hS n hn ρP Z hH hCN i k hi hu hkv hμ hsd h
+  · exact hS n hn ρP Z hH hCP hCN i k hi hu hkv hμ hsd h
 
 theorem tploResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : TPLoResL_lf M r L d0 ρ)
     (hS : TPLoSeedLow M r L d0 ρ) : TPLoResL_seed M r L d0 ρ := by
@@ -458,6 +460,7 @@ theorem tploResL_seed_of {M : Mat} {r L d0 : Nat} {ρ : Valn} (hLF : TPLoResL_lf
 /-- The AbsDN residual at a positive level when the index is the seed and `fsD(seed, 1) < Ω_μ`. -/
 def AbsDNSeedLow (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
     Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
     holeLev (bumpW M ρ i) ≠ z → (∃ μ br vr seed, HoleData M (r + L) ρ μ br vr seed ∧ Z i = seed) →
@@ -482,7 +485,7 @@ def AbsDNZero (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
 theorem absDNRes_of_vk {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
     (hVK : VKFree M ρ) (hS : AbsDNSeedLow M r L d0 ρ) (h0 : AbsDNZero M r L d0 ρ) : AbsDNRes M r L d0 ρ := by
-  intro n hn ρP Z hH hCN i hi hv h2
+  intro n hn ρP Z hH hCP hCN i hi hv h2
   by_cases hμ : holeLev (bumpW M ρ i) = z
   · exact h0 n hn ρP Z hH hCN i hi hv h2 hμ
   obtain ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, hμv, hro⟩ := hH
@@ -496,7 +499,7 @@ theorem absDNRes_of_vk {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : In
   | zero =>
     by_cases h : isSucc (Z i) = false ∧ psi (holeLev (bumpW M ρ i)) z z ≤ fsD (Z i) one
     · exact Or.inl ⟨h.1, seedCond_of_levFree hLF h.2⟩
-    · exact hS n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, hμv, hro⟩ hCN i hi hv h2 hμ
+    · exact hS n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, hμv, hro⟩ hCP hCN i hi hv h2 hμ
         ⟨μ, br, vr, seed, hHD, hZe⟩ h
   | succ k' =>
     have hseedz : seed ≠ z := by obtain ⟨a, X, h⟩ := hHD.seedS; rw [h]; simp

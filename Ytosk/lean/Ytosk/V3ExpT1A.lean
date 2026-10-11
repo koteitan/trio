@@ -300,6 +300,7 @@ the index is not a successor, and the seed condition at `η = 1` holds for the s
 the field holds at the new value (C′ の 2 万行列 × n = 2, 3 で 1026 件、種の条件は退化した種の 1 件を除き成立). -/
 def AbsUWRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
     Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ i k, i < r + L → upg M i = some k → DepX M (r + L) false k →
     (isSucc (Z k) = false ∧ SeedCond (vOpt ρ (par M 1 i)) (Z k) (etaOm (holeLev (last (ρ.v k)))) one) ∨
@@ -318,7 +319,7 @@ theorem expStep_absUW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
   intro n hn ρP Z hCP hGP hQP hCN hGN hoto hotv hle hlex hH
   refine ⟨expStep_agr hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 n hn ρP Z hCP hGP hQP.1 hCN hGN
     hoto hotv hle hlex hH, ?_⟩
-  have hR := hRes n hn ρP Z hH hCN
+  have hR := hRes n hn ρP Z hH hCP hCN
   obtain ⟨μ, br, vr, seed, k0, hHD, hZk, _, _, _, _⟩ := hH
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
@@ -416,6 +417,7 @@ n = 2, 3 で 6112 件、欄は全件成立、種の条件は 56 件で偽: v(P_1
 降りない場合). -/
 def AbsDNRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
     Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
     (isSucc (Z i) = false ∧ SeedCond (vOpt ρ (par M 1 i)) (Z i) (etaOm (holeLev (bumpW M ρ i))) one) ∨
@@ -434,7 +436,7 @@ theorem expStep_absDN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
   intro n hn ρP Z hCP hGP hQP hCN hGN hoto hotv hle hlex hH
   refine ⟨expStep_agr hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 n hn ρP Z hCP hGP hQP.1 hCN hGN
     hoto hotv hle hlex hH, ?_⟩
-  have hR := hRes n hn ρP Z hH hCN
+  have hR := hRes n hn ρP Z hH hCP hCN
   obtain ⟨μ, br, vr, seed, k0, hHD, hZk, _, _, _, _⟩ := hH
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn

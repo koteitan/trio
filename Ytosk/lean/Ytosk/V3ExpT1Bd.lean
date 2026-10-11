@@ -85,7 +85,7 @@ theorem tploResL_lf_of_leafB {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (
 theorem absDNRes_of_leafB {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
     (hVK : BandLast M ρ) (hS : AbsDNSeedLow M r L d0 ρ) (h0 : AbsDNZero M r L d0 ρ) : AbsDNRes M r L d0 ρ := by
-  intro n hn ρP Z hH hCN i hi hv h2
+  intro n hn ρP Z hH hCP hCN i hi hv h2
   by_cases hμ : holeLev (bumpW M ρ i) = z
   · exact h0 n hn ρP Z hH hCN i hi hv h2 hμ
   obtain ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, hμv, hro⟩ := hH
@@ -100,7 +100,7 @@ theorem absDNRes_of_leafB {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I :
   | zero =>
     by_cases h : isSucc (Z i) = false ∧ psi (holeLev (bumpW M ρ i)) z z ≤ fsD (Z i) one
     · exact Or.inl ⟨h.1, seedCond_of_bandS hLF h.2⟩
-    · exact hS n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, hμv, hro⟩ hCN i hi hv h2 hμ
+    · exact hS n hn ρP Z ⟨μ, br, vr, seed, k0, hHD, hZk, h3, h4, hμv, hro⟩ hCP hCN i hi hv h2 hμ
         ⟨μ, br, vr, seed, hHD, hZe⟩ h
   | succ k' =>
     have hseedz : seed ≠ z := by obtain ⟨a, X, h⟩ := hHD.seedS; rw [h]; simp
