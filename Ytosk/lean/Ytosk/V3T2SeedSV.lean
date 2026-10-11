@@ -259,9 +259,9 @@ theorem sv_agree {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) 
   have hi' : i < (M.take (r + L)).length := by rw [hlT]; exact hi
   exact ⟨fun h => (hag i hi').1 (by omega), fun h => (hag i hi').2 (by omega)⟩
 
-/-- **The value of the seed `r` in `M[n]`** (sv, `n ≥ 2`): the counted children of `r` are those of `M.take x`
+/-- **The frame of the seed `r` in `M[n]`** (sv, `n ≥ 2`): the counted children of `r` are those of `M.take x`
 with the values of `M.take x`, then the copy root `x′` with `v = V + 1`. -/
-theorem o_r_level_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem sv_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
@@ -274,12 +274,13 @@ theorem o_r_level_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hGP : Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n - 1)) ρP)
     (hRP : Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n - 1)) rkP)
     {τ0 : Valn} {rk0 : Bool → Nat → Nat} (hC0 : Cons (M.take (r + L)) τ0) (hG0 : Good3 (M.take (r + L)) τ0)
-    (hR0 : Rk (M.take (r + L)) rk0)
-    (hdecN : ((CL (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) r).map
-      σ.o).Pairwise (fun a b => b ≤ a)) :
-    σ.o r = psi (τ0.v r) (step (τ0.v r) (spArg (τ0.v r) z (sumN ((CL (M.take (r + L)) r).map τ0.o)))
-      (succ (ρ.v r)) (sh (ρP.v r) (succ (ρ.v r)) (spArg (ρP.v r) z (sumN ((CL (TRIO.gexp M r L
-        (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n - 1)) r).map ρP.o)))) z) z := by
+    (hR0 : Rk (M.take (r + L)) rk0) :
+    CL (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) r =
+      CL (M.take (r + L)) r ++ [r + L] ∧
+    (∀ d ∈ CL (M.take (r + L)) r, σ.o d = τ0.o d) ∧ σ.v r = τ0.v r ∧
+    σ.o (r + L) = psi (succ (ρ.v r)) (sh (ρP.v r) (succ (ρ.v r)) (spArg (ρP.v r) z (sumN ((CL (TRIO.gexp M r L
+        (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n - 1)) r).map ρP.o)))) z ∧
+    isOT (σ.o (r + L)) = true := by
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   obtain ⟨hcntN, hcntP⟩ := sv_cnt hM hS I hz h2 hlen hr hq hux htP hn
   have hag := sv_agree hM hS I hz h2 hlen hr hq hux htP hn hCN hC0 hR0
@@ -373,15 +374,85 @@ theorem o_r_level_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     have := isOT_shTop (V' := succ (ρ.v r)) (hGP.ot_v r hrP) (by rw [← hvx]; exact hV') (by rw [← hvx]; exact hVV)
       hPo (le_refl _)
     rwa [shf_self] at this
-  have hsN : ∀ c ∈ CL N r, Single (σ.o c) := by
+  exact ⟨hCLN, hval, hvr, hox, by rw [hox]; exact hshOT⟩
+
+/-- **The value of the seed `r` in `M[n]`** (sv, `n ≥ 2`). -/
+theorem o_r_level_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
+    (htP : topped (M.take (r + L)) r = false)
+    {n : Nat} (hn : 2 ≤ n) {σ ρP : Valn} {rkN rkP : Bool → Nat → Nat}
+    (hCN : Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ)
+    (hRN : Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) rkN)
+    (hCP : Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n - 1)) ρP)
+    (hGP : Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n - 1)) ρP)
+    (hRP : Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n - 1)) rkP)
+    {τ0 : Valn} {rk0 : Bool → Nat → Nat} (hC0 : Cons (M.take (r + L)) τ0) (hG0 : Good3 (M.take (r + L)) τ0)
+    (hR0 : Rk (M.take (r + L)) rk0)
+    (hdecN : ((CL (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) r).map
+      σ.o).Pairwise (fun a b => b ≤ a)) :
+    σ.o r = psi (τ0.v r) (step (τ0.v r) (spArg (τ0.v r) z (sumN ((CL (M.take (r + L)) r).map τ0.o)))
+      (succ (ρ.v r)) (sh (ρP.v r) (succ (ρ.v r)) (spArg (ρP.v r) z (sumN ((CL (TRIO.gexp M r L
+        (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n - 1)) r).map ρP.o)))) z) z := by
+  obtain ⟨hCLN, hval, hvr, hox, hxOT⟩ :=
+    sv_frame hM hS I R hz h2 hlen hr hq hux htP hn hCN hRN hCP hGP hRP hC0 hG0 hR0
+  have hrN : r < (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n).length := by
+    have := TRIO.gexp_length (M := M) (j0 := r) (Lb := L) (d0 := entry M 0 (r + L) - entry M 0 r)
+      (d1 := entry M 1 (r + L) - entry M 1 r) (n := n) hlen
+    have : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn
+    have := par_lt M 0 _ _ hq; omega
+  have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; have := par_lt M 0 _ _ hq; omega
+  have hsN : ∀ c ∈ CL (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) r,
+      Single (σ.o c) := by
     intro c hc
     rw [hCLN] at hc
     rcases List.mem_append.mp hc with hc | hc
     · rw [hval c hc]
       exact single_o hC0 hG0 (mem_children (cl_mem_children hc)).2
-    · simp at hc; rw [hc, hox]; exact ⟨hshOT, _, _, rfl⟩
+    · simp at hc; rw [hc, hox]; rw [hox] at hxOT; exact ⟨hxOT, _, _, rfl⟩
   have hform := o_last_form hCN hrN (by rw [hvr]; exact hG0.ot_v r hrT) hCLN hsN hdecN hox
   rw [hform, hvr, List.map_congr_left hval]
+
+/-- **The counted children of the seed `r` in `M[n]` decrease** (sv), when the last counted child of `r` in
+`M.take x` has a subscript above `V + 1`. -/
+theorem seed_dec_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
+    (htP : topped (M.take (r + L)) r = false)
+    {n : Nat} (hn : 2 ≤ n) {σ ρP : Valn} {rkN rkP : Bool → Nat → Nat}
+    (hCN : Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ)
+    (hRN : Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) rkN)
+    (hCP : Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n - 1)) ρP)
+    (hGP : Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n - 1)) ρP)
+    (hRP : Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n - 1)) rkP)
+    {τ0 : Valn} {rk0 : Bool → Nat → Nat} (hC0 : Cons (M.take (r + L)) τ0) (hG0 : Good3 (M.take (r + L)) τ0)
+    (hR0 : Rk (M.take (r + L)) rk0)
+    (hlev : ∀ Lc c0, CL (M.take (r + L)) r = Lc ++ [c0] → ∃ s y, τ0.o c0 = psi s y z ∧ succ (ρ.v r) < s) :
+    ((CL (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) r).map
+      σ.o).Pairwise (fun a b => b ≤ a) := by
+  obtain ⟨hCLN, hval, _, hox, _⟩ :=
+    sv_frame hM hS I R hz h2 hlen hr hq hux htP hn hCN hRN hCP hGP hRP hC0 hG0 hR0
+  have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; have := par_lt M 0 _ _ hq; omega
+  have hdP := hG0.dec r hrT
+  rw [cvals_eq_mapC hC0] at hdP
+  rw [hCLN, List.map_append, List.map_congr_left hval, List.map_singleton]
+  refine List.pairwise_append.mpr ⟨hdP, by simp, fun t ht b hb => ?_⟩
+  simp at hb; rw [hb, hox]
+  rcases List.eq_nil_or_concat (CL (M.take (r + L)) r) with hnil | ⟨Lc, c0, hcat⟩
+  · rw [hnil] at ht; simp at ht
+  · rw [List.concat_eq_append] at hcat
+    obtain ⟨s, y, hc0, hlt⟩ := hlev Lc c0 hcat
+    have hle : τ0.o c0 ≤ t := by
+      rw [hcat, List.map_append, List.map_singleton] at hdP ht
+      rcases List.mem_append.mp ht with ht | ht
+      · exact (List.pairwise_append.mp hdP).2.2 t ht _ (by simp)
+      · simp at ht; rw [ht]
+    refine le_trans (le_of_lt ?_) hle
+    rw [hc0, psi_lt_psi_z_iff]; left; exact hlt
 
 /-- The iterate `σ^k(X)` of `σ = σ_{V, V′}`. -/
 def shIt (V V' X : T) : Nat → T
@@ -397,6 +468,8 @@ def t2X1 (M : Mat) (r L : Nat) (τ : Valn) : T :=
 (`step V X₁ V′ (σ X) = σ X`), and `ψ_V(σ^k X₁) ◁ o_M(r)` for `k ≥ 1`. -/
 structure T2SeedSVRes (M : Mat) (ρ : Valn) (r L : Nat) : Prop where
   topP : topped (M.take (r + L)) r = false
+  decP : ∀ τ, Cons (M.take (r + L)) τ → ∀ Lc c0, CL (M.take (r + L)) r = Lc ++ [c0] →
+    ∃ s y, τ.o c0 = psi s y z ∧ succ (ρ.v r) < s
   vP : ∀ τ, Cons (M.take (r + L)) τ → τ.v r = ρ.v r
   rw : ∀ τ, Cons (M.take (r + L)) τ → ∀ k,
     step (ρ.v r) (t2X1 M r L τ) (succ (ρ.v r))

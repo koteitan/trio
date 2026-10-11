@@ -2519,3 +2519,33 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - AbsUWSeedLow・AbsDNSeedLow（θ = 1 で、種の形が分かっても SeedCond の側は偽になりうる。吸収の側が要る）と TPLoNSeed（M[n] の枠）はまだ。
 - AbsUWSeedLow・AbsDNSeedLow も同じ形に（c47683f6）。AbsUWRes・AbsDNRes の系にも M[n − 1] の評価の Cons を通し、種 = Ω_{ν+1}・ν ≠ 0 では M だけの吸収の残り AbsUWGapRes・AbsDNGapRes（新しい W′ = fsD(W, Ω_{ν+1}) に吸収される v(P_1 i) の加数は W′⟨1⟩ にも吸収される）。ν = 0 は元の形 AbsUWSeedLow0・AbsDNSeedLow0。実測（6 集合）: AbsUW 約 1.2 万件・AbsDN 約 6.4 万件（ν ≠ 0）で例外 0。ν = 0 も M だけの形で例外 0。組み立て hExp_t1GP6。
 - t1-exp の現在の最上位: hExp_t1GP6（V3ExpT1SL）。仮定: hRT、hFrm（TPLoWLFRes2・TPLoW0・AbsDW0・TPLoNSeed・TPLoN0）、hLL（BandLast）、hResN = DegRes TPLoAt・TPLoLFRes2・TPLoGapRes・TPLoSeedLow0・TPLoResL_zero・AbsDGapRes・AbsDSeedLow0・AbsDResL_zero・AbsUWGapRes・AbsUWSeedLow0・AbsUWResL_zero・AbsDNGapRes・AbsDNSeedLow0・AbsDNZero・PassRootRes。M だけの新しい残り（BandLast・TPLoLFRes2・PassRootRes・4 つの GapRes）はどれも 6 集合で例外 0。段 0 の欄（…0・…_zero・TPLoW0・AbsDW0・TPLoN0）は groupA。TPLoNSeed（M[n] の枠、種 < Ω_μ）はまだ。
+
+### ext1x・T2Ext での再測定と TPLoSeedLow の消去（2026-10-12、t1-exp、V3ExpT1N）
+
+- TPLoNSeed（M[n] の枠、種 < Ω_μ）を M だけの帯の条件 TPLoNBand に帰着（9be77955、tploNSeed_of_band、seed_shape_gen、hExp_t1GP7）。種 = Ω_{ν+1} の形は Inv3 なしで、構造の不変条件と Cons・Good3・接頭辞の Rk から出る。TPLo（添字 ψ_μ(Ω_{μ+1})）から fsD_transfer で移す。d3s で 2799 件例外 0。
+- **TPLoSeedLow は残りなしで出る**（tploSeedLow_holds）。前提の GoodIdx (Z c)（Z c = ψ_μ(X)、X ≠ 0）は種 Ω_{ν+1}（引数 0）では偽になる。その場合は退化した添字として DegRes が受け持つ。よって TPLoGapRes・TPLoSeedLow0 は要らない（hExp_t1GP8、ビルド確認は drop-fix の V3DropRel 編集中のため保留）。
+- **M だけの強い形は ext1x・T2Ext で偽**（allres.py）:
+
+| 残り | ext1x | T2Ext |
+|---|---|---|
+| BandLast | 21 | 222 |
+| TPLoLFRes2（BandS 形） | 21 | 215 |
+| TPLoGapRes（もう不要） | 135 | 126 |
+| AbsDGapRes | 24 | 42 |
+| AbsUWGapRes | 0 | 1 |
+| AbsDNGapRes | 0 | 0 |
+| PassRootRes | 0 | 0 |
+
+  - 実際に使う p だけの BandS（lf の各欄）も ext1x で偽（AbsD 12・TPLo 21・AbsUW 4）。
+  - しかし調べた反例では、元の残り（実際の種 ζ での SeedCond か吸収、AbsDRes・TPLoRes の中身）は真で、M[n] の AbsD・AbsDN・AbsUW も真。偽なのは「帯 [Ω_μ, ψ_μ(Ω_{μ+1})) を丸ごと空にする」強い形だけ（実際に要るのは [fsD(ζ, θ), ζ) の範囲だけ）。
+  - ν = v(P_1 r) = 0 の種（段 0）では、元の TPLo の SeedCond そのものが偽の行列がある: (0,0,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,0,0)(4,1,1)(4,1,0)(5,0,0)(6,1,0)(7,2,0)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,1)(7,0,0)(6,1,1)(6,1,0)(7,0,0)(8,1,0)(9,2,0) の列 1・11。ただし GoodIdx の前提で TPLoSeedLow からは外れる（種 = Ω_1 は退化した添字）。
+- 方針: lf の欄は BandS（M だけ）に分けず、元の形（実際の鎖の値 ζ での SeedCond か吸収）のまま残すのがよい。groupA の吸収の分岐・AbsD_L の再設計と合わせる。
+
+### t = 2 の種と q の数える子の減少を M 側の残りから（2026-10-12、t2）
+
+- o_r_level_* を「枠の事実」（`qn_frame`・`sv_frame`・`C_frame`: CL_N(r) の形、前の子の値、新しい子 x′ または q の値、CL_N(q) = [x′]）と値の式に分けた。
+- 減少（`seed_dec_qr`・`seed_dec_qn`・`seed_dec_sv`・`seed_dec_C`）: 新しい最後の子の値は ψ_{V′}(…) で、前の子の値は M（または M.take x）の減少で c0 の値以上。よって V′ < c0 の添字なら減少する。q の数える子は x′ だけなので減少は自明。
+  - qr: V + 1 < v(x)（T2SeedQRRes.ks から）。qn: s′ < v_M(q)（新しい欄 T2SeedQNRes.vqlt）。sv: V + 1 < M.take x での c0 の添字（T2SeedSVRes.decP）。C: s′ < 同じ（T2SeedCRes.decP）。
+  - 実測（7 集合: C′・d3s・deep2・deep3・ext1・ext1x・expP）: 4 つとも例外 0（qr 40 万件、qn 10 万件、sv 2 万件、C 6000 件）。
+- T2BelowResL の種と q の欄から減少を外し、標準形だけにした。t2BelowXRes_of_L が 4 つの場合ごとに減少と ◁ を出す。
+- T2BelowResL に残る M[n] 側の欄: T2VSN・T2Hard・種の o の標準形・q の o の標準形（7 集合で例外 0）。

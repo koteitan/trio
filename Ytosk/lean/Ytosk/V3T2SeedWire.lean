@@ -1,7 +1,7 @@
 /-
 **3 行・t = 2: x より前の残り T2BelowXRes から、証明済みの種の ◁ を外す（`t2BelowXRes_of_L`）。**
 
-T2BelowResL は T2BelowRes の種の欄から ◁ を外したもの。種の ◁ は 4 つの場合ごとに M と M.take x だけの残りから出る。
+T2BelowResL は T2BelowRes の種と q の欄から ◁ と数える子の減少を外したもの。どちらも 4 つの場合ごとに M と M.take x だけの残りから出る。
 - q = r で x への上げがない: seedL_qr（V3T2SeedQRL）、M と M.take x だけの残り T2SeedQRRes から。
 - q ≠ r で q が r の最後の数える子: seedL_qn（V3T2SeedQNV）、残り T2SeedQNRes から。
 - sv（q = r で x − 1 が x へ上げる）: seedL_sv（V3T2SeedSV）、残り T2SeedSVRes から。
@@ -55,10 +55,8 @@ def T2BelowResL (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
     ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true) →
     T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
-    (∀ p, T2Seed M r L p → isOT (σ.o p) = true ∧
-      (cvals (TRIO.gexp M r L d0 d1 n) σ p).Pairwise (fun a b => b ≤ a)) ∧
-    (∀ q, par M 0 (r + L) = some q → q ≠ r → isOT (σ.o q) = true ∧
-      (cvals (TRIO.gexp M r L d0 d1 n) σ q).Pairwise (fun a b => b ≤ a))
+    (∀ p, T2Seed M r L p → isOT (σ.o p) = true) ∧
+    (∀ q, par M 0 (r + L) = some q → q ≠ r → isOT (σ.o q) = true)
 
 /-- `T2BelowResL` for every standard `M` of type `t = 2`. -/
 def T2BelowXResL : Prop :=
@@ -105,62 +103,107 @@ theorem cl_r_split {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hq : par
   rw [hsplit, List.filter_append]
   simp [hcnt]
 
-/-- **`T2BelowXRes` from `T2BelowXResL` and the seed residuals of `q = r` and `q ≠ r`.** -/
+/-- **`T2BelowXRes` from `T2BelowXResL` and the seed residuals of the four cases.** -/
 theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQNAll) (hSV : T2SeedSVAll)
     (hCC : T2SeedCAll) : T2BelowXRes := by
   intro M ρ rk hM hS I R hz h2 r L hlen hr n hn hGlow σ hCN hOT
   obtain ⟨h1, h2', h3, h4⟩ := hL M ρ rk hM hS I R hz h2 r L hlen hr n hn hGlow σ hCN hOT
-  refine ⟨h1, h2', fun p hp => ?_, h4⟩
-  obtain ⟨hot, hdec⟩ := h3 p hp
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  have hrx : r < r + L := par_lt M 2 _ _ hr
+  have hlen2 : 2 ≤ M.length := by omega
+  have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
+  have hexp : ∀ m, expand M m = TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+      (entry M 1 (r + L) - entry M 1 r) m := by
+    intro m
+    have h := expand_eq_gexp M m hlen2 hzT (by rw [h2, show M.length - 1 = r + L by omega]; exact hr)
+    rw [h2, show M.length - 1 = r + L by omega] at h
+    simp only [show (0 < 2) from by omega, show (1 < 2) from by omega, if_true,
+      Nat.add_sub_cancel_left] at h
+    exact h
+  have hRk : ∀ m, 1 ≤ m → ∃ rk', Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+      (entry M 1 (r + L) - entry M 1 r) m) rk' := fun m hm => by
+    obtain ⟨rk', h'⟩ := rk_expand_t2 hX hJ hz h2 I.rank m hm
+    rw [hexp m] at h'; exact ⟨rk', h'⟩
+  obtain ⟨rkN, hRN⟩ := hRk n (by omega)
+  obtain ⟨rkP, hRP⟩ := hRk (n - 1) (by omega)
+  have hCP := cons_of_rk hRP
+  have hGP := hGlow (n - 1) (by omega) (by omega) _ hCP
+  have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+  rw [show M.length - 1 = r + L by omega] at hcnt
+  have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
+  have hC0 := cons_of_rk hRk1
+  have hP1 : TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) 1 =
+      M.take (r + L) := gexp_one_gen hlen
+  have hG0 : Good3 (M.take (r + L)) (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rk)) := by
+    have h := hGlow 1 (le_refl 1) (by omega) _ (by rw [hP1]; exact hC0)
+    rwa [hP1] at h
+  -- the seed is `r`
+  have hpr : ∀ p, T2Seed M r L p → p = r := by
+    intro p hp
+    rcases hp with ⟨_, rfl⟩ | ⟨q, hq, hqr, hpq⟩
+    · rfl
+    · rw [par0_q_t2 hM hS I hlen hr hq hqr] at hpq; cases hpq; rfl
+  -- the decrease of the counted children of the seed and of `q`
+  have hD : (cvals (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n)
+      σ r).Pairwise (fun a b => b ≤ a) ∧
+      (∀ q, par M 0 (r + L) = some q → q ≠ r → (cvals (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+        (entry M 1 (r + L) - entry M 1 r) n) σ q).Pairwise (fun a b => b ≤ a)) := by
+    rw [cvals_eq_mapC hCN]
+    rcases t2_seed_cases hlen hr with hc | hc | hc | hc
+    · obtain ⟨hq, hXu⟩ := hc
+      obtain ⟨he2r, h1lt⟩ := par2_facts I.z2 (by omega) hr
+      have hxb : col M (r + L) ≠ bump M r := fun h => by
+        have := e1_of_col (show col M (r + L) = (entry M 0 r + 1, entry M 1 r, 1) from h); omega
+      obtain ⟨Lc, hCLM⟩ := cl_r_split hlen hq hXu hxb
+      have hRes := hQR M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hXu⟩ Lc hCLM
+      have hks1 : succ (ρ.v r) < ρ.v (r + L) := by rw [succ_eq_addN_one]; exact hRes.ks 1
+      refine ⟨seed_dec_qr hM hS I R hz h2 hlen hr hq hXu hCLM hn hCN hRN hCP hGP hRP hks1, ?_⟩
+      intro q hq' hqr; rw [hq] at hq'; cases hq'; exact absurd rfl hqr
+    · obtain ⟨q, Lc, hq, hqr, hCLM⟩ := hc
+      have hRes := hQN M ρ rk hM hS I R hz h2 r L hlen hr q Lc hq hqr hCLM
+      have hvq := vq_eq_gexp hM hS I hz h2 hlen hr hn hCN hq hqr
+      obtain ⟨hd1, hd2⟩ := seed_dec_qn hM hS I R hz h2 hlen hr hq hqr hCLM hn hCN hRN hCP hGP hRP
+        (by rw [hvq]; exact hRes.vqlt)
+      refine ⟨hd1, fun q' hq' _ => ?_⟩
+      rw [hq] at hq'; cases hq'
+      rw [cvals_eq_mapC hCN]; exact hd2
+    · obtain ⟨hq, hux⟩ := hc
+      have hRes := hSV M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hux⟩
+      refine ⟨seed_dec_sv hM hS I R hz h2 hlen hr hq hux hRes.topP hn hCN hRN hCP hGP hRP hC0 hG0 hRk1
+        (hRes.decP _ hC0), ?_⟩
+      intro q hq' hqr; rw [hq] at hq'; cases hq'; exact absurd rfl hqr
+    · obtain ⟨q, hq, hqr, hncl⟩ := hc
+      have hRes := hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl
+      have hvq := vq_eq_gexp hM hS I hz h2 hlen hr hn hCN hq hqr
+      obtain ⟨hd1, hd2⟩ := seed_dec_C hM hS I R hz h2 hlen hr hq hqr hRes.qP hRes.un hn hCN hRN hCP hGP hRP
+        hC0 hG0 hRk1 (hRes.vP _ hC0) (by rw [hvq]; exact hRes.vqP _ hC0)
+        (fun Lc c0 h => by rw [hvq]; exact hRes.decP _ hC0 Lc c0 h)
+      refine ⟨hd1, fun q' hq' _ => ?_⟩
+      rw [hq] at hq'; cases hq'
+      rw [cvals_eq_mapC hCN]; exact hd2
+  refine ⟨h1, h2', fun p hp => ?_, fun q hq hqr => ⟨h4 q hq hqr, hD.2 q hq hqr⟩⟩
+  have hp' := hpr p hp
+  subst p
+  have hot := h3 r hp
+  have hdec := hD.1
   refine ⟨?_, hot, hdec⟩
-  by_cases hqn : T2QNLast M r L
-  · obtain ⟨q, Lc, hq, hqr, hCLM⟩ := hqn
-    have hpq : par M 0 q = some r := by
-      have hqcl : q ∈ CL M r := by rw [hCLM]; simp
-      exact (mem_children_iff.mp (cl_mem_children hqcl)).2
-    have hp' : p = r := by
-      rcases hp with ⟨hq', _⟩ | ⟨q', hq', _, hpq'⟩
-      · rw [hq] at hq'; cases hq'; exact absurd rfl hqr
-      · rw [hq] at hq'; cases hq'; rw [hpq] at hpq'; cases hpq'; rfl
-    subst p
-    exact seedL_qn hM hS I R hz h2 hlen hr hq hqr hCLM (hQN M ρ rk hM hS I R hz h2 r L hlen hr q Lc hq hqr hCLM)
-      n hn hGlow σ hCN (h4 q hq hqr).1 (by rw [← cvals_eq_mapC hCN]; exact hdec)
-  by_cases hsv : T2SVCase M r L
-  · obtain ⟨hq, hux⟩ := hsv
-    have hp' : p = r := by
-      rcases hp with ⟨_, rfl⟩ | ⟨q, hq', hqr, _⟩
-      · rfl
-      · rw [hq] at hq'; cases hq'; exact absurd rfl hqr
-    subst p
-    exact seedL_sv hM hS I R hz h2 hlen hr hq hux (hSV M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hux⟩)
-      n hn hGlow σ hCN (by rw [← cvals_eq_mapC hCN]; exact hdec)
-  by_cases hcc : T2CCase M r L
-  · obtain ⟨q, hq, hqr, hncl⟩ := hcc
-    have hpq := par0_q_t2 hM hS I hlen hr hq hqr
-    have hp' : p = r := by
-      rcases hp with ⟨hq', _⟩ | ⟨q', hq', _, hpq'⟩
-      · rw [hq] at hq'; cases hq'; exact absurd rfl hqr
-      · rw [hq] at hq'; cases hq'; rw [hpq] at hpq'; cases hpq'; rfl
-    subst p
-    exact seedL_C hM hS I R hz h2 hlen hr hq hqr (hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl)
-      n hn hGlow σ hCN (h4 q hq hqr).1 (by rw [← cvals_eq_mapC hCN]; exact hdec)
-  by_cases hnu : T2QRNoUpg M r L
-  · obtain ⟨hq, hXu⟩ := hnu
-    have hp' : p = r := by
-      rcases hp with ⟨_, rfl⟩ | ⟨q, hq', hqr, _⟩
-      · rfl
-      · rw [hq] at hq'; cases hq'; exact absurd rfl hqr
-    subst p
+  rcases t2_seed_cases hlen hr with hc | hc | hc | hc
+  · obtain ⟨hq, hXu⟩ := hc
     obtain ⟨he2r, h1lt⟩ := par2_facts I.z2 (by omega) hr
     have hxb : col M (r + L) ≠ bump M r := fun h => by
       have := e1_of_col (show col M (r + L) = (entry M 0 r + 1, entry M 1 r, 1) from h); omega
     obtain ⟨Lc, hCLM⟩ := cl_r_split hlen hq hXu hxb
     exact seedL_qr hM hS I R hz h2 hlen hr hq hXu hCLM
       (hQR M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hXu⟩ Lc hCLM) n hn hGlow σ hCN
-  · rcases t2_seed_cases hlen hr with h | h | h | h
-    · exact absurd h hnu
-    · exact absurd h hqn
-    · exact absurd h hsv
-    · exact absurd h hcc
+  · obtain ⟨q, Lc, hq, hqr, hCLM⟩ := hc
+    exact seedL_qn hM hS I R hz h2 hlen hr hq hqr hCLM (hQN M ρ rk hM hS I R hz h2 r L hlen hr q Lc hq hqr hCLM)
+      n hn hGlow σ hCN (h4 q hq hqr) (by rw [← cvals_eq_mapC hCN]; exact hdec)
+  · obtain ⟨hq, hux⟩ := hc
+    exact seedL_sv hM hS I R hz h2 hlen hr hq hux (hSV M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hux⟩)
+      n hn hGlow σ hCN (by rw [← cvals_eq_mapC hCN]; exact hdec)
+  · obtain ⟨q, hq, hqr, hncl⟩ := hc
+    exact seedL_C hM hS I R hz h2 hlen hr hq hqr (hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl)
+      n hn hGlow σ hCN (h4 q hq hqr) (by rw [← cvals_eq_mapC hCN]; exact hdec)
 
 end Ytosk

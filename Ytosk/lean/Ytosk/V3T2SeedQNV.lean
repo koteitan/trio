@@ -46,6 +46,7 @@ theorem qnS_gt (M : Mat) (ρ : Valn) (r L q : Nat) : ρ.v r < qnS M ρ r L q := 
 /-- **The residual of the seed `r`** (`t = 2`, `q ≠ r`, `q` the last counted child of `r`):
 properties of `M` and `M.take x`. -/
 structure T2SeedQNRes (M : Mat) (ρ : Valn) (r L q : Nat) (Lc : List Nat) : Prop where
+  vqlt : qnS M ρ r L q < ρ.v q
   σB : sh (ρ.v r) (qnS M ρ r L q) (t2B (ρ.v r) ρ Lc) = t2B (ρ.v r) ρ Lc
   Bc : ∀ g ∈ summands (t2B (ρ.v r) ρ Lc), ¬ g < psi (succ (qnS M ρ r L q)) z z
   base : ∀ τ, Cons (M.take (r + L)) τ → τ.v r = ρ.v r ∧ ∃ t1,
