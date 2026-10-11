@@ -87,6 +87,85 @@ def TrigS (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop :=
     lt (psi (ρ.v i) z z) (psi s (app b (psi (succ μ) z z)) z) = true →
     lt (preState M ρ i L') (app b ((drop1 M (M.length - 1) rk).o r)) = true
 
+/-- `lo_keep_of_TPL` with the comparison at any index `η ≤ ζ` (for `TPLoS`: `η` = the seed). -/
+theorem lo_keep_of_TPLη {μ br vr s y η ζ : T} (hTPLf : (split y (psi (succ s) z z)).2 = z →
+      ∀ a, last y = psi a z z → isSucc a = false → OHole a →
+      ¬ psi (fsD a η) z z < psi (succ s) z z)
+    (hy : y ≠ z) (hH : HoleT μ br vr (psi s y z)) (hcb : cof br = .big μ)
+    (hbrl : last br ≠ psi (succ μ) z z) (hζΩ : η ≤ ζ)
+    (hl : (split y (psi (succ s) z z)).2 = z) :
+    (split (fsD y ζ) (psi (succ s) z z)).2 = z := by
+  have hHy := holeT_arg hy hH hcb
+  apply lo_z_keep hy hl
+  have hyall : ∀ q ∈ summands y, ¬ q < psi (succ s) z z := by
+    intro q hq
+    have e := split_app (psi (succ s) z z) y
+    rw [hl, app_z_right] at e
+    rw [← e] at hq
+    exact split_fst_ge _ y q hq
+  have hHl := holeT_last hHy
+  have hlh := hyall _ (last_mem hy)
+  obtain ⟨a, b, hlc⟩ := last_psi_form hy
+  rw [hlc] at hlh hHl ⊢
+  by_cases hb : b = z
+  · subst hb
+    by_cases ha : isSucc a = true
+    · -- the last summand is `Ω_{μ+1}`
+      exfalso
+      have haz : a ≠ z := by
+        intro h; subst h
+        have h1 : isSucc (z : T) = false := rfl
+        rw [h1] at ha; cases ha
+      have hcf : cof (psi a z z) = .big (init a) := by
+        unfold cof; rw [if_pos rfl, if_neg haz, if_pos ha]
+      have hia : init a = μ := by
+        rcases hHl with h | ⟨_, _, hD⟩
+        · rw [hcf] at h; cases h; rfl
+        · rw [hD.not_omega_succ] at ha; cases ha
+      have hsa : succ μ = a := by rw [← hia]; unfold succ; exact init_app_one ha
+      rcases hH with hcof | ⟨a', _, hD⟩
+      · have hμs := (cof_psi_inv hy hcof).2
+        apply hlh
+        rw [← hsa, psi_lt_psi_z_iff]
+        left
+        exact lt_of_le_of_lt (le_refl _) (show succ μ < succ s from by
+          rw [lt_succ_iff]; exact succ_le_of_lt (show μ < s from hμs))
+      · cases hD with
+        | here _ _ _ => exact hbrl (by rw [hlc, ← hsa])
+        | arg _ _ hDy =>
+          have := hDy.last'
+          rw [hlc] at this
+          rw [this.not_omega_succ] at ha; cases ha
+        | sub _ _ _ => exact hy rfl
+    · have haz : a ≠ z := by
+        intro h; subst h
+        have := holeT_not_succ hHl
+        have h1 : isSucc (psi z z z) = true := rfl
+        rw [h1] at this; cases this
+      have hns : isSucc a = false := by simpa using ha
+      have hOa : OHole a := by
+        have h := ohole_of_holeT hHl
+        unfold OHole at h
+        rw [if_pos rfl] at h
+        rcases h.2 with h' | h'
+        · rw [hns] at h'; cases h'
+        · exact h'
+      rw [fsD_sub haz hns]
+      intro q hq
+      simp only [summands, List.mem_cons, List.mem_nil_iff, or_false] at hq
+      subst hq
+      intro hlt
+      apply hTPLf hl a hlc hns hOa
+      exact lt_of_le_of_lt (le_psi_sub (fsD_mono_eta hOa hζΩ)) hlt
+  · intro q hq
+    obtain ⟨b', rfl⟩ := summands_fsD_psi hb q hq
+    intro hlt
+    apply hlh
+    rw [psi_lt_psi_z_iff] at hlt ⊢
+    rcases hlt with h | ⟨h, h'⟩
+    · exact Or.inl h
+    · exact absurd h' (T.not_lt_z _)
+
 /-- **The redesigned value part** (draft). -/
 structure Inv3V2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   cons : Cons M ρ
