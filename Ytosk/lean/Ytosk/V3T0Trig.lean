@@ -25,19 +25,6 @@ def T0RE2 : Prop :=
       ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z → y' ≠ y →
         ∃ P a x T', y = app P (psi a x z) ∧ y' = app P T' ∧ T' ≠ z
 
-/-- **Residual: the cut in the last summand** (`T0CutRes` without the condition on the low part of `y′`). -/
-def T0CutResG : Prop :=
-  ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
-    Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
-    ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-      ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
-      ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z →
-      (split y (psi (succ s) z z)).2 = z →
-      spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ≠ z →
-      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
-      ∀ P a x T', y = app P (psi a x z) → y' = app P T' →
-      ∀ κ ∈ cutsNS s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ → κ < T'
-
 /-- **The pure step**: an old rewriting frame of the cut kind keeps rewriting when the argument changes only in
 its last summand. -/
 theorem trig_keep {a B s P a' x T' : T} (hT : T' ≠ z) (hB : B ≠ z)

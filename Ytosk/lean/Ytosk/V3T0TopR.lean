@@ -4,7 +4,8 @@
 D の列は `t0_otdR`（V3T0DepR）から。型（ClsNode）を運ばないので T0IIRes・T0ShapeR3 は要らない。
 代わりに M の `VSmallR` を使うので、hExp は `VSmallR M ρ` を受け取る形になる（main_GP の帰納法で運ばれている）。
 残りの D の仮定（v が変わる子の添字の成分 T0VSResD は V3VSF の vs_changed_bound で証明、t0VSD_at）:
-- `T0TrigRes`: 古い枠が書き換え、状態が hi(y) の先頭部分でない（PH3c の cut の種類）とき、新しい枠も書き換える。
+- M の PH3c（closure の大域の仮定）と `T0CutResG`（切り口が最後の加数 t の中なら κ < T′）。これで右端の変化 RE を D の帰納法で運び、
+  古い枠が書き換えるなら新しい枠も書き換える（V3T0RE、t0_dep_otR）。`T0TrigRes`（V3T0Trig）はその帰結で、今は使わない。
 枠の欄（TP1C・TP1WC・TrigOmC）の影の枠の残り `T0RWResCR` は、子の引数の関係を `◁` でなく `y′ < y` で受け取る。
 -/
 import Ytosk.V3T0DepR
@@ -29,6 +30,19 @@ def T0TrigRes : Prop :=
       (¬ ∃ R, (split y (psi (succ s) z z)).1 = app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) R) →
       Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y'
 
+/-- **Residual: the cut in the last summand** (`T0CutRes` without the condition on the low part of `y′`). -/
+def T0CutResG : Prop :=
+  ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3 M ρ rk →
+    Res3A M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
+      ∀ i c (Lc : List Nat), i < r → c < r → CL M i = Lc ++ [c] → DepX M (r + L) true c →
+      ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z →
+      (split y (psi (succ s) z z)).2 = z →
+      spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ≠ z →
+      Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
+      ∀ P a x T', y = app P (psi a x z) → y' = app P T' →
+      ∀ κ ∈ cutsNS s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ → κ < T'
+
 /-- **The `D` columns before `r` of `N = M[n]`** at one matrix: standard, `◁`, `RClaim`, and `ψ_v(0)` when
 `v` changes. -/
 def T0DF (M : Mat) (ρ : Valn) : Prop :=
@@ -39,7 +53,8 @@ def T0DF (M : Mat) (ρ : Valn) : Prop :=
         (DepX M (r + L) false i → isOT (σ.v i) = true ∧ Lhd z (σ.v i) (ρ.v i))
 
 /-- **`T0DF` from the residuals and `VSmallR` of `M`.** -/
-theorem t0DF_of (hTr : T0TrigRes) (hIV : T0IVRes) {M : Mat} {ρ : Valn}
+theorem t0DF_of (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
+    (hCut : T0CutResG) (hIV : T0IVRes) {M : Mat} {ρ : Valn}
     {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
     (hVR : VSmallR M ρ) : T0DF M ρ := by
   intro r L hlen hL hp he1 n hn σ hCN
@@ -50,7 +65,7 @@ theorem t0DF_of (hTr : T0TrigRes) (hIV : T0IVRes) {M : Mat} {ρ : Valn}
   exact t0_otdR hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
-    hVR (hTr M ρ rk r L hM hS I R hlen hL hp he1)
+    hVR (hPH M ρ rk hM hS I R) (hCut M ρ rk r L hM hS I R hlen hL hp he1)
     (t0_shape3 hM hS I R hlen hL hp he1) (hIV M ρ rk r L hM hS I R hlen hL hp he1) n hn σ hCN
 
 
@@ -740,14 +755,14 @@ theorem hExp_t0A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hOTD : T0DF 
   exact ⟨σ, rkN, V⟩
 
 /-- **`hExp` for `t = 0` in the `RClaim` scheme** (`VSmallR M ρ` given, as carried by main_GP). Residuals:
-`T0IVRes`, `T0TrigRes` (the `D` frames), `T0RestV`・`FrmLF`・`hNG` (value fields), and the
+`T0IVRes`, PH3c of `M` and `T0CutResG` (the `D` frames), `T0RestV`・`FrmLF`・`hNG` (value fields), and the
 shadow frames `T0RWResCR`. No class residual (`T0IIRes`, `T0ShapeR3`). -/
 theorem hExp_t0_topR
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hNG : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ) (hFrm : FrmLF)
-    (hIV : T0IVRes) (hTr : T0TrigRes)
-    (hRest : T0RestV) (hC1 : T0RWResCR PTP1) (hC1W : T0RWResCR PTP1W) (hCT : T0RWResCR PTrig) :
+    (hIV : T0IVRes) (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
+    (hCut : T0CutResG) (hRest : T0RestV) (hC1 : T0RWResCR PTP1) (hC1W : T0RWResCR PTP1W) (hCT : T0RWResCR PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
@@ -758,7 +773,7 @@ theorem hExp_t0_topR
   have hFF := t0_frameFields hFrm (t0_absD hRest.phi) (f _ (t0_tplo hRest.tploR))
   have H2 : T0RestNV := ⟨g _ (t0_absD hRest.phi), g _ (t0_absU hRest.phi), g _ (f _ (t0_tplo hRest.tploR)),
     g _ (f _ (t0_absUW hRest.auwR)), g _ hFF.2.2, g _ (f _ (t0_absDN hRest.adnR)), g _ hFF.1, g _ hFF.2.1⟩
-  have hDF := t0DF_of hTr hIV hM hS I R hVR
+  have hDF := t0DF_of hPH hCut hIV hM hS I R hVR
   apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF) hIV) H2
     (t0RWResAt_of PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht)
       (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) hC1 hDF)
@@ -775,7 +790,8 @@ theorem hExp_t0_topR
 theorem hVSRexp_t0_topR
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
-    (hIV : T0IVRes) (hTr : T0TrigRes) :
+    (hIV : T0IVRes) (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
+    (hCut : T0CutResG) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∀ ρN rkN, Inv3V (expand M n) ρN rkN → VSmallR (expand M n) ρN := by
@@ -799,6 +815,6 @@ theorem hVSRexp_t0_topR
     exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM (r + L) (by omega)) hjS) VT, RT⟩
   exact t0_vsmallR_DF M ρ rk r L n ρN rkN
     ⟨hM, hSRO, I, R, hlen, hL, hp, he1, hTx, hn2, V.cons, V.rank, V.good, V.fo, V.fc, V.kd, V.td⟩ hVR
-    (t0DF_of hTr hIV hM hSRO I R hVR)
+    (t0DF_of hPH hCut hIV hM hSRO I R hVR)
 
 end Ytosk

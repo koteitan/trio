@@ -2367,3 +2367,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - `t2_seed_cases`: qr（x への上げなし）・qn（q が r の最後の数える子）・sv・C の 4 つで t = 2 を尽くす。T2BelowResL から種の ◁ の欄を外し、`t2BelowXRes_of_L : T2BelowXResL → T2SeedQRAll → T2SeedQNAll → T2SeedSVAll → T2SeedCAll → T2BelowXRes`。
 - 実測（C′・d3s・deep2・deep3、k ≤ 4）: T2SeedSVRes（3243 + 153 + 1343 + 1324 件）・T2SeedCRes（1166 + 61 + 540 + 523 件）とも例外 0。◁ は標本による近似判定。
 - 4 つの残りはどれも M と M.take x の値の性質。書き換えの式と ◁ は σ の反復の値についての主張で、q = r の T2SeedQRRes と同じく閉じた形（σ^k が添字を 1 つずつずらす）に直せば純粋な順序数の補題になる見込み（qr は seqZ_form・seqZ_lhd で済んでいる）。
+
+### 右端の変化 RE を D の帰納法で運ぶ（2026-10-12、t0-exp、V3T0RE・V3T0DepR、緑）
+
+- t0_dep_otR が運ぶ主張に RE を足した: D の o の列 i で v が変わらないとき、o(i) = ψ_v(X)、o_N(i) = ψ_v(X′)、X′ ≠ X なら X = P + t（t は 1 項）、X′ = P + T′（T′ ≠ 0）。
+  - 枠 1 段（`re_step`）: 子の引数が RE で、古い枠が書き換えるなら新しい枠も書き換えるとき、親の引数も RE。両方書き換えで lo(y) = 0 なら H s y = y = P + t、H s y′ = P + (hi(T′) + …)。lo(y) ≠ 0 なら t は低い部分にあり、H s y = hi + ψ_s(y)、H s y′ = hi + ψ_s(y′)。どちらも書き換えないなら B + ψ_s(y) と B + ψ_s(y′)。
+  - 葉（`re_leaf`）: 子の添字が変わるとき B + Ω_s と B + Ω_{s′}。
+  - g の枠（`s0_re`・`s1_re`・`t0_S1A_RE`）: 中間の写しの根がないとき（T0IVRes で書き換えない）P = B。あるとき P は B か hi(Y0)（古い枠が書き換えて Y0 で書き換えない場合は B = Y0 か Y0 = 0）。
+  - 書き換えの一致（`trig_agree`）: PH3c の eq・pre は B ≤ P、cut は P の中なら B ≤ P、t の中なら CutResG。B = 0 なら y′ ≠ 0。
+- これで T0TrigRes・T0RE2 は仮定から消え、hExp_t0_topR・hVSRexp_t0_topR の (i) の内容は「M の PH3c（closure の大域の仮定）と T0CutResG」だけ。T0CutResG の場面は t = Ω_k、T′ = Ω_{k′}、κ は添字の鎖の深い切り口（前節）。
+- 残り（hExp_t0_topR）: hLast・hNG・FrmLF・T0IVRes・PH3c・T0CutResG・T0RestV（PhiX0R・T0TPLoRes・T0AbsUWRes・T0AbsDNRes）・T0RWResCR×3。hVSRexp_t0_topR: hLast・T0IVRes・PH3c・T0CutResG。
