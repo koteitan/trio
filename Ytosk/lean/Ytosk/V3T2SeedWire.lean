@@ -1,7 +1,7 @@
 /-
 **3 行・t = 2: x より前の残り T2BelowXRes から、証明済みの種の ◁ を外す（`t2BelowXRes_of_L`）。**
 
-T2BelowResL は T2BelowRes から種と q の欄（◁・標準形・数える子の減少）を外し、M[n] 側の T2HardA（T2Hard・T2VSN の代わり、V3DepRWU）・AbsWN（弱い吸収）だけにしたもの。種と q の欄は 4 つの場合ごとに M と M.take x だけの残りから出る。
+T2BelowResL は T2BelowRes から種と q の欄（◁・標準形・数える子の減少）を外し、M[n] 側の T2HardB（T2Hard・T2VSN の代わり、V3DepRWU。種の v は 4 つの場合の枠の補題で変わらない）・AbsWN（弱い吸収）だけにしたもの。種と q の欄は 4 つの場合ごとに M と M.take x だけの残りから出る。
 - q = r で x への上げがない: seedL_qr（V3T2SeedQRL）、M と M.take x だけの残り T2SeedQRRes から。
 - q ≠ r で q が r の最後の数える子: seedL_qn（V3T2SeedQNV）、残り T2SeedQNRes から。
 - sv（q = r で x − 1 が x へ上げる）: seedL_sv（V3T2SeedSV）、残り T2SeedSVRes から。
@@ -54,7 +54,7 @@ def T2BelowResL (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
   ∀ n, 2 ≤ n → (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L d0 d1 m) τ → Good3 (TRIO.gexp M r L d0 d1 m) τ) →
     ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true) →
-    (∀ p, T2Seed M r L p → T2HardA M (TRIO.gexp M r L d0 d1 n) (r + L) p ρ σ) ∧
+    (∀ p, T2Seed M r L p → T2HardB M (TRIO.gexp M r L d0 d1 n) (r + L) p ρ σ) ∧
     AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ
 
 /-- `T2BelowResL` for every standard `M` of type `t = 2`. -/
@@ -191,6 +191,27 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
       refine ⟨hd1, fun q' hq' _ => ?_⟩
       rw [hq] at hq'; cases hq'
       rw [cvals_eq_mapC hCN]; exact hd2
+  -- the seed `r` keeps its `v` (the frame lemmas of the four cases)
+  have hvr : σ.v r = ρ.v r := by
+    rcases t2_seed_cases hlen hr with hc | hc | hc | hc
+    · obtain ⟨hq, hXu⟩ := hc
+      obtain ⟨he2r, h1lt⟩ := par2_facts I.z2 (by omega) hr
+      have hxb : col M (r + L) ≠ bump M r := fun h => by
+        have := e1_of_col (show col M (r + L) = (entry M 0 r + 1, entry M 1 r, 1) from h); omega
+      obtain ⟨Lc, hCLM⟩ := cl_r_split hlen hq hXu hxb
+      exact (qr_frame hM hS I R hz h2 hlen hr hq hXu hCLM hn hCN hRN hCP hGP hRP).2.1
+    · obtain ⟨q, Lc, hq, hqr, hCLM⟩ := hc
+      exact (qn_frame hM hS I R hz h2 hlen hr hq hqr hCLM hn hCN hRN hCP hGP hRP).2.2.1
+    · obtain ⟨hq, hux⟩ := hc
+      have htP := topP_sv hlen I.z2 I.z1 hr hq hux
+      rw [(sv_frame hM hS I R hz h2 hlen hr hq hux htP hn hCN hRN hCP hGP hRP hC0 hG0 hRk1).2.2.1]
+      exact v_take_of_untopped I hlen hrx htP hC0
+    · obtain ⟨q, hq, hqr, hncl⟩ := hc
+      have hRes := hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl
+      have hvq := vq_eq_gexp hM hS I hz h2 hlen hr hn hCN hq hqr
+      exact (C_frame hM hS I R hz h2 hlen hr hq hqr (qP_C hM hS I hlen hr hq hqr hncl hRes.un) hRes.un hn hCN hRN
+        hCP hGP hRP hC0 hG0 hRk1 (v_take_of_untopped I hlen hrx (topP_C hM hS I hlen hr hq hqr) hC0)
+        (by rw [hvq]; exact hRes.vqP _ hC0)).2.2.1
   have hdecr : ((CL (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) r).map
       σ.o).Pairwise (fun a b => b ≤ a) := by rw [← cvals_eq_mapC hCN]; exact hD.1
   -- the standard form of the seed and of `q`
@@ -218,7 +239,7 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
         (hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl) (hO4 q hq hqr hncl) n hn hGlow σ hCN hdecr
       refine ⟨hro, fun q' hq' _ => ?_⟩
       rw [hq] at hq'; cases hq'; exact hqo
-  refine ⟨h2', fun p hp => ?_, fun q hq hqr => ⟨hOTr.2 q hq hqr, hD.2 q hq hqr⟩, h3⟩
+  refine ⟨fun p hp => by have e := hpr p hp; rw [e] at hp ⊢; exact T2HardA.of_B (h2' r hp) hvr, fun p hp => ?_, fun q hq hqr => ⟨hOTr.2 q hq hqr, hD.2 q hq hqr⟩, h3⟩
   have hp' := hpr p hp
   subst p
   have hot := hOTr.1

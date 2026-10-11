@@ -601,4 +601,13 @@ theorem T2HardA.vsn {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bn
   have := hSp c hs; subst this
   exact h.2.2.2.2 i Lc hi hcl hvc
 
+/-- `T2HardA` without the seed field `T2VSNP` (which holds when `v` of the seed does not change). -/
+def T2HardB (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
+  VSmallRA M ρ ∧ T2VNRA M N bnd ρ σ ∧ T2ShA M N bnd ρ σ ∧
+    (∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimUS U ρ σ p)
+
+theorem T2HardA.of_B {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardB M N bnd p ρ σ) (hv : σ.v p = ρ.v p) :
+    T2HardA M N bnd p ρ σ :=
+  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, fun _ _ _ _ hne => absurd hv hne⟩
+
 end Ytosk
