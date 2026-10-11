@@ -1976,3 +1976,17 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - groupA: **NoGap0PosP は標準形で偽**（2026-10-11）。d3s で 1 件、deep3 で 5 件（deep2・C′・T0Ext では 0）。例: SRO より下の標準形 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,0,0)(7,1,0)(8,0,0)(9,1,0)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,1)(7,2,1) の列 28（行 1 の子を持つ）で v = ψ_0(ψ_1(ψ_0(Ω_1)))。破れはすべて「ψ_a（a ≠ 0）の引数の加数がちょうど ψ_0(Ω_1)」。PhiX・Z0Link・NoGapP・VKFree はこれらの集合（T0Ext 18 万・d3s 1.5 万を含む）で例外 0。したがって phiX_of_z0 の仮定 NoGap0PosP は差し替えが要る（reach_z0 は補題として正しい）。段 0 の扱いは未解決に戻す。
 - V3PInt: つなぎ。ph3c_congr・fc3_congr（評価の取り替え）、ph3c_drop1・fc3_drop1（M.take x の drop1 評価、落とす補題の結論 PO・PV を受け取る形）、ph3c_take_any・fc3_take_any（M.take x のどの Cons の評価でも、t = 2 の hT の形）。
 - T0Ext（deepA の接頭辞に (e0 a + 1, 0, 0) を足した標準形の接頭辞閉包、203497 個）でも P は例外 0（SRO と SRO より上の 2 個を除く）、閉性（基底 160、歩み 1898 段）も壊れる例 0。
+
+### VKFree の差し込み、枠の 3 欄を導く、TPLoN の二度目の言い直し（2026-10-11、t1-exp、V3ExpT1L・V3QRFinal4）
+
+- VKFree（groupA）を差し込んだ（22fccb53）。鎖の段 v(r) は x が r の行 1 の子なので VK に入る（段の結び LevLink は要らない）。AbsD・AbsUW・AbsDN の lf と M[n] の AbsDWLF は VKFree から。TPLo・TPLoW の lf は v(c) = 0 か c が行 1 の子を持てば VKFree から、残りは行 1 ≠ 0 で行 1 の子のない D の列（TPLoLFRes・TPLoWLFRes。C′ 4 万行列で 1820 件、全件成立）。
+- VKFree を t = 1 の鎖で運ぶ: 運ぶ欄 VP (InVKv M ρ)（行 1 の子を持つ列の v は M のそういう列の v）を expStep_VP で、vKFree_of_corr。NoGapP も同じく残りなし（expStep_VP NoGap、始点は vP_take）。
+- TPLoN を hLs0 が使う形そのものに言い直した（94da2fe0、全体ビルド緑 879 jobs）: 添字は種 o′(r)（M.take x の評価を Cons・Rk で量化）。前の形より弱い。
+- 最後の列の枠の 3 欄 TPLoW・AbsDW・TPLoN は運ばずに M[n] 自身の TPLo・AbsD と LevFree から導く（tplow_of_lf・absDW_of_lf・tplon_of_lf）。hExp_t1W 以後、鎖の hQs は不要。
+- seed の部分: 種 ≥ Ω_μ（q ≠ r では全件）なら LevFree から。残りは fsD(種, θ) < Ω_μ（q = r）。AbsD ではそこで種は Ω_{ν+1} の形で fsD(種, θ) = θ = ψ_ν(Ω_{ν+1})、種の条件は v(P_1 i) の NoGap（absDSeedLow_of_noGap）。
+- 最新の組み立て hExp_t1X（Inv3V ∧ Res3H ∧ NoGapP ∧ VKFree を出す、公理は標準の 3 つ）の残り:
+  - hRT（始点）、hRes（M[n] の Res3H）。
+  - 段 0: TPLoResL_zero・AbsDResL_zero・AbsUWResL_zero・AbsDNZero（M の D の列）、TPLoW0・AbsDW0・TPLoN0（M[n] の枠、hFrm）。
+  - 種 < Ω_μ: TPLoSeedLow・AbsDSeedLow2（種が Ω_{ν+1}、ν ≠ 0 でない）・AbsUWSeedLow・AbsDNSeedLow、TPLoNSeed（M[n] の枠）。
+  - 行 1 の子のない D の列: TPLoLFRes・TPLoWLFRes。
+  - VSFRes2: 止まっている。M の VSmallF からは Ω_{v(c)} 以下しか出ず、要るのはそれより小さい Ω_{v′(c)}。「成分の頭の添字 < 最後の加数」を全部の枠の不変条件にする形は偽（段 0 の ψ_0(Ω_{Ω_1}) 型、C′ 10 万行列で 11 件）。
