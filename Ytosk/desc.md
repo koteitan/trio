@@ -2458,3 +2458,5 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
     i = 11、k = x。groupA の AbsD・TPLo の反例と同じ行列（段 0 の隙間 ψ_0(Ω_{Ω_1}) 型）。
   - ほかの欄（VSmallNew・VSmallNewR・ShadowC・TailNR・UpgAbsX・Seed・VSmallR・BumpAbsW）は ext1 で例外 0。
 - 追記（t0-exp）: drop-fix の V3TP1Cut（N の PH3c ∧ TP1Leaf ∧ TP1WLeaf ∧ TrigCut ⇒ TP1C・TP1WC・TrigOmC、任意の行列）を使う最上位 `hExp_t0_topB`（hExp_t0B）。t = 0 の影の枠の残り（T0ShCutRes・T0ShGRes）は要らない。仮定: hLast・N の AbsD・AbsU・FrmLF・M の PH3c・標準形 N の PH3c と 3 つの葉の残り・T0CutResG・T0TPLoRes・T0AbsUWRes・T0AbsDNRes。
+- 追記（t0-exp）: T2Ext（groupA、t = 0 の行列 180169 個）でも t = 0 の残りと前提はすべて例外 0（(i) 63456・CutResG 12662・RE 260 万・T0IVRes 1122・旧 T0VSResG 17800・T0TPLoRes 293 万/54 万・T0AbsDNRes 30 万・T0AbsUWRes 35726/7812・影の枠 D 14780・g 124）。7 集合すべてで例外 0。
+- CutResG の道の形（pcut4.py、d3s・deep3）: k から k′ への RE の道は、切り口の深さ p まで葉の `sub` が p 回続き、切り口の位置で必ず `arg`（新しい引数 ≠ 0）。道の終わり（base）はいつも g 型の変化 ψ_a(Y + 1) ↦ ψ_a(Y)·m + X″。道つき RE で運ぶには「切り口が道の上の葉に来ない」と、lo(y) = 0 の枠で低い部分が生じない（re_H の型）という (ii) 型の事実が要る。
