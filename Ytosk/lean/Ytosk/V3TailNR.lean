@@ -111,4 +111,71 @@ theorem tailNR_of {M : Mat} {x : Nat} {ρ : Valn} (hx : x + 1 = M.length) (hC : 
     show (Tl' ++ [x]).map ρ.o = Tl'.map ρ.o ++ [ρ.o x] by simp, sumN_append_dec hsT hpT, sumN_singleton (hsM _ (by simp)), hox,
     app_assoc]
 
+/-- **Drop hypothesis** (the core of `TailNRL`): every child `ψ_s(y)` in the tail without `x` has
+`y ≤ ψ_s(y)` (measured: the tail is `[P_0(x)]`, whose only counted child is `x`, `y = Ω_{v(x)}` and
+`v(x) < v(P_0(x))`). -/
+def TailY (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
+  ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat) (Tl R : List Nat), CL (M.take x) i = Lc ++ [cs] →
+    CL M i = Lc ++ [cs] ++ Tl ++ R → x ∉ Tl → ∀ t ∈ Tl, ∀ s y, ρ.o t = psi s y z → y ≤ psi s y z
+
+/-- Children `ψ_s(y)` with `y ≤ ψ_s(y)` below a nonzero state with larger summands do not rewrite. -/
+theorem spArg_noRW {a : T} : ∀ (l : List T) (A : T), (∀ t ∈ l, Single t) →
+    l.Pairwise (fun a b => b ≤ a) → A ≠ z → (∀ t ∈ l, ∀ q ∈ summands A, t ≤ q) →
+    (∀ t ∈ l, ∀ s y, t = psi s y z → y ≤ t) → spArg a A (sumN l) = app A (sumN l)
+  | [], A, _, _, _, _, _ => by simp [sumN, spArg]
+  | t :: l, A, hs, hp, hA, hge, hy => by
+    rw [sumN_cons_dec hs hp, spArg_app]
+    obtain ⟨s, y, rfl⟩ := (hs t (by simp)).2
+    have htA : psi s y z ≤ A := by
+      obtain ⟨a1, b1, c1, rfl⟩ : ∃ a1 b1 c1, A = psi a1 b1 c1 := by
+        cases A with
+        | z => exact absurd rfl hA
+        | psi a1 b1 c1 => exact ⟨a1, b1, c1, rfl⟩
+      exact le_trans (hge _ (by simp) (psi a1 b1 z) (by simp [summands])) (le_psi_rest (z_le _))
+    have hstep : spArg a A (psi s y z) = app A (psi s y z) := by
+      rw [spArg_single]; unfold step
+      rw [if_neg (fun h => not_lt.mpr (le_trans (hy _ (by simp) s y rfl) htA) h.1)]
+      exact add_eq_app_of_ge ⟨s, y, rfl⟩ A (hge _ (by simp))
+    rw [hstep, spArg_noRW l (app A (psi s y z)) (fun u hu => hs u (by simp [hu]))
+      (List.pairwise_cons.mp hp).2 (by cases A <;> simp_all [app])
+      (fun u hu q hq => by
+        rw [summands_app] at hq
+        rcases List.mem_append.mp hq with hq | hq
+        · exact hge u (by simp [hu]) q hq
+        · simp [summands] at hq; rw [hq]; exact (List.pairwise_cons.mp hp).1 u hu)
+      (fun u hu => hy u (by simp [hu])), app_assoc]
+
+/-- **`TailNRL` from `TailY`.** -/
+theorem tailNRL_of {M : Mat} {x : Nat} {ρ : Valn} (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hY : TailY M x ρ) : TailNRL M x ρ := by
+  intro i hi Lc cs Tl R hcl hclM hTl hxT
+  have hiM : i < M.length := by omega
+  obtain ⟨hsM, hpM⟩ := cl_vals hC hG hiM
+  have hW : (CL M i).map ρ.o = ((Lc ++ [cs]).map ρ.o ++ Tl.map ρ.o) ++ R.map ρ.o := by
+    rw [hclM]; simp
+  rw [hW] at hsM hpM
+  have hsW : ∀ t ∈ (Lc ++ [cs]).map ρ.o ++ Tl.map ρ.o, Single t := fun t ht =>
+    hsM t (List.mem_append_left _ ht)
+  have hpW := (List.pairwise_append.mp hpM).1
+  have hsP : ∀ t ∈ (Lc ++ [cs]).map ρ.o, Single t := fun t ht => hsW t (List.mem_append_left _ ht)
+  have hpP := (List.pairwise_append.mp hpW).1
+  have hP := sumN_dec _ hsP hpP
+  have hL : (Lc ++ [cs] ++ Tl).map ρ.o = (Lc ++ [cs]).map ρ.o ++ Tl.map ρ.o := by simp
+  rw [hL, sumN_append_dec hsW hpW, spArg_app]
+  apply spArg_noRW _ _ (fun t ht => hsW t (List.mem_append_right _ ht)) (List.pairwise_append.mp hpW).2.1
+  · -- the state is nonzero: its last step is the child `cs`
+    have hcsS := hsP (ρ.o cs) (by simp)
+    obtain ⟨s0, y0, he⟩ := hcsS.2
+    have hPs : (Lc ++ [cs]).map ρ.o = Lc.map ρ.o ++ [ρ.o cs] := by simp
+    rw [hPs] at hsP hpP
+    rw [hPs, sumN_append_dec hsP hpP, spArg_app, sumN_singleton hcsS, he, spArg_single]
+    exact step_ne_z (by rw [← he]; exact hcsS.1)
+  · intro t ht q hq
+    apply spArg_summands_ge (c := t) ((hsW t (List.mem_append_right _ ht)).2) _ z hP.1 _ (by simp [summands]) q hq
+    rw [hP.2]; intro u hu
+    exact (List.pairwise_append.mp hpW).2.2 u hu t ht
+  · intro t ht s y he
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+    rw [he]; exact hY i hi Lc cs Tl R hcl hclM hxT c hc s y he
+
 end Ytosk
