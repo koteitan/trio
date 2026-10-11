@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """P = S1 ∧ S3 ∧ S4 ∧ PH3c ∧ FC3 の実測（probe_close_ph3 の P を FC=1・SKIP=S2 で、プロセスは 6 個まで）。
-NARROW=S: PH3c の cut を cutsNS（添字側は Ω の鎖 scuts だけ、引数側は任意、Lean V3PDef と同じ）。\nNARROW=T: PH3c の cut の位置を cutsNT（最上位の項そのものを除く、Lean V3PDef と同じ）に狭める。
+NARROW=G: さらに引数の側の位置を高い道（cutsH）に（Lean V3PDef と同じ）。\nNARROW=S: PH3c の cut を cutsNS（添字側は Ω の鎖 scuts だけ、引数側は任意、Lean V3PDef と同じ）。\nNARROW=T: PH3c の cut の位置を cutsNT（最上位の項そのものを除く、Lean V3PDef と同じ）に狭める。
   python3 probe_close_nt.py std <mats.pkl> | perturb <mats.pkl> <seed0> <seed1>（MID=1 で途中の列を崩す）"""
 import sys, os, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -26,12 +26,26 @@ def cutsNS(s, h):
     if not h: return []
     a, x, c = h
     return [(t, Z, Z) for t in scuts(s, a)] + [(a, t, Z) for t in PC.cuts(x, s)] + [(a, x, t) for t in cutsNS(s, c)]
+def cutsH(s, h):
+    """cuts の高い道の版: 項の引数に入るのはその項の添字が s 以上のときだけ（Lean V3PDef の cutsH）。"""
+    if not h: return []
+    a, x, c = h
+    out = [(s, Z, Z)] if le(s, a) else []
+    out += [(t, Z, Z) for t in cutsH(s, a)]
+    if le(s, a): out += [(a, t, Z) for t in cutsH(s, x)]
+    return out + [(a, x, t) for t in cutsH(s, c)]
+def cutsNG(s, h):
+    if not h: return []
+    a, x, c = h
+    return [(t, Z, Z) for t in scuts(s, a)] + [(a, t, Z) for t in cutsH(s, x)] + [(a, x, t) for t in cutsNG(s, c)]
 def kindN(B, hi, lo, s):
     k = PC.ph3c_kind(B, hi, lo, s)
     if k in ('eq', 'pre'): return k
     if s == Z or not hi: return None
     if os.environ.get('NARROW') == '1':
         return 'cutS' if B in [(t, Z, Z) for t in scut(s, hi[0])] else None
+    if os.environ.get('NARROW') == 'G':
+        return 'cutNG' if B in cutsNG(s, hi) else None
     if os.environ.get('NARROW') == 'S':
         return 'cutNS' if B in cutsNS(s, hi) else None
     if os.environ.get('NARROW') == 'T':
@@ -42,7 +56,7 @@ def PH3n(M):
     f = PC.frames(list(M))
     if f is None: return False
     return all(kindN(B, hi, lo, s) for i, c, B, hi, lo, s in f)
-if os.environ.get('NARROW') in ('1', 'H', 'T', 'S'): PC.PH3c = PH3n
+if os.environ.get('NARROW') in ('1', 'H', 'T', 'S', 'G'): PC.PH3c = PH3n
 if __name__ == '__main__':
   t = time.time()
   mode = sys.argv[1]

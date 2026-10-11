@@ -11,7 +11,7 @@
 - PH3c: 書き換えが起きる B ≠ 0 の数える子の枠（B = 前の数える子までの状態、o(c) = ψ_s(y)、
   y を Ω_{s+1} で hi・lo に分ける）で、(eq) hi = B かつ lo ≠ 0、(pre) B は hi の真の先頭部分、
   (cut) s ≠ 0 で B は hi のある位置 π（添字 k ≥ s の項）を Ω_s に替え π より右をすべて落とした項。
-  π は hi の最上位の項そのものではなく、ある項の添字か引数の中（`cutsNS`: 添字の側は添字の鎖だけ、引数の側は任意。
+  π は hi の最上位の項そのものではなく、ある項の添字か引数の中（`cutsNS`: 添字の側は添字の鎖だけ、引数の側は高い道（引数に入る項の添字は s 以上）。
   python の cuts より狭い。2026-10-11: この形でも C′・deep2・deep3 で真、閉性も同じ。tools/probe_close_nt.py NARROW=S）。
 - FC3: 最初の数える子（B = 0）で書き換えが起き hi ≠ 0 のとき、v(i) = s なら s は極限（0 でも後続でもない）、
   v(i) < s なら hi の先頭の添字は s + X（X ≠ 0、和としての連結）。
@@ -58,12 +58,14 @@ def S4 (M : Mat) : Prop :=
 /-! ## 値の部分 -/
 
 /-- The positions `π` of `h` holding a summand `ψ_k(γ)` with `k ≥ s`: replace the summand (with what follows it
-in its sum) by `Ω_s` and drop everything to the right of `π` (order: subscript, argument, rest). -/
-def cuts (s : T) : T → List T
+in its sum) by `Ω_s` and drop everything to the right of `π` (order: subscript, argument, rest). The path to `π`
+enters the argument of a summand only when its subscript is at least `s` (high path; 2026-10-11 実測: 標準形の
+cut の枠 28.8 万件はすべてこの形。添字が s より小さい項の引数の中の位置は、t = 2 の置き換え σ で保たれない）。 -/
+def cutsH (s : T) : T → List T
   | z => []
   | psi a x c =>
-      (if le s a then [psi s z z] else []) ++ (cuts s a).map (fun t => psi t z z) ++
-        (cuts s x).map (fun t => psi a t z) ++ (cuts s c).map (fun t => psi a x t)
+      (if le s a then [psi s z z] else []) ++ (cutsH s a).map (fun t => psi t z z) ++
+        (if le s a then (cutsH s x).map (fun t => psi a t z) else []) ++ (cutsH s c).map (fun t => psi a x t)
 
 /-- The chain of subscripts: replace the head summand of `h` (`k ≥ s`) by `Ω_s`, or recurse into the subscript of the
 head summand (`Ω_s`, `Ω_{Ω_s}`, … along the subscripts). -/
@@ -72,12 +74,12 @@ def scuts (s : T) : T → List T
   | psi a _ _ => (if le s a then [psi s z z] else []) ++ (scuts s a).map (fun t => psi t z z)
 
 /-- The cut positions allowed in `PH3c`: inside a summand of `h`, either along the subscript chain of the summand
-(`scuts`) or anywhere in its argument (`cuts`); the summands before it are kept. A top-level summand itself is never
+(`scuts`) or in its argument along a high path (`cutsH`); the summands before it are kept. A top-level summand itself is never
 the position. -/
 def cutsNS (s : T) : T → List T
   | z => []
   | psi a x c =>
-      (scuts s a).map (fun t => psi t z z) ++ (cuts s x).map (fun t => psi a t z) ++
+      (scuts s a).map (fun t => psi t z z) ++ (cutsH s x).map (fun t => psi a t z) ++
         (cutsNS s c).map (fun t => psi a x t)
 
 /-- The kinds `eq`・`pre`・`cut` of a rewriting frame with state `B ≠ 0`, `y = hi + lo` split at `Ω_{s+1}`.

@@ -83,21 +83,46 @@ theorem summands_app_left : ∀ {B R q : T}, q ∈ summands B → q ∈ summands
 
 /-! ## 切り口の挟み込み -/
 
+/-- Membership in `cutsH` at a summand. -/
+theorem mem_cutsH_psi {s a x c t : T} : t ∈ cutsH s (psi a x c) ↔
+    (le s a = true ∧ t = psi s z z) ∨ (∃ u ∈ cutsH s a, t = psi u z z) ∨
+      (le s a = true ∧ ∃ u ∈ cutsH s x, t = psi a u z) ∨ (∃ u ∈ cutsH s c, t = psi a x u) := by
+  show t ∈ (if le s a then [psi s z z] else []) ++ (cutsH s a).map (fun t => psi t z z) ++
+    (if le s a then (cutsH s x).map (fun t => psi a t z) else []) ++ (cutsH s c).map (fun t => psi a x t) ↔ _
+  by_cases h : le s a = true
+  · simp only [h, if_true, List.mem_append, List.mem_singleton, List.mem_map, true_and]
+    constructor
+    · rintro (((rfl | ⟨u, hu, rfl⟩) | ⟨u, hu, rfl⟩) | ⟨u, hu, rfl⟩)
+      · exact Or.inl rfl
+      · exact Or.inr (Or.inl ⟨u, hu, rfl⟩)
+      · exact Or.inr (Or.inr (Or.inl ⟨u, hu, rfl⟩))
+      · exact Or.inr (Or.inr (Or.inr ⟨u, hu, rfl⟩))
+    · rintro (rfl | ⟨u, hu, rfl⟩ | ⟨u, hu, rfl⟩ | ⟨u, hu, rfl⟩)
+      · exact Or.inl (Or.inl (Or.inl rfl))
+      · exact Or.inl (Or.inl (Or.inr ⟨u, hu, rfl⟩))
+      · exact Or.inl (Or.inr ⟨u, hu, rfl⟩)
+      · exact Or.inr ⟨u, hu, rfl⟩
+  · have h' : le s a = false := by simpa using h
+    rw [h']
+    simp only [Bool.false_eq_true, if_false, List.mem_append, List.mem_map, List.not_mem_nil, false_or,
+      or_false, false_and]
+    constructor
+    · rintro (⟨u, hu, rfl⟩ | ⟨u, hu, rfl⟩)
+      · exact Or.inl ⟨u, hu, rfl⟩
+      · exact Or.inr ⟨u, hu, rfl⟩
+    · rintro (⟨u, hu, rfl⟩ | ⟨u, hu, rfl⟩)
+      · exact Or.inl ⟨u, hu, rfl⟩
+      · exact Or.inr ⟨u, hu, rfl⟩
+
 /-- A cut is a cut of itself. -/
-theorem cuts_self {s : T} : ∀ {h t : T}, t ∈ cuts s h → t ∈ cuts s t
-  | z, _, ht => by simp [cuts] at ht
+theorem cutsH_self {s : T} : ∀ {h t : T}, t ∈ cutsH s h → t ∈ cutsH s t
+  | z, _, ht => by simp [cutsH] at ht
   | psi a x c, t, ht => by
-    simp only [cuts, List.mem_append, List.mem_map] at ht
-    rcases ht with ((ht | ⟨u, hu, rfl⟩) | ⟨u, hu, rfl⟩) | ⟨u, hu, rfl⟩
-    · split at ht
-      · simp only [List.mem_singleton] at ht; subst ht; simp [cuts, le]
-      · simp at ht
-    · simp only [cuts, List.mem_append, List.mem_map]
-      exact Or.inl (Or.inl (Or.inr ⟨u, cuts_self hu, rfl⟩))
-    · simp only [cuts, List.mem_append, List.mem_map]
-      exact Or.inl (Or.inr ⟨u, cuts_self hu, rfl⟩)
-    · simp only [cuts, List.mem_append, List.mem_map]
-      exact Or.inr ⟨u, cuts_self hu, rfl⟩
+    rcases mem_cutsH_psi.mp ht with ⟨_, rfl⟩ | ⟨u, hu, rfl⟩ | ⟨hs, u, hu, rfl⟩ | ⟨u, hu, rfl⟩
+    · exact mem_cutsH_psi.mpr (Or.inl ⟨by simp [le], rfl⟩)
+    · exact mem_cutsH_psi.mpr (Or.inr (Or.inl ⟨u, cutsH_self hu, rfl⟩))
+    · exact mem_cutsH_psi.mpr (Or.inr (Or.inr (Or.inl ⟨hs, u, cutsH_self hu, rfl⟩)))
+    · exact mem_cutsH_psi.mpr (Or.inr (Or.inr (Or.inr ⟨u, cutsH_self hu, rfl⟩)))
 
 theorem scuts_self {s : T} : ∀ {h t : T}, t ∈ scuts s h → t ∈ scuts s t
   | z, _, ht => by simp [scuts] at ht
@@ -111,33 +136,26 @@ theorem scuts_self {s : T} : ∀ {h t : T}, t ∈ scuts s h → t ∈ scuts s t
       exact Or.inr ⟨u, scuts_self hu, rfl⟩
 
 /-- **Cut squeeze**: a cut of `h` stays a cut of every `w` between it and `h`. -/
-theorem mem_cuts_squeeze {s : T} : ∀ {h t w : T}, t ∈ cuts s h → t ≤ w → w ≤ h → t ∈ cuts s w
-  | z, _, _, ht, _, _ => by simp [cuts] at ht
+theorem mem_cutsH_squeeze {s : T} : ∀ {h t w : T}, t ∈ cutsH s h → t ≤ w → w ≤ h → t ∈ cutsH s w
+  | z, _, _, ht, _, _ => by simp [cutsH] at ht
   | psi a x c, t, w, ht, h1, h2 => by
     rcases (le_iff _ _).mp h1 with h1 | rfl
     swap
-    · exact cuts_self ht
+    · exact cutsH_self ht
     cases w with
     | z => exact absurd h1 (T.not_lt_z _)
     | psi a' x' c' =>
       have ha : a' ≤ a := sub_le_of_le h2
-      simp only [cuts, List.mem_append, List.mem_map] at ht ⊢
-      rcases ht with ((ht | ⟨u, hu, rfl⟩) | ⟨u, hu, rfl⟩) | ⟨u, hu, rfl⟩
+      rcases mem_cutsH_psi.mp ht with ⟨_, rfl⟩ | ⟨u, hu, rfl⟩ | ⟨hs, u, hu, rfl⟩ | ⟨u, hu, rfl⟩
       · -- top: `t = Ω_s` with `s ≤ a`
-        split at ht
-        · simp only [List.mem_singleton] at ht; subst ht
-          left; left; left
-          rw [T.psi_lt_psi] at h1
-          have : le s a' = true := by
-            rcases h1 with h1 | ⟨rfl, _⟩ | ⟨rfl, _⟩
-            · simp [le, show lt s a' = true from h1]
-            · simp [le]
-            · simp [le]
-          simp [this]
-        · simp at ht
+        refine mem_cutsH_psi.mpr (Or.inl ⟨?_, rfl⟩)
+        rw [T.psi_lt_psi] at h1
+        rcases h1 with h1 | ⟨rfl, _⟩ | ⟨rfl, _⟩
+        · simp [le, show lt s a' = true from h1]
+        · simp [le]
+        · simp [le]
       · -- subscript
-        left; left; right
-        refine ⟨u, mem_cuts_squeeze hu ?_ ha, rfl⟩
+        refine mem_cutsH_psi.mpr (Or.inr (Or.inl ⟨u, mem_cutsH_squeeze hu ?_ ha, rfl⟩))
         rw [T.psi_lt_psi] at h1
         rcases h1 with h1 | ⟨rfl, _⟩ | ⟨rfl, _⟩
         · exact le_of_lt h1
@@ -164,12 +182,10 @@ theorem mem_cuts_squeeze {s : T} : ∀ {h t w : T}, t ∈ cuts s h → t ≤ w �
           · exact absurd h1 (lt_irrefl' _)
           · exact le_of_lt h1
           · exact le_refl _
-        left; right
-        exact ⟨u, mem_cuts_squeeze hu hu' hx, rfl⟩
+        exact mem_cutsH_psi.mpr (Or.inr (Or.inr (Or.inl ⟨hs, u, mem_cutsH_squeeze hu hu' hx, rfl⟩)))
       · -- rest
         obtain ⟨rfl, rfl, h1', h2'⟩ := squeeze_head h1 h2
-        right
-        exact ⟨u, mem_cuts_squeeze hu (le_of_lt h1') h2', rfl⟩
+        exact mem_cutsH_psi.mpr (Or.inr (Or.inr (Or.inr ⟨u, mem_cutsH_squeeze hu (le_of_lt h1') h2', rfl⟩)))
 
 /-- The same for the subscript chain. -/
 theorem mem_scuts_squeeze {s : T} : ∀ {h t w : T}, t ∈ scuts s h → t ≤ w → w ≤ h → t ∈ scuts s w
@@ -281,7 +297,7 @@ theorem cutsNS_squeeze {s : T} : ∀ {hi B y' lo : T}, (∀ q ∈ summands hi, �
         simp only [split]
         rw [if_neg (show ¬ lt (psi a x' z) (psi (succ s) z z) = true from hge')]
         simp only [cutsNS, List.mem_append, List.mem_map]
-        exact Or.inl (Or.inr ⟨u, mem_cuts_squeeze hu hu' hx, rfl⟩)
+        exact Or.inl (Or.inr ⟨u, mem_cutsH_squeeze hu hu' hx, rfl⟩)
       · -- a later summand
         obtain ⟨rfl, rfl, h1', h2''⟩ := squeeze_head h1 h2'
         simp only [split]
