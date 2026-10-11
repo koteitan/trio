@@ -50,7 +50,8 @@ def T0DF (M : Mat) (ρ : Valn) : Prop :=
   ∀ r L, r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i, i < r → (DepX M (r + L) true i → isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ RClaim ρ σ i ∧
-        (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z)) ∧
+        (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z) ∧
+        (σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X')) ∧
         (DepX M (r + L) false i → isOT (σ.v i) = true ∧ Lhd z (σ.v i) (ρ.v i))
 
 /-- **`T0DF` from the residuals and `VSmallR` of `M`.** -/
@@ -238,7 +239,7 @@ theorem t0_vsmallR_DF : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN →
         · exfalso; have : c = r := by omega
           rw [this] at hccnt; exact hng ⟨hig, hccnt⟩
       · exact children_lt_r hlen hL hp hi hig hcM
-    obtain ⟨_, hlD, _, hchg⟩ := (hDF r L hlen hL hp he1 n hn2 σ hCN c hcr).1 hDc
+    obtain ⟨_, hlD, _, hchg, _⟩ := (hDF r L hlen hL hp he1 n hn2 σ hCN c hcr).1 hDc
     have hcN' : c < (TRIO.gexp M r L 0 0 n).length := by rw [hlN]; omega
     have hsame := fun hv => df_same I.cons I.good hCN (show c < M.length by omega) hcN' (hGN.ot_v c hcN') hv hlD
     by_cases hv : σ.v c = ρ.v c
@@ -319,7 +320,7 @@ theorem t0RWResAt_of (P : T → T → T → T → Prop)
       have := hpL.2.2 q hq (ρ.o c) (by simp)
       rwa [hs0] at this
     · simp [summands]
-  obtain ⟨_, hlD, _, hchg⟩ := (hDF r L hlen hL hp he1 n hn σ hCN c hcr).1 hDc
+  obtain ⟨_, hlD, _, hchg, _⟩ := (hDF r L hlen hL hp he1 n hn σ hCN c hcr).1 hDc
   by_cases hvc : σ.v c = ρ.v c
   · obtain ⟨X, X', hX, hX', hlX⟩ := df_same I.cons I.good hCN hcMl hcN (hGN.ot_v c hcN) hvc hlD
     rw [hcv] at hX'

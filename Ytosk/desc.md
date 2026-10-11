@@ -2390,3 +2390,14 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - topped N r = topped (M.take x) r（topped_copy0）。r は上げの的なので行 2 は 1、all_bump_of_last で M.take x での r の子はすべて bump で数えられない。よって M での r の数える子は x だけで o(r) = ψ_{v(r)}(1)（o_x_one0）。
   - cnt_before_next_upg（前任の V3T0Res）で g には r より前の数える子があり、状態 B ≠ 0。B ≥ 1 = y なので古い枠は r で書き換えない。
 - hExp_t0_topR の残り: hLast・hNG・FrmLF・PH3c・T0CutResG・T0RestV（PhiX0R・T0TPLoRes・T0AbsUWRes・T0AbsDNRes）・T0RWResCR×3。hVSRexp_t0_topR: hLast・PH3c・T0CutResG。
+
+### 影の枠を「t の中の cut」に狭めた（2026-10-12、t0-exp、V3T0Shadow、緑）
+
+- T0DF に RE を足した（D の o の列で v が変わらないとき引数は最後の加数だけ違う）。
+- `t0RWResAt_of2`: TP1C・TP1WC・TrigOmC の D の影の枠（B ≠ 0、B が y′ の先頭部分でない、新しい枠が書き換える、型 A でない）を、M の PH3c と RE で場合分けした。
+  - 古い枠も書き換える（y′ < y で単調）。eq・pre は y = B + … から B が y′ の先頭部分になり前提に反する。
+  - cut で lo(y) ≠ 0、または切り口が P の中: B は y′ の真の先頭部分 A より小さい。fsD は右端だけを変える（fsD_app）ので、TP1・TP1W は B < A ≤ fsD(y′, η)、TrigOm は y′ が 2 項以上で Ω_{ν+1} でない（ptp1_gt・ptp1w_gt・ptrig_gt）。
+  - 残り `T0ShCutRes P`: lo(y) = 0 で B = P + κ（κ は最後の加数 t の切り口）。CutResG と同じ場面。
+- g の枠の残り `T0ShGRes P` は T0RWResCR の g の部分そのまま。
+- 最上位 `hExp_t0_topS`（公理は標準の 3 つ）: hLast・hNG・FrmLF・PH3c・T0CutResG・T0RestV・T0ShCutRes×3・T0ShGRes×3。
+- 実測: T0ShCutRes は影の枠 D（5 集合で例外 0、前節）の部分集合。

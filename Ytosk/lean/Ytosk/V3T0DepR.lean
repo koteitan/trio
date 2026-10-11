@@ -896,7 +896,8 @@ theorem t0_otdR {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
         ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true)) :
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i, i < r → (DepX M (r + L) true i → isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ RClaim ρ σ i ∧
-        (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z)) ∧
+        (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z) ∧
+        (σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X')) ∧
         (DepX M (r + L) false i → isOT (σ.v i) = true ∧ Lhd z (σ.v i) (ρ.v i)) := by
   intro n hn2 σ hCN
   have hn : 1 ≤ n := by omega
@@ -1156,8 +1157,8 @@ theorem t0_otdR {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       hoffD hσmid hσlast hF hVS hVR hFO hTD hKD hAbsS hl hy' (hLast n hn2 g hg) hS3 hS2
       hPH (hCutN n hn2 σ hCN) (hVchgRN g hg) (hG0N n hn2 g hg)
     refine ⟨fun hd => ?_, fun hd => ⟨(hdep false i hi).1, (hdep false i hi).2.1 hd⟩⟩
-    obtain ⟨hot, hlt, hR, _⟩ := hdep true i hi
-    refine ⟨hot, hlt hd, hR rfl hd, fun hne => ?_⟩
+    obtain ⟨hot, hlt, hR, hRE⟩ := hdep true i hi
+    refine ⟨hot, hlt hd, hR rfl hd, fun hne => ?_, hRE rfl hd⟩
     have hdv : DepX M (r + L) false i := by
       by_contra hn'; exact hne ((hoffD i hi).2 hn')
     exact o_N_noc' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hi
