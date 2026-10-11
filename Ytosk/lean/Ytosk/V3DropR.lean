@@ -113,6 +113,65 @@ theorem lhdE_frame_weak {a B s s' : T} (hc : isOT (psi s z z) = true) (hwk : WkV
     exact (self_small_weakA hwc hwk.2.1 u hu g hg).imp (fun h1 => le_trans h1 (le_app_psi hBc')) id
   · exact app_lt_app_left B (psi_lt_psi_z_iff.mpr (Or.inl hwk.1))
 
+/-- **The frame relation for a leaf child** `ψ_{w′}(0)` replacing any `ψ_s(y)` (the old child may rewrite; its
+frame has `FrameDom`): the new state `B + ψ_{w′}(0)` is below the old one, and the new child's components are
+at most itself or a component of `a`. -/
+theorem lhdE_frame_leaf {a B s y w' : T} (hc : isOT (psi s y z) = true)
+    (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
+    (hdom : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → FrameDom a B s (H s y))
+    (hlt : psi w' z z < psi s y z) (h1 : one ≤ w') (hwc : WCS a w') :
+    LhdE (psi a (step a B w' z z) z) (psi a (step a B s y z) z) := by
+  have hBc' : ∀ r ∈ summands B, psi w' z z ≤ r := fun r hr => le_trans (le_of_lt hlt) (hBc r hr)
+  have hnew : step a B w' z z = app B (psi w' z z) := by
+    rw [step_leaf]; exact add_eq_app_of_ge ⟨w', z, rfl⟩ B hBc'
+  have hw's : w' ≤ s := by
+    rcases psi_lt_psi_z_iff.mp hlt with h | ⟨h, _⟩
+    · exact le_of_lt h
+    · rw [h]
+  -- the new state is below the old one
+  have hgt : app B (psi w' z z) < step a B s y z := by
+    unfold step
+    split_ifs with ht
+    · rw [H_eq hc]
+      have hBhi := B_le_hi hc ht.1 hBc
+      have hall : ∀ q ∈ summands (split y (psi (succ s) z z)).1, psi w' z z < q := by
+        intro q hq
+        have := split_fst_ge (psi (succ s) z z) y q hq
+        exact lt_of_lt_of_le (psi_lt_psi_z_iff.mpr (Or.inl (lt_of_le_of_lt hw's (lt_succ_self s))))
+          (not_lt.mp this)
+      rcases (le_iff _ _).mp hBhi with hBlt | hBeq
+      · apply app_lt_of_lt (lt_of_lt_of_le hBlt (le_app_self _ _))
+        intro q hq
+        rw [summands_app] at hq
+        rcases List.mem_append.mp hq with hq | hq
+        · exact hall q hq
+        · split at hq
+          · simp [summands] at hq
+          · simp [summands] at hq; rw [hq]; exact hlt
+      · have hlo : (split y (psi (succ s) z z)).2 ≠ z := by
+          intro h0
+          have hy := split_app (psi (succ s) z z) y
+          rw [h0, app_z_right, ← hBeq] at hy
+          rw [hy] at ht; exact lt_irrefl' _ ht.1
+        rw [if_neg hlo, ← hBeq]
+        exact app_lt_app_left B hlt
+    · rw [add_eq_app_of_ge ⟨s, y, rfl⟩ B hBc]
+      exact app_lt_app_left B hlt
+  have hdrop := drop_child_lhdD (a := a) hc hBc hdom
+  rw [hnew]
+  rcases hdrop with h | h
+  · exfalso
+    simp only [psi.injEq] at h
+    have hBlt : B < app B (psi w' z z) := by
+      have := app_lt_app_left B (show z < psi w' z z from T.z_lt_psi _ _ _)
+      rwa [app_z_right] at this
+    exact lt_irrefl' B (lt_of_lt_of_eq (lt_trans hBlt hgt) h.2.1.symm)
+  right
+  apply lhd_weak_childA h (by simp)
+  · intro u hu g hg
+    exact (self_small_weakA hwc h1 u hu g hg).imp (fun h2 => le_trans h2 (le_app_psi hBc')) id
+  · exact hgt
+
 section
 variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
