@@ -461,6 +461,7 @@ def GoodIdx (ζ : T) : Prop := isSucc ζ = false ∧ ∃ μ X, ζ = psi μ X z �
 /-- **Residual: degenerate indices** (only the seed at `q = r`, `n = 2`): the field `F` at the new value. -/
 def DegRes (F : T → T → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
     ¬ GoodIdx (Z c) → F s0 (fsD y0 (Z c))
 
@@ -468,12 +469,14 @@ def DegRes (F : T → T → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
 hole). -/
 def SeedRes (G : T → T → T → Prop) (θf : T → T) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
     GoodIdx (Z c) → G s0 y0 (Z c) → SeedCond s0 (Z c) (etaOm (holeLev y0)) (θf (Z c))
 
 /-- **Residual: a field `F` at the new value** at the `D` columns where `G s₀ y₀ ζ` holds. -/
 def FieldRes (G : T → T → T → Prop) (F : T → T → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ c, c < r + L → DepX M (r + L) true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
     GoodIdx (Z c) → G s0 y0 (Z c) → F s0 (fsD y0 (Z c))
 
@@ -512,9 +515,9 @@ theorem expStep_tploN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
   have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
-  intro n hn ρP Z hCP _ hTPP _ _ _ _ hle _ hH
-  have hDeg := hRes.1 n hn ρP Z hH
-  have hSd := hRes.2 n hn ρP Z hH
+  intro n hn ρP Z hCP _ hTPP hCN _ _ _ hle _ hH
+  have hDeg := hRes.1 n hn ρP Z hH hCN
+  have hSd := hRes.2 n hn ρP Z hH hCN
   obtain ⟨μ', br', vr', seed, k0, hHD, _, _, _, _, _⟩ := hH
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
@@ -599,9 +602,9 @@ theorem expStep_tplo {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
   have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
-  intro n hn ρP Z hCP _ hTPP _ _ _ _ hle _ hH
-  have hDeg := hRes.1 n hn ρP Z hH
-  have hSd := hRes.2 n hn ρP Z hH
+  intro n hn ρP Z hCP _ hTPP hCN _ _ _ hle _ hH
+  have hDeg := hRes.1 n hn ρP Z hH hCN
+  have hSd := hRes.2 n hn ρP Z hH hCN
   obtain ⟨μ', br', vr', seed, k0, hHD, _, _, _, _, _⟩ := hH
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn

@@ -218,13 +218,16 @@ theorem gamS_single {μ b seed : T} (hs : ∃ a X, seed = psi a X z) : ∀ k, �
   | _ + 1 => ⟨μ, _, rfl⟩
 
 /-- **Residual of the AbsD carry** (`t = 1`): at the bump columns of `D` below `x`, the index is not a
-successor and the seed condition holds for the subterms of `v(P_1 i)` (C′ の 2 万行列 × n = 2, 3 で
-P_1 の 6680 件、例外 0). -/
+successor and the seed condition holds for the subterms of `v(P_1 i)`, or the field holds at the new value
+(C′ の 4 万行列 × 鎖の項 k = 0..4 で 64190 件。種の条件で成り立たないのは種 = 1（q = r・n = 2）の 1232 件だけ). -/
 def AbsDRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
-    isSucc (Z i) = false ∧
-      SeedCond (vOpt ρ (par M 1 i)) (Z i) (etaOm (holeLev (bumpW M ρ i))) (etaOm (holeLev (Z i)))
+    (isSucc (Z i) = false ∧
+      SeedCond (vOpt ρ (par M 1 i)) (Z i) (etaOm (holeLev (bumpW M ρ i))) (etaOm (holeLev (Z i)))) ∨
+    (OHole (fsD (bumpW M ρ i) (Z i)) → ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (bumpW M ρ i) (Z i) →
+      q < fsD (fsD (bumpW M ρ i) (Z i)) (etaOm (holeLev (fsD (bumpW M ρ i) (Z i)))))
 
 /-- **AbsD is carried** (`t = 1`), together with `AgrT1`. Residual `AbsDRes`. -/
 theorem expStep_absD {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
@@ -237,7 +240,7 @@ theorem expStep_absD {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
   intro n hn ρP Z hCP hGP hQP hCN hGN hoto hotv hle hlex hH
   refine ⟨expStep_agr hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 n hn ρP Z hCP hGP hQP.1 hCN hGN
     hoto hotv hle hlex hH, ?_⟩
-  have hR := hRes n hn ρP Z hH
+  have hR := hRes n hn ρP Z hH hCN
   obtain ⟨μ, br, vr, seed, k0, hHD, hZk, _, _, _, _⟩ := hH
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
@@ -260,13 +263,14 @@ theorem expStep_absD {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
       rw [← hσ] at hW hV
       rw [hV] at hq
       rw [hW] at hlt hO ⊢
-      obtain ⟨hζs, hSC⟩ := hR i hi' hv he2
-      have hOW := ohole_of_holeT hHW
-      have hζz : Z i ≠ z := by obtain ⟨s, y, h⟩ := hZs; rw [h]; simp
-      have hlt' : fsD (bumpW M ρ i) (Z i) < bumpW M ρ i := by
-        rw [hZe]; exact (hok_of_holeT hHD.rot hHD.cb hHD.hμ hHD.S hWot hHW k).2
-      rw [holeLev_fsD hOW hζz hζs]
-      exact absorb_fsD_W hOW hζz hζs (I.ad i hiM he1 he2 hOW) hlt' hSC q hq hlt
+      rcases hR i hi' hv he2 with ⟨hζs, hSC⟩ | hFld
+      · have hOW := ohole_of_holeT hHW
+        have hζz : Z i ≠ z := by obtain ⟨s, y, h⟩ := hZs; rw [h]; simp
+        have hlt' : fsD (bumpW M ρ i) (Z i) < bumpW M ρ i := by
+          rw [hZe]; exact (hok_of_holeT hHD.rot hHD.cb hHD.hμ hHD.S hWot hHW k).2
+        rw [holeLev_fsD hOW hζz hζs]
+        exact absorb_fsD_W hOW hζz hζs (I.ad i hiM he1 he2 hOW) hlt' hSC q hq hlt
+      · exact hFld hO q hq hlt
     · obtain ⟨hW, hV⟩ := bumpW_off hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 hn
         (ρ := ρ) (ρP := ρP) (Z := Z) hi' hv he1 he2
       rw [← hσ] at hW hV
@@ -295,11 +299,11 @@ the index is not a successor, and the seed condition at `η = 1` holds for the s
 the field holds at the new value (C′ の 2 万行列 × n = 2, 3 で 1026 件、種の条件は退化した種の 1 件を除き成立). -/
 def AbsUWRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ i k, i < r + L → upg M i = some k → DepX M (r + L) false k →
-    isSucc (Z k) = false ∧
-      (SeedCond (vOpt ρ (par M 1 i)) (Z k) (etaOm (holeLev (last (ρ.v k)))) one ∨
-        ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (last (ρ.v k)) (Z k) →
-          q < fsD (fsD (last (ρ.v k)) (Z k)) one)
+    (isSucc (Z k) = false ∧ SeedCond (vOpt ρ (par M 1 i)) (Z k) (etaOm (holeLev (last (ρ.v k)))) one) ∨
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (last (ρ.v k)) (Z k) →
+        q < fsD (fsD (last (ρ.v k)) (Z k)) one
 
 /-- **AbsUW is carried** (`t = 1`), with `AgrT1` from `P`. Residual `AbsUWRes`. -/
 theorem expStep_absUW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
@@ -313,7 +317,7 @@ theorem expStep_absUW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
   intro n hn ρP Z hCP hGP hQP hCN hGN hoto hotv hle hlex hH
   refine ⟨expStep_agr hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 n hn ρP Z hCP hGP hQP.1 hCN hGN
     hoto hotv hle hlex hH, ?_⟩
-  have hR := hRes n hn ρP Z hH
+  have hR := hRes n hn ρP Z hH hCN
   obtain ⟨μ, br, vr, seed, k0, hHD, hZk, _, _, _, _⟩ := hH
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
@@ -356,8 +360,7 @@ theorem expStep_absUW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
         rw [hσ, glueZ_v_dep ρ (shiftV ρP L) Z hkx hkv]
         exact last_fsD_single (holeT_ne_z hHv) hF
       rw [hlv] at hlt ⊢
-      obtain ⟨hζs, hSC⟩ := hR i k hi' hu hkv
-      rcases hSC with hSC | hFld
+      rcases hR i k hi' hu hkv with ⟨hζs, hSC⟩ | hFld
       · have hOW := ohole_of_holeT hHl
         have hζz : Z k ≠ z := by obtain ⟨s, y, h⟩ := hZs; rw [h]; simp
         have hlt' : fsD (last (ρ.v k)) (Z k) < last (ρ.v k) := by
@@ -412,12 +415,12 @@ n = 2, 3 で 6112 件、欄は全件成立、種の条件は 56 件で偽: v(P_1
 降りない場合). -/
 def AbsDNRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
   ∀ n, 2 ≤ n → ∀ (ρP : Valn) (Z : Nat → T), HoleInfo M r L n ρ ρP Z →
+    Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z) →
     ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
-    isSucc (Z i) = false ∧
-      (SeedCond (vOpt ρ (par M 1 i)) (Z i) (etaOm (holeLev (bumpW M ρ i))) one ∨
-        (cof (fsD (bumpW M ρ i) (Z i)) = .omega → NotNode (fsD (bumpW M ρ i) (Z i)) →
-          ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (bumpW M ρ i) (Z i) →
-            q < fsD (fsD (bumpW M ρ i) (Z i)) one))
+    (isSucc (Z i) = false ∧ SeedCond (vOpt ρ (par M 1 i)) (Z i) (etaOm (holeLev (bumpW M ρ i))) one) ∨
+      (cof (fsD (bumpW M ρ i) (Z i)) = .omega → NotNode (fsD (bumpW M ρ i) (Z i)) →
+        ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < fsD (bumpW M ρ i) (Z i) →
+          q < fsD (fsD (bumpW M ρ i) (Z i)) one)
 
 /-- **AbsDN is carried** (`t = 1`), with `AgrT1` from `P`. Residual `AbsDNRes`. -/
 theorem expStep_absDN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
@@ -430,7 +433,7 @@ theorem expStep_absDN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
   intro n hn ρP Z hCP hGP hQP hCN hGN hoto hotv hle hlex hH
   refine ⟨expStep_agr hlen hL hA hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2 n hn ρP Z hCP hGP hQP.1 hCN hGN
     hoto hotv hle hlex hH, ?_⟩
-  have hR := hRes n hn ρP Z hH
+  have hR := hRes n hn ρP Z hH hCN
   obtain ⟨μ, br, vr, seed, k0, hHD, hZk, _, _, _, _⟩ := hH
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
@@ -453,8 +456,7 @@ theorem expStep_absDN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
       rw [← hσ] at hW hV
       rw [hV] at hq
       rw [hW] at hlt hO hcof hNN ⊢
-      obtain ⟨hζs, hSC⟩ := hR i hi' hv he2
-      rcases hSC with hSC | hFld
+      rcases hR i hi' hv he2 with ⟨hζs, hSC⟩ | hFld
       · have hOW := ohole_of_holeT hHW
         have hζz : Z i ≠ z := by obtain ⟨s, y, h⟩ := hZs; rw [h]; simp
         have hlt' : fsD (bumpW M ρ i) (Z i) < bumpW M ρ i := by
