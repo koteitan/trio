@@ -163,4 +163,60 @@ theorem trio_terminates_main_G
     have hMN := Std.exp n hM
     exact ⟨ρN, rkN, V, hDR _ _ _ hMN hNS hNE V, hSeed _ _ _ hMN hNS hNE V⟩
 
+/-- **`VSmallR` passes to `M.take x`** (no extra hypothesis): a changed last child with the same
+subscript rewrites only if the old one does, and a changed subscript comes with the argument `0`. -/
+theorem vsmallR_take {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
+    (hdrop : ∀ i, i < x → PO ρ ρ' i ∧ PV M ρ ρ' i) (hVR : VSmallR M ρ) : VSmallR (M.take x) ρ' := by
+  intro i hi L c R h s' y' hc' ht' u hu g hg
+  rw [lenT hx] at hi
+  have hiM : i < M.length := by omega
+  obtain ⟨hv, hL, Tl, hM⟩ := frame_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hi h
+  rw [hv, hL] at ht'
+  rw [hv] at hu ⊢
+  rw [hL]
+  have hcT : c ∈ CL (M.take x) i := by rw [h]; simp
+  have hcc := cl_mem_children hcT
+  have hcx : c < x := by have := (mem_children hcc).2; rw [lenT hx] at this; exact this
+  have hcM : c < M.length := by omega
+  have hcxT : c < (M.take x).length := by rw [lenT hx]; exact hcx
+  obtain ⟨s, y, hsy⟩ := (single_o hC hG hcM).2
+  have hy'z : y' ≠ z := ne_z_of_lt ht'.1
+  -- the subscript does not change
+  have hss : s' = s := by
+    have hvM : s = ρ.v c := by
+      obtain ⟨y0, hy0⟩ := o_psi_sub hC hcM
+      rw [hsy] at hy0; simp only [psi.injEq] at hy0
+      rw [hy0.1, sf_ot (hG.ot_v c hcM)]
+    have hvT : s' = ρ'.v c := by
+      obtain ⟨y0, hy0⟩ := o_psi_sub hC' hcxT
+      rw [hc'] at hy0; simp only [psi.injEq] at hy0
+      rw [hy0.1, sf_ot (hdrop c hcx).2.2]
+    rw [hvM, hvT]
+    by_contra hvs
+    have hCv : ChgX M x false c := by
+      by_contra hn; exact hvs ((chg_off hx hC hG hC' hRk' c hcx).2 hn)
+    have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCv).1 rfl hcx
+    have ho := o_of_no_counted hC' hcxT (hdrop c hcx).2.2 hT.2.1
+    rw [hc'] at ho; simp only [psi.injEq] at ho
+    exact hy'z ho.2.1
+  subst hss
+  -- `y′ ≤ y`
+  have hyy : y' ≤ y := by
+    rcases (hdrop c hcx).1.1 with hle | ⟨⟨w1, _, _, e1, _, _⟩, _⟩
+    · rw [hc', hsy] at hle
+      rcases (le_iff _ _).mp hle.le with h' | h'
+      · rcases psi_lt_psi_z_iff.mp h' with h' | ⟨_, h'⟩
+        · exact absurd h' (lt_irrefl' _)
+        · exact le_of_lt h'
+      · simp only [psi.injEq] at h'; rw [h'.2.1]
+    · rw [hc'] at e1; simp only [psi.injEq] at e1; exact absurd e1.2.1 hy'z
+  have ht : lt (spArg (ρ.v i) z (sumN (L.map ρ.o))) y = true ∧
+      lt (psi (ρ.v i) z z) (psi s' y z) = true :=
+    ⟨lt_of_lt_of_le (show _ < y' from ht'.1) hyy,
+      lt_of_lt_of_le (show psi (ρ.v i) z z < psi s' y' z from ht'.2) (psi_le_psi_arg hyy)⟩
+  exact hVR i hiM L c (R ++ Tl) hM s' y hsy ht u hu g hg
+
 end Ytosk
