@@ -2517,3 +2517,5 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - TPLoSeedLow0・AbsDSeedLow0（ν = 0、段 0、元の形）。M だけの隙間の形は ν = 0 では偽（C′ 10 件・ext1 54 件、例 (0,0,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(2,1,0)(3,2,0)）。groupA の段 0 の仕事。
 - 組み立て hExp_t1GP5（GP4 の種の 2 欄を上の残りに）。公理は標準の 3 つ。全体ビルド緑（933 jobs）。
 - AbsUWSeedLow・AbsDNSeedLow（θ = 1 で、種の形が分かっても SeedCond の側は偽になりうる。吸収の側が要る）と TPLoNSeed（M[n] の枠）はまだ。
+- AbsUWSeedLow・AbsDNSeedLow も同じ形に（c47683f6）。AbsUWRes・AbsDNRes の系にも M[n − 1] の評価の Cons を通し、種 = Ω_{ν+1}・ν ≠ 0 では M だけの吸収の残り AbsUWGapRes・AbsDNGapRes（新しい W′ = fsD(W, Ω_{ν+1}) に吸収される v(P_1 i) の加数は W′⟨1⟩ にも吸収される）。ν = 0 は元の形 AbsUWSeedLow0・AbsDNSeedLow0。実測（6 集合）: AbsUW 約 1.2 万件・AbsDN 約 6.4 万件（ν ≠ 0）で例外 0。ν = 0 も M だけの形で例外 0。組み立て hExp_t1GP6。
+- t1-exp の現在の最上位: hExp_t1GP6（V3ExpT1SL）。仮定: hRT、hFrm（TPLoWLFRes2・TPLoW0・AbsDW0・TPLoNSeed・TPLoN0）、hLL（BandLast）、hResN = DegRes TPLoAt・TPLoLFRes2・TPLoGapRes・TPLoSeedLow0・TPLoResL_zero・AbsDGapRes・AbsDSeedLow0・AbsDResL_zero・AbsUWGapRes・AbsUWSeedLow0・AbsUWResL_zero・AbsDNGapRes・AbsDNSeedLow0・AbsDNZero・PassRootRes。M だけの新しい残り（BandLast・TPLoLFRes2・PassRootRes・4 つの GapRes）はどれも 6 集合で例外 0。段 0 の欄（…0・…_zero・TPLoW0・AbsDW0・TPLoN0）は groupA。TPLoNSeed（M[n] の枠、種 < Ω_μ）はまだ。
