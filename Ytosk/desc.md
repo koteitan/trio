@@ -2615,3 +2615,9 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 葉 e（Ω_k = o(e)）の位置（d3s・deep3）: c の最後の数える子で P_1 e = c の bump 型（大半）、c の子で上げ型、1 段深い（c の子 d が lo = 0 で書き換えて最後の加数を渡す）bump 型。
 - 偽なもの: 祖先一般の「深い (ii)」（前節）。「M の値のどの単項の部分項も変化の区間 [T′, t) に入らない」も偽（d3s 38・deep3 250）。閾値は v(c) の上の塔に限る必要がある。
 - R の証明には v の値の右端の変化（omega・bump・上げを通る道）の構造が要る（closure の道つき RE の P2 と同じ）。名前つきの残りとしては T0CutResG のまま置く。
+- 追記（closure、G3 の確定と P の保存の G 版、緑）:
+  - G3 の「後ろへ進む」動きにも「前の項の添字が s 以上」の条件を付けた（V3PDef の cutsHG）。標準形の項では位置を含む後ろの項は Ω_s 以上なので前の項も添字 ≥ s で、何も失わない（ext1 と deepA の展開の cut の枠 140156 件すべてこの形）。この条件で「切り口は s より大きい」（cutsHG_gt）が標準形の仮定なしに言え、挟み込み ph3cKindG_squeeze も仮定が増えない。
+  - 古い cutsH の後ろへの動きは条件なしなので、旧 ⊆ G3 は標準形なしでは言えない（互換の補題は置かない）。
+  - P の保存の G 版を名前空間 Ytosk.G に写した（定理の名前は旧と同じ、PH3c → PH3cG・PH3cKind → PH3cKindG）: V3PDropG（1 列落とし）・V3PBaseG（基底）・V3PT0G（t = 0）・V3PT1G（t = 1）・V3PT2G・V3PT2CG（t = 2）・V3PIntG（つなぎ）・V3PSeedOG（seed_kind・seed_ext、切り口の補題 cutsNS_same_sh などを G3 で証明し直し）・V3PSeedQRG・V3PSeedSVG・V3PSeedQNG（種の枠）。公理は標準の 3 つ。
+  - V3PSeedSVG の残り Ytosk.G.T2SeedSVFix は G3 の形（X₁ ∈ cutsNSG (V + 1) (σ X₁)）。ext1 の SpotN でない 51 件も含めて例外 0。
+  - 使う側（t0-exp・drop-fix・t2 の T2SeedFrames）は PH3c を PH3cG に替える必要がある。

@@ -11,38 +11,25 @@ namespace Ytosk
 open T
 
 /-- **A cut sits below a head subscript at least `s`.** -/
-theorem cutsHG_lev {s : T} (hs : isOT s = true) : ∀ {h t : T}, isOT h = true → t ∈ cutsHG s h → s ≤ lev h
-  | z, _, _, ht => by simp [cutsHG] at ht
-  | psi a x c, t, hh, ht => by
+theorem cutsHG_lev {s : T} : ∀ {h t : T}, t ∈ cutsHG s h → s ≤ lev h
+  | z, _, ht => by simp [cutsHG] at ht
+  | psi a x c, t, ht => by
     simp only [lev_psi]
-    rcases mem_cutsHG_psi.mp ht with ⟨hsa, _⟩ | ⟨u, hu, _⟩ | ⟨hsa, _, _, _⟩ | ⟨u, hu, _⟩
+    rcases mem_cutsHG_psi.mp ht with ⟨hsa, _⟩ | ⟨u, hu, _⟩ | ⟨hsa, _, _, _⟩ | ⟨hsa, _, _, _⟩
     · exact le_of_le_bool hsa
-    · exact le_of_lt (lt_of_lt_of_le (cutsHG_gt hs (isOT_sub hh) hu) (cutsHG_le hu))
+    · exact le_of_lt (lt_of_lt_of_le (cutsHG_gt hu) (cutsHG_le hu))
     · exact le_of_le_bool hsa
-    · have h1 := cutsHG_lev hs (isOT_rest hh) hu
-      cases c with
-      | z => simp [cutsHG] at hu
-      | psi c0 c1 c2 =>
-        have hhc : head (psi c0 c1 c2) ≤ psi a x z := (isOT_psi_iff.mp hh).2.2.2.1
-        simp only [lev_psi] at h1
-        refine le_trans h1 ?_
-        rcases (le_iff _ _).mp hhc with h | h
-        · simp only [head] at h
-          rw [psi_lt_psi_z_iff] at h
-          rcases h with h | ⟨h, _⟩
-          · exact le_of_lt h
-          · rw [h]
-        · simp only [head, psi.injEq] at h; rw [h.1]
+    · exact le_of_le_bool hsa
 
-/-- A cut has head subscript above `V`. -/
-theorem cutsHG_lev_cut {s : T} (hs : isOT s = true) : ∀ {h t : T}, isOT h = true → t ∈ cutsHG s h → s ≤ lev t
-  | z, _, _, ht => by simp [cutsHG] at ht
-  | psi a x c, t, hh, ht => by
-    rcases mem_cutsHG_psi.mp ht with ⟨_, rfl⟩ | ⟨u, hu, rfl⟩ | ⟨hsa, _, _, rfl⟩ | ⟨u, hu, rfl⟩
+/-- A cut has head subscript at least `s`. -/
+theorem cutsHG_lev_cut {s : T} : ∀ {h t : T}, t ∈ cutsHG s h → s ≤ lev t
+  | z, _, ht => by simp [cutsHG] at ht
+  | psi a x c, t, ht => by
+    rcases mem_cutsHG_psi.mp ht with ⟨_, rfl⟩ | ⟨u, hu, rfl⟩ | ⟨hsa, _, _, rfl⟩ | ⟨hsa, _, _, rfl⟩
     · simp
-    · simp only [lev_psi]; exact le_of_lt (cutsHG_gt hs (isOT_sub hh) hu)
+    · simp only [lev_psi]; exact le_of_lt (cutsHG_gt hu)
     · simp only [lev_psi]; exact le_of_le_bool hsa
-    · simp only [lev_psi]; exact cutsHG_lev hs hh ht
+    · simp only [lev_psi]; exact le_of_le_bool hsa
 
 /-- `sub a V ≠ 0` when `V < a` (no standard form needed). -/
 theorem sub_ne_z_gen : ∀ {a V : T}, V < a → sub a V ≠ z
@@ -126,17 +113,17 @@ theorem cutsHG_sh : ∀ {h t : T}, isOT h = true → t ∈ cutsHG s h → sh V V
   | z, _, _, ht => by simp [cutsHG] at ht
   | psi a x c, t, hot, ht => by
     have ha := isOT_sub hot
-    rcases mem_cutsHG_psi.mp ht with ⟨hsa, rfl⟩ | ⟨u, hu, rfl⟩ | ⟨hsa, u, hu, rfl⟩ | ⟨u, hu, rfl⟩
+    rcases mem_cutsHG_psi.mp ht with ⟨hsa, rfl⟩ | ⟨u, hu, rfl⟩ | ⟨hsa, u, hu, rfl⟩ | ⟨hsa, u, hu, rfl⟩
     · have hVa : V < a := lt_of_lt_of_le hVs (le_of_le_bool hsa)
       rw [sh_psi_gt hVa, sh_psi_gt hVs]
       simp only [sh_z]
       exact mem_cutsHG_psi.mpr (Or.inl ⟨le_shf_of_le hV hV' hVV hs ha (le_of_lt hVs) (le_of_le_bool hsa), rfl⟩)
     · -- inside the subscript
-      have hsu := cutsHG_gt hs ha hu
+      have hsu := cutsHG_gt hu
       have hVu : V < u := lt_trans hVs hsu
       have hVa : V < a := lt_of_lt_of_le hVu (cutsHG_le hu)
-      have hla : V < lev a := lt_of_lt_of_le hVs (cutsHG_lev hs ha hu)
-      have hlu : V < lev u := lt_of_lt_of_le hVs (cutsHG_lev_cut hs ha hu)
+      have hla : V < lev a := lt_of_lt_of_le hVs (cutsHG_lev hu)
+      have hlu : V < lev u := lt_of_lt_of_le hVs (cutsHG_lev_cut hu)
       rw [sh_psi_gt hVa, sh_psi_gt hVu, sh_z, shf_eq_sh hV hV' hVV hla, shf_eq_sh hV hV' hVV hlu]
       exact mem_cutsHG_psi.mpr (Or.inr (Or.inl ⟨_, cutsHG_sh ha hu, rfl⟩))
     · have hVa : V < a := lt_of_lt_of_le hVs (le_of_le_bool hsa)
@@ -144,11 +131,10 @@ theorem cutsHG_sh : ∀ {h t : T}, isOT h = true → t ∈ cutsHG s h → sh V V
       simp only [sh_z]
       exact mem_cutsHG_psi.mpr (Or.inr (Or.inr (Or.inl ⟨le_shf_of_le hV hV' hVV hs ha (le_of_lt hVs)
         (le_of_le_bool hsa), _, cutsHG_sh (isOT_arg hot) hu, rfl⟩)))
-    · by_cases hVa : V < a
-      · rw [sh_psi_gt hVa, sh_psi_gt hVa]
-        exact mem_cutsHG_psi.mpr (Or.inr (Or.inr (Or.inr ⟨_, cutsHG_sh (isOT_rest hot) hu, rfl⟩)))
-      · rw [sh_psi_le hVa, sh_psi_le hVa]
-        exact mem_cutsHG_psi.mpr (Or.inr (Or.inr (Or.inr ⟨_, cutsHG_sh (isOT_rest hot) hu, rfl⟩)))
+    · have hVa : V < a := lt_of_lt_of_le hVs (le_of_le_bool hsa)
+      rw [sh_psi_gt hVa, sh_psi_gt hVa]
+      exact mem_cutsHG_psi.mpr (Or.inr (Or.inr (Or.inr ⟨le_shf_of_le hV hV' hVV hs ha (le_of_lt hVs)
+        (le_of_le_bool hsa), _, cutsHG_sh (isOT_rest hot) hu, rfl⟩)))
 
 
 /-- **The G3 cut positions of `PH3c` under `σ`.** -/
@@ -165,9 +151,9 @@ theorem cutsNSG_sh : ∀ {hi B : T}, isOT hi = true → AllGeT (psi (succ s) z z
     have hVa : V < a := lt_of_lt_of_le (lt_trans hVs (lt_succ_self s)) hsa
     rw [sh_psi_gt hVa]
     rcases mem_cutsNSG_psi.mp hB with ⟨u, hu, rfl⟩ | ⟨u, hu, rfl⟩ | ⟨u, hu, rfl⟩
-    · have hVu : V < u := lt_trans hVs (cutsHG_gt hs ha hu)
-      have hla : V < lev a := lt_of_lt_of_le hVs (cutsHG_lev hs ha hu)
-      have hlu : V < lev u := lt_of_lt_of_le hVs (cutsHG_lev_cut hs ha hu)
+    · have hVu : V < u := lt_trans hVs (cutsHG_gt hu)
+      have hla : V < lev a := lt_of_lt_of_le hVs (cutsHG_lev hu)
+      have hlu : V < lev u := lt_of_lt_of_le hVs (cutsHG_lev_cut hu)
       rw [sh_psi_gt hVu, sh_z, shf_eq_sh hV hV' hVV hla, shf_eq_sh hV hV' hVV hlu]
       exact mem_cutsNSG_psi.mpr (Or.inl ⟨_, cutsHG_sh hV hV' hVV hs hVs ha hu, rfl⟩)
     · rw [sh_psi_gt hVa, sh_z]

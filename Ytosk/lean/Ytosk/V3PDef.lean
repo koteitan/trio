@@ -124,15 +124,17 @@ structure PInv (M : Mat) (ρ : Valn) : Prop where
 `cutsNS`・`cutsH` は標準形で偽だった（ext1 の t = 2 の行列の M[2]・M[3] で 153 枠。例:
 M = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(5,1,0)(1,1,1) の M[2] の枠で
 B = Ω_{ψ_ω(ψ_ω(Ω_1))}、hi = Ω_{ψ_ω(ψ_ω(Ω_2))}、s = 1。位置は添字に入ってから引数の高い道を進む）。
-G3: 添字には自由に入る、引数には添字が s 以上の項からだけ入る、最上位の項そのものは位置にしない。
+G3: 添字には自由に入る、引数と後ろには添字が s 以上の項からだけ入る、最上位の項そのものは位置にしない。
 ext1 の展開の t = 0・1・2 の cut の枠 119607 件と 5 集合の cut の枠はすべて G3。 -/
 
-/-- G3 の位置（項の中）: その項を `Ω_s` に替える（添字 `≥ s`）、添字に入る、引数に入る（添字 `≥ s` のとき）、後ろへ。 -/
+/-- G3 の位置（項の中）: 添字に入る。添字が s 以上の項では、その項を `Ω_s` に替える・引数に入る・後ろへ進む
+（標準形の項では、位置を含む後ろの項は Ω_s 以上なので前の項も添字 ≥ s。この条件で切り口は s より大きい）。 -/
 def cutsHG (s : T) : T → List T
   | z => []
   | psi a x c =>
-      (if le s a then [psi s z z] else []) ++ (cutsHG s a).map (fun t => psi t z z) ++
-        (if le s a then (cutsHG s x).map (fun t => psi a t z) else []) ++ (cutsHG s c).map (fun t => psi a x t)
+      (cutsHG s a).map (fun t => psi t z z) ++
+        (if le s a then [psi s z z] ++ (cutsHG s x).map (fun t => psi a t z) ++
+          (cutsHG s c).map (fun t => psi a x t) else [])
 
 /-- G3 の位置（状態の段）: 最上位の項そのものは除く。 -/
 def cutsNSG (s : T) : T → List T
