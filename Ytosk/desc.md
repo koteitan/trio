@@ -2081,3 +2081,13 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - prefLast_take（残りなし）、levLeaf_take（仮定 LostKids だけ: 数える子をすべて失う列は P_0 x、5 集合で 52 万件、例外 0）。新しい後続の葉は上げを失った x − 1（PrefLast の j = x − 1、p = P_1 (x−1) のときは levFree_self）か P_0 x（PrefLast の j = x の 2 番目の項）。部品: v_succ_form（v(i) = μ + 1 なら行 2 は 0・上げなし・μ = v(P_1 i)）、levFree_self（V は添字 V の部分項を持たない）。
   - 残り: LostKids の証明（cnt_change から: 数える子の数え方が変わるのは P_0 x と x − 1 の上げの先だけ）、展開（t = 0・1・2）での LevLeafInv ∧ PrefLast、基底。
 - groupA: LevLeafInv ∧ PrefLast の展開での実測（t = 0、T0Ext の 2 万行列 × n = 2, 3）: M[n] の LevLeafInv の組（μ, v(p)）はすべて M か M.take x の LevLeafInv・PrefLast の組（3 万組）。PrefLast の組は 2368 組が新しい（写しで順序が変わる。q と p は大半が無関係な列）。したがって PrefLast は値の対応だけでは t = 0 で運べない（構造の議論か、別の閉じた形が要る）。LostKids: P_0 x が数えられなくなる場合（C′ 2782・d3s 125）でも、その親は必ず他の数える子を持つ（証明はまだ）。
+
+### t = 2 の種の列の枠（2026-10-11、closure）
+
+- V3PSeedO（d75d9fee、緑）: cutsNS_same_sh（B が自分の σ 像の切り口なら、B ∈ cutsNS s h から B ∈ cutsNS s (σ h)、同じ段）、cutsNS_app・cutsNS_self、seed_kind・seed_ext。種の状態 B が「すべて Ω_{V′+1} 以上」かつ Fix(B) := σB = B ∨ B ∈ cutsNS V′ (σB) なら、繰り返し Y ↦ step(B, ψ_{V′}(σY)) のすべての枠で PH3c の種類が正しく、SeedExt（Y は B の延長）も保たれる。
+- 実測（deepA・d3s・deep3、例外 0）:
+  - 種の B ≠ 0 の最後の枠では、子の添字 = V′ = v_N(x′)、B はすべて高い、Fix(B) は n ごとの σ_n で成り立つ。q ≠ r の q の枠はいつも B = 0。
+  - σB = B なら n = 2 は書き換えず n ≥ 3 は pre。σB > B なら n = 2 から同じ道の cut がずっと続く。
+  - n ≥ 3 の種の枠は M[n − 1] の種の枠と添字ごとに一致（同じ数える子・前の値・v、8.3 万件）。n = 2 は M.take x と比べ、v(r) が違う場合が多い。
+  - Fix の理由: M では r の状態は σ で動かない（2.5 万件すべて）。M.take x では x − 1 が M で x へ上げていた場合だけ動く（1423 件、ちょうど cut の場合）。悪い部分（r と x の間）の変わった値は、M の値の右端の Ω_{v_M(x−1)}（または添字 v_M(x−1)）を v_T(x−1) = V + 1 に替えたもの（1.4 万件、全体の置き換えでは 2 件ずれるが、それは同じ値が別の所にもある場合で、右端だけ替えれば一致）。
+- 残り（核）: 「1 列落としの変化は右端の 1 か所の置き換え」（RE）を落とす補題の連鎖で運ぶこと。これで Fix(B_T) が出る（M での穏やかさ ＋ RE）。T0Shape (i) が要るのも同じ型の RE（t0 の D の連鎖）。M の悪い部分の値の穏やかさは r の状態では例外 0、悪い部分全体では 24 件動く（B に効かない列か要調査）。
