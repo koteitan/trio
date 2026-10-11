@@ -635,7 +635,7 @@ theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
     (hoffD : ∀ i, i < r → (¬ DepX M (r + L) true i → σ.o i = ρ.o i) ∧
       (¬ DepX M (r + L) false i → σ.v i = ρ.v i))
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
-    (hAbs : BumpAbsC M (r + L) ρ) (hVNN : VSmallNewN M r ρ σ)
+    (hAbs : BumpAbsLo M r ρ) (hVNN : VSmallNewN M r ρ σ)
     (hS3 : ∀ p, par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 → col M g = bump M p →
       Lhd z (σ.v p) (ρ.v p))
     (hS1 : Counted M g r → Lhd z (σ.o g) (ρ.o g))
@@ -941,7 +941,7 @@ theorem t0_dep_lhd {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                 exact (hoffD m (by omega)).2 (hpnd m hpp)
             exact v_bump_lhd hC hG hCN hiM (hiN i hi) h1 h2 (entry_pre0 hlen hn 1 (by omega))
               (entry_pre0 hlen hn 2 (by omega)) hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt hTD
-              (hAbs i h1 h2 (fun _ _ _ _ => v_z_of_e1 hC (by omega) he1) (Or.inr (Or.inr (v_z_of_e1 hC (by omega) he1))))
+              (hAbs i hi h1 h2)
   exact fun b i hD hi => key _ b i (le_refl _) hD hi
 
 end

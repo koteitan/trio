@@ -26,6 +26,8 @@ structure Res3A (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
     isOT (psi a' (app (qrB M ρ r (M.length - 1)) (psi (succ (ρ.v r)) z z)) z) = true →
     ∀ g ∈ comps a' ((drop1 M (M.length - 1) rk).o r),
       g < app (qrB M ρ r (M.length - 1)) ((drop1 M (M.length - 1) rk).o r)
+  /-- the strong absorption at `t = 2` and `t = 0` (`AbsSR`, 2026-10-11) -/
+  abS : AbsSR M ρ
 
 /-- **The top hypothesis, for every valuation**: every nonempty standard matrix other than SRO has a
 ranking, and every valuation and ranking of it satisfy `Inv3` and `Res3A`. -/
@@ -69,7 +71,7 @@ theorem hInv_of_A (h : HInvA) :
   have hC := cons_of_rk hR
   obtain ⟨I, RA⟩ := hall _ rk hC hR
   have hRk := rk_take_all hR I.r0p I.z2 I.sd I.z1 I.uab
-  refine ⟨_, rk, I, ⟨RA.drop, ?_, RA.seed, ?_⟩⟩
+  refine ⟨_, rk, I, ⟨RA.drop, ?_, RA.seed, ?_, RA.abS⟩⟩
   rotate_left
   · -- `t0`: the values of `M[n]` are those of a standard matrix
     intro r L hlen hp he1

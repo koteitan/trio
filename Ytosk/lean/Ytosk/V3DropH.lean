@@ -69,6 +69,8 @@ structure Res3H (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
     isOT (psi a' (app (qrB M ρ r (M.length - 1)) (psi (succ (ρ.v r)) z z)) z) = true →
     ∀ g ∈ comps a' ((drop1 M (M.length - 1) rk).o r),
       g < app (qrB M ρ r (M.length - 1)) ((drop1 M (M.length - 1) rk).o r)
+  /-- the strong absorption at `t = 2` and `t = 0` (`AbsSR`, 2026-10-11) -/
+  abS : AbsSR M ρ
 
 /-- **`Res3A` from `Res3H`** on a nonempty matrix with the structural invariants and the value part. -/
 theorem Res3A.ofH {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠ []) (S : SInv M)
@@ -81,10 +83,10 @@ theorem Res3A.ofH {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
   have hcnt := counted_take_last (M := M) hl S.r0p S.z2 S.sibDec S.z1c S.uat
   have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) V.rank hcnt
   exact ⟨DropRes.ofH hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab V.cons
-    ⟨V.good, V.vs, V.fc, V.fo, V.kd, V.td⟩ h.drop (cons_of_rk hRk1) hRk1, h.seed⟩
+    ⟨V.good, V.vs, V.fc, V.fo, V.kd, V.td⟩ h.drop (cons_of_rk hRk1) hRk1, h.seed, h.abS⟩
 
 theorem Res3A.toH {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (h : Res3A M ρ rk) : Res3H M ρ rk :=
-  ⟨h.drop.toH, h.seed⟩
+  ⟨h.drop.toH, h.seed, h.abS⟩
 
 /-- **The top theorem with the narrowed residual**: `hLast` and `hExp` only have to give `Res3H`. -/
 theorem trio_terminates_main_H

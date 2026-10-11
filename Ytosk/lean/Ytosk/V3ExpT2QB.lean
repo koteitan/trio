@@ -32,7 +32,7 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (hRN : Rk (TRIO.gexp M r L d0 d1 n) rkN)
     (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ)
     (hKD : BumpKidsDec M ρ)
-    (hAbsC : BumpAbsC M (r + L) ρ)
+    (hAbsC : BumpAbsS M (r + L) ρ)
     (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L))
     (hVSN : T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
     (hHard : T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)

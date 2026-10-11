@@ -128,7 +128,7 @@ include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
 drops by `◁` in `N`. -/
 theorem t0_S2 {g : Nat} (hg : par M 0 r = some g) (hjb : col M r = bump M g)
     (h1 : entry M 1 g ≠ 0) (h2 : entry M 2 g ≠ 0)
-    (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
+    (hTD : BumpTermDec M ρ) (hAbs : BumpAbsLo M r ρ)
     (hbF : ∀ d, d ∈ children M g → d < r →
       bumpTerm (TRIO.gexp M r L 0 0 n) σ g d = bumpTerm M ρ g d)
     (hbroot : ∀ k, k < n → bumpTerm (TRIO.gexp M r L 0 0 n) σ g (r + k * L) =
@@ -263,7 +263,7 @@ theorem t0_S2 {g : Nat} (hg : par M 0 r = some g) (hjb : col M r = bump M g)
     by_cases hWE : omega (sumN (one :: Pl ++ [X])) < E0
     · exact lhd_lt_small (isOT_mem_summands hVot hq) hWE hlt'
     · rw [← hbW]
-      apply hAbs g h1 h2 (fun _ _ _ _ => v_z_of_e1 hC (by omega) he1) (Or.inr (Or.inr (v_z_of_e1 hC (by omega) he1))) q hq _ (by rw [hbW]; exact hlt')
+      apply hAbs g (par_lt M 0 r g hg) h1 h2 q hq _ (by rw [hbW]; exact hlt')
       intro hq2
       apply hn'
       have h2le : two ≤ sumN (one :: Pl ++ List.replicate n O) :=

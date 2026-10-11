@@ -239,17 +239,10 @@ theorem bump_rel_nw {M : Mat} {x : Nat} (hx : x + 1 = M.length)
             rw [hch, List.map_congr_left ho]
             exact brelS_refl
           · simp at hj0; subst hj0; exact hS
-        apply hAbs i h1 h2 hexcl (Or.inl hSG) r hr _ hlt
-        intro hr2
-        apply hn
-        have h2le : two ≤ sumN (one :: Pl ++ [omega G']) :=
-          two_le_sumN_one_cons (by simp) hsL
-        have hom : psi z two z ≤ omega (sumN (one :: Pl ++ [omega G'])) := by
-          rw [← omega_small two_lt_E0]
-          rcases (le_iff _ _).mp h2le with h' | h'
-          · exact le_of_lt (omega_lt_omega isOT_two hp'ot h')
-          · rw [h']
-        exact lt_of_lt_of_le hr2 hom
+        apply hAbs ρ' hC' i h1 h2 hexcl (Or.inl hSG) r hr _ hlt
+        unfold bumpW
+        rw [hmapT]
+        simpa using hn
     · -- the weak case: excluded
       exact absurd hkx (fun h => hNW jl hjlM hjlb k hk ⟨w, hw, hok⟩ h)
 

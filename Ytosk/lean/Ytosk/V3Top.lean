@@ -379,6 +379,8 @@ structure Res3 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
       Good3 (TRIO.gexp M r L 0 0 n) σ ∧ VSmallNewN M r ρ σ ∧
       (∀ i ∈ roots (TRIO.gexp M r L 0 0 n), Single (σ.o i)) ∧
       ((roots (TRIO.gexp M r L 0 0 n)).map σ.o).Pairwise (fun a b => b ≤ a))
+  /-- the strong absorption at `t = 2` and `t = 0` (`AbsSR`, 2026-10-11) -/
+  abS : AbsSR M ρ
 
 /-- **`M[1] = M.take x` with the drop valuation keeps the value invariants** (`t = 1`), from `drop_pres`. -/
 theorem valInv_drop1 {M : Mat} {x : Nat} (hx : x + 1 = M.length)
@@ -469,6 +471,7 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
     have hdr := R.drop
     have hch := R.chain
     have ht0 := R.t0
+    have hab0 := R.abS.2 r hr he1
     have hrx : r < M.length - 1 := par_lt M 0 _ r hr
     obtain ⟨L, hL⟩ : ∃ L, M.length - 1 = r + L := ⟨M.length - 1 - r, by omega⟩
     rw [hL] at hexp hr he1 hx2 hdr
@@ -494,7 +497,7 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
       have hLast := fun n (hn : 2 ≤ n) g (hg : par M 0 r = some g) (hc : Counted M g r) =>
         counted_last0 hlen hL0 hr he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc
       exact t0_main' hlen hL0 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr he1 I.cons I.good
-        I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.rootS I.rootP hLast
+        I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hab0 hdr.ws hdr.vst hdr.ua I.rootS I.rootP hLast
         hN (n + 2) (by omega)
   · -- `t = 1`
     have hx2 : entry M 2 (M.length - 1) = 0 := by

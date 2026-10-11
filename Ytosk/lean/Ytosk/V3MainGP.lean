@@ -95,6 +95,7 @@ theorem trio_terminates_main_GP
     (hDR : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk →
       DropResR M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
     (hSeed : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → SeedR M ρ rk)
+    (hAbS : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → AbsSR M ρ)
     (hRest : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       let x := M.length - 1
       let σ := drop1 M x rk
@@ -129,7 +130,7 @@ theorem trio_terminates_main_GP
       intro h; have := congrArg List.length h; rw [List.length_take] at this; simp at this; omega
     have hS' : M.take (M.length - 1) ≠ SRO := ne_SRO_of_rk V.rank
     have hM' := std_take hM (M.length - 1) (by omega)
-    exact ⟨_, rk, V, Res3A.ofR hne (sInv_std hM' hS') V P' ⟨hDR _ _ _ hM' hS' hne V, hSeed _ _ _ hM' hS' hne V⟩,
+    exact ⟨_, rk, V, Res3A.ofR hne (sInv_std hM' hS') V P' ⟨hDR _ _ _ hM' hS' hne V, hSeed _ _ _ hM' hS' hne V, hAbS _ _ _ hM' hS' hne V⟩,
       P'⟩
   have hTake := hTakeR_of_last hLast
   -- the step
@@ -158,7 +159,7 @@ theorem trio_terminates_main_GP
       have hMN := Std.exp n hM
       have PN := hVSRexp M ρ rk hM hS hE I R P hz n hn hNS hNE ρN rkN V
       exact ⟨ρN, rkN, Inv3.ofV (sInv_std hMN hNS) V,
-        Res3A.ofR hNE (sInv_std hMN hNS) V PN ⟨hDR _ _ _ hMN hNS hNE V, hSeed _ _ _ hMN hNS hNE V⟩, PN⟩
+        Res3A.ofR hNE (sInv_std hMN hNS) V PN ⟨hDR _ _ _ hMN hNS hNE V, hSeed _ _ _ hMN hNS hNE V, hAbS _ _ _ hMN hNS hNE V⟩, PN⟩
   have hER : HInvER := hInvER_of_step (fun n hE => by
     obtain ⟨ρ, rk, V, R, P⟩ := hBaseVR_holds n hE
     have hSRO : expand SRO n ≠ SRO := by

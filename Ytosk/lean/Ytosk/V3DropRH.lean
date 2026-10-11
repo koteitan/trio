@@ -54,6 +54,8 @@ structure Res3R (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
     isOT (psi a' (app (qrB M ρ r (M.length - 1)) (psi (succ (ρ.v r)) z z)) z) = true →
     ∀ g ∈ comps a' ((drop1 M (M.length - 1) rk).o r),
       g < app (qrB M ρ r (M.length - 1)) ((drop1 M (M.length - 1) rk).o r)
+  /-- the strong absorption at `t = 2` and `t = 0` (`AbsSR`, 2026-10-11) -/
+  abS : AbsSR M ρ
 
 /-- **`Res3A` from `Res3R`** (and `VSmallR` of `M`). -/
 theorem Res3A.ofR {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠ []) (S : SInv M)
@@ -66,7 +68,7 @@ theorem Res3A.ofR {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
   have hcnt := counted_take_last (M := M) hl S.r0p S.z2 S.sibDec S.z1c S.uat
   have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) V.rank hcnt
   exact ⟨DropRes.ofR hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab V.cons
-    ⟨V.good, V.vs, V.fc, V.fo, V.kd, V.td⟩ hVR h.drop (cons_of_rk hRk1) hRk1, h.seed⟩
+    ⟨V.good, V.vs, V.fc, V.fo, V.kd, V.td⟩ hVR h.drop (cons_of_rk hRk1) hRk1, h.seed, h.abS⟩
 
 /-- **The top theorem without `HardArg`**: `VSmallR` on every standard matrix (`hVSR`), and `hLast`・`hExp`
 give `Inv3V ∧ Res3R`. -/
@@ -138,6 +140,7 @@ theorem trio_terminates_main_G
     (hDR : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk →
       DropResR M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
     (hSeed : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → SeedR M ρ rk)
+    (hAbS : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → AbsSR M ρ)
     (hRest : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       let x := M.length - 1
       let σ := drop1 M x rk
@@ -157,11 +160,11 @@ theorem trio_terminates_main_G
       intro h; have := congrArg List.length h; rw [List.length_take] at this; simp at this; omega
     have hS' : M.take (M.length - 1) ≠ SRO := ne_SRO_of_rk V.rank
     have hM' := std_take hM (M.length - 1) (by omega)
-    exact ⟨_, rk, V, hDR _ _ _ hM' hS' hne V, hSeed _ _ _ hM' hS' hne V⟩
+    exact ⟨_, rk, V, hDR _ _ _ hM' hS' hne V, hSeed _ _ _ hM' hS' hne V, hAbS _ _ _ hM' hS' hne V⟩
   · intro M ρ rk hM hS hE I R hz n hn hNS hNE
     obtain ⟨ρN, rkN, V⟩ := hExp M ρ rk hM hS hE I R hz n hn hNS hNE
     have hMN := Std.exp n hM
-    exact ⟨ρN, rkN, V, hDR _ _ _ hMN hNS hNE V, hSeed _ _ _ hMN hNS hNE V⟩
+    exact ⟨ρN, rkN, V, hDR _ _ _ hMN hNS hNE V, hSeed _ _ _ hMN hNS hNE V, hAbS _ _ _ hMN hNS hNE V⟩
 
 /-- **`VSmallR` passes to `M.take x`** (no extra hypothesis): a changed last child with the same
 subscript rewrites only if the old one does, and a changed subscript comes with the argument `0`. -/

@@ -107,9 +107,9 @@ theorem gexp_one_gen {M : Mat} {r L d0 d1 : Nat} (hlen : r + L + 1 = M.length) :
 theorem gexp_zero_gen (M : Mat) (r L d0 d1 : Nat) : TRIO.gexp M r L d0 d1 0 = M.take r := by
   unfold TRIO.gexp TRIO.gcopies; simp
 
-/-- The absorption hypothesis before `x` from `BumpAbsC` (whose side condition fails: the parent of `x`
+/-- The absorption hypothesis before `x` from `BumpAbsS` (whose side condition fails: the parent of `x`
 is not a bump child). -/
-theorem abs_of_absC {M : Mat} {x q : Nat} {ρ : Valn} (hAbsC : BumpAbsC M x ρ)
+theorem abs_of_absC {M : Mat} {x q : Nat} {ρ : Valn} (hAbsC : BumpAbsS M x ρ)
     (hpx : par M 0 x = some q) (hqb : ∀ i, par M 0 q = some i → col M q ≠ bump M i) :
     ∀ i, i < x → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ s ∈ summands (vOpt ρ (par M 1 i)),
       ¬ s < psi z two z → s < bumpW M ρ i → Lhd z s (bumpW M ρ i) := by
@@ -959,6 +959,8 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   -- the valuation of `M.take x`
   have hdr : DropRes M (r + L) ρ (drop1 M (r + L) rk) := by
     have := R.drop; rw [hL] at this; exact this
+  have hAS : BumpAbsS M (r + L) ρ := by
+    have := R.abS.1 h2; rw [hL] at this; exact this
   have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank (hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat)
   have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rk) := cons_of_rk hRk1
   have hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rk) :=
@@ -980,7 +982,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     by_cases hqr : q = r
     · rw [hqr] at hq
       have T := R2.qr r L hlen hr hq
-      have hAbs := abs_of_absC hdr.ab hq hrb
+      have hAbs := abs_of_absC hAS hq hrb
       cases hux : upg M (r + L - 1) with
       | none =>
         have T' := T.nn hux
@@ -1024,7 +1026,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       obtain ⟨Txb, Tqb, Te2pq, Tclq, Tclpq⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
       obtain ⟨Tp1, TqL, Tdv, Tos, Tvsh⟩ := qn_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
         I.uat I.uab I.r12 hpq' Tqb
-      have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
+      have hAbs := abs_of_absC hAS hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
       have hs1 := hseed1 pq (by have := par_lt M 0 _ _ hpq; omega) Tclpq T.seed1
       cases hux : upg M (r + L - 1) with
       | none =>
@@ -1063,7 +1065,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     by_cases hqr : q = r
     · rw [hqr] at hq
       have T := R2.qr r L hlen hr hq
-      have hAbs := abs_of_absC hdr.ab hq hrb
+      have hAbs := abs_of_absC hAS hq hrb
       by_cases hux : upg M (r + L - 1) = some (r + L)
       · have T' := T.sv hux
         obtain ⟨Sp1, _, Sdv, Sos, Svsh⟩ := sv_shapes hlen hL0 hq hux (rx_of_sv hlen I.z2 I.z1 hr hux) hrb he2r
@@ -1108,7 +1110,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
             obtain ⟨k0, _, hk0⟩ := List.any_eq_true.mp hiu
             have := upg_target_e2 (of_decide_eq_true hk0); omega
         exact t2_qr_main hlen hL0 hq hd0e hn (hXu_of hux) hxbr hrb he2r hIU I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
-          I.be I.r01 I.e00 I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hdr.ab hxcN hseed
+          I.be I.r01 I.e00 I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hAS hxcN hseed
     · obtain ⟨pq, hpq⟩ := par0_of_anc (anc0_par hA (by omega) hq) (fun h => hqr h.symm)
       have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
       have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
@@ -1116,7 +1118,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       obtain ⟨Txb, Tqb, Te2pq, Tclq, Tclpq⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
       obtain ⟨Tp1, TqL, Tdv, Tos, Tvsh⟩ := qn_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
         I.uat I.uab I.r12 hpq' Tqb
-      have hAbs := abs_of_absC hdr.ab hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
+      have hAbs := abs_of_absC hAS hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
       have hseed := T.big n σ hn hCN
       have hIUt : ∀ c, c < r + L → c ≠ r + (q - r) → topped M c = true →
           isUpg (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c =

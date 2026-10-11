@@ -98,7 +98,7 @@ theorem base_dropRes : DropRes (Mlen (1 + 3 * n)) ((Mlen (1 + 3 * n)).length - 1
   · -- UpgAbsX
     intro i k W _ _ _ _ r hr; rw [vOpt_par1] at hr; simp [summands] at hr
   · -- BumpAbsC
-    intro i _ _ _ _ r hr; rw [vOpt_par1] at hr; simp [summands] at hr
+    intro _ _ i _ _ _ _ r hr; rw [vOpt_par1] at hr; simp [summands] at hr
 
 theorem base_fch : FrameClosedHi (Mlen (1 + 3 * n)) (bval (1 + 3 * n) one) := by
   intro i _ L' c R h _
@@ -108,7 +108,7 @@ theorem base_fch : FrameClosedHi (Mlen (1 + 3 * n)) (bval (1 + 3 * n) one) := by
 
 theorem base_res3A : Res3A (Mlen (1 + 3 * n)) (bval (1 + 3 * n) one) (brk (1 + 3 * n)) := by
   have hx : (Mlen (1 + 3 * n)).length - 1 = 3 * n := by simp
-  refine ⟨base_dropRes, ?_⟩
+  refine ⟨base_dropRes, ?_, ?_⟩
   · -- seed
     intro r h1 h0
     rw [hx] at h1 h0
@@ -118,6 +118,9 @@ theorem base_res3A : Res3A (Mlen (1 + 3 * n)) (bval (1 + 3 * n) one) (brk (1 + 3
     · rw [Mlen_par1 (by omega) (by omega)] at h1; cases h1
       rw [Mlen_par0_BD (by omega) (by omega) (by omega)] at h0
       have := Option.some.inj h0; omega
+  · -- AbsSR: `v(P_1 i) = 0`
+    refine ⟨fun _ i _ _ _ _ r hr => ?_, fun _ _ _ i _ _ _ r hr => ?_⟩ <;>
+      (rw [vOpt_par1] at hr; simp [summands] at hr)
 
 end
 

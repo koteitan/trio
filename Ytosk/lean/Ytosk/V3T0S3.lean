@@ -113,7 +113,7 @@ omit hGN in
 `v(p)` drops by `◁` in `N`. -/
 theorem t0_S3 {g p : Nat} (hg : par M 0 r = some g) (hpg : par M 0 g = some p)
     (hjb : col M g = bump M p) (h1 : entry M 1 p ≠ 0) (h2 : entry M 2 p ≠ 0)
-    (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
+    (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ) (hAbs : BumpAbsLo M r ρ)
     {Lb : List Nat} (hchp : children M p = Lb ++ [g])
     (hbL : ∀ d ∈ Lb, bumpTerm (TRIO.gexp M r L 0 0 n) σ p d = bumpTerm M ρ p d)
     (hKv : ∀ d ∈ children M g, d < r → σ.o d = ρ.o d)
@@ -187,7 +187,7 @@ theorem t0_S3 {g p : Nat} (hg : par M 0 r = some g) (hpg : par M 0 g = some p)
     · simp at h; rw [h]; exact hX.1)
   exact v_bump_lhd hC hG hCN hpM hpN h1 h2 (entry_pre0 hlen hn 1 (by omega))
     (entry_pre0 hlen hn 2 (by omega)) hV hchp hchN hbL hbjM hbjN hGot hG'ot hS hlt hTD
-    (hAbs p h1 h2 (fun _ _ _ _ => v_z_of_e1 hC (by omega) he1) (Or.inr (Or.inr (v_z_of_e1 hC (by omega) he1))))
+    (hAbs p (lt_trans (par_lt M 0 g p hpg) (par_lt M 0 r g hg)) h1 h2)
 
 end
 

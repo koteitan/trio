@@ -64,7 +64,7 @@ theorem hInv_of_E (h : HInvE) :
   obtain ⟨ρ, rk, I, RA⟩ := h M hM hS hE
   have hC := I.cons
   have hR := I.rank
-  refine ⟨ρ, rk, I, ⟨RA.drop, chain_of_E h hM I, RA.seed, ?_⟩⟩
+  refine ⟨ρ, rk, I, ⟨RA.drop, chain_of_E h hM I, RA.seed, ?_, RA.abS⟩⟩
   intro r L hlen hp he1
   have hL : 0 < L := by
     rcases Nat.eq_zero_or_pos L with h0 | h0

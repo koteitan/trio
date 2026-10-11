@@ -395,7 +395,7 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
     (hCN : Cons (TRIO.gexp M r L d0 d1 n) σ) (hGN : Good3 (TRIO.gexp M r L d0 d1 n) σ)
     (hRN : Rk (TRIO.gexp M r L d0 d1 n) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
-    (hAbsC : BumpAbsC M (r + L) ρ)
+    (hAbsC : BumpAbsS M (r + L) ρ)
     (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L))
     (hseed : Lhd z (σ.o r) (ρ.o r)) :
     isOT (root (TRIO.gexp M r L d0 d1 n) σ) = true ∧ root (TRIO.gexp M r L d0 d1 n) σ < root M ρ := by

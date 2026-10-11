@@ -125,14 +125,14 @@ theorem dropRes_congr {N : Mat} {x : Nat} {σ σ' τ τ' : Valn} (hx : x < N.len
     rw [← vOpt_par_congr h hiN] at hv hr
     rw [← (h k (upg_lt hiN hu)).2] at hv
     exact hD.ua i k W hix hu hv hW r hr hrW
-  · intro i h1 h2 hcol hsg r hr hr2
+  · intro σ'' hC'' i h1 h2 hcol hsg r hr hrW hr2
     have hiN := lt_of_entry_ne h1
     rw [← vOpt_par_congr h hiN] at hr
-    rw [← bumpW_congr h]
-    refine hD.ab i h1 h2 (fun j hj hjb hch => ?_) ?_ r hr hr2
+    rw [← bumpW_congr h] at hr2 ⊢
+    refine hD.ab σ'' hC'' i h1 h2 (fun j hj hjb hch => ?_) ?_ r hr hrW hr2
     · rw [(h x hx).2]; exact hcol j hj hjb hch
-    · rcases hsg with ⟨σ'', hC'', hB⟩ | hX
-      · refine Or.inl ⟨σ'', hC'', fun jl hjl hjb => ?_⟩
+    · rcases hsg with ⟨σ3, hC3, hB⟩ | hX
+      · refine Or.inl ⟨σ3, hC3, fun jl hjl hjb => ?_⟩
         have hL : ∀ c ∈ children N jl, c < N.length := fun c hc => (mem_children hc).2
         rw [map_o_congr h hL]; exact hB jl hjl hjb
       · rcases hX with hX | hX

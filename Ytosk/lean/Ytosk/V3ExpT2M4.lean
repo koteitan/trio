@@ -19,6 +19,7 @@ theorem hLastA_of_G
     (hDR : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk →
       DropResR M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
     (hSeed : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → SeedR M ρ rk)
+    (hAbS : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → AbsSR M ρ)
     (hRest : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       let x := M.length - 1
       let σ := drop1 M x rk
@@ -34,7 +35,7 @@ theorem hLastA_of_G
   have hS' : M.take (M.length - 1) ≠ SRO := ne_SRO_of_rk V.rank
   have hM' := std_take hM (M.length - 1) (by omega)
   exact ⟨_, rk, V, Res3A.ofR hne (sInv_std hM' hS') V (hVSR _ _ _ hM' hS' hne V)
-    ⟨hDR _ _ _ hM' hS' hne V, hSeed _ _ _ hM' hS' hne V⟩⟩
+    ⟨hDR _ _ _ hM' hS' hne V, hSeed _ _ _ hM' hS' hne V, hAbS _ _ _ hM' hS' hne V⟩⟩
 
 /-- **`hExp` for `t = 2` in the shape of `trio_terminates_main_G`**: with the global hypotheses of `main_G`
 for the prefix `M.take x`. -/
@@ -43,6 +44,7 @@ theorem hExp_t2_G
     (hDR : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk →
       DropResR M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
     (hSeed : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → SeedR M ρ rk)
+    (hAbS : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → AbsSR M ρ)
     (hRest : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       let x := M.length - 1
       let σ := drop1 M x rk
@@ -53,6 +55,6 @@ theorem hExp_t2_G
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
-  hExp_t2_of_lastV (hLastA_of_G hVSR hDR hSeed hRest) hB hR3
+  hExp_t2_of_lastV (hLastA_of_G hVSR hDR hSeed hAbS hRest) hB hR3
 
 end Ytosk

@@ -204,8 +204,10 @@ theorem t0_D_of_shape (h : T0Shape) {M : Mat} {ρ : Valn} {rk : Bool → Nat →
   obtain ⟨h1, h2, h3, h4⟩ := h M ρ rk r L hM hS I R hlen hL hp he1
   have hDr := R.drop
   rw [show M.length - 1 = r + L by omega] at hDr
+  have hab0 := R.abS.2 r (by rw [show M.length - 1 = r + L by omega]; exact hp)
+    (by rw [show M.length - 1 = r + L by omega]; exact he1)
   exact t0_otd hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
-    I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hDr.ws hDr.vst hDr.ua I.rootS I.rootP
+    I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
     h1 h2 h3 h4 n hn σ hCN
 
@@ -349,8 +351,10 @@ theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) (hR1 : T0RWRes PTP1) (hR1W : T0R
   rw [hexp n]
   have hDr := R.drop
   rw [show M.length - 1 = r + L by omega] at hDr
+  have hab0 := R.abS.2 r (by rw [show M.length - 1 = r + L by omega]; exact hp)
+    (by rw [show M.length - 1 = r + L by omega]; exact he1)
   have hcore := t0_core hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
-    I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hDr.ws hDr.vst hDr.ua I.rootS I.rootP
+    I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
     (fun n hn σ hCN => ⟨hOTD M ρ rk r L n hM hS I R hlen hL hp he1 hn σ hCN,
       t0_vsmallNewN hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.cons I.good I.rank hn hCN⟩)

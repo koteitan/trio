@@ -36,7 +36,7 @@ theorem hR2_t2 (hB : T2BelowXRes) (hSV : T2Seed1SV) (hQC : T2Seed1C) :
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk := by
   intro M ρ rk hM I R hz h2
   have hS : M ≠ SRO := ne_SRO_of_rk I.rank
-  have RA : Res3A M ρ rk := ⟨R.drop, R.seed⟩
+  have RA : Res3A M ρ rk := ⟨R.drop, R.seed, R.abS⟩
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
       TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)

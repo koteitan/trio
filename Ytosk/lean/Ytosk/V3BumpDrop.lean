@@ -583,14 +583,40 @@ parent of `x` is not a bump child (the use in `t = 2`), or `v(x) = 0` (no collap
 matrices: the collapse at `x` can reach `v(i)` weakly through upgrades, e.g. at `i = 11` of
 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)
 (`r = ω^3`, bump term `Ω_1`). SRO からの乱択の展開とその M[n] の接頭辞閉包（標準形 40 万個）で例外 0. -/
-def BumpAbsC (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
+def BumpAbsS (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
   ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
     (∀ j ∈ children M i, col M j = bump M i → children M j = [x] → ρ.v x = z) →
     (StrongG M x ρ i ∨ XParNB M x ∨ ρ.v x = z) →
     ∀ r ∈ summands (vOpt ρ (par M 1 i)), ¬ r < psi z two z → r < bumpW M ρ i → Lhd z r (bumpW M ρ i)
 
-theorem BumpAbs.c {M : Mat} {ρ : Valn} (h : BumpAbs M ρ) (x : Nat) : BumpAbsC M x ρ :=
+/-- **Hypothesis on the drop** (2026-10-11, drop-fix): the absorption of `BumpAbsS`, only for the summands
+`r` of `v(P_1 i)` that survive the new bump term `W′ = bumpW (M.take x) σ′ i` (`¬ r < W′`). This is what
+`bump_rel` uses (`v_strong`). The strong form `BumpAbsS` (all `r ≥ ω²`) is false on standard matrices
+(T0Ext): `(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(3,0,0)`, `i = 7`, `r = ω²`,
+`W = Ω_{ω²}` (test `Ω_1`), where `ω²` is absorbed by `W′ = Ω_1`. -/
+def BumpAbsC (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
+  ∀ σ', Cons (M.take x) σ' → ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+    (∀ j ∈ children M i, col M j = bump M i → children M j = [x] → ρ.v x = z) →
+    (StrongG M x ρ i ∨ XParNB M x ∨ ρ.v x = z) →
+    ∀ r ∈ summands (vOpt ρ (par M 1 i)), ¬ r < bumpW (M.take x) σ' i → r < bumpW M ρ i →
+      Lhd z r (bumpW M ρ i)
+
+theorem BumpAbs.c {M : Mat} {ρ : Valn} (h : BumpAbs M ρ) (x : Nat) : BumpAbsS M x ρ :=
   fun i h1 h2 _ _ => h i h1 h2
+
+/-- **Hypothesis for `t = 0`** (2026-10-11, drop-fix): the absorption of `BumpAbsS` only at the columns
+`i < r` (`r = P_0(x)`). The `t = 0` lemmas use it at the dependent columns before `r`, at `g = P_0(r)` and at
+`P_0(g)`, where `v(x) = 0` makes the side conditions of `BumpAbsS` empty. `BumpAbsS` itself is false at
+`t = 0` (the example of `BumpAbsC` has `i = 7 > r = 6`). -/
+def BumpAbsLo (M : Mat) (r : Nat) (ρ : Valn) : Prop :=
+  ∀ i, i < r → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+    ∀ s ∈ summands (vOpt ρ (par M 1 i)), ¬ s < psi z two z → s < bumpW M ρ i → Lhd z s (bumpW M ρ i)
+
+/-- The strong absorption of the last column `x = |M| - 1` that the expansions use: `BumpAbsS` at
+`t = 2` (`abs_of_absC`), `BumpAbsLo` at `t = 0` (`t0_core`). -/
+def AbsSR (M : Mat) (ρ : Valn) : Prop :=
+  (TRIO.srow M (M.length - 1) = 2 → BumpAbsS M (M.length - 1) ρ) ∧
+  (∀ r, par M 0 (M.length - 1) = some r → entry M 1 (M.length - 1) = 0 → BumpAbsLo M r ρ)
 
 /-- `BRelS 0 ψ_w(0)` forces `w = 0`. -/
 theorem brelS_z_psi {w : T} (h : BRelS z (psi w z z)) : w = z := by
@@ -1096,17 +1122,10 @@ theorem bump_rel {M : Mat} {x : Nat} (hx : x + 1 = M.length)
             rw [hch, List.map_congr_left ho]
             exact brelS_refl
           · simp at hj0; subst hj0; exact hS
-        apply hAbs i h1 h2 hexcl (Or.inl hSG) r hr _ hlt
-        intro hr2
-        apply hn
-        have h2le : two ≤ sumN (one :: Pl ++ [omega G']) :=
-          two_le_sumN_one_cons (by simp) hsL
-        have hom : psi z two z ≤ omega (sumN (one :: Pl ++ [omega G'])) := by
-          rw [← omega_small two_lt_E0]
-          rcases (le_iff _ _).mp h2le with h' | h'
-          · exact le_of_lt (omega_lt_omega isOT_two hp'ot h')
-          · rw [h']
-        exact lt_of_lt_of_le hr2 hom
+        apply hAbs ρ' hC' i h1 h2 hexcl (Or.inl hSG) r hr _ hlt
+        unfold bumpW
+        rw [hmapT]
+        simpa using hn
     · -- the weak case
       by_cases hli : LhdE (ρ'.v i) (ρ.v i)
       · exact Or.inl hli

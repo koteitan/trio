@@ -1111,7 +1111,7 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
       (¬ DepX M (r + L) false i → σ.v i = ρ.v i))
     (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = omid M r L ρ)
     (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
-    (hFO : FrameOT M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
+    (hFO : FrameOT M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ) (hAbs : BumpAbsLo M r ρ)
     (hl : Lhd z (ρ'.o r) (ρ.o r))
     (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
     (hLastC : Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
@@ -1416,7 +1416,7 @@ theorem t0_dep_ot {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat
                   exact (hoffD m (by omega)).2 (hpnd m hpp)
               exact v_bump_lhd hC hG hCN hiM (hiN i hi) h1 h2 (entry_pre0 hlen hn 1 (by omega))
                 (entry_pre0 hlen hn 2 (by omega)) hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt hTD
-                (hAbs i h1 h2 (fun _ _ _ _ => v_z_of_e1 hC (by omega) he1) (Or.inr (Or.inr (v_z_of_e1 hC (by omega) he1))))
+                (hAbs i hi h1 h2)
       | true =>
         by_cases hD : DepX M (r + L) true i
         swap
@@ -1731,7 +1731,7 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
       ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
-    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ) (hAbsS : BumpAbsLo M r ρ)
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
     (hUA : UpgAbsX M (r + L) ρ)
@@ -1901,7 +1901,7 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           rw [Nat.add_zero, Nat.add_zero] at hch0
           rw [hch0, List.map_map]
         apply t0_S2G (O' := omega (sumN ((children (M.take (j' + L)) j').map ρ'.o))) hlen hL hp hn hR0 hZ2
-          hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hjb h1 h2 hTD hAbs
+          hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hjb h1 h2 hTD hAbsS
         · intro d hd hdr
           have hdL : d ∈ Lb := by
             rw [hch] at hd
@@ -1979,7 +1979,7 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
         have hLj : ∀ d ∈ Lb, d < j' :=
           (sib_order (children_sorted M pp) (R := []) (by rw [hch])).1
         apply t0_S3 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hpg hjb h1 h2
-          hTD hKD hAbs hch
+          hTD hKD hAbsS hch
         · intro d hd
           have hdg : par M 0 r ≠ some d := fun h =>
             (hLnd d hd r (mem_children_iff.mpr ⟨by have := hLj d hd; omega, h⟩)).2 hDr
@@ -2014,13 +2014,13 @@ theorem t0_otd {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           · rw [show k = n - 1 by omega, hσlast]; exact hGT.ot_o r (by rw [List.length_take]; omega)
     intro i hi hd
     exact (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT hσB hσBv
-      hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
+      hoffD hσmid hσlast hFO hTD hKD hAbsS hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
       hVchgSN (hVchgRN g hg) (hG0N n hn2 g hg) true i hi) |> fun h =>
       ⟨h.1, (fun hv => let ⟨X, X', a1, a2, a3, _⟩ := h.2.2 rfl hd hv; ⟨X, X', a1, a2, a3⟩), fun hne => by
         have hdv : DepX M (r + L) false i := by
           by_contra hn'; exact hne ((hoffD i hi).2 hn')
         have hvot := (t0_dep_ot hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT
-          hσB hσBv hoffD hσmid hσlast hFO hTD hKD hAbs hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
+          hσB hσBv hoffD hσmid hσlast hFO hTD hKD hAbsS hl hy' (hLast n hn2 g hg) hS3 hS2 (hTrigBN n hn2 σ hCN)
           hVchgSN (hVchgRN g hg) (hG0N n hn2 g hg) false i hi).1
         exact o_N_noc' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hi
           (cl_nil_of_depv' hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hi hdv) hvot⟩
