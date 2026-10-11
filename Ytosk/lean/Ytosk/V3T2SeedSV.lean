@@ -498,17 +498,6 @@ theorem topP_sv {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hZ2 : Z2 M)
   · have := hbet p (Anc0.step hpr (Anc0.refl r)) hpx (by omega) hpe
     omega
 
-/-- **`v` of a column that is not topped in `M.take x` is that of `M`** (`chg_off` and `chg_struct`). -/
-theorem v_take_of_untopped {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) {x i : Nat}
-    (hx : x + 1 = M.length) (hi : i < x) (ht : topped (M.take x) i = false) {τ : Valn}
-    (hτ : Cons (M.take x) τ) : τ.v i = ρ.v i := by
-  have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
-  rw [show M.length - 1 = x by omega] at hcnt
-  have hRk1 : Rk (M.take x) rk := rk_take (by omega) I.rank hcnt
-  refine (chg_off hx I.cons I.good hτ hRk1 i hi).2 (fun h => ?_)
-  have := ((chg_struct hx I.r0p I.z2 I.sd I.z1 I.uat I.uab h).1 rfl hi).1
-  rw [ht] at this; cases this
-
 /-- The iterate `σ^k(X)` of `σ = σ_{V, V′}`. -/
 def shIt (V V' X : T) : Nat → T
   | 0 => X

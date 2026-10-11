@@ -149,7 +149,8 @@ theorem seed_ot_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   rw [show M.length - 1 = r + L by omega] at hcnt
   have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
   have hC0 := cons_of_rk hRk1
-  obtain ⟨hv0, t1, ht1, hch⟩ := hRes.base _ hC0
+  have hv0 := v_take_of_untopped I hlen (par_lt M 2 _ _ hr) (topP_C hM hS I hlen hr hq hqr) hC0
+  obtain ⟨t1, ht1, hch⟩ := hRes.base _ hC0
   set V := ρ.v r with hVdef
   set B := t2B V ρ Lc with hBdef
   set s' := qnS M ρ r L q with hs'def
@@ -202,7 +203,7 @@ theorem seed_ot_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
-    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hRes : T2SeedCRes M ρ r L q)
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q]) (hRes : T2SeedCRes M ρ r L q)
     (hOT : T2SeedCOT M ρ r L q) :
     ∀ n, 2 ≤ n →
       (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
@@ -259,7 +260,7 @@ theorem seed_ot_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       have hn1L : L ≤ (n - 1) * L := Nat.le_mul_of_pos_left L (by omega)
       have hrP : r < (TRIO.gexp M r L d0 d1 (n - 1)).length := by omega
       have hqP : q < (TRIO.gexp M r L d0 d1 (n - 1)).length := by omega
-      have hP := seed_r_value_C hM hS I R hz h2 hlen hr hq hqr hRes hC0 hRk1 (n - 1) (by omega)
+      have hP := seed_r_value_C hM hS I R hz h2 hlen hr hq hqr hncl hRes hC0 hRk1 (n - 1) (by omega)
         (fun m h1 h2' τ hτ => hGlow m h1 (by omega) τ hτ) _ hCP (hGP.ot_o q hqP)
         (by rw [← cvals_eq_mapC hCP]; exact hGP.dec r hrP)
       have hform := o_cl_eq hCP hGP hrP
@@ -272,13 +273,13 @@ theorem seed_ot_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hvq : σ.v q = s' := vq_eq_gexp hM hS I hz h2 hlen hr hn hCN hq hqr
   have hvq0 : (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rk)).v q = σ.v q := by
     rw [hvq]; exact hRes.vqP _ hC0
-  obtain ⟨_, _, _, hvx, hoq, _⟩ := C_frame hM hS I R hz h2 hlen hr hq hqr hRes.qP hRes.un hn hCN hRN hCP hGP hRP
+  obtain ⟨_, _, _, hvx, hoq, _⟩ := C_frame hM hS I R hz h2 hlen hr hq hqr (qP_C hM hS I hlen hr hq hqr hncl hRes.un) hRes.un hn hCN hRN hCP hGP hRP
     hC0 hG0 hRk1 hv0 hvq0
   have hvx' : σ.v (r + L) = s' := by rw [hvx, hvq]; exact qnS_vxs M ρ r L q
   have hqOT : isOT (σ.o q) = true := by
     rw [hoq, hvx', hvq, hXP, hvP]; exact (hOT _ hC0).2 (n - 2)
   refine ⟨hqOT, ?_⟩
-  rw [seed_r_value_C hM hS I R hz h2 hlen hr hq hqr hRes hC0 hRk1 n hn hGlow σ hCN hqOT hdecN]
+  rw [seed_r_value_C hM hS I R hz h2 hlen hr hq hqr hncl hRes hC0 hRk1 n hn hGlow σ hCN hqOT hdecN]
   exact (hOT _ hC0).1 (n - 1) (by omega)
 
 end Ytosk

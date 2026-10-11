@@ -64,37 +64,20 @@ theorem agree_by_rank {M' : Mat} {ρ ρ' : Valn} {rk' : Bool → Nat → Nat} (E
   intro i hi
   exact ⟨fun hE => (key _ i hi).1 (Nat.le_refl _) hE, fun hE => (key _ i hi).2 (Nat.le_refl _) hE⟩
 
-/-- **`P_0(q) = r`** for `t = 2`, `q ≠ r`. -/
-theorem par0_q_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+/-- **C: `q` is not counted at `r` in `M.take x`** (it is an upgrade target, and all its children are bump
+children, so it stays topped). -/
+theorem qP_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
-    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) : par M 0 q = some r := by
-  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
-  have hrx0 : r < r + L := par_lt M 2 _ _ hr
-  have hA0 : Anc0 M r (r + L) := anc0_of_par M 2 r (r + L) hr
-  have hrq0 : Anc0 M r q := anc0_par hA0 (by have := par_lt M 0 _ _ hq; omega) hq
-  obtain ⟨pq, hpq0⟩ := par0_of_anc hrq0 (fun h => hqr h.symm)
-  have hrq : r < q := by have := hrq0.le; omega
-  obtain ⟨qp, rfl⟩ : ∃ qp, q = r + qp := ⟨q - r, by omega⟩
-  obtain ⟨Txb0, Tqb0, _, _, _⟩ := t2_qn_struct hX hJ hlen hr hq (by omega) hpq0
-  have he0lt' := anc0_e0_lt hA0 (by omega)
-  obtain ⟨he2r', h1lt'⟩ := par2_facts hX.z2 (by omega) hr
-  have hqb' : ∀ i, par M 0 (r + qp) = some i → col M (r + qp) ≠ bump M i := by
-    intro i hi; rw [hpq0] at hi; cases hi; exact Tqb0
-  exact qn_par0_q hlen (by omega) hA0 hq (d0 := entry M 0 (r + L) - entry M 0 r) (by omega) (le_refl 2)
-    (d1 := entry M 1 (r + L) - entry M 1 r) (by omega) he2r' h1lt' hqb'
-    (par1_x_r (by omega) I.z2 I.z1 hr) hqr Txb0 hJ hX.r0p I.be
-
-/-- **C: `r` is not topped in `M.take x`** (its last child is `q`, not a bump child). -/
-theorem topP_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
-    {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
-    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) : topped (M.take (r + L)) r = false := by
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q])
+    (hun : upg M (r + L - 1) = none) : ¬ Counted (M.take (r + L)) r q := by
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   have hpq := par0_q_t2 hM hS I hlen hr hq hqr
   have hrq : r < q := par_lt M 0 _ _ hpq
   have hqx : q < r + L := par_lt M 0 _ _ hq
   obtain ⟨qp, rfl⟩ : ∃ qp, q = r + qp := ⟨q - r, by omega⟩
-  obtain ⟨_, Tqb, _, _, _⟩ := t2_qn_struct hX hJ hlen hr hq (by omega) hpq
+  obtain ⟨Txb, Tqb, _, _, _⟩ := t2_qn_struct hX hJ hlen hr hq (by omega) hpq
   have hqc : r + qp ∈ children M r := mem_children_iff.mpr ⟨by omega, hpq⟩
+  -- `q` is the last child of `r`, so it is not counted in `M`
   have hall : ∀ d ∈ children M r, d < r + L := by
     intro d hd
     by_contra h'
@@ -110,12 +93,36 @@ theorem topP_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (h
     have hAd : Anc0 M (r + qp) d := anc_between hAq d (by omega) (by omega)
     have hAr := anc0_par hAd (by omega) (mem_children_iff.mp hd).2
     have := hAr.le; omega
-  unfold topped
-  rw [children_take, List.filter_eq_self.mpr (fun d hd => by simpa using hall d hd), hqlast,
-    List.getLast?_append, List.getLast?_singleton]
-  simp only [Option.some_or]
-  rw [col_take M hqx, bump_take M (by omega)]
-  exact decide_eq_false Tqb
+  have hnM : ¬ Counted M r (r + qp) := by
+    intro hcnt
+    apply hncl
+    refine ⟨((children M r).filter (fun d => decide (d < r + qp))).filter (fun c => decide (Counted M r c)), ?_⟩
+    unfold CL
+    rw [hqlast, List.filter_append]
+    simp [hcnt]
+  have hup : isUpg M (r + qp) = true ∧ topped M (r + qp) = true := by
+    by_contra h; exact hnM ⟨Tqb, h⟩
+  -- in `M.take x`: the same upgrade, still topped
+  have hu' : upg M (r + L - 1) ≠ some (r + qp) := by rw [hun]; intro h; cases h
+  have hiu : isUpg (M.take (r + L)) (r + qp) = true := by rw [isUpg_take_eq hlen hu' hqx]; exact hup.1
+  have hxq : r + L ∈ children M (r + qp) := mem_children_iff.mpr ⟨by omega, hq⟩
+  have hsplit := children_split_x hlen hxq
+  have he2q : entry M 2 (r + qp) = 1 := I.be (r + qp) (r + L) hxq Txb
+  have hallb := all_bump_of_last I.r0p I.z2 I.sd I.z1 he2q hsplit Txb
+  have htop : topped (M.take (r + L)) (r + qp) = true := by
+    unfold topped
+    rw [children_take]
+    cases hl : ((children M (r + qp)).filter (fun d => decide (d < r + L))).getLast? with
+    | none => rfl
+    | some d =>
+      have hd : d ∈ (children M (r + qp)).filter (fun d => decide (d < r + L)) := List.mem_of_getLast? hl
+      have hd' := List.mem_filter.mp hd
+      have hdx : d < r + L := by simpa using hd'.2
+      simp only
+      rw [col_take M hdx, bump_take M hqx]
+      exact decide_eq_true (hallb d hd'.1)
+  intro hcnt
+  exact hcnt.2 ⟨hiu, htop⟩
 
 /-- **The frame of the seed `r` in `M[n]`** (C case, `n ≥ 2`): the counted children of `r` are those of
 `M.take x` with the values of `M.take x`, then `q` with `o_N(q)` as in the main `q ≠ r` case. -/
@@ -537,7 +544,6 @@ theorem seed_dec_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 `M.take x`. With `X₁` the argument of `r` in `M.take x` and `s′ = v_N(q)`: every level rewrites to `σ(X)`, and
 `ψ_V(σ^k X₁) ◁ o_M(r)` for `k ≥ 1`. -/
 structure T2SeedCRes (M : Mat) (ρ : Valn) (r L q : Nat) : Prop where
-  qP : ¬ Counted (M.take (r + L)) r q
   decP : ∀ τ, Cons (M.take (r + L)) τ → ∀ Lc c0, CL (M.take (r + L)) r = Lc ++ [c0] →
     ∃ s y, τ.o c0 = psi s y z ∧ qnS M ρ r L q < s
   un : upg M (r + L - 1) = none
@@ -554,7 +560,7 @@ theorem seed_r_value_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
-    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hRes : T2SeedCRes M ρ r L q)
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q]) (hRes : T2SeedCRes M ρ r L q)
     {τ0 : Valn} {rk0 : Bool → Nat → Nat} (hC0 : Cons (M.take (r + L)) τ0) (hR0 : Rk (M.take (r + L)) rk0) :
     ∀ n, 2 ≤ n →
       (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
@@ -601,7 +607,7 @@ theorem seed_r_value_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ0) (n - 2) →
       σ.o r = psi (ρ.v r) (shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ0) (n - 1)) z := by
     intro ρP rkP hCP hGP hRP hvP hXP
-    obtain ⟨hvx, hor⟩ := o_r_level_C hM hS I R hz h2 hlen hr hq hqr hRes.qP hRes.un hn hCN hRN hCP hGP hRP
+    obtain ⟨hvx, hor⟩ := o_r_level_C hM hS I R hz h2 hlen hr hq hqr (qP_C hM hS I hlen hr hq hqr hncl hRes.un) hRes.un hn hCN hRN hCP hGP hRP
       hC0 hG0 hR0 hv0 hvq0 hqOT hdecN
     have hvx' : σ.v (r + L) = qnS M ρ r L q := by rw [hvx, hvq]; exact qnS_vxs M ρ r L q
     rw [hor, hvx', hvq, hXP, hvP, show n - 1 = (n - 2) + 1 by omega, hRes.rw τ0 hC0 (n - 2)]
@@ -633,7 +639,7 @@ theorem seedL_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
-    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hRes : T2SeedCRes M ρ r L q) :
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q]) (hRes : T2SeedCRes M ρ r L q) :
     ∀ n, 2 ≤ n →
       (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
         (entry M 1 (r + L) - entry M 1 r) m) τ → Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
@@ -648,7 +654,7 @@ theorem seedL_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   rw [show M.length - 1 = r + L by omega] at hcnt
   have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
   have hC0 := cons_of_rk hRk1
-  rw [seed_r_value_C hM hS I R hz h2 hlen hr hq hqr hRes hC0 hRk1 n hn hGlow σ hCN hqOT hdecN]
+  rw [seed_r_value_C hM hS I R hz h2 hlen hr hq hqr hncl hRes hC0 hRk1 n hn hGlow σ hCN hqOT hdecN]
   exact hRes.lhd _ hC0 (n - 1) (by omega)
 
 end Ytosk

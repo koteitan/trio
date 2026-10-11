@@ -184,7 +184,7 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
     · obtain ⟨q, hq, hqr, hncl⟩ := hc
       have hRes := hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl
       have hvq := vq_eq_gexp hM hS I hz h2 hlen hr hn hCN hq hqr
-      obtain ⟨hd1, hd2⟩ := seed_dec_C hM hS I R hz h2 hlen hr hq hqr hRes.qP hRes.un hn hCN hRN hCP hGP hRP
+      obtain ⟨hd1, hd2⟩ := seed_dec_C hM hS I R hz h2 hlen hr hq hqr (qP_C hM hS I hlen hr hq hqr hncl hRes.un) hRes.un hn hCN hRN hCP hGP hRP
         hC0 hG0 hRk1 (v_take_of_untopped I hlen hrx (topP_C hM hS I hlen hr hq hqr) hC0) (by rw [hvq]; exact hRes.vqP _ hC0)
         (fun Lc c0 h => by rw [hvq]; exact hRes.decP _ hC0 Lc c0 h)
       refine ⟨hd1, fun q' hq' _ => ?_⟩
@@ -213,7 +213,7 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
         (hO3 ⟨hq, hux⟩) n hn hGlow σ hCN hdecr, ?_⟩
       intro q hq' hqr; rw [hq] at hq'; cases hq'; exact absurd rfl hqr
     · obtain ⟨q, hq, hqr, hncl⟩ := hc
-      obtain ⟨hqo, hro⟩ := seed_ot_C hM hS I R hz h2 hlen hr hq hqr
+      obtain ⟨hqo, hro⟩ := seed_ot_C hM hS I R hz h2 hlen hr hq hqr hncl
         (hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl) (hO4 q hq hqr hncl) n hn hGlow σ hCN hdecr
       refine ⟨hro, fun q' hq' _ => ?_⟩
       rw [hq] at hq'; cases hq'; exact hqo
@@ -238,7 +238,7 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
     exact seedL_sv hM hS I R hz h2 hlen hr hq hux (hSV M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hux⟩)
       n hn hGlow σ hCN (by rw [← cvals_eq_mapC hCN]; exact hdec)
   · obtain ⟨q, hq, hqr, hncl⟩ := hc
-    exact seedL_C hM hS I R hz h2 hlen hr hq hqr (hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl)
+    exact seedL_C hM hS I R hz h2 hlen hr hq hqr hncl (hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl)
       n hn hGlow σ hCN (hOTr.2 q hq hqr) (by rw [← cvals_eq_mapC hCN]; exact hdec)
 
 end Ytosk
