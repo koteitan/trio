@@ -16,7 +16,7 @@ namespace Ytosk
 open T Classical
 
 /-- The strict row-0 subtree of `s`. -/
-def SubT (M : Mat) (s c : Nat) : Prop := Anc0 M s c ∧ c ≠ s
+def SubTr (M : Mat) (s c : Nat) : Prop := Anc0 M s c ∧ c ≠ s
 
 /-- **The ranking grows along dependencies** from the seed `o(s)`. -/
 theorem depS_rk {M : Mat} {rk : Bool → Nat → Nat} (hR : Rk M rk) {s : Nat} :
@@ -53,8 +53,8 @@ theorem depS_rk {M : Mat} {rk : Bool → Nat → Nat} (hR : Rk M rk) {s : Nat} :
 /-- **The gate**: outside the strict subtree of a sealed column `s`, a dependency on a seed inside goes
 through `o(s)`. -/
 theorem depS_gate {M : Mat} {S : Bool → Nat → Prop} {s : Nat} (hs2 : entry M 2 s = 0)
-    (hsu : upg M s ≠ some (s + 1)) (hS : ∀ b i, S b i → b = true ∧ (i = s ∨ SubT M s i)) :
-    ∀ {b i}, DepS M S b i → ¬ SubT M s i → DepS M (SR s) b i := by
+    (hsu : upg M s ≠ some (s + 1)) (hS : ∀ b i, S b i → b = true ∧ (i = s ∨ SubTr M s i)) :
+    ∀ {b i}, DepS M S b i → ¬ SubTr M s i → DepS M (SR s) b i := by
   intro b i h
   induction h with
   | @seed b i hs =>
@@ -66,7 +66,7 @@ theorem depS_gate {M : Mat} {S : Bool → Nat → Prop} {s : Nat} (hs2 : entry M
     · exact absurd h hni
   | @ochild i c hc hcb hcu _ ih =>
     intro hni
-    by_cases hsc : SubT M s c
+    by_cases hsc : SubTr M s c
     · have hpc := (mem_children_iff.mp hc).2
       have hsi : Anc0 M s i := anc0_par hsc.1 hsc.2.symm hpc
       by_cases his : i = s
@@ -79,7 +79,7 @@ theorem depS_gate {M : Mat} {S : Bool → Nat → Prop} {s : Nat} (hs2 : entry M
     intro hni
     have hmi := anc0_of_par M 1 _ _ hm
     have hmlt := par_lt M 1 _ _ hm
-    have hsm : ¬ SubT M s m := by
+    have hsm : ¬ SubTr M s m := by
       rintro ⟨ha, hne⟩
       apply hni
       refine ⟨Anc0.trans ha hmi, fun his => ?_⟩
@@ -89,7 +89,7 @@ theorem depS_gate {M : Mat} {S : Bool → Nat → Prop} {s : Nat} (hs2 : entry M
     intro hni
     obtain ⟨_, _, _, _, hcase⟩ := upg_spec hk
     rcases hcase with hk1 | ⟨hA, hlt⟩
-    · by_cases hsk : SubT M s k
+    · by_cases hsk : SubTr M s k
       · exfalso
         have hsi1 : Anc0 M s (i + 1) := by rw [← hk1]; exact hsk.1
         have hsle := hsi1.le
@@ -99,7 +99,7 @@ theorem depS_gate {M : Mat} {S : Bool → Nat → Prop} {s : Nat} (hs2 : entry M
         · subst his; exact hsu (by rw [hk, hk1])
         · exact hni ⟨hsi, his⟩
       · exact DepS.vupg h1 h2 hk (ih hsk)
-    · have hsk : ¬ SubT M s k := by
+    · have hsk : ¬ SubTr M s k := by
         rintro ⟨ha, hne⟩
         apply hni
         refine ⟨Anc0.trans ha hA, fun his => ?_⟩
@@ -107,7 +107,7 @@ theorem depS_gate {M : Mat} {S : Bool → Nat → Prop} {s : Nat} (hs2 : entry M
       exact DepS.vupg h1 h2 hk (ih hsk)
   | @vbump i j k h1 h2 hj hjb hk _ ih =>
     intro hni
-    by_cases hsk : SubT M s k
+    by_cases hsk : SubTr M s k
     · exfalso
       have hpk := (mem_children_iff.mp hk).2
       have hsj : Anc0 M s j := anc0_par hsk.1 hsk.2.symm hpk
@@ -131,7 +131,7 @@ theorem not_depS_v_self {M : Mat} {rk : Bool → Nat → Nat} (hR : Rk M rk) {s 
 /-- **`v` of a sealed column does not depend on a seed in its subtree.** -/
 theorem not_depS_sealed {M : Mat} {S : Bool → Nat → Prop} {s : Nat} {rk : Bool → Nat → Nat}
     (hR : Rk M rk) (hs : s < M.length) (hs2 : entry M 2 s = 0) (hsu : upg M s ≠ some (s + 1))
-    (hS : ∀ b i, S b i → b = true ∧ (i = s ∨ SubT M s i)) : ¬ DepS M S false s := fun h =>
+    (hS : ∀ b i, S b i → b = true ∧ (i = s ∨ SubTr M s i)) : ¬ DepS M S false s := fun h =>
   not_depS_v_self hR hs (depS_gate hs2 hsu hS h (fun h' => h'.2 rfl))
 
 /-- **`v(r)` (`t = 2`) depends neither on `o(q)` nor on `o(p2)`** (`q`, `p2` in the subtree of `r`). -/
@@ -141,7 +141,7 @@ theorem tgt_r_t2 {M : Mat} {r L q p2 : Nat} {rk : Bool → Nat → Nat} (hR : Rk
     ¬ DepS M (SR q) false r ∧ ¬ DepS M (SR p2) false r := by
   have hr1 : Anc0 M r (r + 1) := anc_between hA (r + 1) (by omega) (by omega)
   have hsu : upg M r ≠ some (r + 1) := fun h => by have := upg_lt_of_child hr1 h; omega
-  have hseed : ∀ p, Anc0 M r p → ∀ b i, SR p b i → b = true ∧ (i = r ∨ SubT M r i) := by
+  have hseed : ∀ p, Anc0 M r p → ∀ b i, SR p b i → b = true ∧ (i = r ∨ SubTr M r i) := by
     intro p hp b i h
     rcases h with ⟨hb, hi⟩
     subst i
