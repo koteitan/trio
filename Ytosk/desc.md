@@ -1914,3 +1914,16 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - 1 列落としで c の部分木に新しい段が出る（6 万行列で 4.3 万件）が、どれも v(q)（q = p、p の部分木の中、p の行 1 の祖先、q は行 1 の子を持つ）。VKFree はこの形の全部を含む。
   - Lean: VKFree・InVK、levFree_of_vk・levFree_chain_of_vk（VKFree ∧ μ ∈ VK ⇒ LevFree μ v(p)）、base_vKFree、vKFree_take（1 列落とし）、corr_t0（t = 0 の M[n] の行 1 の子を持つ列の v は M の同じ種類の列の v）、vKFree_t0。
   - 残り: LevLink の証明（値の節点の出どころの補題が要る: sf・sp・omega が作る ψ の節点の添字は既存）、t = 2 の VKFree（σ は添字の上で単射なので写しどうしは移るが、V′ の部分項と混ざる組が要る）。
+
+### t = 1 の残りを LevFree に帰着、最後の列の枠の欄を導く（2026-10-11、t1-exp、V3ExpT1L）
+
+- 種の条件（f2fb64b4・541d6225）: 効く部分項は Ω_μ ≤ u < ψ_μ(Ω_{μ+1}) だけ。groupA の LevFree μ V（V に添字 μ の ψ がない、lt_Om_of_levFree）でその帯は空。鎖の 1 項目以降 ζ = ψ_μ(b[γ]) では fsD(ζ, θ) ≥ Ω_μ（om_le_gamS_succ）。よって AbsDRes・AbsUWRes・TPLoRes は 3 つに分かれる（AbsDResL・AbsUWResL・TPLoResL）: lf（段 μ ≠ 0 の LevFree。C′ 4 万行列で全件成立）、seed（段 μ ≠ 0 で添字が種そのもの）、zero（段 0、groupA の PhiX0R と同じ種類）。
+- 最後の列の枠の欄（e5c6db35）: TPLoW・AbsDW は運ばずに、同じ行列の TPLo・AbsD と LevFree から出る（tplow_of_lf・absDW_of_lf、段 μ ≠ 0。fsD_transfer で添字を ψ_μ(Ω_{μ+1}) から鎖の項 η ≥ Ω_μ に付け替え）。実測で穴の段は常に枠の μ（frame_hole: qr_holeD から証明）、μ ≠ 0 では LevFree は全件成立（TPLoW 26834・AbsDW 23570）。段 0 は残り（TPLoW0・AbsDW0、LevFree 0 は TPLoW で 7841/42896 件偽）。これはどの行列でも使えるので、LevFree が不変条件になれば TPLoW・AbsDW は Inv3 から外せる（段 0 の部分を除く）。
+- TPLoN（hLs0 で種を添字にする所）: 段 μ ≠ 0 で種 ≥ Ω_μ なら TPLo と LevFree から出る（6669 件）。種 < Ω_μ（q = r で落とすと v(r) が下がる場合、3916 件）は実測では付け替えが成り立つが理由は別。段 0 では付け替えが効かない場合がある（3368/37743）。TPLoN は鎖で運ぶ（残り）。
+- 組み立て hExp_t1L（trio_terminates_main_H 用、M[n] の Res3H を出す、公理は標準の 3 つ）の残り:
+  - hRT: 始点 M.take x の値の欄（hLast と共通）。
+  - hQs: TPLoN の鎖での運搬。
+  - hFrm: 標準形 M[n] の TPLoWLF・AbsDWLF（LevFree、段 μ ≠ 0）と TPLoW0・AbsDW0（段 0）。
+  - hResN: TPLoResL・AbsDResL・AbsUWResL（lf・seed・zero）、AbsDNRes（種の条件 η = 1 か新しい値での欄）、VSFRes2。
+  - hRes: M[n] の Res3H。
+- VSFRes2 は NoGapP・LevFree からは出ない。実測（2 万件、例外 0）では「段 v(i) の成分の頭の添字は W′ = fsD(last v(c), ζ) より小さい」で、これから g < Ω_{h+1} ≤ Ω_{v′(c)}。W の全部の部分項の添字が W 未満とは限らない（743 件で偽、段 v(i) より下の部分）。
