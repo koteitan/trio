@@ -1,24 +1,19 @@
 /-
-**3 行・t = 2: hExp の t = 2 の部分を trio_terminates_main_H の形で（`hExp_t2_H`）。**
+**3 行・t = 2: hExp の t = 2 の部分を M[n] の Inv3V だけの形で（`hExp_t2_V`）。**
 
 V3ExpT2M2 の形から、チームの分解に合わせて:
-- N の Res3A の代わりに Res3H（N の Inv3V のもとで、`T2Res3H`）。
+- N の Res3 の欄は出さない（trio_terminates_main_G では大域の仮定 hDR・hSeed・hVSR から）。
 - AbsD・AbsU は NoGapP N ∧ PhiX0R N から（`phiX_of_noGapR`・`absD_of_phiX`・`absU_of_phiX`）。
 - TPLoW・AbsDW は同じ行列の TPLo・AbsD と LevFree から（t1-exp の `tplow_of_lf`・`absDW_of_lf`）。
 -/
 import Ytosk.V3ExpT2M2
 import Ytosk.V3ExpT1L
-import Ytosk.V3DropH
 
 namespace Ytosk
 
 open T Classical
 
 set_option linter.unusedSectionVars false
-
-/-- **The residual `Res3H` of `N = M[n]`** (`t = 2`), under the value part of `N`. -/
-def T2Res3H : Prop :=
-  ∀ M ρ rk n σ rkN, T2Ctx M ρ rk n σ rkN → Inv3V (expand M n) σ rkN → Res3H (expand M n) σ rkN
 
 /-- **The remaining value fields of `N = M[n]`** (`t = 2`), in the team's current decomposition. -/
 structure T2Rest3 : Prop where
@@ -39,16 +34,15 @@ structure T2Rest3 : Prop where
   adw0 : T2Field AbsDW0
   foSeed : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → T2SeedFrames QFO M
-  res : T2Res3H
 
-/-- **`hExp` for `t = 2`** (`Res3H` form) with the prefix invariants given. -/
-theorem hExp_t2_H (hB : T2BelowXRes) (hRest : T2Rest3) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+/-- **`hExp` for `t = 2`** (`Inv3V` of `M[n]`) with the prefix invariants given. -/
+theorem hExp_t2_V (hB : T2BelowXRes) (hRest : T2Rest3) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ j, j < M.length → M.take j ≠ SRO → M.take j ≠ [] →
       ∃ τ rkT, Inv3 (M.take j) τ rkT ∧ Res3A (M.take j) τ rkT)
     (n : Nat) (hn : 2 ≤ n) :
-    ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3H (expand M n) ρN rkN := by
+    ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   obtain ⟨rkN, hRN⟩ := rk_expand_t2 hX hJ hz h2 I.rank n (by omega)
   have hCN := cons_of_rk hRN
@@ -82,22 +76,21 @@ theorem hExp_t2_H (hB : T2BelowXRes) (hRest : T2Rest3) {M : Mat} {ρ : Valn} {rk
   have hau : AbsU (expand M n) σ := absU_of_phiX hCN hGN hphi
   have hSN : SInv (expand M n) := (sInvX_expand hX n).toSInv
   have hFV : FrameV (expand M n) σ := ⟨hSN, hCN, hGN, hbd.1, hbd.2, had, F hRest.tplo⟩
-  have hV : Inv3V (expand M n) σ rkN := ⟨hCN, hGN, hRN, F hRest.vs, F hRest.fc, hfo, hbd.1, hbd.2, had, hau,
+  exact ⟨σ, rkN, ⟨hCN, hGN, hRN, F hRest.vs, F hRest.fc, hfo, hbd.1, hbd.2, had, hau,
     F hRest.tp1, F hRest.tplo, F hRest.tp1w, tplow_of_lf hFV (F hRest.tplowLF) (F hRest.tplow0), F hRest.auw,
     absDW_of_lf hFV (F hRest.adwLF) (F hRest.adw0), F hRest.trig,
-    F hRest.tplon, F hRest.adn, rootS_of_good hCN hGN, hrp⟩
-  exact ⟨σ, rkN, hV, hRest.res M ρ rk n σ rkN hctx hV⟩
+    F hRest.tplon, F hRest.adn, rootS_of_good hCN hGN, hrp⟩⟩
 
-/-- **`hExp` for `t = 2`, `Res3H` form, with the prefix invariants from `hLast`.** -/
-theorem hExp_t2_of_lastH
+/-- **`hExp` for `t = 2`, `Inv3V` form, with the prefix invariants from `hLast`.** -/
+theorem hExp_t2_of_lastV
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hB : T2BelowXRes) (hRest : T2Rest3) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
-      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3H (expand M n) ρN rkN := by
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
   intro M ρ rk hM hS hE I R hz h2 n hn
-  apply hExp_t2_H hB hRest hM hS I R hz h2 _ n hn
+  apply hExp_t2_V hB hRest hM hS I R hz h2 _ n hn
   intro j hj hjS hjE
   obtain ⟨τ, rkT, V, R'⟩ := hTake_of_last hLast M ρ rk hM hS hE I R j hj hjS hjE
   exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩
