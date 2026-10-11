@@ -16,7 +16,7 @@ theorem deps_lhd_otW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ �
     (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hVSN : ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v c ≠ ρ.v c →
       ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
-    (hHard : ∀ i (Lc : List Nat) c s y y', i < bnd → CL N i = Lc ++ [c] → ρ.o c = psi s y z →
+    (hHard : ∀ i (Lc : List Nat) c s y y', i < bnd → c < bnd → CL N i = Lc ++ [c] → ρ.o c = psi s y z →
       σ.o c = psi s y' z → lt (ρ.v i) s = true →
       (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s y' z) = true) →
       (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
@@ -213,7 +213,7 @@ theorem deps_lhd_otW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ �
               hsub hsub' _ hot hBot
             intro hss' has ht' ht hhi
             rw [hss'] at ht' hs'y'
-            exact hHard i Lc c s y y' hi hclN hsy hs'y' has ht' ht hhi
+            exact hHard i Lc c s y y' hi hcb hclN hsy hs'y' has ht' ht hhi
       | false =>
         show Lhd z (σ.v i) (ρ.v i) ∧ isOT (σ.v i) = true
         obtain ⟨he1, he2, hpar, hpnd, hupg, hupgb, hbsh⟩ := hVc i hi hs hD

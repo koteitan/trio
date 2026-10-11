@@ -181,7 +181,7 @@ def T2VSN (N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
 
 /-- **`N`-side hypothesis of `deps_lhd_ot`**: the bound in the hard case (`HardArg` form). -/
 def T2Hard (N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
-  ∀ i (Lc : List Nat) c s y y', i < bnd → CL N i = Lc ++ [c] → ρ.o c = psi s y z →
+  ∀ i (Lc : List Nat) c s y y', i < bnd → c < bnd → CL N i = Lc ++ [c] → ρ.o c = psi s y z →
     σ.o c = psi s y' z → lt (ρ.v i) s = true →
     (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s y' z) = true) →
     (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →

@@ -209,16 +209,19 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
       · exfalso; rw [show j = r + L by omega] at hjb; exact hxnbN k hjb
     refine ⟨hjM, by rw [← col_gexp_pre (d0 := d0) (d1 := d1) (m := n) hlen (by omega) hjx, ← hbumpN k hkx]; exact hjb, ?_⟩
     rw [← children_N2 hlen hL hp hd0e (by omega) hn2 hjx]; exact hk'
-  have hdl := deps_lhd_ot (S := S) (bnd := r + L) hC hG hCN hRM (by omega) (by rw [hlN]; omega)
-    hF hFO hVS hTD hKD hVSN hHard hoff hOTout
+  have hdl := deps_lhd_otW (S := S) (W := fun _ _ => False) (bnd := r + L) hC hG hCN hRM (by omega)
+    (by rw [hlN]; omega)
+    hF hFO hVS hTD hKD hVSN hHard hoff hOTout (fun _ h => h)
+    (fun _ _ _ _ h => h.elim) (fun _ _ _ _ _ _ _ _ h => h.elim) (fun _ _ h => h.elim)
     (by
       rintro b i ⟨hb, hi'⟩ _ _ _
       subst hb
       rw [hi']
       exact hseed)
-    hDvNil hCLnil hOc hVc hupgK hAbs
+    (fun c hc _ _ hv => hDvNil c hc hv) (fun c hc _ hv => hCLnil c hc (hDvNil c hc hv))
+    (fun c hc _ h => hCLnil c hc h) (fun i hi hns _ hD hv => hOc i hi hns hD hv) hVc hupgK hAbs
   have hgb := good_below_of (W := fun _ _ => False) hC hG hCN (by omega) (by rw [hlN]; omega) hoff
-    (fun b i hd hi _ => hdl b i hd hi) (fun _ h => h) (fun _ _ _ _ h => h.elim) (fun _ _ h => h.elim)
+    (fun b i hd hi hw => hdl b i hd hi hw) (fun _ h => h) (fun _ _ _ _ h => h.elim) (fun _ _ h => h.elim)
     (by
       intro i hi hs
       rcases hs with ⟨_, rfl⟩ | h
