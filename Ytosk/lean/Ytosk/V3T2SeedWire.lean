@@ -1,7 +1,7 @@
 /-
 **3 行・t = 2: x より前の残り T2BelowXRes から、証明済みの種の ◁ を外す（`t2BelowXRes_of_L`）。**
 
-T2BelowResL は T2BelowRes から種と q の欄（◁・標準形・数える子の減少）を外し、M[n] 側の T2VSN・T2Hard だけにしたもの。種と q の欄は 4 つの場合ごとに M と M.take x だけの残りから出る。
+T2BelowResL は T2BelowRes から種と q の欄（◁・標準形・数える子の減少）を外し、M[n] 側の T2VSN・T2Hard・AbsWN（弱い吸収）だけにしたもの。種と q の欄は 4 つの場合ごとに M と M.take x だけの残りから出る。
 - q = r で x への上げがない: seedL_qr（V3T2SeedQRL）、M と M.take x だけの残り T2SeedQRRes から。
 - q ≠ r で q が r の最後の数える子: seedL_qn（V3T2SeedQNV）、残り T2SeedQNRes から。
 - sv（q = r で x − 1 が x へ上げる）: seedL_sv（V3T2SeedSV）、残り T2SeedSVRes から。
@@ -54,7 +54,8 @@ def T2BelowResL (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
   ∀ n, 2 ≤ n → (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L d0 d1 m) τ → Good3 (TRIO.gexp M r L d0 d1 m) τ) →
     ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
     (∀ b j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (valB σ b j) = true) →
-    T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ
+    T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧ T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ ∧
+    AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ
 
 /-- `T2BelowResL` for every standard `M` of type `t = 2`. -/
 def T2BelowXResL : Prop :=
@@ -114,7 +115,7 @@ def T2SeedOTAll : Prop :=
 theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQNAll) (hSV : T2SeedSVAll)
     (hCC : T2SeedCAll) (hOTs : T2SeedOTAll) : T2BelowXRes := by
   intro M ρ rk hM hS I R hz h2 r L hlen hr n hn hGlow σ hCN hOT
-  obtain ⟨h1, h2'⟩ := hL M ρ rk hM hS I R hz h2 r L hlen hr n hn hGlow σ hCN hOT
+  obtain ⟨h1, h2', h3⟩ := hL M ρ rk hM hS I R hz h2 r L hlen hr n hn hGlow σ hCN hOT
   obtain ⟨hO1, hO2, hO3, hO4⟩ := hOTs M ρ rk hM hS I R hz h2 r L hlen hr
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   have hrx : r < r + L := par_lt M 2 _ _ hr
@@ -217,7 +218,7 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
         (hCC M ρ rk hM hS I R hz h2 r L hlen hr q hq hqr hncl) (hO4 q hq hqr hncl) n hn hGlow σ hCN hdecr
       refine ⟨hro, fun q' hq' _ => ?_⟩
       rw [hq] at hq'; cases hq'; exact hqo
-  refine ⟨h1, h2', fun p hp => ?_, fun q hq hqr => ⟨hOTr.2 q hq hqr, hD.2 q hq hqr⟩⟩
+  refine ⟨h1, h2', fun p hp => ?_, fun q hq hqr => ⟨hOTr.2 q hq hqr, hD.2 q hq hqr⟩, h3⟩
   have hp' := hpr p hp
   subst p
   have hot := hOTr.1

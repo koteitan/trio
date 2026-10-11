@@ -32,7 +32,7 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (hRN : Rk (TRIO.gexp M r L d0 d1 n) rkN)
     (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ)
     (hKD : BumpKidsDec M ρ)
-    (hAbsC : BumpAbsS M (r + L) ρ)
+    (hAbs : AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
     (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L))
     (hVSN : T2VSN (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
     (hHard : T2Hard (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
@@ -180,16 +180,6 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
             intro e he
             have hex := (hLnd d hd e he).1
             exact (hoff e hex).1 (fun h => (hLnd d hd e he).2 ((hiff true e hex).mp h))
-  have hAbs : ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i) := by
-      intro i hi h1 h2
-      refine hAbsC i h1 h2 (fun j hj hjb hjx => ?_) (Or.inr (Or.inl fun q' i' hq' hi' => ?_))
-      · exfalso
-        have hxj : r + L ∈ children M j := by rw [hjx]; simp
-        have hpx := (mem_children_iff.mp hxj).2
-        rw [hp] at hpx; cases hpx
-        exact hrb i (mem_children_iff.mp hj).2 hjb
-      · rw [hp] at hq'; cases hq'; exact hrb i' hi'
   have hxnbN : ∀ i, col N (r + L) ≠ bump N i := by
     intro i h'
     have : entry N 2 (r + L) = (col N (r + L)).2.2 := rfl

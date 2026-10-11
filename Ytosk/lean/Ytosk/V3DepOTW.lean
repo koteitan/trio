@@ -51,8 +51,7 @@ theorem deps_lhd_otW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ �
         (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d)))
     (hupgK : ∀ i k, i < bnd → upg M i = some k → ∀ j ∈ children N k, col N j = bump N k →
       ∀ k' ∈ children N j, k' < bnd → j ∈ children M k ∧ col M j = bump M k ∧ k' ∈ children M j)
-    (hAbs : ∀ i, i < bnd → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i)) :
+    (hAbs : AbsWN M N bnd ρ σ) :
     ∀ b i, DepS M S b i → i < bnd → ¬ W b i →
       Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true := by
   -- standard values outside `D` (below `bnd`) and from `bnd` on
@@ -321,7 +320,7 @@ theorem deps_lhd_otW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ �
             rcases List.mem_append.mp hu with h | h
             · exact (hsK u h).1
             · simp at h; rw [h]; exact hG.ot_o k0 hkM)
-          refine ⟨v_bump_lhd hC hG hCN hiM hiN h1 h2 he1 he2 hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt
+          refine ⟨v_bump_lhdW hC hG hCN hiM hiN h1 h2 he1 he2 hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt
             hTD (hAbs i hi h1 h2), ?_⟩
           -- the new `v` is `V + ω^Y` with `V`, `Y` standard
           have hmapN : (children N i).map (bumpTerm N σ i) = Lb.map (bumpTerm M ρ i) ++ [omega

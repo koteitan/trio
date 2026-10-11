@@ -136,8 +136,7 @@ theorem t2_qn_take (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (hR01 : R01 M)
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
     (hCN : Cons (M.take (r + L)) σ) (hGN : Good3 (M.take (r + L)) σ) (hRN : Rk (M.take (r + L)) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
-    (hAbs : ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
+    (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
     (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
     isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ := by
   have hlT : (M.take (r + L)).length = r + L := by rw [List.length_take]; omega
@@ -342,8 +341,7 @@ theorem t2_sv_take (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
     (hCN : Cons (M.take (r + L)) σ) (hGN : Good3 (M.take (r + L)) σ) (hRN : Rk (M.take (r + L)) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
-    (hAbs : ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
+    (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
     (hseed : Lhd z (σ.o r) (ρ.o r)) :
     isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ := by
   have hlT : (M.take (r + L)).length = r + L := by rw [List.length_take]; omega
@@ -536,8 +534,7 @@ theorem t2_qr_take (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
     (hCN : Cons (M.take (r + L)) σ) (hGN : Good3 (M.take (r + L)) σ) (hRN : Rk (M.take (r + L)) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
-    (hAbs : ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
+    (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
     (hseed : Lhd z (σ.o r) (ρ.o r)) :
     isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ := by
   have hlT : (M.take (r + L)).length = r + L := by rw [List.length_take]; omega
@@ -652,8 +649,7 @@ theorem t2_qu_take (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
     (hCN : Cons (M.take (r + L)) σ) (hGN : Good3 (M.take (r + L)) σ) (hRN : Rk (M.take (r + L)) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hUA : UpgAbsX M (r + L) ρ)
-    (hAbs : ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
+    (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
     (hseed : r ≠ r + L - 1 → Lhd z (σ.o r) (ρ.o r)) :
     isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ := by
   have hlT : (M.take (r + L)).length = r + L := by rw [List.length_take]; omega

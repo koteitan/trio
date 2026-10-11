@@ -11,6 +11,7 @@
 t = 0 の `t0_dep_lhd` と同じ証明を、構造の仮定を外に出して書いたもの（t = 2 などで使う）。
 -/
 import Ytosk.V3T0D
+import Ytosk.V3AbsW
 
 namespace Ytosk
 
@@ -41,8 +42,7 @@ theorem dep_lhd_gen {M N : Mat} {x bnd : Nat} {ρ σ : Valn} {rk : Bool → Nat 
         (∀ d ∈ Kb, ¬ DepX M x true d ∧ d < bnd) ∧
         (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepX M x true e) ∧
         (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d)))
-    (hAbs : ∀ i, i < bnd → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i)) :
+    (hAbs : AbsWN M N bnd ρ σ) :
     ∀ b i, DepX M x b i → i < bnd → Lhd z (valB σ b i) (valB ρ b i) := by
   -- a call outside `D` with a changed `v` has argument `0` in `N`
   have hnoc : ∀ c, c < bnd → DepX M x false c → σ.o c = psi (σ.v c) z z := by
@@ -192,7 +192,7 @@ theorem dep_lhd_gen {M N : Mat} {x bnd : Nat} {ρ σ : Valn} {rk : Bool → Nat 
             rcases List.mem_append.mp hu with h | h
             · exact (hsK u h).1
             · simp at h; rw [h]; exact hG.ot_o k0 hkM)
-          exact v_bump_lhd hC hG hCN hiM hiN h1 h2 he1 he2 hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt
+          exact v_bump_lhdW hC hG hCN hiM hiN h1 h2 he1 he2 hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt
             hTD (hAbs i hi h1 h2)
   exact fun b i hD hi => key _ b i (le_refl _) hD hi
 
@@ -233,8 +233,7 @@ theorem deps_lhd_gen {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ 
         (∀ d ∈ Kb, ¬ DepS M S true d ∧ d < bnd) ∧
         (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepS M S true e) ∧
         (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d)))
-    (hAbs : ∀ i, i < bnd → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i)) :
+    (hAbs : AbsWN M N bnd ρ σ) :
     ∀ b i, DepS M S b i → i < bnd → Lhd z (valB σ b i) (valB ρ b i) := by
   -- a call outside `D` with a changed `v` has argument `0` in `N`
   have hnoc : ∀ c, c < bnd → DepS M S false c → σ.o c = psi (σ.v c) z z := by
@@ -385,7 +384,7 @@ theorem deps_lhd_gen {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ 
             rcases List.mem_append.mp hu with h | h
             · exact (hsK u h).1
             · simp at h; rw [h]; exact hG.ot_o k0 hkM)
-          exact v_bump_lhd hC hG hCN hiM hiN h1 h2 he1 he2 hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt
+          exact v_bump_lhdW hC hG hCN hiM hiN h1 h2 he1 he2 hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt
             hTD (hAbs i hi h1 h2)
   exact fun b i hD hi => key _ b i (le_refl _) hD hi
 
@@ -419,8 +418,7 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
         (∀ d ∈ Kb, ¬ DepS M S true d ∧ d < bnd) ∧
         (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepS M S true e) ∧
         (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d)))
-    (hAbs : ∀ i, i < bnd → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i)) :
+    (hAbs : AbsWN M N bnd ρ σ) :
     ∀ b i, DepS M S b i → i < bnd → ¬ W b i → Lhd z (valB σ b i) (valB ρ b i) := by
   -- a call outside `D` with a changed `v` has argument `0` in `N`
   have hnoc : ∀ c, c < bnd → ¬ W true c → DepS M S false c → σ.o c = psi (σ.v c) z z := by
@@ -575,7 +573,7 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
             rcases List.mem_append.mp hu with h | h
             · exact (hsK u h).1
             · simp at h; rw [h]; exact hG.ot_o k0 hkM)
-          exact v_bump_lhd hC hG hCN hiM hiN h1 h2 he1 he2 hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt
+          exact v_bump_lhdW hC hG hCN hiM hiN h1 h2 he1 he2 hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt
             hTD (hAbs i hi h1 h2)
   exact fun b i hD hi hW => key _ b i (le_refl _) hD hi hW
 

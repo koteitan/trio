@@ -29,7 +29,8 @@ def T2BelowRes (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
     (∀ p, T2Seed M r L p → Lhd z (σ.o p) (ρ.o p) ∧ isOT (σ.o p) = true ∧
       (cvals (TRIO.gexp M r L d0 d1 n) σ p).Pairwise (fun a b => b ≤ a)) ∧
     (∀ q, par M 0 (r + L) = some q → q ≠ r → isOT (σ.o q) = true ∧
-      (cvals (TRIO.gexp M r L d0 d1 n) σ q).Pairwise (fun a b => b ≤ a))
+      (cvals (TRIO.gexp M r L d0 d1 n) σ q).Pairwise (fun a b => b ≤ a)) ∧
+    AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ
 
 /-- `T2BelowRes` for every standard `M` of type `t = 2`. -/
 def T2BelowXRes : Prop :=
@@ -123,8 +124,6 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
   -- the valuation of `M.take x`
   have hdr : DropRes M (r + L) ρ (drop1 M (r + L) rk) := by
     have := R.drop; rw [hL] at this; exact this
-  have hAS : BumpAbsS M (r + L) ρ := by
-    have := R.abS.1 h2; rw [hL] at this; exact this
   have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank (hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat)
   have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rk) := cons_of_rk hRk1
   have hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rk) :=
@@ -149,7 +148,7 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
     cases b
     · exact (hOTx j h1 h2').2
     · exact (hOTx j h1 h2').1
-  obtain ⟨hVSN, hHard, hSeedP, hW⟩ := hRes M ρ rk hM hS I R hz h2 r L hlen hr n hn hGP σ hCN hOTout
+  obtain ⟨hVSN, hHard, hSeedP, hW, hAbsN⟩ := hRes M ρ rk hM hS I R hz h2 r L hlen hr n hn hGP σ hCN hOTout
   have hT : (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n).take
       (r + L) = M.take (r + L) := gexp_take_x hlen (by omega)
   have hUN : UAT (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) := by
@@ -185,7 +184,7 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
       exact Tqb hjb
   by_cases hqr : q = r
   · rw [hqr] at hq
-    have hAbs := abs_of_absC hAS hq hrb
+    have hAbs := hAbsN
     by_cases hux : upg M (r + L - 1) = some (r + L)
     · obtain ⟨Sp1, _, Sdv, Sos, Svsh⟩ := sv_shapes hlen hL0 hq hux (rx_of_sv hlen I.z2 I.z1 hr hux) hrb he2r
         I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be
@@ -248,7 +247,7 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
           obtain ⟨k0, _, hk0⟩ := List.any_eq_true.mp hiu
           have := upg_target_e2 (of_decide_eq_true hk0); omega
       have hbx := t2_qr_below hlen hL0 hq hd0e hn (hXu_of hux) hxbr hrb he2r hIU I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
-        I.be I.r01 I.e00 I.cons I.good I.rank hCN hRN I.fc I.fo I.vs I.td I.kd hAS hxcN hVSN hHard hOTout
+        I.be I.r01 I.e00 I.cons I.good I.rank hCN hRN I.fc I.fo I.vs I.td I.kd hAbsN hxcN hVSN hHard hOTout
         ⟨hs1, hs2⟩ hs3
       intro i hi
       obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hbx i hi
@@ -269,7 +268,7 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
     obtain ⟨Txb, Tqb, Te2pq, Tclq, Tclpq⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
     obtain ⟨Tp1, TqL, Tdv, Tos, Tvsh⟩ := qn_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
       I.uat I.uab I.r12 hpq' Tqb
-    have hAbs := abs_of_absC hAS hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
+    have hAbs := hAbsN
     obtain ⟨hs1, hs2, hs3⟩ := hSeedP pq (Or.inr ⟨q, hq, hqr, hpq⟩)
     obtain ⟨hqot, hqdec⟩ := hW q hq hqr
     have hIUt : ∀ c, c < r + L → c ≠ r + (q - r) → topped M c = true →

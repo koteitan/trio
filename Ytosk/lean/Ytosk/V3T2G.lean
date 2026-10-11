@@ -249,8 +249,7 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ 
     (hRD : ∀ R, R < bnd → Anc0 M R bnd → col M R = (0, 0, 0) → DepS M S true R ∧ ¬ W true R)
     (hWle : ∀ i, i < bnd → W true i → σ.o i ≤ ρ.o i)
     -- values
-    (hAbs : ∀ i, i < bnd → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
+    (hAbs : AbsWN M N bnd ρ σ)
     (hSeed : ∀ b i, S b i → i < bnd → DepS M S b i →
       (∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i)) →
       (∀ b' i', rkM b' i' < rkM b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →

@@ -43,11 +43,13 @@ theorem hR2_t2 (hB : T2BelowXRes) (hSV : T2Seed1SV) (hQC : T2Seed1C) :
   have hGall := good3_expand_t2 hM hS I RA hz h2 (t2BelowXAll_of hB M ρ rk hM hS I RA hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I RA hz h2)
   -- the seeds for `n ≥ 2`
-  have hbig : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ p, T2Seed M r L p →
+  have hbig : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       ∀ n σ, 2 ≤ n →
         Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
-        SeedL ρ σ p := by
-    intro r L hlen hr p hp n σ hn hCN
+        (∀ p, T2Seed M r L p → SeedL ρ σ p) ∧
+        AbsWN M (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n)
+          (r + L) ρ σ := by
+    intro r L hlen hr n σ hn hCN
     have hlen2 : 2 ≤ M.length := by have := par_lt M 2 _ _ hr; omega
     have hexp : expand M n = TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
         (entry M 1 (r + L) - entry M 1 r) n := by
@@ -77,7 +79,8 @@ theorem hR2_t2 (hB : T2BelowXRes) (hSV : T2Seed1SV) (hQC : T2Seed1C) :
         exact h
       have := hGall m hm1 τ (by rw [hexp1]; exact hτ)
       rwa [hexp1] at this
-    exact ((hB M ρ rk hM hS I RA hz h2 r L hlen hr n hn hGP σ hCN hOT).2.2.1 p hp).1
+    have hBR := hB M ρ rk hM hS I RA hz h2 r L hlen hr n hn hGP σ hCN hOT
+    exact ⟨fun p hp => (hBR.2.2.1 p hp).1, hBR.2.2.2.2⟩
   -- the drop to `M.take x`
   have hdropOf : ∀ r L, r + L + 1 = M.length →
       ∀ i, i < r + L → PO ρ (drop1 M (r + L) rk) i ∧ PV M ρ (drop1 M (r + L) rk) i := by
@@ -120,7 +123,8 @@ theorem hR2_t2 (hB : T2BelowXRes) (hSV : T2Seed1SV) (hQC : T2Seed1C) :
     obtain ⟨hC1, hRk1⟩ := hctx r L hlen
     exact ne_of_lt (o_strict_cl_x hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1
       (hdropOf r L hlen) hrx hxin)
-  refine ⟨fun r L qp pq hlen hr hq hqp hpq => ⟨?_, ?_⟩, fun r L hlen hr hq => ⟨?_, ?_, ?_, ?_⟩⟩
+  refine ⟨fun r L hlen hr n σ hn hCN _ => (hbig r L hlen hr n σ hn hCN).2,
+    fun r L qp pq hlen hr hq hqp hpq => ⟨?_, ?_⟩, fun r L hlen hr hq => ⟨?_, ?_, ?_, ?_⟩⟩
   · -- `q ≠ r`: seed1 at `pq`
     have hqx : r + qp < r + L := par_lt M 0 _ _ hq
     by_cases hcl : r + qp ∈ CL M pq
@@ -132,11 +136,11 @@ theorem hR2_t2 (hB : T2BelowXRes) (hSV : T2Seed1SV) (hQC : T2Seed1C) :
       exact ne_of_lt (o_strict_qn hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1
         (hdropOf r L hlen) hq hpq Txb h1q h2q Tclq hcl)
     · exact hQC M ρ rk hM I R hz h2 r L (r + qp) pq hlen hr hq (by omega) hpq hcl
-  · exact fun n σ hn hCN => hbig r L hlen hr pq (Or.inr ⟨r + qp, hq, by omega, hpq⟩) n σ hn hCN
+  · exact fun n σ hn hCN => (hbig r L hlen hr n σ hn hCN).1 pq (Or.inr ⟨r + qp, hq, by omega, hpq⟩)
   · exact fun hux => ⟨hSV M ρ rk hM I R hz h2 r L hlen hr hq hux,
-      fun n σ hn hCN => hbig r L hlen hr r (Or.inl ⟨hq, rfl⟩) n σ hn hCN⟩
+      fun n σ hn hCN => (hbig r L hlen hr n σ hn hCN).1 r (Or.inl ⟨hq, rfl⟩)⟩
   · exact fun hux => ⟨hqr1 r L hlen hr hq (by rw [hux]; simp)⟩
   · exact fun k hux hk => ⟨fun _ => hqr1 r L hlen hr hq (by rw [hux]; intro h; cases h; omega)⟩
-  · exact fun _ n σ hn hCN => hbig r L hlen hr r (Or.inl ⟨hq, rfl⟩) n σ hn hCN
+  · exact fun _ n σ hn hCN => (hbig r L hlen hr n σ hn hCN).1 r (Or.inl ⟨hq, rfl⟩)
 
 end Ytosk

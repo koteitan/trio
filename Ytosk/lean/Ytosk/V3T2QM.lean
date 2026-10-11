@@ -144,8 +144,7 @@ theorem t2_qn_main (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
     (hCN : Cons (TRIO.gexp M r L d0 d1 n) σ) (hGN : Good3 (TRIO.gexp M r L d0 d1 n) σ) (hRN : Rk (TRIO.gexp M r L d0 d1 n) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
-    (hAbs : ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
+    (hAbs : AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
     (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
     isOT (root (TRIO.gexp M r L d0 d1 n) σ) = true ∧ root (TRIO.gexp M r L d0 d1 n) σ < root M ρ := by
   have hlN : (TRIO.gexp M r L d0 d1 n).length = r + n * L := TRIO.gexp_length hlen

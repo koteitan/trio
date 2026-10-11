@@ -36,8 +36,8 @@ theorem v_bump_drop_upg {M N : Mat} {ρ σ : Valn} {i d x : Nat} {L : List Nat} 
     (hbxM : bumpTerm M ρ i x = one)
     (hGot : isOT G = true) (hG'ot : isOT G' = true) (hS : G' = G ∨ BRelS G' G)
     (hTD : BumpTermDec M ρ)
-    (hAbs : ∀ q ∈ summands (vOpt ρ (par M 1 i)), ¬ q < psi z two z → q < bumpW M ρ i →
-      Lhd z q (bumpW M ρ i)) :
+    (hAbs : ∀ q ∈ summands (vOpt ρ (par M 1 i)), ¬ q < psi z two z → ¬ q < bumpW N σ i →
+      q < bumpW M ρ i → Lhd z q (bumpW M ρ i)) :
     Lhd z (σ.v i) (ρ.v i) := by
   set V := vOpt ρ (par M 1 i) with hVdef
   have hVot : isOT V = true := by
@@ -126,7 +126,8 @@ theorem v_bump_drop_upg {M N : Mat} {ρ σ : Valn} {i d x : Nat} {L : List Nat} 
     by_cases hWE : omega (succ S) < E0
     · exact lhd_lt_small (isOT_mem_summands hVot hq) hWE hlt'
     · rw [← hbW]
-      apply hAbs q hq _ (by rw [hbW]; exact hlt')
+      have hbWN : bumpW N σ i = omega S' := by unfold bumpW; rw [hmapN, hsumX G' hG'ot]
+      apply hAbs q hq _ (by rw [hbWN]; exact hn) (by rw [hbW]; exact hlt')
       intro hq2
       apply hn
       have h2le : two ≤ S' :=
@@ -178,8 +179,7 @@ theorem t2_qnu_take (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (hCN : Cons (M.take (r + L)) σ) (hGN : Good3 (M.take (r + L)) σ) (hRN : Rk (M.take (r + L)) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hUA : UpgAbsX M (r + L) ρ)
-    (hAbs : ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
+    (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
     (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
     isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ := by
   have hlT : (M.take (r + L)).length = r + L := by rw [List.length_take]; omega

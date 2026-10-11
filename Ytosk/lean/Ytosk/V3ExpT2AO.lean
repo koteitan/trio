@@ -53,8 +53,7 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
         children M j = Kb ++ [k] ∧ (∀ d ∈ Kb, ¬ DepS M S true d) ∧
         (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepS M S true e)))
     -- values
-    (hAbs : ∀ i, i < bnd → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
+    (hAbs : AbsWN M N bnd ρ σ)
     (hSeed : ∀ b i, S b i → i < bnd → DepS M S b i →
       (∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i)) →
       (∀ b' i', rkM b' i' < rkM b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →

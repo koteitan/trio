@@ -395,7 +395,7 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
     (hCN : Cons (TRIO.gexp M r L d0 d1 n) σ) (hGN : Good3 (TRIO.gexp M r L d0 d1 n) σ)
     (hRN : Rk (TRIO.gexp M r L d0 d1 n) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
-    (hAbsC : BumpAbsS M (r + L) ρ)
+    (hAbs : AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ)
     (hxcN : Counted (TRIO.gexp M r L d0 d1 n) r (r + L))
     (hseed : Lhd z (σ.o r) (ρ.o r)) :
     isOT (root (TRIO.gexp M r L d0 d1 n) σ) = true ∧ root (TRIO.gexp M r L d0 d1 n) σ < root M ρ := by
@@ -523,15 +523,7 @@ theorem t2_qr_main (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hU
             intro e he
             have hex := (hLnd d hd e he).1
             exact (hoff e hex).1 (fun h => (hLnd d hd e he).2 ((hiff true e hex).mp h)))
-    (by
-      intro i hi h1 h2
-      refine hAbsC i h1 h2 (fun j hj hjb hjx => ?_) (Or.inr (Or.inl fun q' i' hq' hi' => ?_))
-      · exfalso
-        have hxj : r + L ∈ children M j := by rw [hjx]; simp
-        have hpx := (mem_children_iff.mp hxj).2
-        rw [hp] at hpx; cases hpx
-        exact hrb i (mem_children_iff.mp hj).2 hjb
-      · rw [hp] at hq'; cases hq'; exact hrb i' hi')
+    hAbs
   apply root_N2 hlen hL hp hd0e hn2 hXu hXb hrb he2r hIU hR0 hR01 hR12 h00 hG hGN
   · intro i hi
     by_cases hd : DepS M S true i
