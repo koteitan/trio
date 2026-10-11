@@ -447,4 +447,160 @@ theorem levFree_hole (hV : VKFree M ρ) {c p : Nat} (hc : c < M.length) (hch : P
 
 end
 
+/-! ## 葉の形の結び（VKFree は標準形で偽なので、こちらを使う）
+
+引数 0 の節点 ψ_a(0) は、数える子のない列 i の o(i) = ψ_{v(i)}(0) でだけ生まれる。したがって値に現れる
+Ω_{μ+1} は、数える子のない列 i で v(i) = μ + 1 のもの（LeafLev）。実測 LevLeaf（行 1 の子を持つ列 p と、
+数える子のない列 i で v(i) = μ + 1（μ ≠ 0）について、v(p) は添字 μ の部分項を持たない）は 5 集合で例外 0。
+-/
+
+/-- `μ + 1` is the `v` of a column without counted children. -/
+def LeafLev (M : Mat) (ρ : Valn) (μ : T) : Prop :=
+  ∃ i, i < M.length ∧ cvals M ρ i = [] ∧ ρ.v i = succ μ
+
+theorem sumN_ne_z_of : ∀ {l : List T}, l ≠ [] → (∀ t ∈ l, t ≠ z ∧ isOT t = true) → sumN l ≠ z
+  | [], h, _ => absurd rfl h
+  | t :: l, _, hl => by
+    unfold sumN
+    simp only [List.foldl_cons]
+    have ht := hl t (by simp)
+    have h1 : sf (add z t) = t := by simp [add]; exact sf_ot ht.2
+    rw [h1]
+    exact foldl_ne_z l ht.1 ht.2 (fun t' h' => (hl t' (by simp [h'])).2)
+
+section
+variable {M : Mat} {ρ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ) {rk : Bool → Nat → Nat} (hR : Rk M rk)
+include hC hG hR
+
+/-- **LevLink, leaf form**: every node `ψ_{μ+1}(0) + c` (`μ ≠ 0`) in a value has `μ + 1 = v(i)` for a column
+`i` without counted children. -/
+theorem levLinkLeaf : ∀ i, i < M.length → ZNode (LeafLev M ρ) (ρ.o i) ∧ ZNode (LeafLev M ρ) (ρ.v i) := by
+  have key : ∀ N, ∀ i, i < M.length →
+      (rk true i ≤ N → ZNode (LeafLev M ρ) (ρ.o i)) ∧ (rk false i ≤ N → ZNode (LeafLev M ρ) (ρ.v i)) := by
+    intro N
+    induction N using Nat.strongRecOn with
+    | _ N ih =>
+      have hV : ∀ i, i < M.length → rk false i ≤ N → ZNode (LeafLev M ρ) (ρ.v i) := by
+        intro i hi hN
+        obtain ⟨_, _, hR3⟩ := hR i hi
+        have hv := (hC i hi).2
+        unfold vRhs at hv
+        by_cases h1 : entry M 1 i = 0
+        · rw [if_pos h1] at hv; rw [hv]; exact zn_z
+        rw [if_neg h1] at hv
+        obtain ⟨hRp, hRu, hRb⟩ := hR3 h1
+        have hV0 : isOT (vOpt ρ (par M 1 i)) = true ∧ ZNode (LeafLev M ρ) (vOpt ρ (par M 1 i)) := by
+          cases hp : par M 1 i with
+          | none => exact ⟨rfl, zn_z⟩
+          | some m =>
+            have hml : m < M.length := by have := par_lt M 1 i m hp; omega
+            have hlt := hRp m hp
+            exact ⟨hG.ot_v m hml, (ih _ (by omega) m hml).2 (Nat.le_refl _)⟩
+        by_cases h2 : entry M 2 i = 0
+        · rw [if_pos h2] at hv
+          cases hu : upg M i with
+          | none =>
+            rw [hu] at hv; simp only at hv
+            rw [sf_ot (isOT_add hV0.1 rfl)] at hv
+            rw [hv]; exact zn_add hV0.2 zn_one
+          | some k =>
+            rw [hu] at hv; simp only at hv
+            have hkl : k < M.length := upg_lt hi hu
+            have hlt := hRu h2 k hu
+            have hXot : isOT (last (ρ.v k)) = true := isOT_last (hG.ot_v k hkl)
+            rw [sf_ot (isOT_add hV0.1 hXot)] at hv
+            rw [hv]; exact zn_add hV0.2 (zn_last ((ih _ (by omega) k hkl).2 (Nat.le_refl _)))
+        · rw [if_neg h2] at hv
+          rw [sf_ot (isOT_add hV0.1 (isOT_bumpOmega hC hG i))] at hv
+          rw [hv]
+          refine zn_add hV0.2 (zn_omega (zn_sumN ?_))
+          intro t ht
+          refine ⟨?_, ?_⟩
+          · rcases List.mem_cons.mp ht with rfl | ht
+            · exact zn_one
+            · obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ht
+              unfold bumpTerm
+              split
+              · rename_i hjb
+                refine zn_omega (zn_sumN ?_)
+                intro t' ht'
+                obtain ⟨k, hk, rfl⟩ := List.mem_map.mp ht'
+                have hkl : k < M.length := (mem_children hk).2
+                have hlt := hRb h2 j hj hjb k hk
+                exact ⟨(ih _ (by omega) k hkl).1 (Nat.le_refl _), hG.ot_o k hkl⟩
+              · exact zn_z
+          · rcases List.mem_cons.mp ht with rfl | ht
+            · rfl
+            · obtain ⟨j, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm hG i j
+      refine fun i hi => ⟨fun hN => ?_, hV i hi⟩
+      obtain ⟨hvo, hRc, _⟩ := hR i hi
+      rw [o_spArg hC hG hi]
+      refine zn_psi_intro (fun harg => ?_) ?_ ?_ zn_z
+      · -- the argument is `0` only without counted children
+        intro μ hμ _
+        refine ⟨i, hi, ?_, hμ⟩
+        by_contra hne
+        apply spArg_ne_z (ρ.v i) (sumN (cvals M ρ i)) z
+          (Or.inr (sumN_ne_z_of hne (fun t ht => by
+            obtain ⟨hot, s, y, rfl⟩ := cvals_single hC hG i t ht
+            exact ⟨by simp, hot⟩)))
+        exact harg
+      · exact (ih _ (by omega) i hi).2 (Nat.le_refl _)
+      · refine zn_spArg _ zn_z (zn_sumN ?_)
+        intro t ht
+        unfold cvals nzs at ht
+        rw [List.mem_filter] at ht
+        obtain ⟨ht, hne⟩ := ht
+        obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+        have hcl : c < M.length := (mem_children hc).2
+        unfold cnt at hne ⊢
+        split at hne
+        · simp at hne
+        · rename_i hb
+          split at hne
+          · simp at hne
+          · rename_i hu
+            have hlt := hRc c hc hb hu
+            rw [if_neg hb, if_neg hu]
+            exact ⟨(ih _ (by omega) c hcl).1 (Nat.le_refl _), hG.ot_o c hcl⟩
+  exact fun i hi => ⟨(key _ i hi).1 (Nat.le_refl _), (key _ i hi).2 (Nat.le_refl _)⟩
+
+theorem zn_bumpW_leaf (i : Nat) : ZNode (LeafLev M ρ) (bumpW M ρ i) := by
+  have hL := levLinkLeaf hC hG hR
+  unfold bumpW
+  refine zn_omega (zn_sumN ?_)
+  intro t ht
+  refine ⟨?_, ?_⟩
+  · rcases List.mem_cons.mp ht with rfl | ht
+    · exact zn_one
+    · obtain ⟨j, _, rfl⟩ := List.mem_map.mp ht
+      unfold bumpTerm
+      split
+      · refine zn_omega (zn_sumN ?_)
+        intro t' ht'
+        obtain ⟨k, hk, rfl⟩ := List.mem_map.mp ht'
+        have hkl : k < M.length := (mem_children hk).2
+        exact ⟨(hL k hkl).1, hG.ot_o k hkl⟩
+      · exact zn_z
+  · rcases List.mem_cons.mp ht with rfl | ht
+    · rfl
+    · obtain ⟨j, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm hG i j
+
+/-- **LevLeaf** (the carried candidate, 5 集合で例外 0). -/
+def LevLeafInv (M : Mat) (ρ : Valn) : Prop :=
+  ∀ c p i μ, c < M.length → par M 1 c = some p → i < M.length → cvals M ρ i = [] → ρ.v i = succ μ →
+    μ ≠ z → LevFree μ (ρ.v p)
+
+omit hR in
+/-- **LevFree at the hole level of a bump term** from `LevLeafInv` (t1-exp の種の条件の μ > 0). -/
+theorem levFree_hole_leaf (hR : Rk M rk) (hV : LevLeafInv M ρ) {c p : Nat} (hc : c < M.length)
+    (hch : P1Chain M p c) (hO : OHole (bumpW M ρ c)) (hμ : holeLev (bumpW M ρ c) ≠ z) :
+    LevFree (holeLev (bumpW M ρ c)) (ρ.v p) := by
+  obtain ⟨c0, hc0⟩ := hole_node hO
+  obtain ⟨i, hi, hcv, hvi⟩ := zn_bumpW_leaf hC hG hR c _ _ hc0 _ rfl hμ
+  obtain ⟨c', hc', hp⟩ := hch.has_child hc
+  exact hV c' p i _ hc' hp hi hcv hvi hμ
+
+end
+
 end Ytosk
