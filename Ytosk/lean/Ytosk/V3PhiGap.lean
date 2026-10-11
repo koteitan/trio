@@ -73,6 +73,23 @@ theorem phiX0_of_noGap0 (h : ∀ c p, c < M.length → par M 1 c = some p → No
   obtain ⟨c', hc', hp⟩ := hch.has_child hc
   exact reach_of_noGap0 hO hμ (h c' p hc' hp)
 
+/-- **The level-0 residual of PhiX**: level-0 holes where `v(p)` has a subterm in `[ψ_0(Ω_1), Ω_1)`
+(C′ で 122 場面、v(p) 自身がその区間にある場合だけ). -/
+def PhiX0R (M : Mat) (ρ : Valn) : Prop :=
+  ∀ c p, c < M.length → entry M 1 c ≠ 0 → entry M 2 c ≠ 0 → P1Chain M p c → OHole (bumpW M ρ c) →
+    holeLev (bumpW M ρ c) = z → ¬ NoGap0 (ρ.v p) →
+    Reach (SubS (ρ.v p)) (bumpW M ρ c) (etaOm (holeLev (bumpW M ρ c)))
+
+theorem phiX0_of_res (h : PhiX0R M ρ) : PhiX0 M ρ := by
+  intro c p hc h1 h2 hch hO hμ
+  by_cases hg : NoGap0 (ρ.v p)
+  · exact reach_of_noGap0 hO hμ hg
+  · exact h c p hc h1 h2 hch hO hμ hg
+
+/-- **The carried form**: `NoGapP ∧ PhiX0R` gives PhiX (hence AbsD and AbsU). -/
+theorem phiX_of_noGapR (hN : NoGapP M ρ) (h0 : PhiX0R M ρ) : PhiX M ρ :=
+  phiX_of_noGap hN (phiX0_of_res h0)
+
 end
 
 /-! ## 1 列落とし M → M.take x
@@ -122,13 +139,13 @@ def DropPhi0Res (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
     bumpW (M.take x) ρ' c ≠ bumpW M ρ c →
     Reach (SubS (ρ.v p)) (bumpW (M.take x) ρ' c) (etaOm (holeLev (bumpW (M.take x) ρ' c)))
 
-/-- **PhiX passes to `M.take x`**, modulo the level-0 residual `DropPhi0Res`. -/
-theorem phiX_take {ρ ρ' : Valn} {rk' : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
-    (hC' : Cons (M.take x) ρ') (hR' : Rk (M.take x) rk') (hN : NoGapP M ρ) (h0 : PhiX0 M ρ)
-    (hres : DropPhi0Res M x ρ ρ') : PhiX (M.take x) ρ' ∧ NoGapP (M.take x) ρ' := by
+/-- **The carried form passes to `M.take x`**, modulo the level-0 residual `DropPhi0Res`. -/
+theorem phiXR_take {ρ ρ' : Valn} {rk' : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hC' : Cons (M.take x) ρ') (hR' : Rk (M.take x) rk') (hN : NoGapP M ρ) (h0 : PhiX0R M ρ)
+    (hres : DropPhi0Res M x ρ ρ') : NoGapP (M.take x) ρ' ∧ PhiX0R (M.take x) ρ' := by
   have hN' := noGapP_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hR' hN
-  refine ⟨phiX_of_noGap hN' ?_, hN'⟩
-  intro c p hc h1 h2 hch hO hμ
+  refine ⟨hN', ?_⟩
+  intro c p hc h1 h2 hch hO hμ hg
   have hlen : (M.take x).length = x := by rw [List.length_take]; omega
   rw [hlen] at hc
   rw [entry_take M 1 hc] at h1
@@ -137,13 +154,18 @@ theorem phiX_take {ρ ρ' : Valn} {rk' : Bool → Nat → Nat} (hC : Cons M ρ) 
   obtain ⟨c', hc', hp⟩ := hch.has_child (by rw [hlen]; exact hc)
   rw [hlen] at hc'
   rw [par_take M 1 c' hc'] at hp
-  rw [v_take_of_par1 hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hR' hc' hp]
-  by_cases hg : NoGap0 (ρ.v p)
-  · exact reach_of_noGap0 hO hμ hg
+  rw [v_take_of_par1 hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hR' hc' hp] at hg ⊢
   by_cases hW : bumpW (M.take x) ρ' c = bumpW M ρ c
   · rw [hW] at hO hμ ⊢
-    exact h0 c p (by omega) h1 h2 hchM hO hμ
+    exact h0 c p (by omega) h1 h2 hchM hO hμ hg
   · exact hres c p hc h1 h2 hchM hO hμ hg hW
+
+/-- **PhiX passes to `M.take x`**, modulo the level-0 residual `DropPhi0Res`. -/
+theorem phiX_take {ρ ρ' : Valn} {rk' : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hC' : Cons (M.take x) ρ') (hR' : Rk (M.take x) rk') (hN : NoGapP M ρ) (h0 : PhiX0R M ρ)
+    (hres : DropPhi0Res M x ρ ρ') : PhiX (M.take x) ρ' ∧ NoGapP (M.take x) ρ' := by
+  obtain ⟨hN', h0'⟩ := phiXR_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hR' hN h0 hres
+  exact ⟨phiX_of_noGapR hN' h0', hN'⟩
 
 end
 
