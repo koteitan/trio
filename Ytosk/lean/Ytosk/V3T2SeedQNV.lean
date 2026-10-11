@@ -25,11 +25,27 @@ theorem qnS_vxs (M : Mat) (ρ : Valn) (r L q : Nat) : add (ρ.v r) (last (qnS M 
   obtain ⟨P, hP, _⟩ := add_eq_app_prefix (ρ.v r) (psi s y z)
   rw [hP, last_app P (by simp), show last (psi s y z) = psi s y z from rfl, hP]
 
+/-- `s′` is standard. -/
+theorem qnS_ot {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) {r : Nat} (hr : r < M.length)
+    (L q : Nat) : isOT (qnS M ρ r L q) = true := by
+  unfold qnS
+  refine isOT_add (I.good.ot_v r hr) (isOT_omega (isOT_sumN _ ?_))
+  intro t ht
+  simp only [List.mem_cons, List.mem_map] at ht
+  rcases ht with rfl | ⟨d, _, rfl⟩
+  · rfl
+  · exact isOT_bumpTerm I.good q d
+
+/-- `V < s′`. -/
+theorem qnS_gt (M : Mat) (ρ : Valn) (r L q : Nat) : ρ.v r < qnS M ρ r L q := by
+  unfold qnS
+  obtain ⟨s, y, hW⟩ := omega_psi_form (sumN (one :: ((children M q).filter (fun d => decide (d < r + L))).map
+    (bumpTerm M ρ q)))
+  rw [hW]; exact lt_add_principal s y _
+
 /-- **The residual of the seed `r`** (`t = 2`, `q ≠ r`, `q` the last counted child of `r`):
 properties of `M` and `M.take x`. -/
 structure T2SeedQNRes (M : Mat) (ρ : Valn) (r L q : Nat) (Lc : List Nat) : Prop where
-  sOT : isOT (qnS M ρ r L q) = true
-  as : ρ.v r < qnS M ρ r L q
   σB : sh (ρ.v r) (qnS M ρ r L q) (t2B (ρ.v r) ρ Lc) = t2B (ρ.v r) ρ Lc
   Bc : ∀ g ∈ summands (t2B (ρ.v r) ρ Lc), ¬ g < psi (succ (qnS M ρ r L q)) z z
   base : ∀ τ, Cons (M.take (r + L)) τ → τ.v r = ρ.v r ∧ ∃ t1,
@@ -130,7 +146,7 @@ theorem seed_r_value_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     rw [hor, hvx', hvq, hXP, hvP]
     obtain ⟨hat, hts⟩ := hch (n - 2)
     rw [show n - 1 = (n - 2) + 1 by omega]
-    exact congrArg (fun X => psi V X z) (qn_step hRes.sOT hRes.as hRes.σB hRes.Bc hat hts)
+    exact congrArg (fun X => psi V X z) (qn_step (qnS_ot I (by omega) L q) (qnS_gt M ρ r L q) hRes.σB hRes.Bc hat hts)
   rcases Nat.lt_or_ge n 3 with hn3 | hn3
   · -- `n = 2`: the base `P = M.take x`
     have hn2 : n = 2 := by omega
