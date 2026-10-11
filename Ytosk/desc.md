@@ -1737,3 +1737,9 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - t0-exp: T0Shape の (ii)(iii)(iv)、P が入ったら (i) と影の枠。
   - t2-exp: Good3 N を仮定にした t = 2 の項目ごとの補題。t2-subst: T2CopyRes などの写しの境界の事実。
   - wip: TPLoN を TPLoW の形に言い直す、新しい行列の TPLoW・AbsDW（節点の場合の閉性 K(d)）。
+
+### 評価が値を持つ（2026-10-11、V3Total、緑）
+
+- rk_std: SRO 以外の標準形（SRO から展開で届く行列）はすべて順位を持つ。val_std: その評価は値を持つ（v と o が循環しない）。公理は propext・Classical.choice・Quot.sound だけ。
+- 証明は標準形についての帰納法で、各段は構造の不変条件（sInvXJ_std）だけを使う: SRO[n] は brk_rk、接頭辞（n ≤ 1・最後の列が 0）は rk_take_all、t = 0 は rk_N0、t = 1 は新しい rk_gexp_t1（n の帰納法で rk_N_t1、構造の仮定は hpath_of_par1・hxnb_t1・hiu_t1・hiux_t1・hnd_t1）、t = 2 は rk_expand_t2。
+- これで目標の 2 つのうち「値が定まる」は証明済み。残りは「値が標準形」と「展開で下がる」。
