@@ -2810,3 +2810,12 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - y′ の高い部分が 0 でなければ y の高い部分も 0 でない（`split_hi_ne_z_of_le`、`split_mono` から）。
   - 段の道も枠ごとに M の道へ写る（`pathLvAll_take`）。
 - これで Inv3V2 の欄 vra の drop 側の生産者がそろった。t = 0・t = 2・t = 1 の展開側は別。
+
+### 一時停止（2026-10-12 夕方、ユーザーの指示）
+
+- 6 人の担当を止め、残っていた測定（drop-fix の newpv2）も止めた。最後のコミットは 709d6a02。作業ツリーは HEAD と同じ（lakefile は並び順だけの差だったので戻した）。
+- drop-fix の T2Ext x−1 の族の変更（UpgAbsXW・PO の弱い枝の拡張・Res3T2.ua）は drop-fix の私的な作業木にあり、未コミット（測定 upgx2・newpv2 待ちだった）。
+- 測定の決まり: 不変条件・残りの仮定は 8 集合（C′・T0Ext・d3s・deep2・deep3・ext1・T2Ext・ext2）と expP で例外 0 のときだけ「測って真」。ext1・T2Ext・expP で、AbsD・TPLo・AbsUW・TrigOmC・PhiX・NoGapP・LevLeafInv・PrefLast・Z0Link・VSmallR（全段・hi ≠ 0 の形）・旧 PH3c（cutsNS）・T0CutKappa が偽と分かった。VSmallF・FrameClosed・AbsDW・TPLoW・TPLoN は Lean の形で真（ext1 で偽と見えたのは probe の定義の誤り）。目標 Desc3 は ext1・ext1x で全件真。
+- 進んだこと（2026-10-12）: TailNR を無条件に証明（V3TailY）。TP1C・TP1WC・TrigOmC を PH3cG から（V3TP1CutG）。PH3c を G3 文法の PH3cG に直し P の保存を全機構で証明し直し（Ytosk.G）。t = 2 の種 4 つの場合を M だけの残りに（V3T2Seed*）、σ(B) = B を構造から（V3Tame）、T2SeedSVFix・T2SeedQNFC・T2SeedCBig を証明（残り構造の T2SeedCNext）。段を制限した RelR（V3RelRU）で HardArgN を t = 0・t = 2 で証明、M だけの不変条件 VSmallRAll（V3VSRAll）に置き換え、その 1 列落としでの保存（V3VSRAllDrop）。t = 1 の TPLo を道の形で運ぶ（V3TPath、groupA の V3AlignT）、AbsUWL（V3QRLocV）。
+- 最上位: t = 0 は hExp_t0_topU、t = 2 は t2BelowXRes_of_L ほか、1 列落としは trio_terminates_main_GH（VSmallR なし）。どれもまだ偽の欄を含む Inv3V の上にある。
+- 再開の続き: Inv3V2（t1-exp の下書き V3Inv2.lean、欄の表は「Inv3V2 の下書き」の節）への一括の移行。新しい欄 AbsDS・AbsUS・TPLoS・AbsUWL/AbsUW0・TrigS・PH3cG・FC3・VSmallRAll。測定待ちだったもの: TPLoS・AbsUS・TrigS の 9 集合（t1-exp）、VSmallRAll の 9 集合と t = 0 での保存の穴（t0-exp）、upgx2・newpv2（drop-fix）、groupA の最終の表。未解決の核: T0CutResGG（closure に引き継ぎ予定だった）、T2SeedCNext、t = 0・t = 1・t = 2 での VSmallRAll の保存、段 0 の残り。
