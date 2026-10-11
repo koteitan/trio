@@ -1960,3 +1960,16 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - V3PT2（0477aa9b）: ph3c_expand_t2・fc3_expand_t2 — t = 2 の一般形 clField_expand_t2 に差し込んだ。枠の性質は FrameOT と組（QT2P・QT2F）。◁ での下げ: ψ_{s′}(y′) ◁ ψ_s(y) で s′ < s なら ◁ の定義に C = Ω_{s′+1} を入れて y′ = 0（lhd_sub_drop）なので書き換えない。添字が同じなら挟み込み。
 - t = 2 の残りは clField_expand_t2 の仮定と同じ: T2BelowXRes（t2 の残り）、M.take x の枠（ph3c_take をどの Cons の評価にも）、種の列の枠 T2SeedFrames QT2P M（p = r か P_0 q と、q ≠ r の q）。実測の「新しく数えられる子」（cut 328）と「添字の変わる子」（pre 131）はここに入る。例: q = r・n = 2 では r の新しい最後の子 x′ の値は ψ_{V′}(σ(B))（B = r の前の数える子の状態 = o_{M.take x}(r) の引数）で、B は σ(B) の切り口になる。
 - これで PH3c・FC3 は、1 列落とし・基底・t = 0・t = 1 は残りなし、t = 2 は種の列の枠を除いて Lean で保存が示せた。証明に S1・S3・S4 は使っていない。
+
+### NoVB は偽、(iv) の置き換え、列ごとの運搬（2026-10-11、t0-exp）
+
+- **NoVB は標準形で偽**: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,0,0)（bms で標準形、SRO より下）など。C′・deep2・deep3 にはこの形がなかった。構造・Inv3・PInv（FC3 を含む）をすべて満たす。前に「FC3 が反例を除く」と書いたのは、その反例の根の枠で FC3 が偶然破れていただけだった。
+  - (iv) の言い換え「o′(r) = omid」も Std で偽（8 件）。元の (iv)（g の引数の ◁・標準形・型）はその 8 件でも真。
+  - (iv) を T0IVRes「中間の写しの根がどれも数えられないとき、g の古い枠は r で書き換えない」に替えた（24a46e69）。そのとき g の枠は o′(r) を o(r) の代わりに足すだけで、◁ と型 A/B0 を保つ（s0_core、型は (iii) から）。
+- **検査集合 T0Ext**（scratchpad/t0-exp/t0ext.pkl）: C′ の 2000 行列の各接頭辞に、最後の列の祖先 a についての (e0 a + 1, 0, 0) を足し、bms で標準形のもの 181290 個（C′ にないもの）。T0Ext で、T0IVRes（1543）・(i) の B ≠ 0（64658）・(ii)（22478）・T0VSResD2（169380）・T0VSResG（5094）・(iii)（5094）はすべて例外 0。
+- **AbsD・AbsU**（V3T0Phi、57475753）: NoGapP ∧ PhiX0R から。NoGapP N は証明済み、残りは PhiX0R N。仮定に M の NoGapP。
+- **列ごとの運搬**（V3T0Col）: N の AbsDN・AbsUW・TPLo を M・M.take x から運んだ（t0_vals_ctx、t0c_bumpW_last）。残りは次の 3 つ。T0Ext と C′ の各 6 万行列で例外 0。
+  - T0AbsDNRes: r より前で v が変わる列。
+  - T0AbsUWRes: r より前で v が変わる上げの組と、(x − 1, r) の写しが最後の根を指す組。
+  - T0TPLoRes: o が変わる列と中間の写しの根。
+- 現在の最上位: hExp_t0_mainC2。仮定は hNG（M の NoGapP）、T0IVRes、T0VSResG、T0ShapeR3（(i) の B ≠ 0、(ii)）、T0RestC（T0VSResD2・PhiX0R・T0TPLoRes・T0AbsUWRes・T0AbsDNRes・TPLoN・TPLoW・AbsDW・T0Res3H）、T0RWResC×3。
