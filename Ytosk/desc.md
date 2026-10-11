@@ -2179,3 +2179,17 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - (B) v が動けば数える子はない。
   - 動く v: x − 1 の v = V′ = v(P_1) + 1（v(P_1) = V、M.take x では上げ先なし）、行 2 = 0 で上げ先の v が動く（v(P_1) = V、v = 上げ先の v の Ω の鎖）、行 2 = 1 でのりしろの子 1 つ・その子 1 つ（v = その子の o）。どれも SpotC か V′。
   - これらを構造の補題（列の型ごと）として示せば、V3PSeedE の SpotN が順位の帰納法で出る。残りの仕事はこの構造の補題（t = 2 の悪い部分で、x − 1 に依る呼び出しの形）。
+
+### 一時停止（2026-10-12、ユーザーの指示）
+
+- 6 人の担当（drop-fix・closure・groupA・t1-exp・t0-exp・t2）を止めた。測定のプロセスは残っていない。最後のコミットは 393104fd。
+- 作業ツリーに未コミットで残っているもの（ビルド未確認、触っていない）: V3DropRH.lean・V3TailNR.lean（drop-fix、TailNR の狭め）、V3T2SeedQNL.lean（t2、q ≠ r の種、新規）、lakefile.toml の根の追加。
+- 測定の決まり: 不変条件・残りの仮定は 5 集合（C′・T0Ext・d3s・deep2・deep3）すべてで例外 0 のときだけ「測って真」とする。今回、C′ で真だった NoVB・VSmallR（全段）・BumpAbsC・NoGap0PosP・VKFree・t0.hG′・t0.hU が偽と分かった。
+- 最上位: trio_terminates_main_GP（V3MainGP）。hExp は M[n] の Inv3V だけ。1 列落としの残り（DropResR: VSmallNewR・ShadowC・TailNR ほか、Seed、AbsSR）は「すべての標準形で成り立つ」全体の仮定（5 集合で例外 0、証明はまだ）。
+- 再開するときの主な残り（担当ごと）:
+  - drop-fix: hLast の M.take x の穴の欄 11 個（t1 の hRT・t2 の hLastA が待つ）。TailNR の核「ℓ = P_0 x が数えられるようになるとき y(ℓ) ≤ B」。ほかの全体の仮定の証明。
+  - closure: t = 2 の種の列の枠。核は RS（右端の 1 か所の置き換え）を落とす補題の連鎖で運ぶことと、鎖に入る値の「おとなしさ」の不変条件（q = r・q ≠ r で各数日の見込み）。RE（V3RE）は t0 の T0Shape (i) と共通。
+  - groupA: LostKids、M[n] の PrefLast（すべての t、証明の筋なし）、Z0Link（段 0、真だが証明の筋なし）と NoGap0Pos の置き換え、t = 2 の hpre・V′ の NoGap。
+  - t1-exp: VSFRes2 の 2 点（P_1 c ≠ i での v′(c) ≥ v(i)、S > 0 での g < S）、TPLoLFRes・TPLoWLFRes、段 0 の残り（Z0Link と同種）、q = r で種 < Ω_μ の場合。
+  - t0-exp: T0Shape (i)（RE 待ち）・(ii)（T0IIRes、RClaim 方式に替えれば不要の見込み）、T0VSResD2、影の枠 3 つ、t0_dep_ot の deps_lhd_ot_R への切り替え。
+  - t2: T2BelowXRes（q = r の種は seedL_qr で M だけの残り T2SeedQRRes に、q ≠ r・sv はこれから）、T2Rest3 の値の欄（fsD と σ の入れ替えの補題が要る）、VSmallR の t = 2。
