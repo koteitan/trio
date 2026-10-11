@@ -635,6 +635,100 @@ theorem rc_tn_prefix {q p B s y s' y' R : T}
         · exact Or.inr ⟨d', List.mem_append_right _ hd', hdd'⟩
     · simp at hg
 
+/-- **Only the old child rewrites, `B` a prefix of `hi(y)`** (core): the tests start with `B`, so the claim
+holds when every component of the new child is below the new state, at most `0` or a component of `B`, or
+dominated by `q` (`hkey`). -/
+theorem rc_tn_core {q p B s y s' y' R : T}
+    (hc : isOT (psi s y z) = true)
+    (hc'c : psi s' y' z < psi s y z)
+    (hc'p : psi s' y' z < psi (succ p) z z → psi s' y' z < psi p (app B (psi s' y' z)) z)
+    (ht : lt B y = true ∧ lt (psi p z z) (psi s y z) = true)
+    (hpre : (split y (psi (succ s) z z)).1 = app B R)
+    (hX' : isOT (psi p (app B (psi s' y' z)) z) = true) (hY0 : isOT (psi p (H s y) z) = true)
+    (hkey : ∀ u, ¬ lt q u = true → ∀ g ∈ comps u (psi s' y' z),
+      g < H p (app B (psi s' y' z)) ∨ g ≤ z ∨ (∃ d ∈ comps u B, g ≤ d) ∨ ∃ d ∈ comps u q, g ≤ d)
+    (hyp : ∀ u, ¬ lt q u = true → ∀ d ∈ comps u p,
+      d < H p (app B (psi s' y' z)) ∨ ∃ d' ∈ comps u q, d ≤ d') :
+    RelR q (H p (app B (psi s' y' z))) (H p (H s y)) := by
+  have has : p ≤ s := le_of_trig ht.2
+  set c' := psi s' y' z with hc'def
+  have hBhi : ∀ r ∈ summands B, ¬ r < psi (succ p) z z := by
+    intro r hr h
+    have h1 : ¬ r < psi (succ s) z z :=
+      split_fst_ge _ y r (by rw [hpre, summands_app]; exact List.mem_append_left _ hr)
+    have hθ : psi (succ p) z z ≤ psi (succ s) z z := psi_le_psi_z (succ_le_succ' has)
+    exact h1 (lt_of_lt_of_le h hθ)
+  have hc'z : c' ≠ z := by simp [hc'def]
+  -- the form of the new state
+  obtain ⟨e, hb, he⟩ : ∃ e, H p (app B c') = app B e ∧
+      ((e = c' ∧ ¬ c' < psi (succ p) z z) ∨ (e = psi p (app B c') z ∧ c' < psi (succ p) z z)) := by
+    by_cases hcθ : c' < psi (succ p) z z
+    · exact ⟨_, H_hi_low hX' hBhi hc'z (by simpa [hc'def, head] using hcθ), Or.inr ⟨rfl, hcθ⟩⟩
+    · refine ⟨c', H_all_hi hX' ?_, Or.inl ⟨rfl, hcθ⟩⟩
+      intro r hr; rw [summands_app] at hr
+      rcases List.mem_append.mp hr with hr | hr
+      · exact hBhi r hr
+      · simp [summands, hc'def] at hr; rw [hr]; exact hcθ
+  -- the form of the old state
+  have eH := H_eq hc
+  have ey : y = app B (app R (split y (psi (succ s) z z)).2) := by
+    rw [← app_assoc, ← hpre]; exact (split_app _ y).symm
+  obtain ⟨E, hA⟩ : ∃ E, H p (H s y) = app B E := by
+    rcases (le_iff _ _).mp has with hps | rfl
+    · have hθ : psi (succ p) z z ≤ psi s z z := by
+        rcases (le_iff _ _).mp (succ_le_of_lt hps) with h | h
+        · exact le_of_lt (psi_lt_psi_z_iff.mpr (Or.inl h))
+        · rw [h]
+      have hall : ∀ r ∈ summands (H s y), ¬ r < psi (succ p) z z := fun r hr =>
+        not_lt.mpr (le_trans hθ (le_trans (psi_le_psi_arg (z_le _)) (H_summands_ge hc r hr)))
+      rw [H_all_hi hY0 hall, eH, hpre, app_assoc]; exact ⟨_, rfl⟩
+    · rw [HH_form hc hY0]
+      split_ifs
+      · rw [eH, hpre, app_assoc]; exact ⟨_, rfl⟩
+      · rw [hpre, app_assoc]; exact ⟨_, rfl⟩
+  rw [hb, hA]
+  rw [hb] at hkey hyp
+  have hone_e : one < e := by
+    rcases he with ⟨rfl, hcθ⟩ | ⟨rfl, _⟩
+    · exact lt_of_lt_of_le (one_lt_om_succ p) (not_lt.mp hcθ)
+    · unfold one
+      rcases lt_trichotomy' z p with h | rfl | h
+      · exact psi_lt_psi_z_iff.mpr (Or.inl h)
+      · exact psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_of_le_of_lt (z_le _) (lt_app_of hc'z)⟩)
+      · exact absurd h (T.not_lt_z _)
+  have hb1 : app B one < app B e := app_lt_app_left B hone_e
+  intro u hu cst h1 h2 g hg
+  obtain ⟨c0, rfl, _, _⟩ := between_app h1 h2
+  have hz : ∀ g, g ≤ z → ∃ d ∈ Gc u (app B c0) ++ comps u q, g ≤ d :=
+    fun g h => ⟨z, List.mem_append_left _ List.mem_cons_self, h⟩
+  have key : ∀ g ∈ comps u c', g < app B e ∨ ∃ d ∈ Gc u (app B c0) ++ comps u q, g ≤ d := by
+    intro g hg
+    rcases hkey u hu g hg with h | h | ⟨d, hd, hgd⟩ | ⟨d, hd, hgd⟩
+    · exact Or.inl h
+    · exact Or.inr (hz g h)
+    · exact Or.inr ⟨d, List.mem_append_left _ (gc_app_left d hd), hgd⟩
+    · exact Or.inr ⟨d, List.mem_append_right _ hd, hgd⟩
+  rw [comps_app] at hg
+  rcases List.mem_append.mp hg with hg | hg
+  · exact Or.inr ⟨g, List.mem_append_left _ (gc_app_left g hg), le_refl _⟩
+  rcases he with ⟨rfl, _⟩ | ⟨rfl, hcθ⟩
+  · exact key g hg
+  · simp only [comps, List.mem_append] at hg
+    rcases hg with hg | hg
+    · split at hg
+      · simp at hg
+      simp only [List.mem_cons, List.mem_append] at hg
+      rcases hg with rfl | hg | hg
+      · exact Or.inl (app_lt_app_left B (hc'p hcθ))
+      · rw [comps_app] at hg
+        rcases List.mem_append.mp hg with hg | hg
+        · exact Or.inr ⟨g, List.mem_append_left _ (gc_app_left g hg), le_refl _⟩
+        · exact key g hg
+      · rcases hyp u hu g hg with h | ⟨d', hd', hdd'⟩
+        · exact Or.inl h
+        · exact Or.inr ⟨d', List.mem_append_right _ hd', hdd'⟩
+    · simp at hg
+
 /-! ## 新旧とも書き換えない枠 -/
 
 /-- **Neither child rewrites.** `X′ = B + c′`, `Y₀ = B + c`. Below `Ω_{p+1}` the parent relation `hN` gives
@@ -730,5 +824,216 @@ theorem rc_nn {q p B s y s' y' : T}
       rcases List.mem_append.mp hg with hg | hg
       · exact Or.inr ⟨g, List.mem_append_left _ (gc_app_left g hg), le_refl _⟩
       · exact hdomc' u c0 hc1 hc2 g hg
+
+/-! ## 閉じた新しい状態・枠 1 段の場合分け -/
+
+/-- **A closed new state** (up to the components of `a`) is in the relation with anything. -/
+theorem relR_of_closed {q a X A : T} (hX : isOT (psi a X z) = true) (hqa : ¬ lt a q = true)
+    (hcl : ∀ u, ¬ lt a u = true → ∀ g ∈ comps u X, g < X ∨ ∃ d ∈ comps u a, g ≤ d)
+    (hyp : ∀ u, ¬ lt q u = true → ∀ d ∈ comps u a, d < H a X ∨ ∃ d' ∈ comps u q, d ≤ d') :
+    RelR q (H a X) A := by
+  intro u hu c _ _ g hg
+  have hau : ¬ lt a u = true := fun h => hu (lt_of_le_of_lt (not_lt.mp hqa) (show a < u from h))
+  have hXH : X ≤ H a X := le_H hX
+  have hsub : ∀ g ∈ comps u X, g < H a X ∨ ∃ d ∈ Gc u c ++ comps u q, g ≤ d := by
+    intro g hg
+    rcases hcl u hau g hg with h | ⟨d, hd, hgd⟩
+    · exact Or.inl (lt_of_lt_of_le h hXH)
+    · rcases hyp u hu d hd with h | ⟨d', hd', hdd'⟩
+      · exact Or.inl (lt_of_le_of_lt hgd h)
+      · exact Or.inr ⟨d', List.mem_append_right _ hd', le_trans hgd hdd'⟩
+  rw [H_eq hX, comps_app] at hg
+  rcases List.mem_append.mp hg with hg | hg
+  · apply hsub; rw [← split_app (psi (succ a) z z) X, comps_app]; exact List.mem_append_left _ hg
+  · split at hg
+    · simp [comps] at hg
+    · rename_i hlo
+      have hXlt : X < H a X := y_lt_H hX hlo
+      rw [comps_psi_z_of_ge hau] at hg
+      simp only [List.mem_cons, List.mem_append] at hg
+      rcases hg with rfl | hg | hg
+      · exact Or.inl hXlt
+      · exact hsub g hg
+      · rcases hyp u hu g hg with h | ⟨d', hd', hdd'⟩
+        · exact Or.inl h
+        · exact Or.inr ⟨d', List.mem_append_right _ hd', hdd'⟩
+
+theorem size_ne_om {u s g : T} (hg : g ∈ comps u s) : g ≠ psi s z z := by
+  intro h; have := size_comps hg; rw [h] at this; simp [size] at this; omega
+
+theorem sub_le_of_lt_om {a s' y' : T} (h : psi s' y' z < psi (succ a) z z) : s' ≤ a := by
+  rcases lt_om_iff.mp h with h | h
+  · simp at h
+  · simpa [lev] using lt_succ_iff.mp h
+
+theorem psi_lt_psi_app {a B s' y' : T} (hc'θ : psi s' y' z < psi (succ a) z z)
+    (hy' : y' < app B (psi s' y' z)) : psi s' y' z < psi a (app B (psi s' y' z)) z := by
+  have hs'a : s' ≤ a := by
+    rcases lt_om_iff.mp hc'θ with h | h
+    · simp at h
+    · simpa [lev] using lt_succ_iff.mp h
+  rcases (le_iff _ _).mp hs'a with h | rfl
+  · exact psi_lt_psi_z_iff.mpr (Or.inl h)
+  · exact psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, hy'⟩)
+
+theorem z_lt_app_psi (B s y : T) : z < app B (psi s y z) := by
+  cases B <;> simp [app]
+
+/-- **One frame step of the claim `RelR`** for the parent `ψ_a` of the last counted child (old `ψ_s(y)`,
+new `ψ_{s′}(y′)`): both rewrite (from the child's claim `hRC`), neither (from the frame relation `hN`), only
+the old (prefix of `hi(y)` from the child's `◁`, else the closedness `hSh`), a weak child. The subscript
+bounds `hVR` (old child) and `hVNR` (a changed subscript) are needed only when the old child rewrites. -/
+theorem relR_frame {q a B s y s' y' : T}
+    (hc : isOT (psi s y z) = true) (hc' : isOT (psi s' y' z) = true)
+    (hBc : ∀ r ∈ summands B, psi s y z ≤ r)
+    (hrel : (LhdE (psi s' y' z) (psi s y z) ∧ (y' ≠ z → s' = s)) ∨ (y' = z ∧ y = z ∧ WkV s' s))
+    (hX' : isOT (psi a (step a B s' y' z) z) = true) (hY0 : isOT (psi a (step a B s y z) z) = true)
+    (hN : LhdE (psi a (step a B s' y' z) z) (psi a (step a B s y z) z))
+    (hRC : s' = s → ∀ q', ¬ lt s q' = true →
+      (∀ u, ¬ lt q' u = true → ∀ g ∈ comps u s, g ≤ psi s z z ∨ g < H s y' ∨ ∃ d ∈ comps u q', g ≤ d) →
+      RelR q' (H s y') (H s y))
+    (hVR : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → ∀ u, ¬ lt a u = true →
+      ∀ g ∈ comps u s, g ≤ psi s z z ∨ g ≤ B ∨ ∃ d ∈ comps u a, g ≤ d)
+    (hVNR : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → s' ≠ s → ∀ u, ¬ lt a u = true →
+      ∀ g ∈ comps u s', g ≤ psi s' z z ∨ g ≤ B ∨ ∃ d ∈ comps u a, g ≤ d)
+    (hSh : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) →
+      ¬ (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) →
+      (¬ ∃ R, (split y (psi (succ s) z z)).1 = app B R) →
+      ∀ u, ¬ lt a u = true → ∀ g ∈ comps u (app B (psi s' y' z)),
+        g < app B (psi s' y' z) ∨ ∃ d ∈ comps u a, g ≤ d)
+    (hqa : ¬ lt a q = true)
+    (hyp : ∀ u, ¬ lt q u = true → ∀ g ∈ comps u a,
+      g ≤ psi a z z ∨ g < H a (step a B s' y' z) ∨ ∃ d ∈ comps u q, g ≤ d) :
+    RelR q (H a (step a B s' y' z)) (H a (step a B s y z)) := by
+  have hXz : step a B s' y' z ≠ z := step_ne_z hc'
+  have hyp' : ∀ u, ¬ lt q u = true → ∀ d ∈ comps u a,
+      d < H a (step a B s' y' z) ∨ ∃ d' ∈ comps u q, d ≤ d' := by
+    intro u hu d hd
+    rcases hyp u hu d hd with h | h | h
+    · exact Or.inl (lt_of_le_of_lt h (om_lt_H hX' hXz))
+    · exact Or.inl h
+    · exact Or.inr h
+  have hau : ∀ u, ¬ lt q u = true → ¬ lt a u = true :=
+    fun u hu h => hu (lt_of_le_of_lt (not_lt.mp hqa) (show a < u from h))
+  have hc'z : psi s' y' z ≠ z := by simp
+  have hc'c : psi s' y' z ≤ psi s y z := by
+    rcases hrel with ⟨h, _⟩ | ⟨rfl, rfl, hw⟩
+    · exact h.le
+    · exact le_of_lt (psi_lt_psi_z_iff.mpr (Or.inl hw.1))
+  have hBc' : ∀ r ∈ summands B, psi s' y' z ≤ r := fun r hr => le_trans hc'c (hBc r hr)
+  have happ' : ¬ (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) →
+      step a B s' y' z = app B (psi s' y' z) := by
+    intro hn; unfold step; rw [if_neg hn]; exact add_eq_app_of_ge ⟨s', y', rfl⟩ B hBc'
+  have happ : ¬ (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) →
+      step a B s y z = app B (psi s y z) := by
+    intro hn; unfold step; rw [if_neg hn]; exact add_eq_app_of_ge ⟨s, y, rfl⟩ B hBc
+  rcases hrel with ⟨hle, hss⟩ | ⟨rfl, rfl, hwk⟩
+  · rcases hle with heq | hl
+    · simp only [psi.injEq] at heq; obtain ⟨rfl, rfl, -⟩ := heq; exact relR_refl _ _
+    by_cases ht' : lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true
+    · -- both rewrite
+      obtain rfl := hss (ne_z_of_lt ht'.1)
+      have hyy : y' < y := by
+        rcases psi_lt_psi_z_iff.mp hl.1 with h | ⟨_, h⟩
+        · exact absurd h (lt_irrefl' _)
+        · exact h
+      have ht : lt B y = true ∧ lt (psi a z z) (psi s' y z) = true :=
+        ⟨lt_trans (show B < y' from ht'.1) hyy, lt_trans (show psi a z z < psi s' y' z from ht'.2) hl.1⟩
+      have e' : step a B s' y' z = H s' y' := by unfold step; rw [if_pos ht']
+      have e : step a B s' y z = H s' y := by unfold step; rw [if_pos ht]
+      rw [e'] at hX' hyp hyp'
+      rw [e] at hY0
+      rw [e', e] at hN ⊢
+      rcases (le_iff _ _).mp (le_of_trig ht.2) with hlt | rfl
+      · apply rc_tt_gt hlt hc' hc (ne_z_of_lt ht'.1) hX' hY0 _ hqa hyp
+        apply hRC rfl a (fun h => lt_irrefl' _ (lt_trans (show a < s' from hlt) h))
+        intro u hu g hg
+        rcases hVR ht u hu g hg with h | h | h
+        · exact Or.inl h
+        · exact Or.inr (Or.inl (lt_of_le_of_lt h (lt_of_lt_of_le ht'.1 (le_H hc'))))
+        · exact Or.inr (Or.inr h)
+      · have hR := hRC rfl a (lt_irrefl' _) (fun u _ g hg => Or.inr (Or.inr ⟨g, hg, le_refl _⟩))
+        exact relR_of_le_q hqa (relR_HH hc' hc hX' hY0 hyy hR hN) hyp'
+    by_cases ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true
+    · -- only the old child rewrites
+      have e : step a B s y z = H s y := by unfold step; rw [if_pos ht]
+      rw [happ' ht'] at hX' hyp' ⊢
+      rw [e] at hY0
+      rw [e]
+      by_cases hpre : ∃ R, (split y (psi (succ s) z z)).1 = app B R
+      · obtain ⟨R, hR⟩ := hpre
+        have hH : app B (psi s' y' z) ≤ H a (app B (psi s' y' z)) := le_H hX'
+        by_cases hs : s' = s
+        · subst hs
+          refine rc_tn_prefix hc hl hss ht' ht hR hX' hY0 ?_ hyp'
+          intro u hu g hg
+          rcases hVR ht u (hau u hu) g hg with h | h | ⟨d, hd, hgd⟩
+          · left
+            refine lt_of_lt_of_le (lt_of_le_of_ne h (size_ne_om hg)) (le_trans ?_ hH)
+            exact le_trans (psi_le_psi_arg (z_le _)) (le_app_psi hBc')
+          · exact Or.inl (lt_of_le_of_lt h (lt_of_lt_of_le (lt_app_of hc'z) hH))
+          · rcases hyp' u hu d hd with h' | h'
+            · exact Or.inl (lt_of_le_of_lt hgd h')
+            · obtain ⟨d', hd', hdd'⟩ := h'
+              exact Or.inr ⟨d', hd', le_trans hgd hdd'⟩
+        · have hy0 : y' = z := by by_contra h; exact hs (hss h)
+          subst hy0
+          refine rc_tn_core hc hl.1 (fun hθ => psi_lt_psi_app hθ (z_lt_app_psi _ _ _)) ht hR hX' hY0 ?_ hyp'
+          intro u hu g hg
+          simp only [comps, List.mem_append] at hg
+          rcases hg with hg | hg
+          · split at hg
+            · simp at hg
+            simp only [List.mem_cons, List.mem_append] at hg
+            rcases hg with rfl | hg | hg
+            · exact Or.inr (Or.inl (le_refl _))
+            · simp [comps] at hg
+            · rcases hVNR ht hs u (hau u hu) g hg with h | h | ⟨d, hd, hgd⟩
+              · left
+                refine lt_of_lt_of_le (lt_of_le_of_ne h (size_ne_om hg)) (le_trans ?_ hH)
+                exact le_app_psi hBc'
+              · exact Or.inl (lt_of_le_of_lt h (lt_of_lt_of_le (lt_app_of hc'z) hH))
+              · rcases hyp' u hu d hd with h' | h'
+                · exact Or.inl (lt_of_le_of_lt hgd h')
+                · obtain ⟨d', hd', hdd'⟩ := h'
+                  exact Or.inr (Or.inr (Or.inr ⟨d', hd', le_trans hgd hdd'⟩))
+          · simp [comps] at hg
+      · exact relR_of_closed hX' hqa (hSh ht ht' hpre) hyp'
+    · -- neither rewrites
+      rw [happ' ht'] at hX' hyp'
+      rw [happ ht] at hY0
+      rw [happ' ht', happ ht] at hN ⊢
+      have hc'lt : psi s' y' z < psi s y z := hl.1
+      refine rc_nn hc'lt hBc hX' hY0 hN ?_ ?_ hyp'
+      · intro c0 h1 h2 u g hg
+        obtain ⟨d, hd, hgd⟩ := hl.2 u c0 h1 h2 g hg
+        right
+        rcases List.mem_append.mp hd with hd | hd
+        · exact ⟨d, List.mem_cons_of_mem _ hd, hgd⟩
+        · simp [Gc, comps] at hd; subst hd; exact ⟨z, List.mem_cons_self, hgd⟩
+      · intro hθ
+        rcases (le_iff _ _).mp (sub_le_of_lt_om hθ) with h | rfl
+        · exact psi_lt_psi_z_iff.mpr (Or.inl h)
+        · apply psi_lt_psi_z_iff.mpr; right; refine ⟨rfl, ?_⟩
+          by_cases hy : y' = z
+          · rw [hy]; exact z_lt_app_psi _ _ _
+          · have hs'a : lt (psi s' z z) (psi s' y' z) = true :=
+              psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_of_le_of_ne (z_le _) (Ne.symm hy)⟩)
+            have hyB : y' ≤ B := not_lt.mp (fun h => ht' ⟨h, hs'a⟩)
+            exact lt_of_le_of_lt hyB (lt_app_of hc'z)
+  · -- weak child
+    have hn' : ¬ (lt B z = true ∧ lt (psi a z z) (psi s' z z) = true) := fun h => T.not_lt_z _ h.1
+    have hn : ¬ (lt B z = true ∧ lt (psi a z z) (psi s z z) = true) := fun h => T.not_lt_z _ h.1
+    rw [happ' hn'] at hX' hyp'
+    rw [happ hn] at hY0
+    rw [happ' hn', happ hn] at hN ⊢
+    refine rc_nn (psi_lt_psi_z_iff.mpr (Or.inl hwk.1)) hBc hX' hY0 hN ?_ ?_ hyp'
+    · intro c0 _ _ u g hg
+      left
+      have h1 := self_small_weak hwk.2.1 hwk.2.2.1 u g hg
+      have hne : g ≠ psi s' z z := by
+        intro h; have := size_comps hg; rw [h] at this; omega
+      exact lt_of_lt_of_le (lt_of_le_of_ne h1 hne) (le_app_psi hBc')
+    · intro hθ; exact psi_lt_psi_app hθ (z_lt_app_psi _ _ _)
 
 end Ytosk
