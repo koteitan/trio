@@ -20,6 +20,7 @@ variable {M : Mat} {r L d0 d1 n qp : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
   (hxb : col M (r + L) = bump M (r + qp)) (hBE : BumpE2 M)
 include hlen hL hA hp hqp hd0e hn2 hxb hBE
 
+omit hBE in
 /-- **`t = 2`, `q ≠ r`: Good3 of `M[n]` before `x`.** -/
 theorem t2_qn_below (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) (hR01 : R01 M)
     (h00 : entry M 0 0 = 0) (he2r : entry M 2 r = 0) {pq : Nat} (hpq : par M 0 (r + qp) = some pq)
