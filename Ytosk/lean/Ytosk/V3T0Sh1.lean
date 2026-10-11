@@ -110,7 +110,7 @@ theorem hExp_t0_mainR2
     (hCT : T0RWResC PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
-      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN :=
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
   hExp_t0_mainR hLast (t0ShapeR_of hS) hRest hC1 hC1W hCT
 
 end Ytosk

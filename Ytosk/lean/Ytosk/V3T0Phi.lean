@@ -64,7 +64,6 @@ structure T0RestG : Prop where
   adn : T0FieldG AbsDN
   tplow : T0FieldG TPLoW
   adw : T0FieldG AbsDW
-  res : T0Res3H
 
 /-- **`hExp` for `t = 0`, the current residuals**, with `NoGapP` of the standard matrices as a hypothesis
 (`hNG`, groupA's carried invariant). -/
@@ -76,11 +75,11 @@ theorem hExp_t0_mainG
     (hCT : T0RWResC PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
-      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN := by
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
   have g : ∀ F, T0FieldG F → T0Field F := fun F h M ρ rk r L n σ rkN hctx =>
     h M ρ rk r L n σ rkN hctx (hNG M ρ rk hctx.1 hctx.2.1 hctx.2.2.1 hctx.2.2.2.1)
   exact hExp_t0_mainN2 hLast hIV hII hG hS hRest.vsD (fun hD =>
     ⟨hD, g _ (t0_absD hRest.phi), g _ (t0_absU hRest.phi), g _ hRest.tplo, g _ hRest.auw, g _ hRest.tplon,
-      g _ hRest.adn, g _ hRest.tplow, g _ hRest.adw, hRest.res⟩) hC1 hC1W hCT
+      g _ hRest.adn, g _ hRest.tplow, g _ hRest.adw⟩) hC1 hC1W hCT
 
 end Ytosk

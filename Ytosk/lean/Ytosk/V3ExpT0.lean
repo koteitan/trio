@@ -334,7 +334,6 @@ structure T0Rest : Prop where
   adn : T0Field AbsDN
   tplow : T0Field TPLoW
   adw : T0Field AbsDW
-  res : T0Res3A
 
 /-- **`hExp` for `t = 0`** (`n ≥ 2`), from the residuals `T0OTD` and `T0Rest`, with the invariants of the
 prefix `M.take x` given. -/
@@ -345,7 +344,7 @@ theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) (hR1 : T0RWRes PTP1) (hR1W : T0R
     (hT : ∀ j, j < M.length → M.take j ≠ SRO → M.take j ≠ [] →
       ∃ τ rkT, Inv3 (M.take j) τ rkT ∧ Res3A (M.take j) τ rkT)
     (n : Nat) (hn2 : 2 ≤ n) :
-    ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN := by
+    ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
   obtain ⟨r, L, hlen, hL, hp, he1, hexp⟩ := t0_shape I hz hs0
   rw [hexp n]
   have hDr := R.drop
@@ -400,7 +399,7 @@ theorem hExp_t0 (hOTD : T0OTD) (hRest : T0Rest) (hR1 : T0RWRes PTP1) (hR1W : T0R
     rwc_trig.mp (hP PTrig (rwc_trig.mpr I.trig) (rwc_trig.mpr IT.trig) hRT)
   have V : Inv3V (TRIO.gexp M r L 0 0 n) σ rkN := ⟨hCN, hGN, hRN, hvs, hFCN, hFON, hKDN, hTDN, had, hau, htp1,
     htplo, htp1w, htplow, hauw, hadw, htrig, htplon, hadn, rootS_of_good hCN hGN, hpN⟩
-  exact ⟨σ, rkN, V, hRest.res _ _ _ _ _ _ _ _ hctx V⟩
+  exact ⟨σ, rkN, V⟩
 
 /-- **`hExp` for `t = 0` in the shape of the top theorem**, with the prefix invariants from the
 one-column drop `hLast` (`hTake_of_last`). -/
@@ -410,7 +409,7 @@ theorem hExp_t0_of_last
     (hOTD : T0OTD) (hRest : T0Rest) (hR1 : T0RWRes PTP1) (hR1W : T0RWRes PTP1W) (hRT : T0RWRes PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
-      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN := by
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
   intro M ρ rk hM hS hE I R hz hs0 n hn2
   apply hExp_t0 hOTD hRest hR1 hR1W hRT hM hS I R hz hs0 _ n hn2
   intro j hj hjS hjE
@@ -427,7 +426,7 @@ theorem hExp_t0_main
     (hBT : T0RWResB PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
-      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN :=
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
   hExp_t0_of_last hLast (t0OTD_of_shape hS) hRest
     (t0RWRes_of PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht) hS hB1)
     (t0RWRes_of PTP1W (fun _ _ _ _ _ hc hBc hl hA ht => ptp1w_classA hc hBc hl hA ht) hS hB1W)
@@ -480,7 +479,7 @@ theorem hExp_t0_mainC
     (hCT : T0RWResC PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
-      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN :=
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
   hExp_t0_main hLast hS hRest
     (t0RWResB_of PTP1 (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) hC1)
     (t0RWResB_of PTP1W (fun _ _ _ _ hlt hpre => ptp1w_prefix hlt hpre) hC1W)

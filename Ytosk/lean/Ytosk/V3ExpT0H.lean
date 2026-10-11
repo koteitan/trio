@@ -58,10 +58,9 @@ structure T0RestH : Prop where
   adn : T0Field AbsDN
   tplow : T0Field TPLoW
   adw : T0Field AbsDW
-  res : T0Res3H
 
 theorem T0RestH.toRest (h : T0RestH) : T0Rest :=
-  ⟨h.vs, h.ad, h.au, h.tplo, h.auw, h.tplon, h.adn, h.tplow, h.adw, t0Res3A_of_H h.res⟩
+  ⟨h.vs, h.ad, h.au, h.tplo, h.auw, h.tplon, h.adn, h.tplow, h.adw⟩
 
 /-- **`hExp` for `t = 0`, the current residuals**: `T0ShapeR2`, `T0RestH` (value fields and `Res3H`), and the
 shadow frames `T0RWResC`. -/
@@ -72,7 +71,7 @@ theorem hExp_t0_mainH
     (hCT : T0RWResC PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
-      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN :=
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
   hExp_t0_mainR2 hLast hS hRest.toRest hC1 hC1W hCT
 
 end Ytosk

@@ -103,10 +103,9 @@ structure T0RestH2 : Prop where
   adn : T0Field AbsDN
   tplow : T0Field TPLoW
   adw : T0Field AbsDW
-  res : T0Res3H
 
 theorem T0RestH2.toRestH (hG : T0VSResG) (h : T0RestH2) : T0RestH :=
-  ⟨t0_vsmallF h.vsD hG, h.ad, h.au, h.tplo, h.auw, h.tplon, h.adn, h.tplow, h.adw, h.res⟩
+  ⟨t0_vsmallF h.vsD hG, h.ad, h.au, h.tplo, h.auw, h.tplon, h.adn, h.tplow, h.adw⟩
 
 /-- **`hExp` for `t = 0`, the current residuals**: `T0IVRes`, `T0VSResG`, the class residuals
 `T0ShapeR3` ((i) at nonzero states, (ii)), `T0RestH2` (`T0VSResD`, the other value fields, `Res3H`), and the
@@ -118,7 +117,7 @@ theorem hExp_t0_mainN
     (hCT : T0RWResC PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
-      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN :=
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
   hExp_t0_mainH hLast (t0ShapeR2_of hIV hII hS) (hRest.toRestH hG) hC1 hC1W hCT
 
 end Ytosk
