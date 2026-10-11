@@ -16,6 +16,15 @@ open T Classical
 set_option linter.unusedSectionVars false
 set_option linter.unusedSimpArgs false
 
+/-- **`V + last(s′) = s′`** for `s′ = V + ω^{…}` (`ω^·` is a single summand). -/
+theorem qnS_vxs (M : Mat) (ρ : Valn) (r L q : Nat) : add (ρ.v r) (last (qnS M ρ r L q)) = qnS M ρ r L q := by
+  unfold qnS
+  obtain ⟨s, y, hW⟩ := omega_psi_form (sumN (one :: ((children M q).filter (fun d => decide (d < r + L))).map
+    (bumpTerm M ρ q)))
+  rw [hW]
+  obtain ⟨P, hP, _⟩ := add_eq_app_prefix (ρ.v r) (psi s y z)
+  rw [hP, last_app P (by simp), show last (psi s y z) = psi s y z from rfl, hP]
+
 /-- **The residual of the seed `r`** (`t = 2`, `q ≠ r`, `q` the last counted child of `r`):
 properties of `M` and `M.take x`. -/
 structure T2SeedQNRes (M : Mat) (ρ : Valn) (r L q : Nat) (Lc : List Nat) : Prop where
@@ -23,7 +32,6 @@ structure T2SeedQNRes (M : Mat) (ρ : Valn) (r L q : Nat) (Lc : List Nat) : Prop
   as : ρ.v r < qnS M ρ r L q
   σB : sh (ρ.v r) (qnS M ρ r L q) (t2B (ρ.v r) ρ Lc) = t2B (ρ.v r) ρ Lc
   Bc : ∀ g ∈ summands (t2B (ρ.v r) ρ Lc), ¬ g < psi (succ (qnS M ρ r L q)) z z
-  vxs : add (ρ.v r) (last (qnS M ρ r L q)) = qnS M ρ r L q
   base : ∀ τ, Cons (M.take (r + L)) τ → τ.v r = ρ.v r ∧ ∃ t1,
     spArg (τ.v r) z (sumN ((CL (M.take (r + L)) r).map τ.o)) = app (t2B (ρ.v r) ρ Lc) (psi t1 z z) ∧
     ∀ k, ρ.v r < tqN (ρ.v r) (qnS M ρ r L q) t1 k ∧
@@ -118,7 +126,7 @@ theorem seed_r_value_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       σ.o r = psi V (app B (psi (tqN V s' t1 (n - 1)) z z)) z := by
     intro ρP rkP hCP hGP hRP hvP hXP
     obtain ⟨hvx, hor⟩ := o_r_level_qn hM hS I R hz h2 hlen hr hq hqr hCLM hn hCN hRN hCP hGP hRP hqOT hdecN
-    have hvx' : σ.v (r + L) = s' := by rw [hvx, hvq]; exact hRes.vxs
+    have hvx' : σ.v (r + L) = s' := by rw [hvx, hvq]; exact qnS_vxs M ρ r L q
     rw [hor, hvx', hvq, hXP, hvP]
     obtain ⟨hat, hts⟩ := hch (n - 2)
     rw [show n - 1 = (n - 2) + 1 by omega]

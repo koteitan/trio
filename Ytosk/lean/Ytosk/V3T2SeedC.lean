@@ -434,7 +434,6 @@ structure T2SeedCRes (M : Mat) (ρ : Valn) (r L q : Nat) : Prop where
   un : upg M (r + L - 1) = none
   vP : ∀ τ, Cons (M.take (r + L)) τ → τ.v r = ρ.v r
   vqP : ∀ τ, Cons (M.take (r + L)) τ → τ.v q = qnS M ρ r L q
-  vxs : add (ρ.v r) (last (qnS M ρ r L q)) = qnS M ρ r L q
   rw : ∀ τ, Cons (M.take (r + L)) τ → ∀ k,
     step (ρ.v r) (t2X1 M r L τ) (qnS M ρ r L q) (step (qnS M ρ r L q) z (qnS M ρ r L q)
       (sh (ρ.v r) (qnS M ρ r L q) (shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ) k)) z) z =
@@ -496,7 +495,7 @@ theorem seed_r_value_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     intro ρP rkP hCP hGP hRP hvP hXP
     obtain ⟨hvx, hor⟩ := o_r_level_C hM hS I R hz h2 hlen hr hq hqr hRes.qP hRes.un hn hCN hRN hCP hGP hRP
       hC0 hG0 hR0 hv0 hvq0 hqOT hdecN
-    have hvx' : σ.v (r + L) = qnS M ρ r L q := by rw [hvx, hvq]; exact hRes.vxs
+    have hvx' : σ.v (r + L) = qnS M ρ r L q := by rw [hvx, hvq]; exact qnS_vxs M ρ r L q
     rw [hor, hvx', hvq, hXP, hvP, show n - 1 = (n - 2) + 1 by omega, hRes.rw τ0 hC0 (n - 2)]
     rfl
   rcases Nat.lt_or_ge n 3 with hn3 | hn3
