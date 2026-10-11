@@ -178,7 +178,7 @@ theorem t2BelowXRes_of_L (hL : T2BelowXResL) (hQR : T2SeedQRAll) (hQN : T2SeedQN
       rw [cvals_eq_mapC hCN]; exact hd2
     · obtain ⟨hq, hux⟩ := hc
       have hRes := hSV M ρ rk hM hS I R hz h2 r L hlen hr ⟨hq, hux⟩
-      refine ⟨seed_dec_sv hM hS I R hz h2 hlen hr hq hux hRes.topP hn hCN hRN hCP hGP hRP hC0 hG0 hRk1
+      refine ⟨seed_dec_sv hM hS I R hz h2 hlen hr hq hux (topP_sv hlen I.z2 I.z1 hr hq hux) hn hCN hRN hCP hGP hRP hC0 hG0 hRk1
         (hRes.decP _ hC0), ?_⟩
       intro q hq' hqr; rw [hq] at hq'; cases hq'; exact absurd rfl hqr
     · obtain ⟨q, hq, hqr, hncl⟩ := hc

@@ -454,6 +454,50 @@ theorem seed_dec_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     refine le_trans (le_of_lt ?_) hle
     rw [hc0, psi_lt_psi_z_iff]; left; exact hlt
 
+/-- **sv: the last child of `r` in `M.take x` is not a bump child** (it is the ancestor of `x − 1`, whose
+`P_1` is `r`). -/
+theorem topP_sv {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hZ2 : Z2 M) (hZ1 : Z1C M)
+    (hr : par M 2 (r + L) = some r) (hq : par M 0 (r + L) = some r)
+    (hux : upg M (r + L - 1) = some (r + L)) : topped (M.take (r + L)) r = false := by
+  have hrx : r < r + L := par_lt M 0 _ _ hq
+  have hrx1 : r ≠ r + L - 1 := rx_of_sv hlen hZ2 hZ1 hr hux
+  have hr1x : par M 1 (r + L) = some r := par1_x_r (by omega) hZ2 hZ1 hr
+  obtain ⟨m, hm1, hmx, _, _⟩ := upg_spec hux
+  rw [hr1x] at hmx; cases hmx
+  obtain ⟨he1, he2⟩ := upg_e12 hux
+  obtain ⟨hAr, _, h1lt, hbet⟩ := par1_facts hm1
+  obtain ⟨p, hpr, hpx⟩ := anc0_child hAr hrx1
+  have hpx1 : p ≤ r + L - 1 := hpx.le
+  have hrp : r < p := par_lt M 0 _ _ hpr
+  have hpM : p ∈ children M r := mem_children_iff.mpr ⟨by omega, hpr⟩
+  have hpT : p ∈ children (M.take (r + L)) r := by
+    rw [children_take]; exact List.mem_filter.mpr ⟨hpM, by simp; omega⟩
+  have hlast : ∀ d ∈ children (M.take (r + L)) r, d ≤ p := by
+    intro d hd
+    rw [children_take] at hd
+    have hd' := List.mem_filter.mp hd
+    have hdx : d < r + L := by simpa using hd'.2
+    by_contra hlt
+    have hAd : Anc0 M p d := anc_between hpx d (by omega) (by omega)
+    have hAr' := anc0_par hAd (by omega) (mem_children_iff.mp hd'.1).2
+    have := hAr'.le; omega
+  have hsplit := split_last_max _ _ (children_sorted (M.take (r + L)) r) hpT hlast
+  unfold topped
+  rw [hsplit, List.getLast?_append, List.getLast?_singleton]
+  simp only [Option.some_or]
+  rw [col_take M (by omega), bump_take M hrx]
+  apply decide_eq_false
+  intro hb
+  have hpb : col M p = (entry M 0 r + 1, entry M 1 r, 1) := by
+    have : bump M r = (entry M 0 r + 1, entry M 1 r, 1) := rfl
+    rw [← this]; exact hb
+  have he1p := e1_of_col hpb
+  have he2p := e2_of_col hpb
+  by_cases hpe : p = r + L - 1
+  · rw [hpe] at he2p; exact he2 he2p
+  · have := hbet p (Anc0.step hpr (Anc0.refl r)) hpx (by omega) hpe
+    omega
+
 /-- The iterate `σ^k(X)` of `σ = σ_{V, V′}`. -/
 def shIt (V V' X : T) : Nat → T
   | 0 => X
@@ -467,7 +511,6 @@ def t2X1 (M : Mat) (r L : Nat) (τ : Valn) : T :=
 `M.take x`. With `X₁` the argument of `r` in `M.take x` and `V′ = V + 1`: every level rewrites to `σ(X)`
 (`step V X₁ V′ (σ X) = σ X`), and `ψ_V(σ^k X₁) ◁ o_M(r)` for `k ≥ 1`. -/
 structure T2SeedSVRes (M : Mat) (ρ : Valn) (r L : Nat) : Prop where
-  topP : topped (M.take (r + L)) r = false
   decP : ∀ τ, Cons (M.take (r + L)) τ → ∀ Lc c0, CL (M.take (r + L)) r = Lc ++ [c0] →
     ∃ s y, τ.o c0 = psi s y z ∧ succ (ρ.v r) < s
   vP : ∀ τ, Cons (M.take (r + L)) τ → τ.v r = ρ.v r
@@ -527,7 +570,7 @@ theorem seed_r_value_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         shIt (ρ.v r) (succ (ρ.v r)) (t2X1 M r L τ0) (n - 2) →
       σ.o r = psi (ρ.v r) (shIt (ρ.v r) (succ (ρ.v r)) (t2X1 M r L τ0) (n - 1)) z := by
     intro ρP rkP hCP hGP hRP hvP hXP
-    have h := o_r_level_sv hM hS I R hz h2 hlen hr hq hux hRes.topP hn hCN hRN hCP hGP hRP hC0 hG0 hR0 hdecN
+    have h := o_r_level_sv hM hS I R hz h2 hlen hr hq hux (topP_sv hlen I.z2 I.z1 hr hq hux) hn hCN hRN hCP hGP hRP hC0 hG0 hR0 hdecN
     have hX1 : t2X1 M r L τ0 = spArg (ρ.v r) z (sumN ((CL (M.take (r + L)) r).map τ0.o)) := by
       unfold t2X1; rw [hv0]
     rw [h, hXP, hvP, hv0, show n - 1 = (n - 2) + 1 by omega, ← hX1, hRes.rw τ0 hC0 (n - 2)]
