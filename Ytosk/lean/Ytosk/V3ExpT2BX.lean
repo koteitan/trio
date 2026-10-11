@@ -89,4 +89,18 @@ theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
         exact DepS.ochild hcch hcnt.1 hcnt.2 hdc)))]
       exact hpM
 
+/-- **`N`-side hypothesis of `deps_lhd_ot`**: the subscript bound of a changed last child (`VSmallNew` form). -/
+def T2VSN (N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
+  ∀ i (Lc : List Nat) c, i < bnd → CL N i = Lc ++ [c] → σ.v c ≠ ρ.v c →
+    ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))
+
+/-- **`N`-side hypothesis of `deps_lhd_ot`**: the bound in the hard case (`HardArg` form). -/
+def T2Hard (N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
+  ∀ i (Lc : List Nat) c s y y', i < bnd → CL N i = Lc ++ [c] → ρ.o c = psi s y z →
+    σ.o c = psi s y' z → lt (ρ.v i) s = true →
+    (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s y' z) = true) →
+    (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+    (split y' (psi (succ s) z z)).1 < (split y (psi (succ s) z z)).1 →
+    ∀ g ∈ comps (ρ.v i) y', g ≤ H s y'
+
 end Ytosk
