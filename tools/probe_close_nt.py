@@ -27,11 +27,11 @@ def cutsNS(s, h):
     a, x, c = h
     return [(t, Z, Z) for t in scuts(s, a)] + [(a, t, Z) for t in PC.cuts(x, s)] + [(a, x, t) for t in cutsNS(s, c)]
 def cutsH(s, h):
-    """cuts の高い道の版: 項の引数に入るのはその項の添字が s 以上のときだけ（Lean V3PDef の cutsH）。"""
+    """cuts の高い道の版: 項の引数に入るのはその項の添字が s 以上のときだけ、添字の中には入らない（Lean V3PDef の cutsH。HSUB=1 で添字にも入る旧版）。"""
     if not h: return []
     a, x, c = h
     out = [(s, Z, Z)] if le(s, a) else []
-    out += [(t, Z, Z) for t in cutsH(s, a)]
+    if os.environ.get('HSUB', '0') == '1': out += [(t, Z, Z) for t in cutsH(s, a)]
     if le(s, a): out += [(a, t, Z) for t in cutsH(s, x)]
     return out + [(a, x, t) for t in cutsH(s, c)]
 def cutsNG(s, h):

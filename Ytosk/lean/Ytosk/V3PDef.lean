@@ -59,12 +59,12 @@ def S4 (M : Mat) : Prop :=
 
 /-- The positions `π` of `h` holding a summand `ψ_k(γ)` with `k ≥ s`: replace the summand (with what follows it
 in its sum) by `Ω_s` and drop everything to the right of `π` (order: subscript, argument, rest). The path to `π`
-enters the argument of a summand only when its subscript is at least `s` (high path; 2026-10-11 実測: 標準形の
+enters the argument of a summand only when its subscript is at least `s`, and never a subscript (high path; 2026-10-11 実測: 標準形の
 cut の枠 28.8 万件はすべてこの形。添字が s より小さい項の引数の中の位置は、t = 2 の置き換え σ で保たれない）。 -/
 def cutsH (s : T) : T → List T
   | z => []
   | psi a x c =>
-      (if le s a then [psi s z z] else []) ++ (cutsH s a).map (fun t => psi t z z) ++
+      (if le s a then [psi s z z] else []) ++
         (if le s a then (cutsH s x).map (fun t => psi a t z) else []) ++ (cutsH s c).map (fun t => psi a x t)
 
 /-- The chain of subscripts: replace the head summand of `h` (`k ≥ s`) by `Ω_s`, or recurse into the subscript of the
