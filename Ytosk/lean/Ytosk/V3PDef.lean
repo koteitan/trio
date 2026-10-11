@@ -11,6 +11,8 @@
 - PH3c: 書き換えが起きる B ≠ 0 の数える子の枠（B = 前の数える子までの状態、o(c) = ψ_s(y)、
   y を Ω_{s+1} で hi・lo に分ける）で、(eq) hi = B かつ lo ≠ 0、(pre) B は hi の真の先頭部分、
   (cut) s ≠ 0 で B は hi のある位置 π（添字 k ≥ s の項）を Ω_s に替え π より右をすべて落とした項。
+  π は hi の最上位の項そのものではなく、ある項の添字か引数の中（`cutsNT`。python の cuts より狭い。
+  2026-10-11: この形でも C′・deep2・deep3 で真、閉性も同じ）。
 - FC3: 最初の数える子（B = 0）で書き換えが起き hi ≠ 0 のとき、v(i) = s なら s は極限（0 でも後続でもない）、
   v(i) < s なら hi の先頭の添字は s + X（X ≠ 0、和としての連結）。
 -/
@@ -63,9 +65,19 @@ def cuts (s : T) : T → List T
       (if le s a then [psi s z z] else []) ++ (cuts s a).map (fun t => psi t z z) ++
         (cuts s x).map (fun t => psi a t z) ++ (cuts s c).map (fun t => psi a x t)
 
-/-- The kinds `eq`・`pre`・`cut` of a rewriting frame with state `B ≠ 0`, `y = hi + lo` split at `Ω_{s+1}`. -/
+/-- The positions of `cuts` except a top-level summand itself: the position is inside the subscript or the
+argument of some summand of `h` (the summands before it are kept). -/
+def cutsNT (s : T) : T → List T
+  | z => []
+  | psi a x c =>
+      (cuts s a).map (fun t => psi t z z) ++ (cuts s x).map (fun t => psi a t z) ++
+        (cutsNT s c).map (fun t => psi a x t)
+
+/-- The kinds `eq`・`pre`・`cut` of a rewriting frame with state `B ≠ 0`, `y = hi + lo` split at `Ω_{s+1}`.
+The `cut` position is never a top-level summand of `hi` (`cutsNT`; 2026-10-11 実測: 標準形の cut の枠 9.7 万で、
+位置は先頭の項の添字の鎖 S…S T か、ある項の引数の中。最上位の項そのものを Ω_s に替える位置は 0 件）。 -/
 def PH3cKind (B hi lo s : T) : Prop :=
-  (hi = B ∧ lo ≠ z) ∨ (hi ≠ B ∧ ((∃ R, R ≠ z ∧ hi = app B R) ∨ (s ≠ z ∧ B ∈ cuts s hi)))
+  (hi = B ∧ lo ≠ z) ∨ (hi ≠ B ∧ ((∃ R, R ≠ z ∧ hi = app B R) ∨ (s ≠ z ∧ B ∈ cutsNT s hi)))
 
 /-- The state before the counted children `L` of `i`. -/
 def stB (ρ : Valn) (i : Nat) (L : List Nat) : T := spArg (ρ.v i) z (sumN (L.map ρ.o))
