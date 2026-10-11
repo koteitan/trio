@@ -11,6 +11,7 @@ g の枠の残り `T0ShGRes` はそのまま。
 -/
 import Ytosk.V3T0TopR
 import Ytosk.SPFSD
+import Ytosk.V3TP1Cut
 
 namespace Ytosk
 
@@ -247,5 +248,92 @@ theorem hExp_t0_topA
   obtain ⟨τ, rkT, V, R'⟩ := hTake_of_last hLast M ρ rk hM hS hE I R j hj hjS hjE
   exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩
 
+
+theorem hExp_t0B {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hOTD : T0DF M ρ)
+    (hVSF : ∀ r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → VSmallF (TRIO.gexp M r L 0 0 n) σ) (hRest : T0RestNV)
+    (hRW : ∀ N σ, Std N → N ≠ SRO → Cons N σ → GoodOT N σ → TP1C N σ ∧ TP1WC N σ ∧ TrigOmC N σ)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (hs0 : TRIO.srow M (M.length - 1) = 0)
+    (hT : ∀ j, j < M.length → M.take j ≠ SRO → M.take j ≠ [] →
+      ∃ τ rkT, Inv3 (M.take j) τ rkT ∧ Res3A (M.take j) τ rkT)
+    (n : Nat) (hn2 : 2 ≤ n) :
+    ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
+  obtain ⟨r, L, hlen, hL, hp, he1, hexp⟩ := t0_shape I hz hs0
+  rw [hexp n]
+  have hDr := R.drop
+  rw [show M.length - 1 = r + L by omega] at hDr
+  have hab0 := R.abS.2 r (by rw [show M.length - 1 = r + L by omega]; exact hp)
+    (by rw [show M.length - 1 = r + L by omega]; exact he1)
+  have hcore := t0_core hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
+    I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
+    (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
+    (fun n hn σ hCN => ⟨fun i hi hd => ((hOTD r L hlen hL hp he1 n hn σ hCN i hi).1 hd).1,
+      t0_vsmallNewN hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.cons I.good I.rank hn hCN⟩)
+    n hn2
+  obtain ⟨σ, rkN, hCN, hRN, hGN, hFON, hFCN, hKDN, hTDN, hRWN, hpN, _⟩ := hcore
+  -- the prefix `M.take x`
+  have hTx : ∃ τ rkT, Inv3 (M.take (r + L)) τ rkT ∧ Res3A (M.take (r + L)) τ rkT := by
+    apply hT (r + L) (by omega)
+    · intro h
+      have hRk1 : Rk (M.take (r + L)) rk :=
+        rk_take (by omega) I.rank (by
+          have := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+          rwa [show M.length - 1 = r + L by omega] at this)
+      rw [h] at hRk1; exact not_val_SRO _ (val_of_rk hRk1)
+    · intro h
+      have := congrArg List.length h
+      rw [List.length_take, Nat.min_eq_left (by omega)] at this
+      simp only [List.length_nil] at this; omega
+  have hctx : T0Ctx M ρ rk r L n σ rkN :=
+    ⟨hM, hS, I, R, hlen, hL, hp, he1, hTx, hn2, hCN, hRN, hGN, hFON, hFCN, hKDN, hTDN⟩
+  have hvs := hVSF r L n σ rkN hctx
+  have had := hRest.ad _ _ _ _ _ _ _ _ hctx
+  have hau := hRest.au _ _ _ _ _ _ _ _ hctx
+  have htplo := hRest.tplo _ _ _ _ _ _ _ _ hctx
+  have hauw := hRest.auw _ _ _ _ _ _ _ _ hctx
+  have htplon := hRest.tplon _ _ _ _ _ _ _ _ hctx
+  have hadn := hRest.adn _ _ _ _ _ _ _ _ hctx
+  have htplow := hRest.tplow _ _ _ _ _ _ _ _ hctx
+  have hadw := hRest.adw _ _ _ _ _ _ _ _ hctx
+  -- the rewriting-frame fields, with the prefix valuation `drop1`
+  have hRk1 : Rk (M.take (r + L)) rk :=
+    rk_take (by omega) I.rank (by
+      have := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+      rwa [show M.length - 1 = r + L by omega] at this)
+  obtain ⟨τ, rkT, IT, _⟩ := hTx
+  have hAg : ∀ i, i < (M.take (r + L)).length →
+      τ.o i = (drop1 M (r + L) rk).o i ∧ τ.v i = (drop1 M (r + L) rk).v i :=
+    agree_of_cons IT.cons (cons_of_rk hRk1) IT.rank
+  obtain ⟨htp1, htp1w, htrig⟩ := hRW _ σ (std_gexp_t0 hM I hlen hL hp he1 n) (ne_SRO_of_rk hRN) hCN hGN.toOT
+  have V : Inv3V (TRIO.gexp M r L 0 0 n) σ rkN := ⟨hCN, hGN, hRN, hvs, hFCN, hFON, hKDN, hTDN, had, hau, htp1,
+    htplo, htp1w, htplow, hauw, hadw, htrig, htplon, hadn, rootS_of_good hCN hGN, hpN⟩
+  exact ⟨σ, rkN, V⟩
+
+/-- **`hExp` for `t = 0` with the rewriting-frame fields of `N` from PH3c of `N`** (drop-fix's V3TP1Cut:
+`tp1C_of_ph3c`・`tp1WC_of_ph3c`・`trigOmC_of_ph3c`). No shadow residual of `t = 0`. -/
+theorem hExp_t0_topB
+    (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
+      ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
+    (hAD : T0Field AbsD) (hAU : T0Field AbsU) (hFrm : FrmLF)
+    (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
+    (hPHN : ∀ N σ, Std N → N ≠ SRO → Cons N σ → GoodOT N σ →
+      PH3c N σ ∧ TP1Leaf N σ ∧ TP1WLeaf N σ ∧ TrigCut N σ)
+    (hCut : T0CutResG) (hTPR : T0TPLoRes) (hAUWR : T0AbsUWRes) (hADNR : T0AbsDNRes) :
+    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
+      col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
+      ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
+  intro M ρ rk hM hS hE I R hVR hz hs0 n hn2
+  have hIV := t0IVRes_holds
+  have hFF := t0_frameFieldsF hFrm hAD (t0_tplo hTPR)
+  have H2 : T0RestNV := ⟨hAD, hAU, t0_tplo hTPR, t0_absUW hAUWR, hFF.2.2, t0_absDN hADNR, hFF.1, hFF.2.1⟩
+  have hDF := t0DF_of hPH hCut hIV hM hS I R hVR
+  apply hExp_t0B hDF (t0_vsmallF_at (t0VSD_at hDF) hIV) H2
+    (fun N σ hN hNS hC hO => by
+      obtain ⟨h1, h2, h3, h4⟩ := hPHN N σ hN hNS hC hO
+      exact ⟨tp1C_of_ph3c hC hO h1 h2, tp1WC_of_ph3c hC hO h1 h3, trigOmC_of_ph3c hC hO h1 h4⟩)
+    hM hS I R hz hs0 _ n hn2
+  intro j hj hjS hjE
+  obtain ⟨τ, rkT, V, R'⟩ := hTake_of_last hLast M ρ rk hM hS hE I R j hj hjS hjE
+  exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩
 
 end Ytosk

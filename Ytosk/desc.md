@@ -2457,3 +2457,4 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - BumpWeakSrc（Lean の前提 ¬LhdE 込み）: 1 件。M = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0)、
     i = 11、k = x。groupA の AbsD・TPLo の反例と同じ行列（段 0 の隙間 ψ_0(Ω_{Ω_1}) 型）。
   - ほかの欄（VSmallNew・VSmallNewR・ShadowC・TailNR・UpgAbsX・Seed・VSmallR・BumpAbsW）は ext1 で例外 0。
+- 追記（t0-exp）: drop-fix の V3TP1Cut（N の PH3c ∧ TP1Leaf ∧ TP1WLeaf ∧ TrigCut ⇒ TP1C・TP1WC・TrigOmC、任意の行列）を使う最上位 `hExp_t0_topB`（hExp_t0B）。t = 0 の影の枠の残り（T0ShCutRes・T0ShGRes）は要らない。仮定: hLast・N の AbsD・AbsU・FrmLF・M の PH3c・標準形 N の PH3c と 3 つの葉の残り・T0CutResG・T0TPLoRes・T0AbsUWRes・T0AbsDNRes。
