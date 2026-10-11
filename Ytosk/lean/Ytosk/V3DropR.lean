@@ -18,12 +18,15 @@ namespace Ytosk
 
 open T
 
-/-- **Value invariant**: in a frame where the child rewrites, the components of the child's subscript at
-every level `u ≤ v(i)` are at most `Ω_s`, at most the state `B`, or at most a component of `v(i)`. -/
+/-- **Value invariant**: in a frame where the child `ψ_s(y)` rewrites and `y` has a high part, the
+components of the child's subscript at every level `u ≤ v(i)` are at most `Ω_s`, at most the state `B`, or at
+most a component of `v(i)`. (Without the high part it is false on standard matrices: T0Ext, 50 cases with
+`y = 1`, `B = 0`.) -/
 def VSmallR (M : Mat) (ρ : Valn) : Prop :=
   ∀ i, i < M.length → ∀ (L : List Nat) (c : Nat) (R : List Nat), CL M i = L ++ c :: R →
     ∀ s y, ρ.o c = psi s y z →
     (lt (spArg (ρ.v i) z (sumN (L.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+    (split y (psi (succ s) z z)).1 ≠ z →
     ∀ u, ¬ lt (ρ.v i) u = true → ∀ g ∈ comps u s,
       g ≤ psi s z z ∨ g ≤ spArg (ρ.v i) z (sumN (L.map ρ.o)) ∨ ∃ d ∈ comps u (ρ.v i), g ≤ d
 
@@ -283,8 +286,10 @@ theorem po_of_R {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
           exact node_ot_hard hcsS.1 (by rw [← hs'y']; exact hPOc.2.1) hrelL
             (hBge _ (single_o hC hG hcsM) (le_refl _) |> fun h => by rw [hsy] at h; exact h)
             (hssT s y s' y' hsy hs'y') (by rw [hvM s y hsy]; exact hfr) (hsubA s' y' hs'y')
-            (fun hss has ht' ht _ => by
+            (fun hss has ht' ht hhi => by
               subst hss
+              have hhz : (split y (psi (succ s') z z)).1 ≠ z := by
+                intro h; rw [h] at hhi; exact T.not_lt_z _ hhi
               have hc' : isOT (psi s' y' z) = true := by rw [← hs'y']; exact hPOc.2.1
               have hyy : y' ≤ y := by
                 rcases (le_iff _ _).mp hrelL.le with h | h
@@ -298,7 +303,7 @@ theorem po_of_R {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
               apply hRCc s' y y' (ρ.v i) hsy hs'y'
                 (fun h => lt_irrefl' _ (lt_trans (show ρ.v i < s' from has) h))
               intro u hu g hg
-              rcases hVR i hiM Lc cs Tl hCL s' y hsy ht u hu g hg with h | h | h
+              rcases hVR i hiM Lc cs Tl hCL s' y hsy ht hhz u hu g hg with h | h | h
               · exact Or.inl h
               · exact Or.inr (Or.inl (lt_of_le_of_lt h (lt_of_lt_of_le ht'.1 (le_H hc'))))
               · exact Or.inr (Or.inr h))

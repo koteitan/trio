@@ -879,6 +879,66 @@ theorem psi_lt_psi_app {a B s' y' : T} (hc'θ : psi s' y' z < psi (succ a) z z)
 theorem z_lt_app_psi (B s y : T) : z < app B (psi s y z) := by
   cases B <;> simp [app]
 
+
+/-! ## `VSmallR` を使わない 2 つの場合 -/
+
+/-- **Both rewrite, same high part**: the claim follows from `ψ_s(y′) ◁ ψ_s(y)` after the common high part. -/
+theorem relR_H_samehi {q s y y' : T} (hc' : isOT (psi s y' z) = true) (hc : isOT (psi s y z) = true)
+    (hl : LhdE (psi s y' z) (psi s y z))
+    (hhi : (split y' (psi (succ s) z z)).1 = (split y (psi (succ s) z z)).1)
+    (hlo : (split y' (psi (succ s) z z)).2 < (split y (psi (succ s) z z)).2) :
+    RelR q (H s y') (H s y) := by
+  have hloz : (split y (psi (succ s) z z)).2 ≠ z := by
+    intro h; rw [h] at hlo; exact T.not_lt_z _ hlo
+  rw [H_eq hc', H_eq hc, if_neg hloz, hhi]
+  by_cases h' : (split y' (psi (succ s) z z)).2 = z
+  · rw [if_pos h', app_z_right]
+    apply relR_self_prefix
+    intro c hc1 hc2
+    exact prefix_tests (e := z) c (by rw [app_z_right]; exact hc1) hc2
+  · rw [if_neg h']; exact relR_prefix_lhdE hl
+
+/-- **Only the old child rewrites, `B = hi(y)`**: the claim follows from the frame relation `hN` or the child
+relation, after `B`. -/
+theorem rc_tn_hi {q p B s y y' : T}
+    (hc : isOT (psi s y z) = true) (hl : Lhd z (psi s y' z) (psi s y z))
+    (ht : lt B y = true ∧ lt (psi p z z) (psi s y z) = true)
+    (hpre : (split y (psi (succ s) z z)).1 = B)
+    (hX' : isOT (psi p (app B (psi s y' z)) z) = true) (hY0 : isOT (psi p (H s y) z) = true)
+    (hN : LhdE (psi p (app B (psi s y' z)) z) (psi p (H s y) z)) :
+    RelR q (H p (app B (psi s y' z))) (H p (H s y)) := by
+  have has : p ≤ s := le_of_trig ht.2
+  have hlo : (split y (psi (succ s) z z)).2 ≠ z := by
+    intro h
+    have e := split_app (psi (succ s) z z) y
+    rw [h, app_z_right, hpre] at e
+    have := ht.1; rw [e] at this; exact lt_irrefl' _ this
+  have eH : H s y = app B (psi s y z) := by rw [H_eq hc, if_neg hlo, hpre]
+  have hBhs : ∀ r ∈ summands B, ¬ r < psi (succ s) z z := by
+    rw [← hpre]; exact split_fst_ge _ y
+  have hBhp : ∀ r ∈ summands B, ¬ r < psi (succ p) z z := fun r hr h =>
+    hBhs r hr (lt_of_lt_of_le h (psi_le_psi_z (succ_le_succ' has)))
+  rw [eH] at hY0 hN ⊢
+  rcases (le_iff _ _).mp has with hps | rfl
+  · -- `p < s`: both states are all high
+    have hθ : psi (succ p) z z ≤ psi s z z := by
+      rcases (le_iff _ _).mp (succ_le_of_lt hps) with h | h
+      · exact le_of_lt (psi_lt_psi_z_iff.mpr (Or.inl h))
+      · rw [h]
+    have hall : ∀ w, ∀ r ∈ summands (app B (psi s w z)), ¬ r < psi (succ p) z z := by
+      intro w r hr
+      rw [summands_app] at hr
+      rcases List.mem_append.mp hr with hr | hr
+      · exact hBhp r hr
+      · simp [summands] at hr; rw [hr]
+        exact not_lt.mpr (le_trans hθ (psi_le_psi_arg (z_le _)))
+    rw [H_all_hi hX' (hall y'), H_all_hi hY0 (hall y)]
+    exact relR_prefix_lhd hl
+  · -- `s = p`
+    rw [H_hi_low hX' hBhp (by simp) (head_psi_lt_succ p y'),
+      H_hi_low hY0 hBhp (by simp) (head_psi_lt_succ p y)]
+    exact relR_prefix_lhdE hN
+
 /-- **One frame step of the claim `RelR`** for the parent `ψ_a` of the last counted child (old `ψ_s(y)`,
 new `ψ_{s′}(y′)`): both rewrite (from the child's claim `hRC`), neither (from the frame relation `hN`), only
 the old (prefix of `hi(y)` from the child's `◁`, else the closedness `hSh`), a weak child. The subscript
@@ -892,8 +952,8 @@ theorem relR_frame {q a B s y s' y' : T}
     (hRC : s' = s → ∀ q', ¬ lt s q' = true →
       (∀ u, ¬ lt q' u = true → ∀ g ∈ comps u s, g ≤ psi s z z ∨ g < H s y' ∨ ∃ d ∈ comps u q', g ≤ d) →
       RelR q' (H s y') (H s y))
-    (hVR : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → ∀ u, ¬ lt a u = true →
-      ∀ g ∈ comps u s, g ≤ psi s z z ∨ g ≤ B ∨ ∃ d ∈ comps u a, g ≤ d)
+    (hVR : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → (split y (psi (succ s) z z)).1 ≠ z →
+      ∀ u, ¬ lt a u = true → ∀ g ∈ comps u s, g ≤ psi s z z ∨ g ≤ B ∨ ∃ d ∈ comps u a, g ≤ d)
     (hVNR : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) → s' ≠ s → ∀ u, ¬ lt a u = true →
       ∀ g ∈ comps u s', g ≤ psi s' z z ∨ g ≤ B ∨ ∃ d ∈ comps u a, g ≤ d)
     (hSh : (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) →
@@ -946,12 +1006,16 @@ theorem relR_frame {q a B s y s' y' : T}
       rw [e', e] at hN ⊢
       rcases (le_iff _ _).mp (le_of_trig ht.2) with hlt | rfl
       · apply rc_tt_gt hlt hc' hc (ne_z_of_lt ht'.1) hX' hY0 _ hqa hyp
-        apply hRC rfl a (fun h => lt_irrefl' _ (lt_trans (show a < s' from hlt) h))
-        intro u hu g hg
-        rcases hVR ht u hu g hg with h | h | h
-        · exact Or.inl h
-        · exact Or.inr (Or.inl (lt_of_le_of_lt h (lt_of_lt_of_le ht'.1 (le_H hc'))))
-        · exact Or.inr (Or.inr h)
+        rcases split_mono (psi (succ s') z z) hyy with hhi | ⟨hhi, hlo⟩
+        · apply hRC rfl a (fun h => lt_irrefl' _ (lt_trans (show a < s' from hlt) h))
+          have hhz : (split y (psi (succ s') z z)).1 ≠ z := by
+            intro h; rw [h] at hhi; exact T.not_lt_z _ hhi
+          intro u hu g hg
+          rcases hVR ht hhz u hu g hg with h | h | h
+          · exact Or.inl h
+          · exact Or.inr (Or.inl (lt_of_le_of_lt h (lt_of_lt_of_le ht'.1 (le_H hc'))))
+          · exact Or.inr (Or.inr h)
+        · exact relR_H_samehi hc' hc (Or.inr hl) hhi hlo
       · have hR := hRC rfl a (lt_irrefl' _) (fun u _ g hg => Or.inr (Or.inr ⟨g, hg, le_refl _⟩))
         exact relR_of_le_q hqa (relR_HH hc' hc hX' hY0 hyy hR hN) hyp'
     by_cases ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true
@@ -960,14 +1024,20 @@ theorem relR_frame {q a B s y s' y' : T}
       rw [happ' ht'] at hX' hyp' ⊢
       rw [e] at hY0
       rw [e]
+      rw [happ' ht', e] at hN
       by_cases hpre : ∃ R, (split y (psi (succ s) z z)).1 = app B R
       · obtain ⟨R, hR⟩ := hpre
         have hH : app B (psi s' y' z) ≤ H a (app B (psi s' y' z)) := le_H hX'
         by_cases hs : s' = s
         · subst hs
+          by_cases hR0 : R = z
+          · rw [hR0, app_z_right] at hR
+            exact rc_tn_hi hc hl ht hR hX' hY0 hN
+          have hhz : (split y (psi (succ s') z z)).1 ≠ z := by
+            rw [hR]; intro h; exact hR0 (app_eq_z h).2
           refine rc_tn_prefix hc hl hss ht' ht hR hX' hY0 ?_ hyp'
           intro u hu g hg
-          rcases hVR ht u (hau u hu) g hg with h | h | ⟨d, hd, hgd⟩
+          rcases hVR ht hhz u (hau u hu) g hg with h | h | ⟨d, hd, hgd⟩
           · left
             refine lt_of_lt_of_le (lt_of_le_of_ne h (size_ne_om hg)) (le_trans ?_ hH)
             exact le_trans (psi_le_psi_arg (z_le _)) (le_app_psi hBc')

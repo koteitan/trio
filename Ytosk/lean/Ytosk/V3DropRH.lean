@@ -170,7 +170,7 @@ theorem vsmallR_take {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
     (hdrop : ∀ i, i < x → PO ρ ρ' i ∧ PV M ρ ρ' i) (hVR : VSmallR M ρ) : VSmallR (M.take x) ρ' := by
-  intro i hi L c R h s' y' hc' ht' u hu g hg
+  intro i hi L c R h s' y' hc' ht' hhz' u hu g hg
   rw [lenT hx] at hi
   have hiM : i < M.length := by omega
   obtain ⟨hv, hL, Tl, hM⟩ := frame_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hi h
@@ -217,6 +217,12 @@ theorem vsmallR_take {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       lt (psi (ρ.v i) z z) (psi s' y z) = true :=
     ⟨lt_of_lt_of_le (show _ < y' from ht'.1) hyy,
       lt_of_lt_of_le (show psi (ρ.v i) z z < psi s' y' z from ht'.2) (psi_le_psi_arg hyy)⟩
-  exact hVR i hiM L c (R ++ Tl) hM s' y hsy ht u hu g hg
+  have hhz : (split y (psi (succ s') z z)).1 ≠ z := by
+    rcases (le_iff _ _).mp hyy with hlt | rfl
+    · rcases split_mono (psi (succ s') z z) hlt with h' | ⟨h', _⟩
+      · intro h0; rw [h0] at h'; exact T.not_lt_z _ h'
+      · rw [← h']; exact hhz'
+    · exact hhz'
+  exact hVR i hiM L c (R ++ Tl) hM s' y hsy ht hhz u hu g hg
 
 end Ytosk
