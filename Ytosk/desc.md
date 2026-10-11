@@ -1743,3 +1743,12 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - rk_std: SRO 以外の標準形（SRO から展開で届く行列）はすべて順位を持つ。val_std: その評価は値を持つ（v と o が循環しない）。公理は propext・Classical.choice・Quot.sound だけ。
 - 証明は標準形についての帰納法で、各段は構造の不変条件（sInvXJ_std）だけを使う: SRO[n] は brk_rk、接頭辞（n ≤ 1・最後の列が 0）は rk_take_all、t = 0 は rk_N0、t = 1 は新しい rk_gexp_t1（n の帰納法で rk_N_t1、構造の仮定は hpath_of_par1・hxnb_t1・hiu_t1・hiux_t1・hnd_t1）、t = 2 は rk_expand_t2。
 - これで目標の 2 つのうち「値が定まる」は証明済み。残りは「値が標準形」と「展開で下がる」。
+
+### 順序を保つ・全射を段 1 に帰着（2026-10-11、V3Order・V3Surj、緑）
+
+- order_pres（V3Order）: 段 1 `Desc3` を仮定すると、標準形 B < A（列の辞書式 seqlex、A ≠ SRO、B ≠ []）について、A・B の値はどちらも標準形で、B の値 < A の値。
+  - reach_of_seqlex: B < A なら B は A から 1 回以上の展開で届く。整礎性は段 1 から（terminates_of_desc3）、共終性は trio の trio_cofinality（ST_TS の上、無条件）、olt_ST_iff_seqlex で seqlex に言い換え、expand_eq_oper で Ytosk の展開に戻す。
+  - std_stts: Ytosk の標準形は空か trio の ST_TS。SRO は D_2 = (0,0,0)(1,1,1)(2,2,1) から 26 回の展開で届く（コピーの個数 2,1,3,2,1,2,2,2,1,1,1,2,2,1,1,1,2,1,2,1,1,1,2,1,1,1、decide）。M[0] は接頭辞（ST_TS は空でない接頭辞で閉じている、stts_take）。
+- surj（V3Surj）: 段 1 と評価側の共終性 `EvalCof`（A の値より小さい標準形の項 t には、t ≤ (A[n] の値) となる n がある）を仮定すると、SRO のある展開の値より小さい標準形の項は、どれも SRO 以外の標準形の値。
+  - EvalCof は、順序を保つことのもとで全射と同値な言い換え。中身の証明（拡張 Buchholz の基本列 t[n] について t[n] ≤ (A[n] の値) の形）はまだ。
+- 目標の 5 つの状態: (1) 値が定まる・(2) SRO から届く は証明済み。(3) 順序を保つ は (4) に帰着。(5) 全射 は (4) と EvalCof に帰着。(4) 値が標準形・展開で下がる（Desc3）が本題として残る。
