@@ -2721,3 +2721,14 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - TPLo: 運びの残りは TPLoPathRes（道の形、全集合で例外 0）。TPLo の欄そのもの（ext1 で 1 件偽）の替わりは groupA の表に合わせる。消費は expStep_tploP の M 側（tploAt_of I.tplo）と tplon_of_lf・qr の TPLoW。
 - AbsUW0（種での AbsUW、添字 0）と qr_final4L（AbsUW でなく AbsUWL・AbsUW0 を受ける、50e0ee8b）。実測（auws.py、全体）: AbsUW_L・AbsUW0 とも C′・t1ext・d3s・deep2・deep3・ext1・ext1x・T2Ext・expP で例外 0（T2Ext 62009・24389 件、expP 38680・14057 件）。
 - q ≠ r 側の AbsD は、t1_main_final の中で hADζ を作っている所だけを AbsDS（種での吸収）に替えれば足りる。ただし AbsD は t1_hole0・v_bump_D・qr_holeD の節の仮定に（受け渡しだけで）入っているので、外すと型の変更が連鎖する。一括の作り直しのときに omit する。
+
+### T2SeedCFix を T2SeedCBig に帰着（2026-10-12、closure、V3CFix、緑）
+- `Ytosk.G.t2SeedCFix_of`: T2SeedCFix を t2 の T2SeedCRes（decP・vqP・un）と名前つきの残り `T2SeedCBig` から証明。T2SeedPRes の C の欄は CRes ∧ CBig に替えた。
+- `T2SeedCBig`: M.take x で r の q より前の数えない子 d（上げの的で topped）は v(d) > s′。実測（crs3.py）: 7 集合で例外 0（C′ 35・t0extA 25・d3s 13・deep2 73・deep3 72・ext1 68・t2ext 141 件）。数える子は decP と o の減少から出る。
+- 帰納法 `c_main` は sv の sv_main と同じ形（σ = σ_{V,s′}、動く列は ChgX M x）。違い:
+  - 主張は bump 子を除く。bump 子の v は σ で動くことがある（実測 C′ 1382 件、V′ = s′ が大きいため）が、どこにも使われない: o は数えず、P_1 の子を持たない（`par1_e2_ne_one`: Z1C）、上げの的にならない（`upg_target_not_bump`）。bump 子の bump 子はない（`bump_bump_false`: BumpLeaf）ので bump 項の中の o は主張の範囲。
+  - 葉は q（v_T(q) = s′、t2 の vqP、ChgX.snb）。q − 1 は q へ上げるので帰納法の上げの場合で運ばれる。
+  - P_1(c) = r・行 2 = 0 の列は q より前（`qsub_no_p1r`: q の部分木では BumpLeaf で矛盾）で上げる（t_upg_ne を x := q で）。P_1(c) = r・行 2 ≠ 0 の bump でない列は r の子（`p1r_child`）で、q か q より前。q より前で bump 項が動かないなら v > s′ が要る（数える子は decP、数えない子は CBig）。
+  - P_1(c) が r より上は t_above0B・t_aboveB（最後の列までの版）。
+- 実測（crs2.py）: C の見える bump でない列すべてで不変条件が 7 集合で例外 0。
+- closure の名前つきの残りは T2SeedCBig だけになった（QNFC・SVFix は証明済み）。
