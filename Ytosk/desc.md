@@ -2299,3 +2299,14 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - g_frames_t0J（V3T0FrmJ）: g_frames_t0 の写しで、最後の写しの根では「j = 0 なら中間の写しの根はどれも数えられない」も渡す。
 - 実測（pall5.py、d3s・deep2・deep3・C′ で例外 0、T0Ext は実行中）: T0TPLoRes（D 76068・614720・615436・1581766）・T0AbsDNRes・T0AbsUWRes（2 種）・T0IVRes（5・46・38・383）・旧 T0VSResG・影の枠 T0RWResCR の 3 欄（D と g）。前任の T0TPLoRes・T0AbsUWRes・T0AbsDNRes の測定は C′・T0Ext の 6 万行列の標本だけだったので測り直した。
 - hExp_t0_topR の残り: hLast・hNG・FrmLF・T0IVRes・T0TrigRes・T0RestV（PhiX0R・T0TPLoRes・T0AbsUWRes・T0AbsDNRes）・T0RWResCR×3。hVSRexp_t0_topR: hLast・T0IVRes・T0TrigRes。
+
+### 1 列伸ばしの集合 ext1 と Inv3V の欄の反例（2026-10-12、groupA）
+
+- 集合 ext1: d3s・deep2・deep3・C′ の長さ 13 以下の行列（6.6 万個）に、bms -s で標準形になる列（行 0 は 1〜最後 + 1、行 1 は親 + 1 以下、行 2 は 0・1）を 1 つ足したもの。108 万個（新規 101 万、接頭辞で閉じる）。場所: 30ae12c5…/scratchpad/groupA/ext1.pkl、破れた行列の一覧は ext1_bad.pkl（/tmp/claude-1000/-home-koteitan-proofs-trio/ 下）。
+- ext1 で偽（行列の数）: VSmallF 319・TPLoW 2・AbsDW 2・TPLo 1・AbsD 1・PhiX 1・Z0Link 11。NoGapP・LevLeafInv・狭い LevFree・ほかの Inv3 の欄は例外 0。
+  - VSmallF: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,0,0) の枠 (0, 4)。列 4 は x を落とすと 3 からの上げで topped、x が子になって数える子になる。v(4) = ψ_0(Ω_{Ω_1})。
+  - AbsD・TPLo・PhiX: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0)。c = 11、p = 10、W = Ω_1、v(10) = ψ_0(Ω_{Ω_1})。
+  - AbsDW・TPLoW: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,0)。
+  - Z0Link: (0,0,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,0)(6,1,0)。
+  - どれも段 0 の隙間 ψ_0(Ω_{Ω_1}) 型の v が出る形。
+- 教訓: 5 集合（展開とその接頭辞から作った集合）は「接頭辞に任意の 1 列を足す」形を欠く。T0Ext は (e0 a + 1, 0, 0) だけを足したもので、これを一般の列に広げたのが ext1。
