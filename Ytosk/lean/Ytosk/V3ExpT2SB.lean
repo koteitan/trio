@@ -49,7 +49,9 @@ theorem t2_sv_below (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) 
     (hseed : Lhd z (σ.o r) (ρ.o r) ∧ isOT (σ.o r) = true)
     (hsdec : (cvals (TRIO.gexp M r L d0 d1 n) σ r).Pairwise (fun a b => b ≤ a)) :
     ∀ i, i < r + L → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
-      (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) := by
+      (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) ∧
+      (¬ SV r (r + L - 1) true i → ¬ (fun _ _ => False : Bool → Nat → Prop) true i →
+        FrameShape M (TRIO.gexp M r L d0 d1 n) ρ σ i) := by
   have hlN : (TRIO.gexp M r L d0 d1 n).length = r + n * L := TRIO.gexp_length hlen
   have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn2
   have hA : Anc0 M r (r + L) := anc0_of_par M 0 r (r + L) hp

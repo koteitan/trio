@@ -36,11 +36,25 @@ def T2BelowXRes : Prop :=
     TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       T2BelowRes M ρ r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r)
 
-/-- **`T2BelowXAll` from `T2BelowXRes`.** -/
-theorem t2BelowXAll_of (hRes : T2BelowXRes) : T2BelowXAll := by
-  intro M ρ rk hM hS I R hz h2
+/-- The columns before `x` whose frames are residual: the seed, and `q` when `q ≠ r`. -/
+def T2SeedCol (M : Mat) (r L i : Nat) : Prop :=
+  T2Seed M r L i ∨ (∃ q, par M 0 (r + L) = some q ∧ q ≠ r ∧ i = q)
+
+/-- **Good3 before `x` and the frame shapes**, for every expansion. -/
+def T2BelowXS (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
+  ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L d0 d1 n) σ →
+    (∀ j, r + L ≤ j → j < (TRIO.gexp M r L d0 d1 n).length → isOT (σ.o j) = true ∧ isOT (σ.v j) = true) →
+    ∀ i, i < r + L → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
+      (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) ∧
+      (¬ T2SeedCol M r L i → FrameShape M (TRIO.gexp M r L d0 d1 n) ρ σ i)
+
+/-- **`T2BelowXS` from `T2BelowXRes`.** -/
+theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r) :
+    T2BelowXS M ρ r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) := by
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
-  intro r L hlen hr
   have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
       TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
   have hrx : r < r + L := par_lt M 2 _ r hr
@@ -155,9 +169,17 @@ theorem t2BelowXAll_of (hRes : T2BelowXRes) : T2BelowXAll := by
           have := (mem_children_iff.mp hd).2; rw [hdx, hq] at this; exact hcr (Option.some.inj this).symm))
           (hbN c hc)]
         exact htM
-      exact t2_sv_below hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (rcl_sv hlen hq hr hux I.z2 I.z1 I.r0p I.uat I.be he2r) hIUt
+      have hbx := t2_sv_below hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (rcl_sv hlen hq hr hux I.z2 I.z1 I.r0p I.uat I.be he2r) hIUt
         Sp1 Sdv Sos Svsh I.cons I.good I.rank hCN hRN I.fc I.fo I.vs I.td I.kd hAbs hVSN hHard hOTout
         ⟨hs1, hs2⟩ hs3
+      intro i hi
+      obtain ⟨h1, h2, h3, h4⟩ := hbx i hi
+      refine ⟨h1, h2, h3, fun hns => ?_⟩
+      apply h4
+      · rintro (⟨_, rfl⟩ | ⟨h, _⟩)
+        · exact hns (Or.inl (Or.inl ⟨hq, rfl⟩))
+        · cases h
+      · exact id
     · obtain ⟨hs1, hs2, hs3⟩ := hSeedP r (Or.inl ⟨hq, rfl⟩)
       have hIU : ∀ c, c < r + L → topped M c = true →
           isUpg (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c =
@@ -174,9 +196,15 @@ theorem t2BelowXAll_of (hRes : T2BelowXRes) : T2BelowXAll := by
         · unfold isUpg at hiu
           obtain ⟨k0, _, hk0⟩ := List.any_eq_true.mp hiu
           have := upg_target_e2 (of_decide_eq_true hk0); omega
-      exact t2_qr_below hlen hL0 hq hd0e hn (hXu_of hux) hxbr hrb he2r hIU I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
+      have hbx := t2_qr_below hlen hL0 hq hd0e hn (hXu_of hux) hxbr hrb he2r hIU I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
         I.be I.r01 I.e00 I.cons I.good I.rank hCN hRN I.fc I.fo I.vs I.td I.kd hdr.ab hxcN hVSN hHard hOTout
         ⟨hs1, hs2⟩ hs3
+      intro i hi
+      obtain ⟨h1, h2, h3, h4⟩ := hbx i hi
+      refine ⟨h1, h2, h3, fun hns => ?_⟩
+      apply h4
+      rintro rfl
+      exact hns (Or.inl (Or.inl ⟨hq, rfl⟩))
   · obtain ⟨pq, hpq⟩ := par0_of_anc (anc0_par hA (by omega) hq) (fun h => hqr h.symm)
     have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
     have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
@@ -214,13 +242,28 @@ theorem t2BelowXAll_of (hRes : T2BelowXRes) : T2BelowXAll := by
     have hqdec' : (cvals (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
         (entry M 1 (r + L) - entry M 1 r) n) σ (r + (q - r))).Pairwise (fun a b => b ≤ a) := by
       rw [show r + (q - r) = q by omega]; exact hqdec
-    exact t2_qn_below hlen hL0 hA hq' (by omega) hd0e hn Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hpq'
+    have hbx := t2_qn_below hlen hL0 hA hq' (by omega) hd0e hn Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hpq'
       Tqb Te2pq Tclq Tclpq hIUt Tp1 TqL Tdv Tos Tvsh I.cons I.good I.rank hCN hRN
       I.fc I.fo I.vs I.td I.kd hAbs hVSN hHard hOTout hvqot' ⟨hs1, hs2⟩ hs3 hqot' hqdec'
+    intro i hi
+    obtain ⟨h1, h2, h3, h4⟩ := hbx i hi
+    refine ⟨h1, h2, h3, fun hns => ?_⟩
+    apply h4
+    · rintro (⟨h, _⟩ | ⟨_, rfl⟩)
+      · cases h
+      · exact hns (Or.inl (Or.inr ⟨q, hq, hqr, hpq⟩))
+    · rintro ⟨_, hi'⟩
+      exact hns (Or.inr ⟨q, hq, hqr, by omega⟩)
 
 end Ytosk
 
 namespace Ytosk
+
+/-- **`T2BelowXAll` from `T2BelowXRes`.** -/
+theorem t2BelowXAll_of (hRes : T2BelowXRes) : T2BelowXAll := by
+  intro M ρ rk hM hS I R hz h2 r L hlen hr n hn σ hCN hOTx i hi
+  obtain ⟨h1, h2', h3, _⟩ := t2BelowXS_of hRes hM hS I R hz h2 hlen hr n hn σ hCN hOTx i hi
+  exact ⟨h1, h2', h3⟩
 
 /-- **`hExp` for `t = 2`, current residuals**: the seeds and the two `N`-side bounds before `x`
 (`T2BelowXRes`) and the remaining value fields `T2Rest`; the boundary facts of the copies are proved

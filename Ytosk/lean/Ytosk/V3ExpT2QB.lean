@@ -40,7 +40,8 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (hseed : Lhd z (σ.o r) (ρ.o r) ∧ isOT (σ.o r) = true)
     (hsdec : (cvals (TRIO.gexp M r L d0 d1 n) σ r).Pairwise (fun a b => b ≤ a)) :
     ∀ i, i < r + L → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
-      (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) := by
+      (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) ∧
+      (i ≠ r → FrameShape M (TRIO.gexp M r L d0 d1 n) ρ σ i) := by
   set N := TRIO.gexp M r L d0 d1 n with hN
   set S : Bool → Nat → Prop := fun b i => b = true ∧ i = r with hS
   have hXbD : ∀ p, par M 0 (r + L) = some p → col M (r + L) ≠ bump M p := by
@@ -206,25 +207,30 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
       rw [hi']
       exact hseed)
     hDvNil hCLnil hOc hVc hupgK hAbs
-  apply good_below_of (W := fun _ _ => False) hC hG hCN (by omega) (by rw [hlN]; omega) hoff
+  have hgb := good_below_of (W := fun _ _ => False) hC hG hCN (by omega) (by rw [hlN]; omega) hoff
     (fun b i hd hi _ => hdl b i hd hi) (fun _ h => h) (fun _ _ _ _ h => h.elim) (fun _ _ h => h.elim)
-  · intro i hi hs
-    rcases hs with ⟨_, rfl⟩ | h
-    · exact hsdec
-    · exact h.elim
-  · intro i hi hns _ hv
-    exact hCLnil i hi (hDvNil i hi hv)
-  · intro i hi hns _ hD hv
-    exact hOc i hi hns hD hv
-  · intro i hi hns _ hnd
-    refine ⟨hcl i hi, fun c hc => ?_⟩
-    have hcch := cl_mem_children hc
-    have hcl' := (mem_children hcch).2
-    by_contra h'
-    have hcx : c = r + L := by omega
-    have hpc := (mem_children_iff.mp hcch).2
-    rw [hcx, hp] at hpc; cases hpc
-    exact hns ⟨rfl, rfl⟩
+    (by
+      intro i hi hs
+      rcases hs with ⟨_, rfl⟩ | h
+      · exact hsdec
+      · exact h.elim)
+    (fun i hi _ _ hv => hCLnil i hi (hDvNil i hi hv))
+    (fun i hi _ _ hv => hDvNil i hi hv)
+    (fun c hc _ hv => hCLnil c hc (hDvNil c hc hv))
+    (fun i hi hns _ hD hv => hOc i hi hns hD hv)
+    (by
+      intro i hi hns _ hnd
+      refine ⟨hcl i hi, fun c hc => ?_⟩
+      have hcch := cl_mem_children hc
+      have hcl' := (mem_children hcch).2
+      by_contra h'
+      have hcx : c = r + L := by omega
+      have hpc := (mem_children_iff.mp hcch).2
+      rw [hcx, hp] at hpc; cases hpc
+      exact hns ⟨rfl, rfl⟩)
+  intro i hi
+  obtain ⟨h1, h2, h3, h4⟩ := hgb i hi
+  exact ⟨h1, h2, h3, fun hir => h4 (fun h => hir h.2) (fun h => h)⟩
 
 end
 

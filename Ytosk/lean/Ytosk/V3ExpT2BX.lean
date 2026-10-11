@@ -29,6 +29,14 @@ theorem cvals_eq_mapC {M : Mat} {ρ : Valn} (hC : Cons M ρ) (i : Nat) :
   obtain ⟨s, y, h⟩ := o_psi_form hC (mem_children hc).2
   rw [h]; simp
 
+/-- **The shape of a frame of `N` against `M`**: the same, or the last counted child lowered by `◁`
+(standard, with argument `0` if its `v` changed), or no counted child in either. -/
+def FrameShape (M N : Mat) (ρ σ : Valn) (i : Nat) : Prop :=
+  (σ.v i = ρ.v i ∧ CL N i = CL M i ∧ ∀ d ∈ CL M i, σ.o d = ρ.o d) ∨
+  (σ.v i = ρ.v i ∧ ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ (∀ d ∈ Lc, σ.o d = ρ.o d) ∧
+    Lhd z (σ.o c) (ρ.o c) ∧ isOT (σ.o c) = true ∧ (σ.v c ≠ ρ.v c → σ.o c = psi (σ.v c) z z)) ∨
+  (CL N i = [] ∧ CL M i = [])
+
 /-- **Good3 before `bnd`** from the agreement off `D`, the `◁` and standard form on `D`, and the seeds. -/
 theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ : Valn}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hCN : Cons N σ) (hbM : bnd ≤ M.length) (hbN : bnd ≤ N.length)
@@ -40,16 +48,19 @@ theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
     (hWot : ∀ i, i < bnd → W true i → isOT (σ.o i) = true)
     (hSdec : ∀ i, i < bnd → (S true i ∨ W true i) → (cvals N σ i).Pairwise (fun a b => b ≤ a))
     (hDvCL : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S false i → CL N i = [])
+    (hDvCLM : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S false i → CL M i = [])
+    (hDvN : ∀ c, c < bnd → ¬ W true c → DepS M S false c → CL N c = [])
     (hOc : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S true i → ¬ DepS M S false i →
       ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ DepS M S true c ∧ c < bnd ∧
         ∀ d ∈ Lc, ¬ DepS M S true d ∧ d < bnd)
     (hCLeq : ∀ i, i < bnd → ¬ S true i → ¬ W true i → ¬ DepS M S true i →
       CL N i = CL M i ∧ ∀ c ∈ CL M i, c < bnd) :
     ∀ i, i < bnd → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
-      (cvals N σ i).Pairwise (fun a b => b ≤ a) := by
+      (cvals N σ i).Pairwise (fun a b => b ≤ a) ∧
+      (¬ S true i → ¬ W true i → FrameShape M N ρ σ i) := by
   intro i hi
   have hiM : i < M.length := by omega
-  refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun hns hnw => ?_⟩
   · by_cases hd : DepS M S true i
     · by_cases hw : W true i
       · exact hWot i hi hw
@@ -88,6 +99,28 @@ theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
         have hcnt : Counted M i c := by unfold CL at hc; simpa using (List.mem_filter.mp hc).2
         exact DepS.ochild hcch hcnt.1 hcnt.2 hdc)))]
       exact hpM
+
+  · by_cases hd : DepS M S true i
+    · by_cases hv : DepS M S false i
+      · exact Or.inr (Or.inr ⟨hDvCL i hi hns hnw hv, hDvCLM i hi hns hnw hv⟩)
+      · obtain ⟨Lc, c, hclM, hclN, hdc, hcb, hLc⟩ := hOc i hi hns hnw hd hv
+        have hWc : ¬ W true c := by
+          intro hw
+          have hcCL : c ∈ CL M i := by rw [hclM]; simp
+          have hcnt : Counted M i c := by unfold CL at hcCL; simpa using (List.mem_filter.mp hcCL).2
+          exact hns (hWo i c (cl_mem_children hcCL) hcnt hw)
+        obtain ⟨hl, hot⟩ := hD true c hdc hcb hWc
+        refine Or.inr (Or.inl ⟨(hoff i hi).2 hv, Lc, c, hclM, hclN,
+          fun d hd' => (hoff d (hLc d hd').2).1 (hLc d hd').1, hl, hot, fun hne => ?_⟩)
+        have hdv : DepS M S false c := by by_contra h'; exact hne ((hoff c hcb).2 h')
+        exact o_of_no_counted hCN (by omega) (hD false c hdv hcb (hWv c)).2
+          (no_cnt_of_cl_nil (hDvN c hcb hWc hdv))
+    · have hv : ¬ DepS M S false i := fun h => hd (DepS.ov h)
+      obtain ⟨hcl, hcb⟩ := hCLeq i hi hns hnw hd
+      refine Or.inl ⟨(hoff i hi).2 hv, hcl, fun c hc => (hoff c (hcb c hc)).1 (fun hdc => hd ?_)⟩
+      have hcch := cl_mem_children hc
+      have hcnt : Counted M i c := by unfold CL at hc; simpa using (List.mem_filter.mp hc).2
+      exact DepS.ochild hcch hcnt.1 hcnt.2 hdc
 
 /-- **`N`-side hypothesis of `deps_lhd_ot`**: the subscript bound of a changed last child (`VSmallNew` form). -/
 def T2VSN (N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=

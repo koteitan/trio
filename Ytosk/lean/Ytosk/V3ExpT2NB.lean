@@ -58,7 +58,9 @@ theorem t2_qn_below (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 M) 
     (hqot : isOT (σ.o (r + qp)) = true)
     (hqdec : (cvals (TRIO.gexp M r L d0 d1 n) σ (r + qp)).Pairwise (fun a b => b ≤ a)) :
     ∀ i, i < r + L → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
-      (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) := by
+      (cvals (TRIO.gexp M r L d0 d1 n) σ i).Pairwise (fun a b => b ≤ a) ∧
+      (¬ SQ (r + qp) pq true i → ¬ WQ (r + qp) true i →
+        FrameShape M (TRIO.gexp M r L d0 d1 n) ρ σ i) := by
   have hlN : (TRIO.gexp M r L d0 d1 n).length = r + n * L := TRIO.gexp_length hlen
   have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn2
   have hqx : r + qp < r + L := by omega

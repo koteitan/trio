@@ -67,7 +67,8 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
     (hSdec : (∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i)) →
       ∀ i, i < bnd → (S true i ∨ W true i) → (cvals N σ i).Pairwise (fun a b => b ≤ a)) :
     ∀ i, i < bnd → isOT (σ.o i) = true ∧ isOT (σ.v i) = true ∧
-      (cvals N σ i).Pairwise (fun a b => b ≤ a) := by
+      (cvals N σ i).Pairwise (fun a b => b ≤ a) ∧
+      (¬ S true i → ¬ W true i → FrameShape M N ρ σ i) := by
   have hch : ∀ i, i < bnd → i ≠ p → children N i = children M i := fun i hi _ => hchA i hi
   have hcol : ∀ i, i < bnd → col N i = col M i := fun i hi => by
     rw [col_eq_entries, col_eq_entries, he 0 i hi, he 1 i hi, he 2 i hi]
@@ -168,6 +169,12 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
   apply good_below_of hC hG hCN (by omega) hbN hoff hdl hWv hWo (hWot hoff) (hSdec hoff)
   · intro i hi hns hnw hv
     exact hCLnil i hi hnw (hDvNil i hi hnw hns hv)
+  · intro i hi hns hnw hv
+    exact hDvNil i hi hnw hns hv
+  · intro c hc hw hd
+    by_cases hs : S true c
+    · exact hDvNilS c hc hw hs hd
+    · exact hCLnil c hc hw (hDvNil c hc hw hs hd)
   · intro i hi hns hnw hD hv
     obtain ⟨Lp, c, R, hch', hcnt', hdc, hR, hL⟩ := hOS i hi hns hnw hD hv
     have hall : ∀ d ∈ children M i, d < bnd := by
