@@ -12,6 +12,7 @@ import Ytosk.V3DepOTW
 import Ytosk.V3RelRU
 import Ytosk.V3T0OT
 import Ytosk.V3T0DepU
+import Ytosk.V3T0TrigG
 import Ytosk.V3VSF
 
 namespace Ytosk
@@ -41,13 +42,17 @@ def VSmallRS (M : Mat) (S : Bool → Nat → Prop) (bnd : Nat) (ρ : Valn) : Pro
     ∀ u, (u = ρ.v k ∨ PathLvS M S bnd ρ k u) → ¬ lt (ρ.v k) u = true → ∀ g ∈ comps u s,
       g ≤ psi s z z ∨ g ≤ spArg (ρ.v k) z (sumN (Lc.map ρ.o)) ∨ ∃ d ∈ comps u (ρ.v k), g ≤ d
 
-/-- **`N`-side hypothesis: the rewrites agree** — at a frame whose `v` and earlier children are unchanged, if the
-old last child rewrites, so does the new one (the `t = 0` analogue is `trig_agreeG`). -/
-def T2TrigN (N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
-  ∀ i (Lc : List Nat) c, i < bnd → c < bnd → CL N i = Lc ++ [c] → σ.v i = ρ.v i → (∀ d ∈ Lc, σ.o d = ρ.o d) →
-    ∀ s y s' y', ρ.o c = psi s y z → σ.o c = psi s' y' z →
-    (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-    (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s' y' z) = true)
+/-- **`N`-side hypothesis: the cut in the last summand** (`t = 0`: `hCutN`): at a `D` frame whose old child
+rewrites with a zero low part, a state `P + κ` with `κ` a cut of the old last summand `ψ_a(x)` is below the new
+tail `T′`. With `PH3cG` of `M` and the right-end change it gives the agreement of the rewrites (`trig_agreeG`). -/
+def T2CutN (M : Mat) (S : Bool → Nat → Prop) (bnd : Nat) (ρ σ : Valn) : Prop :=
+  ∀ i c (Lc : List Nat), i < bnd → c < bnd → CL M i = Lc ++ [c] → DepS M S true c →
+    ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z →
+    (split y (psi (succ s) z z)).2 = z →
+    spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ≠ z →
+    Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
+    ∀ P a x T', y = app P (psi a x z) → y' = app P T' →
+    ∀ κ ∈ cutsNSG s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ → κ < T'
 
 theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ : Valn} {rk : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hCN : Cons N σ) (hRM : Rk M rk)
@@ -55,7 +60,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
     (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ)
     (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hSv : ∀ c, S true c → σ.v c = ρ.v c)
-    (hVR : VSmallRS M S bnd ρ) (hTA : T2TrigN N bnd ρ σ)
+    (hVR : VSmallRS M S bnd ρ) (hPH : PH3cG M ρ) (hCut : T2CutN M S bnd ρ σ)
     (hoff : ∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i))
     (hOTout : ∀ b j, bnd ≤ j → j < N.length → isOT (valB σ b j) = true)
     (hWv : ∀ i, ¬ W false i)
@@ -69,6 +74,8 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
       Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true)
     (hSeedR : ∀ i, S true i → i < bnd → DepS M S true i →
       ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i)
+    (hSeedRE : ∀ i, S true i → i < bnd → DepS M S true i → σ.v i = ρ.v i →
+      ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X')
     (hDvNil : ∀ c, c < bnd → ¬ W true c → ¬ S true c → DepS M S false c → CL M c = [])
     (hDvNilN : ∀ c, c < bnd → ¬ W true c → DepS M S false c → CL N c = [])
     (hCLnil : ∀ c, c < bnd → ¬ W true c → CL M c = [] → CL N c = [])
@@ -89,7 +96,8 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
       ∀ k' ∈ children N j, k' < bnd → j ∈ children M k ∧ col M j = bump M k ∧ k' ∈ children M j)
     (hAbs : AbsWN M N bnd ρ σ) :
     ∀ b i, DepS M S b i → i < bnd → ¬ W b i →
-      (Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true) ∧ (b = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i) := by
+      (Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true) ∧ (b = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i) ∧
+      (b = true → σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X') := by
   -- standard values outside `D` (below `bnd`) and from `bnd` on
   have hOTo : ∀ j, j < N.length → (j < bnd → ¬ DepS M S true j) → isOT (σ.o j) = true := by
     intro j hj hnd
@@ -102,7 +110,8 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
     · rw [(hoff j h).2 (hnd h)]; exact hG.ot_v j (by omega)
     · exact hOTout false j h hj
   have key : ∀ K, ∀ b i, rk b i ≤ K → DepS M S b i → i < bnd → ¬ W b i →
-      (Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true) ∧ (b = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i) := by
+      (Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true) ∧ (b = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i) ∧
+      (b = true → σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X') := by
     intro K
     induction K using Nat.strongRecOn with
     | _ K ih =>
@@ -126,11 +135,10 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
         · exact hOTout b' j h hj
       by_cases hs : S b i
       · refine ⟨hSeed b i hs hi hD (fun b' i' hlt hD' hi' hW' => (ih _ (by omega) b' i' (le_refl _) hD' hi' hW').1),
-          fun hb => ?_⟩
-        subst hb; exact hSeedR i hs hi hD
+          fun hb => by subst hb; exact hSeedR i hs hi hD, (fun hb => by subst hb; exact hSeedRE i hs hi hD)⟩
       cases b with
       | true =>
-        show (Lhd z (σ.o i) (ρ.o i) ∧ isOT (σ.o i) = true) ∧ (true = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i)
+        show (Lhd z (σ.o i) (ρ.o i) ∧ isOT (σ.o i) = true) ∧ (true = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i) ∧ (true = true → σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X')
         by_cases hv : DepS M S false i
         · -- through `v`
           obtain ⟨⟨hIH, hIHot⟩, -⟩ := ih _ (by omega) false i (le_refl _) hv hi (hWv i)
@@ -139,8 +147,14 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
           have hclM := hDvNil i hi hWi hs hv
           have ho : σ.o i = psi (σ.v i) z z :=
             o_of_no_counted hCN hiN hIHot (no_cnt_of_cl_nil (hDvNilN i hi hWi hv))
-          refine ⟨?_, fun _ _ _ => rclaim_zeroU ho⟩
-          rw [ho, o_of_no_counted hC hiM (hG.ot_v i hiM) (no_cnt_of_cl_nil hclM)]
+          have hoM0 := o_of_no_counted hC hiM (hG.ot_v i hiM) (no_cnt_of_cl_nil hclM)
+          refine ⟨?_, fun _ _ _ => rclaim_zeroU ho, fun _ hvi X X' hX hX' hne => ?_⟩
+          rotate_left
+          · exfalso
+            rw [hoM0] at hX; rw [ho, hvi] at hX'
+            simp only [psi.injEq] at hX hX'
+            exact hne (by rw [← hX.2.1, ← hX'.2.1])
+          rw [ho, hoM0]
           refine ⟨lhd_of_lhdE_lt (lhdE_oq_v (Or.inr hIH)) (psi_lt_psi_z_iff.mpr (Or.inl hIH.1)), ?_⟩
           rw [isOT_psi_iff]
           exact ⟨hIHot, rfl, rfl, z_le _, fun g hg => by simp [comps] at hg⟩
@@ -152,7 +166,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
             unfold CL at hcCL; simpa using (List.mem_filter.mp hcCL).2
           have hrkc : rk true c < rk true i := hRc c hcch hcnt.1 hcnt.2
           have hWc : ¬ W true c := fun hw => hs (hWo i c hcch hcnt hw)
-          obtain ⟨⟨hIH, hIHot⟩, hIHR'⟩ := ih _ (by omega) true c (le_refl _) hdc hcb hWc
+          obtain ⟨⟨hIH, hIHot⟩, hIHR', hIHRE'⟩ := ih _ (by omega) true c (le_refl _) hdc hcb hWc
           have hIHR := hIHR' rfl
           change Lhd z (σ.o c) (ρ.o c) at hIH
           change isOT (σ.o c) = true at hIHot
@@ -265,6 +279,30 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
                 rw [hclM, List.map_append, List.map_singleton]; exact hpM) hsy]
             exact hG.ot_o i hiM
           have hBot := hFO i hiM Lc c [] (by rw [hclM])
+          -- a changed `v(c)`: off the seeds `c` has no counted child, so `y = 0` (and `y′ = 0`)
+          have hvchg : σ.v c ≠ ρ.v c → y = z := by
+            intro hne'
+            have hsc : ¬ S true c := fun hsc => hne' (hSv c hsc)
+            have hdv : DepS M S false c := by by_contra hn'; exact hne' ((hoff c hcb).2 hn')
+            have hclc := hDvNil c hcb hWc hsc hdv
+            have hoc := o_of_no_counted hC hcM (hG.ot_v c hcM) (no_cnt_of_cl_nil hclc)
+            rw [hsy] at hoc; simp only [psi.injEq] at hoc
+            exact hoc.2.1
+          -- the right-end change at `c` and the agreement of the rewrites
+          have hREc : σ.v c = ρ.v c → y' ≠ y → REr y y' := by
+            intro hvc hne
+            have hs' : s' = s := by rw [hs'v, hvc, ← hsvc]
+            exact hIHRE' rfl hvc y y' (by rw [hsy, hsvc]) (by rw [hs'y', hs', hsvc]) hne
+          have hagree : σ.v c = ρ.v c → (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
+              lt (psi (ρ.v i) z z) (psi s y z) = true) →
+              lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s y' z) = true := by
+            intro hvc htr
+            have hs' : s' = s := by rw [hs'v, hvc, ← hsvc]
+            by_cases hyy : y' = y
+            · rw [hyy]; exact htr
+            exact trig_agreeG (hREc hvc hyy) (fun hB => hPH i hiM Lc c [] (by rw [hclM]) s y hsy hB htr)
+              (fun hlo hB P a' x T' e1 e2 κ hκ hBk => hCut i c Lc hi hcb hclM hdc s y y' hsy
+                (by rw [hs'y', hs']) hlo hB htr P a' x T' e1 e2 κ hκ hBk) htr
           have hSi : isOT (psi (ρ.v i) (step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s' y' z) z) = true := by
             apply node_ot_hard (by rw [← hsy]; exact hG.ot_o c hcM) (by rw [← hs'y']; exact hIHot)
               (Or.inr (by rw [← hs'y', ← hsy]; exact hIH)) hBc (fun hy' => hss s y s' y' hsy hs'y' hy')
@@ -292,7 +330,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
             · exact Or.inl h
             · exact Or.inr (Or.inl (lt_of_le_of_lt h (lt_of_lt_of_le ht'.1 (le_H hc'1))))
             · exact Or.inr (Or.inr h)
-          refine ⟨⟨hLi, by rw [hformN, hLm, hv']; exact hSi⟩, fun _ => ?_⟩
+          refine ⟨⟨hLi, by rw [hformN, hLm, hv']; exact hSi⟩, fun _ => ?_, fun _ => ?_⟩
           -- the claim at `i`
           intro U hU p yy yy' q hyy hyy' hqp hhyp
           have hoM : ρ.o i = psi (ρ.v i) (step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z) z := by
@@ -317,22 +355,54 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
               exact hIHR U (fun u hu => PathLvS.step hi hcb hclM hD hdc hsy htr (hU u hu)) s' y y' q' hsy hs'y' hq' hyp')
             (fun htr hhz u hu => hVR i c Lc s y hi hcb hclM hD hdc hsy htr hhz u (Or.inr (hU u hu)))
             (fun ht hne _ => by
-              -- a changed `v(c)`: off the seeds `c` has no counted child, so `y = 0` and the old child does not rewrite
+              -- a changed `v(c)`: `y = 0`, the old child does not rewrite
               exfalso
               have hvs : s = ρ.v c := hvM s y hsy
               have hne' : σ.v c ≠ ρ.v c := by rw [← hs'v, ← hvs]; exact hne
-              by_cases hsc : S true c
-              · exact hne' (hSv c hsc)
-              · have hdv : DepS M S false c := by by_contra hn'; exact hne' ((hoff c hcb).2 hn')
-                have hclc := hDvNil c hcb hWc hsc hdv
-                have hoc := o_of_no_counted hC hcM (hG.ot_v c hcM) (no_cnt_of_cl_nil hclc)
-                rw [hsy] at hoc; simp only [psi.injEq] at hoc
-                have := ht.1; rw [hoc.2.1] at this; exact T.not_lt_z _ this)
-            (fun ht hnt _ => absurd (hTA i Lc c hi hcb hclN hv' hsame s y s' y' hsy hs'y' ht) hnt)
+              have := ht.1; rw [hvchg hne'] at this; exact T.not_lt_z _ this)
+            (fun ht hnt _ => by
+              exfalso
+              by_cases hvc : σ.v c = ρ.v c
+              · have es : s' = s := by rw [hs'v, hvc, ← hsvc]
+                rw [es] at hnt; exact hnt (hagree hvc ht)
+              · have := ht.1; rw [hvchg hvc] at this; exact T.not_lt_z _ this)
             hqp hhyp
+          -- the right-end change at `i`
+          intro _ X X' hX hX' hne
+          have hoM : ρ.o i = psi (ρ.v i) (step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z) z := by
+            rw [o_last_form hC hiM (hG.ot_v i hiM) hclM (fun d hd => single_o hC hG
+              (mem_children (cl_mem_children hd)).2) (by
+                rw [hclM, List.map_append, List.map_singleton]; exact hpM) hsy]
+          have hoN : σ.o i = psi (ρ.v i) (step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s' y' z) z := by
+            rw [hformN, hLm, hv']
+          rw [hoM] at hX; rw [hoN] at hX'
+          simp only [psi.injEq] at hX hX'
+          rw [← hX.2.1, ← hX'.2.1] at hne ⊢
+          have hc0 : isOT (psi s y z) = true := by rw [← hsy]; exact hG.ot_o c hcM
+          have hc'0 : isOT (psi s' y' z) = true := by rw [← hs'y']; exact hIHot
+          have hlc : Lhd z (psi s' y' z) (psi s y z) := by rw [← hs'y', ← hsy]; exact hIH
+          by_cases hvc : σ.v c = ρ.v c
+          · have es : s' = s := by rw [hs'v, hvc, ← hsvc]
+            rw [es] at hne hc'0 hlc ⊢
+            have hyy' : y' ≠ y := fun h => hne (by rw [h])
+            have hlt : y' < y := by
+              rcases psi_lt_psi_z_iff.mp hlc.1 with h | ⟨_, h⟩
+              · exact absurd h (lt_irrefl' _)
+              · exact h
+            exact re_step hc0 hc'0 hBc hlt (hREc hvc hyy') (hagree hvc)
+          · have hy0 := hvchg hvc
+            have hy'0 : y' = z := by
+              have h := hchv hvc; rw [hs'y'] at h; simp only [psi.injEq] at h; exact h.2.1
+            have hdv : DepS M S false c := by by_contra hn'; exact hvc ((hoff c hcb).2 hn')
+            have hlv : Lhd z (σ.v c) (ρ.v c) :=
+              (ih _ (by have := hRM c hcM; omega) false c (le_refl _) hdv hcb (hWv c)).1.1
+            rw [hy0] at hBc ⊢; rw [hy'0]
+            rw [hs'v, hsvc]
+            rw [hsvc] at hBc
+            exact re_leaf hlv.1 hBc
       | false =>
-        show (Lhd z (σ.v i) (ρ.v i) ∧ isOT (σ.v i) = true) ∧ (false = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i)
-        refine ⟨?_, fun h => by cases h⟩
+        show (Lhd z (σ.v i) (ρ.v i) ∧ isOT (σ.v i) = true) ∧ (false = true → ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i) ∧ (false = true → σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X')
+        refine ⟨?_, fun h => absurd h (by decide), fun h => absurd h (by decide)⟩
         obtain ⟨he1, he2, hpar, hpnd, hupg, hupgb, hbsh⟩ := hVc i hi hs hD
         have hVot : isOT (vOpt ρ (par M 1 i)) = true := by
           cases hpp : par M 1 i with
@@ -493,11 +563,28 @@ theorem VSmallRA.toS {M : Mat} {ρ : Valn} (h : VSmallRA M ρ) (S : Bool → Nat
     VSmallRS M S bnd ρ :=
   fun k c Lc s y _ _ hcl _ _ hsy ht hhz u hu => h k c Lc s y hcl hsy ht hhz u (hu.imp id PathLvS.toA)
 
-/-- **The replacement of `T2Hard` and `T2VSN`** (one seed `p`, residual part): `VSmallRA` of `M`, the
-hypothesis `T2TrigN` (the rewrites agree), and `RClaimU` at the seed. (`T2VSN` and `VSmallNewR` are not needed:
-off the seeds a changed `v(c)` has no counted child, and `v` of the seed does not change.) -/
+/-- `T2CutN` at all frames of `M` (no `D` condition). -/
+def T2CutA (M N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
+  ∀ i c (Lc : List Nat), i < bnd → c < bnd → CL M i = Lc ++ [c] →
+    ∀ s y y', ρ.o c = psi s y z → σ.o c = psi s y' z →
+    (split y (psi (succ s) z z)).2 = z →
+    spArg (ρ.v i) z (sumN (Lc.map ρ.o)) ≠ z →
+    Trig (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y →
+    ∀ P a x T', y = app P (psi a x z) → y' = app P T' →
+    ∀ κ ∈ cutsNSG s (psi a x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ → κ < T'
+
+theorem T2CutA.toN {M N : Mat} {bnd : Nat} {ρ σ : Valn} (h : T2CutA M N bnd ρ σ) (S : Bool → Nat → Prop) :
+    T2CutN M S bnd ρ σ :=
+  fun i c Lc hi hc hcl _ => h i c Lc hi hc hcl
+
+/-- **The replacement of `T2Hard` and `T2VSN`** (one seed `p`, residual part): `VSmallRA` and `PH3cG` of `M`,
+the cut condition `T2CutA` (with `PH3cG` and the right-end change it gives the agreement of the rewrites),
+and `RClaimU` and the right-end change at the seed. (`T2VSN` and `VSmallNewR` are not needed: off the seeds
+a changed `v(c)` has no counted child, and `v` of the seed does not change.) -/
 def T2HardB (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
-  VSmallRA M ρ ∧ T2TrigN N bnd ρ σ ∧ ∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimU U ρ σ p
+  VSmallRA M ρ ∧ PH3cG M ρ ∧ T2CutA M N bnd ρ σ ∧
+    (∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimU U ρ σ p) ∧
+    (∀ X X', ρ.o p = psi (ρ.v p) X z → σ.o p = psi (ρ.v p) X' z → X' ≠ X → REr X X')
 
 /-- `T2HardB` and an unchanged `v` of the seed. -/
 def T2HardA (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
@@ -512,12 +599,20 @@ theorem T2HardA.seed {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N b
       ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i := by
   intro i hs _ _ U hU
   have := hSp i hs; subst this
-  exact h.1.2.2 U (fun u hu => (hU u hu).toA)
+  exact h.1.2.2.2.1 U (fun u hu => (hU u hu).toA)
 
 theorem T2HardA.sv {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop)
     (hSp : ∀ i, S true i → i = p) : ∀ c, S true c → σ.v c = ρ.v c := by
   intro c hs
   have := hSp c hs; subst this
   exact h.2
+
+theorem T2HardA.re {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop)
+    (hSp : ∀ i, S true i → i = p) :
+    ∀ i, S true i → i < bnd → DepS M S true i → σ.v i = ρ.v i →
+      ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X' := by
+  intro i hs _ _ _
+  have := hSp i hs; subst this
+  exact h.1.2.2.2.2
 
 end Ytosk

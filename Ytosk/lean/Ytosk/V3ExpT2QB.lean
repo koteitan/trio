@@ -201,14 +201,14 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     rw [← children_N2 hlen hL hp hd0e (by omega) hn2 hjx]; exact hk'
   have hdlR := deps_lhd_otW_RU (S := S) (W := fun _ _ => False) (bnd := r + L) hC hG hCN hRM (by omega)
     (by rw [hlN]; omega)
-    hF hFO hVS hTD hKD (hHA.sv S (fun i h => h.2)) (hHA.1.1.toS S (r + L)) hHA.1.2.1 hoff hOTout (fun _ h => h)
+    hF hFO hVS hTD hKD (hHA.sv S (fun i h => h.2)) (hHA.1.1.toS S (r + L)) hHA.1.2.1 (hHA.1.2.2.1.toN S) hoff hOTout (fun _ h => h)
     (fun _ _ _ _ h => h.elim) (fun _ _ _ _ _ _ _ _ h => h.elim) (fun _ _ h => h.elim)
     (by
       rintro b i ⟨hb, hi'⟩ _ _ _
       subst hb
       rw [hi']
       exact hseed)
-    (hHA.seed S (fun i h => h.2))
+    (hHA.seed S (fun i h => h.2)) (hHA.re S (fun i h => h.2))
     (fun c hc _ _ hv => hDvNil c hc hv) (fun c hc _ hv => hCLnil c hc (hDvNil c hc hv))
     (fun c hc _ h => hCLnil c hc h) (fun i hi hns _ hD hv => hOc i hi hns hD hv) hVc hupgK hAbs
   have hdl : ∀ b i, DepS M S b i → i < r + L → ¬ False →
