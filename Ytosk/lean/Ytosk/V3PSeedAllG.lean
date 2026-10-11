@@ -8,12 +8,13 @@
 - C: q ≠ r で q は r の最後の数える子でない。i は r か q。
 `t2_seed_frames_of` は枠の性質 Q 一般で振り分ける（t2 の QFO にも使える）。
 `seed_frames_PF` は PH3cG・FC3 の部分を、t2 の残り（QRRes・SVRes・QNRes・CRes）と closure の残り
-（SVFix・QNFC・CFix）から出す。`ph3c_expand_t2S`・`fc3_expand_t2S` は t2 の QFO の種の枠と合わせた形。
+（SVFix・CFix）から出す。QNFC は V3QNFC で証明済み。`ph3c_expand_t2S`・`fc3_expand_t2S` は t2 の QFO の種の枠と合わせた形。
 -/
 import Ytosk.V3PSeedCG
 import Ytosk.V3PSeedSVG
 import Ytosk.V3PSeedQRG
 import Ytosk.V3PT2G
+import Ytosk.V3QNFC
 
 namespace Ytosk.G
 
@@ -96,14 +97,14 @@ theorem t2_seed_frames_of {Q : T → List T → T → Prop} {M : Mat} {ρ : Valn
     · rw [hiq]; exact hqcase q hq hqr _ (Or.inr rfl)
   exact hfr n hn hlow σ hσ hG
 
-/-- **The residuals of the seed frames** (PH3cG・FC3 part): t2 の残りと closure の残り. -/
+/-- **The residuals of the seed frames** (PH3cG・FC3 part): t2 の残りと closure の残り（SVFix・CFix）. -/
 structure T2SeedPRes (M : Mat) (ρ : Valn) : Prop where
   qr : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
     (∀ i, upg M i ≠ some (r + L)) → ∀ Lc, CL M r = Lc ++ [r + L] → T2SeedQRRes M ρ r L Lc
   sv : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
     upg M (r + L - 1) = some (r + L) → T2SeedSVRes M ρ r L ∧ T2SeedSVFix M ρ r L
   qn : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
-    ∀ Lc, CL M r = Lc ++ [q] → T2SeedQNRes M ρ r L q Lc ∧ T2SeedQNFC M ρ r L q Lc
+    ∀ Lc, CL M r = Lc ++ [q] → T2SeedQNRes M ρ r L q Lc
   C : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
     (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCRes M ρ r L q ∧ T2SeedCFix M ρ r L q
 
@@ -144,7 +145,8 @@ theorem seed_frames_PF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     exact seed_frames_sv hM hS I R hz h2 hlen hr hq hux hSV hFix hC1 hRk1 hT' n hn hlow σ hσ hdec Lc' c R' hcl
   · intro r L q hlen hr hq hqr Lc hLc i hi n hn hlow σ hσ hG Lc' c R' hcl
     rw [hx r L hlen] at hC1 hRk1
-    obtain ⟨hQN, hFC⟩ := hRes.qn r L q hlen hr hq hqr Lc hLc
+    have hQN := hRes.qn r L q hlen hr hq hqr Lc hLc
+    have hFC := t2SeedQNFC_holds hM hS I R hlen hr hq hqr hLc
     exact seed_frames_qn hM hS I R hz h2 hlen hr hq hqr hLc hQN hFC hC1 ⟨rk, hRk1⟩ hP hF n hn hlow σ hσ hG
       i hi Lc' c R' hcl
   · intro r L q hlen hr hq hqr hncl i hi n hn hlow σ hσ hG Lc' c R' hcl
