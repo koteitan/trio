@@ -8,13 +8,14 @@
 - C: q ≠ r で q は r の最後の数える子でない。i は r か q。
 `t2_seed_frames_of` は枠の性質 Q 一般で振り分ける（t2 の QFO にも使える）。
 `seed_frames_PF` は PH3cG・FC3 の部分を、t2 の残り（QRRes・SVRes・QNRes・CRes）と closure の残り
-（SVFix・CFix）から出す。QNFC は V3QNFC で証明済み。`ph3c_expand_t2S`・`fc3_expand_t2S` は t2 の QFO の種の枠と合わせた形。
+（CFix）から出す。QNFC は V3QNFC、SVFix は V3SVFix で証明済み。`ph3c_expand_t2S`・`fc3_expand_t2S` は t2 の QFO の種の枠と合わせた形。
 -/
 import Ytosk.V3PSeedCG
 import Ytosk.V3PSeedSVG
 import Ytosk.V3PSeedQRG
 import Ytosk.V3PT2G
 import Ytosk.V3QNFC
+import Ytosk.V3SVFix
 
 namespace Ytosk.G
 
@@ -97,12 +98,12 @@ theorem t2_seed_frames_of {Q : T → List T → T → Prop} {M : Mat} {ρ : Valn
     · rw [hiq]; exact hqcase q hq hqr _ (Or.inr rfl)
   exact hfr n hn hlow σ hσ hG
 
-/-- **The residuals of the seed frames** (PH3cG・FC3 part): t2 の残りと closure の残り（SVFix・CFix）. -/
+/-- **The residuals of the seed frames** (PH3cG・FC3 part): t2 の残りと closure の残り（CFix）. -/
 structure T2SeedPRes (M : Mat) (ρ : Valn) : Prop where
   qr : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
     (∀ i, upg M i ≠ some (r + L)) → ∀ Lc, CL M r = Lc ++ [r + L] → T2SeedQRRes M ρ r L Lc
   sv : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
-    upg M (r + L - 1) = some (r + L) → T2SeedSVRes M ρ r L ∧ T2SeedSVFix M ρ r L
+    upg M (r + L - 1) = some (r + L) → T2SeedSVRes M ρ r L
   qn : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
     ∀ Lc, CL M r = Lc ++ [q] → T2SeedQNRes M ρ r L q Lc
   C : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
@@ -134,7 +135,8 @@ theorem seed_frames_PF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   · intro r L hlen hr hq hux n hn hlow σ hσ hG Lc' c R' hcl
     have hT' := hT τ0 hC1
     rw [hx r L hlen] at hC1 hRk1 hT'
-    obtain ⟨hSV, hFix⟩ := hRes.sv r L hlen hr hq hux
+    have hSV := hRes.sv r L hlen hr hq hux
+    have hFix := t2SeedSVFix_holds hM hS I R hlen hr hq hux
     have hrN : r < (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
         (entry M 1 (r + L) - entry M 1 r) n).length := by
       have hc : c ∈ children _ r := cl_mem_children (by rw [hcl]; simp)

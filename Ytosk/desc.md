@@ -2700,3 +2700,12 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - **TPLo を道の形で運ぶ**（664ac0b2・9f761441、V3TPath）: SeedRes を TPLoPathRes に替えた。比べる道に並ぶ s0 の部分項 u（groupA の Al a0 s0 u、V3AlignT）だけに「u < ζ ∧ u < ψ_μ(Ω_{μ+1}) → u < fsD(ζ, θ)」を課す。tplo_fsD_path・tploAt_new_path・expStep_tploP、組み立て hExp_t1OP（元の形の残り、TPLo だけ道の形）。公理は標準の 3 つ。
   - 実測（tpath.py）: d3s 33155・deep2 271223・deep3 267655・t1ext 57751・ext1x 27504 件（全体）、C′ 98069・ext1 26371・T2Ext 147672・expP 157040 件（各 12 万行列の標本）で例外 0。SeedCond が偽の場面（ext1x 12・T2Ext 4・expP 163）も含む。
   - AbsD でも Al に狭めた種の条件を測った（dpath.py）: d3s・ext1x・T2Ext は例外 0。expP の標本で 1 件だけ偽: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,0)、n = 2、i = 8。段 0 で W = ψ_0(Ω_1)、ζ = ω^ω、u = ω = fsD(ζ, θ)。新しい W′ = fsD(W, ζ) に穴がないので、AbsDRes の吸収の側は前提がなく真。AbsDRes（選言）は全集合で真のまま。
+
+### T2SeedSVFix の証明（2026-10-12、closure、V3CutOps・V3SVFix、緑）
+- 残り T2SeedSVFix を証明した（`Ytosk.G.t2SeedSVFix_holds`）。T2SeedPRes から SVFix の欄を外した。closure の名前つきの残りは T2SeedCFix だけ。
+- V3CutOps（項の補題、σ = σ_{V,V′}）: CR(t)「σ t = t か t ∈ cutsHG V′ (σ t)」が演算で保たれる。σ で動かない項 g との大小は t と σ t で同じ（σ は単調で g は不動点、`le_fix_iff`）ことが要。`add_cut`（動かない B に切り口の加数）・`cut_prefix_fix`（切り口の前の加数は動かない）・`last_cut`・`H_cut`・`step_cut`（sp の 1 段、書き換えの判定も t と σ t で同じ）・`omega_cut`（ω^x の式は H と同じ形）。
+- V3SVFix（M.take x の順位の帰納法 `sv_main`）: 見える列 c で、σ(o c) = o c か c ∈ ChgX M x かつ o c が切り口。V < v c なら f(v c) = v c か ChgX で v c = V + 1（x − 1 だけ: M.take x では上げないので V + 1）か切り口。
+  - 位置は ChgX の補題: 変わる数える子は最後の数える子（chg_last）、行 2 ≠ 0 の列の下の変化は最後の子の下（chg_only_last）、v が変わる列は子を数えず P_1 の子を持たない（chg_struct の TopC）。
+  - P_1(c) が r より上は v(c) ≤ V（t_above0A・t_aboveA: V3Tame の t_above0・t_above を「x は r の子孫」に一般化）。P_1(c) = r・行 2 = 0・c ≠ x − 1 は上げる（t_upg_ne）。
+  - r の枠: 状態 B は動かず、レベル V と V′ = V + 1 で sp は同じ（子の v は V + 1 より上、spArg_level）。最後の子の切り口を step_cut で運び、加数がすべて Ω_{V+2} 以上なので cutsHG から cutsNSG へ（`hg_to_nsg`）。
+- 実測（rs.py・rs2.py）: sv の M.take x の見える列すべてで上の不変条件が 7 集合で例外 0。C（V′ = s′）では bump 子の v で破れるので、CFix には別の形が要る。
