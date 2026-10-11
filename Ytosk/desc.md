@@ -2578,3 +2578,20 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - V3PKindG: G3 の挟み込み mem_cutsHG_squeeze・cutsNSG_squeeze・ph3cKindG_squeeze（標準形の仮定 isOT s・isOT y が増えた）、旧 ⊆ G3（cutsNS_sub_G・ph3cKindG_of・ph3cG_of）、切り口は s より大きい（cutsHG_gt）。
 - V3PShG: σ で保たれる cutsHG_sh・cutsNSG_sh・ph3cKindG_sh。新しい「添字の中」の場合は、位置を含む添字の項の先頭の添字が s 以上（cutsHG_lev）なので f = σ（shf_eq_sh、項の標準形は不要）になり帰納法に戻る。
 - 次: P の保存（1 列落とし・t = 0・t = 1・t = 2・基底・種の枠）を PH3cG で言い直す。sv の Fix も G3 の形なら ext1 で例外 0（51 件の SpotN でない例もすべて G3 の切り口）。
+- コミット b991ffad（全体ビルド緑、他の担当の未追跡 V3T0DepH を除く）。
+- **T2Ext で落とす補題の結論 PV が 16 件偽**（popv.py、T2Ext 121 万個）。族: …(5,1,0)(4,2,0)(5,3,1)、例
+  (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,1)。x − 1 = 9 = (4,2,0) は M で祖先 6 = (3,2,1) へ上げて
+  v(9) = v(5) + Ω_ω = Ω_ω（v(5) = ω が吸収される）、M.take x では上げを失って v′(9) = ω + 1。ω + 1 ◁ Ω_ω は偽（試す元 Ω_1）、
+  9 は M で x を数える子に持つので弱い枝にも入らない。仮定 UpgAbsX（ω ◁ Ω_ω）がここで偽になっている。
+- 2 つの族（ext1 の列 11、T2Ext の x − 1）はどちらも Buchholz の ◁_η で η = v(P_0 i)（親の添字）にすると成り立つ
+  （popveta.py、2 つの行列の変わる列すべて）。7 集合で測定中。成り立てば PO・PV の関係を ◁_{v(P_0 i)} にするのが筋
+  （親の試す元 ψ_a(…) は a の成分を持つので、親の枠ではそのまま受けられる）。
+
+### t = 0 で VSmallR を使わない（2026-10-12、t0-exp、V3HardN・V3T0DepH・V3T0TopH、緑）
+
+- VSmallR（hi ≠ 0 の形）は標準形で偽（t2、M13 の族）。t = 0 の難しい枠（両方書き換え、添字 s が同じ、v(i) < s、hi(y′) < hi(y)）でも T2Ext 50・expP 28 件で偽（例: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,0,0)(5,1,1)(6,1,1)(7,1,0)(3,2,0)(4,3,1)(5,3,1)(6,0,0)、枠 (4, 5)）。「< H s y′」に弱めても同じ。
+- 難しい枠で使うのは node_ot_hard の仮定 hy「comps_{v(i)}(y′) の成分は H s y′ 以下」だけ。これは 7 集合と expP で例外 0（d3s 3216・deep2 27846・deep3 26874・C′ 78110・T0Ext 270118・ext1 299936・T2Ext 287002・expP 259118、VSmallR が破れる枠を含む）。
+- `HardArgN N bnd ρ σ`（V3HardN）: t2 の T2Hard に前提 c < bnd を足した共通の定義（g の枠の最後の写しの根 c ≥ r を除くため）。
+- `t0_dep_otH`（V3T0DepH）: t0_dep_otR から VSmallR と RClaim を外し、難しい枠は HardArgN から。`hExp_t0_topH`（V3T0TopH）: hExp_t0_topB と同じ組み立てで、VSmallR M を前提にとらない。残り: hLast・N の AbsD・AbsU・FrmLF・M の PH3c・標準形 N の PH3c と 3 つの葉の残り・T0CutResG・T0HardRes・T0TPLoRes・T0AbsUWRes・T0AbsDNRes。
+- groupA の訂正: VSmallF・FrameClosed は Lean の形では偽でない（ext1 の失敗は古い探針の定義）。
+- 一般の「深い (ii)」（D の列 c の祖先関係にある v の変わる列 e で v(e) > v(c) ⇒ v′(e) > v(c)）は偽（C′ 2・ext1 9・T2Ext 2 件、例 ext1 の (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(2,1,1)(2,0,0)(3,1,1)(4,1,1)(5,0,0)、c = 4、e = 8、v(c) = ω³、v(e) = ω^ω、v′(e) = ω³）。CutResG に要るのは右端の鎖に限った形。

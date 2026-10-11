@@ -49,7 +49,7 @@ def T0CutResG : Prop :=
 def T0DF (M : Mat) (ρ : Valn) : Prop :=
   ∀ r L, r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-      ∀ i, i < r → (DepX M (r + L) true i → isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ RClaim ρ σ i ∧
+      ∀ i, i < r → (DepX M (r + L) true i → isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ True ∧
         (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z) ∧
         (σ.v i = ρ.v i → ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X')) ∧
         (DepX M (r + L) false i → isOT (σ.v i) = true ∧ Lhd z (σ.v i) (ρ.v i))
@@ -64,11 +64,15 @@ theorem t0DF_of (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res
   rw [show M.length - 1 = r + L by omega] at hDr
   have hab0 := R.abS.2 r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
-  exact t0_otdR hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
+  have h := t0_otdR hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
     hVR (hPH M ρ rk hM hS I R) (hCut M ρ rk r L hM hS I R hlen hL hp he1)
     (t0_shape3 hM hS I R hlen hL hp he1) (hIV M ρ rk r L hM hS I R hlen hL hp he1) n hn σ hCN
+  intro i hi
+  refine ⟨fun hd => ?_, (h i hi).2⟩
+  obtain ⟨h1, h2, _, h4, h5⟩ := (h i hi).1 hd
+  exact ⟨h1, h2, trivial, h4, h5⟩
 
 
 /-- **The same-subscript form** of a `D` column from `◁`: the arguments decrease. -/
