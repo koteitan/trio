@@ -462,3 +462,103 @@ theorem t2SeedBump_holds {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       rw [entry_gexp_pre hlen hm1 2 (by omega)] <;> exact he2
 
 end Ytosk
+
+namespace Ytosk
+
+open T Classical
+
+/-- **`v_N(q)` in terms of `M`** (`q ≠ r`): `v_M(r) + ω^{1 + Σ bump terms of q before x}`. -/
+theorem vq_eq_gexp {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L n q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r) (hn : 2 ≤ n)
+    {σ : Valn} (hCN : Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+      (entry M 1 (r + L) - entry M 1 r) n) σ)
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) :
+    σ.v q = add (ρ.v r) (omega (sumN (one ::
+      ((children M q).filter (fun d => decide (d < r + L))).map (bumpTerm M ρ q)))) := by
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  have hlen2 : 2 ≤ M.length := by have := par_lt M 2 _ r hr; omega
+  have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
+  have hL0 : 0 < L := by have := par_lt M 2 _ r hr; omega
+  have hA : Anc0 M r (r + L) := anc0_of_par M 2 r (r + L) hr
+  have he0lt := anc0_e0_lt hA (by omega)
+  obtain ⟨he2r, h1lt⟩ := par2_facts hX.z2 (by omega) hr
+  set d0 := entry M 0 (r + L) - entry M 0 r with hd0def
+  set d1 := entry M 1 (r + L) - entry M 1 r with hd1def
+  have hd0e : entry M 0 (r + L) = entry M 0 r + d0 := by omega
+  have hd1e : entry M 1 (r + L) = entry M 1 r + d1 := by omega
+  have hm1 : 1 ≤ n := by omega
+  have hqx := par_lt M 0 _ _ hq
+  have hrq : Anc0 M r q := anc0_par hA (by omega) hq
+  have hrq' := hrq.le
+  obtain ⟨pq, hpq⟩ := par0_of_anc hrq (Ne.symm hqr)
+  have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
+  have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
+  obtain ⟨Txb, Tqb, _⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+  rw [show r + (q - r) = q by omega] at Txb Tqb
+  have hqb : ∀ a, par M 0 q = some a → col M q ≠ bump M a := by
+    intro a ha; rw [hpq] at ha; cases ha; exact Tqb
+  have hr1 : par M 1 (r + L) = some r := par1_x_r (by omega) hX.z2 hX.loc.2.1 hr
+  have hexp : expand M n = TRIO.gexp M r L d0 d1 n := by
+    have h := expand_eq_gexp M n hlen2 hzT (by rw [h2, show M.length - 1 = r + L by omega]; exact hr)
+    rw [h2, show M.length - 1 = r + L by omega] at h
+    simp only [show (0 < 2) from by omega, show (1 < 2) from by omega, if_true,
+      Nat.add_sub_cancel_left] at h
+    exact h
+  obtain ⟨rkN, hRN⟩ : ∃ rk, Rk (TRIO.gexp M r L d0 d1 n) rk := by
+    obtain ⟨rk', h'⟩ := rk_expand_t2 hX hJ hz h2 I.rank n hm1
+    rw [hexp] at h'; exact ⟨rk', h'⟩
+  have hUN : UAT (TRIO.gexp M r L d0 d1 n) := by rw [← hexp]; exact (sInvX_expand hX n).toSInv.uat
+  have hkids := vq_kids_N hlen hL0 hA hq hd0e hn hd1e he2r h1lt hqb hr1 hqr Txb I.be hX.toSInv.uat hUN
+    I.cons I.good hCN hRN
+  have hvr := vr_N hlen hL0 hA hq hd0e hn hd1e he2r h1lt hqb hr1 hX.toSInv.uat hUN I.cons hCN hRN
+  have hchN : children (TRIO.gexp M r L d0 d1 n) q = children M q := children_N2g hlen hL0 hA hq hd0e hn hqx
+  have hxq : r + L ∈ children M q := mem_children_iff.mpr ⟨by omega, hq⟩
+  have hsplit := split_last_max _ _ (children_sorted M q) hxq
+    (fun d hd => by have := (mem_children hd).2; omega)
+  set Lq := (children M q).filter (fun d => decide (d < r + L)) with hLqd
+  have hxnb : col (TRIO.gexp M r L d0 d1 n) (r + L) ≠ bump (TRIO.gexp M r L d0 d1 n) q := by
+    intro h
+    have := (bump_eq h).2.2
+    have h2'' : (col (TRIO.gexp M r L d0 d1 n) (r + L)).2.2 = entry (TRIO.gexp M r L d0 d1 n) 2 (r + L) := rfl
+    rw [h2'', (entry_xprime_g (d1 := d1) hlen hL0 hA hq hd0e hn).1, he2r] at this; omega
+  have hLq : Lq.map (bumpTerm (TRIO.gexp M r L d0 d1 n) σ q) = Lq.map (bumpTerm M ρ q) := by
+    apply List.map_congr_left
+    intro j hjL
+    have hjx : j < r + L := by simpa using (List.mem_filter.mp hjL).2
+    have hjM : j ∈ children M q := (List.mem_filter.mp hjL).1
+    have hjN : j ∈ children (TRIO.gexp M r L d0 d1 n) q := by rw [hchN]; exact hjM
+    unfold bumpTerm
+    by_cases hjb : col (TRIO.gexp M r L d0 d1 n) j = bump (TRIO.gexp M r L d0 d1 n) q
+    · obtain ⟨_, hjbM, hchj, hval⟩ := hkids j hjN hjb
+      rw [if_pos hjb, if_pos hjbM, hchj, List.map_congr_left hval]
+    · have hjbM : ¬ col M j = bump M q := by
+        intro h; apply hjb
+        rw [col_gexp_pre hlen hm1 hjx]; unfold bump
+        rw [entry_gexp_pre hlen hm1 0 hqx, entry_gexp_pre hlen hm1 1 hqx]; exact h
+      rw [if_neg hjb, if_neg hjbM]
+  have htx : bumpTerm (TRIO.gexp M r L d0 d1 n) σ q (r + L) = z := by
+    unfold bumpTerm; rw [if_neg hxnb]
+  have he1q : entry M 1 (r + L) = entry M 1 q :=
+    e1_of_col (show col M (r + L) = (entry M 0 q + 1, entry M 1 q, 1) from Txb)
+  have he2q : entry M 2 q = 1 := I.be q (r + L) hxq Txb
+  have hqN : q < (TRIO.gexp M r L d0 d1 n).length := by
+    have := TRIO.gexp_length (M := M) (j0 := r) (Lb := L) (d0 := d0) (d1 := d1) (n := n) hlen
+    have : L ≤ n * L := Nat.le_mul_of_pos_left L (by omega); omega
+  have hv := (hCN q hqN).2
+  unfold vRhs at hv
+  rw [entry_gexp_pre hlen hm1 1 hqx, entry_gexp_pre hlen hm1 2 hqx, if_neg (by omega), if_neg (by omega),
+    par_gexp_pre hlen hm1 1 hqx, par1_q hlen hL0 hA hq hd0e hn hd1e he2r h1lt hqb hr1 hqr Txb, hchN, hsplit,
+    List.map_append, List.map_singleton, hLq, htx] at hv
+  change σ.v q = sf (add (σ.v r) (omega (sumN (one :: (Lq.map (bumpTerm M ρ q) ++ [z]))))) at hv
+  have hOT : ∀ t ∈ one :: Lq.map (bumpTerm M ρ q), isOT t = true := by
+    intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · rfl
+    · obtain ⟨j, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm I.good q j
+  rw [← List.cons_append, sumN_snoc_z hOT, hvr] at hv
+  rw [hv, sf_ot (isOT_add (I.good.ot_v r (by omega)) (isOT_omega (isOT_sumN _ hOT)))]
+
+end Ytosk

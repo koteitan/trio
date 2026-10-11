@@ -776,6 +776,42 @@ theorem vx_N (hxb : q ≠ r → col M (r + L) = bump M q) (hBE : BumpE2 M) (hJ :
     refine ⟨by rw [hv]; exact hot, ?_⟩
     rw [hv, hl, ← hvr]; exact lt_add_principal st u _
 
+
+/-- **The shape of `v` at the copy root**: `v_M(r) + 1`, or (`q ≠ r`, the copy root upgrades to `q`)
+`v_M(r) + last(v_N(q))`. -/
+theorem vx_eq (hxb : q ≠ r → col M (r + L) = bump M q) (hBE : BumpE2 M) (hJ : RowJ M) (hR0 : R0P M)
+    (hUM : UAT M) (hUN : UAT (TRIO.gexp M r L d0 d1 n)) {ρ σ : Valn} {rkN : Bool → Nat → Nat}
+    (hCM : Cons M ρ) (hGM : Good3 M ρ) (hCN : Cons (TRIO.gexp M r L d0 d1 n) σ)
+    (hRN : Rk (TRIO.gexp M r L d0 d1 n) rkN) :
+    σ.v (r + L) = add (ρ.v r) one ∨
+      (q ≠ r ∧ upg (TRIO.gexp M r L d0 d1 n) (r + L) = some q ∧ σ.v (r + L) = add (ρ.v r) (last (σ.v q))) := by
+  set N := TRIO.gexp M r L d0 d1 n with hN
+  have hlN : N.length = r + n * L := TRIO.gexp_length hlen
+  have hnL2 : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn
+  have hxN : r + L < N.length := by omega
+  obtain ⟨hx2', _⟩ := entry_xprime_g (d1 := d1) hlen hL hA hq hd0e hn
+  have he1N : entry N 1 (r + L) ≠ 0 := by
+    rw [entry1_xN hlen hL hA hq hd0e hn hd1e]; omega
+  have he2N : entry N 2 (r + L) = 0 := by rw [hx2', he2r]
+  have hvr := vr_N hlen hL hA hq hd0e hn hd1e he2r h1x hqb hr1 hUM hUN hCM hCN hRN
+  have hVot : isOT (σ.v r) = true := by rw [hvr]; exact hGM.ot_v r (by omega)
+  have hv := (hCN (r + L) hxN).2
+  unfold vRhs at hv
+  rw [if_neg he1N, if_pos he2N, par1_xN hlen hL hA hq hd0e hn hd1e, hr1] at hv
+  cases hu : upg N (r + L) with
+  | none =>
+    rw [hu] at hv
+    change σ.v (r + L) = sf (add (σ.v r) one) at hv
+    rw [sf_ot (isOT_add hVot rfl), hvr] at hv
+    exact Or.inl hv
+  | some k =>
+    obtain ⟨rfl, hqr⟩ := upg_xN hlen hL hA hq hd0e hn hd1e hr1 hxb hqb hJ hR0 hBE hu
+    obtain ⟨hqot, _⟩ := vq_N hlen hL hA hq hd0e hn hd1e he2r h1x hqb hr1 hqr (hxb hqr) hBE hUM hUN
+      hCM hGM hCN hRN
+    rw [hu] at hv
+    change σ.v (r + L) = sf (add (σ.v r) (last (σ.v k))) at hv
+    rw [sf_ot (isOT_add hVot (isOT_last hqot)), hvr] at hv
+    exact Or.inr ⟨hqr, rfl, hv⟩
 end
 
 /-- **`v(r)` of `M[1] = M.take x` is at most that of `M`** (equal unless `r = x − 1` loses its upgrade). -/
