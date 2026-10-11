@@ -365,3 +365,100 @@ theorem bumpFields_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool
   exact bump_fields_of (key n hn σ hσ)
 
 end Ytosk
+
+namespace Ytosk
+
+open T Classical
+
+/-- **The bump fields at the `v`-seed columns hold**: at `q ≠ r` the bump children other than the lost
+`x` keep their children and values (`vq_kids_N`), and `x − 1` (upgrading to `x`) has row 2 equal to `0`. -/
+theorem t2SeedBump_holds {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2) : T2SeedBump M := by
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  intro r L hlen hr n hn σ hCN _ i hsc
+  have hlen2 : 2 ≤ M.length := by have := par_lt M 2 _ r hr; omega
+  have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
+  have hL0 : 0 < L := by have := par_lt M 2 _ r hr; omega
+  have hA : Anc0 M r (r + L) := anc0_of_par M 2 r (r + L) hr
+  have he0lt := anc0_e0_lt hA (by omega)
+  obtain ⟨he2r, h1lt⟩ := par2_facts hX.z2 (by omega) hr
+  set d0 := entry M 0 (r + L) - entry M 0 r with hd0def
+  set d1 := entry M 1 (r + L) - entry M 1 r with hd1def
+  have hd0e : entry M 0 (r + L) = entry M 0 r + d0 := by omega
+  have hd1e : entry M 1 (r + L) = entry M 1 r + d1 := by omega
+  have hm1 : 1 ≤ n := by omega
+  rcases hsc with ⟨q, hq, hqr, rfl⟩ | ⟨hix, hu⟩
+  · -- `q ≠ r`
+    have hqx := par_lt M 0 _ _ hq
+    have hrq : Anc0 M r i := anc0_par hA (by omega) hq
+    have hrq' := hrq.le
+    obtain ⟨pq, hpq⟩ := par0_of_anc hrq (Ne.symm hqr)
+    have hq' : par M 0 (r + L) = some (r + (i - r)) := by rw [show r + (i - r) = i by omega]; exact hq
+    have hpq' : par M 0 (r + (i - r)) = some pq := by rw [show r + (i - r) = i by omega]; exact hpq
+    obtain ⟨Txb, Tqb, _⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+    rw [show r + (i - r) = i by omega] at Txb Tqb
+    have hqb : ∀ a, par M 0 i = some a → col M i ≠ bump M a := by
+      intro a ha; rw [hpq] at ha; cases ha; exact Tqb
+    have hr1 : par M 1 (r + L) = some r := par1_x_r (by omega) hX.z2 hX.loc.2.1 hr
+    have hexp : expand M n = TRIO.gexp M r L d0 d1 n := by
+      have h := expand_eq_gexp M n hlen2 hzT (by rw [h2, show M.length - 1 = r + L by omega]; exact hr)
+      rw [h2, show M.length - 1 = r + L by omega] at h
+      simp only [show (0 < 2) from by omega, show (1 < 2) from by omega, if_true,
+        Nat.add_sub_cancel_left] at h
+      exact h
+    obtain ⟨rkN, hRN⟩ : ∃ rk, Rk (TRIO.gexp M r L d0 d1 n) rk := by
+      obtain ⟨rk', h'⟩ := rk_expand_t2 hX hJ hz h2 I.rank n hm1
+      rw [hexp] at h'; exact ⟨rk', h'⟩
+    have hUN : UAT (TRIO.gexp M r L d0 d1 n) := by rw [← hexp]; exact (sInvX_expand hX n).toSInv.uat
+    have hkids := vq_kids_N hlen hL0 hA hq hd0e hn hd1e he2r h1lt hqb hr1 hqr Txb I.be hX.toSInv.uat hUN
+      I.cons I.good hCN hRN
+    have hchN : children (TRIO.gexp M r L d0 d1 n) i = children M i := children_N2g hlen hL0 hA hq hd0e hn hqx
+    refine ⟨fun h1 h2' j hj hjb => ?_, fun h1 h2' => ?_⟩
+    · obtain ⟨hjx, hjbM, hchj, hval⟩ := hkids j hj hjb
+      rw [entry_gexp_pre hlen hm1 1 hqx] at h1; rw [entry_gexp_pre hlen hm1 2 hqx] at h2'
+      rw [hchj, List.map_congr_left hval]
+      exact I.kd i h1 h2' j (by rw [← hchN]; exact hj) hjbM
+    · rw [entry_gexp_pre hlen hm1 1 hqx] at h1; rw [entry_gexp_pre hlen hm1 2 hqx] at h2'
+      have hdec := I.td i h1 h2'
+      have hxq : r + L ∈ children M i := mem_children_iff.mpr ⟨by omega, hq⟩
+      have hsplit := split_last_max _ _ (children_sorted M i) hxq
+        (fun d hd => by have := (mem_children hd).2; omega)
+      set Lq := (children M i).filter (fun d => decide (d < r + L)) with hLq
+      have hxnb : col (TRIO.gexp M r L d0 d1 n) (r + L) ≠ bump (TRIO.gexp M r L d0 d1 n) i := by
+        intro h
+        have := (bump_eq h).2.2
+        have h2'' : (col (TRIO.gexp M r L d0 d1 n) (r + L)).2.2 = entry (TRIO.gexp M r L d0 d1 n) 2 (r + L) := rfl
+        rw [h2'', (entry_xprime_g (d1 := d1) hlen hL0 hA hq hd0e hn).1, he2r] at this; omega
+      have hLq : Lq.map (bumpTerm (TRIO.gexp M r L d0 d1 n) σ i) = Lq.map (bumpTerm M ρ i) := by
+        apply List.map_congr_left
+        intro j hjL
+        have hjx : j < r + L := by simpa using (List.mem_filter.mp hjL).2
+        have hjM : j ∈ children M i := (List.mem_filter.mp hjL).1
+        have hjN : j ∈ children (TRIO.gexp M r L d0 d1 n) i := by rw [hchN]; exact hjM
+        unfold bumpTerm
+        by_cases hjb : col (TRIO.gexp M r L d0 d1 n) j = bump (TRIO.gexp M r L d0 d1 n) i
+        · obtain ⟨_, hjbM, hchj, hval⟩ := hkids j hjN hjb
+          rw [if_pos hjb, if_pos hjbM, hchj, List.map_congr_left hval]
+        · have hjbM : ¬ col M j = bump M i := by
+            intro h; apply hjb
+            rw [col_gexp_pre hlen hm1 hjx]; unfold bump
+            rw [entry_gexp_pre hlen hm1 0 hqx, entry_gexp_pre hlen hm1 1 hqx]; exact h
+          rw [if_neg hjb, if_neg hjbM]
+      have htx : bumpTerm (TRIO.gexp M r L d0 d1 n) σ i (r + L) = z := by
+        unfold bumpTerm; rw [if_neg hxnb]
+      rw [hsplit, List.map_append, List.map_singleton] at hdec
+      rw [hchN, hsplit, List.map_append, List.map_singleton, hLq, htx]
+      unfold nzs at hdec ⊢
+      rw [List.filter_append] at hdec ⊢
+      simp only [List.filter_cons, List.filter_nil, ne_eq, not_true_eq_false, decide_false,
+        Bool.false_eq_true, if_false, List.append_nil]
+      exact (List.pairwise_append.mp hdec).1
+  · -- `x − 1` upgrading to `x`: row 2 is `0`
+    have he2 : entry M 2 i = 0 := by
+      have := (upg_e12 hu).2; have := hX.z2 i; omega
+    refine ⟨fun _ h2' => absurd ?_ h2', fun _ h2' => absurd ?_ h2'⟩ <;>
+      rw [entry_gexp_pre hlen hm1 2 (by omega)] <;> exact he2
+
+end Ytosk
