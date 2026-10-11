@@ -2637,3 +2637,9 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - 残る構造の欄: T2SeedCRes.un（q ≠ r で x − 1 は上げない）。x − 1 → x は行 0 の比較（e0 q = e0 r になる）で、x − 1 → q は UAT（上げの的は topped でない、q は x がのりしろで topped）で消えるが、q の真の祖先への上げはまだ消せていない（7 集合で例外 0）。T2SeedCRes.vqP（v_{M.take x}(q) = s′）も残り。
 - V3PSeedCG（緑）: C の場合（q ≠ r、q − 1 が q へ上げ、q は r で数えられない）の種の列 r と q の枠の PH3cG・FC3（Ytosk.G.seed_frames_C）。データは t2 の C_frame、値は seed_r_value_C。r の q の枠は sv と同じ組み立て（内側の段 H(s′, σY) = σY、SeedExt を段の帰納法で、seed_kind を V′ := s′ で）。名前つきの残り Ytosk.G.T2SeedCFix（X₁ は σ_{V,s′} で動かないか G3 の切り口、加数 ≥ Ω_{s′+1}）。実測（cfix.py）: 7 集合（ext1・t2ext を含む）の C の場合 6639 件すべて G3 の切り口で例外 0。
 - t2 の変更（T2SeedSVRes・T2SeedQNRes から v_{M.take x}(r) = v_M(r) の欄を外して v_take_of_untopped で証明）に合わせて V3PSeedSV・SVG・QN・QNG の呼び出しを直した。
+
+### t = 2 の種の枠の振り分け（2026-10-12、closure、V3PSeedAllG、緑）
+- `t2_seed_frames_of`: 枠の性質 Q 一般で T2SeedFrames Q M を 4 つの場合（qr・sv・qn・C）に分ける。x へ上げる列は x − 1 だけ（upg_last_eq）。qr では x は r の最後の数える子（cl_qr: e1 x > e1 r なので col x ≠ bump r、上げの的でない）。q ≠ r の i = P_0(q) は r（par0_q_t2）。t2 の QFO にも使える。
+- `T2SeedPRes`: 場合ごとの残りをまとめた構造（t2 の QRRes・SVRes・QNRes・CRes と closure の SVFix・QNFC・CFix）。
+- `seed_frames_PF`: PH3cG・FC3 の種の枠。M.take x の評価は rk_take と cons_of_rk で作る。sv の「r の子の値が降順」は Good3.dec から。
+- `ph3c_expand_t2S`・`fc3_expand_t2S`: t2 の種の枠 T2SeedFrames QFO M と T2SeedPRes から、t = 2 の M[n]（n ≥ 1）の PH3cG・FC3。
