@@ -102,7 +102,7 @@ theorem trio_terminates_main_GP
       AbsD (M.take x) σ ∧ AbsU (M.take x) σ ∧ TP1C (M.take x) σ ∧ TPLo (M.take x) σ ∧
       TP1WC (M.take x) σ ∧ TPLoW (M.take x) σ ∧ AbsUW (M.take x) σ ∧ AbsDW (M.take x) σ ∧
       TrigOmC (M.take x) σ ∧ TPLoN (M.take x) σ ∧ AbsDN (M.take x) σ)
-    (hExp : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
+    (hExp : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
       col M (M.length - 1) ≠ (0, 0, 0) → ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
         ∃ ρN rkN, Inv3V (expand M n) ρN rkN)
     (hVSRexp : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
@@ -155,7 +155,7 @@ theorem trio_terminates_main_GP
       · obtain rfl : n = 1 := by omega
         rw [expand_one] at hNS hNE ⊢
         exact hTake M ρ rk hM hS hE I R P _ (by omega) hNS hNE
-    · obtain ⟨ρN, rkN, V⟩ := hExp M ρ rk hM hS hE I R hz n hn hNS hNE
+    · obtain ⟨ρN, rkN, V⟩ := hExp M ρ rk hM hS hE I R P hz n hn hNS hNE
       have hMN := Std.exp n hM
       have PN := hVSRexp M ρ rk hM hS hE I R P hz n hn hNS hNE ρN rkN V
       exact ⟨ρN, rkN, Inv3.ofV (sInv_std hMN hNS) V,

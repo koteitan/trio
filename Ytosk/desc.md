@@ -2210,3 +2210,18 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - **T0VSOnly（59e6942e、V3T0VS3）は偽**: 「v が変わる数える子 c は i のただ一つの数える子」は d3s 2・deep2 18・deep3 12・C′ 176 件で破れる（c の前に兄弟がある、S > 0）。T0Ext では S > 0 の場合が 0 件だった。
   - 成り立つもの（5 集合で例外 0、T0Ext 169380 件を含む）: c は最後の数える子（R = []）、o_N(c) = Ω_{v′(c)}、B = S（前の兄弟の o の和）、v′(c) ≥ v(i)、成分 g < S + Ω_{v′(c)}。S = 0 なら g < Ω_{v′(c)}、S > 0 なら g < S。
   - したがって hExp_t0_top の仮定 hOnly は偽で、T0VSResD2 は S > 0 の場合（t1-exp の VSFRes2 と同じ壁）が残る。
+
+### t = 0 の D の列を RClaim 方式に（2026-10-12、t0-exp、V3T0DepR・V3T0TopR、緑）
+
+- `t0_dep_otR`（V3T0DepR）: t0_dep_ot の型（ClsNode）の追跡をやめ、drop-fix の deps_lhd_ot_R と同じ道に替えた。
+  - ◁ は FrameClosed からの o_frame_lhdS、標準形は node_ot_hard（両方書き換えで高い部分が違う場合は子の RClaim と M の VSmallR から hard_of_relR）、RClaim(i) は relR_frame。
+  - g の枠は t0_S1A の型 A・B0・C から RClaim を出す（rclaim_of_cls: A は relR_H_samehi、B0 は H が恒等で ◁、C は先頭部分）。
+  - relR_frame の hVNR は空（v が変わる子は数える子を持たず引数 0 なので書き換えない）。hSh は新しい残り T0TrigRes で前件が起きない。
+- **T0IIRes（(ii)）と T0ShapeR3（(i) の B ≠ 0 の型の形）は不要になった**。
+- 新しい最上位（V3T0TopR、公理は標準の 3 つ）:
+  - `hExp_t0_topR`: 仮定は hLast・hNG・FrmLF・T0IVRes・T0VSResG・T0VSNRes・T0TrigRes・T0RestV・T0RWResCR×3。M の VSmallR を受け取る。
+  - `hVSRexp_t0_topR`: 仮定は hLast・T0IVRes・T0VSNRes・T0TrigRes。
+  - T0VSNRes: v が変わる数える子 c の添字の成分（T0VSResD と同じ中身を、N の Good3 を仮定しない文脈で）。T0VSResD はこれから出る（t0VSResD_of_N）ので T0VSResD2 は仮定から消えた。
+  - T0TrigRes: D の枠で古い枠が書き換え、状態 B が hi(y) の先頭部分でない（PH3c の cut の種類）とき、新しい枠も書き換える。実測: 古い枠が書き換える D の枠はどれも新しい枠も書き換える（5 集合、前節の prcl.py）。PH3c ∧ T0RERes ∧ T0CutRes から出る見込み（V3T0Cut の lt_new_of_kind と同じ議論）。
+  - T0RWResCR: 影の枠の残り。T0RWResC の子の関係 y′ ◁ y を y′ < y に替えたもの（RClaim 方式は引数の ◁ を運ばない）。
+- main_GP（V3MainGP、drop-fix）の hExp に `VSmallR M ρ →` を足した（帰納法の中で P として既にある。呼ぶ所は無い）。
