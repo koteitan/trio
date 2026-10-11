@@ -2512,3 +2512,8 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
 - **T2BelowRes の欄を T2Hard に戻した**（48d77c0a）: T2HardR は VSmallR M を含むので M13 で偽。元の T2Hard（M[n] 側の主張 g ≤ H(s, y′)）は 6 集合（C′・d3s・deep2・deep3・ext1・ext1x、計 71 万枠）と M13 の族で例外 0。V3DepRW は道具として残した。
 - ext1・ext1x（SRO より下に絞る）での再測定: T2SeedQRRes・T2SeedQNRes・T2SeedSVRes・T2SeedCRes・種の RClaim は例外 0（SRO より上の (0,0,0)(1,1,1)(2,2,1) などは対象外）。QVR の σ 不変性 QVRsh は実例の枠（V を行列の v の値、V′ を V より大きい値）260 万件で例外 0。
 - 証明できた欄を残りから外した: V + last(s′) = s′（qnS_vxs）、s′ の標準形（qnS_ot）、V < s′（qnS_gt）。
+- 差し込み（V3ExpT1SL）: seedLow_shape（添字が小さいなら鎖の 0 項目＝種で n = 2、L = 1、種 = Ω_{ν+1}、ν = v(P_1 r)）、seedCond_of_gap。TPLoSeedLow・AbsDSeedLow を次の残りから出す（tploSeedLow_of_gap・absDSeedLow_of_gap）:
+  - TPLoGapRes・AbsDGapRes（M だけ）: L = 1・ν ≠ 0 のとき、D の o の列の v(c)（穴あり）・D の bump の列の v(P_1 i) は段 ν の隙間 GapAt ν μ（u < Ω_{ν+1} かつ u < ψ_μ(Ω_{μ+1}) なら u < ψ_ν(Ω_{ν+1})）を満たす。実測（6 集合）で例外 0（TPLo 約 91 万件、AbsD 約 6 万件）。
+  - TPLoSeedLow0・AbsDSeedLow0（ν = 0、段 0、元の形）。M だけの隙間の形は ν = 0 では偽（C′ 10 件・ext1 54 件、例 (0,0,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(2,1,0)(3,2,0)）。groupA の段 0 の仕事。
+- 組み立て hExp_t1GP5（GP4 の種の 2 欄を上の残りに）。公理は標準の 3 つ。全体ビルド緑（933 jobs）。
+- AbsUWSeedLow・AbsDNSeedLow（θ = 1 で、種の形が分かっても SeedCond の側は偽になりうる。吸収の側が要る）と TPLoNSeed（M[n] の枠）はまだ。
