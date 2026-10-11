@@ -738,8 +738,8 @@ theorem rc_nn {q p B s y s' y' : T}
     (hc'c : psi s' y' z < psi s y z) (hBc : ∀ r ∈ summands B, psi s y z ≤ r)
     (hX' : isOT (psi p (app B (psi s' y' z)) z) = true) (hY0 : isOT (psi p (app B (psi s y z)) z) = true)
     (hN : LhdE (psi p (app B (psi s' y' z)) z) (psi p (app B (psi s y z)) z))
-    (hchild : ∀ c0, psi s' y' z < c0 → c0 ≤ psi s y z → ∀ u, ∀ g ∈ comps u (psi s' y' z),
-      g < app B (psi s' y' z) ∨ ∃ d ∈ Gc u c0, g ≤ d)
+    (hchild : ∀ c0, psi s' y' z < c0 → c0 ≤ psi s y z → ∀ u, ¬ lt q u = true → ∀ g ∈ comps u (psi s' y' z),
+      g < app B (psi s' y' z) ∨ (∃ d ∈ Gc u c0, g ≤ d) ∨ ∃ d ∈ comps u p, g ≤ d)
     (hc'p : psi s' y' z < psi (succ p) z z → psi s' y' z < psi p (app B (psi s' y' z)) z)
     (hyp : ∀ u, ¬ lt q u = true → ∀ d ∈ comps u p,
       d < H p (app B (psi s' y' z)) ∨ ∃ d' ∈ comps u q, d ≤ d') :
@@ -776,12 +776,15 @@ theorem rc_nn {q p B s y s' y' : T}
       · simp [summands, hcdef] at hr; rw [hr]; exact hcθ
     rw [H_all_hi hY0 hallY]
     -- the tests start with `B` and their tail is above `c′`
-    have hdomc' : ∀ u (c0 : T), c' < c0 → c0 ≤ c → ∀ g ∈ comps u c',
-        g < app B c' ∨ ∃ d ∈ Gc u (app B c0) ++ comps u q, g ≤ d := by
-      intro u c0 h1 h2 g hg
-      rcases hchild c0 h1 h2 u g hg with h | ⟨d, hd, hgd⟩
-      · exact Or.inl h
+    have hdomc' : ∀ u (c0 : T), ¬ lt q u = true → c' < c0 → c0 ≤ c → ∀ g ∈ comps u c',
+        g < H p (app B c') ∨ ∃ d ∈ Gc u (app B c0) ++ comps u q, g ≤ d := by
+      intro u c0 hu h1 h2 g hg
+      rcases hchild c0 h1 h2 u hu g hg with h | ⟨d, hd, hgd⟩ | ⟨d, hd, hgd⟩
+      · exact Or.inl (lt_of_lt_of_le h (le_H hX'))
       · exact Or.inr ⟨d, List.mem_append_left _ (gc_app_right d hd), hgd⟩
+      · rcases hyp u hu d hd with h | ⟨d', hd', hdd'⟩
+        · exact Or.inl (lt_of_le_of_lt hgd h)
+        · exact Or.inr ⟨d', List.mem_append_right _ hd', le_trans hgd hdd'⟩
     by_cases hc'θ : c' < θ
     · have hc'z : c' ≠ z := by simp [hc'def]
       have hb : H p (app B c') = app B (psi p (app B c') z) :=
@@ -805,8 +808,8 @@ theorem rc_nn {q p B s y s' y' : T}
         · rw [comps_app] at hg
           rcases List.mem_append.mp hg with hg | hg
           · exact Or.inr ⟨g, List.mem_append_left _ (gc_app_left g hg), le_refl _⟩
-          · rcases hdomc' u c0 hc0 hc2 g hg with h | h
-            · exact Or.inl (lt_trans h hXb)
+          · rcases hdomc' u c0 hu hc0 hc2 g hg with h | h
+            · rw [hb] at h; exact Or.inl h
             · exact Or.inr h
         · rcases hyp u hu g hg with h | ⟨d', hd', hdd'⟩
           · exact Or.inl h
@@ -823,7 +826,9 @@ theorem rc_nn {q p B s y s' y' : T}
       rw [comps_app] at hg
       rcases List.mem_append.mp hg with hg | hg
       · exact Or.inr ⟨g, List.mem_append_left _ (gc_app_left g hg), le_refl _⟩
-      · exact hdomc' u c0 hc1 hc2 g hg
+      · rcases hdomc' u c0 hu hc1 hc2 g hg with h | h
+        · rw [H_all_hi hX' hallX] at h; exact Or.inl h
+        · exact Or.inr h
 
 /-! ## 閉じた新しい状態・枠 1 段の場合分け -/
 
@@ -992,7 +997,7 @@ bounds `hVR` (old child) and `hVNR` (a changed subscript) are needed only when t
 theorem relR_frame {q a B s y s' y' : T}
     (hc : isOT (psi s y z) = true) (hc' : isOT (psi s' y' z) = true)
     (hBc : ∀ r ∈ summands B, psi s y z ≤ r)
-    (hrel : (LhdE (psi s' y' z) (psi s y z) ∧ (y' ≠ z → s' = s)) ∨ (y' = z ∧ y = z ∧ WkV s' s))
+    (hrel : (LhdE (psi s' y' z) (psi s y z) ∧ (y' ≠ z → s' = s)) ∨ (y' = z ∧ y = z ∧ WkVA s' s ∧ WCS a s'))
     (hX' : isOT (psi a (step a B s' y' z) z) = true) (hY0 : isOT (psi a (step a B s y z) z) = true)
     (hN : LhdE (psi a (step a B s' y' z) z) (psi a (step a B s y z) z))
     (hRC : s' = s → ∀ q', ¬ lt s q' = true →
@@ -1026,7 +1031,7 @@ theorem relR_frame {q a B s y s' y' : T}
   have hc'c : psi s' y' z ≤ psi s y z := by
     rcases hrel with ⟨h, _⟩ | ⟨rfl, rfl, hw⟩
     · exact h.le
-    · exact le_of_lt (psi_lt_psi_z_iff.mpr (Or.inl hw.1))
+    · exact le_of_lt (psi_lt_psi_z_iff.mpr (Or.inl hw.1.1))
   have hBc' : ∀ r ∈ summands B, psi s' y' z ≤ r := fun r hr => le_trans hc'c (hBc r hr)
   have happ' : ¬ (lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true) →
       step a B s' y' z = app B (psi s' y' z) := by
@@ -1124,9 +1129,9 @@ theorem relR_frame {q a B s y s' y' : T}
       rw [happ' ht', happ ht] at hN ⊢
       have hc'lt : psi s' y' z < psi s y z := hl.1
       refine rc_nn hc'lt hBc hX' hY0 hN ?_ ?_ hyp'
-      · intro c0 h1 h2 u g hg
+      · intro c0 h1 h2 u _ g hg
         obtain ⟨d, hd, hgd⟩ := hl.2 u c0 h1 h2 g hg
-        right
+        right; left
         rcases List.mem_append.mp hd with hd | hd
         · exact ⟨d, List.mem_cons_of_mem _ hd, hgd⟩
         · simp [Gc, comps] at hd; subst hd; exact ⟨z, List.mem_cons_self, hgd⟩
@@ -1146,13 +1151,14 @@ theorem relR_frame {q a B s y s' y' : T}
     rw [happ' hn'] at hX' hyp'
     rw [happ hn] at hY0
     rw [happ' hn', happ hn] at hN ⊢
-    refine rc_nn (psi_lt_psi_z_iff.mpr (Or.inl hwk.1)) hBc hX' hY0 hN ?_ ?_ hyp'
-    · intro c0 _ _ u g hg
-      left
-      have h1 := self_small_weak hwk.2.1 hwk.2.2.1 u g hg
-      have hne : g ≠ psi s' z z := by
-        intro h; have := size_comps hg; rw [h] at this; omega
-      exact lt_of_lt_of_le (lt_of_le_of_ne h1 hne) (le_app_psi hBc')
+    refine rc_nn (psi_lt_psi_z_iff.mpr (Or.inl hwk.1.1)) hBc hX' hY0 hN ?_ ?_ hyp'
+    · intro c0 _ _ u hu g hg
+      rcases self_small_weakA hwk.2 hwk.1.2.1 u (hau u hu) g hg with h1 | h1
+      · left
+        have hne : g ≠ psi s' z z := by
+          intro h; have := size_comps hg; rw [h] at this; omega
+        exact lt_of_lt_of_le (lt_of_le_of_ne h1 hne) (le_app_psi hBc')
+      · right; right; exact h1
     · intro hθ; exact psi_lt_psi_app hθ (z_lt_app_psi _ _ _)
 
 /-- **A non-rewriting tail `T` only raises the top** (general form of `relR_tl`). -/

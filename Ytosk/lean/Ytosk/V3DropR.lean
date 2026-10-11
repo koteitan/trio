@@ -96,7 +96,7 @@ theorem step_summands_ge {a B s y : T} (hc : isOT (psi s y z) = true)
     · simp [summands] at hr; rw [hr]
 
 /-- **The frame relation for a weak child** `ψ_{s′}(0)` replacing `ψ_s(0)`. -/
-theorem lhdE_frame_weak {a B s s' : T} (hc : isOT (psi s z z) = true) (hwk : WkV s' s)
+theorem lhdE_frame_weak {a B s s' : T} (hc : isOT (psi s z z) = true) (hwk : WkVA s' s) (hwc : WCS a s')
     (hBc : ∀ r ∈ summands B, psi s z z ≤ r) :
     LhdE (psi a (step a B s' z z) z) (psi a (step a B s z z) z) := by
   have hBc' : ∀ r ∈ summands B, psi s' z z ≤ r :=
@@ -108,9 +108,9 @@ theorem lhdE_frame_weak {a B s s' : T} (hc : isOT (psi s z z) = true) (hwk : WkV
   · simp only [psi.injEq] at h
     exact absurd h.2.1 (ne_of_lt (lt_app_of (by simp)))
   right
-  apply lhd_weak_child h (by simp)
-  · intro u g hg
-    exact le_trans (self_small_weak hwk.2.1 hwk.2.2.1 u g hg) (le_app_psi hBc')
+  apply lhd_weak_childA h (by simp)
+  · intro u hu g hg
+    exact (self_small_weakA hwc hwk.2.1 u hu g hg).imp (fun h1 => le_trans h1 (le_app_psi hBc')) id
   · exact app_lt_app_left B (psi_lt_psi_z_iff.mpr (Or.inl hwk.1))
 
 section
@@ -144,7 +144,7 @@ theorem po_of_R {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
     have ho' := o_of_no_counted hC' hiT hv.2 hT.2.1
     refine ⟨⟨?_, by rw [ho']; exact ⟨by rw [isOT_psi_iff]; exact ⟨hv.2, rfl, rfl, z_le _,
       fun g hg => by simp [comps] at hg⟩, _, _, rfl⟩⟩, ?_⟩
-    rcases hv.1 with h | ⟨hW, hnc⟩
+    rcases hv.1 with h | ⟨hW, -, hnc⟩
     · rw [ho', o_spArg hC hG hiM]; exact Or.inl (lhdE_oq_v h)
     · right
       have ho := o_of_no_counted hC hiM (hG.ot_v i hiM) hnc
@@ -219,7 +219,11 @@ theorem po_of_R {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
         by_cases hvs : ρ'.v cs = ρ.v cs
         · rw [hvs]; exact hfr
         · exact hVN i hi Lc cs hcl hvs
-      have hPOrel := o_frame_eval hC hG hF hC' hiT hiM hv' hcl hclM hsame hPOc.2 hPOc.1 hssT
+      have hpar : par M 0 cs = some i := by
+        have := (mem_children_iff.mp hcsT.1).2
+        rwa [par_take M 0 cs (by have := (mem_children hcsT.1).2; rw [List.length_take] at this; omega)] at this
+      have hrelA := rel_of_po_pv hPOc hPVc hpar hvT hvM
+      have hPOrel := o_frame_eval hC hG hF hC' hiT hiM hv' hcl hclM hsame hPOc.2 hrelA hssT
       have hcsM : cs < M.length := by
         have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega
       obtain ⟨hsM, hpM⟩ := cl_vals hC hG hiM
@@ -228,7 +232,7 @@ theorem po_of_R {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
       have hle' : ρ'.o cs ≤ ρ.o cs := by
         rcases hPOc.1 with h | ⟨h, _⟩
         · exact h.le
-        · exact DRelO.le (Or.inr h)
+        · exact DRelOA.le (Or.inr h)
       have hp1 := List.pairwise_append.mp hpM
       have hLc : ∀ t ∈ Lc.map ρ.o, ρ.o cs ≤ t := fun t ht =>
         (List.pairwise_append.mp hp1.1).2.2 t ht _ (by simp)
@@ -354,17 +358,20 @@ theorem po_of_R {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
           rw [← ho]; exact hG.ot_o i hiM
         | cons c0 Tl' => exact hFO i hiM (Lc ++ [cs]) c0 Tl' (by rw [hclM])
       have hrel : (LhdE (psi s' y' z) (psi s y z) ∧ (y' ≠ z → s' = s)) ∨
-          (y' = z ∧ y = z ∧ WkV s' s) := by
-        rcases hPOc.1 with h | ⟨⟨w1, w2, X, e1, e2, hW⟩, w0, hw0⟩
+          (y' = z ∧ y = z ∧ WkVA s' s ∧ WCS (ρ.v i) s') := by
+        rcases hrelA with h | ⟨⟨w1, w2, X, e1, e2, hW⟩, ⟨w0, hw0⟩, hwc⟩
         · rw [hs'y', hsy] at h; exact Or.inl ⟨h, hssT s y s' y' hsy hs'y'⟩
-        · rw [hs'y'] at e1; rw [hsy] at e2 hw0
+        · have hwc' := hwc w1 e1
+          rw [hs'y'] at e1; rw [hsy] at e2 hw0
           simp only [psi.injEq] at e1 e2 hw0
-          right; refine ⟨e1.2.1, hw0.2.1, ?_⟩; rw [e1.1, e2.1]; exact hW
+          right; refine ⟨e1.2.1, hw0.2.1, ?_, ?_⟩
+          · rw [e1.1, e2.1]; exact hW
+          · rw [e1.1]; exact hwc' 
       have hN : LhdE (psi (ρ.v i) (step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s' y' z) z)
           (psi (ρ.v i) (step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z) z) := by
         rcases hrel with ⟨hl, hss⟩ | ⟨rfl, rfl, hwk⟩
         · exact node_lhdD hc hc' hl hBc hss (fun hr => hF i hiM Lc cs Tl hCL s y hsy hr)
-        · exact lhdE_frame_weak hc hwk hBc
+        · exact lhdE_frame_weak hc hwk.1 hwk.2 hBc
       have hRF := relR_frame (q := q) hc hc' hBc hrel hSi hY0 hN
         (fun hss q' hq' hyp' => by subst hss; exact hRCc s' y y' q' hsy hs'y' hq' hyp')
         (hVR i hiM Lc cs Tl hCL s y hsy)
@@ -475,10 +482,13 @@ theorem pv_of_R {i : Nat} (hi : i < x)
       unfold PV
       rw [ek, ek']
       refine ⟨?_, hPVk.2⟩
-      rcases hPVk.1 with h | ⟨hW, _⟩
+      rcases hPVk.1 with h | ⟨hW, hwk, _⟩
       · exact Or.inl h
       · right
-        refine ⟨hW, ?_⟩
+        refine ⟨hW, ?_, ?_⟩
+        · rcases hwk with hcs | ⟨_, _, hnu⟩
+          · exact Or.inl hcs
+          · exact absurd hu (hnu i)
         obtain ⟨m, _, _, _, hcase⟩ := upg_spec hu
         rcases hcase with rfl | ⟨hA, hki⟩
         · intro c hc _

@@ -186,7 +186,7 @@ theorem cl_sorted (N : Mat) (i : Nat) : (CL N i).Pairwise (· < ·) :=
 theorem PO.le {ρ ρ' : Valn} {i : Nat} (h : PO ρ ρ' i) : ρ'.o i ≤ ρ.o i := by
   rcases h.1 with h | ⟨h, _⟩
   · exact h.le
-  · exact DRelO.le (Or.inr h)
+  · exact DRelOA.le (Or.inr h)
 
 theorem PV.le {M : Mat} {ρ ρ' : Valn} {i : Nat} (h : PV M ρ ρ' i) : ρ'.v i ≤ ρ.v i := by
   rcases h.1 with h | ⟨h, _⟩

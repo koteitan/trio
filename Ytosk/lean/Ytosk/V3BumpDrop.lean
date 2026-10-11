@@ -405,13 +405,24 @@ theorem v_strong {V W' W : T} (hV : isOT V = true) (hW' : Single W') (hW : Singl
   obtain ⟨_, s, y, rfl⟩ := hW
   exact lhdE_add_absorb h V hV (isOT_add hV hot') hR
 
-/-- **The weak case**: `V + W′ = V + W` or weakly below. -/
-theorem v_weak {V W' W : T} (hV : isOT V = true) (hcsV : CS V) (hW' : Single W') (hW : Single W)
-    (h : BWk W' W) : add V W' = add V W ∨ WkV (add V W') (add V W) := by
+theorem WCSP.add {M : Mat} {ρ : Valn} {i : Nat} {V W : T} (hV : WCSP M ρ i V) (hW : CS W) :
+    WCSP M ρ i (add V W) := by
+  rcases hV with hV | ⟨hV, hn, hu⟩
+  · exact Or.inl (cs_add hV hW)
+  · refine Or.inr ⟨fun u hu' g hg => ?_, hn, hu⟩
+    rcases comps_add u V W g hg with h | h
+    · exact hV u hu' g h
+    · exact Or.inl (hW g (comps_sub_z u W g h))
+
+/-- **The weak case**: `V + W′ = V + W` or weakly below (2026-10-12: the component condition `WCSP` of `V`
+passes to `V + W′`). -/
+theorem v_weak {M : Mat} {ρ : Valn} {i : Nat} {V W' W : T} (hV : isOT V = true) (hcsV : WCSP M ρ i V)
+    (hW' : Single W') (hW : Single W)
+    (h : BWk W' W) : add V W' = add V W ∨ (WkVA (add V W') (add V W) ∧ WCSP M ρ i (add V W')) := by
   rcases (le_iff _ _).mp (add_le_add_single V hW'.2 hW.2 h.1) with hlt | heq
   · right
-    exact ⟨hlt, cs_add hcsV (bwk_cs hW'.1 h),
-      le_trans (one_le_of_ne_z (single_ne_z hW')) (le_add_single V hW'.2), isOT_add hV hW'.1⟩
+    exact ⟨⟨hlt, le_trans (one_le_of_ne_z (single_ne_z hW')) (le_add_single V hW'.2), isOT_add hV hW'.1⟩,
+      hcsV.add (bwk_cs hW'.1 h)⟩
   · left; exact heq
 
 /-! ## 0 でない値と 2 以上の p -/
@@ -565,7 +576,7 @@ def BumpWeakSrc (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
     ∀ k ∈ children M j, (∃ w, w ≠ z ∧ ρ.o k = psi w z z) →
       ((k = x ∧ children M j = [x] ∧ ¬ LhdE (ρ'.v i) (ρ.v i)) ∨
         (k < x ∧ ρ'.o k ≠ ρ.o k ∧ ¬ LhdE (ρ'.v k) (ρ.v k))) →
-      children M i = [j] ∧ (children M j).head? = some k ∧ CS (vOpt ρ (par M 1 i))
+      children M i = [j] ∧ (children M j).head? = some k ∧ WCSP M ρ i (vOpt ρ (par M 1 i))
 
 /-- The parent of `x` is not a bump child. -/
 def XParNB (M : Mat) (x : Nat) : Prop :=
@@ -627,7 +638,8 @@ theorem brelS_z_psi {w : T} (h : BRelS z (psi w z z)) : w = z := by
   · cases he
 
 theorem BumpWeakShape.src {M : Mat} {ρ : Valn} (h : BumpWeakShape M ρ) (x : Nat) (ρ' : Valn) :
-    BumpWeakSrc M x ρ ρ' := fun i h1 h2 j hj hjb k hk hw _ => h i h1 h2 j hj hjb k hk hw
+    BumpWeakSrc M x ρ ρ' := fun i h1 h2 j hj hjb k hk hw _ =>
+  let ⟨a, b, c⟩ := h i h1 h2 j hj hjb k hk hw; ⟨a, b, Or.inl c⟩
 
 @[simp] theorem sumN_nil : sumN [] = z := rfl
 
@@ -731,7 +743,7 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     have hmapT : (children (M.take x) jl).map ρ'.o = K0.map ρ.o ++ [ρ'.o kl] := by
       rw [hKT, List.map_append, List.map_singleton]
       congr 1; exact List.map_congr_left hsame
-    have hlekl : ρ'.o kl ≤ ρ.o kl := hPO.1.elim (fun h => h.le) (fun h => DRelO.le (Or.inr h.1))
+    have hlekl : ρ'.o kl ≤ ρ.o kl := hPO.1.elim (fun h => h.le) (fun h => DRelOA.le (Or.inr h.1))
     have hsM : ∀ k ∈ children M jl, Single (ρ.o k) := fun k hk => single_o hC hG (mem_children hk).2
     have hsAll : ∀ t ∈ K0.map ρ.o ++ [ρ.o kl] ++ XJ.map ρ.o, Single t := by
       intro t ht
@@ -785,13 +797,14 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
           rw [v_z_of_e1 hC hklL he, v_z_of_e1 hC' hklLT (by rw [entry_take M 1 hklx]; exact he)]
         have hv'z : ρ'.v kl ≠ z := v_ne_z_of_e1 hC' hklLT (by rw [entry_take M 1 hklx]; exact he1)
         rw [ho']
-        rcases hPV.1 with hl | ⟨hWk, hnc⟩
+        rcases hPV.1 with hl | ⟨hWk, hwc, hnc⟩
         · left; exact brelS_fix hl (one_le_of_ne_z hv'z)
         · by_cases hlv : LhdE (ρ'.v kl) (ρ.v kl)
           · left; exact brelS_fix hlv (one_le_of_ne_z hv'z)
           right
+          have hcs : CS (ρ'.v kl) := hwc.cs_of_bump (mem_children_iff.mp hklM).2 (mem_children_iff.mp hjlM).2 hjlb
           refine ⟨bwk_fix (le_trans (psi_le_psi_z (le_of_lt hWk.1)) (psi_le_psi_rest (z_le _)))
-            hWk.2.2.1 hWk.2.1, kl, by simp, ρ.v kl, ?_, o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc,
+            hWk.2.1 hcs, kl, by simp, ρ.v kl, ?_, o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc,
             Or.inr ⟨hklx, by
               rw [ho', o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc]
               intro h; simp only [psi.injEq] at h; exact hv h.1, hlv⟩⟩
@@ -905,7 +918,7 @@ theorem bump_rel {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       PO ρ ρ' k ∧ PV M ρ ρ' k)
     (hCv : ChgX M x false i) (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i ≠ 0) :
     isOT (ρ'.v i) = true ∧
-      (LhdE (ρ'.v i) (ρ.v i) ∨ (WkV (ρ'.v i) (ρ.v i) ∧ ∀ c ∈ children M i, ¬ Counted M i c)) := by
+      (LhdE (ρ'.v i) (ρ.v i) ∨ (WkVA (ρ'.v i) (ρ.v i) ∧ WCSP M ρ i (ρ'.v i) ∧ ∀ c ∈ children M i, ¬ Counted M i c)) := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have hiT : i < (M.take x).length := by omega
   have hiM : i < M.length := by omega
@@ -1157,7 +1170,7 @@ theorem bump_rel {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       rw [e', e]
       rcases v_weak hVot hcsV (single_omega hp'ot1) (single_omega hpot1) hW with heq | hwk
       · exact Or.inl (Or.inl heq)
-      · refine Or.inr ⟨hwk, fun c hc hcnt => ?_⟩
+      · refine Or.inr ⟨hwk.1, hwk.2, fun c hc hcnt => ?_⟩
         rw [hone] at hc
         simp at hc
         rw [hc] at hcnt

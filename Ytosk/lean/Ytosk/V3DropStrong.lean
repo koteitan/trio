@@ -172,7 +172,7 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
     have ho' := o_of_no_counted hC' hiT hv.2 hT.2.1
     refine ⟨?_, by rw [ho']; exact ⟨by rw [isOT_psi_iff]; exact ⟨hv.2, rfl, rfl, z_le _,
       fun g hg => by simp [comps] at hg⟩, _, _, rfl⟩⟩
-    rcases hv.1 with h | ⟨hW, hnc⟩
+    rcases hv.1 with h | ⟨hW, -, hnc⟩
     · rw [ho', o_spArg hC hG hiM]; exact Or.inl (lhdE_oq_v h)
     · right
       have ho := o_of_no_counted hC hiM (hG.ot_v i hiM) hnc
@@ -245,7 +245,11 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
         by_cases hvs : ρ'.v cs = ρ.v cs
         · rw [hvs]; exact hfr
         · exact hVN i hi Lc cs hcl hvs
-      refine ⟨Or.inl (o_frame_eval hC hG hF hC' hiT hiM hv' hcl hclM hsame hPOc.2 hPOc.1 hssT), ?_⟩
+      have hpar : par M 0 cs = some i := by
+        have := (mem_children_iff.mp hcsT.1).2
+        rwa [par_take M 0 cs (by have := (mem_children hcsT.1).2; rw [List.length_take] at this; omega)] at this
+      refine ⟨Or.inl (o_frame_eval hC hG hF hC' hiT hiM hv' hcl hclM hsame hPOc.2
+        (rel_of_po_pv hPOc hPVc hpar hvT hvM) hssT), ?_⟩
       -- `o′(i)` is standard
       have hcsM : cs < M.length := by
         have := (mem_children (cl_mem_children (show cs ∈ CL M i by rw [hclM]; simp))).2; omega
@@ -255,7 +259,7 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
       have hle' : ρ'.o cs ≤ ρ.o cs := by
         rcases hPOc.1 with h | ⟨h, _⟩
         · exact h.le
-        · exact DRelO.le (Or.inr h)
+        · exact DRelOA.le (Or.inr h)
       have hp1 := List.pairwise_append.mp hpM
       have hLc : ∀ t ∈ Lc.map ρ.o, ρ.o cs ≤ t := fun t ht =>
         (List.pairwise_append.mp hp1.1).2.2 t ht _ (by simp)
@@ -388,10 +392,13 @@ theorem pv_of_hard {i : Nat} (hi : i < x)
       unfold PV
       rw [ek, ek']
       refine ⟨?_, hPVk.2⟩
-      rcases hPVk.1 with h | ⟨hW, _⟩
+      rcases hPVk.1 with h | ⟨hW, hwk, _⟩
       · exact Or.inl h
       · right
-        refine ⟨hW, ?_⟩
+        refine ⟨hW, ?_, ?_⟩
+        · rcases hwk with hcs | ⟨_, _, hnu⟩
+          · exact Or.inl hcs
+          · exact absurd hu (hnu i)
         obtain ⟨m, _, _, _, hcase⟩ := upg_spec hu
         rcases hcase with rfl | ⟨hA, hki⟩
         · intro c hc _

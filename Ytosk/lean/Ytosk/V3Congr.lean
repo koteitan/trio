@@ -110,6 +110,7 @@ theorem dropRes_congr {N : Mat} {x : Nat} {σ σ' τ τ' : Valn} (hx : x < N.len
     have hiN := lt_of_entry_ne h1
     have hok := (h k hkN).1
     rw [← vOpt_par_congr h hiN]
+    unfold WCSP; rw [← vOpt_par_congr h hiN (r := 0)]
     apply hD.ws i h1 h2 j hj hjb k hk (by rw [hok]; exact hw)
     rcases hcase with ⟨hkx, hch, hl⟩ | ⟨hkx, hne, hl⟩
     · have hij : i < j := (mem_children hj).1

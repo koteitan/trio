@@ -33,7 +33,7 @@ theorem bump_relW {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       PO ρ ρ' k ∧ PV M ρ ρ' k)
     (hCv : ChgX M x false i) (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i ≠ 0) :
     isOT (ρ'.v i) = true ∧
-      (LhdE (ρ'.v i) (ρ.v i) ∨ (WkV (ρ'.v i) (ρ.v i) ∧ ∀ c ∈ children M i, ¬ Counted M i c)) := by
+      (LhdE (ρ'.v i) (ρ.v i) ∨ (WkVA (ρ'.v i) (ρ.v i) ∧ WCSP M ρ i (ρ'.v i) ∧ ∀ c ∈ children M i, ¬ Counted M i c)) := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have hiT : i < (M.take x).length := by omega
   have hiM : i < M.length := by omega
@@ -285,7 +285,7 @@ theorem bump_relW {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       rw [e', e]
       rcases v_weak hVot hcsV (single_omega hp'ot1) (single_omega hpot1) hW with heq | hwk
       · exact Or.inl (Or.inl heq)
-      · refine Or.inr ⟨hwk, fun c hc hcnt => ?_⟩
+      · refine Or.inr ⟨hwk.1, hwk.2, fun c hc hcnt => ?_⟩
         rw [hone] at hc
         simp at hc
         rw [hc] at hcnt

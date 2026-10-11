@@ -248,6 +248,45 @@ theorem lhd_weak_child {a B c' X : T} (hdrop : Lhd z (psi a B z) (psi a X z)) (h
         exact hdrop.2 u (psi a C R) hBc h2 g hgB
   · simp at hg
 
+/-- **`lhd_weak_child` with the parent's components** (2026-10-12): a component of the new child may instead be
+dominated by a component of the parent subscript `a` (which every test `ψ_a(C) + R` carries). -/
+theorem lhd_weak_childA {a B c' X : T} (hdrop : Lhd z (psi a B z) (psi a X z)) (hc : c' ≠ z)
+    (hsmall : ∀ u, ¬ lt a u = true → ∀ g ∈ comps u c', g ≤ app B c' ∨ ∃ d ∈ comps u a, g ≤ d)
+    (hlt : app B c' < X) :
+    Lhd z (psi a (app B c') z) (psi a X z) := by
+  refine ⟨by rw [psi_lt_psi_z_iff]; exact Or.inr ⟨rfl, hlt⟩, fun u c h1 h2 => ?_⟩
+  obtain ⟨C, R, rfl, hC1, hC2⟩ := between_psi h1 h2
+  have hBc : psi a B z < psi a C R := by
+    apply lt_of_lt_of_le _ (le_of_lt h1)
+    rw [psi_lt_psi_z_iff]; right; refine ⟨rfl, ?_⟩
+    have := app_lt_app_left B (show z < c' by cases c' with | z => exact absurd rfl hc | psi _ _ _ => exact T.z_lt_psi _ _ _)
+    rwa [app_z_right] at this
+  intro g hg
+  simp only [comps, List.mem_append] at hg
+  rcases hg with hg | hg
+  · split at hg
+    · simp at hg
+    · rename_i hau
+      simp only [List.mem_cons, List.mem_append] at hg
+      have hCmem : C ∈ comps u (psi a C R) := by
+        simp only [comps, List.mem_append]; left; rw [if_neg hau]; simp
+      rcases hg with rfl | (hg | hg)
+      · exact ⟨C, List.mem_append_left _ hCmem, hC1⟩
+      · rw [comps_app] at hg
+        rcases List.mem_append.mp hg with hg | hg
+        · have hgB : g ∈ comps u (psi a B z) := by
+            simp only [comps, List.mem_append]; left; rw [if_neg hau]; simp [hg]
+          exact hdrop.2 u (psi a C R) hBc h2 g hgB
+        · rcases hsmall u hau g hg with h | ⟨d, hd, hgd⟩
+          · exact ⟨C, List.mem_append_left _ hCmem, le_trans h hC1⟩
+          · have hdmem : d ∈ comps u (psi a C R) := by
+              simp only [comps, List.mem_append]; left; rw [if_neg hau]; simp [hd]
+            exact ⟨d, List.mem_append_left _ hdmem, hgd⟩
+      · have hgB : g ∈ comps u (psi a B z) := by
+          simp only [comps, List.mem_append]; left; rw [if_neg hau]; simp [hg]
+        exact hdrop.2 u (psi a C R) hBc h2 g hgB
+  · simp at hg
+
 /-- `ψ_w(0)` above `ψ_0(Ω_1)` is a fixed point of `ω^`. -/
 theorem omega_psi_fix {w : T} (hw : isOT w = true) (hE : ¬ psi w z z < E0) : omega (psi w z z) = psi w z z := by
   have hot : isOT (psi w z z) = true := by

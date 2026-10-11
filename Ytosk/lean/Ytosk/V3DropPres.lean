@@ -264,7 +264,7 @@ theorem frameClosed_take (hF : FrameClosed M ρ) : FrameClosed (M.take x) ρ' :=
   subst hss
   have hle : psi s' y' z ≤ psi s' y z := by
     rw [← hc', ← hsy]
-    exact DRelO.le ((hdrop c hcx).1.1.elim (fun h => Or.inl h) (fun h => Or.inr h.1))
+    exact DRelOA.le ((hdrop c hcx).1.1.elim (fun h => Or.inl h) (fun h => Or.inr h.1))
   have hyy : y' ≤ y := by
     rcases (le_iff _ _).mp hle with h | h
     · rcases psi_lt_psi_z_iff.mp h with h | ⟨_, h⟩

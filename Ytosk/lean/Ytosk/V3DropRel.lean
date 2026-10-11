@@ -25,6 +25,7 @@ def WkO (t' t : T) : Prop := ∃ w' w X, t' = psi w' z z ∧ t = psi w X z ∧ W
 
 def DRelO (t' t : T) : Prop := LhdE t' t ∨ WkO t' t
 
+
 /-- Components at a level are among the components at level `0`. -/
 theorem comps_sub_z (u : T) : ∀ t, ∀ g ∈ comps u t, g ∈ comps z t
   | z, g, hg => by simp [comps] at hg
@@ -50,6 +51,29 @@ theorem Om_one_le_psi {w : T} (hw : one ≤ w) : Om one ≤ psi w z z := by
     rw [psi_lt_psi_z_iff]; exact Or.inl h
   · right; rw [h]
 
+/-! ### 弱い関係を親の添字の成分まで広げる（2026-10-12、drop-fix）
+
+ext1 の標準形 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0) の列 11 で、
+v′ = ψ_0(Ω_{Ω_1}) + ω² は `CS` でない（v(P_1 11) = v(10) が段の項に吸収されなくなる）。成分は親の添字の成分で押さえられる。 -/
+
+/-- Components at the levels `u ≤ a` are countable or dominated by a component of `a`. -/
+def WCS (a w : T) : Prop := ∀ u, ¬ lt a u = true → ∀ g ∈ comps u w, g < Om one ∨ ∃ d ∈ comps u a, g ≤ d
+
+theorem WCS.of_cs {w : T} (h : CS w) (a : T) : WCS a w :=
+  fun u _ g hg => Or.inl (h g (comps_sub_z u w g hg))
+
+/-- The weak relation of subscripts without the component condition. -/
+def WkVA (w' w : T) : Prop := w' < w ∧ one ≤ w' ∧ isOT w' = true
+
+theorem WkV.toA {w' w : T} (h : WkV w' w) : WkVA w' w := ⟨h.1, h.2.2.1, h.2.2.2⟩
+
+def WkOA (t' t : T) : Prop := ∃ w' w X, t' = psi w' z z ∧ t = psi w X z ∧ WkVA w' w
+
+def DRelOA (t' t : T) : Prop := LhdE t' t ∨ WkOA t' t
+
+theorem WkO.toA {t' t : T} (h : WkO t' t) : WkOA t' t :=
+  let ⟨w', w, X, h1, h2, h3⟩ := h; ⟨w', w, X, h1, h2, h3.toA⟩
+
 /-- **A weak child dominates its own components.** -/
 theorem self_small_weak {w' : T} (hcs : CS w') (h1 : one ≤ w') :
     ∀ u, ∀ g ∈ comps u (psi w' z z), g ≤ psi w' z z := by
@@ -63,6 +87,23 @@ theorem self_small_weak {w' : T} (hcs : CS w') (h1 : one ≤ w') :
   · simp at h
   · exact le_of_lt (lt_of_lt_of_le (hcs g h) (Om_one_le_psi h1))
   · simp at h
+
+/-- **A weak child, up to the parent's components.** -/
+theorem self_small_weakA {a w' : T} (hcs : WCS a w') (h1 : one ≤ w') :
+    ∀ u, ¬ lt a u = true → ∀ g ∈ comps u (psi w' z z), g ≤ psi w' z z ∨ ∃ d ∈ comps u a, g ≤ d := by
+  intro u hu g hg
+  simp only [comps, List.mem_append] at hg
+  rcases hg with hg | hg
+  · split at hg
+    · simp at hg
+    · simp only [List.mem_cons, List.mem_append] at hg
+      rcases hg with rfl | h | h
+      · exact Or.inl (z_le _)
+      · simp [comps] at h
+      · rcases hcs u hu g h with h' | h'
+        · exact Or.inl (le_of_lt (lt_of_lt_of_le h' (Om_one_le_psi h1)))
+        · exact Or.inr h'
+  · simp [comps] at hg
 
 /-- **`o` from `v`**: `ψ_{v′}(0)` against `ψ_v(X)`. -/
 theorem drelO_of_v {v' v X : T} (h : DRelV v' v) : DRelO (psi v' z z) (psi v X z) := by
@@ -89,9 +130,9 @@ theorem le_app_of_ge {s y : T} : ∀ (B : T), (∀ q ∈ summands B, psi s y z �
 
 /-- **The `o` frame with a weak last child**: the new child is `ψ_{w′}(0)` (no rewrite), the relation
 of the old side to the state without the child (`hdrop`) is a hypothesis. -/
-theorem o_frame_weak {a w' w F : T} {L : List T}
+theorem o_frame_weakA {a w' w F : T} {L : List T}
     (hs' : ∀ t ∈ L ++ [psi w' z z], Single t) (hp' : (L ++ [psi w' z z]).Pairwise (fun a b => b ≤ a))
-    (hW : WkV w' w) (hdrop : LhdE (psi a (spArg a z (sumN L)) z) (psi a F z))
+    (hW : WkVA w' w) (hWC : WCS a w') (hdrop : LhdE (psi a (spArg a z (sumN L)) z) (psi a F z))
     (hlt : app (spArg a z (sumN L)) (psi w' z z) < F) :
     LhdE (psi a (spArg a z (sumN (L ++ [psi w' z z]))) z) (psi a F z) := by
   set B := spArg a z (sumN L) with hB
@@ -120,8 +161,17 @@ theorem o_frame_weak {a w' w F : T} {L : List T}
     simp only [psi.injEq] at he
     have := lt_trans hBlt hlt
     rw [he.2.1] at this; exact lt_irrefl' _ this
-  · exact lhd_weak_child hl (by simp)
-      (fun u g hg => le_trans (self_small_weak hW.2.1 hW.2.2.1 u g hg) (le_app_of_ge B hBge)) hlt
+  · exact lhd_weak_childA hl (by simp)
+      (fun u hu g hg => (self_small_weakA hWC hW.2.1 u hu g hg).imp
+        (fun h => le_trans h (le_app_of_ge B hBge)) id) hlt
+
+/-- The former form (countable components). -/
+theorem o_frame_weak {a w' w F : T} {L : List T}
+    (hs' : ∀ t ∈ L ++ [psi w' z z], Single t) (hp' : (L ++ [psi w' z z]).Pairwise (fun a b => b ≤ a))
+    (hW : WkV w' w) (hdrop : LhdE (psi a (spArg a z (sumN L)) z) (psi a F z))
+    (hlt : app (spArg a z (sumN L)) (psi w' z z) < F) :
+    LhdE (psi a (spArg a z (sumN (L ++ [psi w' z z]))) z) (psi a F z) :=
+  o_frame_weakA hs' hp' hW.toA (WCS.of_cs hW.2.1 a) hdrop hlt
 
 /-! ## 評価器の段の o の枠 (1): v が変わる列 -/
 
@@ -279,6 +329,11 @@ theorem DRelO.le {t' t : T} (h : DRelO t' t) : t' ≤ t := by
   · exact h.le
   · left; show psi w' z z < psi w X z; rw [psi_lt_psi_z_iff]; exact Or.inl hW.1
 
+theorem DRelOA.le {t' t : T} (h : DRelOA t' t) : t' ≤ t := by
+  rcases h with h | ⟨w', w, X, rfl, rfl, hW⟩
+  · exact h.le
+  · left; show psi w' z z < psi w X z; rw [psi_lt_psi_z_iff]; exact Or.inl hW.1
+
 theorem sumN_singleton {t : T} (h : Single t) : sumN [t] = t := by
   show sf (add z t) = t
   rw [add_z_left]; exact sf_ot h.1
@@ -292,7 +347,8 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     (hclT : CL (M.take x) i = Lc ++ [cs]) (hcl : CL M i = Lc ++ [cs] ++ Tl)
     (hsame : ∀ d ∈ Lc, ρ'.o d = ρ.o d)
     (hcs' : Single (ρ'.o cs))
-    (hrel : LhdE (ρ'.o cs) (ρ.o cs) ∨ (WkO (ρ'.o cs) (ρ.o cs) ∧ ∃ w, ρ.o cs = psi w z z))
+    (hrel : LhdE (ρ'.o cs) (ρ.o cs) ∨ (WkOA (ρ'.o cs) (ρ.o cs) ∧ (∃ w, ρ.o cs = psi w z z) ∧
+      ∀ w', ρ'.o cs = psi w' z z → WCS (ρ.v i) w'))
     (hss : ∀ s y s' y', ρ.o cs = psi s y z → ρ'.o cs = psi s' y' z → y' ≠ z → s' = s) :
     LhdE (ρ'.o i) (ρ.o i) := by
   set a := ρ.v i with ha
@@ -332,7 +388,7 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
   have hle' : ρ'.o cs ≤ ρ.o cs := by
     rcases hrel with h | ⟨h, _⟩
     · exact h.le
-    · exact DRelO.le (Or.inr h)
+    · exact DRelOA.le (Or.inr h)
   have hs' : ∀ t ∈ Lv ++ [ρ'.o cs], Single t := by
     intro t ht; rcases List.mem_append.mp ht with ht | ht
     · exact hsL t ht
@@ -391,7 +447,8 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     rw [hsy] at hsM hpM
     exact o_frame_term (L := Lv) (Tl := Tv) hsM hpM hs' hp' hN hT
   · -- weak child
-    obtain ⟨⟨w', w, X, hw', hw, hWk⟩, w0, hw0⟩ := hW
+    obtain ⟨⟨w', w, X, hw', hw, hWk⟩, ⟨w0, hw0⟩, hwc⟩ := hW
+    have hWC := hwc w' hw' 
     rw [hw] at hw0; simp only [psi.injEq] at hw0; obtain ⟨rfl, rfl, -⟩ := hw0
     have hF' : spArg a z (sumN (Lv ++ [ρ.o cs] ++ Tv)) = spArg a B (sumN (ρ.o cs :: Tv)) := by
       rw [List.append_assoc, show [ρ.o cs] ++ Tv = ρ.o cs :: Tv from rfl,
@@ -439,7 +496,7 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
       rw [psi_lt_psi_z_iff]; exact Or.inl hWk.1
     rw [hw'] at hs' hp'
     rw [hw']
-    exact o_frame_weak hs' hp' hWk hdrop hlt
+    exact o_frame_weakA hs' hp' hWk hWC hdrop hlt
 
 /-- **The `o` frame with no counted child in `M.take x`** (`v` unchanged): all counted children of `M` are
 dropped. -/

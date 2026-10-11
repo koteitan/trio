@@ -37,7 +37,7 @@ theorem new_arg_le {c : Nat} (hcx : c < x) {s' y' s y : T} (hc' : ρ'.o c = psi 
   refine ⟨rfl, ?_⟩
   have hle : psi s' y' z ≤ psi s' y z := by
     rw [← hc', ← hsy]
-    exact DRelO.le ((hdrop c hcx).1.1.elim (fun h => Or.inl h) (fun h => Or.inr h.1))
+    exact DRelOA.le ((hdrop c hcx).1.1.elim (fun h => Or.inl h) (fun h => Or.inr h.1))
   rcases (le_iff _ _).mp hle with h | h
   · rcases psi_lt_psi_z_iff.mp h with h | ⟨_, h⟩
     · exact absurd h (lt_irrefl' _)

@@ -40,14 +40,59 @@ def FrameOT (M : Mat) (ρ : Valn) : Prop :=
 
 theorem VSmallV.subSmall {t : T} (h : VSmallV t) (a : T) : SubSmall a t := fun u _ g hg => h u g hg
 
-/-- The claim at an `o` call. -/
+/-- The claim at an `o` call. (2026-10-12: the weak alternative without the component condition `CS`; the
+component condition is in `PV`.) -/
 def PO (ρ ρ' : Valn) (i : Nat) : Prop :=
-  (LhdE (ρ'.o i) (ρ.o i) ∨ (WkO (ρ'.o i) (ρ.o i) ∧ ∃ w, ρ.o i = psi w z z)) ∧ Single (ρ'.o i)
+  (LhdE (ρ'.o i) (ρ.o i) ∨ (WkOA (ρ'.o i) (ρ.o i) ∧ ∃ w, ρ.o i = psi w z z)) ∧ Single (ρ'.o i)
+
+/-- The parent of `i` is not a bump child. -/
+def NBPar (M : Mat) (i : Nat) : Prop :=
+  ∀ p g, par M 0 i = some p → par M 0 p = some g → col M p ≠ bump M g
+
+/-- **The component condition of a weak `v`** (2026-10-12): countable components, or components at the levels
+`u ≤ v(P_0 i)` countable or dominated by a component of `v(P_0 i)` when the parent of `i` is not a bump child
+(ext1: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0), `i = 11`). -/
+def WCSP (M : Mat) (ρ : Valn) (i : Nat) (w : T) : Prop :=
+  CS w ∨ (WCS (vOpt ρ (par M 0 i)) w ∧ NBPar M i ∧ ∀ j, upg M j ≠ some i)
+
+theorem WCSP.wcs {M : Mat} {ρ : Valn} {i p : Nat} {w : T} (h : WCSP M ρ i w) (hp : par M 0 i = some p) :
+    WCS (ρ.v p) w := by
+  rcases h with h | ⟨h, _⟩
+  · exact WCS.of_cs h _
+  · rw [hp] at h; exact h
+
 
 /-- The claim at a `v` call. -/
 def PV (M : Mat) (ρ ρ' : Valn) (i : Nat) : Prop :=
-  (LhdE (ρ'.v i) (ρ.v i) ∨ (WkV (ρ'.v i) (ρ.v i) ∧ ∀ c ∈ children M i, ¬ Counted M i c)) ∧
+  (LhdE (ρ'.v i) (ρ.v i) ∨
+    (WkVA (ρ'.v i) (ρ.v i) ∧ WCSP M ρ i (ρ'.v i) ∧ ∀ c ∈ children M i, ¬ Counted M i c)) ∧
     isOT (ρ'.v i) = true
+
+/-- Under a bump child the component condition is `CS`. -/
+theorem WCSP.cs_of_bump {M : Mat} {ρ : Valn} {k j i : Nat} {w : T} (h : WCSP M ρ k w)
+    (hk : par M 0 k = some j) (hj : par M 0 j = some i) (hb : col M j = bump M i) : CS w := by
+  rcases h with h | ⟨_, hn, _⟩
+  · exact h
+  · exact absurd hb (hn j i hk hj)
+
+/-- **The relation of a child for `o_frame_eval`** from its `PO` and `PV`: a weak `o` with a `⊴` subscript is
+`⊴`, a weak subscript carries the component condition at the parent. -/
+theorem rel_of_po_pv {M : Mat} {ρ ρ' : Valn} {c i : Nat} (hPO : PO ρ ρ' c) (hPV : PV M ρ ρ' c)
+    (hp : par M 0 c = some i) (hvT : ∀ s y, ρ'.o c = psi s y z → s = ρ'.v c)
+    (hvM : ∀ s y, ρ.o c = psi s y z → s = ρ.v c) :
+    LhdE (ρ'.o c) (ρ.o c) ∨ (WkOA (ρ'.o c) (ρ.o c) ∧ (∃ w, ρ.o c = psi w z z) ∧
+      ∀ w', ρ'.o c = psi w' z z → WCS (ρ.v i) w') := by
+  rcases hPO.1 with h | ⟨hW, hw⟩
+  · exact Or.inl h
+  rcases hPV.1 with hl | ⟨_, hwc, _⟩
+  · left
+    obtain ⟨w', w, X, h1, h2, _⟩ := hW
+    rw [h1, h2, hvT _ _ h1, hvM _ _ h2]
+    exact lhdE_oq_v hl
+  · right
+    refine ⟨hW, hw, fun w' h' => ?_⟩
+    rw [hvT _ _ h']
+    exact hwc.wcs hp
 
 /-- A changed `v` has row 1 nonzero. -/
 theorem chgx_e1 {M : Mat} {x i : Nat} (h : ChgX M x false i) : entry M 1 i ≠ 0 := by
@@ -159,7 +204,7 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
     have ho' := o_of_no_counted hC' hiT hv.2 hT.2.1
     refine ⟨?_, by rw [ho']; exact ⟨by rw [isOT_psi_iff]; exact ⟨hv.2, rfl, rfl, z_le _,
       fun g hg => by simp [comps] at hg⟩, _, _, rfl⟩⟩
-    rcases hv.1 with h | ⟨hW, hnc⟩
+    rcases hv.1 with h | ⟨hW, -, hnc⟩
     · rw [ho', o_spArg hC hG hiM]; exact Or.inl (lhdE_oq_v h)
     · right
       have ho := o_of_no_counted hC hiM (hG.ot_v i hiM) hnc
@@ -221,7 +266,11 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
           by_contra hn; exact hvs ((hoff cs (by rw [hlenT] at hcsx0; exact hcsx0)).2 hn)
         have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB hCv).1 rfl (by rw [hlenT] at hcsx0; exact hcsx0)
         exact o_of_no_counted hC' hcsx0 hPVc.2 hT.2.1
-      refine ⟨Or.inl (o_frame_eval hC hG hF hC' hiT hiM hv' hcl hclM hsame hPOc.2 hPOc.1
+      have hcsx' : cs < x := by rw [hlenT] at hcsx0; exact hcsx0
+      have hpar : par M 0 cs = some i := by
+        have := (mem_children_iff.mp hcsT.1).2; rwa [par_take M 0 cs hcsx'] at this
+      refine ⟨Or.inl (o_frame_eval hC hG hF hC' hiT hiM hv' hcl hclM hsame hPOc.2
+        (rel_of_po_pv hPOc hPVc hpar hvT hvM)
         (fun s y s' y' h h' hy' => by
           rw [hvT s' y' h', hvM s y h]
           by_contra hvs
@@ -235,7 +284,7 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
       have hle' : ρ'.o cs ≤ ρ.o cs := by
         rcases hPOc.1 with h | ⟨h, _⟩
         · exact h.le
-        · exact DRelO.le (Or.inr h)
+        · exact DRelOA.le (Or.inr h)
       have hp1 := List.pairwise_append.mp hpM
       have hLc : ∀ t ∈ Lc.map ρ.o, ρ.o cs ≤ t := fun t ht =>
         (List.pairwise_append.mp hp1.1).2.2 t ht _ (by simp)
@@ -333,10 +382,13 @@ theorem pv_of {i : Nat} (hi : i < x)
       unfold PV
       rw [ek, ek']
       refine ⟨?_, hPVk.2⟩
-      rcases hPVk.1 with h | ⟨hW, _⟩
+      rcases hPVk.1 with h | ⟨hW, hwk, _⟩
       · exact Or.inl h
       · right
-        refine ⟨hW, ?_⟩
+        refine ⟨hW, ?_, ?_⟩
+        · rcases hwk with hcs | ⟨_, _, hnu⟩
+          · exact Or.inl hcs
+          · exact absurd hu (hnu i)
         obtain ⟨m, _, _, _, hcase⟩ := upg_spec hu
         rcases hcase with rfl | ⟨hA, hki⟩
         · intro c hc _

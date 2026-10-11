@@ -93,7 +93,7 @@ theorem base_dropRes : DropRes (Mlen (1 + 3 * n)) ((Mlen (1 + 3 * n)).length - 1
       rw [Mlen_children_nil (Or.inl (by omega))] at hk; simp at hk
     have hchj := Mlen_children_AB hk' (by omega) (by omega)
     rw [hchj] at hk; simp at hk; subst hk
-    refine ⟨hch, by rw [hchj]; rfl, ?_⟩
+    refine ⟨hch, by rw [hchj]; rfl, Or.inl ?_⟩
     rw [vOpt_par1]; intro g hg; simp [comps] at hg
   · -- UpgAbsX
     intro i k W _ _ _ _ r hr; rw [vOpt_par1] at hr; simp [summands] at hr

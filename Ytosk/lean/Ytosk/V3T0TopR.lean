@@ -565,7 +565,7 @@ theorem t0_vsmallF_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
           have := e2_of_col hcol
           rw [hx2] at this; omega
       have hlv : Lhd z (ρ'.v r) (ρ.v r) := by
-        rcases hPV.1 with h | ⟨_, hno⟩
+        rcases hPV.1 with h | ⟨_, _, hno⟩
         · rcases h with h | h
           · exact absurd h hv
           · exact h
