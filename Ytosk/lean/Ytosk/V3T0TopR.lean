@@ -9,6 +9,7 @@ D の列は `t0_otdR`（V3T0DepR）から。型（ClsNode）を運ばないの�
 -/
 import Ytosk.V3T0DepR
 import Ytosk.V3T0Top
+import Ytosk.V3T0FrmJ
 
 namespace Ytosk
 
@@ -418,7 +419,7 @@ theorem t0_vsmallF_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hD : ∀ r L n σ rkN, T0Ctx M ρ rk r L n σ rkN →
       ∀ i (Lc : List Nat) c (R : List Nat), i < r → c < r → CL M i = Lc ++ c :: R → σ.v c ≠ ρ.v c →
         ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
-    (hGr : T0VSResG) :
+    (hIV : T0IVRes) :
     ∀ r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → VSmallF (TRIO.gexp M r L 0 0 n) σ := by
   intro r L n σ rkN hctx
   obtain ⟨hM, hS, I, R, hlen, hL, hp, he1, _, hn2, hCN, hRN, hGN, _⟩ := id hctx
@@ -434,6 +435,10 @@ theorem t0_vsmallF_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hoff := chg_off hx I.cons I.good hC1 hRk1
   have hVT : ValInv (M.take (r + L)) ρ' :=
     drop_pres hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hDr hC1 hRk1
+  have hdrop := drop_all hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs hDr.vst
+    I.fc I.fo hDr.argT
+    (bump_drop hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hDr.ab hDr.ws)
+    hDr.ua
   set N := TRIO.gexp M r L 0 0 n with hNdef
   have hlN : N.length = r + n * L := lenN0 hlen hn
   have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
@@ -478,7 +483,7 @@ theorem t0_vsmallF_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       intro hdv
       exact uncnt_of_depv (show r + L + 1 = M.length from hlen) I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hp
         (by omega) hdv hrg hgc
-    apply g_frames_t0 hlen hL hp hn I.r0p I.z2 I.sd I.z1 I.uat I.uab he1 hx2 hn2 I.cons I.good hCN hGN.toOT QVS
+    apply g_frames_t0J hlen hL hp hn I.r0p I.z2 I.sd I.z1 I.uat I.uab he1 hx2 hn2 I.cons I.good hCN hGN.toOT QVS
       hg hgc (fun c hc hd => (hoffD c hc).1 hd) hσvg hσmid hσlast
       (counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn2 hg hgc)
       (fun Lc c R hCL => hFO g (by omega) Lc c R hCL)
@@ -515,20 +520,124 @@ theorem t0_vsmallF_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       rcases I.vs g hgM Lc r [] hCL g'' hg'' with h | h
       · exact Or.inl h
       · exact Or.inr (le_trans h hmono)
-    rcases hcv with rfl | rfl
+    rcases hcv with rfl | ⟨rfl, hj0⟩
     · rw [hom] at hsy; simp only [psi.injEq] at hsy
       rw [← hsy.1] at hg' ⊢
       exact hold g' hg'
     · have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
       obtain ⟨y0, hy0⟩ := o_psi_sub hC1 hrT
       rw [hsy] at hy0; simp only [psi.injEq] at hy0
-      rw [sf_ot (hVT.g.ot_v r hrT)] at hy0
+      have hv'ot := hVT.g.ot_v r hrT
+      rw [sf_ot hv'ot] at hy0
       rw [hy0.1] at hg' ⊢
       by_cases hv : ρ'.v r = ρ.v r
       · rw [hv] at hg' ⊢; exact hold g' hg'
-      · rcases hGr M ρ rk r L n σ rkN hctx g hg hgc Lc hCL hv g' hg' with h | h
-        · exact Or.inl h
-        · exact Or.inr (le_trans h hmono)
+      -- the drop at `r`: `x` is a counted child of `r`, so `v′(r) ◁ v(r)`
+      obtain ⟨hPO, hPV⟩ := hdrop r (by omega)
+      have hxr : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hp⟩
+      have hxcnt : Counted M r (r + L) := by
+        refine ⟨fun h => ?_, fun h => ?_⟩
+        · have h2 : entry M 2 (r + L) = (bump M r).2.2 := by
+            show (col M (r + L)).2.2 = _; rw [h]
+          rw [hx2] at h2; simp [bump] at h2
+        · obtain ⟨hu, _⟩ := h
+          unfold isUpg at hu
+          obtain ⟨k, _, hk⟩ := List.any_eq_true.mp hu
+          have hk' : upg M k = some (r + L) := by simpa using hk
+          obtain ⟨m, _, _, hcol, _⟩ := upg_spec hk'
+          have := e2_of_col hcol
+          rw [hx2] at this; omega
+      have hlv : Lhd z (ρ'.v r) (ρ.v r) := by
+        rcases hPV.1 with h | ⟨_, hno⟩
+        · rcases h with h | h
+          · exact absurd h hv
+          · exact h
+        · exact absurd hxcnt (hno _ hxr)
+      -- a changed `v(r)`: `o′(r) = ψ_{v′(r)}(0)`
+      have hyz : y = z := by
+        have hCv : ChgX M (r + L) false r := by
+          by_contra hn'; exact hv ((hoff r (by omega)).2 hn')
+        have hT := (chg_struct hx I.r0p I.z2 I.sd I.z1 I.uat I.uab hCv).1 rfl (by omega)
+        have ho := o_of_no_counted hC1 hrT hv'ot hT.2.1
+        rw [hsy, hy0.1] at ho; simp only [psi.injEq] at ho; exact ho.2.1
+      obtain ⟨d, hd, hgd⟩ := hlv.2 (ρ.v g) (ρ.v r) hlv.1 (le_refl _) g' hg'
+      rcases List.mem_append.mp hd with hd | hd
+      swap
+      · simp [Gc, comps] at hd
+        rw [hd] at hgd
+        exact Or.inr (le_trans hgd (z_le _))
+      rcases I.vs g hgM Lc r [] hCL d hd with hdo | hdB
+      swap
+      · exact Or.inr (le_trans hgd (le_trans hdB hmono))
+      set Bg := spArg (ρ.v g) z (sumN (Lc.map ρ.o)) with hBg
+      by_cases hB0 : Bg = z ∧ j = 0
+      · -- no middle copy root counts: the old frame does not rewrite at `r` (`T0IVRes`), and `o′(r) ◁ o(r)`
+        obtain ⟨Y0, hY0⟩ : ∃ Y0, ρ.o r = psi (ρ.v r) (app Y0 one) z := ⟨_, hor⟩
+        have hnt := hIV M ρ rk r L hM hS I R hlen hL hp he1 n hn2 g hg hgc (hj0 hB0.2) Lc hCL _ _ hY0
+        have hsMc : ∀ d ∈ CL M g, Single (ρ.o d) := fun d hd => single_o I.cons I.good
+          (mem_children (cl_mem_children hd)).2
+        have hformM := o_last_form I.cons hgM (I.good.ot_v g hgM) hCL hsMc
+          (by have := (cl_vals I.cons I.good hgM).2; exact this) hY0
+        have hot := I.good.ot_o g hgM
+        rw [hformM] at hot
+        unfold step at hot
+        rw [if_neg (by rw [← hBg, hB0.1]; rw [← hBg, hB0.1] at hnt; exact hnt)] at hot
+        rw [← hBg, hB0.1] at hot
+        have hot2 : isOT (psi (ρ.v g) (psi (ρ.v r) (app Y0 one) z) z) := hot
+        rw [← hY0] at hot2
+        have hl0 : LhdE (ρ'.o r) (ρ.o r) := by
+          rcases hPO.1 with h | ⟨_, w, hw⟩
+          · exact h
+          · rw [hY0] at hw; simp only [psi.injEq] at hw
+            exact absurd hw.2.1 (fun h => by cases Y0 <;> simp [app, one] at h)
+        have hot' := ot_parent_lhd hot2 (single_o hC1 hVT.g hrT).1 hl0
+        rw [hsy, hy0.1, hyz] at hot'
+        by_cases hsa : ρ'.v r < ρ.v g
+        · rw [comps_nil_of_lt hv'ot hsa] at hg'; simp at hg'
+        · left
+          apply le_of_lt
+          apply ((isOT_psi_iff).mp hot').2.2.2.2 g'
+          rw [comps_psi_z_of_ge hsa]
+          simp [hg']
+      · -- the state of `N` is at least `Ω_{v(r)}`
+        right
+        refine le_trans hgd (le_trans hdo ?_)
+        have hs : ∀ t ∈ Lc.map ρ.o ++ List.replicate j (omid M r L ρ), Single t := by
+          intro t ht
+          rcases List.mem_append.mp ht with ht | ht
+          · exact hsM t (List.mem_append_left _ ht)
+          · rw [(List.mem_replicate.mp ht).2]; exact hsO
+        have hpw : (Lc.map ρ.o ++ List.replicate j (omid M r L ρ)).Pairwise (fun a b => b ≤ a) := by
+          have hp1 := List.pairwise_append.mp hpM
+          refine List.pairwise_append.mpr ⟨hp1.1, List.pairwise_replicate.mpr (Or.inr (le_refl _)), ?_⟩
+          intro a ha b hb
+          rw [(List.mem_replicate.mp hb).2]
+          exact le_trans (le_of_lt hOr) (hp1.2.2 a ha _ (by simp))
+        have hsd := sumN_dec _ hs hpw
+        have hge : ∀ t ∈ Lc.map ρ.o ++ List.replicate j (omid M r L ρ), psi (ρ.v r) z z ≤ t := by
+          intro t ht
+          rcases List.mem_append.mp ht with ht | ht
+          · have := (List.pairwise_append.mp hpM).2.2 t ht (ρ.o r) (by simp)
+            refine le_trans ?_ this
+            rw [hor]; exact psi_le_psi_arg (z_le _)
+          · rw [(List.mem_replicate.mp ht).2, hom]; exact psi_le_psi_arg (z_le _)
+        have hne : Lc.map ρ.o ++ List.replicate j (omid M r L ρ) ≠ [] := by
+          intro he
+          apply hB0
+          rw [List.append_eq_nil_iff, List.map_eq_nil_iff, List.replicate_eq_nil_iff] at he
+          refine ⟨?_, he.2⟩
+          rw [hBg, he.1]; rfl
+        apply le_of_summands_ge
+        · apply spArg_ne_z
+          right
+          intro hz
+          have h1 := hsd.2
+          rw [hz] at h1
+          simp [summands] at h1
+          exact hne (by simp [h1.1, h1.2])
+        · apply spArg_summands_ge ⟨ρ.v r, z, rfl⟩ _ z hsd.1
+          · rw [hsd.2]; exact hge
+          · simp [summands]
   · -- the `D` frames before `r`
     intro i hi hng Lc c R hCL hDc s y hsy g' hg'
     have hcCL : c ∈ CL M i := by rw [hCL]; simp
@@ -631,13 +740,13 @@ theorem hExp_t0A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hOTD : T0DF 
   exact ⟨σ, rkN, V⟩
 
 /-- **`hExp` for `t = 0` in the `RClaim` scheme** (`VSmallR M ρ` given, as carried by main_GP). Residuals:
-`T0IVRes`, `T0VSResG`, `T0TrigRes` (the `D` frames), `T0RestV`・`FrmLF`・`hNG` (value fields), and the
+`T0IVRes`, `T0TrigRes` (the `D` frames), `T0RestV`・`FrmLF`・`hNG` (value fields), and the
 shadow frames `T0RWResCR`. No class residual (`T0IIRes`, `T0ShapeR3`). -/
 theorem hExp_t0_topR
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hNG : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ) (hFrm : FrmLF)
-    (hIV : T0IVRes) (hG : T0VSResG) (hTr : T0TrigRes)
+    (hIV : T0IVRes) (hTr : T0TrigRes)
     (hRest : T0RestV) (hC1 : T0RWResCR PTP1) (hC1W : T0RWResCR PTP1W) (hCT : T0RWResCR PTrig) :
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
@@ -650,7 +759,7 @@ theorem hExp_t0_topR
   have H2 : T0RestNV := ⟨g _ (t0_absD hRest.phi), g _ (t0_absU hRest.phi), g _ (f _ (t0_tplo hRest.tploR)),
     g _ (f _ (t0_absUW hRest.auwR)), g _ hFF.2.2, g _ (f _ (t0_absDN hRest.adnR)), g _ hFF.1, g _ hFF.2.1⟩
   have hDF := t0DF_of hTr hIV hM hS I R hVR
-  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF) hG) H2
+  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF) hIV) H2
     (t0RWResAt_of PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht)
       (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) hC1 hDF)
     (t0RWResAt_of PTP1W (fun _ _ _ _ _ hc hBc hl hA ht => ptp1w_classA hc hBc hl hA ht)

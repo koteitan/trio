@@ -2288,3 +2288,14 @@ N = M[n]、c_k = o_{M[k]}(r) とする。
   - lo(y) ≠ 0: y = hi + lo = P + t から P = hi + R0（prefix_of_app_single）、B ≤ hi ≤ P < y′。lo(y) = 0: 切り口が P の中なら B ≤ P、t の中（B = P + κ）なら T0CutResG で κ < T′。
 - 実測（5 集合、例外 0）: T0CutResG（新しい引数の低い部分の条件なし）d3s 194・deep2 1602・deep3 1714・C′ 4562・T0Ext 37784 件。どの場面でも新しい引数の低い部分は 0 だった。
 - CutResG の場面の形（d3s・deep3 の全件）: t は葉 Ω_k、T′ は 1 項の葉 Ω_{k′}（添字が変わる）、κ は添字の鎖の深い切り口（例: s = ω、t = Ω_{ψ_ω(…)}、κ = Ω_{Ω_ω}、T′ = Ω_{ψ_ω(…′)}）。κ < T′ は「右端の変化の位置が切り口の位置より深い」ことで、closure の RE（V3RE、道に沿った右端の変化）の主題そのもの。
+
+### T0VSResG を証明した（2026-10-12、t0-exp、V3T0FrmJ・V3T0TopR、緑）
+
+- g の枠で最後の写しの根の子 o′(r) の添字 v′(r) が変わるときの VSmallF（旧 T0VSResG）を、N の状態 B_N（数えられた中間の写しの根を含む）で示した。
+  - x は r の数える子（行 2 が 0 なので bump でなく、上げの的は行 2 ≠ 0 なので isUpg でない）。よって落とす補題の PV は v′(r) ◁ v(r)（WkV の枝は数える子がないときだけ）。
+  - 成分 g′ は s′ ◁ s の試し C = v(r) で v(r) の成分 d か 0 以下。M の VSmallF で d ≤ B か d ≤ Ω_{v(r)}。
+  - B ≠ 0 か中間の写しの根が数えられる（j ≥ 1）とき: B_N の加数はどれも Ω_{v(r)} 以上（o(r)・omid = ψ_{v(r)}(Y0) は Ω_{v(r)} 以上）なので Ω_{v(r)} ≤ B_N。
+  - B = 0 かつ j = 0: T0IVRes で古い枠は r で書き換えず o(g) = ψ_a(o(r))。PO で o′(r) ◁ o(r)（WkO の枝は o(r) の引数 Y0 + 1 ≠ 0 で除かれる）なので ψ_a(Ω_{v′(r)}) は標準形（ot_parent_lhd）、成分は Ω_{v′(r)} より小さい。
+  - g_frames_t0J（V3T0FrmJ）: g_frames_t0 の写しで、最後の写しの根では「j = 0 なら中間の写しの根はどれも数えられない」も渡す。
+- 実測（pall5.py、d3s・deep2・deep3・C′ で例外 0、T0Ext は実行中）: T0TPLoRes（D 76068・614720・615436・1581766）・T0AbsDNRes・T0AbsUWRes（2 種）・T0IVRes（5・46・38・383）・旧 T0VSResG・影の枠 T0RWResCR の 3 欄（D と g）。前任の T0TPLoRes・T0AbsUWRes・T0AbsDNRes の測定は C′・T0Ext の 6 万行列の標本だけだったので測り直した。
+- hExp_t0_topR の残り: hLast・hNG・FrmLF・T0IVRes・T0TrigRes・T0RestV（PhiX0R・T0TPLoRes・T0AbsUWRes・T0AbsDNRes）・T0RWResCR×3。hVSRexp_t0_topR: hLast・T0IVRes・T0TrigRes。
