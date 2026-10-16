@@ -3434,3 +3434,11 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - C の最後の枠のデータを `G.seed_last_C`（V3T2SeedFr2）に切り出した。
 - Ytosk 全体のビルド緑（1028 jobs）。公理は propext・Classical.choice・Quot.sound。
 
+### C の vqP を un から（2026-10-17、t2、V3T2CVq）
+
+- `c_vqP_of_un`: C の種の残り `T2SeedCRes.vqP`（M.take x での v(q) = s′ = qnS）は、同じ束の `un`（x − 1 は上げない）から出る。
+  - q の x より前の真の子孫は M.take x で値が変わらない（`chg_free_reg`。領域は子で閉じ、出口は x − 1 だけで、x − 1 は上げない）。`chg_off` で値の一致。
+  - v(q) の式（行 2 = 1）: v(P_1 q) + ω^{1 + Σ bump 項}。P_1 q = r で v(r) は変わらない（`topP_C`）。M.take x の q の子は M の x より前の子で、bump 項は孫の値だけで決まるので M と同じ。これは qnS の定義そのもの。
+- `T2SeedCResR`（vqP を除いた形）と `t2SeedCRes_of`。C の残りは decP・un・rw・lhd。
+- Ytosk 全体のビルド緑（1029 jobs）。公理は propext・Classical.choice・Quot.sound。
+
