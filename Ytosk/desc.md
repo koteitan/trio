@@ -3209,3 +3209,19 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 見通し:
   - T0CutResGGC の証明には「種で生まれた切り口の位置は、後の展開が変える位置（v の道で omega が写しをはがす所を含む）と重ならない」という値の履歴の不変条件が要る。
   - 生まれる所は t = 2 の種、保つのは t = 0・1・2 の展開と 1 列落とし。top の UpgRun（T2SeedCNext）・t2 の T2CutA と同じ種類の主張。
+
+### t = 1 の VSmallRAll と ExpT1OutV2 の完成（2026-10-17、t1、V3T1VSRAll、緑）
+
+- `expT1Out_V2_glob : HFrameV2 → HLeafV2 → ExpT1OutV2`。t = 1 の残りは top の共通の残り HFrameV2・HLeafV2 だけになった。S1 は `S1_std`（V3S1Std）で外した（`s1Std`）。前の `expT1Out_of_res` の残り T1VSRAllStep は要らない。
+- **VSmallRAll は M だけから出る。** φ（`phiT1`）: k < r なら k、そうでなければ r + (k − r) mod L（写しのブロックをブロック 0 に戻す）。
+  - `FrameMapT1 M ρ r L N σ`: N の書き換える枠 (k, c) は、M の書き換える枠 (φk, φc) に写り、v(k)・添字・前の子の o は同じで、引数は M の方が大きい。例外は写しの根 c の枠で、そのとき φk = φc = r、v(k) = v(r)、添字の成分は 0 以下か v(r) の成分以下。
+  - `pathLvAll_mapT1`: N の段の道は M の (φk) での段の道に写る。写しの根の枠を通るときは、段は v(r) か M の r での段（`PathLvAll` の帰納法、枠の写像だけを使う）。
+  - `vsmallRAll_of_mapT1`: FrameMapT1 と VSmallRAll M から VSmallRAll N。t2 の調べとちがい P = M[n − 1] の段は使わない（P の道は写しの根の上で N と分かれ、接頭辞の枠の書き換えは n = 2 で N と P で食い違う。M へ写せばこの問題はない）。
+- `expStep_frameMapT1`: FrameMapT1 ∧ VrDomQ は 1 コピーごとに保たれる。
+  - k < x: CL は M と同じ。書き換える子 c の v は D でない（D なら c は数える子を持たず、o(c) の引数は 0）。前の子は D でない（p1_dep）。o は fsD で下がり添字は同じなので引数は M の方が大きい（arg_le_of_psi_le）。
+  - c = x（写しの根）: q ≠ r なら v(q) > v(r)（v_chain_lt）で Ω_{v(q)} ≥ Ω_{v(r)+1} = o(x) ≥ o_N(x) となり書き換えない。q = r なら添字 v_P(r) の成分は VrDomQ で v(r) の成分以下。
+  - k ≥ x: P の枠 (k − L, c − L) そのもの（children_shift・cnt_copy）。φ は L ずらしで変わらない（`phiT1_shift`）。
+- 始点 `frameMapT1_take`: M.take x の枠は frame_take_rw で M の枠（φ は恒等）。v′(r) は PV の ◁（Lhd z の Dom を c = v(r) で使う）。q = r のとき x は r の数える子なので PV の弱い枝は起きない。
+- 測定（`tmp/t1/probes/vra6.py`、試し）: d3s 1500・ext2・t2ext・Cprime・expP・ext1x・deep3・ext1 各 2000 行列（n = 2, 3, 4）で、非根の枠の写像・根の枠（q = r のときだけ）・段の包含に例外 0。証明したので全数の測定はしていない。
+- `probe_eqsib.py`（EqSibUpg・PassFirst）は 9 集合で例外 0（ext2 は実行中）。EqSibUpg は S1 から証明済みなので確認のため。
+- 公理はどれも propext・Classical.choice・Quot.sound。

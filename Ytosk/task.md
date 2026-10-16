@@ -57,9 +57,9 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t1OP`）
       - ✅ q = r の条件付き入口を Inv3V2 に接続。実際の添字を使い、旧 AbsD・TrigOmC を外す（`qr_final_inv3V2`）
       - ✅ q != r の条件付き入口を Inv3V2 に接続。旧 AbsD・AbsU・TPLo を始点の条件に替える（`qn_final_inv3V2`）
-      - ✅ ExpT1OutV2 の組み立て（`expT1Out_of_res`、V3ExpT1Inv2）。運ぶ述語は CopyCoreV2 ∧ VrLe ∧ VSmallF ∧ VSmallRAll。枠の 10 欄・葉は top の共通の残り HFrameV2・HLeafV2、TP1C・TP1WC は PH3cG と葉から。残りは下の 2 つと HFrameV2・HLeafV2
-      - ✅ PassRootRes を S1 から証明（`passRootRes_of_S1`、V3EqSibS1・V3PassRoot）。値は使わない。残りは標準形の S1（`S1Std`、t0・top の共通の履歴の不変条件。t = 0・t = 1 の展開での保存は済み）
-      - VSmallRAll の 1 コピーごとの保存（`T1VSRAllStep`）。値が変わる（D の値は fsD）ので t0 の写像の議論はそのまま使えない
+      - ✅ ExpT1OutV2 を HFrameV2・HLeafV2（top の共通の残り）だけから（`expT1Out_V2_glob`、V3T1VSRAll）。運ぶ述語は CopyCoreV2 ∧ VrLe ∧ VSmallF ∧ FrameMapT1 ∧ VrDomQ。TP1C・TP1WC は PH3cG と葉から
+      - ✅ PassRootRes を S1 から証明（`passRootRes_of_S1`、V3EqSibS1・V3PassRoot）。S1 は `S1_std`（V3S1Std）
+      - ✅ VSmallRAll の保存（`expStep_frameMapT1`・`vsmallRAll_of_mapT1`）。N の書き換える枠は M の枠に写り、M の VSmallRAll だけから出る
     - t = 2 の展開と下降
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t2_G`・`hR2_t2_of`）
       - Inv3V2 への接続と、新しい枠の条件の証明
