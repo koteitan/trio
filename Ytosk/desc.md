@@ -3114,3 +3114,15 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - `t2VSFCV2_of`（V3T2VSFC）: T2VSFCV2 ⟸ T2BelowXRes ∧ FDsh ∧ 種の列の枠 `T2SeedVSFV2`（QVSF）・`T2SeedFCV2`（QFC）。M.take x の Good3・VSmallF・FrameClosed は StepCtxV2 の接頭辞の Inv3V2 から `agree_of_cons` で任意の Cons の評価へ（`take_fields_ctx`）。
 - 公理は propext・Classical.choice・Quot.sound。Ytosk 全体のビルド緑（999 jobs）。
 - 写しの枠の強い局所形の観察（`tmp/t2/probes/fcs*.py`）: 「B と s の成分は B・Ω_s・a の成分で押さえられる」は写しの枠でもまれに偽（P の対応する枠が偽のときだけ。r の新しい子の枠の写し）。FrameDom はそこでは B が H の接頭辞であることで成り立つ。
+
+### S1 は t = 0 の展開で保たれる（2026-10-16、t0、V3S1T0、緑）
+
+- 履歴の不変条件の共通の土台として、closure の S1（V3PDef: 隣り合う兄弟の部分木の列の並びは辞書式で増えない）を使う。私の SubLex は S1 と同じもので、d3s の 44460 組で例外 0。
+- `S1_t0`: R0P M・R0P N・S1 M から S1 N（N = M[n]、t = 0、n ≥ 1）。公理は propext・Classical.choice・Quot.sound。
+  - t = 0 の展開は写しだけ: `gexp_t0_eq`（N = M.take r ++ (M[r, r+L))^n）、`gexp_t0_split`（N = M.take x ++ 残りの写し）。
+  - S1 を並びの形 `S1s` に言い換えた（隣り合う兄弟 a < b ⟺ 行 0 が同じで、間の列の行 0 はどれも大きい。`S1s_of_S1`・`S1_of_S1s`、R0P のもとで）。
+  - 場合分け:
+    - a ≥ x: 写しは周期的（`colT0_per`）で、N.drop b は 1 周期前の drop の接頭辞（`dropT0_prefix`）なので、組 (a − L, b − L) に帰着する（a についての強い帰納法）。
+    - a, b < x: M の組。b の部分木が x まで届くときは、M では最後が col x、N では col r で続くか切れる。col r < col x なので辞書式の不等号は保たれる（`seqLtB_snoc_lt`）。
+    - a < x ≤ b: 行 0 の比較から a = r・b = x。N の x の部分木は r の部分木の接頭辞（`seqLtB_of_prefix_false`）。
+- 残り: S1 の t = 1・t = 2 の展開での保存（上昇があるので写しが行 1 でずれる）。分担は top と相談中。
