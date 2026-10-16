@@ -2920,3 +2920,19 @@ PassRootRes の再測定用に `tools/probe_passroot.py` を追加した。DepX 
 
 
 PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列、SRO より下 5,375,152 行列、そのうち t = 1 の評価 2,681,874 行列。前件を満たす 47,654 枠で反例は 0、評価失敗も 0。集合間の重複は除いていない。`Ytosk/passroot-measurement.md` と `.json` に各集合の件数と再現手順を保存した。検出の対照として非標準の行列を 1 個作り、条件違反を検出することと yaBMS の非標準判定も確認した。対照はこの全数集計には含めていない。測定は一般の証明ではないので、PassRootRes を作業ツリーで未完了のまま残した。
+
+### Inv3V2 の上の最上位（2026-10-16、top）
+
+- `trio_terminates_main_V2`（V3MainV2）: Inv3V2 の上で Desc3 と停止性を組み立てた。旧 Inv3・Inv3V を使わない。公理は propext・Classical.choice・Quot.sound。
+- 残りの仮定は 8 個の名前つきの Prop（V3ResV2）。
+  - 行列ごと（どの標準形でも Inv3V2 から）: `HDropV2`（DropResH）・`HSeedV2`（SeedR）・`HAbSV2`（AbsSR）。担当 drop。
+  - 1 列落とし: `HTakeV2`。結論 `TakeResV2` は `inv3V2_take` の残り（落とした行列の TakeFrameV2・TP1LeafG・TP1WLeafG・根の RootP）。担当 drop。
+  - t = 0: `ExpT0V2`（M[n] の Inv3V2）。担当 t0。
+  - t = 1: `ExpT1V2`（qr/qn_final_inv3V2 の hPs、ExpStepT1）。結論の形 `ExpT1OutV2` を直接示してもよい（`desc3_V2O`）。担当 t1。
+  - t = 2: `ExpT2V2`（M[n] の Inv3V2）・`R2V2`（Res3T2）。担当 t2。
+- 展開の仮定は文脈 `StepCtxV2` を受け取る: M の SInv・Inv3V2・Res3A と、全ての接頭辞 M.take j（1 ≤ j < |M|）の Inv3V2・Res3A。
+- 組み立ての中身:
+  - 帰納法 `hInvV2_all`: Std についての帰納法。基底は `hBaseV2_holds`。n ≤ 1 と最後の列が (0,0,0) の場合は接頭辞。
+  - 接頭辞 `pre_V2`: `inv3V2_take` を 1 列ずつ使う。評価は `drop1 M j rk`、順位は M と同じ rk のまま（`drop1_take_succ`）。評価を取り替えないので、Inv3V2 の 25 欄の合同の補題は要らない。
+  - 下降 `desc_stepV2`: 旧 `desc_step` を、旧 Inv3 の偽でない欄だけの `Inv3C` で写した。t = 1・n ≥ 2 は `qr_final_inv3V2`・`qn_final_inv3V2` の下降。t = 2 は旧 `t2_drops` の写し `t2_dropsC`（使う欄は Inv3C・Res3.drop・Res3.chain・Res3T2 だけ）。
+  - `Res3.chain` は接頭辞の Res3A.drop から。`Res3.t0` は ExpT0V2 の評価から `agree_of_cons` と Good3・rootS・rootP の合同で出す。

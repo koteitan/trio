@@ -68,7 +68,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - 強い T2UpgAbs の反例を扱える形への修正
   - **各段をまとめて Desc3 を得る**
     - ✅ 旧 Inv3V 上の条件付き最上位の組み立て（`trio_terminates_main_GH`）
-    - 最上位を Inv3V2 に替え、上の未証明の条件を全て証明して閉じる
+    - ✅ Inv3V2 上の最上位の組み立て（`trio_terminates_main_V2`、V3MainV2）。旧 Inv3・Inv3V を使わない
+    - 残りの 8 個の条件（V3ResV2）を証明して閉じる: HDropV2・HSeedV2・HAbSV2・HTakeV2（drop）、ExpT0V2（t0）、ExpT1V2（t1）、ExpT2V2・R2V2（t2）
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
   - Desc3 の証明 → **目標 4 が残っている**
@@ -92,7 +93,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
 
 ### 最上位の定理（どれも仮定つき）
 
-- 全体: `trio_terminates_main_GH`（V3RestTakeG）。VSmallR を使わない形
+- **Inv3V2 の上の全体: `trio_terminates_main_V2`（V3MainV2）**。残りは V3ResV2 の 8 個の名前つきの Prop（desc.md の節「Inv3V2 の上の最上位」）
+- 旧い全体: `trio_terminates_main_GH`（V3RestTakeG）。VSmallR を使わない形。偽の欄を含む Inv3V の上
 - t = 0 の hExp: `hExp_t0_topU`（V3T0TopU）
 - t = 1 の hExp: `hExp_t1OP`（V3TPath）。新しい条件付き入口は `qr_final_inv3V2`（q = r）と `qn_final_inv3V2`（q != r）、どちらも V3Inv2 で Inv3V2 を使用
 - t = 2 の hExp: `hExp_t2_G`（V3ExpT2M4）。x より前は `t2BelowXRes_of_L`（V3T2SeedWire）
