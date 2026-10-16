@@ -3442,3 +3442,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - `T2SeedCResR`（vqP を除いた形）と `t2SeedCRes_of`。C の残りは decP・un・rw・lhd。
 - Ytosk 全体のビルド緑（1029 jobs）。公理は propext・Classical.choice・Quot.sound。
 
+- 追記（top）: 最上位の種の残りの C を t2 の T2SeedCResR（vqP は un から、`t2SeedCRes_of`、V3T2CVq）に、T2VRASeed を t2 の `t2VRASeedG_of`（V3T2VRASeed、残り T2VRAQNDom・T2VRASeedSVC）で埋めた。Ytosk 全体のビルド緑。

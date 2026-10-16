@@ -4,7 +4,7 @@
 - `T2SeedPResRV2`・`t2SeedPResV2_of`: 種の残り `T2SeedPResV2` を、t2 が M だけで決まる欄を外した
   `T2SeedPResR`（V3T2SeedRes）に替える。
 - 種の残り `T2SeedPResRC`: qr は t2 の T2SeedQRResR、sv は t2 の T2SVStrict（rw を出す、V3T2SeedRes2）と lhd、
-  qn は base だけ（unc = QNUncRes は UpgSibV から、V3QNUncV）、C は T2SeedCRes だけ（CBig は UpgSibV から）。
+  qn は base だけ（unc = QNUncRes は UpgSibV から、V3QNUncV）、C は t2 の T2SeedCResR（vqP は un から、V3T2CVq。CBig は UpgSibV から）。
 - C の欄: 構造の残り T2SeedCNext は標準形で偽なので、C の欄は T2SeedCRes ∧ T2SeedCBig に替えた。
   `HSibV2`（どの標準形でも値の残り UpgSibV、V3CBigV）と C の残り T2SeedCRes から CBig を出す
   （`t2SeedPResR_of_sib`）。HSibV2 は難しい形 `HSibHardV2`（V3SibV）に絞った（`hSib_of_hard`）。
@@ -27,6 +27,8 @@ import Ytosk.V3T2SeedRes2
 import Ytosk.V3T2VRA
 import Ytosk.V3T2SeedFrV2
 import Ytosk.V3T2VRAPre
+import Ytosk.V3T2CVq
+import Ytosk.V3T2VRASeed
 
 namespace Ytosk
 
@@ -54,7 +56,7 @@ theorem hSib_of_hard (h : HSibHardV2) : HSibV2 := fun N σ rk hN hS hC hR hG =>
 
 /-- **The seed residuals left at the top** (2026-10-17): `qr` as t2's `T2SeedQRResR`; `sv` as t2's
 `T2SVStrict` (V3T2SeedRes2, gives `rw`) and the `lhd` field; `qn` only the `base` field (the `unc` field
-`QNUncRes` comes from `UpgSibV`, V3QNUncV); `C` only `T2SeedCRes` (`T2SeedCBig` comes from `UpgSibV`, V3CBigV). -/
+`QNUncRes` comes from `UpgSibV`, V3QNUncV); `C` as t2's `T2SeedCResR` (`T2SeedCBig` comes from `UpgSibV`, V3CBigV). -/
 structure T2SeedPResRC (M : Mat) (ρ : Valn) : Prop where
   qr : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
     (∀ i, upg M i ≠ some (r + L)) → ∀ Lc, CL M r = Lc ++ [r + L] → T2SeedQRResR M ρ r L Lc
@@ -70,7 +72,7 @@ structure T2SeedPResRC (M : Mat) (ρ : Valn) : Prop where
         (1 ≤ k → tqN (ρ.v r) (qnS M ρ r L q) t1 k < ρ.v q ∧
           (tqN (ρ.v r) (qnS M ρ r L q) t1 k = ρ.v q ∨ Lhd z (tqN (ρ.v r) (qnS M ρ r L q) t1 k) (ρ.v q)))
   C : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
-    (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCRes M ρ r L q
+    (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCResR M ρ r L q
 
 /-- **t2-seed, reduced** (the residuals of `T2SeedPResRC`). -/
 def T2SeedPResRCV2 : Prop :=
@@ -82,7 +84,7 @@ theorem t2SeedPResR_of_sib (hSib : HSibV2) (h : T2SeedPResRCV2) : T2SeedPResRV2 
   have H := h M ρ rk C hz h2
   have IW := Inv3W.ofV2 C.S C.I
   refine ⟨H.qr, fun r L hlen hr hq hux => ?_, fun r L q hlen hr hq hqr Lc hCL => ?_,
-    fun r L q hlen hr hq hqr hncl => ⟨H.C r L q hlen hr hq hqr hncl, ?_⟩⟩
+    fun r L q hlen hr hq hqr hncl => ⟨t2SeedCRes_of C.std C.ne IW hlen hr hq hqr (H.C r L q hlen hr hq hqr hncl), ?_⟩⟩
   · obtain ⟨hSt, hlhd⟩ := H.sv r L hlen hr hq hux
     exact ⟨sv_rw_of C.std C.ne IW ⟨C.R.drop⟩ hlen hr hq hux hSt, hlhd⟩
   · exact t2SeedQNResR_of2 C.std C.ne IW hlen hr hq hqr hCL
@@ -93,7 +95,7 @@ theorem t2SeedPResR_of_sib (hSib : HSibV2) (h : T2SeedPResRCV2) : T2SeedPResRV2 
       have := par_lt M 2 (r + L) r hr; omega
     obtain ⟨I1, _⟩ := C.pre (r + L) (by omega) (by omega)
     exact G.t2SeedCBig_of_sibV C.std C.ne IW ⟨C.R.drop⟩ hlen hr hq hqr hncl
-      (H.C r L q hlen hr hq hqr hncl)
+      (t2SeedCRes_of C.std C.ne IW hlen hr hq hqr (H.C r L q hlen hr hq hqr hncl))
       (fun τ hτ hG => hSib _ τ rk (std_take C.std (r + L) (by omega)) (ne_SRO_of_rk I1.rank) hτ I1.rank hG)
 
 /-- **`ExpT0OutV2` from t0's residuals** (`expT0V2_of4` with the descent of `t0_final_inv3V2D` kept). -/
@@ -113,28 +115,32 @@ theorem expT0Out_of4 (hRw : T0RwRes) (hAbW : T0AbWRes)
 
 /-- **The current top theorem**: everything committed so far plugged in. The hypotheses are the named
 residuals: drop `HDropV2`・`HSeedV2`; shared `HFrameV2`・`HLeafV2`; t0 `T0RwRes`・`T0AbWRes`;
-t2 `T2BelowXRes`・`T2SeedPResRCV2`・`T2SeedDomV2`・`FDsh`・`QVRAsh`・the seed columns `T2VRASeed`・the prefix shape
-`T2SeedPreShape`・the copy levels `T2VRACopy`; top `HSibHardV2`.
+t2 `T2BelowXRes`・`T2SeedPResRCV2`・`T2SeedDomV2`・`FDsh`・`QVRAsh`・the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`)・
+the prefix shape `T2SeedPreShape`・the copy levels `T2VRACopy`; top `HSibHardV2`.
 None of them is the false strong absorption `HAbSV2`. -/
 theorem trio_terminates_main_V2_cur (hD : HDropV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hRw : T0RwRes) (hAbW : T0AbWRes)
     (hB : T2BelowXRes) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
     (hFD : FDsh) (hsh : QVRAsh)
-    (hVSd : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
-      TRIO.srow M (M.length - 1) = 2 → T2VRASeed M)
+    (hQNG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
+        par M 0 (r + L) = some q → q ≠ r → ∀ Lc, CL M r = Lc ++ [q] → T2VRAQNDom M ρ r L q Lc)
+    (hSVCG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VRASeedSVC M)
     (hVPr : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2SeedPreShape M ρ)
     (hVCp : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRACopy M) : WellFounded Step' :=
   have hP : T2SeedPResV2 := t2SeedPResV2_of (t2SeedPResR_of_sib (hSib_of_hard hSib) hPR)
+  have hPreG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ := fun M ρ rk C hz h2 =>
+    t2VRAPre_of hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)
   terminates_of_desc3 (desc3_V2O hD hSd (hTake_of_glob hF hLf)
     (expT0Out_of4 hRw hAbW (t0Leaf_of_glob hLf) (t0Frame_of_glob hF))
     (expT1Out_V2_glob hF hLf)
     (expT2V2_of hB (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
-      (t2VRAV2_of hsh hB hVSd
-        (fun M ρ rk C hz h2 => t2VRAPre_of hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2
-          (hVPr M ρ rk C hz h2)) hVCp) hF hLf)
+      (t2VRAV2_of hsh hB (t2VRASeedG_of hB hP hPreG hQNG hSVCG) hPreG hVCp) hF hLf)
     (r2V2_of hB))
 
 end Ytosk
