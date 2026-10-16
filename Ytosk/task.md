@@ -56,7 +56,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
           - ✅ RwClosed（種類 cut の枠で B は ClosedA）の 11 集合（10 集合＋std_a）の測定。例外 0
           - RwClosed の保存
             - ✅ 基底・1 列落とし・t = 0・t = 1（V3RwClDrop・V3RwClT0・V3RwClT1）
-            - ✅ t = 2 の組み立て（`rwClosed_expand_t2SK`、V3RwClCopy・V3RwClSh・V3RwClSeed・V3SubstLev）。残り: T2CopyK CopyCutK（写しの枠で前提が立てば SubstDom V V′ a）と T2X1Cl（前提つき、種 r の最後の枠）
+            - ✅ t = 2 の組み立て（`rwClosed_expand_t2SV`、V3RwClCopy・V3RwClSh・V3RwClSeed・V3SubstLev・V3VAnc）。残り: T2CopyK CopyLowK（P の写しの枠で前提 → ClosedLow）、T2VAncStep（M[n] の行 1 の 1 段の VAnc）、T2X1Cl（前提つき、11 集合の全数で例外 0）
+              - ✅ 共有の値の条件 VDomF（t1 の T2VRAK・t2 の FDsh と共通）を写しの構造から T2VAncStep に帰着（t2CopyK_vDom_of）
               - ClSh（項だけの σ 不変性）は偽（反例は V3RwClSh の冒頭）。旧 `rwClosed_expand_t2S` は使わない
               - CopyCutK の測定（vprefix5.py）・T2X1Cl の測定（x1cl.py）
             - 最上位の帰納法で RwClosed を運ぶ（top が形を決める）
