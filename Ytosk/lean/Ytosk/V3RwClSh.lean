@@ -143,23 +143,33 @@ theorem closedA_sh_low {V V' a B : T} (hV : isOT V = true) (hV' : isOT V' = true
     · exact Or.inr h
 
 /-- **The single-matrix form** of the `V′`-domination: for a column `j` below `p` (row 1), the components of
-`v(p)` are at most `Ω_{v(p)}` or below a component of `v(j)`. -/
+`v(p)` are at most `Ω_{v(j)}` or below a component of `v(j)`. -/
 def VAnc (σ : Valn) (p j : Nat) : Prop :=
-  ∀ u, ∀ g ∈ comps u (σ.v p), g ≤ psi (σ.v p) z z ∨ ∃ d ∈ comps u (σ.v j), g ≤ d
+  ∀ u, ∀ g ∈ comps u (σ.v p), g ≤ psi (σ.v j) z z ∨ ∃ d ∈ comps u (σ.v j), g ≤ d
+
+theorem vAnc_refl (σ : Valn) (p : Nat) : VAnc σ p p := fun _ g hg => Or.inr ⟨g, hg, le_refl _⟩
+
+/-- **`VAnc` is transitive** along increasing `v`. -/
+theorem vAnc_trans {σ : Valn} {p q j : Nat} (hqj : σ.v q ≤ σ.v j) (h1 : VAnc σ p q) (h2 : VAnc σ q j) :
+    VAnc σ p j := by
+  intro u g hg
+  rcases h1 u g hg with h | ⟨d, hd, h⟩
+  · left
+    refine le_trans h (psi_le_psi_of ?_)
+    rcases (le_iff _ _).mp hqj with h' | h'
+    · exact Or.inl h'
+    · exact Or.inr ⟨h', Or.inr ⟨rfl, le_refl _⟩⟩
+  · rcases h2 u d hd with h' | ⟨d', hd', h'⟩
+    · exact Or.inl (le_trans h h')
+    · exact Or.inr ⟨d', hd', le_trans h h'⟩
 
 /-- `VDomF` at a copy frame from `VAnc` in `N` at `(r + L, i + L)`. -/
-theorem vDomF_of_vAnc {σ : Valn} {p j : Nat} {V V' a : T} (hV : isOT V = true) (hV' : isOT V' = true)
-    (hVV : V ≤ V') (ha : isOT a = true) (hVa : V ≤ a)
+theorem vDomF_of_vAnc {σ : Valn} {p j : Nat} {V V' a : T}
     (hp : σ.v p = V') (hj : σ.v j = shf V V' a) (h : VAnc σ p j) : VDomF V V' a := by
   intro u' _ g hg
   rw [← hp] at hg
   rcases h u' g hg with h | ⟨d, hd, h⟩
-  · left
-    refine le_trans h (psi_le_psi_of ?_)
-    rw [hp]
-    rcases (le_iff _ _).mp (le_shf hV hV' hVV ha hVa) with h' | h'
-    · exact Or.inl h'
-    · exact Or.inr ⟨h', Or.inr ⟨rfl, le_refl _⟩⟩
+  · left; rw [← hj]; exact h
   · rw [hj] at hd; exact Or.inr ⟨d, hd, h⟩
 
 end Ytosk

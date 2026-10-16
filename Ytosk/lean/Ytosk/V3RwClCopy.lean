@@ -10,6 +10,7 @@ ClSh は項の主張として偽（V3RwClSh の冒頭）。写しの枠で前提
 - `qRCo_shK`: qRCo_sh の ClSh を CopyCutK に替えたもの（closedA_sh・substDom_self）。
 -/
 import Ytosk.V3RwClSh
+import Ytosk.V3VAnc
 import Ytosk.V3RwClSeed
 
 namespace Ytosk
@@ -478,5 +479,77 @@ theorem rwClosed_expand_t2SL {M : Mat} {ρ : Valn}
     ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → RwClosed (expand M n) σ :=
   rwClosed_expand_t2L hB hM hS I R hz h2 hRM hT (G.seed_frames_RC hM hS I R hRM hz h2 hT hX1 hRes)
     (t2CopyK_and hLow hVD)
+
+/-- **Residual on `N = M[n]` alone**: the one-step row-1 domination `VAncStep` of every `M[n]`. -/
+def T2VAncStep (M : Mat) : Prop := ∀ n, 2 ≤ n → ∀ σ, Cons (expand M n) σ → VAncStep (expand M n) σ
+
+/-- **`VDomF` at the guarded copy frames** from `VAncStep` of `N = M[n]`: `V′ = v_N(r + L)`, `f(v_P i) = v_N(i + L)`
+(CopyFacts), and `i + L` is a row-1 descendant of `r + L` in `N` (`le1_copy2`). -/
+theorem t2CopyK_vDom_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M)
+    (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
+    (h2 : TRIO.srow M (M.length - 1) = 2) (hVS : T2VAncStep M) : T2CopyK CopyVDomK M := by
+  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
+    (t2CopyResAll_holds M ρ rk hM hS I R hz h2)
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  intro r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R' hCL
+  have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
+  have hrx : r < r + L := par_lt M 2 _ _ hr
+  have hL0 : 0 < L := by omega
+  have hlen2 : 2 ≤ M.length := by omega
+  have hA : Anc0 M r (r + L) := anc0_of_par M 2 r (r + L) hr
+  have he0lt := anc0_e0_lt hA (by omega)
+  obtain ⟨he2r, h1lt⟩ := par2_facts hX.z2 (by omega) hr
+  have hgx : TRIO.le1 M r (r + L) := by
+    obtain ⟨_, _, _, _, hle, _⟩ := (par2_iff M (show r + L < M.length by omega)).mp hr
+    exact hle
+  set d0 := entry M 0 (r + L) - entry M 0 r with hd0def
+  set d1 := entry M 1 (r + L) - entry M 1 r with hd1def
+  have hd0e : entry M 0 (r + L) = entry M 0 r + d0 := by omega
+  have hd0 : 0 < d0 := by omega
+  have hd1 : 0 < d1 := by omega
+  have hexp : ∀ m, expand M m = TRIO.gexp M r L d0 d1 m := by
+    intro m
+    have h := expand_eq_gexp M m hlen2 hzT (by rw [h2, show M.length - 1 = r + L by omega]; exact hr)
+    rw [h2, show M.length - 1 = r + L by omega] at h
+    simp only [show (0 < 2) from by omega, show (1 < 2) from by omega, if_true,
+      Nat.add_sub_cancel_left] at h
+    exact h
+  have hG : ∀ m, 1 ≤ m → ∀ σ, Cons (TRIO.gexp M r L d0 d1 m) σ → Good3 (TRIO.gexp M r L d0 d1 m) σ :=
+    fun m hm σ hσ => by rw [← hexp m] at hσ ⊢; exact hGall m hm σ hσ
+  have hRk : ∀ m, 1 ≤ m → ∃ rk, Rk (TRIO.gexp M r L d0 d1 m) rk := fun m hm => by
+    obtain ⟨rk', h'⟩ := rk_expand_t2 hX hJ hz h2 I.rank m hm
+    rw [hexp m] at h'; exact ⟨rk', h'⟩
+  have hBE : ∀ m, 1 ≤ m → BumpE2 (TRIO.gexp M r L d0 d1 m) := fun m _ => by
+    rw [← hexp m]; exact (sInvX_expand hX m).loc.2.2.1
+  have hCR := t2CopyResAll_holds M ρ rk hM hS I R hz h2 r L hlen hr
+  have hSD := hX.loc.1
+  obtain ⟨rkP, hRP⟩ := hRk (n - 1) (by omega)
+  obtain ⟨hKV, hB', hV', hVV⟩ := hCR n hn σ ρP hCN hCP hGP
+  have hK := t2GuardKids_gexp hlen hL0 hA hd0e hn hd0 hd1 hgx he2r (hBE (n - 1) (by omega))
+  have hRK := t2RootKids_gexp hlen hL0 hA hd0e hn hd0 hd1 hgx he2r hX.r0p hSD
+  have hF := copy_facts_gexp hlen hL0 hA hd0e hn hd0 hd1 hgx he2r (hBE (n - 1) (by omega))
+    hCN hCP hGP hRP hK hKV hRK hB' hV' hVV
+  obtain ⟨_, hgc, _⟩ := hF i hri hi
+  obtain ⟨hv, _, _, _⟩ := hgc hg
+  have hGN := hG n (by omega) σ hCN
+  have hlP : (TRIO.gexp M r L d0 d1 (n - 1)).length = r + (n - 1) * L := TRIO.gexp_length hlen
+  have hle := le1_copy2 hlen hL0 hA hd0e hn hd0 hd1 hgx (i + 1) i (Nat.lt_succ_self i) hri
+    (by rw [hlP] at hi; exact hi) hg
+  have hstep : VAncStep (TRIO.gexp M r L d0 d1 n) σ := by
+    have := hVS n hn σ (by rw [hexp n]; exact hCN)
+    rw [hexp n] at this; exact this
+  exact vDomF_of_vAnc rfl hv (vAnc_of_step hCN hGN hstep hle)
+
+/-- **RwClosed of every `M[n]`** (`t = 2`) with the copy frames reduced to `T2CopyK CopyLowK` (`P` side) and
+`T2VAncStep` (`N` alone). -/
+theorem rwClosed_expand_t2SV {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hRM : RwClosed M ρ)
+    (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → RwClosed (M.take (M.length - 1)) τ)
+    (hX1 : G.T2X1Cl M ρ) (hRes : G.T2SeedPRes M ρ) (hLow : T2CopyK CopyLowK M) (hVS : T2VAncStep M) :
+    ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → RwClosed (expand M n) σ :=
+  rwClosed_expand_t2SL hB hM hS I R hz h2 hRM hT hX1 hRes hLow (t2CopyK_vDom_of hB hM hS I R hz h2 hVS)
 
 end Ytosk
