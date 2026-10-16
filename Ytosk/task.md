@@ -95,7 +95,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ t2 の expT2V2_of・r2V2_of を差し込んだ現状の最上位（`trio_terminates_main_V2_t2`、種の残りを T2SeedPResR に減らした `_t2R`、V3TopV2）
     - ✅ 全員の生産者を差し込んだ現状の最上位 `trio_terminates_main_V2_cur`（V3TopV2）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
-    - 現状の最上位の残りを証明して閉じる: HDropV2・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0RwRes・T0AbWRes（t0）、T2BelowXRes・T2FOSeedV2・T2SeedPResRCV2・FDsh・T2SeedVSFV2・T2SeedFCV2・QVRAsh・T2VRASeed・T2VRAPre・T2VRACopy（t2）、HSibHardV2（top）
+    - 現状の最上位の残りを証明して閉じる: HDropV2・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0RwRes・T0AbWRes（t0）、T2BelowXRes・T2SeedPResRCV2・T2SeedDomV2・FDsh・QVRAsh・T2VRASeed・T2SeedPreShape・T2VRACopy（t2）、HSibHardV2（top）
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
   - Desc3 の証明 → **目標 4 が残っている**

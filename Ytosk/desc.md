@@ -3423,3 +3423,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - `q_nocnt_t2`: q ≠ r なら x は q ののりしろの子（t2_qn_struct）なので、q の子はすべてのりしろの列で、M[n] で x より前に数える子はない。
   - `pathLvAll_pre_t2`: x より前（q を除く）の段の道は枠ごとに M の道へ写る。
   - 残り `T2SeedPreShape`: 種 p（q = r なら r、q ≠ r なら P_0 q）の枠で子が x より前かつ q でないものは、N で書き換えるなら M でも同じ値で書き換える。試し（tmp/t1/probes/seedpre.py、d3s・t2ext・ext2・expP 各 2000 行列）で例外 0。p の子 q の枠は N だけで書き換えるが、q は種の列なので効かない。
+- 追記（top）: 最上位に t2 の `t2FOSeedV2_of`・`t2VSFCV2_of2`（V3T2SeedFrV2）と `t2VRAPre_of`（V3T2VRAPre）を差し込んだ。`trio_terminates_main_V2_cur` の t2 の残りは T2BelowXRes・T2SeedPResRCV2・T2SeedDomV2・FDsh・QVRAsh・T2VRASeed・T2SeedPreShape・T2VRACopy。Ytosk 全体のビルド緑。
