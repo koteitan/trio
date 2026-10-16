@@ -3460,3 +3460,14 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 骨組み（V3RwClCopy）: t2 の clField_copy・clField_expand_t2S を枠ごとの条件 K を受け取る形に写した（`clField_copyK`・`clField_expand_t2SK`）。残り `T2CopyK K M`（M[n − 1] の守られた写しの枠で K (v_P(r)) (v_N(r + L)) (v_P(i)) …）。`rwClosed_expand_t2SK`: RwClosed of M[n] ⟸ T2BelowXRes ∧ T2CopyK CopyCutK ∧ T2X1Cl ∧ T2SeedPRes。CopyCutK = 写しの枠で RwClosed の前提が立てば SubstDom V V′ a。
 - 測定（tmp/t0/probes/vprefix5.py、各集合 30000 行列、n = 2, 3）: 前提が立つ写しの枠で SubstDom は 11 集合で例外 0（ext2 335・ext1 281・std_a 421・d3s 214・t2ext 313・expP 387・Cprime 312・deep2 451・deep3 483・ext1x 81 件、t0ext は該当なし）。前提が立つ枠の大半は a = V だが、a ≠ V もある（ext2 57・ext1 9・std_a 11）。前提が立たない枠では SubstDom は偽になりうる（d = 0 を除いても ext1 で 28487 件）ので、K は前提つきでないといけない。
 - T2X1Cl（M.take x での r の引数 X₁ は ClosedA）は前提なしでは偽（Cprime 22・deep2 1・std_a 1。例: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,0,0)(5,1,1)(6,1,1)(3,2,1)、v(r) = ω、X₁ = Ω_{ω+ω}(…) の段 0 の成分 Ω_{ω2} が X₁ より大きい）。この行列の M[2]・M[3]・M[4] では r の最後の枠で前提が立たない（σX₁ = X₁ で書き換えない）。T2X1Cl を前提つき（sv・C の場合に r の最後の子で QRC）に直した。
+
+### T2VRACopy を段 u ≤ V の形に・QVRAsh は項だけでは偽、枠の条件 K へ（2026-10-17、t1、V3T2VRA）
+
+- **T2VRACopy の新しい形**: 写しの枠 (i + L, c) で、書き換え・hi(y) ≠ 0・¬ v_N(i + L) < u・comps u s ≠ [] の段 u（v_N(i + L) か道の段）は、P の列 i の段（LevAt）で u ≤ V = v_P(r)。成分のない段は QVRAt が自明なので要らない。
+  - 旧い形（P の段か f 像、変わらない段は u ≤ V か V′ ≤ u）は ext1 で例外 16（書き換えない枠の段）。新しい形は ext1 で例外 0。
+  - これで copyFrame_VRA は段を動かさない（u₁ = u、守られた列では u ≤ V）。
+- **QVRAsh（項だけの σ 移送、u ≤ V）は偽**: V = Ω_2、V′ = Ω_3 + ψ_1(ψ_0(Ω_{Ω_{Ω_{Ω_9}}}))、a = Ω_2 + Ω_2、u = 0、cv = ψ_{Ω_{Ω_2+1}}(Ω_{Ω_{Ω_2+1}+1})（tmp/t1/probes/qvrash_ce.py）。s の深い添字の f で V′ の加数が丸ごと入り、その成分 Ω_{Ω_{Ω_9}} は f(a) = Ω_3 + Ω_2 の成分でも Ω_{f(s)} でも押さえられない。t0 の ClSh と同じ原因。
+  - 形を `QVRAshK K`（枠の条件 K を仮定に足した移送）と残り `T2VRAK K M`（守られた写しの枠・P の段 u ≤ V で K）に分けた。最上位は K = `KStepVRA`（移送そのもの）で `qVRAshK_step` が自明、残りは `T2VRAK KStepVRA`。
+  - 証明できる K を探す手がかり（標本 std_a・ext2 各 4000、tmp/t1/probes/qvrash4.py・qvrash5.py）: g′ ∈ comps u (f s) は (A) σ g、(B) g そのまま、(C) V′ の加数の成分。(C) には K3「∀ g ∈ comps u V′, g ≤ Ω_{V′} ∨ ∃ d′ ∈ comps u (f a), g ≤ d′」（例外 0）。P 側の選択肢 g ≤ d（d ∈ comps u a）は σ d で運べない例がある（V = 0、a = ψ(ψ_{Ω_1}(0))：d は f(a) にそのまま残る）。t0 の SubstDom の (1)（σ d の支配）はここでは偽。
+- 測定（tools/probe_t2vra.py、全数、新しい形。QVRAsh 欄 = T2VRAK KStepVRA を P の段・0・枠の項の添字の u ≤ V で）: d3s・deep2・deep3・Cprime・t0ext・ext1x・expP・ext1 で T2VRAPre・T2VRACopy・T2VRASeed・QVRAsh すべて例外 0。t2ext・ext2・std_a は測定中。
+

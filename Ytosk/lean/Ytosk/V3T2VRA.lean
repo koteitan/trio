@@ -6,8 +6,10 @@ clField_expand_t2S（V3T2VSR）と同じ 1 コピーごとの帰納法で、段�
 - 接頭辞（k < x）で種の列でない枠: FrameShape（T2BelowXS）で M の枠と同じか最後の子が ◁ で下がる。
   段は M の段（名前つきの残り `T2VRAPre`）。M の VSmallRAll から `clField_of_shapeS`（Q を段 u で固定）。
 - 写し（k = i + L ≥ x）: CopyFacts で P = M[n − 1] の枠の σ 像（守られた列）か等しい（守られない列）。
-  段は P の段か、守られた列ではその f 像（名前つきの残り `T2VRACopy`）。P の VSmallRAll（帰納法の仮定）と
-  σ での移送（項だけの名前つきの残り `QVRAsh`）から。
+  意味のある段（書き換え・hi ≠ 0・成分あり）は P の段で u ≤ V（名前つきの残り `T2VRACopy`）。P の VSmallRAll
+  （帰納法の仮定）と σ での移送 `QVRAshK K`（枠の条件 K のもと）から。K は守られた写しの枠の名前つきの残り
+  `T2VRAK K M`。項だけの移送（K なし）は偽（V′ の成分が深い添字の f から入る、`QVRAshK` の注の反例）。
+  `KStepVRA`（移送そのもの）なら `qVRAshK_step` で自明。
 - 種の列の枠: 名前つきの残り `T2VRASeed`。
 -/
 import Ytosk.V3T2VSR
@@ -57,26 +59,33 @@ theorem qVRAt_low : ∀ a Lv cv cv' u, QVRAt a Lv cv u → Lhd z cv' cv → isOT
     subst this
     exact absurd htr.1 (T.not_lt_z _)
 
-/-- **The `σ`-transport of one frame and one level** (named residual; a statement about terms only):
-at a level `u ≤ V` or `u ≥ V′` the level stays, at a level `u ≥ V` it moves to `f(u)`. -/
-def QVRAsh : Prop :=
+/-- **The `σ`-transport of one frame at a level `u ≤ V`** under a frame condition `K`. Without a condition the
+statement about terms only is false: a component of `V′` enters `f(s)` through a deep subscript of `s` and need
+not be bounded in `f(a)` (V = Ω_2, V′ = Ω_3 + ψ_1(ψ_0(Ω_{Ω_{Ω_{Ω_9}}})), a = Ω_2 + Ω_2, u = 0,
+cv = ψ_{Ω_{Ω_2+1}}(Ω_{Ω_{Ω_2+1}+1})). -/
+def QVRAshK (K : T → T → T → List T → T → T → Prop) : Prop :=
   ∀ (V V' a : T) (Lv : List T) (cv u : T), isOT V = true → isOT V' = true → V < V' →
     isOT a = true → V ≤ a → (∀ t ∈ Lv ++ [cv], Single t) →
     (Lv ++ [cv]).Pairwise (fun a b => b ≤ a) → (V < a ∨ ∀ t ∈ Lv ++ [cv], V < lev t) →
-    QVRAt a Lv cv u →
-    ((u ≤ V ∨ V' ≤ u) → QVRAt (shf V V' a) (Lv.map (sh V V')) (sh V V' cv) u) ∧
-      (V ≤ u → QVRAt (shf V V' a) (Lv.map (sh V V')) (sh V V' cv) (shf V V' u))
+    u ≤ V → K V V' a Lv cv u → QVRAt a Lv cv u → QVRAt (shf V V' a) (Lv.map (sh V V')) (sh V V' cv) u
+
+/-- The frame condition that is the `σ`-transport itself. -/
+def KStepVRA (V V' a : T) (Lv : List T) (cv u : T) : Prop :=
+  QVRAt a Lv cv u → QVRAt (shf V V' a) (Lv.map (sh V V')) (sh V V' cv) u
+
+theorem qVRAshK_step : QVRAshK KStepVRA :=
+  fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hK hQ => hK hQ
 
 /-- **A copy frame of `N`** from the frame of `P` at the level `u₁`, moved to the level `u`. -/
-theorem copyFrame_VRA (hsh : QVRAsh)
+theorem copyFrame_VRA {K : T → T → T → List T → T → T → Prop} (hsh : QVRAshK K)
     {N P : Mat} {σ ρ : Valn} {r L : Nat} {V' : T} {g : Nat → Prop}
     (hF : CopyFacts N P σ ρ r L V' g) (hCP : Cons P ρ) (hGP : Good3 P ρ) (hrP : r < P.length)
     (hV' : isOT V' = true) (hVV : ρ.v r < V')
-    {i : Nat} (hri : r ≤ i) (hi : i < P.length) {u u1 : T}
-    (hlev : (g i → (u1 = u ∧ (u ≤ ρ.v r ∨ V' ≤ u)) ∨ (ρ.v r ≤ u1 ∧ u = shf (ρ.v r) V' u1)) ∧
-      (¬ g i → u1 = u))
+    {i : Nat} (hri : r ≤ i) (hi : i < P.length) {u : T} (hgu : g i → u ≤ ρ.v r)
+    (hK : g i → ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL P i = Lc ++ c :: R →
+      K (ρ.v r) V' (ρ.v i) (Lc.map ρ.o) (ρ.o c) u)
     (hQP : ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL P i = Lc ++ c :: R →
-      QVRAt (ρ.v i) (Lc.map ρ.o) (ρ.o c) u1) :
+      QVRAt (ρ.v i) (Lc.map ρ.o) (ρ.o c) u) :
     ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL N (i + L) = Lc ++ c :: R →
       QVRAt (σ.v (i + L)) (Lc.map σ.o) (σ.o c) u := by
   set V := ρ.v r with hVdef
@@ -129,15 +138,13 @@ theorem copyFrame_VRA (hsh : QVRAsh)
         · obtain ⟨d, hd', rfl⟩ := List.mem_map.mp h
           exact hdl d (List.mem_append_left _ hd')
         · simp at h; rw [h]; exact hdl c0 (by simp)
-    have hT := hsh V V' (ρ.v i) (Lc0.map ρ.o) (ρ.o c0) u1 hVo hV' hVV (hGP.ot_v i hi) hVi hS' hP' hlevel hQ
-    rcases hlev.1 hg with ⟨rfl, hu⟩ | ⟨hVu, rfl⟩
-    · exact hT.1 hu
-    · exact hT.2 hVu
+    exact hsh V V' (ρ.v i) (Lc0.map ρ.o) (ρ.o c0) u hVo hV' hVV (hGP.ot_v i hi) hVi hS' hP' hlevel (hgu hg)
+      (hK hg Lc0 c0 R0 hsplit) hQ
   · obtain ⟨hv, hd⟩ := hngc hg
     have hmap : Lc0.map (σ.o ∘ (· + L)) = Lc0.map ρ.o := by
       apply List.map_congr_left; intro d hd'; exact hd d (hmem d (List.mem_append_left _ hd'))
     rw [hv, hmap, hd c0 (hmem c0 (by simp))]
-    rw [← hlev.2 hg]; exact hQ
+    exact hQ
 
 /-- `M[n]` (`t = 2`) in the `gexp` form. -/
 noncomputable abbrev G2 (M : Mat) (r L n : Nat) : Mat :=
@@ -156,27 +163,38 @@ def T2VRAPre (M : Mat) (ρ : Valn) : Prop :=
     ∀ σ, Cons (G2 M r L n) σ → Good3 (G2 M r L n) σ →
     ∀ k, k < r + L → ¬ T2SeedCol M r L k → ∀ u, PathLvAll (G2 M r L n) σ k u → PathLvAll M ρ k u
 
-/-- **R-copy (VSmallRAll)**: a path level at a copy column of `M[n]` is a level of `M[n − 1]`, moved by `f` at a
-guarded column; an unmoved level at a guarded column is not in `(V, V′)`. -/
+/-- **R-copy (VSmallRAll)**: a level that matters at a copy frame of `M[n]` (rewriting, `hi ≠ 0`, at most the
+parent's `v`, with a component) is a level of `M[n − 1]` at the copied column, and at most `V = v_P(r)`. -/
 def T2VRACopy (M : Mat) : Prop :=
   ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ n, 2 ≤ n →
     ∀ σ ρP, Cons (G2 M r L n) σ → Good3 (G2 M r L n) σ →
     Cons (G2 M r L (n - 1)) ρP → Good3 (G2 M r L (n - 1)) ρP →
     ∀ i, r ≤ i → i < (G2 M r L (n - 1)).length →
-    ∀ u, PathLvAll (G2 M r L n) σ (i + L) u → ¬ lt (σ.v (i + L)) u = true →
-      ∃ u1, LevAt (G2 M r L (n - 1)) ρP i u1 ∧
-        (TRIO.le1 (G2 M r L (n - 1)) r i →
-          (u1 = u ∧ (u ≤ ρP.v r ∨ σ.v (r + L) ≤ u)) ∨ (ρP.v r ≤ u1 ∧ u = shf (ρP.v r) (σ.v (r + L)) u1)) ∧
-        (¬ TRIO.le1 (G2 M r L (n - 1)) r i → u1 = u)
+    ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL (G2 M r L n) (i + L) = Lc ++ c :: R →
+    ∀ s y, σ.o c = psi s y z →
+    (lt (spArg (σ.v (i + L)) z (sumN (Lc.map σ.o))) y = true ∧ lt (psi (σ.v (i + L)) z z) (psi s y z) = true) →
+    (split y (psi (succ s) z z)).1 ≠ z →
+    ∀ u, LevAt (G2 M r L n) σ (i + L) u → ¬ lt (σ.v (i + L)) u = true → comps u s ≠ [] →
+      LevAt (G2 M r L (n - 1)) ρP i u ∧ u ≤ ρP.v r
+
+/-- **R-copy-K (VSmallRAll)**: the frame condition `K` at the guarded copy frames of `M[n − 1]`, at its levels
+`u ≤ V` (`V = v_P(r)`, `V′ = v_N(r + L)`). -/
+def T2VRAK (K : T → T → T → List T → T → T → Prop) (M : Mat) : Prop :=
+  ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ n, 2 ≤ n →
+    ∀ σ ρP, Cons (G2 M r L n) σ → Cons (G2 M r L (n - 1)) ρP → Good3 (G2 M r L (n - 1)) ρP →
+    ∀ i, r ≤ i → i < (G2 M r L (n - 1)).length → TRIO.le1 (G2 M r L (n - 1)) r i →
+    ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL (G2 M r L (n - 1)) i = Lc ++ c :: R →
+    ∀ u, LevAt (G2 M r L (n - 1)) ρP i u → u ≤ ρP.v r →
+      K (ρP.v r) (σ.v (r + L)) (ρP.v i) (Lc.map ρP.o) (ρP.o c) u
 
 /-- **VSmallRAll of every `M[n]`** (`t = 2`, `n ≥ 1`) from VSmallRAll of `M` and `M.take x` and the named
 residuals. -/
-theorem vsmallRAll_expand_t2 (hsh : QVRAsh) (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem vsmallRAll_expand_t2 {K : T → T → T → List T → T → T → Prop} (hsh : QVRAshK K) (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hM : Std M) (hS : M ≠ SRO)
     (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
     (h2 : TRIO.srow M (M.length - 1) = 2) (hVM : VSmallRAll M ρ)
     (hVT : ∀ τ, Cons (M.take (M.length - 1)) τ → VSmallRAll (M.take (M.length - 1)) τ)
-    (hSeed : T2VRASeed M) (hPre : T2VRAPre M ρ) (hCopy : T2VRACopy M) :
+    (hSeed : T2VRASeed M) (hPre : T2VRAPre M ρ) (hCopy : T2VRACopy M) (hKM : T2VRAK K M) :
     ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → VSmallRAll (expand M n) σ := by
   have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXAll_of hB M ρ rk hM hS I R hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I R hz h2)
@@ -276,22 +294,14 @@ theorem vsmallRAll_expand_t2 (hsh : QVRAsh) (hB : T2BelowXRes) {M : Mat} {ρ : V
                 (mem_children (cl_mem_children (show c ∈ CL _ (r + a + L) by rw [hCL]; simp))).2
             omega
           intro s y hsy ht hhi hku
-          obtain ⟨hcl, hgc, hngc⟩ := hF (r + a) (by omega) hia
-          have hlev : ∃ u1, LevAt (G2 M r L m) ρP (r + a) u1 ∧
-              (TRIO.le1 (G2 M r L m) r (r + a) →
-                (u1 = u ∧ (u ≤ ρP.v r ∨ σ.v (r + L) ≤ u)) ∨
-                (ρP.v r ≤ u1 ∧ u = shf (ρP.v r) (σ.v (r + L)) u1)) ∧
-              (¬ TRIO.le1 (G2 M r L m) r (r + a) → u1 = u) := by
-            rcases hu with hu | hu
-            · by_cases hg : TRIO.le1 (G2 M r L m) r (r + a)
-              · obtain ⟨hv, hVi, _, _⟩ := hgc hg
-                exact ⟨_, Or.inl rfl, fun _ => Or.inr ⟨hVi, by rw [hu, hv]⟩, fun h => absurd hg h⟩
-              · obtain ⟨hv, _⟩ := hngc hg
-                exact ⟨_, Or.inl rfl, fun h => absurd h hg, fun _ => by rw [hu, hv]⟩
-            · exact hCopy r L hlen hr (m + 1) hn2 σ _ hCN hGN hCP hGP (r + a) (by omega) hia u hu hku
-          obtain ⟨u1, hu1, hl1, hl2⟩ := hlev
-          exact copyFrame_VRA hsh hF hCP hGP hrP hV' hVV (i := r + a) (by omega) hia ⟨hl1, hl2⟩
-            (fun Lc0 c0 R0 h => (vsmallRAll_iff.mp hQP) (r + a) Lc0 c0 R0 h u1 hu1) Lc c Rr hCL
+          by_cases hcs : comps u s = []
+          · intro g hg; rw [hcs] at hg; simp at hg
+          obtain ⟨hu1, huV⟩ := hCopy r L hlen hr (m + 1) hn2 σ _ hCN hGN hCP hGP (r + a) (by omega) hia
+            Lc c Rr hCL s y hsy ht hhi u hu hku hcs
+          exact copyFrame_VRA hsh hF hCP hGP hrP hV' hVV (i := r + a) (by omega) hia (fun _ => huV)
+            (fun hg Lc0 c0 R0 h => hKM r L hlen hr (m + 1) hn2 σ _ hCN hCP hGP (r + a) (by omega) hia hg
+              Lc0 c0 R0 h u hu1 huV)
+            (fun Lc0 c0 R0 h => (vsmallRAll_iff.mp hQP) (r + a) Lc0 c0 R0 h u hu1) Lc c Rr hCL
             s y hsy ht hhi hku
   intro n hn σ hσ
   rw [hexp n] at hσ ⊢
@@ -334,13 +344,15 @@ theorem vsmallRAll_congr {N : Mat} {σ τ : Valn} (h : Agree N σ τ) (hV : VSma
   · exact Or.inr (pathLvAll_congr h hu)
 
 /-- **T2VRAV2 from the named residuals.** -/
-theorem t2VRAV2_of (hsh : QVRAsh) (hB : T2BelowXRes)
+theorem t2VRAV2_of {K : T → T → T → List T → T → T → Prop} (hsh : QVRAshK K) (hB : T2BelowXRes)
     (hSeedG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRASeed M)
     (hPreG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ)
     (hCopyG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
-      TRIO.srow M (M.length - 1) = 2 → T2VRACopy M) : T2VRAV2 := by
+      TRIO.srow M (M.length - 1) = 2 → T2VRACopy M)
+    (hKG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VRAK K M) : T2VRAV2 := by
   intro M ρ rk C hz h2 n hn σ rkN hCN _ _ _
   obtain ⟨hX, _⟩ := sInvXJ_std C.std C.ne
   have hl2 : 2 ≤ M.length := by
@@ -352,6 +364,6 @@ theorem t2VRAV2_of (hsh : QVRAsh) (hB : T2BelowXRes)
   have hC1 := I1.cons
   exact vsmallRAll_expand_t2 hsh hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 C.I.vra
     (fun τ hτ => vsmallRAll_congr (agree_of_cons hC1 hτ hRk1) I1.vra)
-    (hSeedG M ρ rk C hz h2) (hPreG M ρ rk C hz h2) (hCopyG M ρ rk C hz h2) n (by omega) σ hCN
+    (hSeedG M ρ rk C hz h2) (hPreG M ρ rk C hz h2) (hCopyG M ρ rk C hz h2) (hKG M ρ rk C hz h2) n (by omega) σ hCN
 
 end Ytosk

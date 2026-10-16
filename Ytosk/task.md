@@ -77,9 +77,9 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
           - ✅ 種の列の枠（VSmallF・FrameOT・FrameClosed）を 4 つの場合で証明（V3T2SeedFr・V3T2SeedFr2・V3T2SeedFrV2）。残りは T2SeedDomV2（qn・C の s′ の成分、9 集合で例外 0）
           - FDsh の証明（`frameDom_of_kind` により、写しの枠の s の成分の条件の σ 移送に帰着できる見込み）
       - VSmallRAll の保存（T2VRAV2）
-        - ✅ 骨組み `t2VRAV2_of`（V3T2VRA、t1）: T2VRAV2 ⟸ QVRAsh（σ での移送、項だけ）∧ T2BelowXRes ∧ T2VRASeed（種の列の枠）∧ T2VRAPre（接頭辞の段は M の段）∧ T2VRACopy（写しの段は P の段か f 像）
+        - ✅ 骨組み `t2VRAV2_of`（V3T2VRA、t1）: T2VRAV2 ⟸ QVRAshK K（枠の条件 K のもとでの σ 移送）∧ T2BelowXRes ∧ T2VRASeed（種の列の枠）∧ T2VRAPre（接頭辞の段は M の段）∧ T2VRACopy（意味のある写しの段は P の段で u ≤ V）∧ T2VRAK K（守られた写しの枠の条件）。最上位は K = KStepVRA（移送そのもの、qVRAshK_step）
         - ✅ T2VRAPre ⟸ T2SeedPreShape（種の列 p の枠の形）（`t2VRAPre_of`、V3T2VRAPre）
-        - 残り（t1）: QVRAsh（t0 の V3SubstLev の補題で）、T2VRACopy、T2VRASeed、T2SeedPreShape。10 集合の全数の測定中
+        - 残り（t1）: T2VRAK KStepVRA（項だけの QVRAsh は偽。証明できる K を探す: V′ の成分の支配 K3 は標本で例外 0、P 側の d の選択肢の σ 像は抑えられない例あり）、T2VRACopy、T2SeedPreShape。全数の測定（新しい形）: 7 集合で例外 0、t2ext・ext2・std_a は測定中
       - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と C の値の残り UpgSibV
         - ✅ M だけで決まる欄（qr の ks・vs、qn の vqlt・Bc、sv の decP）を証明（V3T2SeedRes）
         - ✅ sv の rw を T2SVStrict 1 つに（V3T2SeedRes2）、qn の σB を数えない子の残り QNUncRes に（V3T2QNSig、一般の V′ の closure V3T2TameG）
@@ -97,7 +97,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ t2 の expT2V2_of・r2V2_of を差し込んだ現状の最上位（`trio_terminates_main_V2_t2`、種の残りを T2SeedPResR に減らした `_t2R`、V3TopV2）
     - ✅ 全員の生産者を差し込んだ現状の最上位 `trio_terminates_main_V2_cur`（V3TopV2）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
-    - 現状の最上位の残りを証明して閉じる: HDropV2・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0RwRes・T0AbWRes（t0）、T2BelowXRes・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・QVRAsh・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShape・T2VRACopy（t2）、HSibHardV2（top）
+    - 現状の最上位の残りを証明して閉じる: HDropV2・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0RwRes・T0AbWRes（t0）、T2BelowXRes・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・T2VRAK KStepVRA（t1）・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShape・T2VRACopy（t2）、HSibHardV2（top）
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
   - Desc3 の証明 → **目標 4 が残っている**

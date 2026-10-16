@@ -115,14 +115,15 @@ theorem expT0Out_of4 (hRw : T0RwRes) (hAbW : T0AbWRes)
 
 /-- **The current top theorem**: everything committed so far plugged in. The hypotheses are the named
 residuals: drop `HDropV2`・`HSeedV2`; shared `HFrameV2`・`HLeafV2`; t0 `T0RwRes`・`T0AbWRes`;
-t2 `T2BelowXRes`・`T2SeedPResRCV2`・`T2SeedDomV2`・`FDsh`・`QVRAsh`・the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`)・
-the prefix shape `T2SeedPreShape`・the copy levels `T2VRACopy`; top `HSibHardV2`.
+t2 `T2BelowXRes`・`T2SeedPResRCV2`・`T2SeedDomV2`・`FDsh`・the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`)・
+the prefix shape `T2SeedPreShape`・the copy levels `T2VRACopy`・the `σ`-step at the guarded copy frames
+`T2VRAK KStepVRA` (t1); top `HSibHardV2`.
 None of them is the false strong absorption `HAbSV2`. -/
 theorem trio_terminates_main_V2_cur (hD : HDropV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hRw : T0RwRes) (hAbW : T0AbWRes)
     (hB : T2BelowXRes) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
-    (hFD : FDsh) (hsh : QVRAsh)
+    (hFD : FDsh)
     (hQNG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
         par M 0 (r + L) = some q → q ≠ r → ∀ Lc, CL M r = Lc ++ [q] → T2VRAQNDom M ρ r L q Lc)
@@ -131,7 +132,9 @@ theorem trio_terminates_main_V2_cur (hD : HDropV2) (hSd : HSeedV2)
     (hVPr : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2SeedPreShape M ρ)
     (hVCp : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
-      TRIO.srow M (M.length - 1) = 2 → T2VRACopy M) : WellFounded Step' :=
+      TRIO.srow M (M.length - 1) = 2 → T2VRACopy M)
+    (hVK : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VRAK KStepVRA M) : WellFounded Step' :=
   have hP : T2SeedPResV2 := t2SeedPResV2_of (t2SeedPResR_of_sib (hSib_of_hard hSib) hPR)
   have hPreG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ := fun M ρ rk C hz h2 =>
@@ -140,7 +143,7 @@ theorem trio_terminates_main_V2_cur (hD : HDropV2) (hSd : HSeedV2)
     (expT0Out_of4 hRw hAbW (t0Leaf_of_glob hLf) (t0Frame_of_glob hF))
     (expT1Out_V2_glob hF hLf)
     (expT2V2_of hB (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
-      (t2VRAV2_of hsh hB (t2VRASeedG_of hB hP hPreG hQNG hSVCG) hPreG hVCp) hF hLf)
+      (t2VRAV2_of qVRAshK_step hB (t2VRASeedG_of hB hP hPreG hQNG hSVCG) hPreG hVCp hVK) hF hLf)
     (r2V2_of hB))
 
 end Ytosk
