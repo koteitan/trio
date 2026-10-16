@@ -3497,3 +3497,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - RwClosed（`closedA_sh_low`）: 写しの枠で前提が立てば P の状態 B は段 ≤ a で閉じている（`ClosedLow a B`、a の成分の枝が要らない）。ClosedLow ∧ VDomF → ClosedA f(a) σB。SubstDom の (1)（a の成分を σ で運ぶ）は要らなくなった。`rwClosed_expand_t2SL` の残りは `T2CopyK CopyLowK`（P 側、前提 → ClosedLow）と `T2CopyK CopyVDomK`（VDomF）、T2X1Cl・T2SeedPRes・T2BelowXRes。
 - `VAnc σ p j`（単一行列）: v(p) の段 u の成分 g は g ≤ Ω_{v(p)} か v(j) の段 u の成分以下。`vDomF_of_vAnc`: N で p = r + L、j = i + L（σ.v(i + L) = f(v_P i)）なら VDomF。測定（tmp/t0/probes/vanc.py、std_a・ext2・d3s 各 3000）: 行 1 の祖先と子孫のすべての組で VAnc 256772 件、写しの枠で VDomF（逃げ道 Ω_{V′} の強い形）12057 件、i + L は N で r + L の行 1 の子孫（12057 件）、いずれも例外 0。前提が立つ写しの枠で ClosedLow（vprefix の Dneeded）は 11 集合の標本で例外 0。
 - VAnc の証明には値の形の不変条件が要りそう: v(j) = add(v(P_1 j), t) で add が落とす v(P_1 j) の加数 q（q < head t）の成分は、項としては t の成分で抑えられない（ψ_0(Ω_{Ω_5}) < Ω_1 など）。
+
+### 一般の形 SibVCol（2026-10-17、top、測定のみ）
+
+- SibVCol: 同じ親の隣り合う子 a < b で col a = col b、b が b − 1 から上げられないなら v(b) ≤ v(a)。UpgSibV の (i)（同じ列）を含み、a が上げられ topped という条件を外した形。
+- 測定（tmp/top/probes/probe_sibcol.py）: 全 10 集合で前件 7,748,281 件、例外 0。79,201 個の生成集合でも前件 65,210 件、例外 0。
+- 列が違う兄弟に広げた形（b が上げられないなら v(b) ≤ v(a)、または o(b) ≤ o(a)）は偽（生成集合で 6,528 件）。
+- 見通し: SibVCol は Good3 の「数える子の o は増えない」と同じ種類の兄弟の値の条件。Good3 と同じく値の不変条件として運ぶ形が自然。
