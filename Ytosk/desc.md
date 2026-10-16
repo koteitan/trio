@@ -3184,3 +3184,13 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 新しい補題:
   - `cnf_sibChain`: CNF は「列 p から、p の部分木と後の兄弟の部分木（親の部分木の終わりまで）」の translate に降りる（列の長さの帰納法。p が先頭の子の部分木にあるか、兄弟の側にあるかで分ける）。
   - `S1s_of_cnf`: 隣り合う兄弟 a < b で、a の兄弟の鎖の translate は P a (a の部分木) (P b (b の部分木) …)。CNF の比較から ¬(translate (subT a) <o translate (subT b))。subT a・subT b は深さ e0 a のブロック（`blockok_subT`）なので、順序同型で列の辞書式に戻す（`seqLtB_iff_seqlex`）。
+
+### qn の σB（2026-10-17、t2、V3T2TameG・V3T2QNSig）
+
+- `tg_main`・`tg_sigmaB`（V3T2TameG）: closure の V3Tame（σ_{V, V+1}）を一般の V′ に広げた。仮定は「V′ < V + ω^W なら V′ + ω^W = V + ω^W」（吸収）と「r の x より前の行 2 ≠ 0 の子 d で V′ < v(d)」。
+  - V′ = V + 1 ではすべての見える列で f(v c) = v c だったが、一般の V′ では r の下の bump 子（P_1 = r・行 2 = 1 で r の子でない列）は v が小さく吸収しない（実測でも f(v c) ≠ v c）。主張を bump 子でない列（`TNB`）に制限した。帰納法で読む列はどれも bump 子でない: 数える子、bump 子の子（BumpLeaf で行 2 = 0）、上げの的（行 1 が P_1 より大きい）、P_1 の親（Z1C により行 2 = 1 の列は P_1 にならない、`no_par1_of_e2`）。P_1 = r・行 2 = 1 の bump 子でない列は r の子（RowJ と P_1 の性質）。
+- `qn_sigmaB`（V3T2QNSig）: T2SeedQNRes.σB（σ_{V, s′}、s′ = V + ω^S）を `tg_sigmaB`（x := q）で。吸収は `add_omega_absorb`。数える子 d は兄弟の減少で v(d) ≥ v(q) > s′。q への上げはない（q は topped で r で数えられる）。
+  - 残り: `QNUncRes`（r の q より前の数えない子、つまり上げの的で topped の子 d で s′ < v(d)）。測定（`tmp/ytosk-handoff/probes/t2-1016b/qnunc.py`）: Cprime・d3s・deep2・deep3・ext1 で qn 48 件・C 261 件、例外 0（10 集合の全数ではない）。
+  - 接続: `T2SeedQNResR2`（σB を QNUncRes に替えた形）、`T2SeedPResR2` と `t2SeedPResR_of2`（→ T2SeedPResR）。
+- 公理は propext・Classical.choice・Quot.sound。Ytosk 全体のビルド緑（1007 jobs）。
+

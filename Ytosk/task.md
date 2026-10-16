@@ -70,6 +70,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
           - FDsh の証明
       - VSmallRAll の保存（T2VRAV2）
       - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と構造の残り T2SeedCNext
+        - ✅ M だけで決まる欄（qr の ks・vs、qn の vqlt・Bc、sv の decP）を証明（V3T2SeedRes）
+        - ✅ sv の rw を T2SVStrict 1 つに（V3T2SeedRes2）、qn の σB を数えない子の残り QNUncRes に（V3T2QNSig、一般の V′ の closure V3T2TameG）
         - T2SeedCNext（top）: 今の構造の不変条件から出ない（非標準の反例 2 つ、desc.md）。7 集合で例外 0。新しい不変条件 UpgRun を測って、展開で閉じる（次の作業）
       - 強い T2UpgAbs の反例を扱える形への修正
   - **各段をまとめて Desc3 を得る**
