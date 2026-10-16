@@ -12,7 +12,8 @@ HardArg                 V3DropStrong.lean:139 HardArg        one case = (i < x, 
                                                              both triggers, hi(y') < hi(y); conclusion over
                                                              comps (v i) y' (fixed level, finite).
 VSmallNew               V3DropMain.lean:32 VSmallNew         case = (i, cs) with v'(cs) != v(cs); fixed level v(i).
-BumpWeakSrc             V3BumpDrop.lean:554 BumpWeakSrc      case = (i, j, k) with e1,e2 != 0, j bump child, k
+BumpWeakSrc             V3BumpDrop.lean BumpWeakSrc (2026-10-17: = BumpWeakShapeSrc ∧ WeakCS; the counter BumpWeakSrc
+                        is the shape part, WeakCS the other)  case = (i, j, k) with e1,e2 != 0, j bump child, k
                                                              child of j, o(k)=psi w 0 0 (w != 0), and the
                                                              disjunction (k=x & ch j=[x] & not v'(i) |>= v(i)) or
                                                              (k<x & o'(k)!=o(k) & not v'(k) |>= v(k)).  WCSP
@@ -81,8 +82,8 @@ from probe_inv3_prefix import Ctx, Z, ONE, lt, le, isOT, split, succ, app, sumN,
 import ytosk_eval as Y                                                # noqa: E402
 
 SRO = [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0), (2, 0, 0)]
-SETS = ('Cprime', 't0ext', 'd3s', 'deep2', 'deep3', 'ext1', 'ext1x', 't2ext', 'ext2', 'expP')
-FIELDS = ('HardArg', 'VSmallNew', 'BumpWeakSrc', 'BumpAbsC', 'BumpAbsS', 'AbsSR.S', 'AbsSR.Lo', 'SeedR',
+SETS = ('Cprime', 't0ext', 'd3s', 'deep2', 'deep3', 'ext1', 'ext1x', 't2ext', 'ext2', 'expP', 'std_a')
+FIELDS = ('HardArg', 'VSmallNew', 'BumpWeakSrc', 'WeakCS', 'BumpAbsC', 'BumpAbsS', 'AbsSR.S', 'AbsSR.Lo', 'SeedR',
           'VSmallNewR', 'ShadowC')
 OM1 = (ONE, Z, Z)
 E0 = (Z, OM1, Z)
@@ -290,8 +291,12 @@ def measure(matrix):
                 a1 = k == x and chM(j) == [x] and not lhdE(T.v(i), C.v(i))
                 a2 = k < x and T.o(k) != ok_ and not lhdE(T.v(k), C.v(k))
                 if not (a1 or a2): continue
-                okc = chM(i) == [j] and chM(j)[:1] == [k] and wcsp(i, V)
+                okc = chM(i) == [j] and chM(j)[:1] == [k]       # BumpWeakShapeSrc (2026-10-17)
                 note('BumpWeakSrc', okc, i=i, j=j, k=k)
+    # WeakCS (2026-10-17, the second half of BumpWeakSrc): every weakly changed v' has CS or WCS (v(P_0 i))
+    for i in range(x):
+        if T.v(i) == C.v(i) or lhdE(T.v(i), C.v(i)): continue
+        note('WeakCS', CS(T.v(i)) or WCS(vOpt(par0(i)), T.v(i)), i=i)
         if not all(chM(j) != [x] or vx_zero for j in bj): continue
         W = bumpW_M(i)
         guard = xparnb or vx_zero or strongG(i)

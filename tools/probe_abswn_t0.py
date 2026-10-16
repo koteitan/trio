@@ -76,7 +76,7 @@ if __name__ == '__main__':
     import json, os
     out = '/home/koteitan/proofs/trio/tmp/ytosk-handoff/results/drop/abswn_t0'
     os.makedirs(out, exist_ok=True)
-    names = sys.argv[1:] or ['Cprime', 't0ext', 'd3s', 'deep2', 'deep3', 'ext1', 'ext1x', 't2ext', 'ext2', 'expP']
+    names = sys.argv[1:] or ['Cprime', 't0ext', 'd3s', 'deep2', 'deep3', 'ext1', 'ext1x', 't2ext', 'ext2', 'expP', 'std_a']
     for name in names:
         mats = pickle.load(open('/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/%s.pkl' % name, 'rb'))
         tot = Counter(); exs = []

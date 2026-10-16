@@ -19,7 +19,7 @@ from probe_inv3_prefix import (
 
 SRO = [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0), (2, 0, 0)]
 SETS = ('Cprime', 't0ext', 'd3s', 'deep2', 'deep3', 'ext1', 'ext1x',
-        't2ext', 'ext2', 'expP')
+        't2ext', 'ext2', 'expP', 'std_a')
 FIELDS = ('AbsUS', 'TPLoS', 'TrigS', 'VSmallRAll')
 
 

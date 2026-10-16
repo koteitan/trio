@@ -141,7 +141,7 @@ from probe_trigs0 import lift_counts  # noqa: E402
 
 FIELDS = ('AbsDS', 'AbsUWL', 'AbsDW', 'AbsUW0', 'TPLoN', 'AbsDN', 'TPLoW')
 SETS = ('Cprime', 't0ext', 'd3s', 'deep2', 'deep3', 'ext1', 'ext1x',
-        't2ext', 'ext2', 'expP')
+        't2ext', 'ext2', 'expP', 'std_a')
 DEFINITIONS = ('V3SeedFields.lean:AbsDS', 'V3QRLocV.lean:AbsUWL', 'V3QRLocV.lean:AbsDW',
                'V3QRFinal4.lean:AbsUW0', 'V3QRFinal4.lean:TPLoN', 'V3QRFinal4.lean:AbsDN',
                'V3QRKeep.lean:TPLoW')

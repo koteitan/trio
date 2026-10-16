@@ -16,7 +16,7 @@ from probe_inv3_prefix import Ctx, Z, ONE, lt, le, isOT
 import ytosk_eval as Y
 
 SRO = [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0), (2, 0, 0)]
-SETS = ('Cprime', 't0ext', 'd3s', 'deep2', 'deep3', 'ext1', 'ext1x', 't2ext', 'ext2', 'expP')
+SETS = ('Cprime', 't0ext', 'd3s', 'deep2', 'deep3', 'ext1', 'ext1x', 't2ext', 'ext2', 'expP', 'std_a')
 SETDIR = '/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets'
 OUTDIR = '/home/koteitan/proofs/trio/tmp/ytosk-handoff/results/drop'
 OM1 = (ONE, Z, Z)
