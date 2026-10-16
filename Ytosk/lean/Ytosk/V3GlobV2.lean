@@ -7,7 +7,6 @@ drop（M.take x）・t0（M[n]）・t1（各コピー）・t2（M[n]）が同じ
 
 - `HFrameV2`: 枠の 10 欄。`HLeafV2`: 葉の 2 条件。
 - 変換: `hTake_of_glob`（drop の HTakeV2）、`t0Frame_of_glob`・`t0Leaf_of_glob`（t0 の T0NRes）。
-- `trio_terminates_main_V2_glob`: 現状の最上位で、drop・t0 の枠と葉をこの 2 つに替えたもの。
 
 注意: 共通の形は前件が弱い（親の行列の Inv3V2 を使えない）ので、担当ごとの形より強い主張。
 担当ごとの形（TakeResV2・T0NRes TakeFrameV2 など）で示してもよい。
@@ -62,14 +61,5 @@ theorem t0Leaf_of_glob (hL0 : HLeafV2) : T0NRes (fun N σ _ => TP1LeafG N σ ∧
   intro M ρ rk r L C hlen hL hp he1 n hn σ rkN hCN hRN hGN
   obtain ⟨hStd, hE⟩ := gexp_t0_facts C hlen hL hp he1 n hn
   exact hL0 _ σ rkN hStd (ne_SRO_of_rk hRN) hE hCN hRN hGN
-
-/-- **The current top theorem with the shared residuals** for the frame fields and the leaves of drop and
-`t = 0`. -/
-theorem trio_terminates_main_V2_glob (hD : HDropV2) (hSd : HSeedV2) (hA : HAbSV2)
-    (hF : HFrameV2) (hLf : HLeafV2)
-    (hCut : T0CutResGGC)
-    (h1 : ExpT1V2) (h2 : ExpT2V2) (hR2 : R2V2) : WellFounded Step' :=
-  trio_terminates_main_V2_now hD hSd hA (hTake_of_glob hF hLf) hCut (t0Leaf_of_glob hLf)
-    (t0Frame_of_glob hF) h1 h2 hR2
 
 end Ytosk

@@ -3375,3 +3375,16 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 追記（2026-10-17、t0）: ClSh に仮定「B の加数の添字は a 以上」を足した（qRCo_sh では B の加数 ≥ ψ_s(y) と a ≤ s から出る）。
   - 足す前の形は項だけの主張としては偽になる。例: V = 0、V′ = 10、a = ψ_0(Ω_5)、B = ψ_1(Ω_2)。B の成分 Ω_2 は a の成分 Ω_5 以下だが、σB の成分 Ω_12 は f(a) の成分で押さえられない。
   - 足した形は、小さな標準形の項での無作為な試し（clsh_enum.py）で 96905 件、例外 0。
+
+### 最上位から偽の強い吸収 HAbSV2 を外す・UpgSibVHard の (ii) を絞る（2026-10-17、top）
+
+- **HAbSV2 は偽**（drop: t = 0 の BumpAbsLo も厳密な ◁ で標準形で偽）だったのに、最上位の仮定に残っていた。外した。
+  - 文脈 `StepCtxV2` の R とその接頭辞を、Res3A から強い吸収 abS を外した `Res3AW`（drop・seed）に替えた（V3ResV2）。HTakeV2 の引数も Res3AW。
+  - 下降（V3MainV2）: `Res3` の代わりに `Res3D`（drop・chain）を使う。t = 0・n ≥ 2 の下降は、旧 t0_main'（強い吸収を使う）でなく、t0 の `t0_final_inv3V2D` の結論を受ける `ExpT0OutV2`（V3ResV2、ExpT1OutV2 と同じ形）から出す（`hT0_V2`）。n = 0・1 は drop_n0r・drop_n1 のまま。
+  - `desc3_V2O`・`desc3_V2`・`trio_terminates_main_V2` は HAbSV2 を取らず、t = 0 は ExpT0OutV2。古い組み立て `_now`（V3MainV2）・`_glob`（V3GlobV2）・`_t2`・`_t2R`・`_t2S`（V3TopV2）は消した。
+  - t0 の生産者: `expT0Out_of4`（V3TopV2）は t0 の expT0V2_of4 と同じ材料（T0RwRes・T0AbWRes・N の葉と枠）から、下降まで含めて ExpT0OutV2 を出す。
+  - 呼び出し側の直し（t0 のファイル）: 古い入口 `expT0V2_of`・`expT0V2_of2`（V3T0Inv2）・`expT0V2_of3`（V3T0Inv2S）は C.R.abS を使っていたので、引数 `(hA : HAbSV2)` を足した。
+- **現状の最上位 `trio_terminates_main_V2_cur`** の残り: drop HDropV2・HSeedV2、共通 HFrameV2・HLeafV2、t0 T0RwRes・T0AbWRes、t2 T2BelowXRes・T2FOSeedV2・T2SeedPResRCV2・FDsh・T2SeedVSFV2・T2SeedFCV2・T2VRAV2、top HSibHardV2。Ytosk 全体のビルド緑（1021 jobs）、公理は標準の 3 つ。
+- **UpgSibVHard の (ii)**（e1 b < e1 a）を「upg b = b + 1（次の列への上げ）」だけに絞った（V3SibV）。e2 b = 1 は RowJ・BumpE2 で除き、e1 b = 0 は v(b) = 0、upg b = none は v_chain_lt、upg b = k（祖先）は道の帰納法で v(b) = v(k) ≤ v(p) ≤ v(a)。証明の筋は V3SibV の冒頭の注釈。
+  - 測定（tmp の probe_sibii.py、10 集合）: (ii) の前件 12,357 件。upg b は none（e1 b = 0 が 10,068・e1 b > 0 が 1,447）か祖先（842）で、次の列は 0 件。v(b) ≤ v(p) は例外 0。
+- UpgSibV の追加の測定: SRO から作った標準形 7,410,825 個（行列 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(1,0,0) より大きく長さ 14 以下、展開の n ≤ 3）で前件 2,836,549 件、例外 0。

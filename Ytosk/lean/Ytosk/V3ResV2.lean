@@ -7,7 +7,8 @@
 行列ごとの残り（どの標準形でも、Inv3V2 から言う）:
 - `HDropV2`: 1 列落としの残り `DropResH`（drop）。
 - `HSeedV2`: t = 1・q = r の始点の条件 `SeedR`（drop）。
-- `HAbSV2`: t = 0 の強い吸収 `AbsSR`（drop）。t = 2 の欄は使われておらず偽だったので外した（2026-10-16）。
+- `HAbSV2`: t = 0 の強い吸収 `AbsSR`（drop）。標準形で偽（drop、2026-10-17）。最上位はもう使わない（文脈の
+  `Res3AW` は abS を持たない、2026-10-17）。古い t0 の入口（expT0V2_of・of2・of3）だけが引数で受ける。
 
 各段の残り:
 - `HTakeV2`: 1 列落とし。`inv3V2_take` の残り `TakeResV2`（落とした行列の枠の欄・葉）（drop）。根の RootP は証明済み。
@@ -18,8 +19,8 @@
 - `ExpT2V2`: t = 2、n ≥ 2 の展開の Inv3V2（t2）。
 - `R2V2`: t = 2 の下降の残り `Res3T2`（t2）。
 
-展開の仮定は文脈 `StepCtxV2` を受け取る: M の SInv・Inv3V2・Res3A と、全ての接頭辞 M.take j（1 ≤ j < |M|）の
-Inv3V2・Res3A。接頭辞の評価は `drop1 M j rk`、順位は M と同じ rk（評価を取り替えないので合同の補題は要らない）。
+展開の仮定は文脈 `StepCtxV2` を受け取る: M の SInv・Inv3V2・Res3AW と、全ての接頭辞 M.take j（1 ≤ j < |M|）の
+Inv3V2・Res3AW。Res3AW は Res3A から偽の強い吸収 abS を外したもの（drop・seed）。接頭辞の評価は `drop1 M j rk`、順位は M と同じ rk（評価を取り替えないので合同の補題は要らない）。
 -/
 import Ytosk.V3TakeInv2
 import Ytosk.V3DropRH
@@ -44,6 +45,19 @@ def HSeedV2 : Prop :=
 def HAbSV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk → AbsSR M ρ
 
+/-- **`Res3A` without the strong absorption** (`drop`, `seed`): the context of the steps (2026-10-17). -/
+structure Res3AW (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
+  drop : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
+  seed : ∀ r, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
+    lt (sf ((drop1 M (M.length - 1) rk).v r)) (ρ.v r) = true →
+    ∀ a', ¬ lt (ρ.v r) a' = true →
+    isOT (psi a' (app (qrB M ρ r (M.length - 1)) (psi (succ (ρ.v r)) z z)) z) = true →
+    ∀ g ∈ comps a' ((drop1 M (M.length - 1) rk).o r),
+      g < app (qrB M ρ r (M.length - 1)) ((drop1 M (M.length - 1) rk).o r)
+
+theorem Res3A.toAW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (R : Res3A M ρ rk) : Res3AW M ρ rk :=
+  ⟨R.drop, R.seed⟩
+
 /-! ## 1 列落とし -/
 
 /-- The residual of `inv3V2_take`: the frame fields and the two leaf conditions of the dropped matrix
@@ -56,7 +70,7 @@ structure TakeResV2 (M : Mat) (rk : Bool → Nat → Nat) : Prop where
 
 /-- **R-take**: the one-column drop step. -/
 def HTakeV2 : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3V2 M ρ rk → Res3A M ρ rk → TakeResV2 M rk
+  ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3V2 M ρ rk → Res3AW M ρ rk → TakeResV2 M rk
 
 /-! ## 展開 -/
 
@@ -67,14 +81,24 @@ structure StepCtxV2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop whe
   ne : M ≠ SRO
   S : SInv M
   I : Inv3V2 M ρ rk
-  R : Res3A M ρ rk
+  R : Res3AW M ρ rk
   pre : ∀ j, 1 ≤ j → j < M.length →
-    Inv3V2 (M.take j) (drop1 M j rk) rk ∧ Res3A (M.take j) (drop1 M j rk) rk
+    Inv3V2 (M.take j) (drop1 M j rk) rk ∧ Res3AW (M.take j) (drop1 M j rk) rk
 
 /-- **R-t0**: the expansions `M[n]` (`n ≥ 2`) with a last column of type `t = 0` have the invariant. -/
 def ExpT0V2 : Prop :=
   ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
     ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (expand M n) ρN rkN
+
+/-- **R-t0, with the descent**: the conclusion that t0's engine `t0_final_inv3V2D` gives (2026-10-17). -/
+def ExpT0OutV2 : Prop :=
+  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (expand M n) ρN rkN ∧
+      isOT (root (expand M n) ρN) = true ∧ root (expand M n) ρN < root M ρ
+
+theorem expT0V2_of_out (h : ExpT0OutV2) : ExpT0V2 := fun M ρ rk C hz hs n hn => by
+  obtain ⟨ρN, rkN, IN, _⟩ := h M ρ rk C hz hs n hn
+  exact ⟨ρN, rkN, IN⟩
 
 /-- **R-t1**: at `t = 1` (`x = r + L`, `r = P_1(x)`), one added copy keeps the invariant (`ExpStepT1`). -/
 def ExpT1V2 : Prop :=

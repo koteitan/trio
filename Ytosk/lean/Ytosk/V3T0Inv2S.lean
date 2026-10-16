@@ -59,10 +59,10 @@ theorem expT0V2_of4 (hRw : T0RwRes) (hAbW : T0AbWRes)
   exact ⟨ρN, rkN, IN⟩
 
 /-- `expT0V2_of4` with the strong absorption `AbsSR` of the step context (the earlier interface). -/
-theorem expT0V2_of3 (hRw : T0RwRes)
+theorem expT0V2_of3 (hA : HAbSV2) (hRw : T0RwRes)
     (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
     ExpT0V2 :=
-  expT0V2_of4 hRw (fun M ρ rk C r L hlen hp he1 => T0AbsW.of_strong (C.R.abS r
+  expT0V2_of4 hRw (fun M ρ rk C r L hlen hp he1 => T0AbsW.of_strong ((hA M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.I) r
     (by rw [show M.length - 1 = r + L by omega]; exact hp) (by rw [show M.length - 1 = r + L by omega]; exact he1)))
     hLeaf hFrm
 

@@ -236,23 +236,24 @@ def T0NRes (F : Mat → Valn → (Bool → Nat → Nat) → Prop) : Prop :=
       Rk (TRIO.gexp M r L 0 0 n) rkN → Good3 (TRIO.gexp M r L 0 0 n) σ → F (TRIO.gexp M r L 0 0 n) σ rkN
 
 /-- **top's `ExpT0V2`** from the cut residual and the two residual fields of `N`. -/
-theorem expT0V2_of2 (hCut : T0CutResGGC)
+theorem expT0V2_of2 (hA : HAbSV2) (hCut : T0CutResGGC)
     (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
     ExpT0V2 := by
   intro M ρ rk C hz hs0 n hn2
   obtain ⟨r, L, hlen, hL, hp, he1, hexp⟩ := t0_shapeS C.S hz hs0
   rw [hexp n]
   have hpre := (C.pre (r + L) (by omega) (by omega)).1
-  obtain ⟨ρN, rkN, IN, _, _⟩ := t0_final_inv3V2 C.std C.ne C.S C.I hlen hL hp he1 C.R.drop C.R.abS hpre hCut
+  obtain ⟨ρN, rkN, IN, _, _⟩ := t0_final_inv3V2 C.std C.ne C.S C.I hlen hL hp he1 C.R.drop
+    (hA M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.I) hpre hCut
     (hLeaf M ρ rk r L C hlen hL hp he1) (hFrm M ρ rk r L C hlen hL hp he1)
     n hn2
   exact ⟨ρN, rkN, IN⟩
 
 /-- The earlier interface of `expT0V2_of2` with the `VSmallRAll` residual of `N`, which is now proved
 (`vsmallRAll_N_t0`) and not used. -/
-theorem expT0V2_of (hCut : T0CutResGGC) (_hVRA : T0NRes (fun N σ _ => VSmallRAll N σ))
+theorem expT0V2_of (hA : HAbSV2) (hCut : T0CutResGGC) (_hVRA : T0NRes (fun N σ _ => VSmallRAll N σ))
     (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
     ExpT0V2 :=
-  expT0V2_of2 hCut hLeaf hFrm
+  expT0V2_of2 hA hCut hLeaf hFrm
 
 end Ytosk
