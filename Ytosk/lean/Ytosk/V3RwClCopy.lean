@@ -335,4 +335,148 @@ theorem rwClosed_expand_t2SK (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
     ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → RwClosed (expand M n) σ :=
   rwClosed_expand_t2K hB hM hS I R hz h2 hRM hT (G.seed_frames_RC hM hS I R hRM hz h2 hT hX1 hRes) hK
 
+
+/-! ## 閉じた枠と V′ の支配に分けた形（共有の値の条件 VDomF） -/
+
+/-- **The copy-frame condition, split**: at the premise, the state is closed at all levels `≤ a`, and `VDomF`. -/
+def CopyCutL (V V' a : T) (Lv : List T) (cv : T) : Prop :=
+  ∀ s y, cv = psi s y z → lt (spArg a z (sumN Lv)) y = true ∧ lt (psi a z z) (psi s y z) = true →
+    spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 →
+    (¬ ∃ R', (split y (psi (succ s) z z)).1 = app (spArg a z (sumN Lv)) R') →
+    ClosedLow a (spArg a z (sumN Lv)) ∧ VDomF V V' a
+
+/-- The `P`-side part: at the premise, the state is closed at all levels `≤ a`. -/
+def CopyLowK (_V _V' a : T) (Lv : List T) (cv : T) : Prop :=
+  ∀ s y, cv = psi s y z → lt (spArg a z (sumN Lv)) y = true ∧ lt (psi a z z) (psi s y z) = true →
+    spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 →
+    (¬ ∃ R', (split y (psi (succ s) z z)).1 = app (spArg a z (sumN Lv)) R') →
+    ClosedLow a (spArg a z (sumN Lv))
+
+/-- The value part: `VDomF` (shared with VSmallRAll and FrameDom). -/
+def CopyVDomK (V V' a : T) (_Lv : List T) (_cv : T) : Prop := VDomF V V' a
+
+theorem t2CopyK_mono {K K' : T → T → T → List T → T → Prop} (h : ∀ V V' a Lv cv, K V V' a Lv cv → K' V V' a Lv cv)
+    {M : Mat} (hK : T2CopyK K M) : T2CopyK K' M :=
+  fun r L hlen hr n hn σ ρ hσ hρ hG i hri hi hg Lc c R hCL =>
+    h _ _ _ _ _ (hK r L hlen hr n hn σ ρ hσ hρ hG i hri hi hg Lc c R hCL)
+
+theorem t2CopyK_and {M : Mat} (h1 : T2CopyK CopyLowK M) (h2 : T2CopyK CopyVDomK M) : T2CopyK CopyCutL M :=
+  fun r L hlen hr n hn σ ρ hσ hρ hG i hri hi hg Lc c R hCL s y hcv ht hhi hnp =>
+    ⟨h1 r L hlen hr n hn σ ρ hσ hρ hG i hri hi hg Lc c R hCL s y hcv ht hhi hnp,
+     h2 r L hlen hr n hn σ ρ hσ hρ hG i hri hi hg Lc c R hCL⟩
+
+theorem qRCo_shL (V V' a : T) (Lv : List T) (cv : T) (hV : isOT V = true)
+    (hV' : isOT V' = true) (hVV : V < V') (ha : isOT a = true) (hVa : V ≤ a)
+    (hs : ∀ t ∈ Lv ++ [cv], Single t) (hp : (Lv ++ [cv]).Pairwise (fun a b => b ≤ a))
+    (hlev : V < a ∨ ∀ t ∈ Lv ++ [cv], V < lev t) (hK : CopyCutL V V' a Lv cv) (hQ : QRCo a Lv cv) :
+    QRCo (shf V V' a) (Lv.map (sh V V')) (sh V V' cv) := by
+  have hLs : ∀ t ∈ Lv, Single t := fun t ht => hs t (List.mem_append_left _ ht)
+  have hLp : Lv.Pairwise (fun a b => b ≤ a) := (List.pairwise_append.mp hp).1
+  obtain ⟨hSot, hSsum⟩ := sumN_dec Lv hLs hLp
+  have hlev' : V < a ∨ ∀ q ∈ summands (sumN Lv), lev q ≠ V := by
+    rcases hlev with h | h
+    · exact Or.inl h
+    · right; rw [hSsum]; intro q hq; exact ne_of_gt (h q (List.mem_append_left _ hq))
+  have hBot : isOT (spArg a z (sumN Lv)) = true := isOT_spArg a (sumN Lv) z rfl hSot
+  have hB : spArg (shf V V' a) z (sumN (Lv.map (sh V V'))) = sh V V' (spArg a z (sumN Lv)) := by
+    rw [← sh_sumN hV hV' hVV (fun t ht => (hLs t ht).1)]
+    have hsp := sh_spArg hV hV' hVV ha hVa (b := z) rfl hSot hlev'
+    rw [sh_z] at hsp
+    exact hsp
+  obtain ⟨hcvot, s, y, hcv⟩ := hs cv (by simp)
+  subst hcv
+  refine ⟨isOT_sh hV hV' hVV hcvot, ?_⟩
+  intro s' y' hcv' ht' hhi' hnp'
+  rw [hB] at ht' hhi' hnp' ⊢
+  have hVV' : V ≤ V' := le_of_lt hVV
+  have hsot : isOT s = true := isOT_sub hcvot
+  have hyot : isOT y = true := isOT_arg hcvot
+  by_cases hVs : V < s
+  · rw [sh_psi_gt hVs, sh_z] at hcv'
+    simp only [psi.injEq] at hcv'
+    obtain ⟨rfl, rfl, -⟩ := hcv'
+    have h1 : lt (spArg a z (sumN Lv)) y = true :=
+      (sh_lt_iff hV hV' hVV' hBot hyot).mp ht'.1
+    have hfa : shf V V' a ≤ shf V V' s := le_of_trig ht'.2
+    have has : a ≤ s := by
+      rcases (le_iff _ _).mp hfa with h | h
+      · exact le_of_lt ((shf_lt_iff hV hV' hVV' ha hsot hVa (le_of_lt hVs)).mp h)
+      · rcases lt_trichotomy' a s with h' | h' | h'
+        · exact le_of_lt h'
+        · rw [h']
+        · exact absurd h (ne_of_gt (shf_lt_shf hV hV' hVV' hsot ha (le_of_lt hVs) h'))
+    have hyz : y ≠ z := fun h => by rw [h] at h1; exact T.not_lt_z _ h1
+    have h2 : lt (psi a z z) (psi s y z) = true := by
+      show psi a z z < psi s y z
+      rcases (le_iff _ _).mp has with h | h
+      · exact psi_lt_psi_z_iff.mpr (Or.inl h)
+      · subst h
+        exact psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_of_le_of_ne (z_le _) (Ne.symm hyz)⟩)
+    -- the premise `B < hi(y)` moves back
+    have hsplit := sh_split hV hV' hVV (sh_lt_om_succ hV hV' hVV hsot hVs) hyot
+    rw [hsplit] at hhi' hnp'
+    have hhiot : isOT (split y (psi (succ s) z z)).1 = true :=
+      isOT_app_left (by rw [split_app]; exact hyot)
+    have hhi : spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 :=
+      (sh_lt_iff hV hV' hVV' hBot hhiot).mp hhi'
+    have hBc : ∀ q ∈ summands (spArg a z (sumN Lv)), psi s y z ≤ q := by
+      apply spArg_summands_ge ⟨s, y, rfl⟩ (sumN Lv) z hSot
+      · rw [hSsum]; intro q hq
+        exact (List.pairwise_append.mp hp).2.2 q hq _ (by simp)
+      · simp [summands]
+    have hBV : ∀ q ∈ summands (spArg a z (sumN Lv)), V < lev q := by
+      intro q hq
+      exact lt_of_lt_of_le hVs (lev_le_of_le (hBc q hq))
+    have hnp : ¬ ∃ R', (split y (psi (succ s) z z)).1 = app (spArg a z (sumN Lv)) R' := by
+      rintro ⟨R', hR'⟩
+      exact hnp' ⟨sh V V' R', by simp only; rw [hR', sh_app]⟩
+    have hBa : ∀ q ∈ summands (spArg a z (sumN Lv)), a ≤ lev q := fun q hq =>
+      le_trans has (lev_le_of_le (hBc q hq))
+    obtain ⟨hL, hD⟩ := hK s y rfl ⟨h1, h2⟩ hhi hnp
+    exact closedA_sh_low hV hV' hVV' ha hVa hBot hBV hBa hL hD
+  · rw [sh_psi_le hVs, sh_z] at hcv'
+    simp only [psi.injEq] at hcv'
+    obtain ⟨rfl, rfl, -⟩ := hcv'
+    exfalso
+    have hlt : s < shf V V' a :=
+      lt_of_le_of_lt (le_of_not_gt hVs) (lt_of_lt_of_le hVV (le_shf hV hV' hVV' ha hVa))
+    have := le_of_trig ht'.2
+    exact lt_irrefl' _ (lt_of_lt_of_le hlt this)
+
+/-- **RwClosed of every `M[n]`** (`t = 2`, `n ≥ 1`) without `ClSh`: the copy frames by `T2CopyK CopyCutL`. -/
+theorem rwClosed_expand_t2L (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hRM : RwClosed M ρ)
+    (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → RwClosed (M.take (M.length - 1)) τ)
+    (hSeed : T2SeedFrames QRC M) (hK : T2CopyK CopyCutL M) :
+    ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → RwClosed (expand M n) σ := by
+  have hl : 1 ≤ M.length := by
+    rcases Nat.eq_zero_or_pos M.length with h | h
+    · exfalso; apply hz; rw [h]
+      have : M = [] := List.eq_nil_of_length_eq_zero h
+      subst this; rfl
+    · exact h
+  have hSeed' : T2SeedFrames QRCo M := by
+    intro r L hlen hr n hn hGm σ hCN hGN i hsc Lc c R hCL
+    have hcN := (mem_children (cl_mem_children (show c ∈ CL _ i by rw [hCL]; simp))).2
+    exact ⟨hGN.ot_o c hcN, hSeed r L hlen hr n hn hGm σ hCN hGN i hsc Lc c R hCL⟩
+  have key := clField_expand_t2SK (K := CopyCutL) (fun V V' a Lv cv hV hV' hVV ha hVa hs hp hlev hK hQ =>
+      qRCo_shL V V' a Lv cv hV hV' hVV ha hVa hs hp hlev hK hQ) qRCo_low hB hM hS I R hz h2
+    (clField_QRCo I.good hRM) (fun τ hτ => clField_QRCo (good3_take_any I R hl hτ) (hT τ hτ))
+    hSeed' hK
+  exact fun n hn σ hσ => rwClosed_of_QRCo (key n hn σ hσ)
+
+/-- **RwClosed of every `M[n]`** (`t = 2`) with the residuals `T2CopyK CopyLowK` (copy frames of `P`: closed at the premise) and `T2CopyK CopyVDomK` (`VDomF`), `T2X1Cl` and
+`T2SeedPRes` (seed frames), `T2BelowXRes`. -/
+theorem rwClosed_expand_t2SL (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hRM : RwClosed M ρ)
+    (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → RwClosed (M.take (M.length - 1)) τ)
+    (hX1 : G.T2X1Cl M ρ) (hRes : G.T2SeedPRes M ρ) (hLow : T2CopyK CopyLowK M) (hVD : T2CopyK CopyVDomK M) :
+    ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → RwClosed (expand M n) σ :=
+  rwClosed_expand_t2L hB hM hS I R hz h2 hRM hT (G.seed_frames_RC hM hS I R hRM hz h2 hT hX1 hRes)
+    (t2CopyK_and hLow hVD)
+
 end Ytosk
