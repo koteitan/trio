@@ -725,7 +725,7 @@ theorem t0_otdH0 {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
           rw [Nat.add_zero, Nat.add_zero] at hch0
           rw [hch0, List.map_map]
         apply t0_S2G (O' := omega (sumN ((children (M.take (j' + L)) j').map ρ'.o))) hlen hL hp hn hR0 hZ2
-          hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hjb h1 h2 hTD hAbsS
+          hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hjb h1 h2 hTD (AbsWN.of_strong hAbsS)
         · intro d hd hdr
           have hdL : d ∈ Lb := by
             rw [hch] at hd
@@ -803,7 +803,7 @@ theorem t0_otdH0 {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
         have hLj : ∀ d ∈ Lb, d < j' :=
           (sib_order (children_sorted M pp) (R := []) (by rw [hch])).1
         apply t0_S3 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hpg hjb h1 h2
-          hTD hKD hAbsS hch
+          hTD hKD (AbsWN.of_strong hAbsS) hch
         · intro d hd
           have hdg : par M 0 r ≠ some d := fun h =>
             (hLnd d hd r (mem_children_iff.mpr ⟨by have := hLj d hd; omega, h⟩)).2 hDr

@@ -128,7 +128,7 @@ include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
 drops by `◁` in `N`. -/
 theorem t0_S2 {g : Nat} (hg : par M 0 r = some g) (hjb : col M r = bump M g)
     (h1 : entry M 1 g ≠ 0) (h2 : entry M 2 g ≠ 0)
-    (hTD : BumpTermDec M ρ) (hAbs : BumpAbsLo M r ρ)
+    (hTD : BumpTermDec M ρ) (hAbs : AbsWN M (TRIO.gexp M r L 0 0 n) r ρ σ)
     (hbF : ∀ d, d ∈ children M g → d < r →
       bumpTerm (TRIO.gexp M r L 0 0 n) σ g d = bumpTerm M ρ g d)
     (hbroot : ∀ k, k < n → bumpTerm (TRIO.gexp M r L 0 0 n) σ g (r + k * L) =
@@ -256,6 +256,8 @@ theorem t0_S2 {g : Nat} (hg : par M 0 r = some g) (hjb : col M r = bump M g)
   have hW := brelS_lhdE (brelS_omega hp'ot hpot hS)
   have hbW : bumpW M ρ g = omega (sumN (one :: Pl ++ [X])) := by
     unfold bumpW; rw [hmapM, hnzT [X] (by simp [hX])]
+  have hbWN : bumpW (TRIO.gexp M r L 0 0 n) σ g = omega (sumN (one :: Pl ++ List.replicate n O)) := by
+    unfold bumpW; rw [hmapN, hnzT (List.replicate n O) (fun t ht => by rw [(List.mem_replicate.mp ht).2]; exact hO)]
   have hE : LhdE (σ.v g) (ρ.v g) := by
     rw [ev', ev]
     apply v_strong hVot (single_omega hp'ot) (single_omega hpot) hW
@@ -263,7 +265,7 @@ theorem t0_S2 {g : Nat} (hg : par M 0 r = some g) (hjb : col M r = bump M g)
     by_cases hWE : omega (sumN (one :: Pl ++ [X])) < E0
     · exact lhd_lt_small (isOT_mem_summands hVot hq) hWE hlt'
     · rw [← hbW]
-      apply hAbs g (par_lt M 0 r g hg) h1 h2 q hq _ (by rw [hbW]; exact hlt')
+      apply hAbs g (par_lt M 0 r g hg) h1 h2 q hq _ (by rw [hbWN]; exact hn') (by rw [hbW]; exact hlt')
       intro hq2
       apply hn'
       have h2le : two ≤ sumN (one :: Pl ++ List.replicate n O) :=

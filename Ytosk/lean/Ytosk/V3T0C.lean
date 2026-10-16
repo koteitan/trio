@@ -40,17 +40,17 @@ structure Inv3C (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   rootS : ∀ i ∈ roots M, Single (ρ.o i)
   rootP : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)
 
-/-- The part of `Res3A` used by the `t = 0` engine (no `seed`). -/
+/-- The part of `Res3A` used by the `t = 0` engine (no `seed`; 2026-10-17: no `abS` either, the absorption
+is passed as the weak `T0AbsW`). -/
 structure Res3C (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   drop : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
-  abS : AbsSR M ρ
 
 theorem Inv3.toC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) : Inv3C M ρ rk :=
   ⟨I.r0p, I.z2, I.sd, I.z1, I.uat, I.uab, I.r12, I.be, I.r01, I.e00, I.cons, I.good, I.rank, I.vs, I.fc,
     I.fo, I.kd, I.td, I.rootS, I.rootP⟩
 
 theorem Res3A.toC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (R : Res3A M ρ rk) : Res3C M ρ rk :=
-  ⟨R.drop, R.abS⟩
+  ⟨R.drop⟩
 
 /-- `T0Ctx` with the core bundles (the prefix slot is not used by the engine and is left `True`). -/
 def T0CtxC (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat) (σ : Valn)

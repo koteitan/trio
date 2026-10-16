@@ -46,12 +46,12 @@ def T0CutResGGC : Prop :=
 
 /-- **`T0DF` from the core bundles**, `PH3cG` and `VSmallRA` of `M` (as `t0DF_ofU`). -/
 theorem t0DF_ofC (hCut : T0CutResGGC) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
-    (hS : M ≠ SRO) (I : Inv3C M ρ rk) (R : Res3C M ρ rk) (hPH : PH3cG M ρ) (hVA : VSmallRA M ρ) :
+    (hS : M ≠ SRO) (I : Inv3C M ρ rk) (R : Res3C M ρ rk) (hab : AbsSR M ρ) (hPH : PH3cG M ρ) (hVA : VSmallRA M ρ) :
     T0DF M ρ := by
   intro r L hlen hL hp he1 n hn σ hCN
   have hDr := R.drop
   rw [show M.length - 1 = r + L by omega] at hDr
-  have hab0 := R.abS r (by rw [show M.length - 1 = r + L by omega]; exact hp)
+  have hab0 := hab r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
   have h := t0_otdU hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
@@ -70,7 +70,7 @@ theorem t0_final_inv3V2D {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L 
     (hM : Std M) (hS : M ≠ SRO) (S : SInv M) (I : Inv3V2 M ρ rk)
     (hlen : r + L + 1 = M.length) (hL : 0 < L) (hp : par M 0 (r + L) = some r)
     (he1 : entry M 1 (r + L) = 0)
-    (R : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)) (hab : AbsSR M ρ)
+    (R : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)) (hAbW : T0AbsW M r L ρ)
     (I1 : Inv3V2 (M.take (r + L)) (drop1 M (r + L) rk) rk)
     (hDF : T0DF M ρ)
     (hLeaf : ∀ n, 2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
@@ -83,16 +83,14 @@ theorem t0_final_inv3V2D {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L 
   intro n hn2
   have hn : 1 ≤ n := by omega
   have IC := I.toC S
-  have RC : Res3C M ρ rk := ⟨R, hab⟩
+  have RC : Res3C M ρ rk := ⟨R⟩
   have hx : r + L + 1 = M.length := hlen
   have hDr := R
   rw [show M.length - 1 = r + L by omega] at hDr
-  have hab0 := hab r (by rw [show M.length - 1 = r + L by omega]; exact hp)
-    (by rw [show M.length - 1 = r + L by omega]; exact he1)
   have hx2 : entry M 2 (r + L) = 0 := S.r12 _ he1
   obtain ⟨σ, rkN, hCN, hRN, hGN, hFON, hFCN, hKDN, hTDN, _, hpN, hot, hlt⟩ :=
     t0_core hlen hL S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00 hp he1 I.cons I.good
-      I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
+      I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hAbW hDr.ws hDr.vst hDr.ua I.rootS I.rootP
       (fun n hn g hg hc => counted_last0 hlen hL hp he1 S.r0p S.z2 S.sibDec S.z1c S.uab S.r12 hn hg hc)
       (fun n hn σ hCN => ⟨fun i hi hd => ((hDF r L hlen hL hp he1 n hn σ hCN i hi).1 hd).1,
         t0_vsmallNewN hlen hL hp he1 S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 I.cons I.good I.rank hn hCN⟩)
@@ -204,8 +202,10 @@ theorem t0_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L :
       Good3 (TRIO.gexp M r L 0 0 n) σ → TakeFrameV2 (TRIO.gexp M r L 0 0 n) σ rkN) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (TRIO.gexp M r L 0 0 n) ρN rkN ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ :=
-  t0_final_inv3V2D hM hS S I hlen hL hp he1 R hab I1
-    (t0DF_ofC hCut hM hS (I.toC S) ⟨R, hab⟩ I.ph I.vra.toLast) hLeaf hFrm
+  t0_final_inv3V2D hM hS S I hlen hL hp he1 R
+    (T0AbsW.of_strong (hab r (by rw [show M.length - 1 = r + L by omega]; exact hp)
+      (by rw [show M.length - 1 = r + L by omega]; exact he1))) I1
+    (t0DF_ofC hCut hM hS (I.toC S) ⟨R⟩ hab I.ph I.vra.toLast) hLeaf hFrm
 
 /-- `t0_shape` from the structural invariants. -/
 theorem t0_shapeS {M : Mat} (S : SInv M)
