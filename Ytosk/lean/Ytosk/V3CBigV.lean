@@ -33,7 +33,7 @@ theorem t2SeedCBig_of_sibV {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q])
     (hRes : T2SeedCRes M ρ r L q)
-    (hSib : ∀ τ, Cons (M.take (r + L)) τ → UpgSibV (M.take (r + L)) τ) : T2SeedCBig M ρ r L q := by
+    (hSib : ∀ τ, Cons (M.take (r + L)) τ → Good3 (M.take (r + L)) τ → UpgSibV (M.take (r + L)) τ) : T2SeedCBig M ρ r L q := by
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   have hpq := par0_q_t2 hM hS I hlen hr hq hqr
   have hrq : r < q := par_lt M 0 q r hpq
@@ -149,7 +149,7 @@ theorem t2SeedCBig_of_sibV {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     · -- `dn` is not upgraded from `dn − 1`: it is counted and below `q`, and `v(dn) ≤ v(d)`
       have hdnc : Counted (M.take (r + L)) r dn := by
         by_contra hdnc; exact hu (huncnt dn hdn hdnc).2
-      have hle := hSib τ hτ r d dn hd hdn hddn hcons (huncnt d hd hcnt).2 (huncnt d hd hcnt).1 hu
+      have hle := hSib τ hτ hG r d dn hd hdn hddn hcons (huncnt d hd hcnt).2 (huncnt d hd hcnt).1 hu
       exact lt_of_lt_of_le (hcntd dn hdn hdnc) hle
     have hlt := upg_next_lt hXT hτ hG hd hdn hddn hcons (hcolr d hd).1 (hcolr d hd).2.1 (hcolr d hd).2.2
       (hcolr dn hdn).2.1 (hcolr dn hdn).2.2 (huncnt d hd hcnt).1 hu

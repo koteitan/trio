@@ -3298,3 +3298,12 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 名前つきの残りは 2 つ。
     - `ClSh`: 閉じていることの σ 不変性。項だけの主張で、t2 の FDsh と同じ種類。comps_sh は段 ≥ V しか扱わないので、段 < V と、V′ の部分の成分が要る。
     - `T2SeedFrames QRC M`: 種の列の枠。
+
+### UpgSibV を難しい形に絞る（2026-10-17、top、V3SibV）
+
+- `upgSibV_of_hard`: SInvX・S1・Cons・Good3 と `UpgSibVHard` から UpgSibV。証明した場合:
+  - col b = col a で a に子がない: S1 から sub(b) ≤ sub(a) = [col a]。b に子があると sub(b) は [col a] より長く、辞書式で大きいので矛盾（`subT_leaf`・`subT_tail_ne`）。b にも子がなく、vRhs が同じなので v(b) = v(a)。
+  - col b = (e0 p + 1, y, 0): b の上げの的は祖先にはなりえず（p の子で b の祖先は b だけ）、次の列 b + 1（p の子、列 (e0 p + 1, y, 1)）だけ。S1 の (b, b + 1) で col b < col (b + 1) が矛盾。よって upg b = none で v(b) = v(p) + 1 ≤ v(p) + ω^{W_a} = v(a)。
+- 残り `UpgSibVHard`: (i) col b = col a で a に子がある、(ii) e1 b < e1 a。
+- 最上位: `HSibHardV2`（どの標準形でも UpgSibVHard）から HSibV2（`hSib_of_hard`、S1_std・sInvXJ_std を使う）。`trio_terminates_main_V2_cur` の top の残りは HSibHardV2 になった。HSibV2 の前件に Good3 を足した（t2SeedCBig_of_sibV の中で Good3 は出ているので、仮定は弱くなっただけ）。
+- Ytosk 全体のビルド緑（1017 jobs）。公理は propext・Classical.choice・Quot.sound。
