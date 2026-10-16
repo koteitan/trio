@@ -29,9 +29,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 未測定だった条件の全数確認。TrigS の反例を見つけ、TrigS0 に修正
     - ✅ 狭めた条件から実際の使い所の条件を出す補題（`hAUζ_of_absUS`・`hTPLζ_of_tplos`・`hLo_of_TPLS`・`hYB_of_trigS0`）
     - 既存の最上位・各型の展開を Inv3V2 に接続する
-    - FrameV・AbsDN・TP1C の扱いを新しい束に合わせる
-      - ✅ FrameV の AbsD・TPLo を q = r の枠に狭めた FrameV2 と tplow/absDW/tplon_of_lf2（V3FrameV2）
-      - AbsDQR・TPLoQR の 10 集合の測定（`tools/probe_frameqr.py`）。8 集合で例外 0、ext2・expP が残り
+    - ✅ FrameV・AbsDN・TP1C の扱いを新しい束に合わせる（FrameV2、V3FrameV2。AbsDQR・TPLoQR は全 10 集合で例外 0）
   - **各段で Inv3V2 が成り立つことを示す**
     - ✅ 基底 SRO[n]（`hBaseV2_holds`）。追加の仮定なし
     - 1 列落とし
@@ -72,10 +70,11 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
           - ✅ FrameClosed の骨組み（`frameClosed_expand_t2`、V3T2FC）と T2VSFCV2 の生産者（`t2VSFCV2_of`、V3T2VSFC）。残りは FDsh（FrameDom の σ 不変性、項だけの主張）と種の列の枠 T2SeedVSFV2・T2SeedFCV2
           - FDsh の証明
       - VSmallRAll の保存（T2VRAV2）
-      - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と構造の残り T2SeedCNext
+      - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と C の値の残り UpgSibV
         - ✅ M だけで決まる欄（qr の ks・vs、qn の vqlt・Bc、sv の decP）を証明（V3T2SeedRes）
         - ✅ sv の rw を T2SVStrict 1 つに（V3T2SeedRes2）、qn の σB を数えない子の残り QNUncRes に（V3T2QNSig、一般の V′ の closure V3T2TameG）
-        - T2SeedCNext（top）: 今の構造の不変条件から出ない（非標準の反例 2 つ、desc.md）。7 集合で例外 0。新しい不変条件 UpgRun を測って、展開で閉じる（次の作業）
+        - ✅ 構造の残り T2SeedCNext は標準形で偽（反例は desc.md、候補 UpgRun も偽）。C の欄を CRes ∧ CBig に替え、CBig を値の残り UpgSibV から証明（`t2SeedCBig_of_sibV`、V3CBigV）。UpgSibV は全 10 集合で例外 0
+        - UpgSibV（最上位の HSibV2）の証明（top）。同じ列の兄弟では S1（兄弟の部分木の辞書式の減少）の値の版
       - 強い T2UpgAbs の反例を扱える形への修正
   - **各段をまとめて Desc3 を得る**
     - ✅ 旧 Inv3V 上の条件付き最上位の組み立て（`trio_terminates_main_GH`）
@@ -83,7 +82,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 落とした行列の根の RootP（`rootP0_take`）。t0 の `expT0V2_of` を差し込んだ現状の最上位（`trio_terminates_main_V2_now`）
     - ✅ 枠の 10 欄・葉の条件の行列ごとの共通の残り HFrameV2・HLeafV2 と drop・t0 への変換（V3GlobV2、`trio_terminates_main_V2_glob`）
     - ✅ t2 の expT2V2_of・r2V2_of を差し込んだ現状の最上位（`trio_terminates_main_V2_t2`、種の残りを T2SeedPResR に減らした `_t2R`、V3TopV2）
-    - 残りの 8 個の条件（V3ResV2）を証明して閉じる: HDropV2・HSeedV2・HAbSV2・HTakeV2（drop）、ExpT0V2（t0）、ExpT1V2（t1）、ExpT2V2・R2V2（t2）
+    - ✅ 全員の生産者を差し込んだ現状の最上位 `trio_terminates_main_V2_cur`（V3TopV2）
+    - 現状の最上位の残りを証明して閉じる: HDropV2・HSeedV2・HAbSV2（drop）、HFrameV2・HLeafV2（共通）、T0RwRes（t0）、T2BelowXRes・T2FOSeedV2・T2SeedPResRCV2・FDsh・T2SeedVSFV2・T2SeedFCV2・T2VRAV2（t2）、HSibV2（top）
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
   - Desc3 の証明 → **目標 4 が残っている**
@@ -169,7 +169,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
 どれも測定では例外 0。証明はまだ。
 
 - **T0CutResGG**（t = 0 の切り口、V3T0DepT・V3T0Thr）。8 集合で例外 0。「どの切り口でも保たれる」は偽で、B の最後の加数として実際に現れる切り口だけが保たれる。閾値の補題（V3T0Thr、塔の形 ThrA・ThrV）は真。足りないのは、引数の中の切り口 ψ_a(Ω_s) を扱う入れ子の主張。T0CutKappa（切り口は Ω の葉）は偽。
-- **T2SeedCNext**（構造だけの主張、V3CBig）: M.take x で、r の数えない子 d の次の兄弟 dn が数える子なら、dn は dn − 1 から上げられる。7 集合で例外 0。既存の構造の不変条件から出るかは未確認。
+- **UpgSibV**（値の主張、V3CBigV、最上位の HSibV2）: 同じ親の隣り合う子 a < b で、a が a − 1 から上げられ topped、b が b − 1 から上げられないなら v(b) ≤ v(a)。全 10 集合で例外 0。偽と分かった構造の主張 T2SeedCNext の代わり。
 - **t = 2 の始点の残り**: T2SeedQRRes・QNRes・SVRes・CRes の閉じた形の性質（M と M.take x だけの主張、7 集合で例外 0）。
 - **1 列落としの残り**（全体の仮定）: VSmallNew・VSmallNewR・ShadowC・UpgAbsX・Seed・BumpAbsC（弱い形）・AbsSR。測定で真、証明はまだ。
   - T2Ext の x−1 の族（16 件）では UpgAbsX が偽で、1 列落としの結論も別の形で破れる。弱い形 UpgAbsXW と、落とす補題の結論 PO の弱い枝の拡張で直す変更を作った。これはローカルのブランチ `dropfix-wkx` の作業用コミット eb0cca69（49 ファイル）にあり、main には入っていない。main に載せ直す前に、2 つの測定を 9 集合で行うこと: upgx2（「x−1 で強い吸収が破れるなら x の行 2 ≠ 0」）と newpv2（新しい形の PO・PV）。t = 2 の道では強い UpgAbsX がまだ要り、それを `Res3T2.ua`（大域の名前 `T2UpgAbs`）として表に出してある。これは T2Ext で偽なので、t = 2 側で広げる必要がある。
@@ -178,7 +178,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
 
 ### 偽と分かったもの（使わないこと）
 
-AbsD・TPLo・AbsUW・TrigOmC（Inv3V の欄）、TrigS（子の dOf を制限しない旧案）、PhiX・NoGapP・NoGap0PosP・LevLeafInv・PrefLast・VKFree・Z0Link・BandLast、VSmallR（全段の形も hi ≠ 0 の形も）、旧 PH3c（cutsNS）、NoVB、t0.hG′・t0.hU、T0CutKappa、T0ThrGRes、強い BumpAbsC、BumpWeakSrc（旧形）、FrameClosedHi、TPLoN の全列の形。反例は desc.md の各節にある。
+AbsD・TPLo・AbsUW・TrigOmC（Inv3V の欄）、TrigS（子の dOf を制限しない旧案）、PhiX・NoGapP・NoGap0PosP・LevLeafInv・PrefLast・VKFree・Z0Link・BandLast、VSmallR（全段の形も hi ≠ 0 の形も）、旧 PH3c（cutsNS）、NoVB、t0.hG′・t0.hU、T0CutKappa、T0ThrGRes、強い BumpAbsC、BumpWeakSrc（旧形）、FrameClosedHi、TPLoN の全列の形、T2SeedCNext・UpgRun（どちらも標準形で偽）。反例は desc.md の各節にある。
 
 本題の主張そのもの（値は標準形で、M[n] の値 < M の値）は、どの測定集合でも成り立っている。崩れているのは証明の組み立てだけ。
 

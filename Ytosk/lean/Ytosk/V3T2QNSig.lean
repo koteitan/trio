@@ -126,7 +126,7 @@ structure T2SeedPResR2 (M : Mat) (ρ : Valn) : Prop where
   qn : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
     ∀ Lc, CL M r = Lc ++ [q] → T2SeedQNResR2 M ρ r L q Lc
   C : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
-    (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCRes M ρ r L q ∧ G.T2SeedCNext M r L q
+    (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCRes M ρ r L q ∧ G.T2SeedCBig M ρ r L q
 
 theorem t2SeedPResR_of2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
     (I : Inv3W M ρ rk) (h : T2SeedPResR2 M ρ) : T2SeedPResR M ρ where

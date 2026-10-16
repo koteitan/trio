@@ -3243,3 +3243,29 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 制限なしの形が例外 0 の集合: d3s・deep2・t0ext・Cprime。
   - lo(y) = 0 の形は残りの集合で測定中。
 - 次: RwClosed を不変条件として示す。子の値が下がっても保たれる枠の性質（新しい枠が書き換えるなら古い枠も書き換える。B は子に依らない）なので、closure の PH3cG と同じ枠の仕組み（frameQd_N_t0 など）で各展開に運べる見込み。種の枠（t = 2）と 1 列落としは別に要る。
+
+### T2SeedCNext と UpgRun は標準形で偽、C の欄を値の残り UpgSibV に替える（2026-10-16、top、V3CBigV）
+
+- **T2SeedCNext は標準形で偽。** M = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(2,1,1)(1,1,1)(2,1,1)(3,0,0)(2,1,0)(1,1,1)(2,1,1)。
+  - (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(2,1,1)(1,1,1)(2,1,1)(3,0,0)(2,1,0)(2,0,0)[2] の接頭辞（SRO からの展開の道を tools/trio.py の幅優先探索で確認。bms -s = 1）。
+  - x = 13、r = 0、q = 12、d = 4（数えない: 3 から上げられ topped）、dn = 8（数える）。dn − 1 = 7 の列は (2,1,1) なので upg(7) ≠ 8。`tools/probe_cnext.py` の measure もこの行列で失敗を出す。
+  - 10 集合の測定は例外 0 だった（前件は全部で 8 件: deep2 2・deep3 2・expP 4）。集合にこの形が入っていなかった。
+- **候補 UpgRun も偽。** 標準形 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(1,1,1)(2,1,0)(1,1,1)（(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(1,1,1)(2,1,0)(2,0,0)[2] の接頭辞）で a = 4・b = 6・c = 8。SRO から作った標準形 79,201 個（行列 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(1,1,1) より大きく長さ 11 以下、展開の n ≤ 3）で 88 件偽。
+- 兄弟の部分木の辞書式の減少 SubDec（同じ親の隣り合う子 a < b で、部分木の列のリストが sub(b) ≤ sub(a)）は、上の 79,201 個と deep2 で例外 0。ただし上の M も SubDec を満たすので、SubDec からも T2SeedCNext は出ない。
+- **T2SeedCBig（実際に使う値の主張）は上の M でも成り立つ**: v(4) = ω^(1 + ω^{o(6)} + 1) > s′ = ω。壊れたのは T2SeedCBig を示す途中の構造の主張だけ。
+- **新しい残り UpgSibV**（V3CBigV）: 同じ親の隣り合う子 a < b で、a が a − 1 から上げられ topped、b が b − 1 から上げられないなら v(b) ≤ v(a)。行列ごとの値の主張。
+  - `G.t2SeedCBig_of_sibV`: 旧証明の右からの帰納法で、dn が dn − 1 から上げられない場合だけを替えた。そのとき dn は数える子（数えない子は上げられる）で、decP から s′ < v(dn)、UpgSibV で v(dn) ≤ v(d)。
+  - 強い形 v(b) < v(a) は偽（a・b がともに子のない (e0 p + 1, e1, 1) のとき等しい）。
+- 共有の定義の変更: `G.T2SeedPRes.C`（V3PSeedAllG）と `T2SeedPResR.C`（V3T2SeedRes）を `T2SeedCRes ∧ T2SeedCNext` から `T2SeedCRes ∧ T2SeedCBig` に替えた。使う所は seed_frames_PF の 1 か所（t2SeedCFix_of に CBig を直接渡す）。旧 `t2SeedCBig_of`（V3CBig）は残すが、仮定 T2SeedCNext が偽なので使わない。
+- 最上位（V3TopV2）: `HSibV2`（どの標準形でも UpgSibV）と、C の欄を T2SeedCRes だけにした `T2SeedPResRCV2` から T2SeedPResRV2 を出す（`t2SeedPResR_of_sib`）。`trio_terminates_main_V2_t2S` はその形。
+- 呼び出し側の直し: t2 の V3T2QNSig の `T2SeedPResR2.C` も同じ型に替えた（1 行）。
+- **現状の最上位 `trio_terminates_main_V2_cur`**（V3TopV2）: t2 の `t2VSFCV2_of`（V3T2VSFC）、t1 の `expT1Out_V2_glob`（V3T1VSRAll）、t0 の `expT0V2_of3`（V3T0Inv2S）を差し込んだ。残りの仮定:
+  - drop: HDropV2・HSeedV2・HAbSV2
+  - 共通: HFrameV2・HLeafV2
+  - t0: T0RwRes
+  - t2: T2BelowXRes・T2FOSeedV2・T2SeedPResRCV2・FDsh・T2SeedVSFV2・T2SeedFCV2・T2VRAV2
+  - top: HSibV2
+  - 公理は propext・Classical.choice・Quot.sound。Ytosk 全体のビルドは緑（1013 jobs）。
+- 測定: `tools/probe_upgsibv.py`（--selftest で上の M の全接頭辞を確かめる）。全 10 集合で例外 0、前件 199,050 件（C′ 11,513・t0ext 6,816・d3s 651・deep2 5,589・deep3 5,450・ext1 11,423・ext1x 2,010・t2ext 53,015・ext2 69,518・expP 33,065）。上の 79,201 個の標準形でも前件 14,149 件で例外 0。
+- UpgSibV の前件の形（79,201 個の標準形）: b の列が a より小さい場合（6,944 件、どれも v(b) < v(a)）と、同じ列の場合（7,205 件）。同じ列で a に子がない場合は b にも bump 子がなく等しい。同じ列で a に子がある場合は S1（兄弟の部分木は辞書式で増えない、t0・t1 が S1_std で証明済み）の値の版で、値の不変条件として運ぶ必要がありそう。証明は未着手。
+- 測定（top の引き継ぎ分）: AbsDQR・TPLoQR は全 10 集合で例外 0（ext2 は AbsDQR 104,981 加数・TPLoQR 299,794 列、expP は 70,479・205,023）。

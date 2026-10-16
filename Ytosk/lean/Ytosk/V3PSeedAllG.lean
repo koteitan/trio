@@ -8,7 +8,7 @@
 - C: q ≠ r で q は r の最後の数える子でない。i は r か q。
 `t2_seed_frames_of` は枠の性質 Q 一般で振り分ける（t2 の QFO にも使える）。
 `seed_frames_PF` は PH3cG・FC3 の部分を、t2 の残り（QRRes・SVRes・QNRes・CRes）と closure の残り
-（CNext: 数えない子の次の数える兄弟は直前の列から上げられる、構造だけの主張）から出す。QNFC は V3QNFC、SVFix は V3SVFix、CFix は V3CFix・V3CBig で CNext に帰着。`ph3c_expand_t2S`・`fc3_expand_t2S` は t2 の QFO の種の枠と合わせた形。
+（CNext: 数えない子の次の数える兄弟は直前の列から上げられる、構造だけの主張）から出す。QNFC は V3QNFC、SVFix は V3SVFix、CFix は V3CFix・V3CBig で CNext に帰着。（2026-10-16、top: CNext は標準形で偽。C の欄は CRes ∧ CBig に替え、CBig は V3CBigV で値の残り UpgSibV から出す。）`ph3c_expand_t2S`・`fc3_expand_t2S` は t2 の QFO の種の枠と合わせた形。
 -/
 import Ytosk.V3PSeedCG
 import Ytosk.V3PSeedSVG
@@ -101,7 +101,8 @@ theorem t2_seed_frames_of {Q : T → List T → T → Prop} {M : Mat} {ρ : Valn
     · rw [hiq]; exact hqcase q hq hqr _ (Or.inr rfl)
   exact hfr n hn hlow σ hσ hG
 
-/-- **The residuals of the seed frames** (PH3cG・FC3 part): t2 の残りと closure の構造の残り（CNext）. -/
+/-- **The residuals of the seed frames** (PH3cG・FC3 part): t2 の残りと、C の値の残り CBig（2026-10-16、top:
+構造の残り CNext は標準形で偽なので CBig に替えた。CBig は V3CBigV の UpgSibV から出る）. -/
 structure T2SeedPRes (M : Mat) (ρ : Valn) : Prop where
   qr : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
     (∀ i, upg M i ≠ some (r + L)) → ∀ Lc, CL M r = Lc ++ [r + L] → T2SeedQRRes M ρ r L Lc
@@ -110,7 +111,7 @@ structure T2SeedPRes (M : Mat) (ρ : Valn) : Prop where
   qn : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
     ∀ Lc, CL M r = Lc ++ [q] → T2SeedQNRes M ρ r L q Lc
   C : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
-    (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCRes M ρ r L q ∧ T2SeedCNext M r L q
+    (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCRes M ρ r L q ∧ T2SeedCBig M ρ r L q
 
 /-- **PH3cG and FC3 at the seed frames of every `M[n]`** (`t = 2`). -/
 theorem seed_frames_PF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
@@ -157,8 +158,8 @@ theorem seed_frames_PF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   · intro r L q hlen hr hq hqr hncl i hi n hn hlow σ hσ hG Lc' c R' hcl
     have hT' := hT τ0 hC1
     rw [hx r L hlen] at hC1 hRk1 hT'
-    obtain ⟨hCR, hNext⟩ := hRes.C r L q hlen hr hq hqr hncl
-    have hFix := t2SeedCFix_of hM hS I R hlen hr hq hqr hncl hCR (t2SeedCBig_of hM hS I R hlen hr hq hqr hncl hCR hNext)
+    obtain ⟨hCR, hBig⟩ := hRes.C r L q hlen hr hq hqr hncl
+    have hFix := t2SeedCFix_of hM hS I R hlen hr hq hqr hncl hCR hBig
     exact seed_frames_C hM hS I R hz h2 hlen hr hq hqr hncl hCR hFix hC1 hRk1 hT' n hn hlow σ hσ hG
       i hi Lc' c R' hcl
 
