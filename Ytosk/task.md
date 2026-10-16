@@ -76,7 +76,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
           - FDsh の証明（`frameDom_of_kind` により、写しの枠の s の成分の条件の σ 移送に帰着できる見込み）
       - VSmallRAll の保存（T2VRAV2）
         - ✅ 骨組み `t2VRAV2_of`（V3T2VRA、t1）: T2VRAV2 ⟸ QVRAsh（σ での移送、項だけ）∧ T2BelowXRes ∧ T2VRASeed（種の列の枠）∧ T2VRAPre（接頭辞の段は M の段）∧ T2VRACopy（写しの段は P の段か f 像）
-        - 残り 4 つの証明（t1）
+        - ✅ T2VRAPre ⟸ T2SeedPreShape（種の列 p の枠の形）（`t2VRAPre_of`、V3T2VRAPre）
+        - 残り（t1）: QVRAsh（t0 の V3SubstLev の補題で）、T2VRACopy、T2VRASeed、T2SeedPreShape。10 集合の全数の測定中
       - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と C の値の残り UpgSibV
         - ✅ M だけで決まる欄（qr の ks・vs、qn の vqlt・Bc、sv の decP）を証明（V3T2SeedRes）
         - ✅ sv の rw を T2SVStrict 1 つに（V3T2SeedRes2）、qn の σB を数えない子の残り QNUncRes に（V3T2QNSig、一般の V′ の closure V3T2TameG）
