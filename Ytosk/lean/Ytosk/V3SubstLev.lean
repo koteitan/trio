@@ -8,6 +8,7 @@ V3Subst の `comps_sh` は段 u ≥ V（新しい段 f(u)）だけを扱う。�
   では s のまま）と u ≤ u′ を満たせば、comps u′ (σ t) の元は σ g か g（g ∈ comps u t）か、V′ のある加数の
   成分（f(s) = V′ の前置部分 + σ(s − V) の前置部分から）。
 - `comps_sh_min`: 段 u := min(u′, V)（u′ ≤ V なら u′、そうでなければ V）でこの条件が立つ。
+- `comps_sh_pull`: u′ > V のときは V ≤ w ≤ V + 1 の任意の w でよい（w = V + 1 なら引き戻しの成分が少ない）。
 -/
 import Ytosk.V3Subst
 
@@ -60,7 +61,7 @@ theorem comps_to_summand {u : T} : ∀ {W g : T}, g ∈ comps u W → ∃ q ∈ 
       exact ⟨q, by simp [summands, hq], hgq⟩
 
 /-- The parts of `comps u (ψ_v(x) + c)` when `ψ_v(x)` is seen at `u`. -/
-theorem mem_comps_psi_of {u v x c g : T} (hv : ¬ v < u)
+theorem comps_psi_mem_of {u v x c g : T} (hv : ¬ v < u)
     (h : g = x ∨ g ∈ comps u x ∨ g ∈ comps u v ∨ g ∈ comps u c) : g ∈ comps u (psi v x c) := by
   simp only [comps, List.mem_append]
   rcases h with rfl | h | h | h
@@ -110,10 +111,10 @@ theorem comps_sh_lev (V V' : T) {u u' : T}
             have hsu := hC1 s hVs hf
             simp only [List.mem_cons, List.mem_append] at hg
             rcases hg with rfl | hg | hg
-            · exact Or.inl ⟨y, mem_comps_psi_of hsu (Or.inl rfl), rfl⟩
+            · exact Or.inl ⟨y, comps_psi_mem_of hsu (Or.inl rfl), rfl⟩
             · rcases comps_sh_lev V V' hC1 hC2 hC3 n y g' hny hg with ⟨g, hg, e⟩ | ⟨g, hg, e⟩ | h
-              · exact Or.inl ⟨g, mem_comps_psi_of hsu (Or.inr (Or.inl hg)), e⟩
-              · exact Or.inr (Or.inl ⟨g, mem_comps_psi_of hsu (Or.inr (Or.inl hg)), e⟩)
+              · exact Or.inl ⟨g, comps_psi_mem_of hsu (Or.inr (Or.inl hg)), e⟩
+              · exact Or.inr (Or.inl ⟨g, comps_psi_mem_of hsu (Or.inr (Or.inl hg)), e⟩)
               · exact Or.inr (Or.inr h)
             · -- the components of `f(s) = V′ + σ(s − V)`
               unfold shf at hg
@@ -123,8 +124,8 @@ theorem comps_sh_lev (V V' : T) {u u' : T}
               · obtain ⟨q, hq, hgq⟩ := comps_to_summand hg
                 exact Or.inr (Or.inr ⟨q, hPs q hq, hgq⟩)
               · rcases comps_sh_lev V V' hC1 hC2 hC3 n (sub s V) g' hns hg with ⟨g, hg, e⟩ | ⟨g, hg, e⟩ | h
-                · exact Or.inl ⟨g, mem_comps_psi_of hsu (Or.inr (Or.inr (Or.inl (comps_sub_sub u s V hg)))), e⟩
-                · exact Or.inr (Or.inl ⟨g, mem_comps_psi_of hsu
+                · exact Or.inl ⟨g, comps_psi_mem_of hsu (Or.inr (Or.inr (Or.inl (comps_sub_sub u s V hg)))), e⟩
+                · exact Or.inr (Or.inl ⟨g, comps_psi_mem_of hsu
                     (Or.inr (Or.inr (Or.inl (comps_sub_sub u s V hg)))), e⟩)
                 · exact Or.inr (Or.inr h)
         · exact htail hg
@@ -137,9 +138,9 @@ theorem comps_sh_lev (V V' : T) {u u' : T}
             have hsu := hC2 s hVs hf
             simp only [List.mem_cons, List.mem_append] at hg
             rcases hg with e | hg | hg
-            · exact Or.inr (Or.inl ⟨y, mem_comps_psi_of hsu (Or.inl rfl), e⟩)
-            · exact Or.inr (Or.inl ⟨g', mem_comps_psi_of hsu (Or.inr (Or.inl (comps_anti hC3 hg))), rfl⟩)
-            · exact Or.inr (Or.inl ⟨g', mem_comps_psi_of hsu (Or.inr (Or.inr (Or.inl (comps_anti hC3 hg)))), rfl⟩)
+            · exact Or.inr (Or.inl ⟨y, comps_psi_mem_of hsu (Or.inl rfl), e⟩)
+            · exact Or.inr (Or.inl ⟨g', comps_psi_mem_of hsu (Or.inr (Or.inl (comps_anti hC3 hg))), rfl⟩)
+            · exact Or.inr (Or.inl ⟨g', comps_psi_mem_of hsu (Or.inr (Or.inr (Or.inl (comps_anti hC3 hg)))), rfl⟩)
         · exact htail hg
 
 /-- **The pull-back level `min(u′, V)`** satisfies the conditions of `comps_sh_lev`. -/
@@ -164,5 +165,25 @@ theorem comps_sh_min (V V' : T) (u' : T) {t g' : T} (hg : g' ∈ comps u' (sh V 
     by_cases h : u' ≤ V
     · rw [if_pos h]
     · rw [if_neg h]; exact le_of_lt (lt_of_not_ge h)
+
+/-- **The pull-back level `u′` (if `u′ ≤ V`) or any `w ∈ [V, V + 1]` (if `u′ > V`).** -/
+theorem comps_sh_pull (V V' u' w : T) (hw1 : V ≤ w) (hw2 : w ≤ succ V) {t g' : T}
+    (hg : g' ∈ comps u' (sh V V' t)) :
+    (∃ g ∈ comps (if u' ≤ V then u' else w) t, g' = sh V V' g) ∨
+      (∃ g ∈ comps (if u' ≤ V then u' else w) t, g' = g) ∨ (∃ q ∈ summands V', g' ∈ comps u' q) := by
+  apply comps_sh_lev V V' (u := if u' ≤ V then u' else w) (u' := u') _ _ _ (size t) t g' (Nat.le_refl _) hg
+  · intro s hVs _
+    by_cases h : u' ≤ V
+    · rw [if_pos h]; exact fun h' => absurd (lt_of_lt_of_le h' h) (not_lt.mpr (le_of_lt hVs))
+    · rw [if_neg h]
+      exact fun h' => absurd (lt_of_lt_of_le h' hw2) (not_lt.mpr (succ_le_of_lt hVs))
+  · intro s hVs hsu
+    by_cases h : u' ≤ V
+    · rw [if_pos h]; exact hsu
+    · exfalso
+      exact h (le_trans (not_lt.mp hsu) (not_lt.mp hVs))
+  · by_cases h : u' ≤ V
+    · rw [if_pos h]
+    · rw [if_neg h]; exact le_trans hw2 (succ_le_of_lt (lt_of_not_ge h))
 
 end Ytosk

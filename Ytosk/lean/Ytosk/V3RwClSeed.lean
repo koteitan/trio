@@ -274,7 +274,9 @@ theorem seed_frames_sv_RC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
     (hRes : T2SeedSVRes M ρ r L)
     {τ0 : Valn} {rk0 : Bool → Nat → Nat} (hC0 : Cons (M.take (r + L)) τ0) (hR0 : Rk (M.take (r + L)) rk0)
-    (hRwT : RwClosed (M.take (r + L)) τ0) (hX1cl : ClosedA (τ0.v r) (t2X1 M r L τ0)) :
+    (hRwT : RwClosed (M.take (r + L)) τ0)
+    (hX1cl : ∀ k, QRC (τ0.v r) ((CL (M.take (r + L)) r).map τ0.o)
+      (psi (succ (ρ.v r)) (sh (ρ.v r) (succ (ρ.v r)) (shIt (ρ.v r) (succ (ρ.v r)) (t2X1 M r L τ0) k)) z)) :
     ∀ n, 2 ≤ n →
       (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
         (entry M 1 (r + L) - entry M 1 r) m) τ → Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
@@ -360,8 +362,7 @@ theorem seed_frames_sv_RC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       exact ⟨hox, hCLN, hvr, hval⟩
   refine seed_frames_liftE (G := M.take (r + L)) (E := []) (by simp) hCLN hvr hval
       (fun Lc' c R' h => rwClosed_iff.mp hRwT r hrT Lc' c R' h) ?_ Lc' c R' hCL
-  intro s y _ _ _ _
-  exact hX1cl
+  rw [hox]; exact hX1cl (n - 2)
 
 open Classical in
 /-- **PH3cG and FC3 at the frames of the seeds `r` and `q` of `M[n]`** (C case). -/
@@ -372,7 +373,10 @@ theorem seed_frames_C_RC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q])
     (hRes : T2SeedCRes M ρ r L q)
     {τ0 : Valn} {rk0 : Bool → Nat → Nat} (hC0 : Cons (M.take (r + L)) τ0) (hR0 : Rk (M.take (r + L)) rk0)
-    (hRwT : RwClosed (M.take (r + L)) τ0) (hX1cl : ClosedA (τ0.v r) (t2X1 M r L τ0)) :
+    (hRwT : RwClosed (M.take (r + L)) τ0)
+    (hX1cl : ∀ k, QRC (τ0.v r) ((CL (M.take (r + L)) r).map τ0.o)
+      (psi (qnS M ρ r L q) (step (qnS M ρ r L q) z (qnS M ρ r L q)
+        (sh (ρ.v r) (qnS M ρ r L q) (shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ0) k)) z) z)) :
     ∀ n, 2 ≤ n →
       (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
         (entry M 1 (r + L) - entry M 1 r) m) τ → Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
@@ -470,8 +474,7 @@ theorem seed_frames_C_RC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   · rw [hi] at hCL ⊢
     refine seed_frames_liftE (G := M.take (r + L)) (E := []) (by simp) hCLN (by rw [hvr, hv0]) hval
         (fun Lc' c R' h => rwClosed_iff.mp hRwT r hrT Lc' c R' h) ?_ Lc' c R' hCL
-    intro s y _ _ _ _
-    exact hX1cl
+    rw [hoq]; exact hX1cl (n - 2)
   · rw [hi] at hCL ⊢
     rw [hCLNq] at hCL
     have hc : c = r + L ∧ Lc' = [] := by
@@ -482,18 +485,24 @@ theorem seed_frames_C_RC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     intro s y _ _ _ _ u _ g hg
     simp [sumN, spArg, comps] at hg
 
-/-- **Residual: the argument of the seed `r` in `M.take x` is closed** (`ClosedA` at `v(r)`), the state of the
-last seed frame in the sv and C cases. -/
-def T2X1Cl (M : Mat) : Prop :=
-  ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ τ, Cons (M.take (r + L)) τ →
-    ClosedA (τ.v r) (t2X1 M r L τ)
+/-- **Residual: the last seed frame of `r`** in the sv and C cases (state `X₁`, the argument of `r` in `M.take x`):
+`QRC` at the new last child `ψ_{V′}(σ^{k+1} X₁)` (sv, `V′ = V + 1`) or `ψ_{s′}(step s′ 0 s′ (σ^{k+1} X₁))` (C,
+`s′ = qnS`). The unconditional `ClosedA (v r) X₁` is false (Cprime: 22 matrices); the premise of `QRC` does
+not hold there. -/
+def T2X1Cl (M : Mat) (ρ : Valn) : Prop :=
+  ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ τ, Cons (M.take (r + L)) τ → ∀ k,
+    (par M 0 (r + L) = some r → upg M (r + L - 1) = some (r + L) → QRC (τ.v r) ((CL (M.take (r + L)) r).map τ.o)
+      (psi (succ (ρ.v r)) (sh (ρ.v r) (succ (ρ.v r)) (shIt (ρ.v r) (succ (ρ.v r)) (t2X1 M r L τ) k)) z)) ∧
+    (∀ q, par M 0 (r + L) = some q → q ≠ r → (¬ ∃ Lc, CL M r = Lc ++ [q]) → QRC (τ.v r) ((CL (M.take (r + L)) r).map τ.o)
+      (psi (qnS M ρ r L q) (step (qnS M ρ r L q) z (qnS M ρ r L q)
+        (sh (ρ.v r) (qnS M ρ r L q) (shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ) k)) z) z))
 
 /-- **RwClosed at the seed frames of every `M[n]`** (`t = 2`). -/
 theorem seed_frames_RC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hRw : RwClosed M ρ)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → RwClosed (M.take (M.length - 1)) τ)
-    (hX1 : T2X1Cl M) (hRes : T2SeedPRes M ρ) :
+    (hX1 : T2X1Cl M ρ) (hRes : T2SeedPRes M ρ) :
     T2SeedFrames QRC M := by
   have hRk1 : Rk (M.take (M.length - 1)) rk := by
     have hlen1 : 1 ≤ M.length := by
@@ -520,7 +529,7 @@ theorem seed_frames_RC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     have hdec : ((CL (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n)
         r).map σ.o).Pairwise (fun a b => b ≤ a) := by
       rw [← cvals_eq_map hσ hG]; exact hG.dec r hrN
-    exact seed_frames_sv_RC hM hS I R hz h2 hlen hr hq hux hSV hC1 hRk1 hT' (hX1 r L hlen hr τ0 hC1)
+    exact seed_frames_sv_RC hM hS I R hz h2 hlen hr hq hux hSV hC1 hRk1 hT' (fun k => (hX1 r L hlen hr τ0 hC1 k).1 hq hux)
       n hn hlow σ hσ hdec Lc' c R' hcl
   · intro r L q hlen hr hq hqr Lc hLc i hi n hn hlow σ hσ hG Lc' c R' hcl
     rw [hx r L hlen] at hC1 hRk1
@@ -532,7 +541,7 @@ theorem seed_frames_RC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     have hT' := hT τ0 hC1
     rw [hx r L hlen] at hC1 hRk1 hT'
     obtain ⟨hCR, _⟩ := hRes.C r L q hlen hr hq hqr hncl
-    exact seed_frames_C_RC hM hS I R hz h2 hlen hr hq hqr hncl hCR hC1 hRk1 hT' (hX1 r L hlen hr τ0 hC1)
+    exact seed_frames_C_RC hM hS I R hz h2 hlen hr hq hqr hncl hCR hC1 hRk1 hT' (fun k => (hX1 r L hlen hr τ0 hC1 k).2 q hq hqr hncl)
       n hn hlow σ hσ hG i hi Lc' c R' hcl
 
 /-- **RwClosed of every `M[n]`** (`t = 2`) with the seed frames reduced to `T2X1Cl` and the seed residuals. -/
@@ -541,7 +550,7 @@ theorem rwClosed_expand_t2S (hCl : ClSh) (hB : T2BelowXRes) {M : Mat} {ρ : Valn
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hRM : RwClosed M ρ)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → RwClosed (M.take (M.length - 1)) τ)
-    (hX1 : T2X1Cl M) (hRes : T2SeedPRes M ρ) :
+    (hX1 : T2X1Cl M ρ) (hRes : T2SeedPRes M ρ) :
     ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → RwClosed (expand M n) σ :=
   rwClosed_expand_t2 hCl hB hM hS I R hz h2 hRM hT (seed_frames_RC hM hS I R hRM hz h2 hT hX1 hRes)
 

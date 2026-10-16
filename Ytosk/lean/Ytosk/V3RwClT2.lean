@@ -17,7 +17,8 @@ open T Classical
 
 set_option linter.unusedSectionVars false
 
-/-- **`σ`-invariance of closedness** (named residual; a statement about terms only). -/
+/-- **`σ`-invariance of closedness** (a statement about terms only). **False** (counterexample in V3RwClSh);
+use `rwClosed_expand_t2SK` (V3RwClCopy) instead. -/
 def ClSh : Prop :=
   ∀ V V' a B : T, isOT V = true → isOT V' = true → V < V' → isOT a = true → V ≤ a →
     isOT B = true → (∀ q ∈ summands B, V < lev q) → (∀ q ∈ summands B, a ≤ lev q) → ClosedA a B →
