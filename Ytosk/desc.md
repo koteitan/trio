@@ -3346,3 +3346,13 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - σ でも保たれる（sh_app）。
 - 基底・1 列落とし・t = 0・t = 1・t = 2 の組み立ては、この前提で緑のまま。
 - 測定（closedC.py、種類 cut の枠の ClosedA）: ext1x 6498 件で例外 0。ほかの集合は実行中。
+
+### RwClosed の種の枠（2026-10-17、t0、V3RwClSeed、緑）
+
+- `seed_frames_RC`: T2SeedFrames QRC M。closure の種の枠の証明（seed_frames_qr・qn・sv・C）の前半（N での r・q の数える子と値）を写し、最後の枠の結論を QRC にした。
+  - qr: 最後の枠は、n = 2 で書き換えない（T2SeedQRRes.w1）か、n ≥ 3 で y = B + ψ(…)（sh_seqZ）。B が hi の先頭部分なので、前提が立たない。
+  - qn: r の最後の枠は y = B + ψ(…)（hhigh）で同じ。q の枠は最初の枠で、状態は 0。
+  - sv・C: 最後の枠の状態は X₁ = t2X1 M r L τ（M.take x での r の引数）。名前つきの残り `T2X1Cl`（X₁ は v(r) で ClosedA）。前の枠は M.take x の枠で、その RwClosed から出す。
+  - 前提: t2 の既存の残り T2SeedPRes（qr・sv・qn・C の値の欄）。
+- `rwClosed_expand_t2S`: t = 2 の RwClosed の残りは、ClSh・T2X1Cl・T2BelowXRes・T2SeedPRes だけになった。
+- 測定: T2X1Cl は d3s の t = 2 の行列 3436 件で例外 0（argcl.py の「t2 take r arg」）。10 集合＋std_a は RwClosed の測定のあとに流す。
