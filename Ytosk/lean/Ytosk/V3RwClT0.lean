@@ -9,6 +9,7 @@ RwClosed（V3T0DepS: 書き換える枠で B < hi(y) なら状態 B は閉じて
 -/
 import Ytosk.V3T0DepS
 import Ytosk.V3PT0G
+import Ytosk.V3T2SeedLhd
 
 namespace Ytosk
 
@@ -19,12 +20,19 @@ set_option linter.unusedSectionVars false
 /-- The frame property of `RwClosed`. -/
 abbrev QRC (a : T) (Lv : List T) (cv : T) : Prop :=
   ∀ s y, cv = psi s y z → lt (spArg a z (sumN Lv)) y = true ∧ lt (psi a z z) (psi s y z) = true →
-    spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 → ClosedA a (spArg a z (sumN Lv))
+    spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 →
+    (¬ ∃ R', (split y (psi (succ s) z z)).1 = app (spArg a z (sumN Lv)) R') → ClosedA a (spArg a z (sumN Lv))
 
 theorem rwClosed_iff {M : Mat} {ρ : Valn} : RwClosed M ρ ↔ ∀ i, i < M.length → ∀ (Lc : List Nat) (c : Nat)
     (R : List Nat), CL M i = Lc ++ c :: R → QRC (ρ.v i) (Lc.map ρ.o) (ρ.o c) :=
-  ⟨fun h i hi Lc c R hCL s y hsy ht hB => h i hi Lc c R hCL s y hsy ht hB,
-   fun h i hi Lc c R hCL s y hsy ht hB => h i hi Lc c R hCL s y hsy ht hB⟩
+  ⟨fun h i hi Lc c R hCL s y hsy ht hB hn => h i hi Lc c R hCL s y hsy ht hB hn,
+   fun h i hi Lc c R hCL s y hsy ht hB hn => h i hi Lc c R hCL s y hsy ht hB hn⟩
+
+/-- Not a prefix of the smaller high part: not a prefix of the larger one. -/
+theorem notpre_back {B h' h : T} (hB : B < h') (hle : h' ≤ h) (hn : ¬ ∃ R, h' = app B R) :
+    ¬ ∃ R, h = app B R := by
+  rintro ⟨R, rfl⟩
+  exact hn (app_prefix_of_between (le_of_lt hB) hle)
 
 /-- `hi` is monotone. -/
 theorem hi_le_of_le {t y' y : T} (h : y' ≤ y) : (split y' t).1 ≤ (split y t).1 := by
@@ -37,7 +45,7 @@ theorem hi_le_of_le {t y' y : T} (h : y' ≤ y) : (split y' t).1 ≤ (split y t)
 /-- (d) for `QRC`. -/
 theorem qrc_drop {a : T} {Lv : List T} {s s' y y' : T} (hle : psi s' y' z ≤ psi s y z)
     (hss : y' ≠ z → s' = s) (hM : QRC a Lv (psi s y z)) : QRC a Lv (psi s' y' z) := by
-  intro s1 y1 h ht hB
+  intro s1 y1 h ht hB hnp
   obtain ⟨h1, h2, -⟩ := T.psi.inj h
   subst h1; subst h2
   have hy0 : y' ≠ z := ne_z_of_lt ht.1
@@ -55,7 +63,7 @@ theorem qrc_drop {a : T} {Lv : List T} {s s' y y' : T} (hle : psi s' y' z ≤ ps
       (by rcases (le_iff _ _).mp hyy with h | h
           · exact le_of_lt (psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, h⟩))
           · rw [h])
-  exact hM s' y rfl ht0 (lt_of_lt_of_le hB (hi_le_of_le hyy))
+  exact hM s' y rfl ht0 (lt_of_lt_of_le hB (hi_le_of_le hyy)) (notpre_back hB (hi_le_of_le hyy) hnp)
 
 theorem qrc_nr {a : T} {Lv : List T} {s y : T}
     (h : ¬ (lt (spArg a z (sumN Lv)) y = true ∧ lt (psi a z z) (psi s y z) = true)) :

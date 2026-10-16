@@ -3335,3 +3335,14 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - `expT0V2_of4`（V3T0Inv2S）: top の ExpT0V2 を、残り T0RwRes（RwClosed）・T0AbWRes（T0AbsW）と N の 2 つの残りから出す。AbsSR も T0CutResGGC も使わない。公理は標準の 3 つ。expT0V2_of3 は of4 に AbsSR を包んだもの。
 - 残り: T0AbWRes（AbsWN）の証明。drop の筋は、落とし側の BumpAbsC と、単調性 bumpW (M.take x) ≤ bumpW N。10 集合の測定は drop のキュー。
 - top へ: V3MainV2 の 331 行の `R.abS`（Res3.t0 の組み立て）も、t = 0 の AbsSR を使っている。最上位から HAbSV2 を外すには、そこも T0AbsW に替える必要がある。
+
+### RwClosed を種類 cut の枠に狭めた（2026-10-17、t0、緑）
+
+- 測定（closedB.py）: 「書き換えて B < hi(y) なら ClosedA」は偽。ext1x 19 件・t2ext 121 件・expP 741 件で、どれも種類 pre（hi(y) = B + R）の枠。
+  - 例: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,0,0)(4,1,1)(5,1,0)(2,2,0)(3,3,1)(4,0,0)(5,1,1)(6,1,0)(3,3,0) の枠 (4, 9)。a = 1、B = ψ_ω(ψ_0(ψ_ω(Ω_1)))、hi(y) = B + Ω_3。成分 ψ_ω(Ω_1) > B で、v(i) = 1 の成分は 0 だけ。
+- 影で使うのは種類 cut だけ。影では lo(y) = 0・B = P + κ で、κ は最後の加数 t より小さい 1 項なので、B は y の先頭部分でない。
+- そこで RwClosed の前提を「B < hi(y) かつ B は hi(y) の先頭部分でない（¬ ∃ R, hi(y) = B + R）」にした。
+  - 子が下がっても保たれる: 古い枠が種類 pre（hi(y) = B + R）なら、B < hi(y′) ≤ hi(y) から hi(y′) も B で始まる（app_prefix_of_between、`notpre_back`）。
+  - σ でも保たれる（sh_app）。
+- 基底・1 列落とし・t = 0・t = 1・t = 2 の組み立ては、この前提で緑のまま。
+- 測定（closedC.py、種類 cut の枠の ClosedA）: ext1x 6498 件で例外 0。ほかの集合は実行中。

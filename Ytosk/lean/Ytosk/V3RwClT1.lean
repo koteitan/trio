@@ -17,21 +17,22 @@ set_option linter.unusedSectionVars false
 
 /-- The rewriting-frame property of `RwClosed`. -/
 abbrev RC' (a : T) (Lv : List T) (s y : T) : Prop :=
-  spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 → ClosedA a (spArg a z (sumN Lv))
+  spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 →
+    (¬ ∃ R', (split y (psi (succ s) z z)).1 = app (spArg a z (sumN Lv)) R') → ClosedA a (spArg a z (sumN Lv))
 
 theorem rwClosed_iffQR {M : Mat} {ρ : Valn} : RwClosed M ρ ↔ ∀ i, i < M.length → ∀ (Lc : List Nat) (c : Nat)
     (R : List Nat), CL M i = Lc ++ c :: R → G.QR RC' (ρ.v i) (Lc.map ρ.o) (ρ.o c) :=
-  ⟨fun h i hi Lc c R hCL s y hsy ht hB => h i hi Lc c R hCL s y hsy ht hB,
-   fun h i hi Lc c R hCL s y hsy ht hB => h i hi Lc c R hCL s y hsy ht hB⟩
+  ⟨fun h i hi Lc c R hCL s y hsy ht hB hn => h i hi Lc c R hCL s y hsy ht hB hn,
+   fun h i hi Lc c R hCL s y hsy ht hB hn => h i hi Lc c R hCL s y hsy ht hB hn⟩
 
 theorem rc'_drop {a : T} {Lv : List T} {s y y' : T} (hyy : y' ≤ y)
     (_ht : lt (spArg a z (sumN Lv)) y' = true ∧ lt (psi a z z) (psi s y' z) = true)
     (h : RC' a Lv s y) : RC' a Lv s y' :=
-  fun hB => h (lt_of_lt_of_le hB (hi_le_of_le hyy))
+  fun hB hn => h (lt_of_lt_of_le hB (hi_le_of_le hyy)) (notpre_back hB (hi_le_of_le hyy) hn)
 
 theorem rc'_app {a : T} {Lv : List T} {s b δ : T} (hb : spArg a z (sumN Lv) = b)
     (hge : AllGeT (psi (succ s) z z) b) (_hδz : δ ≠ z) (hδ : δ < psi (succ s) z z) : RC' a Lv s (app b δ) := by
-  intro hB
+  intro hB _
   have hsplit : split (app b δ) (psi (succ s) z z) = (b, δ) :=
     split_app_of hge (Or.inr (lt_of_le_of_lt (head_le_self δ) hδ))
   rw [hsplit, hb] at hB

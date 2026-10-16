@@ -13,13 +13,15 @@ open T
 
 set_option linter.unusedSectionVars false
 
-/-- **The state of every rewriting frame below the high part of the argument is closed** at the levels up to
-`v(i)` (kinds `pre`・`cut`; kind `eq`, where the state is the high part, can fail: deep3). -/
+/-- **The state of every rewriting frame of kind `cut` is closed** at the levels up to `v(i)` (`ClosedA`):
+the state is below the high part of the argument and not its prefix. Kinds `eq`（deep3）and `pre`（ext1x・t2ext）
+can fail. -/
 def RwClosed (M : Mat) (ρ : Valn) : Prop :=
   ∀ i, i < M.length → ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R → ∀ s y,
     ρ.o c = psi s y z →
     lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
     spArg (ρ.v i) z (sumN (Lc.map ρ.o)) < (split y (psi (succ s) z z)).1 →
+    (¬ ∃ R', (split y (psi (succ s) z z)).1 = app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) R') →
     ClosedA (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
 
 section
@@ -614,7 +616,7 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                     by_cases hvc : σ.v c = ρ.v c
                     · have es : s' = s := by rw [hs'v, hvc, ← hsvc]
                       rw [es] at hnt ⊢
-                      rcases htos hvc ht with hnew | ⟨hlo, -⟩
+                      rcases htos hvc ht with hnew | ⟨hlo, P1, a1, x1, T1, e1, -, κ1, hκ1, hBk1, -⟩
                       · exact absurd hnew hnt
                       · have hyy : y' ≠ y := fun e => hnt (by rw [e]; exact ht)
                         obtain ⟨P0, a0, x0, T0, -, e2, hT0⟩ := hREc hvc hyy
@@ -628,7 +630,20 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                         exact shadow_hSh hBc ht hnt hyz' hl' (hClB i hiM Lc c [] (by rw [hclM]) s y hsy ht (by
                           have e := split_app (psi (succ s) z z) y
                           rw [hlo, app_z_right] at e
-                          rw [e]; exact ht.1))
+                          rw [e]; exact ht.1) (by
+                          rintro ⟨R1, hR1⟩
+                          have e := split_app (psi (succ s) z z) y
+                          rw [hlo, app_z_right] at e
+                          rw [e, e1] at hR1
+                          rw [← hB, hBk1, app_assoc] at hR1
+                          have h2 := app_left_cancel0 hR1
+                          have hκt : κ1 = psi a1 x1 z := by
+                            rcases mem_cutsNSG_psi.mp hκ1 with ⟨u, _, rfl⟩ | ⟨u, _, rfl⟩ | ⟨u, hu, _⟩
+                            · simp only [app, psi.injEq] at h2; rw [h2.1, h2.2.1]
+                            · simp only [app, psi.injEq] at h2; rw [h2.2.1]
+                            · simp [cutsNSG] at hu
+                          have hBy : B = y := by rw [hBk1, hκt, e1]
+                          have := ht.1; rw [hBy] at this; exact lt_irrefl' _ this))
                           (fun u hu hau g hg => hVR i c Lc s y hi hcr hclM hdi hdc hsy ht hhz u
                             (Or.inr (hU u hu)) hau g hg)
                     · have := ht.1; rw [(hchv hvc).1] at this; exact absurd this (T.not_lt_z _))

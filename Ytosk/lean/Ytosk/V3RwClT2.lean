@@ -55,8 +55,8 @@ theorem qRCo_sh (hCl : ClSh) (V V' a : T) (Lv : List T) (cv : T) (hV : isOT V = 
   obtain ⟨hcvot, s, y, hcv⟩ := hs cv (by simp)
   subst hcv
   refine ⟨isOT_sh hV hV' hVV hcvot, ?_⟩
-  intro s' y' hcv' ht' hhi'
-  rw [hB] at ht' hhi' ⊢
+  intro s' y' hcv' ht' hhi' hnp'
+  rw [hB] at ht' hhi' hnp' ⊢
   have hVV' : V ≤ V' := le_of_lt hVV
   have hsot : isOT s = true := isOT_sub hcvot
   have hyot : isOT y = true := isOT_arg hcvot
@@ -83,7 +83,7 @@ theorem qRCo_sh (hCl : ClSh) (V V' a : T) (Lv : List T) (cv : T) (hV : isOT V = 
         exact psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_of_le_of_ne (z_le _) (Ne.symm hyz)⟩)
     -- the premise `B < hi(y)` moves back
     have hsplit := sh_split hV hV' hVV (sh_lt_om_succ hV hV' hVV hsot hVs) hyot
-    rw [hsplit] at hhi'
+    rw [hsplit] at hhi' hnp'
     have hhiot : isOT (split y (psi (succ s) z z)).1 = true :=
       isOT_app_left (by rw [split_app]; exact hyot)
     have hhi : spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 :=
@@ -96,7 +96,10 @@ theorem qRCo_sh (hCl : ClSh) (V V' a : T) (Lv : List T) (cv : T) (hV : isOT V = 
     have hBV : ∀ q ∈ summands (spArg a z (sumN Lv)), V < lev q := by
       intro q hq
       exact lt_of_lt_of_le hVs (lev_le_of_le (hBc q hq))
-    exact hCl V V' a _ hV hV' hVV ha hVa hBot hBV (hQ.2 s y rfl ⟨h1, h2⟩ hhi)
+    have hnp : ¬ ∃ R', (split y (psi (succ s) z z)).1 = app (spArg a z (sumN Lv)) R' := by
+      rintro ⟨R', hR'⟩
+      exact hnp' ⟨sh V V' R', by simp only; rw [hR', sh_app]⟩
+    exact hCl V V' a _ hV hV' hVV ha hVa hBot hBV (hQ.2 s y rfl ⟨h1, h2⟩ hhi hnp)
   · rw [sh_psi_le hVs, sh_z] at hcv'
     simp only [psi.injEq] at hcv'
     obtain ⟨rfl, rfl, -⟩ := hcv'
@@ -112,11 +115,11 @@ theorem qRCo_low : ∀ a Lv cv cv', QRCo a Lv cv → Lhd z cv' cv → isOT cv' =
   intro a Lv cv cv' hQ hl hot' hcv hss
   refine ⟨hot', ?_⟩
   obtain ⟨s, y, rfl⟩ := hcv
-  intro s' y' hcv' ht' hhi'
+  intro s' y' hcv' ht' hhi' hnp'
   subst hcv'
   have hss' : y' ≠ z → s' = s := fun hy => by
     by_contra hne; exact hy (hss s y s' y' rfl rfl hne)
-  exact qrc_drop (le_of_lt hl.1) hss' hQ.2 s' y' rfl ht' hhi'
+  exact qrc_drop (le_of_lt hl.1) hss' hQ.2 s' y' rfl ht' hhi' hnp'
 
 /-- **RwClosed of every `M[n]`** (`t = 2`, `n ≥ 1`), with `ClSh` and the seed frames as the named residuals. -/
 theorem rwClosed_expand_t2 (hCl : ClSh) (hB : T2BelowXRes) {M : Mat} {ρ : Valn}

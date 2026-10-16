@@ -31,13 +31,13 @@ include hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop
 
 /-- **RwClosed passes to `M.take x`.** -/
 theorem rwClosed_take (hP : RwClosed M ρ) : RwClosed (M.take x) ρ' := by
-  intro i hi L c R h s' y' hc' ht' hB
+  intro i hi L c R h s' y' hc' ht' hB hnp
   rw [lenT hx] at hi
   have hiM : i < M.length := by omega
   obtain ⟨hv, hL, Tl, hM⟩ := frame_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hi h
   have hst : spArg (ρ'.v i) z (sumN (L.map ρ'.o)) = spArg (ρ.v i) z (sumN (L.map ρ.o)) := by
     rw [hv, hL]
-  rw [hst] at hB ht' ⊢
+  rw [hst] at hB ht' hnp ⊢
   rw [hv] at ht' ⊢
   obtain ⟨hsM, _⟩ := cl_vals hC hG hiM
   rw [hM] at hsM
@@ -48,6 +48,7 @@ theorem rwClosed_take (hP : RwClosed M ρ) : RwClosed (M.take x) ρ' := by
   obtain ⟨rfl, hyy⟩ := G.new_arg_le hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hcx hc' hsy
     (ne_z_of_lt ht'.1)
   exact hP i hiM L c (R ++ Tl) hM s' y hsy ht (lt_of_lt_of_le hB (hi_le_of_le hyy))
+    (notpre_back hB (hi_le_of_le hyy) hnp)
 
 end
 
