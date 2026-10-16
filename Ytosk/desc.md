@@ -3490,3 +3490,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 測定（drop の tools/probe_abswn_t0.py の mono、t0ext の 2 万行列、n = 2, 3）: T0BumpMono は 154034 件で例外 0。bumpW M ρ i ≤ bumpW M[n] σ i は偽（18470 件で M[n] の方が小さい）。
 - T0BumpMono の証明は局所的でない: 同じ標本で v_N(i) ≠ v_{M.take x}(i) の列（i < r）は g = P_0 r が 2040、r の他の行 0 の祖先が 13930、祖先でない列が 2500。M.take x から M[n] へ、r より前の列の値が下がらないことを一般に示す必要がある。
 - 追記（t0）: 値そのものの単調性も測った（同じ t0ext 2 万行列、n = 2, 3、i < r のすべての列、行の制限なし）: v_{M.take x}(i) ≤ v_{M[n]}(i) と o_{M.take x}(i) ≤ o_{M[n]}(i) が 349612 件で例外 0。T0BumpMono はこの単調性から出る見込み（bumpW は v の最後の加数、`t0c_bumpW_last`）。証明は値の等式（Val.lean の oRhs・vRhs）を順位で帰納する形になるが、数える子・上げ（cnt・upg・topped）が M.take x と M[n] で同じとは限らないのが難所。スクリプトは tmp/t0/probes/vchg.py。
+
+### 共有の σ の枠の条件 VDomF と単一行列の形 VAnc（2026-10-17、t0、V3RwClSh・V3RwClCopy）
+
+- σ で枠の性質を運ぶとき、項だけでは抑えられないのは V′ の加数の成分（深い添字 s の f(s) = V′ + σ(s − V) から入る）。これを値だけの条件にした: `VDomF V V′ a` = 段 u′ ≤ f(a) の V′ の成分 g は g ≤ Ω_{f(a)} か、f(a) の段 u′ の成分以下。t1 の K3（逃げ道 Ω_{V′}）より弱く、t1 の逃げ道 Ω_{f s}（s ≥ a）にも、RwClosed の σB ≥ Ω_{f a} にも足りる。
+- RwClosed（`closedA_sh_low`）: 写しの枠で前提が立てば P の状態 B は段 ≤ a で閉じている（`ClosedLow a B`、a の成分の枝が要らない）。ClosedLow ∧ VDomF → ClosedA f(a) σB。SubstDom の (1)（a の成分を σ で運ぶ）は要らなくなった。`rwClosed_expand_t2SL` の残りは `T2CopyK CopyLowK`（P 側、前提 → ClosedLow）と `T2CopyK CopyVDomK`（VDomF）、T2X1Cl・T2SeedPRes・T2BelowXRes。
+- `VAnc σ p j`（単一行列）: v(p) の段 u の成分 g は g ≤ Ω_{v(p)} か v(j) の段 u の成分以下。`vDomF_of_vAnc`: N で p = r + L、j = i + L（σ.v(i + L) = f(v_P i)）なら VDomF。測定（tmp/t0/probes/vanc.py、std_a・ext2・d3s 各 3000）: 行 1 の祖先と子孫のすべての組で VAnc 256772 件、写しの枠で VDomF（逃げ道 Ω_{V′} の強い形）12057 件、i + L は N で r + L の行 1 の子孫（12057 件）、いずれも例外 0。前提が立つ写しの枠で ClosedLow（vprefix の Dneeded）は 11 集合の標本で例外 0。
+- VAnc の証明には値の形の不変条件が要りそう: v(j) = add(v(P_1 j), t) で add が落とす v(P_1 j) の加数 q（q < head t）の成分は、項としては t の成分で抑えられない（ψ_0(Ω_{Ω_5}) < Ω_1 など）。
