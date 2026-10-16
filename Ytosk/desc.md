@@ -3589,3 +3589,15 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - **停止時のブランチ（2026-10-17、t1）**: (a) t1-work（V3T2VRAK、この節）は main に入った（4c049b09、全体ビルド緑 1036 jobs）。(b) t1-qr2（2b93435a、q = r の偽の仮定 hUA1・T1UpgQRV2 を外した）は drop-wkx2 4f7e3f84 の上（drop-wkx2 は 2b93435a に早送り済み）。drop の uaw1・pv2 の測定のあと drop-wkx2 ごと main に載せる。worktree は trio/tmp/t1/wt（t1-work）と trio/tmp/t1/wtqr（t1-qr2）。
 - 最上位の K の差し替え（V3TopV2 の T2VRAK KStepVRA → KVRA = t0 の T2CopyK CopyVDomK（t2CopyK_vDom_of と T2VAncStep で）∧ T2VRAK KAG）は KA・KG の全数測定のあと。T2VRACopy（新しい形）・T2VRAK KStepVRA（旧 QVRAsh 欄）は 11 集合（std_a を含む）の全数で例外 0。
 
+
+### 停止時の top の状態（2026-10-17、top）
+
+- 最上位: `trio_terminates_main_V2_cur`（V3TopV2）と、t2 が T2BelowXRes を T2BelowRV2・T2SeedOTV2 に分けた変種 `trio_terminates_main_V2_t2B`（V3TopT2B）。1 本の `_cur` にまとめるのは次の作業（未着手）。残りの一覧は task.md。
+- 測定の集合: 11 番目 std_a.pkl（79,201、lead が sets/ に置いた）。12 番目 std_b.pkl（7,410,825 の生成した標準形、sets/ に置いた、815 MB）は、11 集合で前件が 1000 件未満の主張だけに使う。生成は `tools/stdgen.py FLOOR LMAX NMAX out.pkl`（std_b は FLOOR = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(1,0,0)、LMAX = 14、NMAX = 3）。
+- HFrameV2・HLeafV2 の測定（tools/probe_hframe.py）は途中で止めた。済み: Cprime・t0ext・d3s・deep2・deep3 で例外 0（TP1LeafG の前件は Cprime で 5 件だけ）。未: ext1（80 万まで進んで止めた）・ext1x・t2ext・ext2・expP・std_a と、sets_take の 6 集合。再開:
+  - `env --chdir=tools nice -n 15 python3 probe_hframe.py ext1 ext1x t2ext ext2 expP std_a --output tmp/ytosk-handoff/results/top/hframe --workers 4`
+  - `env --chdir=tools nice -n 15 python3 probe_hframe.py t0ext d3s deep2 deep3 ext1x expP --data tmp/ytosk-handoff/sets_take --output tmp/ytosk-handoff/results/top/hframe_take --workers 4`
+  - TP1LeafG・TP1WLeafG は前件がまれなので std_b でも測る。
+- HSibHardV2: lead が SibVCol を値の副不変条件として運ぶ案を承認（自分のファイルで base・take・t0・t1・t2、後で Inv3V2 にまとめる）。lead の注意: 「部分木の辞書式の順 ⇒ 値の順」は目標 3 の局所形なので Desc3 を使わないこと。Good3.dec（数える子の o の減少）で覆える対があるかを先に測る。どれも未着手。
+- t0 の質問（T0PrefixInv、M[n] の接頭辞の Inv3V2 が ExpT0OutV2 の時点で使えるか）: 今の帰納法では使えない。ExpT0OutV2 は M の文脈 StepCtxV2 M だけを受け、M[n] の接頭辞の Inv3V2 は M[n] の Inv3V2 から pre_V2 で後に出る。T0PrefixInv を残りにするか、帰納法の形を変える必要がある。
+- 私的なブランチ top-cbig（tmp/top/wt）は main と同じ（未コミットの作業なし）。
