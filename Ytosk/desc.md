@@ -2989,11 +2989,11 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - `tools/probe_leafg.py`（TP1LeafG・TP1WLeafG、CPairG・HPairG を構成子どおりに列挙）。試しでは前件の立つ枠が少ない（9000 行列で TP1LeafG 1 件）。
   - `tools/probe_frame7.py`（AbsDS・AbsUWL・AbsUW0・AbsDW・TPLoN・AbsDN・TPLoW、補助エージェントが書いた。3000 行列で全欄に前件あり、例外 0。約 2.2 ms/行列）。
   - 落とした行列 M.take x のうち元の集合にないもの: `tmp/ytosk-handoff/sets_take/<集合>.pkl`（t0ext 18302・d3s 12642・deep2 1・deep3 1・ext1x 115220・expP 83789、他の 4 集合は 0）。TakeFrameV2 は M.take x の主張なので、元の 10 集合とこの追加分の両方で測る。probe_inv2・probe_trigs0（AbsUS・TPLoS・TrigS0・VSmallRAll）もこの追加分で流す（`--data tmp/ytosk-handoff/sets_take`）。
-  - top の `tools/probe_hframe.py` が同じ欄（HFrameV2・HLeafV2）を測る。二重にならないよう top と決める（問い合わせ中）。
+  - top の `tools/probe_hframe.py` も同じ欄（HFrameV2・HLeafV2）の probe だが、top は走らせない（15k 行列の試しだけ、例外 0）。10 集合の測定は drop が行う。
   - `tools/probe_dropres.py`（HardArg・VSmallNew・BumpWeakSrc・BumpAbsC・SeedR・AbsSR・VSmallNewR・ShadowC、厳密な ◁）は下書き。既知の行列での試し（BumpAbsS が i = 7 で偽）だけ済み。
 - **再開の手順**:
   1. 私的な worktree（/tmp の下）は消えるので `git -C trio worktree prune` のあと、ブランチ `drop-wkx2` から作り直す（`.lake/build` を写し、`packages` は main の物へ symlink）。
   2. main が進んでいれば `drop-wkx2` を main に rebase し、全体ビルド。
   3. probe_newpv3 を全 10 集合で流す。例外 0 なら drop-wkx2 を 1 コミットにまとめて main に入れ、t0・t1・t2・top に呼び出しの変更を知らせる（t2 には T2UpgAbs を広げるのは t2 の仕事と伝える）。例外があれば族を調べる。
-  4. 葉の条件・枠の 7 欄・追加分を測る（top と分担を決めてから）。
+  4. 葉の条件・枠の 7 欄・追加分を測る（drop が測ると top と決めた）。
   5. (3) の候補: t0 が HardArgN で使った段を制限した RelRU と VSmallRAll（Inv3V2 の欄）で、落とす補題を R の道（V3DropR）で作り直せば HardArg が要らなくなる。その代わり VSmallNewR・ShadowC が残る。
