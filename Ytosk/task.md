@@ -84,7 +84,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         - ✅ 骨組み `t2VRAV2_of`（V3T2VRA、t1）: T2VRAV2 ⟸ QVRAshK K（枠の条件 K のもとでの σ 移送）∧ T2BelowXRes ∧ T2VRASeed（種の列の枠）∧ T2VRAPre（接頭辞の段は M の段）∧ T2VRACopy（意味のある写しの段は P の段で u ≤ V）∧ T2VRAK K（守られた写しの枠の条件）。最上位は K = KStepVRA（移送そのもの、qVRAshK_step）
         - ✅ T2VRAPre ⟸ T2SeedPreShape（種の列 p の枠の形）（`t2VRAPre_of`、V3T2VRAPre）
         - ✅ T2VRASeed（種の列の枠）を qr・qn・C の q で証明（`t2VRASeedG_of`、V3T2VRASeed、t2）。残りは T2VRAQNDom（9 集合・std_b で例外 0）と T2VRASeedSVC（sv・C の r の枠）
-        - 残り（t1）: T2VRAK KStepVRA（項だけの QVRAsh は偽。証明できる K を探す: V′ の成分の支配 K3 は標本で例外 0、P 側の d の選択肢の σ 像は抑えられない例あり）、T2VRACopy、T2SeedPreShape。全数の測定（新しい形）: 7 集合で例外 0、t2ext・ext2・std_a は測定中
+        - ✅ `qVRAshK_KVRA`（V3T2VRAK）: K = VDomF ∧ KAG のもとで σ 移送。残り T2VRAK KVRA ⟸ T2CopyK CopyVDomK（t0 と共有）∧ T2VRAK KAG（`t2VRAK_KVRA_of`）
+        - 残り（t1）: T2VRAK KAG（KA・KG、測定中）、T2VRACopy（11 集合で例外 0）、T2SeedPreShape。最上位の K を KStepVRA から KVRA に替えるのは t2 の一括変更の後
       - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と C の値の残り UpgSibV
         - ✅ M だけで決まる欄（qr の ks・vs、qn の vqlt・Bc、sv の decP）を証明（V3T2SeedRes）
         - ✅ sv の rw を T2SVStrict 1 つに（V3T2SeedRes2）、qn の σB を数えない子の残り QNUncRes に（V3T2QNSig、一般の V′ の closure V3T2TameG）

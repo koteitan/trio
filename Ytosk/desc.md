@@ -3574,3 +3574,16 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - VAncStep の証明（add が落とす v(P_1 j) の加数の成分は、足した項の成分か Ω_{v j} で押さえられる。BumpAbs・UpgAbs と同じ種類の値の形の事実）。
   - CopyLowK（P の写しの枠で前提 → ClosedLow）と T2X1Cl の証明。
 - drop から: 落とし側の AbsWN の 3 行の補題（drop の案）は absWN_take_t0 として入っている（v(x) = 0 は Cons から直接）。t1: VDomF・CopyVDomK の名前と形は変えないこと（t1 の qVRAshK_KVRA が使う）。
+
+### QVRAshK の枠の条件 KVRA を証明した（2026-10-17、t1、V3T2VRAK、緑）
+
+- **`qVRAshK_KVRA : QVRAshK KVRA`**（公理は propext・Quot.sound）。KVRA = t0 の共有の条件 `VDomF V V′ a` ∧ `KAG`。
+  - 段 u ≤ V での f(s) の成分 g′ は 3 種（`comps_sh_levA`、t0 の comps_sh_lev の (A) を「σ で動く位置の成分」`compsAN`（添字 > V の ψ の下だけを通る位置）に絞った形）: (A) σ g（g は動く位置）、(B) g（s − V の成分）、(C) V′ の加数の成分。f(s) = V′ の前置部分 ++ σ(s − V) の前置部分も (C)。
+  - (C): VDomF で Ω_{f a} ≤ Ω_{f s}（a ≤ s）か f(a) の成分以下。
+  - (B): P の QVRAt の 3 つの選択肢を運ぶ。Ω_s ≤ Ω_{f s}、B ≤ σB、第 3 の選択肢 g ≤ d は KA「∀ d ∈ comps u a, d ≤ Ω_{f a} ∨ ∃ d′ ∈ comps u (f a), d ≤ d′」で（Ω_{f a} ≤ Ω_{f s}）。
+  - (A): KG「V < s → 動く位置の成分 g（compsAN V u n (s − V)）は g ≤ Ω_s か g ≤ B」。σ は単調なので σ g ≤ Ω_{f s} か σB。
+  - 前提の移送: σB < σy ⇔ B < y、ψ_{f a} < ψ_{f s}(σy) ⇒ ψ_a < ψ_s(y)（a = V なら V < s から）、hi は sh_split・sh_lt_om_succ。s ≤ V なら σ 側の書き換えが起きない（V′ ≤ f(a) ≤ s ≤ V に矛盾）。
+- 残り `T2VRAK KVRA M` ⟸ t0 の `T2CopyK CopyVDomK M` ∧ `T2VRAK KAG M`（`t2VRAK_KVRA_of`）。最上位への差し込みは t2 の署名の一括変更が入ってから。
+- 「動く位置」が要る理由: 項として σ g ≠ g でも、s の中で添字 ≤ V の ψ の下にあれば f(s) では g のまま（ext1 の例 V = 0 で g = ψ_{ψ_{ψ(1)}(0)}(0) + ψ_{ψ(1)}(ψ(1))）。σ g ≠ g で測った KG は ext2 で例外 14、位置で測ると 0。
+- 測定（tools/probe_t2vrak.py、全数。KA は逃げ道 Ω_{f a} なしの強い形で測る）: d3s で KA・KG・VD 例外 0。残りの集合は測定中。T2VRACopy（新しい形）・T2VRAK KStepVRA（旧 QVRAsh 欄）は 11 集合（std_a を含む）の全数で例外 0。
+
