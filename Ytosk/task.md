@@ -31,7 +31,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - 既存の最上位・各型の展開を Inv3V2 に接続する
     - FrameV・AbsDN・TP1C の扱いを新しい束に合わせる
       - ✅ FrameV の AbsD・TPLo を q = r の枠に狭めた FrameV2 と tplow/absDW/tplon_of_lf2（V3FrameV2）
-      - AbsDQR・TPLoQR の 10 集合の測定（`tools/probe_frameqr.py`）
+      - AbsDQR・TPLoQR の 10 集合の測定（`tools/probe_frameqr.py`）。8 集合で例外 0、ext2・expP が残り
   - **各段で Inv3V2 が成り立つことを示す**
     - ✅ 基底 SRO[n]（`hBaseV2_holds`）。追加の仮定なし
     - 1 列落とし
@@ -71,12 +71,14 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - Inv3V2 への接続と、新しい枠の条件の証明
       - VSmallRAll の保存
       - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と構造の残り T2SeedCNext
+        - T2SeedCNext（top）: 今の構造の不変条件から出ない（非標準の反例 2 つ、desc.md）。7 集合で例外 0。新しい不変条件 UpgRun を測って、展開で閉じる（次の作業）
       - 強い T2UpgAbs の反例を扱える形への修正
   - **各段をまとめて Desc3 を得る**
     - ✅ 旧 Inv3V 上の条件付き最上位の組み立て（`trio_terminates_main_GH`）
     - ✅ Inv3V2 上の最上位の組み立て（`trio_terminates_main_V2`、V3MainV2）。旧 Inv3・Inv3V を使わない
     - ✅ 落とした行列の根の RootP（`rootP0_take`）。t0 の `expT0V2_of` を差し込んだ現状の最上位（`trio_terminates_main_V2_now`）
     - ✅ 枠の 10 欄・葉の条件の行列ごとの共通の残り HFrameV2・HLeafV2 と drop・t0 への変換（V3GlobV2、`trio_terminates_main_V2_glob`）
+    - t2 の expT2V2_of・r2V2_of を最上位に差し込む（top の次の作業）
     - 残りの 8 個の条件（V3ResV2）を証明して閉じる: HDropV2・HSeedV2・HAbSV2・HTakeV2（drop）、ExpT0V2（t0）、ExpT1V2（t1）、ExpT2V2・R2V2（t2）
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）

@@ -2997,3 +2997,31 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   3. probe_newpv3 を全 10 集合で流す。例外 0 なら drop-wkx2 を 1 コミットにまとめて main に入れ、t0・t1・t2・top に呼び出しの変更を知らせる（t2 には T2UpgAbs を広げるのは t2 の仕事と伝える）。例外があれば族を調べる。
   4. 葉の条件・枠の 7 欄・追加分を測る（drop が測ると top と決めた）。
   5. (3) の候補: t0 が HardArgN で使った段を制限した RelRU と VSmallRAll（Inv3V2 の欄）で、落とす補題を R の道（V3DropR）で作り直せば HardArg が要らなくなる。その代わり VSmallNewR・ShadowC が残る。
+
+### t = 0 の hVRA0 を外す・測定の途中結果（2026-10-16、top）
+
+- t0 が VSmallRAll of M[n] を証明（`vsmallRAll_N_t0`）。最上位は `expT0V2_of2` に切り替え、`trio_terminates_main_V2_now`・`_glob` から hVRA0 を外した（01834056）。`_glob` の t0 の残りは T0CutResGGC だけ。
+- t2 が ExpT2V2・R2V2 の生産者 `expT2V2_of`・`r2V2_of` をコミット（e4526c7d、V3ExpT2V2）。最上位への差し込みはまだ（次の作業）。drop が UpgAbsXW を載せ直す予定で、そのとき V3MainV2 の t2_dropsC・desc_stepV2 に最小の直しが入る。
+- AbsDQR・TPLoQR の測定（`tools/probe_frameqr.py`）: 8 集合で例外 0（Cprime・t0ext・d3s・deep2・deep3・ext1・ext1x・t2ext。t2ext は AbsDQR 121,059 加数・TPLoQR 351,756 列）。ext2・expP は再起動の前に止めた。まだ「測って真」ではない。
+  - 続き: `env --chdir=tools nice -n 15 python3 probe_frameqr.py ext2 expP --output tmp/ytosk-handoff/results/top/frameqr --workers 4`
+- HFrameV2・HLeafV2 の 10 集合の測定は drop が走らせる（probe を予約済み、M.take x 側も含む）。私の `tools/probe_hframe.py` は 1.5 万行列の試しだけで、例外 0。
+
+### T2SeedCNext は今の構造の不変条件から出ない（2026-10-16、top）
+
+- 測定（`tools/probe_cnext.py`、前件は Lean の T2SeedPRes.C と同じ）: 7 集合で例外 0（Cprime・t0ext・d3s・deep2・deep3・ext1・ext1x）。前件はまれで、deep2・deep3 で 2 件ずつ。t2ext・ext2・expP は再起動の前に止めた。
+  - 続き: `env --chdir=tools nice -n 15 python3 probe_cnext.py t2ext ext2 expP --output tmp/ytosk-handoff/results/top/cnext --workers 4`
+- **証明済みの構造の不変条件からは導けない。** 次の非標準の行列（bms -s = 0）は R0P・R1S・Z2・R12・R01・e00・SibDec・Z1C・BumpE2・BumpLeaf・RowJ を全部満たし（スクリプトで確認）、T2SeedCNext の前件を満たして結論が偽。
+  - (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1): r = 0、q = 9、d = 4（数えない）、dn = 6（数える）、upg N 5 = none。
+  - (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(1,1,1)(2,1,0)(1,1,1)(2,1,1): 兄弟の部分木が辞書式で減っていても偽になる例。r = 0、q = 8、d = 4、dn = 6。
+- 主張の中身: r の子は全部 (e0 r + 1, e1 r + 1, 1)・P_1 = r。数えない子 d < q は d − 1 から上げられ topped。dn が dn − 1 から上げられるのは、d の部分木が葉 kl（bump 子 jl の子、行 2 = 0、行 1 = e1 r + 1、P_1 = r）で終わるとき。jl に子がなければ dn − 1 = jl（行 2 = 1）で上げられない。
+- 標準形で成り立つ理由は展開の履歴: 展開は行列の末尾しか変えないので、前の兄弟の部分木は完全な写しで、切れた形は最後にしか現れない。局所的な事実ではない。最後の子が切れた (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(1,1,1) は標準形（bms -s = 1）。
+- 候補の一般形 **UpgRun**（`tools/probe_upgrun.py`）: p の連続する子 a < b で、a が a − 1 から上げられ topped、b より後の子 c が c − 1 から上げられるなら、b は b − 1 から上げられる。T2SeedCNext は N = M.take x に c = q で当てれば出る（q は M で数えない子なので q − 1 から上げられる）。deep2 の 4 万行列で 1021 件、例外 0（試し）。10 集合ではまだ測っていない。
+- 選択肢: (a) UpgRun のような新しい構造の不変条件を、1 列落とし・t = 0/1/2 の展開で閉じる（既存の LocInv の Seed の仕組み V3InvPer2・V3InvSeed3 と同じ形。upg の展開での補題 upg_copy などは既存）。手間は大きい。(b) t2SeedCBig_of で、数える dn の場合を値の議論で迂回する（兄弟の部分木の比較を避ける案はまだない）。
+- **次の作業は (a)**: (1) UpgRun を 10 集合で測る。(2) 1 列落としで閉じることを示す（後ろの兄弟が減るだけ）。(3) Seed の形で展開で閉じることを示す。(4) T2SeedCNext を UpgRun から証明する。
+
+### 再開時の top の次の手順（2026-10-16）
+
+1. t2 の `expT2V2_of`・`r2V2_of` を最上位に差し込んだ形を作る（V3MainV2 の `_now` か V3GlobV2 の `_glob`）。drop の UpgAbsXW のコミットの後に、t2_dropsC を t2 の `t2_drops`（Inv3W）に置き換えられるか見る。
+2. probe_frameqr の ext2・expP を走らせ、AbsDQR・TPLoQR を 10 集合で確定。
+3. probe_cnext の t2ext・ext2・expP、probe_upgrun の 10 集合。
+4. T2SeedCNext の (a)。
