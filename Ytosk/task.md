@@ -47,7 +47,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - ✅ Inv3V2 への接続（`t0_final_inv3V2`・`expT0V2_of2`、V3T0Inv2）。PH3cG・FC3 も接続、旧 Inv3 は使わない（V3T0C の Inv3C）
       - ✅ VSmallRAll の保存（`vsmallRAll_N_t0`、V3T0VSRAllN）。残りなし
       - N の最後の列の枠の 10 欄と葉の条件（top の共通の残り HFrameV2・HLeafV2）
-      - 切り口の残り T0CutResGGC
+      - 切り口の残り T0CutResGGC（t2 の T2CutA と同じ形）。測定は 5 集合まで（10 集合の残りの再開手順は desc.md「T0CutResGGC の調査（2026-10-16、t0）」）
     - t = 1 の展開
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t1OP`）
       - ✅ q = r の条件付き入口を Inv3V2 に接続。実際の添字を使い、旧 AbsD・TrigOmC を外す（`qr_final_inv3V2`）
