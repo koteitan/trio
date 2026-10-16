@@ -3307,3 +3307,8 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 残り `UpgSibVHard`: (i) col b = col a で a に子がある、(ii) e1 b < e1 a。
 - 最上位: `HSibHardV2`（どの標準形でも UpgSibVHard）から HSibV2（`hSib_of_hard`、S1_std・sInvXJ_std を使う）。`trio_terminates_main_V2_cur` の top の残りは HSibHardV2 になった。HSibV2 の前件に Good3 を足した（t2SeedCBig_of_sibV の中で Good3 は出ているので、仮定は弱くなっただけ）。
 - Ytosk 全体のビルド緑（1017 jobs）。公理は propext・Classical.choice・Quot.sound。
+- 追記（2026-10-17、t0）: RwClosed の結論を Closed から `ClosedA (v i) B`（V3NodeLhd: B の成分は B 以下か、v(i) の成分以下）に弱めた。
+  - 理由: Closed の σ 不変性 ClSh は偽だった。V′ が閉じていない（例 V′ = ψ_0(…Ω_{Ω_…}…)）と、sh B の添字 V′ + … から大きな成分が出る。clsh.py: d3s の 3000 行列で 34 件、t2ext で 42 件。
+  - ClosedA なら、V′ の成分は shf a の成分にも現れる。試し（clsh.py、t2 の probe_fdsh と同じ V・V′ の選び方）で例外 0（d3s 282844 件・t2ext 187822 件）。
+  - shadow_hSh は ClosedA で足りる（hSh は v(i) の成分以下を許す）。
+  - ClSh（ClosedA の σ 不変性）は項だけの名前つきの残りとして置く。証明には、段 < V の成分と、add V′ … の前置部分の成分の扱いが要る。

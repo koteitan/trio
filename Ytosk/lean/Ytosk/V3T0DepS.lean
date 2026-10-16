@@ -20,7 +20,7 @@ def RwClosed (M : Mat) (ρ : Valn) : Prop :=
     ρ.o c = psi s y z →
     lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
     spArg (ρ.v i) z (sumN (Lc.map ρ.o)) < (split y (psi (succ s) z z)).1 →
-    Closed (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
+    ClosedA (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
 
 section
 variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)

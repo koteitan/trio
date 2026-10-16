@@ -19,7 +19,7 @@ set_option linter.unusedSectionVars false
 /-- The frame property of `RwClosed`. -/
 abbrev QRC (a : T) (Lv : List T) (cv : T) : Prop :=
   ∀ s y, cv = psi s y z → lt (spArg a z (sumN Lv)) y = true ∧ lt (psi a z z) (psi s y z) = true →
-    spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 → Closed a (spArg a z (sumN Lv))
+    spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 → ClosedA a (spArg a z (sumN Lv))
 
 theorem rwClosed_iff {M : Mat} {ρ : Valn} : RwClosed M ρ ↔ ∀ i, i < M.length → ∀ (Lc : List Nat) (c : Nat)
     (R : List Nat), CL M i = Lc ++ c :: R → QRC (ρ.v i) (Lc.map ρ.o) (ρ.o c) :=

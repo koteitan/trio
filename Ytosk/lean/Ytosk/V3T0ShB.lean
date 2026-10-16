@@ -41,14 +41,14 @@ theorem le_of_summand_first {B q : T} (hB : B ≠ z) (hq : ∀ p ∈ summands B,
 /-! ## 影の枠の成分の条件 -/
 
 /-- **The component condition of a shadow frame** (relR_frameU's `hSh`), from `Closed a B` and the
-subscript bound (VSmallRP). -/
+subscript bound (VSmallRP). `ClosedA a B`: the components of `B` are below `B` or below a component of `a`. -/
 theorem shadow_hSh {U : T → Prop} {a B s y y' : T}
     (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
     (ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true)
     (hnt : ¬ (lt B y' = true ∧ lt (psi a z z) (psi s y' z) = true))
     (hy'z : y' ≠ z)
     (hl : Lhd z (psi s y' z) (psi s y z))
-    (hB : Closed a B)
+    (hB : ClosedA a B)
     (hVR : ∀ u, U u → ¬ lt a u = true → ∀ g ∈ comps u s,
       g ≤ psi s z z ∨ g ≤ B ∨ ∃ d ∈ comps u a, g ≤ d) :
     ∀ u, U u → ¬ lt a u = true → ∀ g ∈ comps u (app B (psi s y' z)),
@@ -83,10 +83,11 @@ theorem shadow_hSh {U : T → Prop} {a B s y y' : T}
     · exact Or.inl (lt_of_le_of_lt h hBX)
     · exact Or.inr h
   -- the components of `B`
-  have hBc' : ∀ g ∈ comps u B, g < X' := fun g hg => lt_of_le_of_lt (hB u hu g hg) hBX
   rw [hX', comps_app] at hg
   rcases List.mem_append.mp hg with hg | hg
-  · exact Or.inl (hBc' g hg)
+  · rcases hB u hu g hg with h | h
+    · exact Or.inl (lt_of_le_of_lt h hBX)
+    · exact Or.inr h
   -- the components of `ψ_s(y′)`
   simp only [comps, if_neg hsu, List.append_nil, List.mem_cons, List.mem_append] at hg
   rcases hg with rfl | hg | hg
@@ -113,7 +114,9 @@ theorem shadow_hSh {U : T → Prop} {a B s y y' : T}
     · -- `d` is a component of `B + 1`
       rw [comps_app] at hd
       rcases List.mem_append.mp hd with hd | hd
-      · exact Or.inl (lt_of_le_of_lt (le_trans hgd (hB u hu d hd)) hBX)
+      · rcases hB u hu d hd with h | ⟨d', hd', h⟩
+        · exact Or.inl (lt_of_le_of_lt (le_trans hgd h) hBX)
+        · exact Or.inr ⟨d', hd', le_trans hgd h⟩
       · have : d = z := by
           revert hd; simp only [one, comps]
           split_ifs <;> simp

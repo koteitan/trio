@@ -17,7 +17,7 @@ set_option linter.unusedSectionVars false
 
 /-- The rewriting-frame property of `RwClosed`. -/
 abbrev RC' (a : T) (Lv : List T) (s y : T) : Prop :=
-  spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 → Closed a (spArg a z (sumN Lv))
+  spArg a z (sumN Lv) < (split y (psi (succ s) z z)).1 → ClosedA a (spArg a z (sumN Lv))
 
 theorem rwClosed_iffQR {M : Mat} {ρ : Valn} : RwClosed M ρ ↔ ∀ i, i < M.length → ∀ (Lc : List Nat) (c : Nat)
     (R : List Nat), CL M i = Lc ++ c :: R → G.QR RC' (ρ.v i) (Lc.map ρ.o) (ρ.o c) :=

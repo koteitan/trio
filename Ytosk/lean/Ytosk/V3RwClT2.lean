@@ -20,7 +20,7 @@ set_option linter.unusedSectionVars false
 /-- **`σ`-invariance of closedness** (named residual; a statement about terms only). -/
 def ClSh : Prop :=
   ∀ V V' a B : T, isOT V = true → isOT V' = true → V < V' → isOT a = true → V ≤ a →
-    isOT B = true → (∀ q ∈ summands B, V < lev q) → Closed a B → Closed (shf V V' a) (sh V V' B)
+    isOT B = true → (∀ q ∈ summands B, V < lev q) → ClosedA a B → ClosedA (shf V V' a) (sh V V' B)
 
 /-- `QRC` with the standard form of the child. -/
 def QRCo (a : T) (Lv : List T) (cv : T) : Prop := isOT cv = true ∧ QRC a Lv cv
