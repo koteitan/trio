@@ -9,6 +9,9 @@ AbsWN M N bnd ρ σ の前件「q は bumpW N σ i に吸収されない」は�
   M[n] の方が小さい。x が i ののりしろの子の子のとき）。
 -/
 import Ytosk.V3T0Inv2S
+import Ytosk.V3Congr
+import Ytosk.V3Copy2
+import Ytosk.V3DropPres
 
 namespace Ytosk
 
@@ -32,5 +35,70 @@ def T0BumpMono (M : Mat) (r L : Nat) : Prop :=
 theorem t0AbsW_of {M : Mat} {r L : Nat} {ρ τ : Valn} (hτ : Cons (M.take (r + L)) τ)
     (hD : AbsWN M (M.take (r + L)) r ρ τ) (hm : T0BumpMono M r L) : T0AbsW M r L ρ :=
   fun n hn σ hσ => absWN_mono hD (hm τ hτ n hn σ hσ)
+
+/-! ## 接頭辞を 1 列ずつ落として単調性をつなぐ -/
+
+/-- **One-column drop monotonicity of the bump term** along the prefixes of `N` longer than `k0`. -/
+def BumpDropMono (N : Mat) (k0 : Nat) : Prop :=
+  ∀ k, k0 < k → k ≤ N.length → ∀ τ τ', Cons (N.take k) τ → Cons (N.take (k - 1)) τ' →
+    ∀ i, i < k0 → entry N 1 i ≠ 0 → entry N 2 i ≠ 0 → bumpW (N.take (k - 1)) τ' i ≤ bumpW (N.take k) τ i
+
+/-- The prefixes of `N` from `k0` on are ranked. -/
+def PrefixRk (N : Mat) (k0 : Nat) : Prop := ∀ k, k0 ≤ k → k ≤ N.length → ∃ rk, Rk (N.take k) rk
+
+theorem bumpW_chain {N : Mat} {k0 : Nat} (hD : BumpDropMono N k0) (hR : PrefixRk N k0) :
+    ∀ m k, k = k0 + m → k ≤ N.length → ∀ τ0 τ, Cons (N.take k0) τ0 → Cons (N.take k) τ →
+      ∀ i, i < k0 → entry N 1 i ≠ 0 → entry N 2 i ≠ 0 → bumpW (N.take k0) τ0 i ≤ bumpW (N.take k) τ i
+  | 0, k, hk, hkN, τ0, τ, h0, h, i, _, _, _ => by
+    simp only [Nat.add_zero] at hk
+    subst hk
+    obtain ⟨rk, hrk⟩ := hR _ (le_refl _) hkN
+    rw [bumpW_congr (agree_of_cons h0 h hrk) i]
+  | m + 1, k, hk, hkN, τ0, τ, h0, h, i, hi, h1, h2 => by
+    obtain ⟨rk', hrk'⟩ := hR (k - 1) (by omega) (by omega)
+    have hC' := cons_of_rk hrk'
+    exact le_trans (bumpW_chain hD hR m (k - 1) (by omega) (by omega) τ0 _ h0 hC' i hi h1 h2)
+      (hD k (by omega) hkN τ _ h hC' i hi h1 h2)
+
+/-- **Residual of the monotonicity**: every `M[n]` (`t = 0`) has the one-column drop monotonicity of the bump
+term and ranked prefixes from `r + L` on. -/
+def T0BumpDrop (M : Mat) (r L : Nat) : Prop :=
+  ∀ n, 2 ≤ n → BumpDropMono (TRIO.gexp M r L 0 0 n) (r + L) ∧ PrefixRk (TRIO.gexp M r L 0 0 n) (r + L)
+
+/-- **`T0BumpMono` from the one-column drops** along the prefixes of `M[n]`. -/
+theorem t0BumpMono_of {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hD : T0BumpDrop M r L) :
+    T0BumpMono M r L := by
+  intro τ hτ n hn σ hσ i hi h1 h2
+  obtain ⟨hDm, hR⟩ := hD n hn
+  have hlN : (TRIO.gexp M r L 0 0 n).length = r + n * L := TRIO.gexp_length hlen
+  have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L (by omega)
+  have htake : (TRIO.gexp M r L 0 0 n).take (r + L) = M.take (r + L) := gexp_take_x hlen (by omega)
+  have he : ∀ q, entry (TRIO.gexp M r L 0 0 n) q i = entry M q i := by
+    intro q
+    rw [← entry_take (TRIO.gexp M r L 0 0 n) (l := r + L) q (show i < r + L by omega), htake,
+      entry_take M q (show i < r + L by omega)]
+  have hfull : (TRIO.gexp M r L 0 0 n).take (TRIO.gexp M r L 0 0 n).length = TRIO.gexp M r L 0 0 n :=
+    List.take_length
+  have hσ' : Cons ((TRIO.gexp M r L 0 0 n).take (TRIO.gexp M r L 0 0 n).length) σ := by rw [hfull]; exact hσ
+  have hτ' : Cons ((TRIO.gexp M r L 0 0 n).take (r + L)) τ := by rw [htake]; exact hτ
+  have key := bumpW_chain hDm hR (n * L - L) (TRIO.gexp M r L 0 0 n).length (by rw [hlN]; omega) (le_refl _)
+    τ σ hτ' hσ' i (by omega) (by rw [he 1]; exact h1) (by rw [he 2]; exact h2)
+  rw [htake, hfull] at key
+  exact key
+
+/-- **`BumpDropMono` from drop's one-column lemma** (`bumpW_take_le`): at every prefix `N.take k` (`k0 < k`), the
+structural invariants, `Good3`, a rank of `N.take (k − 1)` and the drop relation `PO ∧ PV` (`drop_all_H`). -/
+theorem bumpDropMono_of {N : Mat} {k0 : Nat}
+    (h : ∀ k, k0 < k → k ≤ N.length → ∀ τ τ', Cons (N.take k) τ → Cons (N.take (k - 1)) τ' →
+      R0P (N.take k) ∧ Z2 (N.take k) ∧ SibDec (N.take k) ∧ Z1C (N.take k) ∧ UAT (N.take k) ∧ UAB (N.take k) ∧
+      Good3 (N.take k) τ ∧ (∃ rk, Rk (N.take (k - 1)) rk) ∧
+      ∀ i, i < k - 1 → PO τ τ' i ∧ PV (N.take k) τ τ' i) : BumpDropMono N k0 := by
+  intro k hk hkN τ τ' hC hC' i hi _ _
+  obtain ⟨hR0, hZ2, hSD, hZ1, hUAT, hUAB, hG, ⟨rk, hRk⟩, hdrop⟩ := h k hk hkN τ τ' hC hC'
+  have htt : (N.take k).take (k - 1) = N.take (k - 1) := by
+    rw [List.take_take]; congr 1; omega
+  have hx : k - 1 + 1 = (N.take k).length := by rw [List.length_take]; omega
+  rw [← htt] at hC' hRk ⊢
+  exact bumpW_take_le hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk hdrop (by omega)
 
 end Ytosk
