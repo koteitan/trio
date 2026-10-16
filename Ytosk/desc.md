@@ -3553,3 +3553,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 
 **ブランチ drop-wkx2（4f7e3f84、main af831702 の上、全体ビルド緑 1022 jobs、公理は標準の 3 つ）**: 上の (1)(2) の直しと SmallSelf(V + 1)。main には未コミット（新しい定義の 11 集合の測定待ち）。t1 はこの上で q = r の L = 1 の枝を直し、hUA1・T1UpgQRV2 を外す予定（t1-qr）。取り込み手順: `tmp/drop/land.sh`（rebase・全体ビルド・main の作業ツリーの衝突確認）のあと、変更したファイルを main の作業ツリーに写してコミット。
 - 追記（top）: SibVCol を 1 列落とし M → M.take x で運ぶ場合の見通し。落とす補題の PV から v′(b) ≤ v(b) は出る。しかし v′(a) = v(a) は一般に言えない: a の部分木の列の P_1 は p より上の祖先 g を指しうり、v(g) は g の bump 子の子の o を通して x を含む部分木に依る。a と b は同じ祖先の文脈を共有するので、文脈が下がったときに両方が同じように動くことを示す必要がある（文脈についての単調性）。展開の場合も同じ問題がある。
+
+### T0AbWRes を HDropV2 と接頭辞の不変条件に（2026-10-17、t0、V3T0AbW）
+
+- T0BumpMono（bumpW (M.take x) ≤ bumpW M[n]、i < r）は、M[n] の接頭辞 M[n].take k（k = r + L, …, |M[n]|）を 1 列ずつ落とす連鎖で出る（`bumpW_chain`、`t0BumpMono_of`）。M.take x = M[n].take (r + L)（gexp_take_x）。
+- 1 列の落とし: drop の `drop_all_H` の PO・PV（LhdE・WkOA・WkVA）はどれも ≤ を含み、`bumpW_take_le` が bumpW の ≤ を出す。標準形で Inv3V2 のある接頭辞なら HDropV2 から DropResH が出るので、1 列の落としは仮定なしで立つ（`bumpW_drop_std`、`t0BumpDrop_of`）。
+- 落とし側の AbsWN M (M.take x)（`absWN_take_t0`）: DropResH の `ab : BumpAbsC` から。t = 0 では x の行 1 が 0 で v(x) = 0 なので、BumpAbsC の 2 つの前提は自明。
+- まとめ `t0AbWRes_of : HDropV2 → T0PrefixInv → T0AbWRes`。残り `T0PrefixInv`: t = 0 の M について、M[n].take k（r + L ≤ k ≤ |M[n]|）が標準形・SRO でない・Inv3V2 を持つ。これは N = M[n] の StepCtxV2.pre と同じ種類の事実で、最上位の帰納法で出せるか top に確認中。
