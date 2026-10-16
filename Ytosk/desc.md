@@ -3585,5 +3585,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 前提の移送: σB < σy ⇔ B < y、ψ_{f a} < ψ_{f s}(σy) ⇒ ψ_a < ψ_s(y)（a = V なら V < s から）、hi は sh_split・sh_lt_om_succ。s ≤ V なら σ 側の書き換えが起きない（V′ ≤ f(a) ≤ s ≤ V に矛盾）。
 - 残り `T2VRAK KVRA M` ⟸ t0 の `T2CopyK CopyVDomK M` ∧ `T2VRAK KAG M`（`t2VRAK_KVRA_of`）。最上位への差し込みは t2 の署名の一括変更が入ってから。
 - 「動く位置」が要る理由: 項として σ g ≠ g でも、s の中で添字 ≤ V の ψ の下にあれば f(s) では g のまま（ext1 の例 V = 0 で g = ψ_{ψ_{ψ(1)}(0)}(0) + ψ_{ψ(1)}(ψ(1))）。σ g ≠ g で測った KG は ext2 で例外 14、位置で測ると 0。
-- 測定（tools/probe_t2vrak.py、全数。KA は逃げ道 Ω_{f a} なしの強い形で測る）: d3s で KA・KG・VD 例外 0。残りの集合は測定中。T2VRACopy（新しい形）・T2VRAK KStepVRA（旧 QVRAsh 欄）は 11 集合（std_a を含む）の全数で例外 0。
+- 測定（tools/probe_t2vrak.py、全数。KA は逃げ道 Ω_{f a} なしの強い形で測る）: d3s・deep2・deep3・Cprime・t0ext・ext1x で KA・KG・VD すべて例外 0。**停止で中断**: expP・ext1・t2ext・ext2・std_a は未測定。再開: `env --chdir=/home/koteitan/proofs/trio/tools nice -n 15 python3 probe_t2vrak.py expP ext1 t2ext ext2 --output /home/koteitan/proofs/trio/tmp/ytosk-handoff/results/t1/t2vrak --workers 4`、std_a は `nice -n 15 python3 tmp/t1/run_set.py probe_t2vrak tmp/ytosk-handoff/sets/std_a.pkl`。
+- **停止時のブランチ（2026-10-17、t1）**: (a) t1-work（V3T2VRAK、この節）は main 7404395c の上で全体ビルド緑。main の作業ツリーに他の役の未 commit の変更（lakefile・V3T0AbW）があり早送りできなかった。再開時にまず `git -C <trio> merge --ff-only t1-work`（載せ直しが要れば rebase）。(b) t1-qr2（2b93435a、q = r の偽の仮定 hUA1・T1UpgQRV2 を外した）は drop-wkx2 4f7e3f84 の上（drop-wkx2 は 2b93435a に早送り済み）。drop の uaw1・pv2 の測定のあと drop-wkx2 ごと main に載せる。worktree は trio/tmp/t1/wt（t1-work）と trio/tmp/t1/wtqr（t1-qr2）。
+- 最上位の K の差し替え（V3TopV2 の T2VRAK KStepVRA → KVRA = t0 の T2CopyK CopyVDomK（t2CopyK_vDom_of と T2VAncStep で）∧ T2VRAK KAG）は KA・KG の全数測定のあと。T2VRACopy（新しい形）・T2VRAK KStepVRA（旧 QVRAsh 欄）は 11 集合（std_a を含む）の全数で例外 0。
 
