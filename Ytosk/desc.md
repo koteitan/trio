@@ -2969,3 +2969,31 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
     - 最後の写し: M.take x の枠で、frame_take_rw により M の枠に写る。
   - 段の道も φ で M の道に写る（`pathLvAll_N_t0`）。よって N の枠の段はどれも M の枠の段で、M の VSmallRAll がそのまま使える。
   - 引き継ぎの穴（最後の写しで、段の鎖が g の上を通るとき「N で書き換えるなら M.take x でも書き換える」が 2 件偽）は、M.take x の道でなく M の道へ写すことで要らなくなった。証明したので、この形の測定はしていない。
+
+### UpgAbsXW の載せ直しと測定の準備（2026-10-16、drop）
+
+- **載せ直し**: drop-fix の作業用コミット eb0cca69（UpgAbsXW・PO の弱い枝の拡張・CntX・Res3T2.ua）を今の main に載せ直した。ローカルのブランチ `drop-wkx2`（3 コミット、先頭 8e93deef、e4526c7d の上）。全体ビルド緑（992 jobs）、公理は propext・Classical.choice・Quot.sound。**main にはまだ入れていない**（測定が終わっていないため）。
+  - eb0cca69 の後に main に増えた呼び出しの直し: V3VLocT1（t1_main_vlocS の drop_all に `.toW`）、V3Inv2・V3ExpInv2（t = 1 の 4 か所に `(R.ua.toX hx2)`）、V3T0C（新しい補題 `CntX.nocnt_of_strong` と `PO.zero_of_strong`）、V3T0Inv2（2 か所 `.toX`）、V3MainV2（t2_dropsC に `hua := R2.ua`、desc_stepV2 の 5 か所 `.toX hx2`）。
+  - t2 の hR2_t2 が Inv3W・Res3W の形になったので、T2UpgAbs もその形にした。hR2_t2_ofW・hR2_t2_of・hExp_t2_inv3V2・r2V2_of・expT2V2_of に引数 `(hU2 : T2UpgAbs)` を足した。T2UpgAbs（t = 2 の x − 1 での強い吸収）は T2Ext で偽なので、t2 の側で広げる必要がある。
+  - `CntX.nocnt_of_strong`（V3MainT1D）: 強い UpgAbsX があれば CntX の第 2 の場合（UpgBad）は起きず、弱い列は数える子を持たない。
+- **厳密な ◁**: `tools/lhd_exact.py`。Lean の `Lhd z b a` を、c がすべての木（標準形に限らない）を動く形のまま判定する。
+  - K_u(c) = max(0 と comps u c)。破れ ⟺ ある u と c ∈ (b, a] で K_u(c) < max(comps u b)。comps u t は u が大きいほど小さくなるので、u は b の添字だけ調べればよい。
+  - 「区間の中に K_u(c) < g の c がある」を木の辞書式順序の区間の分解（c = ψ_v(x) + r の v・x・r の積の箱）で再帰的に判定する。
+  - 7 節点までの木の総当たり（c は 7 節点までの全部）と 2880 組で一致。
+  - 前の probe の `lhd`（probe_inv3_prefix）は基本列の数項だけ試す近似で、失敗を見落としうる。前の PO・PV・UpgAbsX の測定はこの近似だった。
+- **測定（途中で止めた）**: `tools/probe_newpv3.py`（UpgAbsXW を x − 1 で全ての W について、強い形が破れる場合の upgx2「行 2 の x ≠ 0」、新しい PO・PV）。全 10 集合を t2ext から順に流したが、再起動のため約 25 分（t2ext の途中）で止めた。結果はない。
+  - 試し（各 1000 行列、t2ext・ext2・Cprime）と、既知の 2 つの族（T2Ext の …(5,1,0)(4,2,0)(5,3,1)、ext1 の列 11）では例外 0。T2Ext の族は「強い形が破れ、弱い形で成り立つ」（PV・PO は weakX の枝）。
+  - 見積もり: 約 5 ms/行列、4 プロセスで全 10 集合約 2 時間。
+  - 再実行: `nice -n 15 python3 tools/probe_newpv3.py t2ext expP ext1 ext1x Cprime t0ext d3s deep2 deep3 ext2`（結果は `tmp/ytosk-handoff/results/drop/`）。
+- **次に流す予定だった測定**（どれも未実行）:
+  - `tools/probe_leafg.py`（TP1LeafG・TP1WLeafG、CPairG・HPairG を構成子どおりに列挙）。試しでは前件の立つ枠が少ない（9000 行列で TP1LeafG 1 件）。
+  - `tools/probe_frame7.py`（AbsDS・AbsUWL・AbsUW0・AbsDW・TPLoN・AbsDN・TPLoW、補助エージェントが書いた。3000 行列で全欄に前件あり、例外 0。約 2.2 ms/行列）。
+  - 落とした行列 M.take x のうち元の集合にないもの: `tmp/ytosk-handoff/sets_take/<集合>.pkl`（t0ext 18302・d3s 12642・deep2 1・deep3 1・ext1x 115220・expP 83789、他の 4 集合は 0）。TakeFrameV2 は M.take x の主張なので、元の 10 集合とこの追加分の両方で測る。probe_inv2・probe_trigs0（AbsUS・TPLoS・TrigS0・VSmallRAll）もこの追加分で流す（`--data tmp/ytosk-handoff/sets_take`）。
+  - top の `tools/probe_hframe.py` が同じ欄（HFrameV2・HLeafV2）を測る。二重にならないよう top と決める（問い合わせ中）。
+  - `tools/probe_dropres.py`（HardArg・VSmallNew・BumpWeakSrc・BumpAbsC・SeedR・AbsSR・VSmallNewR・ShadowC、厳密な ◁）は下書き。既知の行列での試し（BumpAbsS が i = 7 で偽）だけ済み。
+- **再開の手順**:
+  1. 私的な worktree（/tmp の下）は消えるので `git -C trio worktree prune` のあと、ブランチ `drop-wkx2` から作り直す（`.lake/build` を写し、`packages` は main の物へ symlink）。
+  2. main が進んでいれば `drop-wkx2` を main に rebase し、全体ビルド。
+  3. probe_newpv3 を全 10 集合で流す。例外 0 なら drop-wkx2 を 1 コミットにまとめて main に入れ、t0・t1・t2・top に呼び出しの変更を知らせる（t2 には T2UpgAbs を広げるのは t2 の仕事と伝える）。例外があれば族を調べる。
+  4. 葉の条件・枠の 7 欄・追加分を測る（top と分担を決めてから）。
+  5. (3) の候補: t0 が HardArgN で使った段を制限した RelRU と VSmallRAll（Inv3V2 の欄）で、落とす補題を R の道（V3DropR）で作り直せば HardArg が要らなくなる。その代わり VSmallNewR・ShadowC が残る。

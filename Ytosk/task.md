@@ -38,7 +38,10 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - ✅ 残りの条件を仮定した組み立て（`inv3V2_take`）
       - ✅ PH3cG・FC3・VSmallRAll の保存。落とす補題の結論を仮定した証明
       - 落とす補題の残り（DropRes など）。強い UpgAbsX の反例も修正する
-      - 落とした行列の枠の条件（TakeFrameV2）、TP1LeafG・TP1WLeafG、最後の列が根の場合の RootP
+        - UpgAbsXW（T2Ext の x − 1 の族の修正）を今の main に載せ直した。ローカルのブランチ `drop-wkx2` で全体ビルド緑、main には未コミット。全 10 集合の測定（`tools/probe_newpv3.py`、厳密な ◁）が途中で止まっていて、その結果を見てからコミットする
+        - DropResH の残り（HardArg・VSmallNew・BumpWeakSrc・BumpAbsC）と SeedR・AbsSR の 10 集合の測定（`tools/probe_dropres.py` は下書き、試しの実行のみ）
+      - 落とした行列の枠の条件（TakeFrameV2）、TP1LeafG・TP1WLeafG（最後の列が根の場合の RootP は top の `rootP0_take` で済み）
+        - 10 集合と、落とした行列の追加分（`tmp/ytosk-handoff/sets_take/`）での測定（`tools/probe_frame7.py`・`tools/probe_leafg.py`）。top の `tools/probe_hframe.py` と重なるので、どちらで測るか top と決める
     - t = 0 の展開
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t0_topU`）
       - ✅ Inv3V2 への接続（`t0_final_inv3V2`・`expT0V2_of2`、V3T0Inv2）。PH3cG・FC3 も接続、旧 Inv3 は使わない（V3T0C の Inv3C）
