@@ -14,6 +14,7 @@ import Ytosk.V3T0OT
 import Ytosk.V3T0DepU
 import Ytosk.V3T0TrigG
 import Ytosk.V3VSF
+import Ytosk.V3T0DepS
 
 namespace Ytosk
 
@@ -60,7 +61,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
     (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ)
     (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hSv : ∀ c, S true c → σ.v c = ρ.v c)
-    (hVR : VSmallRS M S bnd ρ) (hPH : PH3cG M ρ) (hCut : T2CutN M S bnd ρ σ)
+    (hVR : VSmallRS M S bnd ρ) (hPH : PH3cG M ρ) (hClB : RwClosed M ρ)
     (hoff : ∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i))
     (hOTout : ∀ b j, bnd ≤ j → j < N.length → isOT (valB σ b j) = true)
     (hWv : ∀ i, ¬ W false i)
@@ -293,16 +294,15 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
             intro hvc hne
             have hs' : s' = s := by rw [hs'v, hvc, ← hsvc]
             exact hIHRE' rfl hvc y y' (by rw [hsy, hsvc]) (by rw [hs'y', hs', hsvc]) hne
-          have hagree : σ.v c = ρ.v c → (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
+          have htos : σ.v c = ρ.v c → (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧
               lt (psi (ρ.v i) z z) (psi s y z) = true) →
-              lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s y' z) = true := by
+              (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s y' z) = true) ∨
+                ((split y (psi (succ s) z z)).2 = z ∧ ∃ P a' x T', y = app P (psi a' x z) ∧ y' = app P T' ∧
+                  ∃ κ ∈ cutsNSG s (psi a' x z), spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = app P κ ∧ ¬ κ < T') := by
             intro hvc htr
-            have hs' : s' = s := by rw [hs'v, hvc, ← hsvc]
             by_cases hyy : y' = y
-            · rw [hyy]; exact htr
-            exact trig_agreeG (hREc hvc hyy) (fun hB => hPH i hiM Lc c [] (by rw [hclM]) s y hsy hB htr)
-              (fun hlo hB P a' x T' e1 e2 κ hκ hBk => hCut i c Lc hi hcb hclM hdc s y y' hsy
-                (by rw [hs'y', hs']) hlo hB htr P a' x T' e1 e2 κ hκ hBk) htr
+            · rw [hyy]; exact Or.inl htr
+            exact trig_or_shadow (hREc hvc hyy) (fun hB => hPH i hiM Lc c [] (by rw [hclM]) s y hsy hB htr) htr
           have hSi : isOT (psi (ρ.v i) (step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s' y' z) z) = true := by
             apply node_ot_hard (by rw [← hsy]; exact hG.ot_o c hcM) (by rw [← hs'y']; exact hIHot)
               (Or.inr (by rw [← hs'y', ← hsy]; exact hIH)) hBc (fun hy' => hss s y s' y' hsy hs'y' hy')
@@ -361,11 +361,40 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
               have hne' : σ.v c ≠ ρ.v c := by rw [← hs'v, ← hvs]; exact hne
               have := ht.1; rw [hvchg hne'] at this; exact T.not_lt_z _ this)
             (fun ht hnt _ => by
-              exfalso
               by_cases hvc : σ.v c = ρ.v c
               · have es : s' = s := by rw [hs'v, hvc, ← hsvc]
-                rw [es] at hnt; exact hnt (hagree hvc ht)
-              · have := ht.1; rw [hvchg hvc] at this; exact T.not_lt_z _ this)
+                rw [es] at hnt ⊢
+                rcases htos hvc ht with hnew | ⟨hlo, P1, a1, x1, T1, e1, -, κ1, hκ1, hBk1, -⟩
+                · exact absurd hnew hnt
+                · have hyy : y' ≠ y := fun e => hnt (by rw [e]; exact ht)
+                  obtain ⟨P0, a0, x0, T0, -, e2, hT0⟩ := hREc hvc hyy
+                  have hyz' : y' ≠ z := by rw [e2]; exact app_ne_z_right hT0
+                  have hyz : y ≠ z := fun e => by rw [e] at ht; exact T.not_lt_z _ ht.1
+                  have hhz : (split y (psi (succ s) z z)).1 ≠ z := by
+                    intro h0
+                    have e := split_app (psi (succ s) z z) y
+                    rw [h0, hlo] at e; simp [app] at e; exact hyz e.symm
+                  have hl' : Lhd z (psi s y' z) (psi s y z) := by have h := hlc; rw [es] at h; exact h
+                  exact shadow_hSh hBc ht hnt hyz' hl' (hClB i hiM Lc c [] (by rw [hclM]) s y hsy ht (by
+                    have e := split_app (psi (succ s) z z) y
+                    rw [hlo, app_z_right] at e
+                    rw [e]; exact ht.1) (by
+                    rintro ⟨R1, hR1⟩
+                    have e := split_app (psi (succ s) z z) y
+                    rw [hlo, app_z_right] at e
+                    rw [e, e1] at hR1
+                    rw [hBk1, app_assoc] at hR1
+                    have h2 := app_left_cancel0 hR1
+                    have hκt : κ1 = psi a1 x1 z := by
+                      rcases mem_cutsNSG_psi.mp hκ1 with ⟨u, _, rfl⟩ | ⟨u, _, rfl⟩ | ⟨u, hu, _⟩
+                      · simp only [app, psi.injEq] at h2; rw [h2.1, h2.2.1]
+                      · simp only [app, psi.injEq] at h2; rw [h2.2.1]
+                      · simp [cutsNSG] at hu
+                    have hBy : spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = y := by rw [hBk1, hκt, e1]
+                    have := ht.1; rw [hBy] at this; exact lt_irrefl' _ this))
+                    (fun u hu hau g hg => hVR i c Lc s y hi hcb hclM hD hdc hsy ht hhz u
+                      (Or.inr (hU u hu)) hau g hg)
+              · exfalso; have := ht.1; rw [hvchg hvc] at this; exact T.not_lt_z _ this)
             hqp hhyp
           -- the right-end change at `i`
           intro _ X X' hX hX' hne
@@ -389,7 +418,14 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
               rcases psi_lt_psi_z_iff.mp hlc.1 with h | ⟨_, h⟩
               · exact absurd h (lt_irrefl' _)
               · exact h
-            exact re_step hc0 hc'0 hBc hlt (hREc hvc hyy') (hagree hvc)
+            by_cases hold : lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true
+            · rcases htos hvc hold with hnew | ⟨hlo, P, a', x, T', e1, e2, κ, hκ, hBk, hnk⟩
+              · exact re_step hc0 hc'0 hBc hlt (hREc hvc hyy') (fun _ => hnew)
+              · by_cases hnew : lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧
+                    lt (psi (ρ.v i) z z) (psi s y' z) = true
+                · exact re_step hc0 hc'0 hBc hlt (hREc hvc hyy') (fun _ => hnew)
+                · exact re_shadow hc0 hBc hlt hold hnew hlo e1 hBk
+            · exact re_step hc0 hc'0 hBc hlt (hREc hvc hyy') (fun h => absurd h hold)
           · have hy0 := hvchg hvc
             have hy'0 : y' = z := by
               have h := hchv hvc; rw [hs'y'] at h; simp only [psi.injEq] at h; exact h.2.1
@@ -582,7 +618,7 @@ the cut condition `T2CutA` (with `PH3cG` and the right-end change it gives the a
 and `RClaimU` and the right-end change at the seed. (`T2VSN` and `VSmallNewR` are not needed: off the seeds
 a changed `v(c)` has no counted child, and `v` of the seed does not change.) -/
 def T2HardB (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
-  VSmallRA M ρ ∧ PH3cG M ρ ∧ T2CutA M N bnd ρ σ ∧
+  VSmallRA M ρ ∧ PH3cG M ρ ∧ RwClosed M ρ ∧
     (∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimU U ρ σ p) ∧
     (∀ X X', ρ.o p = psi (ρ.v p) X z → σ.o p = psi (ρ.v p) X' z → X' ≠ X → REr X X')
 

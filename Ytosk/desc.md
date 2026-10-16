@@ -3471,3 +3471,14 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 証明できる K を探す手がかり（標本 std_a・ext2 各 4000、tmp/t1/probes/qvrash4.py・qvrash5.py）: g′ ∈ comps u (f s) は (A) σ g、(B) g そのまま、(C) V′ の加数の成分。(C) には K3「∀ g ∈ comps u V′, g ≤ Ω_{V′} ∨ ∃ d′ ∈ comps u (f a), g ≤ d′」（例外 0）。P 側の選択肢 g ≤ d（d ∈ comps u a）は σ d で運べない例がある（V = 0、a = ψ(ψ_{Ω_1}(0))：d は f(a) にそのまま残る）。t0 の SubstDom の (1)（σ d の支配）はここでは偽。
 - 測定（tools/probe_t2vra.py、全数、新しい形。QVRAsh 欄 = T2VRAK KStepVRA を P の段・0・枠の項の添字の u ≤ V で）: d3s・deep2・deep3・Cprime・t0ext・ext1x・expP・ext1 で T2VRAPre・T2VRACopy・T2VRASeed・QVRAsh すべて例外 0。t2ext・ext2・std_a は測定中。
 
+### T2CutA を RwClosed に替えた（2026-10-17、t2、V3DepRWU）
+
+- t = 2 の x より前の D の帰納法（`deps_lhd_otW_RU`）は、切り口の仮定 T2CutN（T2HardB の T2CutA）を書き換えの一致（M で書き換える枠は N でも書き換える）の 2 か所だけで使っていた。t0 が T0CutResGGC を外したのと同じく、影の枠を直接扱う形に替えた。
+  - 書き換えの一致の代わりに `trig_or_shadow`（V3T0ShB）: N でも書き換えるか、影（lo(y) = 0、B は y の最後の加数の G3 の切り口で κ ≥ T′）。
+  - 影の枠の成分の条件（relR_frameU の引数）は `shadow_hSh` と `RwClosed M ρ`（t0 の V3T0DepS、書き換える枠で B < hi(y) かつ B が hi(y) の先頭部分でなければ ClosedA (v i) B）。影では B = y になりえないので、B は hi(y) の先頭部分でない。
+  - RE は `re_shadow`。
+- `T2HardB` の `T2CutA M N bnd ρ σ` を `RwClosed M ρ` に替えた。T2BelowXRes の切り口の部分は、t0 が不変条件として示している RwClosed（最上位の T0RwRes と同じ主張）になった。T2CutA は使われなくなった（定義は残した）。
+- 呼び出しの直し: V3ExpT2QB・V3ExpT2AO（`(hHA.1.2.2.1.toN S)` → `hHA.1.2.2.1`）。
+- 測定: C の un（x − 1 は上げない）は std_b の C の 23358 件で例外 0（`tmp/ytosk-handoff/probes/t2-1016b/cun.py`）。T2SeedDomV2・T2VRAQNDom も std_b（t = 2 の 106 万行列）で例外 0。
+- Ytosk 全体のビルド緑（1031 jobs）。公理は propext・Classical.choice・Quot.sound。
+
