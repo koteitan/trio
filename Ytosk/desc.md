@@ -3631,5 +3631,6 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 **測定**（tmp/t2/probes/seedrr3.py: B0・REr・閉じた条件（全段 clAll と道の段 clPath）・σ.o r と σ.o q の標準形。N = M[n]、n = 2, 3。P は X の最後の加数を除いたもの）:
 - 10 集合（Cprime・deep2・deep3・expP・ext1・ext1x・t0ext・t2ext・ext2・std_a）と d3s で、B0・REr・clPath・otR・otQ はすべて例外 0（qr 170 万件・qn 44 万件・sv 7.5 万件・C 2.3 万件）。T2SeedQNCl・T2SeedSVCl・T2SeedCCl・T2SeedOTRestV2 はこの欄の部分。
 - clAll は qn だけ偽（10 集合で 278 件）。例 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,0,0)(5,1,1)(6,1,1)(7,1,0)(5,0,0)(3,2,1)(4,0,0)(5,1,1)(6,1,1)(7,1,0)(5,0,0)(3,2,1)、n = 2、V = 1、段 u = 0（道の段でない）。
-- 未測定（停止時）: bumpmono.py（T2BumpMono、TleN の欄。MleN は偽で参考）と preshape.py（T2SeedPreShape、全場合）。d3s 400 行列の試しでは TleN 例外 0。結果の置き場 tmp/t2/bumpmono_all.txt・preshape_all.txt。
+- 停止時（2026-10-17、lead の指示）に止めた。どの集合も済んでいない: bumpmono.py（T2BumpMono、TleN の欄。MleN は偽で参考）と preshape.py（T2SeedPreShape、全場合）。d3s 400 行列の試しでは TleN 例外 0。結果の置き場 tmp/t2/bumpmono_all.txt・preshape_all.txt。
 - 再開: `env --chdir=/home/koteitan/proofs/trio/tmp/t2/probes nice -n 15 python3 bumpmono.py Cprime deep2 deep3 d3s expP ext1 ext1x t2ext ext2 std_a`、続けて `… preshape.py <同じ 10 集合>`（4 プロセス、1 本ずつ）。
+- 停止時のブランチ: t2 の作業はすべて main（d2656d1d まで）。私的な worktree trio/tmp/t2/wt（t2-work）は main と同じ。測定スクリプトは trio/tmp/t2/probes/（seedrr3.py・bumpmono.py・preshape.py）。最上位の変種は _cur・_t2B・_t2C の 3 つ（top が 1 つにまとめる予定）。
