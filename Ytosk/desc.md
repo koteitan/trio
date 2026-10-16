@@ -2936,3 +2936,20 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 接頭辞 `pre_V2`: `inv3V2_take` を 1 列ずつ使う。評価は `drop1 M j rk`、順位は M と同じ rk のまま（`drop1_take_succ`）。評価を取り替えないので、Inv3V2 の 25 欄の合同の補題は要らない。
   - 下降 `desc_stepV2`: 旧 `desc_step` を、旧 Inv3 の偽でない欄だけの `Inv3C` で写した。t = 1・n ≥ 2 は `qr_final_inv3V2`・`qn_final_inv3V2` の下降。t = 2 は旧 `t2_drops` の写し `t2_dropsC`（使う欄は Inv3C・Res3.drop・Res3.chain・Res3T2 だけ）。
   - `Res3.chain` は接頭辞の Res3A.drop から。`Res3.t0` は ExpT0V2 の評価から `agree_of_cons` と Good3・rootS・rootP の合同で出す。
+- 追記（top）: TakeResV2 から最後の列が根の場合の RootP を外した。`rootP0_take`（V3MainV2）で証明（`rootP_take_root`。根の列 x には誰も依らないので、M.take x の評価は M と一致）。HTakeV2 の残りは落とした行列の TakeFrameV2・TP1LeafG・TP1WLeafG だけ。
+- 追記（top）: t0 の `expT0V2_of`（V3T0Inv2）を差し込んだ現状の最上位 `trio_terminates_main_V2_now`。V3MainV2 の Inv3C は V3T0C のものに統一（同じ欄）。
+
+### FrameV の狭め FrameV2（2026-10-16、top、V3FrameV2）
+
+- 旧 FrameV（V3ExpT1L）は大域の AbsD・TPLo を含む。どちらも ext1 で偽。`tplow_of_lf`・`absDW_of_lf`・`tplon_of_lf` が使うのは、最後の列の q = r の枠（段 μ ≠ 0）の D の列での AbsD・TPLo だけ。
+- `AbsDQR`・`TPLoQR`: その枠だけに狭めた形。結論は穴の段でなく枠の段 μ で述べる（etaOm μ）。frame_hole で穴の段 = μ なので、旧形からは `FrameV.toV2` で出る。
+- `tplow_of_lf2`・`absDW_of_lf2`・`tplon_of_lf2`: 旧補題と同じ証明。段を μ で述べるので frame_hole が要らない。
+- `FrmLF2`（行列ごとの LevFree の残り、前件が FrameV2）と `frameFields_of_V2`: どの標準形でも TPLoW・AbsDW・TPLoN が FrameV2 から出る。t0 の hFrm0、drop の TakeResV2.frame、t1・t2 の枠の欄のうち 3 欄に使える。
+- 測定: `tools/probe_frameqr.py`（DepX は probe_inv2 の 6 構成子の最小閉包）。
+
+### 行列ごとの共通の残り HFrameV2・HLeafV2（2026-10-16、top、V3GlobV2）
+
+- 枠の 10 欄（TakeFrameV2）と葉の条件（TP1LeafG・TP1WLeafG）は行列ごとの主張で、drop（M.take x）・t0（M[n]）・t1（各コピー）・t2（M[n]）が同じ種類の残りを持っていた。
+- `HFrameV2`・`HLeafV2`: どの標準形 N ≠ SRO・N ≠ [] でも、Cons・Rk・Good3 を満たす評価で成り立つ、という共通の形。
+- 変換 `hTake_of_glob`（drop の HTakeV2）、`t0Frame_of_glob`・`t0Leaf_of_glob`（t0 の T0NRes）。`trio_terminates_main_V2_glob` は現状の最上位で drop・t0 の枠と葉をこの 2 つに替えたもの。
+- 共通の形は前件が弱い（親の Inv3V2 を使えない）ので担当ごとの形より強い主張。担当ごとの形で示してもよい。
