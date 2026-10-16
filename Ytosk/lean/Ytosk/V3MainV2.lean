@@ -6,7 +6,7 @@
 - 帰納法（`hInvV2_all`）: Std についての帰納法で、SRO 以外の空でない標準形に Inv3V2 を持つ評価がある。
   基底は `hBaseV2_holds`、接頭辞は `inv3V2_take` を 1 列ずつ（`pre_V2`）、n ≥ 2 は型ごとの仮定。
 - 接頭辞の評価は `drop1 M j rk`、順位は M と同じ。評価を取り替えないので、Inv3V2 の欄の合同の補題は要らない。
-- 下降（`desc_stepV2`）: 旧 `desc_step` を旧 Inv3 の偽でない欄（`Inv3C`）だけで動く形に写した。
+- 下降（`desc_stepV2`）: 旧 `desc_step` を旧 Inv3 の偽でない欄（`Inv3C`、V3T0C）だけで動く形に写した。
   t = 1・n ≥ 2 は `qr_final_inv3V2`・`qn_final_inv3V2`、t = 2 は旧 `t2_drops` の写し `t2_dropsC`。
   t = 0・n ≥ 2 の `Res3.t0` は、`ExpT0V2` の評価から合同（Good3・rootS・rootP）で出す。
 -/
@@ -18,39 +18,11 @@ import Ytosk.V3Congr
 import Ytosk.V3InvJ
 import Ytosk.TwoRowZ
 import Ytosk.V3TopC
+import Ytosk.V3T0Inv2
 
 namespace Ytosk
 
 open T
-
-/-- **The fields of the old `Inv3` that are true on standard matrices**: the structural invariants and
-the value fields other than the four false ones (and their consumers). Same field names as `Inv3`. -/
-structure Inv3C (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
-  r0p : R0P M
-  z2 : Z2 M
-  sd : SibDec M
-  z1 : Z1C M
-  uat : UAT M
-  uab : UAB M
-  r12 : R12 M
-  be : BumpE2 M
-  r01 : R01 M
-  e00 : entry M 0 0 = 0
-  cons : Cons M ρ
-  good : Good3 M ρ
-  rank : Rk M rk
-  vs : VSmallF M ρ
-  fc : FrameClosed M ρ
-  fo : FrameOT M ρ
-  kd : BumpKidsDec M ρ
-  td : BumpTermDec M ρ
-  rootS : ∀ i ∈ roots M, Single (ρ.o i)
-  rootP : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)
-
-theorem Inv3C.of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (S : SInv M) (I : Inv3V2 M ρ rk) :
-    Inv3C M ρ rk :=
-  ⟨S.r0p, S.z2, S.sibDec, S.z1c, S.uat, S.uab, S.r12, S.bumpE2, S.r01, S.e00, I.cons, I.good, I.rank,
-    I.vs, I.fc, I.fo, I.kd, I.td, I.rootS, I.rootP⟩
 
 /-! ## 下降: 旧 `t2_drops`・`desc_step` を `Inv3C` で（証明は同じ） -/
 
@@ -628,7 +600,7 @@ theorem hT2_V2 (h2 : ExpT2V2) (hR2 : R2V2) {M : Mat} {ρ : Valn} {rk : Bool → 
     col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n := by
   intro hz hs
   obtain ⟨hX, hJ⟩ := sInvXJ_std C.std C.ne
-  apply t2_dropsC (Inv3C.of C.S C.I) R (hR2 M ρ rk C hz hs) hX hJ hz hs
+  apply t2_dropsC (Inv3V2.toC C.S C.I) R (hR2 M ρ rk C hz hs) hX hJ hz hs
   intro n hn _ _
   obtain ⟨ρN, rkN, IN⟩ := h2 M ρ rk C hz hs n hn
   exact ⟨ρN, rkN, IN.cons, IN.rank, IN.good⟩
@@ -640,7 +612,7 @@ theorem desc3_V2O (hD : HDropV2) (hSd : HSeedV2) (hA : HAbSV2) (hT : HTakeV2)
   obtain ⟨ρ, rk, I⟩ := hInvV2_all hD hSd hA hT h0 h1 h2 M hM hS hE
   have C := ctx_V2 hD hSd hA hT hM hS hE I
   have R := res3_of_V2 h0 C
-  obtain ⟨t', hv, _, hlt⟩ := desc_stepV2 hE (Inv3C.of C.S I) R (hT1_V2 h1 C) (hT2_V2 h2 hR2 C R) n
+  obtain ⟨t', hv, _, hlt⟩ := desc_stepV2 hE (Inv3V2.toC C.S I) R (hT1_V2 h1 C) (hT2_V2 h2 hR2 C R) n
   exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
 
 /-- **Desc3 from the residuals** (`t = 1` as one-copy preservation `ExpT1V2`). -/
@@ -653,5 +625,13 @@ V3ResV2; none contains the false fields of the old `Inv3`. -/
 theorem trio_terminates_main_V2 (hD : HDropV2) (hSd : HSeedV2) (hA : HAbSV2) (hT : HTakeV2)
     (h0 : ExpT0V2) (h1 : ExpT1V2) (h2 : ExpT2V2) (hR2 : R2V2) : WellFounded Step' :=
   terminates_of_desc3 (desc3_V2 hD hSd hA hT h0 h1 h2 hR2)
+
+/-- **The current form**: `trio_terminates_main_V2` with the producers committed so far plugged in.
+`t = 0`: `expT0V2_of` (V3T0Inv2), residuals `T0CutResGGC` and the three `T0NRes` of `M[n]`. -/
+theorem trio_terminates_main_V2_now (hD : HDropV2) (hSd : HSeedV2) (hA : HAbSV2) (hT : HTakeV2)
+    (hCut : T0CutResGGC) (hVRA0 : T0NRes (fun N σ _ => VSmallRAll N σ))
+    (hLeaf0 : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm0 : T0NRes TakeFrameV2)
+    (h1 : ExpT1V2) (h2 : ExpT2V2) (hR2 : R2V2) : WellFounded Step' :=
+  trio_terminates_main_V2 hD hSd hA hT (expT0V2_of hCut hVRA0 hLeaf0 hFrm0) h1 h2 hR2
 
 end Ytosk
