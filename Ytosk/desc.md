@@ -3135,3 +3135,16 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 証明に要るもの（未着手）: (a) N の道と P の道の対応。写しのブロックの中は σ の写し。写しの根より上は N の接頭辞の枠と P の接頭辞の枠の書き換えの関係が要る（N・P とも M に対して FrameShape だが、N と P の直接の関係は Lean にない）。(b) 段 u ≤ V での成分の σ 移送（σ(t) の段 u の成分は、t の成分の σ 像か、そのままの成分か、V′ の成分）。
 - 測定の道具は `tmp/ytosk-handoff/probes/t2-1016b/`（vraup・vracopy・vrapre・fcs・fd2・fdsh など）。
 
+
+### t = 0 の BumpAbsLo も偽・使い所は弱い形で足りる（2026-10-17、drop）
+
+- AbsSR を t = 0 の成分 BumpAbsLo M r ρ（i < r = P_0(x) で強い吸収）だけにしたが、これも厳密な ◁（lhd_exact.py）で偽。以前の「T0Ext 1461 件で例外 0」は近似の ◁ の測定だった。
+  - 反例（bms -s = 1）: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(3,0,0)(2,1,1)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,0,0)(4,0,0)、r = 14、i = 11、q = ω^{ω²+2}、W = Ω_{ω^{ω²+2}+ω^ω}。
+  - probe_dropres の標本（各集合の 1/60）: AbsSR.Lo の破れ t0ext 33・t2ext 68・ext1 7・expP 90。同じ標本で HardArg・VSmallNew・BumpWeakSrc・BumpAbsC・SeedR・VSmallNewR・ShadowC は例外 0。
+- 使い所（V3T0D の v_strong と v_bump_lhd、V3T0B・V3T0G の g、V3T0S3 の P_0(g)）が要るのは、N = M[n] の新しいのりしろの項 bumpW N σ i に吸収されない加数だけ（V3AbsW の弱い形 AbsWN M N r ρ σ。V3AbsW の v_bump_lhdW がその形の補題）。
+- 測定（`tools/probe_abswn_t0.py`、t0ext の 6 万行列、n = 2, 3）:
+  - 強い形: 936 件中 912 件偽（bumpW が変わる列で 412 件、変わらない列で 500 件）。
+  - AbsWN: 前件が 1 件も立たない（ω² ≤ q < bumpW M i の加数は全部 bumpW N i 未満）。
+  - i < r で bumpW (M.take x) i ≤ bumpW N i: 46 万件で例外 0。等号でないこともある（5.6 万件、そのときいつも bumpW N i < bumpW M i）。
+- AbsWN を出す筋: t = 0 では M[n] = M.take x ++（r の下に吊るした写し）なので、落とし側の BumpAbsC（DropResH.ab。t = 0 では v(x) = 0 で側条件が立つ）と、上の単調性から AbsWN が出る。単調性は M.take x と M[n] の値の比較で、まだ証明はない。
+- エンジンを弱い形に替えるかは t0 に任せた（連絡済み）。全 10 集合の測定は drop のキューに入れた（結果は tmp/ytosk-handoff/results/drop/abswn_t0/）。
