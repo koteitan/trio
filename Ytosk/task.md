@@ -52,8 +52,10 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
           - ✅ 履歴の土台 S1（兄弟の部分木は辞書式で増えない）はすべての標準形で成り立つ（`S1_std`、V3S1Std。trio の cnf_ST_TS から）
           - 兄弟の切り口の位置の値の条件（S1 だけでは出ない）
         - ✅ T0CutResGGC を使わない t = 0 の組み立て（影の枠を直接扱う。`expT0V2_of3`、V3T0Inv2S）。残りは RwClosed（書き換える枠で lo(y) = 0 なら B は閉じている）
-          - RwClosed の 10 集合の測定（4 集合で例外 0、残りは実行中）
-          - RwClosed の保存の証明（枠の性質なので PH3cG と同じ仕組みで運べる見込み）
+          - RwClosed（書き換える枠で B < hi(y) なら B は閉じている）の 10 集合の測定（3 集合で例外 0、残りは実行中）
+          - RwClosed の保存
+            - ✅ 基底・1 列落とし・t = 0・t = 1（V3RwClDrop・V3RwClT0・V3RwClT1）
+            - t = 2（σ での保存・◁ で下げる・種の枠）
     - t = 1 の展開
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t1OP`）
       - ✅ q = r の条件付き入口を Inv3V2 に接続。実際の添字を使い、旧 AbsD・TrigOmC を外す（`qr_final_inv3V2`）

@@ -13,12 +13,13 @@ open T
 
 set_option linter.unusedSectionVars false
 
-/-- **The state of every rewriting frame with an all-high argument is closed** at the levels up to `v(i)`. -/
+/-- **The state of every rewriting frame below the high part of the argument is closed** at the levels up to
+`v(i)` (kinds `pre`・`cut`; kind `eq`, where the state is the high part, can fail: deep3). -/
 def RwClosed (M : Mat) (ρ : Valn) : Prop :=
   ∀ i, i < M.length → ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R → ∀ s y,
     ρ.o c = psi s y z →
     lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true →
-    (split y (psi (succ s) z z)).2 = z →
+    spArg (ρ.v i) z (sumN (Lc.map ρ.o)) < (split y (psi (succ s) z z)).1 →
     Closed (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
 
 section
@@ -624,7 +625,10 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                           have e := split_app (psi (succ s) z z) y
                           rw [h0, hlo] at e; simp [app] at e; exact hyz e.symm
                         have hl' : Lhd z (psi s y' z) (psi s y z) := by have h := hlc'; rw [es] at h; exact h
-                        exact shadow_hSh hBc ht hnt hyz' hl' (hClB i hiM Lc c [] (by rw [hclM]) s y hsy ht hlo)
+                        exact shadow_hSh hBc ht hnt hyz' hl' (hClB i hiM Lc c [] (by rw [hclM]) s y hsy ht (by
+                          have e := split_app (psi (succ s) z z) y
+                          rw [hlo, app_z_right] at e
+                          rw [e]; exact ht.1))
                           (fun u hu hau g hg => hVR i c Lc s y hi hcr hclM hdi hdc hsy ht hhz u
                             (Or.inr (hU u hu)) hau g hg)
                     · have := ht.1; rw [(hchv hvc).1] at this; exact absurd this (T.not_lt_z _))
