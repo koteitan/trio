@@ -3292,3 +3292,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - `rwClosed_take`（1 列落とし）・`base_rwClosed`（基底）。
   - `expStep_rwClosed_t1S`（t = 1 の各段）。x の枠は新しい引数が b + δ で hi = b = B なので、前提が立たない（`rc'_app`）。
 - 残り: t = 2。PH3cG と同じく、σ で保たれること（qT2P_sh に当たる）、◁ で下げても保たれること、種の枠（T2SeedFrames）が要る。
+- 追記（2026-10-17、t0、V3RwClT2、緑）: t = 2 の組み立て `rwClosed_expand_t2`。t2 の FrameClosed（V3T2FC の frameClosed_expand_t2）と同じ形で、`clField_expand_t2S` に枠の性質 `QRCo`（子が標準形で QRC）を入れた。
+  - 写し（`qRCo_sh`）: 書き換えの条件・状態は σ と交換。前提 B < hi(y) も σ と交換（sh_split・sh_lt_iff）。
+  - 子を ◁ で下げる（`qRCo_low`）: qrc_drop。
+  - 名前つきの残りは 2 つ。
+    - `ClSh`: 閉じていることの σ 不変性。項だけの主張で、t2 の FDsh と同じ種類。comps_sh は段 ≥ V しか扱わないので、段 < V と、V′ の部分の成分が要る。
+    - `T2SeedFrames QRC M`: 種の列の枠。

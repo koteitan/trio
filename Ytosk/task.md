@@ -55,7 +55,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
           - RwClosed（書き換える枠で B < hi(y) なら B は閉じている）の 10 集合の測定（3 集合で例外 0、残りは実行中）
           - RwClosed の保存
             - ✅ 基底・1 列落とし・t = 0・t = 1（V3RwClDrop・V3RwClT0・V3RwClT1）
-            - t = 2（σ での保存・◁ で下げる・種の枠）
+            - ✅ t = 2 の組み立て（`rwClosed_expand_t2`、V3RwClT2）。残り: 項の主張 ClSh（σ で閉じていることが保たれる）と種の枠 T2SeedFrames QRC
+            - 最上位の帰納法で RwClosed を運ぶ（top と相談）
     - t = 1 の展開
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t1OP`）
       - ✅ q = r の条件付き入口を Inv3V2 に接続。実際の添字を使い、旧 AbsD・TrigOmC を外す（`qr_final_inv3V2`）
