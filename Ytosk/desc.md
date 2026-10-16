@@ -3356,3 +3356,19 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 前提: t2 の既存の残り T2SeedPRes（qr・sv・qn・C の値の欄）。
 - `rwClosed_expand_t2S`: t = 2 の RwClosed の残りは、ClSh・T2X1Cl・T2BelowXRes・T2SeedPRes だけになった。
 - 測定: T2X1Cl は d3s の t = 2 の行列 3436 件で例外 0（argcl.py の「t2 take r arg」）。10 集合＋std_a は RwClosed の測定のあとに流す。
+
+### 種の列の枠の VSmallF・FrameOT・FrameClosed と、PH3cG の種類からの FrameDom（2026-10-17、t2、V3T2SeedFr・V3T2CutDom）
+
+- 一般の補題（どの枠でも使える）:
+  - `frameDom_prefix`: H = B + R なら (B, H] の C はどれも B で始まる（`between_app`）。添字 s の成分が z・B 以下・Ω_s 以下・a の成分以下なら FrameDom。
+  - `frameDom_first`（B = 0）: H の先頭の添字が s で始まれば（lev H = s + X）、(Ω_s, H] の C の先頭の添字も s で始まり、s の成分は C の成分。FC3 の形そのもの。
+  - `frameDom_self`: 添字 = 親の添字なら s の成分は a の成分。
+  - `cutsH_dom`・`cutsNS_dom`（V3T2CutDom）: B が H の G3 の切り口で B < C ≤ H なら、B の成分は z か s の成分か C の成分以下（H の構造の帰納法。切り口は道に沿って部分項を Ω_s に替えたもので、間の C は同じ道を持つ）。
+  - **`frameDom_of_kind`**: 書き換える枠で PH3cG の種類（hi = B・hi = B + R・切り口）が分かれば、B の成分の分は FrameDom を満たす。残るのは添字 s の成分の条件（z・B 以下・Ω_s 以下・a の成分以下）だけ。公理は propext・Quot.sound。
+  - 観察: 実際の枠では、B ≠ 0 の枠の s の成分はいつもこの条件を満たす（前の fcs・fd2 の測定）。B = 0 の枠は FC3 から `frameDom_first`・`frameDom_self` で出る。FDsh（写しの枠の FrameDom）はこれで「s の成分の条件の σ 移送」に帰着できる見込み（任意の C を相手にしなくてよい）。未着手。
+- 種の列の枠（closure の V3PSeed*G の枠のデータを使う）:
+  - qr（`seed_frames_qr3`）: r の最後の枠は状態 B（M と同じ）・子 ψ_{V+1}(Y)。n = 2 は書き換えない（w1）、n ≥ 3 は Y = B + ψ_{V+n−1}(…) で H = Y（接頭辞）。段 V での V + 1 の成分は z だけ（`comps_succ_self`）。残りなし（T2SeedQRRes は既存の残り）。
+  - qn（`seed_frames_qn3`）: r の最後の枠は子 ψ_{s′}(B + Ω_{f(t)})、q の枠は子の添字 = v_N(q) = s′（`frameDom_self`）。Lc = [] では `frameDom_first`（T2SeedQNFC）。残りは `T2SeedQNDom`（s′ = V + ω^S の成分: Lc ≠ [] なら段 u ≤ V で z・B 以下・V の成分以下、段 V では Ω_{s′} 以下か B 以下）。測定（`tmp/ytosk-handoff/probes/t2-1016b/qnlast.py`）: 9 集合（Cprime・d3s・deep2・deep3・ext1・t2ext・ext2・expP・ext1x）で例外 0（t0ext は t = 2 の qn の行列がない）。
+  - sv・C は作業中（sv は s = V + 1 なので s の成分は自明、C は qn と同じ形の残りが要る見込み）。
+- 公理は propext・Classical.choice・Quot.sound。Ytosk 全体のビルド緑（1021 jobs）。
+
