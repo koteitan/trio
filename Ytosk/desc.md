@@ -3388,3 +3388,17 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - **UpgSibVHard の (ii)**（e1 b < e1 a）を「upg b = b + 1（次の列への上げ）」だけに絞った（V3SibV）。e2 b = 1 は RowJ・BumpE2 で除き、e1 b = 0 は v(b) = 0、upg b = none は v_chain_lt、upg b = k（祖先）は道の帰納法で v(b) = v(k) ≤ v(p) ≤ v(a)。証明の筋は V3SibV の冒頭の注釈。
   - 測定（tmp の probe_sibii.py、10 集合）: (ii) の前件 12,357 件。upg b は none（e1 b = 0 が 10,068・e1 b > 0 が 1,447）か祖先（842）で、次の列は 0 件。v(b) ≤ v(p) は例外 0。
 - UpgSibV の追加の測定: SRO から作った標準形 7,410,825 個（行列 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(1,0,0) より大きく長さ 14 以下、展開の n ≤ 3）で前件 2,836,549 件、例外 0。
+
+### t = 2 の VSmallRAll の骨組みと q = r の始点の弱い場合（2026-10-17、t1、V3T2VRA・V3SeedWeak、t1-qr）
+
+- **T2VRAV2 の骨組み `t2VRAV2_of`（V3T2VRA、緑）**: clField_expand_t2S と同じ 1 コピーごとの帰納法で、段の道つきの VSmallRAll を運ぶ。枠ごとの主張は段 u を固定した `QVRAt a Lv cv u`（`vsmallRAll_iff`）。
+  - 接頭辞の種でない枠: FrameShape（T2BelowXS）で clField_of_shapeS を Q = QVRAt · · · u で使う（`qVRAt_low`）。段は M の段（残り `T2VRAPre`）。
+  - 写しの枠: CopyFacts で P の枠の σ 像（守られた列）か等しい（守られない列）（`copyFrame_VRA`）。段は P の段か、守られた列ではその f 像（残り `T2VRACopy`、変わらない段は u ≤ V か V′ ≤ u）。σ での移送は項だけの残り `QVRAsh`。
+  - 種の列の枠: 残り `T2VRASeed`。M.take x の VSmallRAll は接頭辞の Inv3V2 から `vsmallRAll_congr`（評価の取り替え）で。
+  - t = 1 のように M へ直接写す方法は t = 2 では使えない（種の列の枠は N だけで書き換える、写しの値は σ_j の像）。
+  - 測定（試し、tmp/t1/probes/vra2l.py・vra2g.py・qvrash.py、d3s・t2ext・ext2・expP・Cprime・std_a 各 1000〜1500 行列、n = 2, 3）: 写しの枠はすべて P の σ 像か等しい、段は P の段か f 像（f 像は守られた列だけ）。接頭辞の種でない枠の段はすべて M の段。守られた写しの枠の P の段は (V, V′) に入らない。QVRAsh の 2 つの形は実例ですべて真。どこにも FAIL はない。全数の測定はまだ。
+- **q = r の始点が ◁ でない場合（drop の報告、t1-qr）**: r = x − 1 が M では祖先へ上げられ、M.take x で上げを失うと、始点 Ω_{w′}（w′ = v′(r) = v(P_1 r) + 1 < v(r)）は o(r) に ◁ で下がらない。
+  - `seedOK_of_small_below`（V3SeedWeak）: w′ の成分がどれも Ω_{w′} 未満（`SmallSelf`）なら ◁ なしで SeedOK。CS はその特別な場合（`seedOK_of_cs_below`）。`v_last_take`: v′(x − 1) = v(P_1(x − 1)) + 1。
+  - 測定（tools/probe_qrseed.py）: 10 集合・std_a・std_b（741 万行列、q = r は 156 万）で、始点が ◁ でない例は 93 件、すべて SmallSelf(w′)。CS でない例が 3 件（std_b の (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,0) など、V = ψ_0(Ω_1)）。一般の v の値では SmallSelf は偽（d3s に ψ_0(Ω_{Ω_1})）。
+  - lead の承認で、drop が UpgAbsXW の弱い選択肢に SmallSelf(V + 1) を足す。t1-qr（drop-wkx2 の上）では q = r の qr_final3 と t = 1 のエンジン全部を UpgAbsXW に替えた（全体ビルド緑、残り sorry 1 か所 = WCSP の第 2 の場合、drop の変更が入ったら閉じる）。
+- EqSibUpg の 10 集合の測定は全部で例外 0（ext2 も 0）。

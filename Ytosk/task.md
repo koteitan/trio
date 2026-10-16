@@ -74,6 +74,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
           - ✅ FrameClosed の骨組み（`frameClosed_expand_t2`、V3T2FC）と T2VSFCV2 の生産者（`t2VSFCV2_of`、V3T2VSFC）。残りは FDsh（FrameDom の σ 不変性、項だけの主張）と種の列の枠 T2SeedVSFV2・T2SeedFCV2
           - FDsh の証明
       - VSmallRAll の保存（T2VRAV2）
+        - ✅ 骨組み `t2VRAV2_of`（V3T2VRA、t1）: T2VRAV2 ⟸ QVRAsh（σ での移送、項だけ）∧ T2BelowXRes ∧ T2VRASeed（種の列の枠）∧ T2VRAPre（接頭辞の段は M の段）∧ T2VRACopy（写しの段は P の段か f 像）
+        - 残り 4 つの証明（t1）
       - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と C の値の残り UpgSibV
         - ✅ M だけで決まる欄（qr の ks・vs、qn の vqlt・Bc、sv の decP）を証明（V3T2SeedRes）
         - ✅ sv の rw を T2SVStrict 1 つに（V3T2SeedRes2）、qn の σB を数えない子の残り QNUncRes に（V3T2QNSig、一般の V′ の closure V3T2TameG）
