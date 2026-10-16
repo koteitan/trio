@@ -54,6 +54,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
           - 兄弟の切り口の位置の値の条件（S1 だけでは出ない）
         - ✅ T0CutResGGC を使わない t = 0 の組み立て（影の枠を直接扱う。`expT0V2_of3`、V3T0Inv2S）。残りは RwClosed（書き換える枠で B < hi(y) なら B は閉じている、ClosedA）
         - ✅ 強い BumpAbsLo（標準形で偽）を弱い AbsWN（T0AbsW）に替えた組み立て `expT0V2_of4`。残り T0AbWRes（AbsWN の証明、drop の筋）
+          - ✅ T0AbWRes ⟸ HDropV2 ∧ T0PrefixInv（`t0AbWRes_of`、V3T0AbW）。残り T0PrefixInv（M[n] の接頭辞の Std・Inv3V2、top に確認中）
           - ✅ RwClosed（種類 cut の枠で B は ClosedA）の 11 集合（10 集合＋std_a）の測定。例外 0
           - RwClosed の保存
             - ✅ 基底・1 列落とし・t = 0・t = 1（V3RwClDrop・V3RwClT0・V3RwClT1）
