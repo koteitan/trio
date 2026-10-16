@@ -2953,3 +2953,19 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - `HFrameV2`・`HLeafV2`: どの標準形 N ≠ SRO・N ≠ [] でも、Cons・Rk・Good3 を満たす評価で成り立つ、という共通の形。
 - 変換 `hTake_of_glob`（drop の HTakeV2）、`t0Frame_of_glob`・`t0Leaf_of_glob`（t0 の T0NRes）。`trio_terminates_main_V2_glob` は現状の最上位で drop・t0 の枠と葉をこの 2 つに替えたもの。
 - 共通の形は前件が弱い（親の Inv3V2 を使えない）ので担当ごとの形より強い主張。担当ごとの形で示してもよい。
+
+### t = 0 の Inv3V2 への接続と VSmallRAll の保存（2026-10-16、t0）
+
+- V3T0C: 旧 Inv3 から偽でない欄だけを取った束 `Inv3C`（構造の欄・Cons・Good3・Rk・VSmallF・FrameClosed・FrameOT・BumpKidsDec・BumpTermDec・rootS・rootP）と `Res3C`（drop・abS）。t = 0 のエンジンが使う std_gexp_t0・t0_shape3・t0IVRes_holds・t0VSD_at・t0_vsmallF_at を、型だけ替えて写した（証明は同じ）。
+- V3T0Inv2 `t0_final_inv3V2`: M の SInv・Inv3V2、DropRes・AbsSR、M.take x の Inv3V2 から、M[n]（n ≥ 2）の Inv3V2・根の標準性・下降を出す。
+  - PH3cG・FC3 は G.ph3c_N_t0・G.fc3_N_t0 を初めて接続した。側条件は t0_core と同じ式で出す。
+  - M の VSmallRP は M の VSmallRAll から出す。T0VSPRes は要らない。
+  - 残り: `T0CutResGGC`（T0CutResGG の Inv3・Res3A を Inv3C・Res3C に替えたもの）、N の葉の条件 TP1LeafG・TP1WLeafG、N の最後の列の枠の 10 欄（TakeFrameV2 N）。top の ExpT0V2 は `expT0V2_of2` で出る。
+- V3T0VSRAllN `vsmallRAll_N_t0`: VSmallRAll M ⇒ VSmallRAll M[n]（t = 0）。新しい残りはない。
+  - N の書き換える枠 (i, c) は、M の書き換える枠 (φ i, φ c)（φ = phi0、写した元の列）に写る（`frameMap_N_t0`）。v(i)・添字・前の子の o は同じで、引数は M の方が大きい。
+    - r より前: M と同じ枠。c が D の列なら o_N(c) ≤ o_M(c) で、添字は同じ。
+    - g の枠: 写しの根のうち書き換えるのは最初の 1 個だけ（no_rw_after）。子は omid か o′(r) で、どちらも o_M(r) = ψ_v(Y0 + 1) より下。
+    - 中間の写し: M の枠そのもの。
+    - 最後の写し: M.take x の枠で、frame_take_rw により M の枠に写る。
+  - 段の道も φ で M の道に写る（`pathLvAll_N_t0`）。よって N の枠の段はどれも M の枠の段で、M の VSmallRAll がそのまま使える。
+  - 引き継ぎの穴（最後の写しで、段の鎖が g の上を通るとき「N で書き換えるなら M.take x でも書き換える」が 2 件偽）は、M.take x の道でなく M の道へ写すことで要らなくなった。証明したので、この形の測定はしていない。

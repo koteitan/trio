@@ -41,9 +41,10 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - 落とした行列の枠の条件（TakeFrameV2）、TP1LeafG・TP1WLeafG、最後の列が根の場合の RootP
     - t = 0 の展開
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t0_topU`）
-      - Inv3V2 への接続と、新しい枠の条件の証明
-      - VSmallRAll の保存
-      - 切り口の残り T0CutResGG
+      - ✅ Inv3V2 への接続（`t0_final_inv3V2`・`expT0V2_of2`、V3T0Inv2）。PH3cG・FC3 も接続、旧 Inv3 は使わない（V3T0C の Inv3C）
+      - ✅ VSmallRAll の保存（`vsmallRAll_N_t0`、V3T0VSRAllN）。残りなし
+      - N の最後の列の枠の 10 欄と葉の条件（top の共通の残り HFrameV2・HLeafV2）
+      - 切り口の残り T0CutResGGC
     - t = 1 の展開
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t1OP`）
       - ✅ q = r の条件付き入口を Inv3V2 に接続。実際の添字を使い、旧 AbsD・TrigOmC を外す（`qr_final_inv3V2`）
