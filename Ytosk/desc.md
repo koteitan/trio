@@ -3450,3 +3450,13 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - (i)（同じ列、a に子がある）の形: 10 集合で 5,129 件。sub(b) が sub(a) の接頭辞 4,463 件、最初の違いが b の子の段で b が小さい 628 件、それ以外（深い所で違う）38 件（expP、例 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(4,1,1)(4,1,0)(5,0,0)(6,1,1)(6,1,1)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(4,1,1)(4,1,0)(5,0,0)(6,1,1)(6,1,0) の a = 4・b = 13）。部分木の形だけの単純な特徴づけはない。
 - まとめ: HSibHardV2 の 2 つの形はどちらも兄弟の部分木の値の比較（S1 の値の版）。局所的な順序の保存か、値の不変条件として全機構で運ぶ必要がある。
 - 測定の注意: 10 集合は兄弟の並びの形が薄い（T2SeedCNext・UpgRun の反例も (ii) の次の列への上げも入っていなかった）。前件がまれな主張は、生成集合 tmp/top/std_a.pkl（79,201）・std_b.pkl（7,410,825、生成は tmp/top/stdgen.py）でも測るとよい。
+
+### RwClosed の写しの枠: ClSh は偽、SubstDom で運ぶ（2026-10-17、t0、V3SubstLev・V3RwClSh・V3RwClCopy）
+
+- ClSh（σ = sh V V′ で ClosedA a B が ClosedA f(a) σB へ移る、項だけの主張）は偽。反例: V = Ω_2、V′ = Ω_3 + ψ_1(ψ_1(ψ_0(Ω_{Ω_5})))、a = Ω_2 + ψ_1(Ω_2)、B = ψ_a(Ω_{Ω_2+1})。ClosedA a B は立つ。σB の中の添字 f(Ω_2 + 1) = V′ + 1 は V′ の加数 ψ_1(ψ_1(…)) を含み、その段 0 の成分 Ω_{Ω_5} は σB より大きい。f(a) = Ω_3 + ψ_1(Ω_2) では V′ のその加数が消えているので、f(a) の成分でも押さえられない。原因は、深い添字の f(s) = V′ + σ(s − V) から V′ の成分が入ること。
+- 成分の引き戻し（V3SubstLev）: `comps_sh_lev`（段の対 (u, u′) の条件つき）、`comps_sh_min`（u = min(u′, V)）、`comps_sh_pull`（u′ ≤ V なら u′、u′ > V なら V ≤ w ≤ V + 1 の任意の w）。σt の段 u′ の成分は σg か g（g は t の段 u の成分）か V′ の加数の成分。
+- `SubstDom V V′ a`（V3RwClSh）: (1) a の段 pullLev の成分 d（d ≠ 0）は σd が f(a) の段 u′ の成分以下、(2) V′ の段 u′ の成分は f(a) の段 u′ の成分以下。pullLev は u′ ≤ V なら u′、そうでなければ V < a なら V + 1、a = V なら V。段を V にすると (1) が前提の立つ写しの枠で偽になる（ext2 27 件。V = 0、a = ω^2 の段 0 の成分 2 は段 1 で見えない）。V + 1 にすると例外 0。
+- `closedA_sh`: SubstDom V V′ a → ClosedA a B → ClosedA f(a) σB（緑）。a = V なら (2) は自明で、(1) は V と V′ だけの条件 `VDom`（`substDom_of_vDom`）。
+- 骨組み（V3RwClCopy）: t2 の clField_copy・clField_expand_t2S を枠ごとの条件 K を受け取る形に写した（`clField_copyK`・`clField_expand_t2SK`）。残り `T2CopyK K M`（M[n − 1] の守られた写しの枠で K (v_P(r)) (v_N(r + L)) (v_P(i)) …）。`rwClosed_expand_t2SK`: RwClosed of M[n] ⟸ T2BelowXRes ∧ T2CopyK CopyCutK ∧ T2X1Cl ∧ T2SeedPRes。CopyCutK = 写しの枠で RwClosed の前提が立てば SubstDom V V′ a。
+- 測定（tmp/t0/probes/vprefix5.py、各集合 30000 行列、n = 2, 3）: 前提が立つ写しの枠で SubstDom は 11 集合で例外 0（ext2 335・ext1 281・std_a 421・d3s 214・t2ext 313・expP 387・Cprime 312・deep2 451・deep3 483・ext1x 81 件、t0ext は該当なし）。前提が立つ枠の大半は a = V だが、a ≠ V もある（ext2 57・ext1 9・std_a 11）。前提が立たない枠では SubstDom は偽になりうる（d = 0 を除いても ext1 で 28487 件）ので、K は前提つきでないといけない。
+- T2X1Cl（M.take x での r の引数 X₁ は ClosedA）は前提なしでは偽（Cprime 22・deep2 1・std_a 1。例: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,0,0)(5,1,1)(6,1,1)(3,2,1)、v(r) = ω、X₁ = Ω_{ω+ω}(…) の段 0 の成分 Ω_{ω2} が X₁ より大きい）。この行列の M[2]・M[3]・M[4] では r の最後の枠で前提が立たない（σX₁ = X₁ で書き換えない）。T2X1Cl を前提つき（sv・C の場合に r の最後の子で QRC）に直した。

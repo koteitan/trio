@@ -53,10 +53,12 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
           - 兄弟の切り口の位置の値の条件（S1 だけでは出ない）
         - ✅ T0CutResGGC を使わない t = 0 の組み立て（影の枠を直接扱う。`expT0V2_of3`、V3T0Inv2S）。残りは RwClosed（書き換える枠で B < hi(y) なら B は閉じている、ClosedA）
         - ✅ 強い BumpAbsLo（標準形で偽）を弱い AbsWN（T0AbsW）に替えた組み立て `expT0V2_of4`。残り T0AbWRes（AbsWN の証明、drop の筋）
-          - RwClosed（種類 cut の枠で B は ClosedA）の 11 集合（10 集合＋std_a）の測定。ext1x・t2ext で例外 0、残りは実行中
+          - ✅ RwClosed（種類 cut の枠で B は ClosedA）の 11 集合（10 集合＋std_a）の測定。例外 0
           - RwClosed の保存
             - ✅ 基底・1 列落とし・t = 0・t = 1（V3RwClDrop・V3RwClT0・V3RwClT1）
-            - ✅ t = 2 の組み立て（`rwClosed_expand_t2S`、V3RwClT2・V3RwClSeed）。残り: ClSh（σ で ClosedA が保たれる、項だけの主張、t2 の FDsh と共通の補題で）と T2X1Cl（M.take x での r の引数は ClosedA）
+            - ✅ t = 2 の組み立て（`rwClosed_expand_t2SK`、V3RwClCopy・V3RwClSh・V3RwClSeed・V3SubstLev）。残り: T2CopyK CopyCutK（写しの枠で前提が立てば SubstDom V V′ a）と T2X1Cl（前提つき、種 r の最後の枠）
+              - ClSh（項だけの σ 不変性）は偽（反例は V3RwClSh の冒頭）。旧 `rwClosed_expand_t2S` は使わない
+              - CopyCutK の測定（vprefix5.py）・T2X1Cl の測定（x1cl.py）
             - 最上位の帰納法で RwClosed を運ぶ（top が形を決める）
     - t = 1 の展開
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t1OP`）
