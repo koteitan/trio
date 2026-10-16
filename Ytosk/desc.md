@@ -3424,3 +3424,13 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - `pathLvAll_pre_t2`: x より前（q を除く）の段の道は枠ごとに M の道へ写る。
   - 残り `T2SeedPreShape`: 種 p（q = r なら r、q ≠ r なら P_0 q）の枠で子が x より前かつ q でないものは、N で書き換えるなら M でも同じ値で書き換える。試し（tmp/t1/probes/seedpre.py、d3s・t2ext・ext2・expP 各 2000 行列）で例外 0。p の子 q の枠は N だけで書き換えるが、q は種の列なので効かない。
 - 追記（top）: 最上位に t2 の `t2FOSeedV2_of`・`t2VSFCV2_of2`（V3T2SeedFrV2）と `t2VRAPre_of`（V3T2VRAPre）を差し込んだ。`trio_terminates_main_V2_cur` の t2 の残りは T2BelowXRes・T2SeedPResRCV2・T2SeedDomV2・FDsh・QVRAsh・T2VRASeed・T2SeedPreShape・T2VRACopy。Ytosk 全体のビルド緑。
+
+### 種の列の枠の VSmallRAll（T2VRASeed、qr・qn、2026-10-17、t2、V3T2VRASeed）
+
+- t1 の骨組み（V3T2VRA）の残り `T2VRASeed` を、qr・qn と C の q の枠で示した（`t2VRASeed_of`、最上位の形 `t2VRASeedG_of`）。
+  - 段（`pathLv_of_shape`・`rw_frame_of_shape`）: r の親 k は種の列でないので FrameShape。N で枠 (k, r) が書き換えるなら M でも書き換える（同じ添字で o_N(r) ≤ o_M(r)、子の v が変われば o = ψ_{v′}(0) で書き換えない）。k より上は T2VRAPre。よって N の r の段 ⊆ M の r の段。
+  - 枠（`vra_lift`）: r の最後の枠より前は M の枠そのもの。最後の枠の子の添字は qr で V + 1（成分は z か V の成分）、qn で s′。q の枠（qn・C）は子の添字が v_N(q) 自身なので自明（`qVRAt_self`）。
+  - 残り: `T2VRAQNDom`（qn の最後の枠: M の r の段 u ≤ V で、s′ の成分は Ω_{s′} 以下・B 以下・V の成分以下）。測定（`tmp/ytosk-handoff/probes/t2-1016b/qnpath.py`）: 9 集合で例外 0（qn 346 万件・C 18 万件の成分）。`T2VRASeedSVC`（sv・C の r の枠。最後の枠より前は M.take x の枠で、N の段は M の段に入るが M.take x の段に入るとは限らないので、M.take x の VSmallRAll から直接は出ない）。
+- C の最後の枠のデータを `G.seed_last_C`（V3T2SeedFr2）に切り出した。
+- Ytosk 全体のビルド緑（1028 jobs）。公理は propext・Classical.choice・Quot.sound。
+
