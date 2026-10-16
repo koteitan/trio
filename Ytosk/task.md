@@ -79,6 +79,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - VSmallRAll の保存（T2VRAV2）
         - ✅ 骨組み `t2VRAV2_of`（V3T2VRA、t1）: T2VRAV2 ⟸ QVRAshK K（枠の条件 K のもとでの σ 移送）∧ T2BelowXRes ∧ T2VRASeed（種の列の枠）∧ T2VRAPre（接頭辞の段は M の段）∧ T2VRACopy（意味のある写しの段は P の段で u ≤ V）∧ T2VRAK K（守られた写しの枠の条件）。最上位は K = KStepVRA（移送そのもの、qVRAshK_step）
         - ✅ T2VRAPre ⟸ T2SeedPreShape（種の列 p の枠の形）（`t2VRAPre_of`、V3T2VRAPre）
+        - ✅ T2VRASeed（種の列の枠）を qr・qn・C の q で証明（`t2VRASeedG_of`、V3T2VRASeed、t2）。残りは T2VRAQNDom（9 集合・std_b で例外 0）と T2VRASeedSVC（sv・C の r の枠）
         - 残り（t1）: T2VRAK KStepVRA（項だけの QVRAsh は偽。証明できる K を探す: V′ の成分の支配 K3 は標本で例外 0、P 側の d の選択肢の σ 像は抑えられない例あり）、T2VRACopy、T2SeedPreShape。全数の測定（新しい形）: 7 集合で例外 0、t2ext・ext2・std_a は測定中
       - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と C の値の残り UpgSibV
         - ✅ M だけで決まる欄（qr の ks・vs、qn の vqlt・Bc、sv の decP）を証明（V3T2SeedRes）
@@ -87,7 +88,9 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         - ✅ 構造の残り T2SeedCNext は標準形で偽（反例は desc.md、候補 UpgRun も偽）。C の欄を CRes ∧ CBig に替え、CBig を値の残り UpgSibV から証明（`t2SeedCBig_of_sibV`、V3CBigV）。UpgSibV は全 10 集合で例外 0
         - ✅ UpgSibV を難しい形 UpgSibVHard に絞った（`upgSibV_of_hard`、V3SibV。a に子がない同じ列と、b = (e0 p+1, y, 0) は S1 から証明）
         - ✅ (ii) e1 b < e1 a を次の列への上げ（upg b = b + 1、10 集合で 0 件）だけに絞った（V3SibV）
+        - ✅ C の vqP を un から（`c_vqP_of_un`、V3T2CVq、t2）。C の残りは decP・un（std_b で例外 0）・rw・lhd
         - UpgSibVHard（最上位の HSibHardV2）の証明（top）: 同じ列で a に子がある場合（S1 の値の版）と、(ii) の次の列への上げ
+      - ✅ T2BelowXRes の切り口の仮定 T2CutA を RwClosed に替えた（V3DepRWU、t0 の影の補題を使う）。T2BelowXRes の残りは種での RClaimU・REr、AbsWN
       - 強い T2UpgAbs の反例を扱える形への修正
   - **各段をまとめて Desc3 を得る**
     - ✅ 旧 Inv3V 上の条件付き最上位の組み立て（`trio_terminates_main_GH`）
