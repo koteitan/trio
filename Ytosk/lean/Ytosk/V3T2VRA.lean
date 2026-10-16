@@ -189,14 +189,14 @@ def T2VRAK (K : T → T → T → List T → T → T → Prop) (M : Mat) : Prop 
 
 /-- **VSmallRAll of every `M[n]`** (`t = 2`, `n ≥ 1`) from VSmallRAll of `M` and `M.take x` and the named
 residuals. -/
-theorem vsmallRAll_expand_t2 {K : T → T → T → List T → T → T → Prop} (hsh : QVRAshK K) (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem vsmallRAll_expand_t2 {K : T → T → T → List T → T → T → Prop} (hsh : QVRAshK K) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO)
     (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
     (h2 : TRIO.srow M (M.length - 1) = 2) (hVM : VSmallRAll M ρ)
     (hVT : ∀ τ, Cons (M.take (M.length - 1)) τ → VSmallRAll (M.take (M.length - 1)) τ)
     (hSeed : T2VRASeed M) (hPre : T2VRAPre M ρ) (hCopy : T2VRACopy M) (hKM : T2VRAK K M) :
     ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → VSmallRAll (expand M n) σ := by
-  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXAll_of hB M ρ rk hM hS I R hz h2)
+  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I R hz h2)
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   obtain ⟨r, hr⟩ := parLast_of hX.e00 hX.r01 hX.r12 hz
@@ -344,7 +344,7 @@ theorem vsmallRAll_congr {N : Mat} {σ τ : Valn} (h : Agree N σ τ) (hV : VSma
   · exact Or.inr (pathLvAll_congr h hu)
 
 /-- **T2VRAV2 from the named residuals.** -/
-theorem t2VRAV2_of {K : T → T → T → List T → T → T → Prop} (hsh : QVRAshK K) (hB : T2BelowXRes)
+theorem t2VRAV2_of {K : T → T → T → List T → T → T → Prop} (hsh : QVRAshK K) (hB : T2BelowXResV2)
     (hSeedG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRASeed M)
     (hPreG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -362,7 +362,7 @@ theorem t2VRAV2_of {K : T → T → T → List T → T → T → Prop} (hsh : QV
   obtain ⟨I1, _⟩ := C.pre (M.length - 1) (by omega) (by omega)
   have hRk1 : Rk (M.take (M.length - 1)) rk := I1.rank
   have hC1 := I1.cons
-  exact vsmallRAll_expand_t2 hsh hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 C.I.vra
+  exact vsmallRAll_expand_t2 hsh (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 C.I.vra
     (fun τ hτ => vsmallRAll_congr (agree_of_cons hC1 hτ hRk1) I1.vra)
     (hSeedG M ρ rk C hz h2) (hPreG M ρ rk C hz h2) (hCopyG M ρ rk C hz h2) (hKG M ρ rk C hz h2) n (by omega) σ hCN
 

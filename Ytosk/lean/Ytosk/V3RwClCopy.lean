@@ -127,13 +127,13 @@ theorem clField_expand_t2SK {Q : T → List T → T → Prop} {K : T → T → T
       K V V' a Lv cv → Q a Lv cv → Q (shf V V' a) (Lv.map (sh V V')) (sh V V' cv))
     (hQlow : ∀ a Lv cv cv', Q a Lv cv → Lhd z cv' cv → isOT cv' = true → (∃ s y, cv = psi s y z) →
       (∀ s y s' y', cv = psi s y z → cv' = psi s' y' z → s' ≠ s → y' = z) → Q a Lv cv')
-    (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
+    {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M) (hS : M ≠ SRO)
     (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
     (h2 : TRIO.srow M (M.length - 1) = 2) (hQM : CLField Q M ρ)
     (hQT : ∀ τ, Cons (M.take (M.length - 1)) τ → CLField Q (M.take (M.length - 1)) τ)
     (hSeed : T2SeedFrames Q M) (hKM : T2CopyK K M) :
     ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → CLField Q (expand M n) σ := by
-  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXAll_of hB M ρ rk hM hS I R hz h2)
+  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I R hz h2)
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   obtain ⟨r, hr⟩ := parLast_of hX.e00 hX.r01 hX.r12 hz
@@ -301,8 +301,8 @@ theorem qRCo_shK (V V' a : T) (Lv : List T) (cv : T) (hV : isOT V = true)
     exact lt_irrefl' _ (lt_of_lt_of_le hlt this)
 
 /-- **RwClosed of every `M[n]`** (`t = 2`, `n ≥ 1`) without `ClSh`: the copy frames by `T2CopyK CopyCutK`. -/
-theorem rwClosed_expand_t2K (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+theorem rwClosed_expand_t2K {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hRM : RwClosed M ρ)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → RwClosed (M.take (M.length - 1)) τ)
@@ -326,8 +326,8 @@ theorem rwClosed_expand_t2K (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
 
 /-- **RwClosed of every `M[n]`** (`t = 2`) with the residuals `T2CopyK CopyCutK` (copy frames), `T2X1Cl` and
 `T2SeedPRes` (seed frames), `T2BelowXRes`. -/
-theorem rwClosed_expand_t2SK (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+theorem rwClosed_expand_t2SK {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hRM : RwClosed M ρ)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → RwClosed (M.take (M.length - 1)) τ)
@@ -444,8 +444,8 @@ theorem qRCo_shL (V V' a : T) (Lv : List T) (cv : T) (hV : isOT V = true)
     exact lt_irrefl' _ (lt_of_lt_of_le hlt this)
 
 /-- **RwClosed of every `M[n]`** (`t = 2`, `n ≥ 1`) without `ClSh`: the copy frames by `T2CopyK CopyCutL`. -/
-theorem rwClosed_expand_t2L (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+theorem rwClosed_expand_t2L {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hRM : RwClosed M ρ)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → RwClosed (M.take (M.length - 1)) τ)
@@ -469,8 +469,8 @@ theorem rwClosed_expand_t2L (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
 
 /-- **RwClosed of every `M[n]`** (`t = 2`) with the residuals `T2CopyK CopyLowK` (copy frames of `P`: closed at the premise) and `T2CopyK CopyVDomK` (`VDomF`), `T2X1Cl` and
 `T2SeedPRes` (seed frames), `T2BelowXRes`. -/
-theorem rwClosed_expand_t2SL (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+theorem rwClosed_expand_t2SL {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hRM : RwClosed M ρ)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → RwClosed (M.take (M.length - 1)) τ)

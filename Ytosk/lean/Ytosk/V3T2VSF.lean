@@ -169,13 +169,13 @@ theorem qVSF_of_shape {M N : Mat} {ρ σ : Valn} {i : Nat} (hC : Cons M ρ) (hG 
 
 /-- **VSmallF's frame property on every `M[n]`** (`t = 2`, `n ≥ 1`): copies by `qVSF_sh`, the frames before `x` off
 the seeds by `qVSF_of_shape` from `VSmallF M`, the prefix `M.take x` and the seed frames given. -/
-theorem vsmallF_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
+theorem vsmallF_expand_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M)
     (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
     (h2 : TRIO.srow M (M.length - 1) = 2)
     (hQT : ∀ τ, Cons (M.take (M.length - 1)) τ → CLField QVSF (M.take (M.length - 1)) τ)
     (hSeed : T2SeedFrames QVSF M) :
     ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → CLField QVSF (expand M n) σ := by
-  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXAll_of hB M ρ rk hM hS I R hz h2)
+  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I R hz h2)
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   obtain ⟨r, hr⟩ := parLast_of hX.e00 hX.r01 hX.r12 hz
@@ -260,7 +260,7 @@ theorem vsmallF_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool �
   exact key n hn σ hσ
 
 /-- **VSmallF of every `M[n]`** (`t = 2`, `n ≥ 1`), with the seed frames as the named residual. -/
-theorem vsmallF_expand_t2V (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
+theorem vsmallF_expand_t2V {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M)
     (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
     (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → Good3 (M.take (M.length - 1)) τ ∧ VSmallF (M.take (M.length - 1)) τ)

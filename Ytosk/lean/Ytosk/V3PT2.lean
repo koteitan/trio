@@ -259,7 +259,7 @@ end
 
 /-- **PH3c of every `M[n]`** (`t = 2`), from PH3c・FrameOT of `M` and `M.take x`, the residual of the frames
 below `x` (`T2BelowXRes`), and the seed frames. -/
-theorem ph3c_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem ph3c_expand_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hP : PH3c M ρ)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ →
@@ -274,7 +274,7 @@ theorem ph3c_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
     (fun τ hτ => clField_qT2P hτ (hT τ hτ).1 (hT τ hτ).2) hSeed n hn σ hσ
 
 /-- **FC3 of every `M[n]`** (`t = 2`). -/
-theorem fc3_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem fc3_expand_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hP : FC3 M ρ)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ →

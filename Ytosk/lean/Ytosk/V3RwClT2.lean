@@ -126,8 +126,8 @@ theorem qRCo_low : ∀ a Lv cv cv', QRCo a Lv cv → Lhd z cv' cv → isOT cv' =
   exact qrc_drop (le_of_lt hl.1) hss' hQ.2 s' y' rfl ht' hhi' hnp'
 
 /-- **RwClosed of every `M[n]`** (`t = 2`, `n ≥ 1`), with `ClSh` and the seed frames as the named residuals. -/
-theorem rwClosed_expand_t2 (hCl : ClSh) (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+theorem rwClosed_expand_t2 (hCl : ClSh) {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hRM : RwClosed M ρ)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → RwClosed (M.take (M.length - 1)) τ)

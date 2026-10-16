@@ -36,7 +36,7 @@ theorem take_fields_ctx {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : S
   exact vsmallF_of_clField hτ hG (clField_congr (clField_of_vsmallF I1.cons I1.good I1.vs) hA)
 
 /-- **T2VSFCV2 from the named residuals.** -/
-theorem t2VSFCV2_of (hB : T2BelowXRes) (hFD : FDsh) (hSV : T2SeedVSFV2) (hSF : T2SeedFCV2) : T2VSFCV2 := by
+theorem t2VSFCV2_of (hB : T2BelowXResV2) (hFD : FDsh) (hSV : T2SeedVSFV2) (hSF : T2SeedFCV2) : T2VSFCV2 := by
   intro M ρ rk C hz h2 n hn σ rkN hCN _ hGN _
   obtain ⟨hX, _⟩ := sInvXJ_std C.std C.ne
   have hl2 : 2 ≤ M.length := by
@@ -45,10 +45,10 @@ theorem t2VSFCV2_of (hB : T2BelowXRes) (hFD : FDsh) (hSV : T2SeedVSFV2) (hSF : T
     have := par_lt M 2 _ r hr; omega
   have IW := Inv3W.ofV2 C.S C.I
   have RW : Res3W M ρ rk := ⟨C.R.drop⟩
-  refine ⟨vsmallF_expand_t2V hB C.std C.ne IW RW hz h2
+  refine ⟨vsmallF_expand_t2V (hB M ρ rk C) C.std C.ne IW RW hz h2
       (fun τ hτ => ⟨(take_fields_ctx C hl2 hτ).1, (take_fields_ctx C hl2 hτ).2.1⟩)
       (hSV M ρ rk C hz h2) n (by omega) σ hCN hGN,
-    frameClosed_expand_t2 hFD hB C.std C.ne IW RW hz h2 (fun τ hτ => (take_fields_ctx C hl2 hτ).2.2)
+    frameClosed_expand_t2 hFD (hB M ρ rk C) C.std C.ne IW RW hz h2 (fun τ hτ => (take_fields_ctx C hl2 hτ).2.2)
       (hSF M ρ rk C hz h2) n (by omega) σ hCN⟩
 
 end Ytosk

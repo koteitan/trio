@@ -159,7 +159,7 @@ def T2VRASeedSVC (M : Mat) : Prop :=
 open Classical in
 /-- **T2VRASeed** (`VSmallRAll` at the seed frames of `M[n]`) for qr and qn, with the residuals `T2VRAQNDom`
 and `T2VRASeedSVC` (sv, C). The levels of `r` are those of `M` (`pathLv_of_shape`, `T2VRAPre`). -/
-theorem t2VRASeed_of (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem t2VRASeed_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hVM : VSmallRAll M ρ) (hRes : G.T2SeedPRes M ρ) (hPre : T2VRAPre M ρ)
@@ -167,7 +167,7 @@ theorem t2VRASeed_of (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat
       ∀ Lc, CL M r = Lc ++ [q] → T2VRAQNDom M ρ r L q Lc)
     (hSVC : T2VRASeedSVC M) : T2VRASeed M := by
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
-  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXAll_of hB M ρ rk hM hS I R hz h2)
+  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I R hz h2)
   have hlen1 : 1 ≤ M.length := by
     rcases hM0 : M with _ | _
@@ -298,7 +298,7 @@ theorem t2VRASeed_of (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat
         exact qVRAt_self ⟨y0, hy0⟩
 
 /-- **The top-level form** of `T2VRASeed` (t1's `t2VRAV2_of` argument `hSeedG`). -/
-theorem t2VRASeedG_of (hB : T2BelowXRes) (hPR : T2SeedPResV2)
+theorem t2VRASeedG_of (hB : T2BelowXResV2) (hPR : T2SeedPResV2)
     (hPreG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ)
     (hQNG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -308,7 +308,7 @@ theorem t2VRASeedG_of (hB : T2BelowXRes) (hPR : T2SeedPResV2)
       TRIO.srow M (M.length - 1) = 2 → T2VRASeedSVC M) :
     ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRASeed M :=
-  fun M ρ rk C hz h2 => t2VRASeed_of hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 C.I.vra
+  fun M ρ rk C hz h2 => t2VRASeed_of (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 C.I.vra
     (hPR M ρ rk C hz h2) (hPreG M ρ rk C hz h2) (hQNG M ρ rk C hz h2) (hSVCG M ρ rk C hz h2)
 
 end Ytosk

@@ -180,12 +180,12 @@ theorem q_nocnt_t2 {M : Mat} {r L n : Nat} (hX : SInvX M) (hJ : RowJ M) (hlen : 
     entry_take N 0 (show q < r + L by omega), entry_take N 1 (show q < r + L by omega)]
 
 /-- **`T2VRAPre` from `T2SeedPreShape`** (and t2's `T2BelowXRes`). -/
-theorem t2VRAPre_of (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem t2VRAPre_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hSP : T2SeedPreShape M ρ) : T2VRAPre M ρ := by
   intro r L hlen hr n hn σ hCN hGN k hk hsc u hu
-  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXAll_of hB M ρ rk hM hS I R hz h2)
+  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I R hz h2)
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧

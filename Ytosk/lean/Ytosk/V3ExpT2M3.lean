@@ -37,7 +37,7 @@ structure T2Rest3 : Prop where
     TRIO.srow M (M.length - 1) = 2 → T2SeedFrames QFO M
 
 /-- **`hExp` for `t = 2`** (`Inv3V` of `M[n]`) with the prefix invariants given. -/
-theorem hExp_t2_V (hB : T2BelowXRes) (hRest : T2Rest3) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem hExp_t2_V {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hRest : T2Rest3)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ j, j < M.length → M.take j ≠ SRO → M.take j ≠ [] →
@@ -48,7 +48,7 @@ theorem hExp_t2_V (hB : T2BelowXRes) (hRest : T2Rest3) {M : Mat} {ρ : Valn} {rk
   obtain ⟨rkN, hRN⟩ := rk_expand_t2 hX hJ hz h2 I.rank n (by omega)
   have hCN := cons_of_rk hRN
   set σ := rhsIt (expand M n) (rkBound (expand M n) rkN) with hσ
-  have hGN := good3_expand_t2 hM hS I R hz h2 (t2BelowXAll_of hB M ρ rk hM hS I R hz h2)
+  have hGN := good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I R hz h2) n (by omega) σ hCN
   -- the prefix `M.take x`
   obtain ⟨r, hr⟩ := parLast_of hX.e00 hX.r01 hX.r12 hz
@@ -91,7 +91,7 @@ theorem hExp_t2_of_lastV
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
   intro M ρ rk hM hS hE I R hz h2 n hn
-  apply hExp_t2_V hB hRest hM hS I.toW R.toW hz h2 _ n hn
+  apply hExp_t2_V (hB M ρ rk) hRest hM hS I.toW R.toW hz h2 _ n hn
   intro j hj hjS hjE
   obtain ⟨τ, rkT, V, R'⟩ := hTake_of_last hLast M ρ rk hM hS hE I R j hj hjS hjE
   exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩

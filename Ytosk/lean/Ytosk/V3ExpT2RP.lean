@@ -15,11 +15,11 @@ open T Classical
 set_option linter.unusedSectionVars false
 
 /-- **`RootP` of every `M[n]`** (`t = 2`, `n ≥ 2`). -/
-theorem rootP_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem rootP_expand_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2) :
     ∀ n, 2 ≤ n → ∀ σ, Cons (expand M n) σ → RootP (expand M n) σ := by
-  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXAll_of hB M ρ rk hM hS I R hz h2)
+  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I R hz h2)
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   obtain ⟨r, hr⟩ := parLast_of hX.e00 hX.r01 hX.r12 hz

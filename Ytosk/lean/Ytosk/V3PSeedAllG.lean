@@ -170,7 +170,7 @@ theorem t2SeedFrames_and {Q₁ Q₂ : T → List T → T → Prop} {M : Mat} (h�
     ⟨h₁ r L hlen hr n hn hlow σ hσ hG i hi Lc c R hcl, h₂ r L hlen hr n hn hlow σ hσ hG i hi Lc c R hcl⟩
 
 /-- **PH3cG of every `M[n]`** (`t = 2`), with the seed frames reduced to the named residuals. -/
-theorem ph3c_expand_t2S (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem ph3c_expand_t2S {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hP : PH3cG M ρ) (hF : FC3 M ρ)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ →
@@ -183,7 +183,7 @@ theorem ph3c_expand_t2S (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → 
   exact ⟨hFO r L hlen hr n hn hlow σ hσ hG i hi Lc c R' hcl, (hPF r L hlen hr n hn hlow σ hσ hG i hi Lc c R' hcl).1⟩
 
 /-- **FC3 of every `M[n]`** (`t = 2`), with the seed frames reduced to the named residuals. -/
-theorem fc3_expand_t2S (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem fc3_expand_t2S {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hP : PH3cG M ρ) (hF : FC3 M ρ)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ →

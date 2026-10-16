@@ -123,8 +123,8 @@ theorem qFCo_low : ∀ a Lv cv cv', QFCo a Lv cv → Lhd z cv' cv → isOT cv' =
 
 /-- **FrameClosed of every `M[n]`** (`t = 2`, `n ≥ 1`), with `FDsh` and the seed frames as the named
 residuals. -/
-theorem frameClosed_expand_t2 (hFD : FDsh) (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+theorem frameClosed_expand_t2 (hFD : FDsh) {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → FrameClosed (M.take (M.length - 1)) τ)
     (hSeed : T2SeedFrames QFC M) :

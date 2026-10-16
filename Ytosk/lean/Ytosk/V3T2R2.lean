@@ -32,16 +32,17 @@ def T2Seed1C : Prop :=
     (drop1 M (r + L) rk).o pq ≠ ρ.o pq
 
 /-- **`hR2` for `t = 2`** from `T2BelowXRes` and the two seed1 residuals. -/
-theorem hR2_t2 (hB : T2BelowXRes) (hSV : T2Seed1SV) (hQC : T2Seed1C) :
-    ∀ M ρ rk, Std M → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+theorem hR2_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
+    (hSV : T2Seed1SV) (hQC : T2Seed1C) :
+    Std M → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk := by
-  intro M ρ rk hM I R hz h2
+  intro hM I R hz h2
   have hS : M ≠ SRO := ne_SRO_of_rk I.rank
   have RA : Res3W M ρ rk := R
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
       TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
-  have hGall := good3_expand_t2 hM hS I RA hz h2 (t2BelowXAll_of hB M ρ rk hM hS I RA hz h2)
+  have hGall := good3_expand_t2 hM hS I RA hz h2 (t2BelowXE_of hB hM hS I RA hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I RA hz h2)
   -- the seeds for `n ≥ 2`
   have hbig : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
@@ -80,7 +81,7 @@ theorem hR2_t2 (hB : T2BelowXRes) (hSV : T2Seed1SV) (hQC : T2Seed1C) :
         exact h
       have := hGall m hm1 τ (by rw [hexp1]; exact hτ)
       rwa [hexp1] at this
-    have hBR := hB M ρ rk hM hS I RA hz h2 r L hlen hr n hn hGP σ hCN hOT
+    have hBR := hB hM hS I RA hz h2 r L hlen hr n hn hGP σ hCN hOT
     exact ⟨fun p hp => (hBR.2.1 p hp).1, hBR.2.2.2⟩
   -- the drop to `M.take x`
   have hdropOf : ∀ r L, r + L + 1 = M.length →

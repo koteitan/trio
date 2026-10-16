@@ -26,6 +26,11 @@ def T2SeedPResV2 : Prop :=
   ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     G.T2SeedPRes M ρ
 
+/-- **`T2BelowXRes` in the step context**: the part before `x` only at the matrices of the induction. -/
+def T2BelowXResV2 : Prop := ∀ M ρ rk, StepCtxV2 M ρ rk → T2BelowXResAt M ρ rk
+
+theorem T2BelowXRes.toV2 (h : T2BelowXRes) : T2BelowXResV2 := fun M ρ rk _ => h M ρ rk
+
 /-- **t2-vs**: `VSmallF` and `FrameClosed` of `M[n]` (`T2Rest3.vs`・`fc` with the new context). -/
 def T2VSFCV2 : Prop :=
   ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
@@ -62,12 +67,12 @@ theorem expand_ne_nil_t2 {M : Mat} (hX : SInvX M) (hz : col M (M.length - 1) ≠
   rw [h]; exact hne
 
 /-- **R2V2 from `T2BelowXRes`.** -/
-theorem r2V2_of (hB : T2BelowXRes) : R2V2 := by
+theorem r2V2_of (hB : T2BelowXResV2) : R2V2 := by
   intro M ρ rk C hz h2
-  exact hR2_t2_ofW hB M ρ rk C.std (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2
+  exact hR2_t2_ofW (hB M ρ rk C) C.std (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2
 
 /-- **ExpT2V2 from the named residuals.** -/
-theorem expT2V2_of (hB : T2BelowXRes) (hFO : T2FOSeedV2) (hPR : T2SeedPResV2) (hVF : T2VSFCV2)
+theorem expT2V2_of (hB : T2BelowXResV2) (hFO : T2FOSeedV2) (hPR : T2SeedPResV2) (hVF : T2VSFCV2)
     (hVA : T2VRAV2) (hF : HFrameV2) (hL : HLeafV2) : ExpT2V2 := by
   intro M ρ rk C hz h2 n hn
   obtain ⟨hX, _⟩ := sInvXJ_std C.std C.ne
@@ -78,7 +83,7 @@ theorem expT2V2_of (hB : T2BelowXRes) (hFO : T2FOSeedV2) (hPR : T2SeedPResV2) (h
   obtain ⟨I1, _⟩ := C.pre (M.length - 1) (by omega) (by omega)
   have hE := expand_ne_nil_t2 hX hz h2 (n := n) (by omega)
   have hStd : Std (expand M n) := Std.exp n C.std
-  obtain ⟨ρN, rkN, IN, _⟩ := hExp_t2_inv3V2 hB C.std C.ne C.I C.R.drop I1 hz h2
+  obtain ⟨ρN, rkN, IN, _⟩ := hExp_t2_inv3V2 (hB M ρ rk C) C.std C.ne C.I C.R.drop I1 hz h2
     (hFO M ρ rk C hz h2) (hPR M ρ rk C hz h2)
     (fun m hm σ rkN hCN hRN hGN hPN => by
       have hEm := expand_ne_nil_t2 hX hz h2 (n := m) (by omega)

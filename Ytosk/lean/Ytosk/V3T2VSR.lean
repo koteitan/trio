@@ -77,13 +77,13 @@ theorem clField_expand_t2S {Q : T → List T → T → Prop}
       Q a Lv cv → Q (shf V V' a) (Lv.map (sh V V')) (sh V V' cv))
     (hQlow : ∀ a Lv cv cv', Q a Lv cv → Lhd z cv' cv → isOT cv' = true → (∃ s y, cv = psi s y z) →
       (∀ s y s' y', cv = psi s y z → cv' = psi s' y' z → s' ≠ s → y' = z) → Q a Lv cv')
-    (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
+    {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M) (hS : M ≠ SRO)
     (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
     (h2 : TRIO.srow M (M.length - 1) = 2) (hQM : CLField Q M ρ)
     (hQT : ∀ τ, Cons (M.take (M.length - 1)) τ → CLField Q (M.take (M.length - 1)) τ)
     (hSeed : T2SeedFrames Q M) :
     ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → CLField Q (expand M n) σ := by
-  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXAll_of hB M ρ rk hM hS I R hz h2)
+  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I R hz h2)
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   obtain ⟨r, hr⟩ := parLast_of hX.e00 hX.r01 hX.r12 hz
@@ -216,7 +216,7 @@ theorem hVSRexp_t2 (hSh : QVRsh) (hB : T2BelowXRes)
     hdr.ua
   have hVT : VSmallR (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) :=
     vsmallR_take hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 hdrop P
-  exact (clField_expand_t2S hSh qVR_low hB hM hS I R hz h2 P
+  exact (clField_expand_t2S hSh qVR_low (hB M ρ rk) hM hS I R hz h2 P
     (fun τ hτ => vSmallR_congr (agree_of_cons hC1 hτ hRk1) hVT)
     (hSeedF M ρ rk hM hS I R hz h2) n (by omega) ρN V.cons)
 

@@ -33,11 +33,14 @@ def T2BelowRes (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
       (cvals (TRIO.gexp M r L d0 d1 n) σ q).Pairwise (fun a b => b ≤ a)) ∧
     AbsWN M (TRIO.gexp M r L d0 d1 n) (r + L) ρ σ
 
-/-- `T2BelowRes` for every standard `M` of type `t = 2`. -/
-def T2BelowXRes : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+/-- `T2BelowRes` at one standard `M` of type `t = 2`. -/
+def T2BelowXResAt (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop :=
+  Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       T2BelowRes M ρ r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r)
+
+/-- `T2BelowRes` for every standard `M` of type `t = 2`. -/
+def T2BelowXRes : Prop := ∀ M ρ rk, T2BelowXResAt M ρ rk
 
 /-- The columns before `x` whose frames are residual: the seed, and `q` when `q ≠ r`. -/
 def T2SeedCol (M : Mat) (r L i : Nat) : Prop :=
@@ -70,7 +73,7 @@ def T2BelowXS (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
         BumpInfo M (TRIO.gexp M r L d0 d1 n) ρ σ i)
 
 /-- **`T2BelowXS` from `T2BelowXRes`.** -/
-theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem t2BelowXS_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hRes : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r) :
@@ -149,7 +152,7 @@ theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
     cases b
     · exact (hOTx j h1 h2').2
     · exact (hOTx j h1 h2').1
-  obtain ⟨hHard, hSeedP, hW, hAbsN⟩ := hRes M ρ rk hM hS I R hz h2 r L hlen hr n hn hGP σ hCN hOTout
+  obtain ⟨hHard, hSeedP, hW, hAbsN⟩ := hRes hM hS I R hz h2 r L hlen hr n hn hGP σ hCN hOTout
   have hT : (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n).take
       (r + L) = M.take (r + L) := gexp_take_x hlen (by omega)
   have hUN : UAT (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) := by
@@ -330,6 +333,14 @@ namespace Ytosk
 /-- **`T2BelowXAll` from `T2BelowXRes`.** -/
 theorem t2BelowXAll_of (hRes : T2BelowXRes) : T2BelowXAll := by
   intro M ρ rk hM hS I R hz h2 r L hlen hr n hn hGP σ hCN hOTx i hi
+  obtain ⟨h1, h2', h3, _, _, _⟩ := t2BelowXS_of (hRes M ρ rk) hM hS I R hz h2 hlen hr n hn hGP σ hCN hOTx i hi
+  exact ⟨h1, h2', h3⟩
+
+/-- **`T2BelowXE` at one `M` from `T2BelowXResAt`.** -/
+theorem t2BelowXE_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hRes : T2BelowXResAt M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2) : T2BelowXE M := by
+  intro r L hlen hr n hn hGP σ hCN hOTx i hi
   obtain ⟨h1, h2', h3, _, _, _⟩ := t2BelowXS_of hRes hM hS I R hz h2 hlen hr n hn hGP σ hCN hOTx i hi
   exact ⟨h1, h2', h3⟩
 

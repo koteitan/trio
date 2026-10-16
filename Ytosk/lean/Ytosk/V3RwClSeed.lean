@@ -545,8 +545,8 @@ theorem seed_frames_RC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       n hn hlow σ hσ hG i hi Lc' c R' hcl
 
 /-- **RwClosed of every `M[n]`** (`t = 2`) with the seed frames reduced to `T2X1Cl` and the seed residuals. -/
-theorem rwClosed_expand_t2S (hCl : ClSh) (hB : T2BelowXRes) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+theorem rwClosed_expand_t2S (hCl : ClSh) {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hRM : RwClosed M ρ)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → RwClosed (M.take (M.length - 1)) τ)

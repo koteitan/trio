@@ -42,7 +42,7 @@ structure T2NRes (N : Mat) (σ : Valn) (rkN : Bool → Nat → Nat) : Prop where
   tp1w : TP1WLeafG N σ
 
 /-- The valuation of `M[n]` (`n ≥ 2`, `t = 2`) with its ranking and `Good3`. -/
-theorem t2_val_expand (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem t2_val_expand {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (n : Nat) (hn : 2 ≤ n) :
@@ -50,12 +50,12 @@ theorem t2_val_expand (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Na
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   obtain ⟨rkN, hRN⟩ := rk_expand_t2 hX hJ hz h2 I.rank n (by omega)
   have hCN := cons_of_rk hRN
-  exact ⟨_, rkN, hCN, hRN, good3_expand_t2 hM hS I R hz h2 (t2BelowXAll_of hB M ρ rk hM hS I R hz h2)
+  exact ⟨_, rkN, hCN, hRN, good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I R hz h2) n (by omega) _ hCN⟩
 
 /-- **The `t = 2` expansion with `Inv3V2`**: from `Inv3V2` of `M` and of `M.take x`, the drop residual, and
 the named residuals, every `M[n]` (`n ≥ 2`) has `Inv3V2`, a standard value, and a smaller value. -/
-theorem hExp_t2_inv3V2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem hExp_t2_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3V2 M ρ rk)
     (R : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
     (I1 : Inv3V2 (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) rk)
@@ -73,7 +73,7 @@ theorem hExp_t2_inv3V2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
   obtain ⟨rkN, hRN⟩ := rk_expand_t2 hX hJ hz h2 I.rank n (by omega)
   have hCN := cons_of_rk hRN
   set σ := rhsIt (expand M n) (rkBound (expand M n) rkN) with hσ
-  have hGN := good3_expand_t2 hM hS IW RW hz h2 (t2BelowXAll_of hB M ρ rk hM hS IW RW hz h2)
+  have hGN := good3_expand_t2 hM hS IW RW hz h2 (t2BelowXE_of hB hM hS IW RW hz h2)
     (t2CopyResAll_holds M ρ rk hM hS IW RW hz h2) n (by omega) σ hCN
   -- the prefix `M.take x`
   have hAg : ∀ τ', Cons (M.take (M.length - 1)) τ' →
@@ -97,7 +97,7 @@ theorem hExp_t2_inv3V2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
     tp1WC_of_ph3cG hCN hGN.toOT hph NR.tp1w, NR.frame.tplow, NR.frame.auwl, NR.frame.auw0,
     NR.frame.adw, NR.frame.trigs, NR.frame.tplon, NR.frame.adn, rootS_of_good hCN hGN, hrp⟩, ?_⟩
   -- the drop of the value
-  have R2 := hR2_t2_ofW hB M ρ rk hM IW RW hz h2
+  have R2 := hR2_t2_ofW hB hM IW RW hz h2
   obtain ⟨_, hge⟩ := t2_drops_ge IW RW R2 hX hJ hz h2
     (fun m hm _ _ => t2_val_expand hB hM hS IW RW hz h2 m hm)
   obtain ⟨t', ⟨ρ', rk', hC', hR', hroot⟩, hot, hlt⟩ := hge n hn
