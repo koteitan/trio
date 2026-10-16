@@ -3482,3 +3482,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 測定: C の un（x − 1 は上げない）は std_b の C の 23358 件で例外 0（`tmp/ytosk-handoff/probes/t2-1016b/cun.py`）。T2SeedDomV2・T2VRAQNDom も std_b（t = 2 の 106 万行列）で例外 0。
 - Ytosk 全体のビルド緑（1031 jobs）。公理は propext・Classical.choice・Quot.sound。
 
+
+### T0AbsW を落とし側と単調性に分ける（2026-10-17、t0、V3T0AbW）
+
+- `absWN_mono`: AbsWN M N′ bnd ρ σ′ と（行 1・2 が 0 でない列で）bumpW N′ σ′ i ≤ bumpW N σ i から AbsWN M N bnd ρ σ。前件「q は bumpW N σ i に吸収されない」が N′ でも立つから。
+- `t0AbsW_of`: T0AbsW M r L ρ ⟸ AbsWN M (M.take x) r ρ τ（落とし側）∧ `T0BumpMono M r L`（i < r、行 1・2 が 0 でない列で bumpW (M.take x) τ i ≤ bumpW M[n] σ i）。
+- 測定（drop の tools/probe_abswn_t0.py の mono、t0ext の 2 万行列、n = 2, 3）: T0BumpMono は 154034 件で例外 0。bumpW M ρ i ≤ bumpW M[n] σ i は偽（18470 件で M[n] の方が小さい）。
+- T0BumpMono の証明は局所的でない: 同じ標本で v_N(i) ≠ v_{M.take x}(i) の列（i < r）は g = P_0 r が 2040、r の他の行 0 の祖先が 13930、祖先でない列が 2500。M.take x から M[n] へ、r より前の列の値が下がらないことを一般に示す必要がある。
