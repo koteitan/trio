@@ -3062,3 +3062,12 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - t1: ExpT1V2
   - t2: T2BelowXRes・T2FOSeedV2・T2SeedPResRV2（qr の w1・dom、qn の σB・base、sv の rw・lhd、C の T2SeedCRes・T2SeedCNext）・T2VSFCV2・T2VRAV2
 - 公理は propext・Classical.choice・Quot.sound。drop の UpgAbsXW（ブランチ drop-wkx2）が main に入ると、expT2V2_of・r2V2_of に T2UpgAbs の引数が付く。そのときこのファイルにも足す。
+
+### t = 2 の M[n] の VSmallF（2026-10-16、t2、V3T2VSF）
+
+- `vsmallF_expand_t2V`: t = 2 の M[n]（n ≥ 1）の VSmallF。公理は propext・Classical.choice・Quot.sound。
+  - VSmallF を枠の性質 `QVSF`（段 v(i) での子の添字の成分の上限）として、既存の骨組み（写し・x より前・種の列）で運ぶ。
+  - 写し: `qVSF_sh`。段 v(i) ≥ V なので、成分は `comps_sh` で σ と入れ替わる。添字 s ≤ V は動かず、段だけが上がる。
+  - x より前の種でない列: FrameShape で M の枠と同じか、最後の子だけが ◁ で下がる（`qVSF_of_shape`）。添字が変わる子は M でも N でも引数 0 なので、M の VSmallF と `vs_changed_bound` から出る。このために FrameShape に M 側の葉の事実（添字が変わる子の o は M で ψ_v(0)、段が上がる）を足した（V3ExpT2BX・QB・AO・FO・VSR の最小の直し）。
+  - 残り: 種の列の枠 `T2SeedFrames QVSF M`、M.take x の Good3・VSmallF（どの Cons の評価でも）。
+- T2VSFCV2 の残りは FrameClosed と、上の 2 つの残り。

@@ -224,6 +224,7 @@ theorem t2_qr_below (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (fun i hi _ _ hv => hCLnil i hi (hDvNil i hi hv))
     (fun i hi _ _ hv => hDvNil i hi hv)
     (fun c hc _ hv => hCLnil c hc (hDvNil c hc hv))
+    (fun c hc _ hv _ => hDvNil c hc hv)
     (fun i hi hns _ hD hv => hOc i hi hns hD hv)
     (by
       intro i hi hns _ hnd

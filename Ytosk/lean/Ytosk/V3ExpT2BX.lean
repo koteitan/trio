@@ -34,7 +34,8 @@ theorem cvals_eq_mapC {M : Mat} {ρ : Valn} (hC : Cons M ρ) (i : Nat) :
 def FrameShape (M N : Mat) (ρ σ : Valn) (i : Nat) : Prop :=
   (σ.v i = ρ.v i ∧ CL N i = CL M i ∧ ∀ d ∈ CL M i, σ.o d = ρ.o d) ∨
   (σ.v i = ρ.v i ∧ ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ (∀ d ∈ Lc, σ.o d = ρ.o d) ∧
-    Lhd z (σ.o c) (ρ.o c) ∧ isOT (σ.o c) = true ∧ (σ.v c ≠ ρ.v c → σ.o c = psi (σ.v c) z z)) ∨
+    Lhd z (σ.o c) (ρ.o c) ∧ isOT (σ.o c) = true ∧ (σ.v c ≠ ρ.v c → σ.o c = psi (σ.v c) z z) ∧
+    (σ.v c ≠ ρ.v c → ρ.o c = psi (ρ.v c) z z ∧ Lhd z (σ.v c) (ρ.v c))) ∨
   (CL N i = [] ∧ CL M i = [])
 
 /-- **Good3 before `bnd`** from the agreement off `D`, the `◁` and standard form on `D`, and the seeds. -/
@@ -50,6 +51,7 @@ theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
     (hDvCL : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S false i → CL N i = [])
     (hDvCLM : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S false i → CL M i = [])
     (hDvN : ∀ c, c < bnd → ¬ W true c → DepS M S false c → CL N c = [])
+    (hDvM : ∀ c, c < bnd → ¬ W true c → DepS M S false c → σ.v c ≠ ρ.v c → CL M c = [])
     (hOc : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S true i → ¬ DepS M S false i →
       ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ DepS M S true c ∧ c < bnd ∧
         ∀ d ∈ Lc, ¬ DepS M S true d ∧ d < bnd)
@@ -131,10 +133,13 @@ theorem good_below_of {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
           exact hns (hWo i c (cl_mem_children hcCL) hcnt hw)
         obtain ⟨hl, hot⟩ := hD true c hdc hcb hWc
         refine Or.inr (Or.inl ⟨(hoff i hi).2 hv, Lc, c, hclM, hclN,
-          fun d hd' => (hoff d (hLc d hd').2).1 (hLc d hd').1, hl, hot, fun hne => ?_⟩)
-        have hdv : DepS M S false c := by by_contra h'; exact hne ((hoff c hcb).2 h')
-        exact o_of_no_counted hCN (by omega) (hD false c hdv hcb (hWv c)).2
-          (no_cnt_of_cl_nil (hDvN c hcb hWc hdv))
+          fun d hd' => (hoff d (hLc d hd').2).1 (hLc d hd').1, hl, hot, fun hne => ?_, fun hne => ?_⟩)
+        · have hdv : DepS M S false c := by by_contra h'; exact hne ((hoff c hcb).2 h')
+          exact o_of_no_counted hCN (by omega) (hD false c hdv hcb (hWv c)).2
+            (no_cnt_of_cl_nil (hDvN c hcb hWc hdv))
+        · have hdv : DepS M S false c := by by_contra h'; exact hne ((hoff c hcb).2 h')
+          exact ⟨o_of_no_counted hC (by omega) (hG.ot_v c (by omega))
+            (no_cnt_of_cl_nil (hDvM c hcb hWc hdv hne)), (hD false c hdv hcb (hWv c)).1⟩
     · have hv : ¬ DepS M S false i := fun h => hd (DepS.ov h)
       obtain ⟨hcl, hcb⟩ := hCLeq i hi hns hnw hd
       refine Or.inl ⟨(hoff i hi).2 hv, hcl, fun c hc => (hoff c (hcb c hc)).1 (fun hdc => hd ?_)⟩

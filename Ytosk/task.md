@@ -69,7 +69,11 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - t = 2 の展開と下降
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t2_G`・`hR2_t2_of`）
       - Inv3V2 への接続と、新しい枠の条件の証明
-      - VSmallRAll の保存
+        - ✅ 生産者 `expT2V2_of`・`r2V2_of`（V3ExpT2V2）と最上位への差し込み（top の V3TopV2）
+        - M[n] の VSmallF・FrameClosed（T2VSFCV2）
+          - ✅ VSmallF（`vsmallF_expand_t2V`、V3T2VSF）。残りは種の列の枠 `T2SeedFrames QVSF M` と M.take x の VSmallF
+          - FrameClosed
+      - VSmallRAll の保存（T2VRAV2）
       - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と構造の残り T2SeedCNext
         - T2SeedCNext（top）: 今の構造の不変条件から出ない（非標準の反例 2 つ、desc.md）。7 集合で例外 0。新しい不変条件 UpgRun を測って、展開で閉じる（次の作業）
       - 強い T2UpgAbs の反例を扱える形への修正

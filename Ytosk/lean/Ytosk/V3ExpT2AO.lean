@@ -196,6 +196,10 @@ theorem t2_assembleOT {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {�
     by_cases hs : S true c
     · exact hDvNilS c hc hw hs hd
     · exact hCLnil c hc hw (hDvNil c hc hw hs hd)
+  · intro c hc hw hd hne
+    by_cases hs : S true c
+    · exact absurd (hHA.sv S hSp c hs) hne
+    · exact hDvNil c hc hw hs hd
   · intro i hi hns hnw hD hv
     obtain ⟨Lp, c, R, hch', hcnt', hdc, hR, hL⟩ := hOS i hi hns hnw hD hv
     have hall : ∀ d ∈ children M i, d < bnd := by

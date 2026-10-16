@@ -26,7 +26,7 @@ theorem clField_of_shapeS {Q : T → List T → T → Prop}
     (hQ : ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL M i = Lc ++ c :: R → Q (ρ.v i) (Lc.map ρ.o) (ρ.o c)) :
     ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL N i = Lc ++ c :: R → Q (σ.v i) (Lc.map σ.o) (σ.o c) := by
   intro Lc c R hCL
-  rcases hS with ⟨hv, hcl, hsame⟩ | ⟨hv, Lc0, c0, hclM, hclN, hsame, hl, hot, hchv⟩ | ⟨hN, _⟩
+  rcases hS with ⟨hv, hcl, hsame⟩ | ⟨hv, Lc0, c0, hclM, hclN, hsame, hl, hot, hchv, _⟩ | ⟨hN, _⟩
   · rw [hcl] at hCL
     have hmem : ∀ d ∈ Lc ++ [c], d ∈ CL M i := fun d hd => by
       rw [hCL]
