@@ -3322,3 +3322,16 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 形 (i)（同じ列 A、a に子がある）: a の子は全部 B で、その子は全部 e1 < y（切れた形）。その子 c は e2 c = 0（RowJ）で、P_1 c は p の真の祖先、upg c は p より上の祖先の子か none。つまり a の部分木の中の値は、部分木の列と p より上の祖先だけで決まる（a の位置によらない）。b の部分木も同じだが、最後の列だけは次の兄弟へ上げられうる（b の後ろに依る）。
   - したがって (i) は「同じ親の下で、部分木の辞書式の順 ⇒ W（bump 項の和）の順」という局所的な単調性。ψ の正規化 sf（枠の書き換え）を通るので、既存の枠の機構（FrameClosed など）が要る。
 - 見通し: (ii) は S4 の証明と P_1 の鎖の値の比較で閉じられそう。(i) は局所的な単調性の定理か、UpgSibV を Inv3V2 の欄として全機構で運ぶか。
+
+### t = 0 のエンジンを強い BumpAbsLo から弱い AbsWN へ（2026-10-17、t0、5553c08b、緑）
+
+- drop の指摘: t = 0 の hab0 = BumpAbsLo M r ρ（AbsSR の中身）は、厳密な ◁ で標準形で偽。反例は (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(3,0,0)(2,1,1)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,0,0)(4,0,0)。使う所が要るのは、N の新しいのりしろの項に吸収されない加数だけ（弱い形 AbsWN）。
+- 変更:
+  - `AbsWN`・`AbsWN.of_strong`・`v_bump_lhdW` を V3AbsW から V3T0D へ移した。V3T0D の中のエンジンで使うため。名前は同じ。
+  - `T0AbsW M r L ρ`: すべての n ≥ 2・N = M[n] の評価 σ での AbsWN。
+  - t0_S2・t0_S2G・t0_S3・t0_dep_lhd・t0_dep_otS は AbsWN をとる。t0_S2・t0_S2G は、吸収されない前提 hn′ を bumpW N σ g の式（hbWN）で渡す。
+  - t0_core・t0_otdS・t0_final_inv3V2D は T0AbsW をとる。旧い呼び出しは `T0AbsW.of_strong` / `AbsWN.of_strong` で包んだので、意味は変わらない。
+  - `Res3C`（t0 だけの束）から abS を外した。
+  - `expT0V2_of4`（V3T0Inv2S）: top の ExpT0V2 を、残り T0RwRes（RwClosed）・T0AbWRes（T0AbsW）と N の 2 つの残りから出す。AbsSR も T0CutResGGC も使わない。公理は標準の 3 つ。expT0V2_of3 は of4 に AbsSR を包んだもの。
+- 残り: T0AbWRes（AbsWN）の証明。drop の筋は、落とし側の BumpAbsC と、単調性 bumpW (M.take x) ≤ bumpW N。10 集合の測定は drop のキュー。
+- top へ: V3MainV2 の 331 行の `R.abS`（Res3.t0 の組み立て）も、t = 0 の AbsSR を使っている。最上位から HAbSV2 を外すには、そこも T0AbsW に替える必要がある。

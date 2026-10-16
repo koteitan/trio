@@ -51,7 +51,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         - 証明。局所的な形は非標準形で偽で、展開の履歴を運ぶ不変条件が要る（desc.md「T0CutResGGC の 10 集合の測定と、証明の筋の調べ」）
           - ✅ 履歴の土台 S1（兄弟の部分木は辞書式で増えない）はすべての標準形で成り立つ（`S1_std`、V3S1Std。trio の cnf_ST_TS から）
           - 兄弟の切り口の位置の値の条件（S1 だけでは出ない）
-        - ✅ T0CutResGGC を使わない t = 0 の組み立て（影の枠を直接扱う。`expT0V2_of3`、V3T0Inv2S）。残りは RwClosed（書き換える枠で lo(y) = 0 なら B は閉じている）
+        - ✅ T0CutResGGC を使わない t = 0 の組み立て（影の枠を直接扱う。`expT0V2_of3`、V3T0Inv2S）。残りは RwClosed（書き換える枠で B < hi(y) なら B は閉じている、ClosedA）
+        - ✅ 強い BumpAbsLo（標準形で偽）を弱い AbsWN（T0AbsW）に替えた組み立て `expT0V2_of4`。残り T0AbWRes（AbsWN の証明、drop の筋）
           - RwClosed（書き換える枠で B < hi(y) なら B は閉じている）の 10 集合の測定（3 集合で例外 0、残りは実行中）
           - RwClosed の保存
             - ✅ 基底・1 列落とし・t = 0・t = 1（V3RwClDrop・V3RwClT0・V3RwClT1）
