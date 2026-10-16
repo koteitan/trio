@@ -3050,3 +3050,15 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - sv: M.take x の r の最後の数える子 c0 は列 (e0 r + 1, e1 r + 1, 1) で P_1 = r、v(c0) = V + ω^W > V + 1（`v_child_gt`、`sv_decP`）。残りは `T2SeedSVResR`（rw・lhd）。
   - 接続: `t2SeedPRes_of`（減らした `T2SeedPResR` から `G.T2SeedPRes`、C は元のまま）、`t2SeedQRAll_of`・`t2SeedQNAll_of`・`t2SeedSVAll_of`（V3T2SeedWire の All の形）。
 - T2SeedCNext は扱わない（top が今の構造の不変条件から出ないことを示し、新しい不変条件を準備中）。
+
+### t = 2 の生産者を最上位に差し込む（2026-10-16、top、V3TopV2）
+
+- `trio_terminates_main_V2_t2`: `trio_terminates_main_V2_glob` の ExpT2V2・R2V2 を t2 の `expT2V2_of`・`r2V2_of` で埋めた。
+- `trio_terminates_main_V2_t2R`: さらに種の残り T2SeedPResV2 を、t2 が M だけで決まる欄を外した T2SeedPResR の形 `T2SeedPResRV2` に替えた（`t2SeedPResV2_of`）。
+- 現状の最上位 `_t2R` の残りの仮定:
+  - drop: HDropV2・HSeedV2・HAbSV2
+  - 共通: HFrameV2・HLeafV2
+  - t0: T0CutResGGC
+  - t1: ExpT1V2
+  - t2: T2BelowXRes・T2FOSeedV2・T2SeedPResRV2（qr の w1・dom、qn の σB・base、sv の rw・lhd、C の T2SeedCRes・T2SeedCNext）・T2VSFCV2・T2VRAV2
+- 公理は propext・Classical.choice・Quot.sound。drop の UpgAbsXW（ブランチ drop-wkx2）が main に入ると、expT2V2_of・r2V2_of に T2UpgAbs の引数が付く。そのときこのファイルにも足す。

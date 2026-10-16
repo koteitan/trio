@@ -78,7 +78,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ Inv3V2 上の最上位の組み立て（`trio_terminates_main_V2`、V3MainV2）。旧 Inv3・Inv3V を使わない
     - ✅ 落とした行列の根の RootP（`rootP0_take`）。t0 の `expT0V2_of` を差し込んだ現状の最上位（`trio_terminates_main_V2_now`）
     - ✅ 枠の 10 欄・葉の条件の行列ごとの共通の残り HFrameV2・HLeafV2 と drop・t0 への変換（V3GlobV2、`trio_terminates_main_V2_glob`）
-    - t2 の expT2V2_of・r2V2_of を最上位に差し込む（top の次の作業）
+    - ✅ t2 の expT2V2_of・r2V2_of を差し込んだ現状の最上位（`trio_terminates_main_V2_t2`、種の残りを T2SeedPResR に減らした `_t2R`、V3TopV2）
     - 残りの 8 個の条件（V3ResV2）を証明して閉じる: HDropV2・HSeedV2・HAbSV2・HTakeV2（drop）、ExpT0V2（t0）、ExpT1V2（t1）、ExpT2V2・R2V2（t2）
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
