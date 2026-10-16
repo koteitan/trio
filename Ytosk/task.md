@@ -72,7 +72,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         - M[n] の VSmallF・FrameClosed（T2VSFCV2）
           - ✅ VSmallF（`vsmallF_expand_t2V`、V3T2VSF）。残りは種の列の枠 `T2SeedFrames QVSF M` と M.take x の VSmallF
           - ✅ FrameClosed の骨組み（`frameClosed_expand_t2`、V3T2FC）と T2VSFCV2 の生産者（`t2VSFCV2_of`、V3T2VSFC）。残りは FDsh（FrameDom の σ 不変性、項だけの主張）と種の列の枠 T2SeedVSFV2・T2SeedFCV2
-          - FDsh の証明
+          - ✅ 種の列の枠（VSmallF・FrameOT・FrameClosed）を 4 つの場合で証明（V3T2SeedFr・V3T2SeedFr2・V3T2SeedFrV2）。残りは T2SeedDomV2（qn・C の s′ の成分、9 集合で例外 0）
+          - FDsh の証明（`frameDom_of_kind` により、写しの枠の s の成分の条件の σ 移送に帰着できる見込み）
       - VSmallRAll の保存（T2VRAV2）
         - ✅ 骨組み `t2VRAV2_of`（V3T2VRA、t1）: T2VRAV2 ⟸ QVRAsh（σ での移送、項だけ）∧ T2BelowXRes ∧ T2VRASeed（種の列の枠）∧ T2VRAPre（接頭辞の段は M の段）∧ T2VRACopy（写しの段は P の段か f 像）
         - 残り 4 つの証明（t1）

@@ -3409,3 +3409,12 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 最上位の種の残り `T2SeedPResRC`（V3TopV2）を t2 の最新の形に: qr は T2SeedQRResR、sv は T2SVStrict（sv_rw_of で rw を出す、V3T2SeedRes2）と lhd、qn は base だけ（unc は UpgSibV から）、C は T2SeedCRes だけ（CBig は UpgSibV から）。
 - T2VRAV2 を t2 の `t2VRAV2_of`（V3T2VRA）で埋めた。`trio_terminates_main_V2_cur` の t2 の残りは T2BelowXRes・T2FOSeedV2・T2SeedPResRCV2・FDsh・T2SeedVSFV2・T2SeedFCV2・QVRAsh・T2VRASeed・T2VRAPre・T2VRACopy。
 - Ytosk 全体のビルド緑（1023 jobs）、公理は標準の 3 つ。
+
+### 種の列の枠の残りを埋める（sv・C と組み立て、2026-10-17、t2、V3T2SeedFr2・V3T2SeedFrV2）
+
+- sv（`G.seed_frames_sv3`）: r の最後の枠は状態 X₁・子 ψ_{V+1}(σ^{n−1} X₁)。FrameClosed は closure の `seed_kind`（PH3cG の種類）と `frameDom_of_kind`。添字 V + 1 の成分は z か V の成分なので自明。残りなし（T2SeedSVRes は既存の残り、SVFix は closure が証明済み）。
+- C（`G.seed_frames_C3`）: r の最後の枠は状態 X₁・子 ψ_{s′}(σ Y)。X₁ = 0 なら子は ψ_{s′}(Ω_{s′}) で `frameDom_first`。q の枠は qn と同じ。残りは `G.T2SeedCDom`（s′ の成分: X₁ ≠ 0 なら段 u ≤ V で z・X₁ 以下・V の成分以下、段 V では Ω_{s′} 以下か X₁ 以下）。測定（`tmp/ytosk-handoff/probes/t2-1016b/clast.py`）: 9 集合で例外 0（X₁ = 0 の書き換える枠は出なかった）。
+- 組み立て（`t2SeedFrames3`・`t2SeedFrV2_of`）: `T2SeedVSFV2 ∧ T2SeedFCV2 ∧ T2FOSeedV2` ⟸ `T2SeedPResV2`（既存の種の残り）∧ `T2SeedDomV2`（新しい残り: qn の T2SeedQNDom と C の T2SeedCDom）。
+- 最上位向け: `t2VSFCV2_of2`: T2VSFCV2 ⟸ T2BelowXRes ∧ FDsh ∧ T2SeedPResV2 ∧ T2SeedDomV2。`t2FOSeedV2_of`: T2FOSeedV2 ⟸ T2SeedPResV2 ∧ T2SeedDomV2。
+- 公理は propext・Classical.choice・Quot.sound。Ytosk 全体のビルド緑（1025 jobs）。
+
