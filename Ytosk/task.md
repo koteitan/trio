@@ -53,11 +53,11 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
           - 兄弟の切り口の位置の値の条件（S1 だけでは出ない）
         - ✅ T0CutResGGC を使わない t = 0 の組み立て（影の枠を直接扱う。`expT0V2_of3`、V3T0Inv2S）。残りは RwClosed（書き換える枠で B < hi(y) なら B は閉じている、ClosedA）
         - ✅ 強い BumpAbsLo（標準形で偽）を弱い AbsWN（T0AbsW）に替えた組み立て `expT0V2_of4`。残り T0AbWRes（AbsWN の証明、drop の筋）
-          - RwClosed（書き換える枠で B < hi(y) なら B は閉じている）の 10 集合の測定（3 集合で例外 0、残りは実行中）
+          - RwClosed（種類 cut の枠で B は ClosedA）の 11 集合（10 集合＋std_a）の測定。ext1x・t2ext で例外 0、残りは実行中
           - RwClosed の保存
             - ✅ 基底・1 列落とし・t = 0・t = 1（V3RwClDrop・V3RwClT0・V3RwClT1）
-            - ✅ t = 2 の組み立て（`rwClosed_expand_t2`、V3RwClT2）。残り: 項の主張 ClSh（σ で閉じていることが保たれる）と種の枠 T2SeedFrames QRC
-            - 最上位の帰納法で RwClosed を運ぶ（top と相談）
+            - ✅ t = 2 の組み立て（`rwClosed_expand_t2S`、V3RwClT2・V3RwClSeed）。残り: ClSh（σ で ClosedA が保たれる、項だけの主張、t2 の FDsh と共通の補題で）と T2X1Cl（M.take x での r の引数は ClosedA）
+            - 最上位の帰納法で RwClosed を運ぶ（top が形を決める）
     - t = 1 の展開
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t1OP`）
       - ✅ q = r の条件付き入口を Inv3V2 に接続。実際の添字を使い、旧 AbsD・TrigOmC を外す（`qr_final_inv3V2`）
