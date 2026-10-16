@@ -3225,3 +3225,21 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 測定（`tmp/t1/probes/vra6.py`、試し）: d3s 1500・ext2・t2ext・Cprime・expP・ext1x・deep3・ext1 各 2000 行列（n = 2, 3, 4）で、非根の枠の写像・根の枠（q = r のときだけ）・段の包含に例外 0。証明したので全数の測定はしていない。
 - `probe_eqsib.py`（EqSibUpg・PassFirst）は 9 集合で例外 0（ext2 は実行中）。EqSibUpg は S1 から証明済みなので確認のため。
 - 公理はどれも propext・Classical.choice・Quot.sound。
+
+### T0CutResGGC を外す: 影の枠を直接扱い、残りを RwClosed に替えた（2026-10-17、t0、V3T0ShB・V3T0DepS・V3T0Inv2S、緑）
+
+- D の帰納法が T0CutResGGC を使うのは、書き換えの一致（M で書き換える枠は N でも書き換える）の 2 か所だけだった。RelRU の影の枠の成分の条件（relR_frameU の hSh）と、RE（re_step）。そこで影（M で書き換え、N で書き換えない）を直接扱った。
+  - `trig_or_shadow`: M で書き換える枠は、N でも書き換えるか、影の形かのどちらか。影の形は、lo(y) = 0、y = P + ψ_a(x)、y′ = P + T′、B = P + κ（κ は最後の加数の G3 の切り口）、κ ≥ T′。PH3cG の種類の場合分け（trig_agreeG）から出る。
+  - `re_shadow`: 影でも RE は保たれる。古い親の引数は H(s, y) = y = P + ψ_a(x)、新しい引数は B + ψ_s(y′) = P + (κ + ψ_s(y′))。
+  - `shadow_hSh`: 影の枠の成分の条件。comps_u(B + ψ_s(y′)) の各元 g は、g < B + ψ_s(y′) か、v(i) の成分以下。
+    - B の成分: B が閉じている（Closed (v i) B）ことから。
+    - s の成分: VSmallRP から。
+    - y′ ≤ B（影なので）。
+    - y′ の成分: Lhd z (ψ_s y′) (ψ_s y) を中間の項 c = ψ_s(B + 1) で使う（y′ ≤ B < B + 1 ≤ y）。成分は B + 1 以下か、B の成分か、s の成分で押さえられる。
+- `t0_dep_otS`・`t0_otdS`（V3T0DepS）: V3T0DepU の写しで、hCut の代わりに `RwClosed M ρ` をとる。RwClosed は「書き換える枠で lo(y) = 0 なら、状態 B は v(i) 以下の段で閉じている」。
+- `t0_final_inv3V2D`（V3T0Inv2）: t0_final_inv3V2 の T0DF をとる形。旧 t0_final_inv3V2 はこれの包み（呼び出しは変わらない）。
+- `t0DF_ofS`・`expT0V2_of3`（V3T0Inv2S）: top の ExpT0V2 を、残り `T0RwRes`（StepCtxV2 の M の RwClosed）と N の 2 つの残り（葉・枠）から出す。T0CutResGGC は要らない。公理は標準の 3 つ。
+- RwClosed の測定（tmp/t0/probes/closedB.py、B の段 0 の成分がすべて B 以下）。lo(y) = 0 の制限なしの形は deep3 で 1 件偽で、反例は lo ≠ 0（B = hi(y) の種類）の枠。
+  - 制限なしの形が例外 0 の集合: d3s・deep2・t0ext・Cprime。
+  - lo(y) = 0 の形は残りの集合で測定中。
+- 次: RwClosed を不変条件として示す。子の値が下がっても保たれる枠の性質（新しい枠が書き換えるなら古い枠も書き換える。B は子に依らない）なので、closure の PH3cG と同じ枠の仕組み（frameQd_N_t0 など）で各展開に運べる見込み。種の枠（t = 2）と 1 列落としは別に要る。

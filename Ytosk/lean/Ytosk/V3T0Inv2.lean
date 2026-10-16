@@ -63,16 +63,16 @@ theorem t0DF_ofC (hCut : T0CutResGGC) {M : Mat} {ρ : Valn} {rk : Bool → Nat �
   obtain ⟨h1, h2, _, h4, h5⟩ := (h i hi).1 hd
   exact ⟨h1, h2, trivial, h4, h5⟩
 
-/-- **`t = 0`, `n ≥ 2`: Inv3V2 of `N = M[n]`**, the standard root value and its descent.
+/-- **`t = 0`, `n ≥ 2`: Inv3V2 of `N = M[n]`** from `T0DF M ρ` (the `D` induction's output), the standard root value and its descent.
 Named residuals: the cut `T0CutResGGC`, and for `N` the leaves `TP1LeafG`・`TP1WLeafG`
 and the ten last-column frame fields (`TakeFrameV2 N`). -/
-theorem t0_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat}
+theorem t0_final_inv3V2D {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat}
     (hM : Std M) (hS : M ≠ SRO) (S : SInv M) (I : Inv3V2 M ρ rk)
     (hlen : r + L + 1 = M.length) (hL : 0 < L) (hp : par M 0 (r + L) = some r)
     (he1 : entry M 1 (r + L) = 0)
     (R : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)) (hab : AbsSR M ρ)
     (I1 : Inv3V2 (M.take (r + L)) (drop1 M (r + L) rk) rk)
-    (hCut : T0CutResGGC)
+    (hDF : T0DF M ρ)
     (hLeaf : ∀ n, 2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
       Good3 (TRIO.gexp M r L 0 0 n) σ →
       TP1LeafG (TRIO.gexp M r L 0 0 n) σ ∧ TP1WLeafG (TRIO.gexp M r L 0 0 n) σ)
@@ -89,7 +89,6 @@ theorem t0_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L :
   rw [show M.length - 1 = r + L by omega] at hDr
   have hab0 := hab r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
-  have hDF := t0DF_ofC hCut hM hS IC RC I.ph I.vra.toLast
   have hx2 : entry M 2 (r + L) = 0 := S.r12 _ he1
   obtain ⟨σ, rkN, hCN, hRN, hGN, hFON, hFCN, hKDN, hTDN, _, hpN, hot, hlt⟩ :=
     t0_core hlen hL S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00 hp he1 I.cons I.good
@@ -187,6 +186,26 @@ theorem t0_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L :
   exact ⟨σ, rkN, ⟨hCN, hGN, hRN, hvs, hFCN, hFON, hKDN, hTDN, hph, hfc3, hvra,
     F.ads, F.aus, tp1C_of_ph3cG hCN hGN.toOT hph hTP, F.tplos, tp1WC_of_ph3cG hCN hGN.toOT hph hTPW,
     F.tplow, F.auwl, F.auw0, F.adw, F.trigs, F.tplon, F.adn, rootS_of_good hCN hGN, hpN⟩, hot, hlt⟩
+
+/-- **`t = 0`, `n ≥ 2`: Inv3V2 of `N = M[n]`**, the standard root value and its descent.
+Named residuals: the cut `T0CutResGGC`, and for `N` the leaves `TP1LeafG`・`TP1WLeafG`
+and the ten last-column frame fields (`TakeFrameV2 N`). -/
+theorem t0_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat}
+    (hM : Std M) (hS : M ≠ SRO) (S : SInv M) (I : Inv3V2 M ρ rk)
+    (hlen : r + L + 1 = M.length) (hL : 0 < L) (hp : par M 0 (r + L) = some r)
+    (he1 : entry M 1 (r + L) = 0)
+    (R : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)) (hab : AbsSR M ρ)
+    (I1 : Inv3V2 (M.take (r + L)) (drop1 M (r + L) rk) rk)
+    (hCut : T0CutResGGC)
+    (hLeaf : ∀ n, 2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
+      Good3 (TRIO.gexp M r L 0 0 n) σ →
+      TP1LeafG (TRIO.gexp M r L 0 0 n) σ ∧ TP1WLeafG (TRIO.gexp M r L 0 0 n) σ)
+    (hFrm : ∀ n, 2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
+      Good3 (TRIO.gexp M r L 0 0 n) σ → TakeFrameV2 (TRIO.gexp M r L 0 0 n) σ rkN) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (TRIO.gexp M r L 0 0 n) ρN rkN ∧
+      isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ :=
+  t0_final_inv3V2D hM hS S I hlen hL hp he1 R hab I1
+    (t0DF_ofC hCut hM hS (I.toC S) ⟨R, hab⟩ I.ph I.vra.toLast) hLeaf hFrm
 
 /-- `t0_shape` from the structural invariants. -/
 theorem t0_shapeS {M : Mat} (S : SInv M)
