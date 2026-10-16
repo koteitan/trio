@@ -3601,3 +3601,35 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - HSibHardV2: lead が SibVCol を値の副不変条件として運ぶ案を承認（自分のファイルで base・take・t0・t1・t2、後で Inv3V2 にまとめる）。lead の注意: 「部分木の辞書式の順 ⇒ 値の順」は目標 3 の局所形なので Desc3 を使わないこと。Good3.dec（数える子の o の減少）で覆える対があるかを先に測る。どれも未着手。
 - t0 の質問（T0PrefixInv、M[n] の接頭辞の Inv3V2 が ExpT0OutV2 の時点で使えるか）: 今の帰納法では使えない。ExpT0OutV2 は M の文脈 StepCtxV2 M だけを受け、M[n] の接頭辞の Inv3V2 は M[n] の Inv3V2 から pre_V2 で後に出る。T0PrefixInv を残りにするか、帰納法の形を変える必要がある。
 - 私的なブランチ top-cbig（tmp/top/wt）は main と同じ（未コミットの作業なし）。
+
+### T2BelowXRes の分解と種の RClaimU・AbsWN・標準形・枠の形（2026-10-17、t2）
+
+**T2BelowXRes を M ごとに**（8cd2af17）: `T2BelowXResAt M ρ rk`（1 つの M）、`T2BelowXRes := ∀ M ρ rk, T2BelowXResAt M ρ rk`、`T2BelowXResV2 := ∀ M ρ rk, StepCtxV2 M ρ rk → T2BelowXResAt M ρ rk`。hB を受ける補題は {M} {ρ} {rk} (hB : T2BelowXResAt M ρ rk) の形。V2 の入口は T2BelowXResV2 を取る。
+
+**分解**（V3T2BelowV2・V3T2BelowR、a0772790）:
+- `t2BelowXResV2_of`: T2BelowXResV2 ⟸ T0RwRes（RwClosed M）∧ T2BelowRV2 ∧ T2SeedPResV2（種の ◁）∧ T2SeedOTV2（種の標準形）。T2HardB の VSmallRA・PH3cG は Inv3V2 から。
+- T2BelowRV2 の中身は種での RClaimU・REr（T2SeedRR）と AbsWN。前提として σ.o r・σ.o q の標準形と r の数える子の減少を受ける（t2BelowXResAt_of_L で先に出しているもの）。
+- `t2BelowRV2_of`: T2BelowRV2 ⟸ T2SeedPResV2 ∧ T2SeedClV2 ∧ T2BumpMonoV2。
+
+**種の RClaimU・REr**（V3T2SeedRR・V3T2SeedRRC）: 種 r の引数 X（M）と X′（M[n]）について
+- 類 B0: X・X′ の加数はすべて Ω_{V+1} 以上。このとき H は引数そのもの。
+- 共通の接頭辞: X = P + ψ(…)（最後の加数）、X′ = P + T′（T′ ≠ 0）。REr はこれそのもの。X′ < c ≤ X の c は P + c₀ の形。
+- 閉じた条件: 道の段 u（PathLvA M ρ r u、u ≤ V）で X′ の成分 g は X′ より小さいか P・V の成分以下。
+- この 3 つと両方の標準形から RClaimU（`rclaim_of_hiB0`）。u > V の段の成分は ψ_V(X′) の標準形で X′ 未満。V の成分は RClaimU の前提で Ω_V（< X′）以下、H p y′ 未満、q の成分以下のどれか。
+- qr: X = B + Ω_{v(x)}、X′ = B + ψ_{V+k+1}(σ^k W₁)。閉じた条件は既にある残り T2SeedQRRes の dom の欄（全段）から。新しい残りはない（`seedRR_qr`）。
+- qn: X′ = B + Ω_{t_k}。残り `T2SeedQNCl`（t_k の成分、道の段）。sv・C: 残り `T2SeedSVCl`・`T2SeedCCl`（形と閉じた条件をまとめた `SeedClB0`）。まとめて `T2SeedClV2`。
+- 閉じた条件を全段 u ≤ V で要求すると qn で偽（Cprime 12・ext1 70・t2ext 88 件など）。道の段だけなら例外 0。
+
+**AbsWN**（V3T2AbW）: t0 の V3T0AbW と同じ形。落とし側 AbsWN M (M.take x) は落としの残り BumpAbsC（Res3W の drop.ab）から（`t2_absWN_take`）。その側条件「x の親は bump の子でない」は t = 2 でいつも立つ（`t2_xparNB`: q = r なら行 2 が 0、q ≠ r なら t2_qn_struct）。展開側は残り `T2BumpMono`（i < x で bumpW (M.take x) τ i ≤ bumpW M[n] σ i）。
+
+**種の標準形**（V3T2SeedOTP）: qr（`seedOT_qr`: 新しい加数は M.take x の o(r) から isOT_shTop を繰り返し、段 V の成分は dom の欄。v′(r) ≤ V は落とす補題の PV）と sv（`seedOT_sv`: σ = σ_{V,V+1} で ψ_V(X) の標準形は ψ_V(σX) に移る、`isOT_psi_shSucc`）を証明。残り `T2SeedOTRestV2` は qn・C。
+
+**種の列の枠の形 T2SeedPreShape**（V3T2SeedPre）: qr・qn は証明（`qr_frame_pre`・`qn_frame_pre` は qr_frame・qn_frame の前半で M[n−1] の Good3 を使わない。`frame_of_prefix`）。残り `T2SeedPreShapeSVC`（sv・C）。
+
+**最上位** `trio_terminates_main_V2_t2C`（V3TopT2B）: `_cur` の T2BelowXRes・T2SeedPreShape の代わりに T2SeedClV2・T2BumpMonoV2・T2SeedOTRestV2・T2SeedPreShapeSVC を取る。公理は標準の 3 つ。
+
+**測定**（tmp/t2/probes/seedrr3.py: B0・REr・閉じた条件（全段 clAll と道の段 clPath）・σ.o r と σ.o q の標準形。N = M[n]、n = 2, 3。P は X の最後の加数を除いたもの）:
+- 10 集合（Cprime・deep2・deep3・expP・ext1・ext1x・t0ext・t2ext・ext2・std_a）と d3s で、B0・REr・clPath・otR・otQ はすべて例外 0（qr 170 万件・qn 44 万件・sv 7.5 万件・C 2.3 万件）。T2SeedQNCl・T2SeedSVCl・T2SeedCCl・T2SeedOTRestV2 はこの欄の部分。
+- clAll は qn だけ偽（10 集合で 278 件）。例 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,0,0)(5,1,1)(6,1,1)(7,1,0)(5,0,0)(3,2,1)(4,0,0)(5,1,1)(6,1,1)(7,1,0)(5,0,0)(3,2,1)、n = 2、V = 1、段 u = 0（道の段でない）。
+- 未測定（停止時）: bumpmono.py（T2BumpMono、TleN の欄。MleN は偽で参考）と preshape.py（T2SeedPreShape、全場合）。d3s 400 行列の試しでは TleN 例外 0。結果の置き場 tmp/t2/bumpmono_all.txt・preshape_all.txt。
+- 再開: `env --chdir=/home/koteitan/proofs/trio/tmp/t2/probes nice -n 15 python3 bumpmono.py Cprime deep2 deep3 d3s expP ext1 ext1x t2ext ext2 std_a`、続けて `… preshape.py <同じ 10 集合>`（4 プロセス、1 本ずつ）。
