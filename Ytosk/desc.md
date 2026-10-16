@@ -3560,3 +3560,17 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 1 列の落とし: drop の `drop_all_H` の PO・PV（LhdE・WkOA・WkVA）はどれも ≤ を含み、`bumpW_take_le` が bumpW の ≤ を出す。標準形で Inv3V2 のある接頭辞なら HDropV2 から DropResH が出るので、1 列の落としは仮定なしで立つ（`bumpW_drop_std`、`t0BumpDrop_of`）。
 - 落とし側の AbsWN M (M.take x)（`absWN_take_t0`）: DropResH の `ab : BumpAbsC` から。t = 0 では x の行 1 が 0 で v(x) = 0 なので、BumpAbsC の 2 つの前提は自明。
 - まとめ `t0AbWRes_of : HDropV2 → T0PrefixInv → T0AbWRes`。残り `T0PrefixInv`: t = 0 の M について、M[n].take k（r + L ≤ k ≤ |M[n]|）が標準形・SRO でない・Inv3V2 を持つ。これは N = M[n] の StepCtxV2.pre と同じ種類の事実で、最上位の帰納法で出せるか top に確認中。
+
+### t0 の停止時点（2026-10-17、t0）
+
+- 止めた測定（再開のコマンド。どれも nice -n 15、4 プロセス、1 本ずつ）:
+  - SubstDom・ClosedLow（Dneeded）の全数: `python3 tmp/t0/probes/vprefix5.py 100000000 d3s t2ext expP Cprime deep2 deep3 t0ext ext1x ext2 ext1 std_a > tmp/t0/vprefix5_full.txt`。終わったのは d3s だけ（例外 0）、t2ext の途中で止めた。各集合 3 万の標本は 11 集合で例外 0（tmp/t0/vprefix5.txt）。
+  - VAnc・VDomF の全数: `NW=4 python3 tmp/t0/probes/vanc.py 100000000 d3s t2ext expP Cprime deep2 deep3 t0ext ext1x ext2 ext1 std_a > tmp/t0/vanc_full.txt`。未着手（標本 std_a・ext2・d3s 各 3000 は例外 0）。
+  - VAncStep（1 段）の全数: `NW=4 python3 tmp/t0/probes/vanc1.py 100000000 <11 集合>`。標本（std_a・ext2・ext1 各 2 万、d3s）は例外 0。
+  - ClosedLow（RwClosed の前提の枠）の全数: `python3 tmp/t0/probes/closedL.py 100000000 <11 集合>`。標本 5 集合は例外 0。
+  - 終わった全数: T2X1Cl（前提つき）は 11 集合で例外 0（tmp/t0/x1cl.txt）。
+- 次の手:
+  - top の答え待ち: T0PrefixInv（M[n] の接頭辞の Std・Inv3V2）を最上位の帰納法で出せるか。出せれば t0AbWRes_of を最上位に差し込む。
+  - VAncStep の証明（add が落とす v(P_1 j) の加数の成分は、足した項の成分か Ω_{v j} で押さえられる。BumpAbs・UpgAbs と同じ種類の値の形の事実）。
+  - CopyLowK（P の写しの枠で前提 → ClosedLow）と T2X1Cl の証明。
+- drop から: 落とし側の AbsWN の 3 行の補題（drop の案）は absWN_take_t0 として入っている（v(x) = 0 は Cons から直接）。t1: VDomF・CopyVDomK の名前と形は変えないこと（t1 の qVRAshK_KVRA が使う）。
