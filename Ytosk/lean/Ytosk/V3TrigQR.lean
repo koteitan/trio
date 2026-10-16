@@ -65,7 +65,7 @@ variable {M : Mat} {x r : Nat} {ρ : Valn} {μ b : T} (hx : x + 1 = M.length)
   (hro : ρ.o r = psi μ (app b (psi (succ μ) z z)) z)
   (hox : ρ.o x = psi (succ μ) z z)
   (hOS : ∀ i, i < x → DepX M x true i → OShape M x i)
-include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS
 
 /-- **hLeaf for `q = r`.** -/
 theorem qr_hLeaf (hμ : ρ.v r = μ) {seed : T} (hSr : SeedOK μ (app b (psi (succ μ) z z)) μ seed)
@@ -80,7 +80,7 @@ theorem qr_hLeaf (hμ : ρ.v r = μ) {seed : T} (hSr : SeedOK μ (app b (psi (su
   intro i Lc c R hi hch _ hcx hd t hto s ν hnew ht1 ht2
   rcases Nat.lt_or_ge c x with hc | hc
   · exfalso
-    obtain ⟨_, a', _, hD⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS
+    obtain ⟨_, a', _, hD⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS
       true c hd hc
     simp only [valB, cond_true] at hD
     rw [hto] at hD
@@ -163,7 +163,7 @@ theorem qr_hShape {Z : Nat → T} (hZ : ∀ c, Z c ≠ z) :
     ∀ c, c < x → DepX M x true c → ∀ s0 y0, ρ.o c = psi s0 y0 z → y0 ≠ z →
       ∀ s ν, fsD (psi s0 y0 z) (Z c) = psi s (psi (succ ν) z z) z → ∃ t, y0 = psi (succ t) z z := by
   intro c hc hd s0 y0 h0 hy0 s ν h
-  obtain ⟨_, a', _, hD⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS
+  obtain ⟨_, a', _, hD⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS
     true c hd hc
   simp only [valB, cond_true] at hD
   rw [h0] at hD

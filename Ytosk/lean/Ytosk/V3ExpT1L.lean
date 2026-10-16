@@ -594,7 +594,7 @@ theorem frame_hole {M : Mat} {ρ : Valn} (I : FrameV M ρ) {r : Nat} {μ b : T}
   have hx1 : entry M 1 (M.length - 1) ≠ 0 := by have := par1_entry_lt h1; omega
   have hox : ρ.o (M.length - 1) = psi (succ μ) z z := by
     rw [hμ]; exact o_last_t1 hx I.cons I.good h1 hx1 hx2
-  exact (qr_holeD hx I.s.r0p I.s.z2 I.s.sibDec I.s.z1c I.s.uat I.s.uab hx2 h1 hq I.cons I.good I.kd I.td I.ad hro hox
+  exact (qr_holeD hx I.s.r0p I.s.z2 I.s.sibDec I.s.z1c I.s.uat I.s.uab hx2 h1 hq I.cons I.good I.kd I.td hro hox
     (hOS_t1 hx I.s.r0p I.s.z2 I.s.sibDec I.s.z1c I.s.uat I.s.uab hx2 hq) bb i hd hi).1
 
 /-- **TPLoW from TPLo and `LevFree`** at a positive level; the level `0` is the residual `h0`. -/

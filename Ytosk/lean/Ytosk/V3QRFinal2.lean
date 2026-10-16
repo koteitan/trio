@@ -22,7 +22,7 @@ theorem qr_final2 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAD : AbsD M ρ)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
     (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUWL M ρ) (hAD' : AbsDW M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     (hYB : ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R → Counted M i c →
@@ -31,7 +31,9 @@ theorem qr_final2 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       lt (preState M ρ i L') (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) = true →
       lt (psi (ρ.v i) z z) (psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
       ∀ m', lt (preState M ρ i L') (app (qrB M ρ r (r + L))
-        (gamS (ρ.v r) (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) ((drop1 M (r + L) rkM).o r) m'))
+        (gamS (ρ.v r) (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) ((drop1 M (r + L) rkM).o r)
+          (m' + dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L)))
+            (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c)))
         = true)
     (hS : ∀ a', ¬ lt (ρ.v r) a' = true →
       isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
@@ -63,6 +65,6 @@ theorem qr_final2 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
   have hbq : b = qrB M ρ r (r + L) := hbe
   subst hbq
   exact qr_final hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hKD hTD
-    hAD hTP hTPL hAU' hAD' hsM hpM hro hb rfl hYB hS hsp0 hADs0 hAUs0 hLs hG1 Pn hP1 hPs
+    hTP hTPL hAU' hAD' hsM hpM hro hb rfl hYB hS hsp0 hADs0 hAUs0 hLs hG1 Pn hP1 hPs
 
 end Ytosk

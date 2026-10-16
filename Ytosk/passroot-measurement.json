@@ -1,0 +1,418 @@
+{
+  "date": "2026-10-15",
+  "field": "PassRootRes",
+  "definition": "Ytosk/lean/Ytosk/V3ExpT1V.lean",
+  "status": "finite exhaustive measurement; not a proof",
+  "scope": "last column x has t=1; r is its row-1 parent; matrices strictly below SRO",
+  "command": "nice -n 15 python3 tools/probe_passroot.py --workers 4 --output tmp/ytosk-handoff/results/passroot",
+  "counts": {
+    "input": 5375155,
+    "below_SRO": 5375152,
+    "t1_evaluated": 2681874,
+    "dependent_frames": 47654,
+    "PassRootRes.cases": 47654,
+    "outside_SRO": 3
+  },
+  "sets": [
+    {
+      "set": "Cprime",
+      "counts": {
+        "input": 404051,
+        "below_SRO": 404051,
+        "t1_evaluated": 195711,
+        "dependent_frames": 6971,
+        "PassRootRes.cases": 6971
+      },
+      "examples": {},
+      "seconds": 40.65,
+      "definitions": [
+        "V3ExpT1V.lean: PassRootRes"
+      ],
+      "fields": [
+        "PassRootRes"
+      ],
+      "case_unit": "passing dependent counted child at r"
+    },
+    {
+      "set": "t0ext",
+      "counts": {
+        "input": 181290,
+        "below_SRO": 181287,
+        "outside_SRO": 3
+      },
+      "examples": {},
+      "seconds": 1.04,
+      "definitions": [
+        "V3ExpT1V.lean: PassRootRes"
+      ],
+      "fields": [
+        "PassRootRes"
+      ],
+      "case_unit": "passing dependent counted child at r"
+    },
+    {
+      "set": "d3s",
+      "counts": {
+        "input": 15000,
+        "below_SRO": 15000,
+        "t1_evaluated": 9103,
+        "dependent_frames": 341,
+        "PassRootRes.cases": 341
+      },
+      "examples": {},
+      "seconds": 4.4,
+      "definitions": [
+        "V3ExpT1V.lean: PassRootRes"
+      ],
+      "fields": [
+        "PassRootRes"
+      ],
+      "case_unit": "passing dependent counted child at r"
+    },
+    {
+      "set": "deep2",
+      "counts": {
+        "input": 128150,
+        "below_SRO": 128150,
+        "t1_evaluated": 79172,
+        "dependent_frames": 2938,
+        "PassRootRes.cases": 2938
+      },
+      "examples": {},
+      "seconds": 38.52,
+      "definitions": [
+        "V3ExpT1V.lean: PassRootRes"
+      ],
+      "fields": [
+        "PassRootRes"
+      ],
+      "case_unit": "passing dependent counted child at r"
+    },
+    {
+      "set": "deep3",
+      "counts": {
+        "input": 123493,
+        "below_SRO": 123493,
+        "t1_evaluated": 74939,
+        "dependent_frames": 2868,
+        "PassRootRes.cases": 2868
+      },
+      "examples": {},
+      "seconds": 36.36,
+      "definitions": [
+        "V3ExpT1V.lean: PassRootRes"
+      ],
+      "fields": [
+        "PassRootRes"
+      ],
+      "case_unit": "passing dependent counted child at r"
+    },
+    {
+      "set": "ext1",
+      "counts": {
+        "input": 1082667,
+        "below_SRO": 1082667,
+        "t1_evaluated": 479397,
+        "dependent_frames": 315,
+        "PassRootRes.cases": 315
+      },
+      "examples": {},
+      "seconds": 40.76,
+      "definitions": [
+        "V3ExpT1V.lean: PassRootRes"
+      ],
+      "fields": [
+        "PassRootRes"
+      ],
+      "case_unit": "passing dependent counted child at r"
+    },
+    {
+      "set": "ext1x",
+      "counts": {
+        "input": 119974,
+        "below_SRO": 119974,
+        "t1_evaluated": 64453,
+        "dependent_frames": 188,
+        "PassRootRes.cases": 188
+      },
+      "examples": {},
+      "seconds": 13.99,
+      "definitions": [
+        "V3ExpT1V.lean: PassRootRes"
+      ],
+      "fields": [
+        "PassRootRes"
+      ],
+      "case_unit": "passing dependent counted child at r"
+    },
+    {
+      "set": "t2ext",
+      "counts": {
+        "input": 1207960,
+        "below_SRO": 1207960,
+        "t1_evaluated": 631354,
+        "dependent_frames": 21572,
+        "PassRootRes.cases": 21572
+      },
+      "examples": {},
+      "seconds": 153.35,
+      "definitions": [
+        "V3ExpT1V.lean: PassRootRes"
+      ],
+      "fields": [
+        "PassRootRes"
+      ],
+      "case_unit": "passing dependent counted child at r"
+    },
+    {
+      "set": "ext2",
+      "counts": {
+        "input": 1497986,
+        "below_SRO": 1497986,
+        "t1_evaluated": 854899,
+        "dependent_frames": 4085,
+        "PassRootRes.cases": 4085
+      },
+      "examples": {},
+      "seconds": 292.13,
+      "definitions": [
+        "V3ExpT1V.lean: PassRootRes"
+      ],
+      "fields": [
+        "PassRootRes"
+      ],
+      "case_unit": "passing dependent counted child at r"
+    },
+    {
+      "set": "expP",
+      "counts": {
+        "input": 614584,
+        "below_SRO": 614584,
+        "t1_evaluated": 292846,
+        "dependent_frames": 8376,
+        "PassRootRes.cases": 8376
+      },
+      "examples": {},
+      "seconds": 76.19,
+      "definitions": [
+        "V3ExpT1V.lean: PassRootRes"
+      ],
+      "fields": [
+        "PassRootRes"
+      ],
+      "case_unit": "passing dependent counted child at r"
+    }
+  ],
+  "script_sha256": "bda7194995fc61c76a9d904b664294ab0191d2e93d14aa39736475388321f13e",
+  "negative_control": {
+    "matrix": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        1
+      ],
+      [
+        2,
+        1,
+        1
+      ],
+      [
+        3,
+        1,
+        0
+      ],
+      [
+        1,
+        1,
+        1
+      ],
+      [
+        2,
+        0,
+        0
+      ],
+      [
+        3,
+        1,
+        1
+      ],
+      [
+        4,
+        1,
+        1
+      ],
+      [
+        5,
+        1,
+        0
+      ],
+      [
+        3,
+        1,
+        0
+      ],
+      [
+        4,
+        2,
+        1
+      ],
+      [
+        5,
+        1,
+        0
+      ],
+      [
+        6,
+        0,
+        0
+      ],
+      [
+        7,
+        1,
+        1
+      ],
+      [
+        7,
+        1,
+        1
+      ],
+      [
+        8,
+        1,
+        1
+      ],
+      [
+        9,
+        1,
+        0
+      ]
+    ],
+    "bms_standard": false,
+    "expected_failures": 1,
+    "counts": {
+      "input": 1,
+      "below_SRO": 1,
+      "t1_evaluated": 1,
+      "dependent_frames": 1,
+      "PassRootRes.cases": 1,
+      "PassRootRes.failures": 1
+    },
+    "examples": {
+      "PassRootRes": {
+        "matrix": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            1
+          ],
+          [
+            2,
+            1,
+            1
+          ],
+          [
+            3,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            1
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            3,
+            1,
+            1
+          ],
+          [
+            4,
+            1,
+            1
+          ],
+          [
+            5,
+            1,
+            0
+          ],
+          [
+            3,
+            1,
+            0
+          ],
+          [
+            4,
+            2,
+            1
+          ],
+          [
+            5,
+            1,
+            0
+          ],
+          [
+            6,
+            0,
+            0
+          ],
+          [
+            7,
+            1,
+            1
+          ],
+          [
+            7,
+            1,
+            1
+          ],
+          [
+            8,
+            1,
+            1
+          ],
+          [
+            9,
+            1,
+            0
+          ]
+        ],
+        "x": 16,
+        "r": 12,
+        "c": 14,
+        "earlier_counted": [
+          13
+        ],
+        "later_counted": [],
+        "v_r": [],
+        "last_v_c": [
+          [
+            [],
+            [],
+            []
+          ],
+          [],
+          []
+        ],
+        "cof_last_v_c": [
+          "big",
+          []
+        ]
+      }
+    }
+  }
+}

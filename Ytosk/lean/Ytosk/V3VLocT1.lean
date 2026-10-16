@@ -10,7 +10,7 @@
   `seed_arg_ge`・`seed_fix`）。
 - まとめ `t1_main_vloc`（`t1_main_tpl` から hV と始点の下限を外す）。
 -/
-import Ytosk.V3FrameT1
+import Ytosk.V3SeedFields
 
 namespace Ytosk
 
@@ -297,6 +297,7 @@ variable {M : Mat} {x r : Nat} {ρ : Valn} {μ br vr : T} (hx : x + 1 = M.length
   (hC : Cons M ρ) (hG : Good3 M ρ) (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAD : AbsD M ρ)
 include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD
 
+omit hAD in
 /-- **At a bump frame of `D`, `v(i) = B ++ W`** with the bump term `W` (given the hole of `o(k)`). -/
 theorem v_bump_D {i j k : Nat} {L K : List Nat} (hi : i < x) (h1 : entry M 1 i ≠ 0)
     (h2 : entry M 2 i ≠ 0) (hch : children M i = L ++ [j]) (hjb : col M j = bump M i)
@@ -331,6 +332,7 @@ variable (hrx : r < x) (hAr : Anc0 M r x) (hro : ρ.o r = psi vr br z)
     DepX M x true k → k ≤ r)
 include hrx hAr hro hcb hμr hbr hHx hF1 hOS hS2 hS3
 
+omit hAD in
 /-- **Hole and position without `VLocal`** (`t = 1`, `q ≠ r`). -/
 theorem t1_hole0 :
     ∀ b i, DepX M x b i → (i < x ∨ (i = x ∧ b = true)) →
@@ -487,7 +489,7 @@ theorem t1_hole0 :
         · exact Or.inr ⟨by omega, rfl⟩
       obtain ⟨ihH, ihD, _⟩ := ih hkpos
       simp only [valB, cond_true] at ihH ihD
-      obtain ⟨hBD, ⟨B, hvi⟩, hHv, hSl⟩ := v_bump_D hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hi
+      obtain ⟨hBD, ⟨B, hvi⟩, hHv, hSl⟩ := v_bump_D hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hi
         h1 h2 hch hjb hchj ihH
       refine ⟨hHv, ?_, fun _ _ => hSl⟩
       intro hir
@@ -660,12 +662,12 @@ theorem not_lt_of_lo_z {t θ : T} (ht : t ≠ z) (hl : (split t θ).2 = z) : ¬ 
 
 /-- **`ω` commutes with `fsD`** for a standard term with a hole, when `ζ` is a fixed point of `ω` at
 least `ψ_μ(Ω_{μ+1})` and the low part of a single term stays empty (TPL). -/
-theorem omega_fsD_hole {μ br vr Y ζ X : T} (hY : isOT Y = true) (hH : HoleT μ br vr Y)
+theorem omega_fsD_hole_at {μ br vr Y ζ X : T} (hY : isOT Y = true) (hH : HoleT μ br vr Y)
     (hcb : cof br = .big μ) (hbrl : last br ≠ psi (succ μ) z z)
     (hζ : ζ = psi μ X z) (hXz : X ≠ z) (hζfix : omega ζ = ζ) (hζΩ : etaOm μ ≤ ζ)
     (hok : ∀ t, isOT t = true → HoleT μ br vr t → isOT (fsD t ζ) = true ∧ fsD t ζ < t)
     (hTPLY : ∀ s b, Y = psi s b z → (split b (psi (succ s) z z)).2 = z → ∀ a, last b = psi a z z →
-      isSucc a = false → OHole a → ¬ psi (fsD a (etaOm μ)) z z < psi (succ s) z z) :
+      isSucc a = false → OHole a → ¬ psi (fsD a ζ) z z < psi (succ s) z z) :
     fsD (omega Y) ζ = omega (fsD Y ζ) := by
   have hζz : ζ ≠ z := by rw [hζ]; simp
   have hYz := holeT_ne_z hH
@@ -697,7 +699,7 @@ theorem omega_fsD_hole {μ br vr Y ζ X : T} (hY : isOT Y = true) (hH : HoleT μ
         · have hHb := holeT_arg hb hH hcb
           have hbs := not_succ_arg_of_holeT hb hH
           rw [fsD_psi hb hbs] at hYot' ⊢
-          have hlo' := lo_keep_of_TPL (hTPLY s b rfl) hb hH hcb hbrl hζΩ hlo
+          have hlo' := lo_keep_of_TPLη (hTPLY s b rfl) hb hH hcb hbrl (le_refl ζ) hlo
           apply omega_fix_nolo hYot'
           · intro hE'
             obtain ⟨hsz, hlt⟩ := below_E0 hE'
@@ -797,6 +799,20 @@ theorem app_single_ne {P c s b : T} (hP : P ≠ z) (hc : c ≠ z) : app P c ≠ 
     rw [app_psi]; intro h
     exact hc (app_eq_z (T.psi.inj h).2.2).2
 
+/-- **`ω` commutes with `fsD`** for a standard term with a hole, when `ζ` is a fixed point of `ω` at
+least `ψ_μ(Ω_{μ+1})` and the low part of a single term stays empty (TPL). -/
+theorem omega_fsD_hole {μ br vr Y ζ X : T} (hY : isOT Y = true) (hH : HoleT μ br vr Y)
+    (hcb : cof br = .big μ) (hbrl : last br ≠ psi (succ μ) z z)
+    (hζ : ζ = psi μ X z) (hXz : X ≠ z) (hζfix : omega ζ = ζ) (hζΩ : etaOm μ ≤ ζ)
+    (hok : ∀ t, isOT t = true → HoleT μ br vr t → isOT (fsD t ζ) = true ∧ fsD t ζ < t)
+    (hTPLY : ∀ s b, Y = psi s b z → (split b (psi (succ s) z z)).2 = z → ∀ a, last b = psi a z z →
+      isSucc a = false → OHole a → ¬ psi (fsD a (etaOm μ)) z z < psi (succ s) z z) :
+    fsD (omega Y) ζ = omega (fsD Y ζ) := by
+  apply omega_fsD_hole_at hY hH hcb hbrl hζ hXz hζfix hζΩ hok
+  intro s b he hl a hla hns hO hlt
+  exact hTPLY s b he hl a hla hns hO
+    (lt_of_le_of_lt (le_psi_sub (fsD_mono_eta hO hζΩ)) hlt)
+
 /-- **A single `ω^G` with no low part is `G` itself.** -/
 theorem omega_single_nolo {G s b : T} (hG : isOT G = true) (hGz : G ≠ z) (h : omega G = psi s b z)
     (hl : (split b (psi (succ s) z z)).2 = z) : omega G = G := by
@@ -854,7 +870,7 @@ section
 variable {M : Mat} {x r : Nat} {ρ : Valn} {μ br vr ζ X : T} (hx : x + 1 = M.length)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
   (hx2 : entry M 2 x = 0) {q : Nat} (hq : par M 0 x = some q)
-  (hC : Cons M ρ) (hG : Good3 M ρ) (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAD : AbsD M ρ)
+  (hC : Cons M ρ) (hG : Good3 M ρ) (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
   (hrx : r < x) (hAr : Anc0 M r x) (hro : ρ.o r = psi vr br z)
   (hcb : cof br = .big μ) (hμr : μ = vr) (hbr : br ≠ z)
   (hHx : HoleT μ br vr (ρ.o x))
@@ -863,18 +879,22 @@ variable {M : Mat} {x r : Nat} {ρ : Valn} {μ br vr ζ X : T} (hx : x + 1 = M.l
   (hS2 : ∀ i k, i ≤ r → DepX M x false i → entry M 2 i = 0 → upg M i = some k → k ≤ r)
   (hS3 : ∀ i j k, i ≤ r → j ∈ children M i → col M j = bump M i → k ∈ children M j →
     DepX M x true k → k ≤ r)
-  (hTPLo : TPLo M ρ) (hAU : AbsU M ρ) (hbrl : last br ≠ psi (succ μ) z z)
+  (hTPLζ : ∀ c, c < M.length → DepX M x true c → ∀ s y, ρ.o c = psi s y z →
+    (split y (psi (succ s) z z)).2 = z → ∀ a, last y = psi a z z → isSucc a = false →
+    OHole a → holeLev y = μ → ¬ psi (fsD a ζ) z z < psi (succ s) z z) (hAUζ : ∀ i k, i < x → DepX M x false i → upg M i = some k →
+    OHole (last (ρ.v k)) → holeLev (last (ρ.v k)) = μ →
+    ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) → q < fsD (last (ρ.v k)) ζ) (hbrl : last br ≠ psi (succ μ) z z)
   (hζ : ζ = psi μ X z) (hXz : X ≠ z) (hζfix : omega ζ = ζ) (hζΩ : etaOm μ ≤ ζ)
   (hok : ∀ t, isOT t = true → HoleT μ br vr t → isOT (fsD t ζ) = true ∧ fsD t ζ < t)
   (hADζ : ∀ i, i < x → DepX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → OHole (bumpW M ρ i) →
     holeLev (bumpW M ρ i) = μ → ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
       q < fsD (bumpW M ρ i) ζ)
-include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hrx hAr hro hcb hμr hbr hHx hF1 hOS hS2 hS3
-  hTPLo hAU hbrl hζ hXz hζfix hζΩ hok hADζ
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hrx hAr hro hcb hμr hbr hHx hF1 hOS hS2 hS3
+  hTPLζ hAUζ hbrl hζ hXz hζfix hζΩ hok hADζ
 
 /-- **`VLocal` on `D`** from the invariants. -/
-theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i := by
-  have hH := t1_hole0 hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hrx hAr hro hcb hμr hbr hHx
+theorem vlocal_t1_at : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i := by
+  have hH := t1_hole0 hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hrx hAr hro hcb hμr hbr hHx
     hF1 hOS hS2 hS3
   have hζz : ζ ≠ z := by rw [hζ]; simp
   intro i hi hv
@@ -895,9 +915,7 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
       exact (hok _ hVs.1 hHl).1
     · intro t ht hlt
       have hOk := ohole_of_holeT hHl
-      have h0 := hAU i (i + 1) hu hOk t ht hlt
-      rw [holeLev_holeT hHl] at h0
-      exact lt_of_lt_of_le h0 (fsD_mono_eta hOk hζΩ)
+      exact hAUζ i (i + 1) hi hv hu hOk (holeLev_holeT hHl) t ht hlt
   · -- the bump frame
     right
     have hkM : k < M.length := by
@@ -908,7 +926,7 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
       · exact Or.inl h
       · exact Or.inr ⟨by omega, rfl⟩)
     simp only [valB, cond_true] at hHk
-    obtain ⟨hBD, _, _, _⟩ := v_bump_D hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hi h1 h2
+    obtain ⟨hBD, _, _, _⟩ := v_bump_D hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hi h1 h2
       hch hjb hchj hHk
     set P := nzs (L.map (bumpTerm M ρ i)) with hPdef
     set G := sumN (K.map ρ.o ++ [ρ.o k]) with hGdef
@@ -946,7 +964,7 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
     have hfG : fsD G ζ = G' := by rw [hGe, hG'e]; exact fsD_app _ (single_ne_z hkS) ζ
     -- TPL for `G` and for `P + ω^G`
     have hTG : ∀ s b, G = psi s b z → (split b (psi (succ s) z z)).2 = z → ∀ a, last b = psi a z z →
-        isSucc a = false → OHole a → ¬ psi (fsD a (etaOm μ)) z z < psi (succ s) z z := by
+        isSucc a = false → OHole a → ¬ psi (fsD a ζ) z z < psi (succ s) z z := by
       intro s b hGsb hl a hla has hOa
       have hK0 : sumN (K.map ρ.o) = z := by
         by_contra hK
@@ -955,11 +973,10 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
       have hb : b ≠ z := by
         intro hb0; rw [hb0] at hla; simp [last] at hla
       have hHb := holeT_arg hb (by rw [← hok']; exact hHk) hcb
-      have := hTPLo k hkM s b hok' hl a hla has hOa
-      rwa [holeLev_holeT hHb] at this
+      exact hTPLζ k hkM hdk s b hok' hl a hla has hOa (holeLev_holeT hHb)
     have hTY2 : ∀ s b, app (sumN P) (omega G) = psi s b z → (split b (psi (succ s) z z)).2 = z →
         ∀ a, last b = psi a z z → isSucc a = false → OHole a →
-        ¬ psi (fsD a (etaOm μ)) z z < psi (succ s) z z := by
+        ¬ psi (fsD a ζ) z z < psi (succ s) z z := by
       intro s b hY hl
       have hP0 : sumN P = z := by
         by_contra hP; exact app_single_ne hP hωGz hY
@@ -968,9 +985,9 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
       have hfix := omega_single_nolo hGot (holeT_ne_z hHG) hY' hl
       exact hTG s b (by rw [← hfix]; exact hY') hl
     have hωGfs : fsD (omega G) ζ = omega G' := by
-      rw [omega_fsD_hole hGot hHG hcb hbrl hζ hXz hζfix hζΩ hok hTG, hfG]
+      rw [omega_fsD_hole_at hGot hHG hcb hbrl hζ hXz hζfix hζΩ hok hTG, hfG]
     have hωp : fsD (omega (app (sumN P) (omega G))) ζ = omega (app (sumN P) (omega G')) := by
-      rw [omega_fsD_hole hBD.potW hHY2 hcb hbrl hζ hXz hζfix hζΩ hok hTY2,
+      rw [omega_fsD_hole_at hBD.potW hHY2 hcb hbrl hζ hXz hζfix hζΩ hok hTY2,
         fsD_app _ hωGz ζ, hωGfs]
     -- absorption
     have hOW : OHole (bumpW M ρ i) := by rw [hBD.W]; exact ohole_of_holeT hHW
@@ -992,6 +1009,43 @@ theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i 
     · intro t ht hlt
       rw [← hωp]
       exact hA2 t ht hlt
+
+end
+
+section
+variable {M : Mat} {x r : Nat} {ρ : Valn} {μ br vr ζ X : T} (hx : x + 1 = M.length)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+  (hx2 : entry M 2 x = 0) {q : Nat} (hq : par M 0 x = some q)
+  (hC : Cons M ρ) (hG : Good3 M ρ) (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAD : AbsD M ρ)
+  (hrx : r < x) (hAr : Anc0 M r x) (hro : ρ.o r = psi vr br z)
+  (hcb : cof br = .big μ) (hμr : μ = vr) (hbr : br ≠ z)
+  (hHx : HoleT μ br vr (ρ.o x))
+  (hF1 : ∀ i, r < i → i < x → DepX M x true i → ¬ DepX M x false i → lt μ (ρ.v i) = true)
+  (hOS : ∀ i, i < x → DepX M x true i → OShape M x i)
+  (hS2 : ∀ i k, i ≤ r → DepX M x false i → entry M 2 i = 0 → upg M i = some k → k ≤ r)
+  (hS3 : ∀ i j k, i ≤ r → j ∈ children M i → col M j = bump M i → k ∈ children M j →
+    DepX M x true k → k ≤ r)
+  (hTPLo : TPLo M ρ) (hAU : AbsU M ρ) (hbrl : last br ≠ psi (succ μ) z z)
+  (hζ : ζ = psi μ X z) (hXz : X ≠ z) (hζfix : omega ζ = ζ) (hζΩ : etaOm μ ≤ ζ)
+  (hok : ∀ t, isOT t = true → HoleT μ br vr t → isOT (fsD t ζ) = true ∧ fsD t ζ < t)
+  (hADζ : ∀ i, i < x → DepX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → OHole (bumpW M ρ i) →
+    holeLev (bumpW M ρ i) = μ → ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+      q < fsD (bumpW M ρ i) ζ)
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hrx hAr hro hcb hμr hbr hHx hF1 hOS hS2 hS3
+  hTPLo hAU hbrl hζ hXz hζfix hζΩ hok hADζ
+
+/-- Compatibility entry from the older global fields. -/
+theorem vlocal_t1 : ∀ i, i < x → DepX M x false i → VLocal M x ρ ζ μ i := by
+  apply vlocal_t1_at hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hrx hAr hro
+    hcb hμr hbr hHx hF1 hOS hS2 hS3 ?_ ?_ hbrl hζ hXz hζfix hζΩ hok hADζ
+  · intro c hc _ s y ho hy a hla hns hO hl hlt
+    have h := hTPLo c hc s y ho hy a hla hns hO
+    rw [hl] at h
+    exact h (lt_of_le_of_lt (le_psi_sub (fsD_mono_eta hO hζΩ)) hlt)
+  · intro i k _ _ hu hO hl q hq hlt
+    have h := hAU i k hu hO q hq hlt
+    rw [hl] at h
+    exact lt_of_lt_of_le h (fsD_mono_eta hO hζΩ)
 
 end
 
@@ -1254,6 +1308,7 @@ variable {M : Mat} {x r : Nat} {ρ : Valn} {μ : T} (hx : x + 1 = M.length)
   (hOS : ∀ i, i < x → DepX M x true i → OShape M x i)
 include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hox hF1 hOS
 
+omit hAD in
 /-- **After `r`, the values on `D` have cofinality `Ω_{μ+1}`** (without `VLocal`). -/
 theorem t1_cof0 : ∀ b i, DepX M x b i → r < i → (i < x ∨ (i = x ∧ b = true)) →
     cof (valB ρ b i) = .big μ ∧ (b = false → entry M 2 i ≠ 0 → Single (last (ρ.v i))) := by
@@ -1379,7 +1434,7 @@ theorem t1_cof0 : ∀ b i, DepX M x b i → r < i → (i < x ∨ (i = x ∧ b = 
       obtain ⟨ihk, _⟩ := ih (by omega) hkpos
       simp only [valB, cond_true] at ihk
       obtain ⟨hBD, ⟨B, hvi⟩, _, hSl⟩ := v_bump_D (br := z) (vr := z) hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC
-        hG hKD hTD hAD hi h1 h2 hch hjb hchj (Or.inl ihk)
+        hG hKD hTD hi h1 h2 hch hjb hchj (Or.inl ihk)
       have hGot := (sumN_dec _ hBD.sK hBD.pK).1
       have hkS : Single (ρ.o k) := hBD.sK _ (List.mem_append_right _ (List.mem_singleton_self _))
       have hcG : cof (sumN (K.map ρ.o ++ [ρ.o k])) = .big μ := by
@@ -1600,7 +1655,7 @@ theorem t1_main_vloc {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
   obtain ⟨hseedΩ, hseedfix⟩ := seed_fix hsot hσz hσge
   rw [← hs] at hseedΩ hseedfix
   -- `b_r`
-  have hcof0 := t1_cof0 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hox hF1 hOS
+  have hcof0 := t1_cof0 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hox hF1 hOS
   have hcof : ∀ b i, DepX M (r + L) b i → r < i → (i < r + L ∨ (i = r + L ∧ b = true)) →
       cof (valB ρ b i) = .big μ := fun b i hD hri hp => (hcof0 b i hD hri hp).1
   obtain ⟨hcb, hbr⟩ := hcb_of_cof hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hOS hcof h1 hx2 hqr hR12 hBE hro
@@ -1653,5 +1708,152 @@ theorem t1_main_vloc {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL 
           (by have h := hAD i (by omega) h1 h2 hO q hq hlt; rwa [hl] at h) (fsD_mono_eta hO hζΩ))
   exact t1_main_tpl hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
     hVS hF hFO hTP (TPL_of_TPLo hTPLo) hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hseedΩ hV hsM hpM hG1 Pn hP1 hPs
+
+/-- The q != r engine using only seed-local AbsDS, AbsUS, and TPLoS. -/
+theorem t1_main_vlocS {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hqr : par M 0 (r + L) ≠ some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hTP : TP1C M ρ) (hTPLS : TPLoS M ρ rkM) (hADS : AbsDS M ρ rkM) (hAUS : AbsUS M ρ rkM)
+    (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
+      ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
+      ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
+    (hUA : UpgAbsX M (r + L) ρ)
+    (hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r)
+    {μ br vr : T} (hμr : μ = vr) (hro : ρ.o r = psi vr br z)
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM))
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hrx : r < r + L := by omega
+  have hrM : r < M.length := by omega
+  have hvr : ρ.v r = vr := by
+    obtain ⟨y0, hy0⟩ := o_psi_sub hC hrM
+    rw [hro] at hy0; simp only [psi.injEq] at hy0
+    rw [hy0.1, sf_ot (hG.ot_v r hrM)]
+  have hF1 : ∀ i, r < i → i < r + L → DepX M (r + L) true i → ¬ DepX M (r + L) false i →
+      lt μ (ρ.v i) = true := by
+    intro i h2 h3 h4 h5
+    rw [hμr, ← hvr]
+    exact hF1_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB h1 hC hG hRM i h2 h3 h4 h5
+  have hox : ρ.o (r + L) = psi (succ μ) z z := by
+    rw [o_last_t1 hlen hC hG h1 (by have := par1_entry_lt h1; omega) hx2, hvr, hμr]
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
+  have hOS := hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq
+  -- the base `M.take x`
+  have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
+  have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  have hv1r : (drop1 M (r + L) rkM).v r = ρ.v r :=
+    base_v_r hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hA (by omega) hqr hpath
+  have hv1 : (drop1 M (r + L) rkM).v r = μ := by rw [hv1r, hvr, hμr]
+  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hVSt hF hFO hArgT
+    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hTD hAbs hWS)
+    hUA
+  have hotv : ∀ i, i < r + L → isOT ((drop1 M (r + L) rkM).v i) = true :=
+    fun i hi => (hdrop i hi).2.2
+  have hoto : ∀ i, i < r + L → isOT ((drop1 M (r + L) rkM).o i) = true :=
+    fun i hi => (hdrop i hi).1.2.1
+  -- the seed
+  obtain ⟨σ, hs, hσz, hσge⟩ := seed_arg_ge hlen hR0 hZ2 hSD hZ1 hUAB h1 hqr hC1 hRk1 hotv hoto hv1
+  have hsot : isOT (psi μ σ z) = true := by rw [← hs]; exact hoto r hrx
+  obtain ⟨hseedΩ, hseedfix⟩ := seed_fix hsot hσz hσge
+  rw [← hs] at hseedΩ hseedfix
+  -- `b_r`
+  have hcof0 := t1_cof0 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hox hF1 hOS
+  have hcof : ∀ b i, DepX M (r + L) b i → r < i → (i < r + L ∨ (i = r + L ∧ b = true)) →
+      cof (valB ρ b i) = .big μ := fun b i hD hri hp => (hcof0 b i hD hri hp).1
+  obtain ⟨hcb, hbr⟩ := hcb_of_cof hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hOS hcof h1 hx2 hqr hR12 hBE hro
+  have hbrl := last_br_of_cof hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hOS hcof h1 hx2 hqr hR12 hBE hro
+  have hrot : isOT (psi vr br z) = true := by rw [← hro]; exact hG.ot_o r hrM
+  have hμ : ¬ lt μ vr = true := by rw [hμr]; exact lt_irrefl' _
+  -- the seed condition
+  obtain ⟨hlhd0, _⟩ := base_seed hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hrx (hdrop r hrx).1 hv1r hne
+  have hlhd : Lhd z (psi μ σ z) (psi μ br z) := by
+    rw [← hs]; rw [hro, ← hμr] at hlhd0; exact hlhd0
+  have hσb : σ < br := by
+    have := hlhd.1; rw [psi_lt_psi_z_iff] at this
+    rcases this with h | ⟨_, h⟩
+    · exact absurd h (lt_irrefl' _)
+    · exact h
+  have hS : ∀ a', ¬ lt vr a' = true → isOT (psi a' br z) = true →
+      SeedOK a' br μ ((drop1 M (r + L) rkM).o r) := by
+    intro a' ha' hot'
+    rw [hs]
+    exact seedOK_of_lhd_top hot' hcb (by rw [hμr]; exact ha') hsot hσb hlhd
+  have hHx : HoleT μ br vr (ρ.o (r + L)) := Or.inl (by rw [hox]; exact cof_omega_succ μ)
+  have hS2 := hS2_t1 hR0 hA (by omega)
+  have hS3 := hS3_t1 h1 hA (by omega) hlen hR0 hZ2 hSD hZ1
+  have hlast : M.length - 1 = r + L := by omega
+  have hroμ : ρ.o r = psi μ br z := by simpa only [← hμr] using hro
+  have hseedle : ∀ m, (drop1 M (r + L) rkM).o r ≤
+      gamS μ br ((drop1 M (r + L) rkM).o r) m := by
+    intro m
+    induction m with
+    | zero => exact le_refl _
+    | succ m ih => exact le_trans ih (gamS_mono hrot hcb hμ (hS vr (lt_irrefl' _) hrot) m).le
+  -- `VLocal` on the whole chain
+  have hV : ∀ m i, i < r + L → DepX M (r + L) false i →
+      VLocal M (r + L) ρ (gamS μ br ((drop1 M (r + L) rkM).o r) m) μ i := by
+    intro m
+    have hζfix := gamS_fix hrot hcb hμ (hS vr (lt_irrefl' _) hrot) hbrl hseedfix hseedΩ m
+    have hζΩ := gamS_ge_omfix (isOT_arg hrot) hcb hbrl hseedΩ m
+    have hok : ∀ t, isOT t = true → HoleT μ br vr t →
+        isOT (fsD t (gamS μ br ((drop1 M (r + L) rkM).o r) m)) = true ∧
+        fsD t (gamS μ br ((drop1 M (r + L) rkM).o r) m) < t :=
+      fun t hot hH => hok_of_holeT hrot hcb hμ hS hot hH m
+    have hADζ := hADζ_of_absDS hADS (by simpa only [hlast] using h1)
+      (by simpa only [hlast] using hqr) (by simpa only [hlast] using hx2) hroμ
+      (by simpa only [hlast] using hseedle m)
+    have hAUζ := hAUζ_of_absUS hAUS (by simpa only [hlast] using h1)
+      (by simpa only [hlast] using hqr) (by simpa only [hlast] using hx2) hroμ
+      (by simpa only [hlast] using hseedle m)
+    have hTPLc := hTPLζ_of_tplos hTPLS (by simpa only [hlast] using h1)
+      (by simpa only [hlast] using hqr) (by simpa only [hlast] using hx2) hroμ
+      (by simpa only [hlast] using hseedle m)
+    simp only [hlast] at hADζ hAUζ hTPLc
+    have hTPLζ : ∀ c, c < M.length → DepX M (r + L) true c → ∀ s y, ρ.o c = psi s y z →
+        (split y (psi (succ s) z z)).2 = z → ∀ a, last y = psi a z z → isSucc a = false →
+        OHole a → holeLev y = μ →
+        ¬ psi (fsD a (gamS μ br ((drop1 M (r + L) rkM).o r) m)) z z < psi (succ s) z z := by
+      intro c hc hd s y ho hy a hla hns hO hl
+      by_cases hcx : c < r + L
+      · exact hTPLc c hcx hd s y ho hy a hla hns hO hl
+      · have he : c = r + L := by omega
+        subst c
+        rw [hox] at ho
+        cases ho
+        simp [last] at hla
+    cases m with
+    | zero =>
+      exact vlocal_t1_at (X := σ) hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD
+        hrx hA hro hcb hμr hbr hHx hF1 hOS hS2 hS3 hTPLζ hAUζ hbrl hs hσz hζfix hζΩ hok hADζ
+    | succ m =>
+      have hne' : gamS μ br ((drop1 M (r + L) rkM).o r) m ≠ z := by
+        intro h
+        have := gamS_ge_omfix (isOT_arg hrot) hcb hbrl hseedΩ m
+        rw [h] at this
+        exact T.not_lt_z _ (lt_of_lt_of_le (T.z_lt_psi _ _ _) this)
+      exact vlocal_t1_at (X := fs br (gamS μ br ((drop1 M (r + L) rkM).o r) m)) hlen hR0 hZ2 hSD
+        hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hrx hA hro hcb hμr hbr hHx hF1 hOS hS2 hS3
+        hTPLζ hAUζ hbrl rfl (fs_ne_z_big hcb hne') hζfix hζΩ hok hADζ
+  have hζz : ∀ m, gamS μ br ((drop1 M (r + L) rkM).o r) m ≠ z := by
+    intro m he
+    have h := hseedle m
+    rw [he, hs] at h
+    exact T.not_lt_z _ (lt_of_lt_of_le (T.z_lt_psi _ _ _) h)
+  have hLo := hLo_of_TPLS hlen hC hG hrx hA h1 hqr hx2 hro hcb hμr hbr hox hF1 hOS (hV 0)
+    hS2 hS3 hTPLS hbrl hseedle hζz
+  exact t1_main_tp1 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hqr hC hG hRM
+    hVS hF hFO hTP hArgT hKD hTD hAbs hWS hVSt hUA hne hμr hro hV hLo hsM hpM hG1 Pn hP1 hPs
 
 end Ytosk

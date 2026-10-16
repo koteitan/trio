@@ -26,7 +26,7 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAD : AbsD M ρ)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
     (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUWL M ρ) (hAD' : AbsDW M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- `A = o(r) = ψ_μ(b + Ω_{μ+1})`
@@ -39,7 +39,8 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       lt (preState M ρ i L') (app b (psi (succ (ρ.v r)) z z)) = true →
       lt (psi (ρ.v i) z z) (psi s (app b (psi (succ (ρ.v r)) z z)) z) = true →
       ∀ m', lt (preState M ρ i L')
-        (app b (gamS (ρ.v r) (app b (psi (succ (ρ.v r)) z z)) ((drop1 M (r + L) rkM).o r) m')) = true)
+        (app b (gamS (ρ.v r) (app b (psi (succ (ρ.v r)) z z)) ((drop1 M (r + L) rkM).o r)
+          (m' + dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) c))) = true)
     -- the seed `o_{M[1]}(r)`
     (hS : ∀ a', ¬ lt (ρ.v r) a' = true →
       isOT (psi a' (app b (psi (succ (ρ.v r)) z z)) z) = true →
@@ -139,7 +140,7 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       fsD (valB ρ bb i) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ
         (app b (psi (succ μ) z z)) seed m i) < valB ρ bb i := by
     intro bb i hd hi m
-    obtain ⟨hH, _⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS bb i hd hi
+    obtain ⟨hH, _⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS bb i hd hi
     have hot : isOT (valB ρ bb i) = true := by
       cases bb
       · exact hG.ot_v i (by omega)
@@ -161,7 +162,7 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
     refine ⟨fun i hi hd => (hHok true i hd hi m).1, fun i hi hd => (hHok false i hd hi m).1,
       fun c hc hd => ⟨(hHok true c hd hc m).2.le, ?_⟩⟩
     have hcM : c < M.length := by omega
-    obtain ⟨hH, _⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS true c hd hc
+    obtain ⟨hH, _⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS true c hd hc
     simp only [valB, cond_true] at hH
     exact single_ne_z (single_fsD (o_psi_form hC hcM) (holeT_not_succ hH)
       (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hH)) (hgS _)
@@ -172,7 +173,7 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       fsD (ρ.o Rt) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ (app b (psi (succ μ) z z)) seed m Rt)
         < ρ.o Rt := by
     intro m
-    obtain ⟨hHR, _⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS
+    obtain ⟨hHR, _⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS
       true Rt hRd hRx
     simp only [valB, cond_true] at hHR
     have hRM' : Rt < M.length := by omega
@@ -193,12 +194,12 @@ theorem qr_final {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 
       (fun m => ⟨by rw [hox]; exact (gamS_lt_om hrot cof_br (lt_irrefl' μ) hSr m).le,
         gamS_ne_z_q hseedz m⟩)
       hRA hRt0 hRlast hRd hsM hpM hxv hOS hVS hdr
-      (fun m => qr_oloc hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro rfl hb hpre hox
+      (fun m => qr_oloc hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro rfl hb hpre hox
         hOS hVS hBk hxv hS hseedS hsp0 hTP hTPL hYB hLs m)
-      (fun m => qr_vloc hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS hb hVS
+      (fun m => qr_vloc hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS hb hVS
         hBk hxv hseedS hTPL hLs hS hAU' hAUs0 hAD' hADs0 m)
       hRt hOT ⟨hrot, cof_br, lt_irrefl' μ, hS, hseedS, fun bb i hd hi =>
-        (qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS bb i hd hi).1⟩
+        (qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS bb i hd hi).1⟩
       (ρ1 := drop1 M (r + L) rkM) (rk1 := rkM) (by rw [gexp_one_eq hlen]; exact hC1)
       (by rw [gexp_one_eq hlen]; exact hRk1) (by rw [gexp_one_eq hlen]; exact hG1) rfl
       (fun g hg a ha h => by

@@ -7,19 +7,75 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
 - 標準形 `Std` = SRO から展開でたどり着く行列（`Ytosk/lean/Ytosk/BMS.lean`）
 - 展開は M[n] と書く（Lean の `expand M n`、n はコピーの個数）
 
-## 1. 目標と、終わったもの
+## 1. 作業ツリー
 
-目標は 5 つ。
+✅ は、その枝に書いた作業が完了した印。子が全部完了した枝は、親に ✅ を付けて子を表示しない。
+「条件付きの組み立て」と「測定」は、それぞれ完了しても、残った仮定の証明にはならない。
 
-| # | 目標 | 状態 | Lean |
-|---|---|---|---|
-| 1 | 値が定まる（v・o が循環しない） | 証明済み（仮定なし） | `val_std`・`rk_std`（V3Total） |
-| 2 | SRO より小さい標準形は SRO から届く | 証明済み（仮定なし） | googology-lean の `trio_reach_sro`（ブランチ feature/trio-reach、TrioReach.lean）。trio 側では `std_stts`（V3Order） |
-| 3 | 順序を保つ | 4 に帰着 | `order_pres : Desc3 → …`（V3Order） |
-| 4 | 値が標準形で、展開で下がる（`Desc3`） | **未完（本題）** | 下の 2 節 |
-| 5 | 全射 | 4 と `EvalCof` に帰着 | `surj : Desc3 → EvalCof → …`（V3Surj）。`EvalCof`（拡張 Buchholz 側の共終性）は未証明 |
+**Inv3V2 は目標 4 の証明で使う、値の条件をまとめた束。**
+各行列でこの束が成り立つことを、基底・1 列落とし・展開で証明する。
+その結果を使って、値が標準形で展開すると下がること（Desc3）を示す。
+旧い束 Inv3V には偽の条件があるため、Inv3V2 に直している途中。
 
-項の順序の整礎性は `wf_OT`（WF.lean）で証明済み。どの定理も公理は propext・Classical.choice・Quot.sound だけ。
+- ✅ **1. 値が定まる（v・o が循環しない）**
+- ✅ **2. SRO より小さい標準形は SRO から届く**
+- **3. 順序を保つ**
+  - ✅ 目標 4 が成り立てば順序を保つ、という証明（`order_pres`、V3Order）
+  - その仮定 Desc3 の証明 → **目標 4 が残っている**
+- **4. 値が標準形で、展開すると下がる（Desc3）**
+  - ✅ 共通の土台
+  - **証明で運ぶ束を Inv3V2 に直す**
+    - ✅ 新しい束と各条件の定義（V3Inv2）
+    - ✅ 未測定だった条件の全数確認。TrigS の反例を見つけ、TrigS0 に修正
+    - ✅ 狭めた条件から実際の使い所の条件を出す補題（`hAUζ_of_absUS`・`hTPLζ_of_tplos`・`hLo_of_TPLS`・`hYB_of_trigS0`）
+    - 既存の最上位・各型の展開を Inv3V2 に接続する
+    - FrameV・AbsDN・TP1C の扱いを新しい束に合わせる
+  - **各段で Inv3V2 が成り立つことを示す**
+    - ✅ 基底 SRO[n]（`hBaseV2_holds`）。追加の仮定なし
+    - 1 列落とし
+      - ✅ 残りの条件を仮定した組み立て（`inv3V2_take`）
+      - ✅ PH3cG・FC3・VSmallRAll の保存。落とす補題の結論を仮定した証明
+      - 落とす補題の残り（DropRes など）。強い UpgAbsX の反例も修正する
+      - 落とした行列の枠の条件（TakeFrameV2）、TP1LeafG・TP1WLeafG、最後の列が根の場合の RootP
+    - t = 0 の展開
+      - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t0_topU`）
+      - Inv3V2 への接続と、新しい枠の条件の証明
+      - VSmallRAll の保存
+      - 切り口の残り T0CutResGG
+    - t = 1 の展開
+      - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t1OP`）
+      - ✅ q = r の条件付き入口を Inv3V2 に接続。実際の添字を使い、旧 AbsD・TrigOmC を外す（`qr_final_inv3V2`）
+      - ✅ q != r の条件付き入口を Inv3V2 に接続。旧 AbsD・AbsU・TPLo を始点の条件に替える（`qn_final_inv3V2`）
+      - コピーを 1 個増やす各段で Inv3V2 が保たれること（ExpStepT1）
+        - ✅ PH3cG・FC3 の保存を Inv3V2 に接続（`expStep_closure_inv3V2`）。旧い偽の欄を使わない
+        - ✅ Cons・Good3・FrameClosed・FrameOT・BumpKidsDec・BumpTermDec・PH3cG・FC3・rootS・rootP の 10 条件をまとめて保存（`expStep_core_inv3V2`）
+        - ✅ この 10 条件と下降を、両入口で各段の保存を仮定せずに出す（`qr_core_final_inv3V2`・`qn_core_final_inv3V2`）。束全体の結論ではない
+        - ✅ 最後の加数の成分の条件を仮定した VSmallF の保存（`expStep_vsmallF_inv3V2`）
+        - ✅ VSFRes2 を仮定せず、元の行列の PassRootRes だけで VSmallF を保存する経路を接続（`expStep_vsmallF_pass_inv3V2`）
+        - ✅ この経路で、両入口から 10 条件＋VSmallF と下降を出す（`qr_vsmallF_final_inv3V2`・`qn_vsmallF_final_inv3V2`）。DropRes・始点の束・PassRootRes などは仮定
+        - ✅ PassRootRes の全 10 集合の全数確認。47,654 枠で反例・評価失敗 0（測定であり証明ではない）
+        - PassRootRes を証明（元の成分の経路を使うなら VSFRes2）。条件そのものは未証明
+        - ✅ 葉の条件を仮定して TP1C・TP1WC を出す組み立て（`expStep_tp1_inv3V2`）
+        - 葉の条件（T1LeavesV2）と、束の残りの条件の保存を証明
+      - 落とす補題と始点の成分の残りを証明
+      - VSmallRAll の保存
+      - 新しい枠の条件・段 0 の扱いの証明
+    - t = 2 の展開と下降
+      - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t2_G`・`hR2_t2_of`）
+      - Inv3V2 への接続と、新しい枠の条件の証明
+      - VSmallRAll の保存
+      - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と構造の残り T2SeedCNext
+      - 強い T2UpgAbs の反例を扱える形への修正
+  - **各段をまとめて Desc3 を得る**
+    - ✅ 旧 Inv3V 上の条件付き最上位の組み立て（`trio_terminates_main_GH`）
+    - 最上位を Inv3V2 に替え、上の未証明の条件を全て証明して閉じる
+- **5. 全射**
+  - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
+  - Desc3 の証明 → **目標 4 が残っている**
+  - 項側の共終性（値を十分大きく近づけられること、EvalCof）の証明
+
+旧 Inv3V 上の条件付き定理には、標準形で偽の条件が含まれる。このままでは目標 4 を閉じられない。
+証明済みの定理の公理は propext・Classical.choice・Quot.sound の範囲。
 
 ## 2. 本題（目標 4）の現状
 
@@ -38,7 +94,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
 
 - 全体: `trio_terminates_main_GH`（V3RestTakeG）。VSmallR を使わない形
 - t = 0 の hExp: `hExp_t0_topU`（V3T0TopU）
-- t = 1 の hExp: `hExp_t1OP`（V3TPath）
+- t = 1 の hExp: `hExp_t1OP`（V3TPath）。新しい条件付き入口は `qr_final_inv3V2`（q = r）と `qn_final_inv3V2`（q != r）、どちらも V3Inv2 で Inv3V2 を使用
 - t = 2 の hExp: `hExp_t2_G`（V3ExpT2M4）。x より前は `t2BelowXRes_of_L`（V3T2SeedWire）
 - t = 2 の hR2: `hR2_t2_of`（V3T2R3）。残りは T2BelowXRes だけ
 
@@ -46,34 +102,51 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
 
 ### 次の仕事: Inv3V2 への一括の移行
 
-下書きは `Ytosk/lean/Ytosk/V3Inv2.lean`（緑、まだどこからも使っていない）。欄の一覧と、各欄を作る側・使う側の表は、desc.md の節「Inv3V2 の下書き: 欄の一覧と生産者・消費者の表」にある。
+束の定義は `Ytosk/lean/Ytosk/V3Inv2.lean`。基底・1 列落としの組み立て・t = 1 の両方の条件付き入口から使用している。展開側と共用するため、TrigS0 の定義は `V3TrigSeed`、AbsDS・AbsUS・TPLoS とその接続の補題は `V3SeedFields` に移した。条件の内容は変えていない。既存の最上位と展開の全ての仕組みへの移行は未完。元の欄の表は desc.md の節「Inv3V2 の下書き: 欄の一覧と生産者・消費者の表」、再開後の変更は末尾の節を参照。
 
 方針: 偽の欄を、実際に使う所が要る形に狭める。偽の欄を実際に使っているのは、どれも t = 1 の最後の列の枠だけだった。そこで「最後の列の枠の欄」に替える。枠の欄は行列ごとの主張なので、M から M[n] へ運ぶ補題が要らなくなる。
 
 | 今の欄（Inv3V） | 新しい欄（Inv3V2） | 測定 |
 |---|---|---|
 | AbsD | AbsDS（q ≠ r の枠、始点での吸収） | 9 集合で例外 0 |
-| AbsU | AbsUS | 測定途中だった |
-| TPLo | TPLoS | 測定途中だった |
+| AbsU | AbsUS | 10 集合の全数で反例 0 |
+| TPLo | TPLoS | 10 集合の全数で反例 0 |
 | AbsUW | AbsUWL ＋ AbsUW0 | 9 集合で例外 0 |
-| TrigOmC | TrigS | 測定途中だった |
+| TrigOmC | TrigS0（子 c の dOf = 0 の枠） | 旧 TrigS は T2Ext・expP で偽。修正版は全 10 集合で反例 0（2 集合を全数再走査、8 集合は旧強条件の全数確認による） |
 | （大域の仮定） | PH3cG・FC3 | 8 集合で例外 0。保存はすべての仕組みで証明済み（`Ytosk.G` 名前空間） |
-| （大域の仮定） | VSmallRAll（`vra`） | 標本で例外 0、全数は未測定。1 列落としでの保存は証明済み（`vsmallRAll_take`） |
+| （大域の仮定） | VSmallRAll（`vra`） | 10 集合の全数で反例 0。基底と 1 列落としでの保存は証明済み |
 | VSmallF・FrameClosed・FrameOT・BumpKidsDec・BumpTermDec・TP1C・TP1WC・TPLoW・AbsDW・TPLoN・AbsDN・rootS・rootP・Cons・Good3・Rk | そのまま | Lean の形で真 |
 
 始点 = o_{M.take x}(r) = `(drop1 M x rk).o r`。鎖の添字 ζ はどれも始点以上なので、始点での主張から ζ での主張が fsD の単調性で出る（例 `hADζ_of_absDS`）。
 
 移行の手順:
 
-1. 測定途中だった AbsUS・TPLoS・TrigS を 9 集合で測る。VSmallRAll を 9 集合で全数測る。
-2. どれかが偽なら、その欄を使う所が要る形をさらに狭める。
+1. **完了**: AbsUS・TPLoS・旧 TrigS・VSmallRAll を、必須 9 集合と ext1x の全 10 集合で全数測定。結果・再現手順は `Ytosk/inv2-measurement.md` と `Ytosk/inv2-measurement.json`。
+2. **完了**: 旧 TrigS が偽だったので、実際の消費者が始点を使う `dOf c = 0` の枠の TrigS0 に狭めた。`hYB_of_trigS0` で十分性を証明し、反例のあった T2Ext・expP を全数再走査。修正版は反例 0。
 3. 最上位の定理と、各仕組みの欄を作る補題を、1 回の計画した変更で `Inv3V2` に移す。消える補題・要る変更の一覧は desc.md の同じ節の末尾。主な変更:
    - `FrameV` の ad・tplo を「q = r の枠の D の列での AbsD・TPLo」に狭める
    - `expStep_absDN` が使う I.ad を AbsDS から出すか、AbsDN も枠の欄にする
    - t = 1 の TP1C の運び（`expStep_tpG`・`qr2_tpG`）を、PH3cG ＋ TP1LeafG・TP1WLeafG から出す形（`tp1C_of_ph3cG`、V3TP1CutG）に揃える。TP1ResG から TrigCutG を外す
    - `trio_terminates_main_GH` の大域の仮定 hNG（NoGapP、偽）・hP0・hD0 は AbsD・AbsU を作るためだけなので、AbsDS・AbsUS に替えれば外せる
+   - **完了**: q = r の hYBs は `dOf c = 0` の枠だけ、hYB は実際の添字 `m + dOf c` に狭めた。`qr_final4S`・`qr_final_inv3V2` で TrigS0 を展開側へ接続。受け渡すだけだった AbsD もこの枝から外した
+   - **完了**: q != r の hTG・hTY2 を実際の ζ にそろえた。`omega_fsD_hole_at`・`vlocal_t1_at`・`t1_main_vlocS`・`qn_final_inv3V2` で始点の AbsDS・AbsUS・TPLoS を展開側へ接続
 4. VSmallRAll が t = 0・t = 1・t = 2 の展開で保たれることを示す（作る補題がまだない）。
    - t = 0 には穴が 1 つある。最後の写しで、段の鎖が g の上を通る場合に「N で書き換えるなら M.take x でも書き換える」が 2 件偽。
+
+再開後に証明した組み立て:
+
+- `hBaseV2_holds`（V3BaseInv2）: SRO[n] の Inv3V2 と Res3A。追加の仮定なし。
+- `inv3V2_take`（V3TakeInv2）: Inv3V2 の 1 列落とし。残りは DropRes・TakeFrameV2・TP1LeafG・TP1WLeafG・最後の列が根の場合の RootP。DropRes の強い UpgAbsX はまだ変更していない。
+- `hADζ_of_absDS`・`hAUζ_of_absUS`・`hTPLζ_of_tplos`・`hLo_of_TPLS`（V3SeedFields）、`hYB_of_trigS0`（V3TrigSeed）: 新しい条件を消費者で使うための補題。
+- `qr_final_inv3V2`（V3Inv2）: t = 1・q = r の入口。Inv3V2 から展開の Inv3V2・値の標準性・下降を組み立てる。残りは DropRes、落とした行列の Inv3V2、始点の成分の条件、コピーを 1 個増やす各段での Inv3V2 の保存（ExpStepT1）。旧 AbsD・TrigOmC は要求しない。
+- `qn_final_inv3V2`（V3Inv2）: t = 1・q != r の入口。残りは DropRes、落とした行列の Inv3V2、ExpStepT1。始点の下降は落とす補題から証明。旧 AbsD・AbsU・TPLo は要求しない。
+- `expStep_closure_inv3V2`（V3ExpInv2）: t = 1 の各コピーで PH3cG・FC3 を保存。構造の条件と Inv3V2 だけを使う。`expStep_tp1_inv3V2` は葉の条件 T1LeavesV2 を仮定して TP1C・TP1WC も保存する。T1LeavesV2 自体と束全体の保存は未証明。
+- `expStep_core_inv3V2`（V3ExpInv2）: コピーごとに上記 10 条件を保存。`qr_core_final_inv3V2`・`qn_core_final_inv3V2` は、その部分の束 CopyCoreV2 と値の標準性・下降を出す。DropRes、始点の Inv3V2、q = r の始点の成分の条件は残る。Inv3V2 全体の各段の保存を仮定しないが、結論も束全体ではない。
+- `expStep_vsmallF_inv3V2`・`expStep_core_vsmallF_inv3V2`（V3ExpInv2）: VSFRes2 を仮定して VSmallF も保存。VSFRes2 は、変わる最後の加数の成分を抑える条件で、まだ証明していない。
+- `expStep_vsmallF_pass_inv3V2`・`expStep_core_vsmallF_pass_inv3V2`（V3ExpInv2）: 旧 Inv3 を要求しない `expStep_vsmallF2S` に接続し、残りを元の行列の PassRootRes に絞った。VSFRes2 自体を証明したわけではなく、展開で与えられる Good3 も使う別経路。
+- `vrle_prefix_inv3V2`（V3ExpInv2）: DropRes と始点の Inv3V2 から v(r) の始点での上限を証明。これと上記保存を使う `qr_vsmallF_final_inv3V2`・`qn_vsmallF_final_inv3V2` は、CopyCoreV2・VSmallF・値の標準性・下降を出す。束全体の保存はまだ出ない。
+- PassRootRes の測定: `tools/probe_passroot.py`。全 10 集合、入力 5,375,155 行列のうち SRO より下は 5,375,152、t = 1 の評価は 2,681,874、前件を満たす 47,654 枠で反例・評価失敗 0。詳細・再現手順は `Ytosk/passroot-measurement.md` と `.json`。一般の標準形での証明ではない。
+- Ytosk 全体のビルド成功。公理は許可された 3 つの範囲。既存の最上位と展開側への接続は次の仕事。
 
 ### 未解決の核（名前つきの残りの仮定）
 
@@ -89,7 +162,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
 
 ### 偽と分かったもの（使わないこと）
 
-AbsD・TPLo・AbsUW・TrigOmC（Inv3V の欄）、PhiX・NoGapP・NoGap0PosP・LevLeafInv・PrefLast・VKFree・Z0Link・BandLast、VSmallR（全段の形も hi ≠ 0 の形も）、旧 PH3c（cutsNS）、NoVB、t0.hG′・t0.hU、T0CutKappa、T0ThrGRes、強い BumpAbsC、BumpWeakSrc（旧形）、FrameClosedHi、TPLoN の全列の形。反例は desc.md の各節にある。
+AbsD・TPLo・AbsUW・TrigOmC（Inv3V の欄）、TrigS（子の dOf を制限しない旧案）、PhiX・NoGapP・NoGap0PosP・LevLeafInv・PrefLast・VKFree・Z0Link・BandLast、VSmallR（全段の形も hi ≠ 0 の形も）、旧 PH3c（cutsNS）、NoVB、t0.hG′・t0.hU、T0CutKappa、T0ThrGRes、強い BumpAbsC、BumpWeakSrc（旧形）、FrameClosedHi、TPLoN の全列の形。反例は desc.md の各節にある。
 
 本題の主張そのもの（値は標準形で、M[n] の値 < M の値）は、どの測定集合でも成り立っている。崩れているのは証明の組み立てだけ。
 
@@ -117,7 +190,7 @@ AbsD・TPLo・AbsUW・TrigOmC（Inv3V の欄）、PhiX・NoGapP・NoGap0PosP・L
 
 ## 4. 作業の決まり
 
-- Lean の確認: `env --chdir=Ytosk/lean nice -n 15 lake build Ytosk.<依存>` のあと、`lake env lean <ファイル>`（または `leanman check -C Ytosk/lean <ファイル>`、`LEANMAN_TIMEOUT=900`）。
+- Lean の確認: leanman スキルに従う。`env --chdir=Ytosk/lean nice -n 15 leanman build Ytosk.<依存>` のあと、`env LEANMAN_TIMEOUT=900 nice -n 15 leanman check --backend lean -C Ytosk/lean <ファイル>`。
 - コミットするファイルに sorry を入れない。仮定は定理の引数として明示する。公理は propext・Classical.choice・Quot.sound だけ（`#print axioms` で確かめる）。
 - 新しいファイルは `Ytosk/lean/lakefile.toml` の roots に 1 か所だけ足す。ファイル全体を書き換えない。lakefile をコミットするときは、HEAD の版に自分の 1 行だけ足した blob を作って入れる。他の人の未コミットの行を混ぜない。コミットの直後に roots の数が減っていないか確かめる。
 - 共有の定義を変えたら、Ytosk 全体をビルドして緑を確かめてからコミットする。
@@ -128,7 +201,8 @@ AbsD・TPLo・AbsUW・TrigOmC（Inv3V の欄）、PhiX・NoGapP・NoGap0PosP・L
 
 ## 5. 参照
 
-- desc.md の最後の節「一時停止（2026-10-12 夕方）」: 止めた時点の状態と再開の続き。
+- desc.md の節「一時停止（2026-10-12 夕方）」: 止めた時点の状態。
+- desc.md の最新の節「VSmallF の残りを PassRootRes に絞る」: 再開後の到達点と残り。
 - desc.md の節「Inv3V2 の下書き」: 移行の表。
 - desc.md の節「訂正と 7 集合の表: Lean と同じ形の欄」: どの欄がどの集合で偽か。
 - googology-lean の worktree（ブランチ feature/trio-reach）: 目標 2 の `trio_reach_sro`。googology-lean の main の作業ツリーには書かない（別の作業が進行中）。

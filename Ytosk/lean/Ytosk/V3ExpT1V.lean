@@ -139,7 +139,7 @@ def PassRootRes (M : Mat) (r L : Nat) (ρ : Valn) : Prop :=
     cof (last (ρ.v c)) = .big (ρ.v r) → Lc = []
 
 /-- **The passing cofinality is above the chain level at the parent** (with an earlier counted child). -/
-theorem mu_lt_vi {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+theorem mu_lt_viS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (S : SInv M) (hC : Cons M ρ) (hRM : Rk M rk) (V : ValInv M ρ)
     {r L : Nat} (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
     (hPR : PassRootRes M r L ρ)
     {μ br vr seed : T} (hHD : HoleData M (r + L) ρ μ br vr seed) (hμv : μ = vr) (hro : ρ.o r = psi vr br z)
@@ -148,7 +148,7 @@ theorem mu_lt_vi {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M �
     (hcof : cof (last (ρ.v c)) = .big μ) (hLc : Lc ≠ []) : lt μ (ρ.v i) = true := by
   have hrx : r < r + L := par_lt M 1 _ r h1
   have hrM : r < M.length := by omega
-  have hvr : vr = ρ.v r := chain_level I.cons I.good hrM hro
+  have hvr : vr = ρ.v r := chain_level hC V.g hrM hro
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
   have hcCL : c ∈ CL M i := by rw [hCL]; simp
@@ -158,19 +158,19 @@ theorem mu_lt_vi {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M �
   have hcofv : cof (ρ.v c) = .big μ := by rw [← cof_last_g]; exact hcof
   have hrc : r < c := by
     by_contra hcr
-    have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq
+    have hOS := hOS_t1 hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hx2 hq
     have hF1 : ∀ j, r < j → j < r + L → DepX M (r + L) true j → ¬ DepX M (r + L) false j →
         lt μ (ρ.v j) = true := by
       intro j h2 h3 h4 h5
       rw [hμv, hvr]
-      exact hF1_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 I.cons I.good I.rank j h2 h3 h4 h5
+      exact hF1_t1 hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab h1 hC V.g hRM j h2 h3 h4 h5
     have hox : ρ.o (r + L) = psi (succ μ) z z := by
-      rw [o_last_t1 hlen I.cons I.good h1 (by have := par1_entry_lt h1; omega) hx2, ← hvr, ← hμv]
+      rw [o_last_t1 hlen hC V.g h1 (by have := par1_entry_lt h1; omega) hx2, ← hvr, ← hμv]
     have hbr : br ≠ z := by
       intro h; have := hHD.cb; rw [h] at this; simp [cof] at this
-    have hH := t1_hole0 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq I.cons I.good I.kd I.td I.ad hrx hA hro
-      hHD.cb hμv hbr (Or.inl (by rw [hox]; exact cof_omega_succ μ)) hF1 hOS (hS2_t1 I.r0p hA (by omega))
-      (hS3_t1 h1 hA (by omega) hlen I.r0p I.z2 I.sd I.z1) false c hcd (Or.inl hcx)
+    have hH := t1_hole0 hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hx2 hq hC V.g V.kd V.td hrx hA hro
+      hHD.cb hμv hbr (Or.inl (by rw [hox]; exact cof_omega_succ μ)) hF1 hOS (hS2_t1 S.r0p hA (by omega))
+      (hS3_t1 h1 hA (by omega) hlen S.r0p S.z2 S.sibDec S.z1c) false c hcd (Or.inl hcx)
     obtain ⟨a', _, hD⟩ := hH.2.1 (by omega)
     simp only [valB, cond_false] at hD
     rw [hD.cof_omega] at hcofv
@@ -181,12 +181,12 @@ theorem mu_lt_vi {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M �
     exact absurd (hPR Lc c R hCL hcd hcx (by rw [hcof, hμv, hvr])) hLc
   · have hdi : DepX M (r + L) true i := DepX.ochild hcch hccnt.1 hccnt.2 (DepX.ov hcd)
     have hvd : ¬ DepX M (r + L) false i := fun hv =>
-      uncnt_of_depv hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq hi hv hcch hccnt
+      uncnt_of_depv hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hx2 hq hi hv hcch hccnt
     rw [hμv, hvr]
-    exact hF1_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 I.cons I.good I.rank i h hi hdi hvd
+    exact hF1_t1 hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab h1 hC V.g hRM i h hi hdi hvd
 
 /-- **VSFRes2 at one frame** (`t = 1`): the frame `(i, c)` with `c` a `v` call of `D`. Residual `PassRootRes`. -/
-theorem vsf_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+theorem vsf_frameS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (S : SInv M) (hC : Cons M ρ) (hRM : Rk M rk) (V : ValInv M ρ)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
@@ -204,8 +204,8 @@ theorem vsf_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M 
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
   have hSA := sameAt_lt hlen hL hA hd0e hn hpath hx2
-    (hxnb_t1 hlen hL hA hd0e I.z2 I.z1 h1 n hn)
-    (hiu_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn)
+    (hxnb_t1 hlen hL hA hd0e S.z2 S.z1c h1 n hn)
+    (hiu_t1 hlen hL hA hd0e hpath hx2 (S.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (S.z2 r) hn)
   have hiM : i < M.length := by omega
   have hcCL : c ∈ CL M i := by rw [hCL]; simp
   have hcch : c ∈ children M i := (List.mem_filter.mp hcCL).1
@@ -220,7 +220,7 @@ theorem vsf_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M 
     intro d hd
     exact decide_eq_decide.mpr (counted_iff_of_cnt (hS.cnt d hd))
   have hvd : ¬ DepX M (r + L) false i := fun hv =>
-    uncnt_of_depv hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq0 hi hv hcch hccnt
+    uncnt_of_depv hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hx2 hq0 hi hv hcch hccnt
   have hvi : σ.v i = ρ.v i := by rw [hσ, glueZ_v_lt ρ (shiftV ρP L) Z hi hvd]
   have hcN : c < (TRIO.gexp M r L d0 0 n).length := by rw [hlN]; omega
   have hvcot : isOT (σ.v c) = true := hGN.ot_v c hcN
@@ -238,12 +238,12 @@ theorem vsf_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M 
       have hs : (CL M i).Pairwise (· < ·) := (children_sorted M i).filter _
       rw [hCL] at hs
       exact List.rel_of_pairwise_cons (List.pairwise_append.mp hs).2.1 hd
-    exact p1_dep hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq0 hi hcch hdch hcd' (DepX.ov hcd) hdcnt
+    exact p1_dep hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hx2 hq0 hi hcch hdch hcd' (DepX.ov hcd) hdcnt
   subst hR
   have hCLcM : CL M c = [] := by
     rw [List.eq_nil_iff_forall_not_mem]
     intro d hd
-    exact uncnt_of_depv hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq0 hcx hcd (List.mem_filter.mp hd).1
+    exact uncnt_of_depv hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hx2 hq0 hcx hcd (List.mem_filter.mp hd).1
       (by simpa using (List.mem_filter.mp hd).2)
   have hoc : σ.o c = psi (σ.v c) z z := by
     rw [o_cl_eq hCN hGN hcN, hCLeq c hcx, hCLcM]; rfl
@@ -277,28 +277,28 @@ theorem vsf_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M 
       rw [hσ, glueZ_v_dep ρ (shiftV ρP L) Z hcx hcd, h0'] at hg
       simp [fsD, comps] at hg
     rw [hσ, glueZ_v_dep ρ (shiftV ρP L) Z hcx hcd, fsD_init_last hvc0, comps_app,
-      comps_init_v_nil I.cons I.good I.rank hcM h0, List.nil_append, hZe] at hg
+      comps_init_v_nil hC V.g hRM hcM h0, List.nil_append, hZe] at hg
     have hHv := hHD.hole false c hcd hcx
     simp only [valB, cond_false] at hHv
-    have hWot : isOT (last (ρ.v c)) = true := isOT_last (I.good.ot_v c hcM)
+    have hWot : isOT (last (ρ.v c)) = true := isOT_last (V.g.ot_v c hcM)
     obtain ⟨y, hy, hgy⟩ := hole_dom hHD.rot hHD.cb hHD.hμ hHD.S hWot (holeT_last hHv) k (ρ.v i) g hg
     have hocM : ρ.o c = psi (ρ.v c) z z := by
-      rw [o_cl_eq I.cons I.good hcM, hCLcM]; rfl
-    have hOmB := om_le_state I.cons I.good hiM hCL hocM hLc
+      rw [o_cl_eq hC V.g hcM, hCLcM]; rfl
+    have hOmB := om_le_state hC V.g hiM hCL hocM hLc
     rcases hy with hy | rfl | ⟨hcof, hy⟩
-    · rcases I.vs i hiM Lc c [] hCL y (comps_last_sub1 _ _ y hy) with h | h
+    · rcases V.vs i hiM Lc c [] hCL y (comps_last_sub1 _ _ y hy) with h | h
       · exact le_trans hgy (le_trans h hOmB)
       · exact le_trans hgy h
     · exact le_trans hgy (z_le _)
     · have hSr := hHD.S vr (lt_irrefl' vr) hHD.rot
-      rw [comps_gamS_nil hHD.seedS hSr.lt_om (mu_lt_vi I hlen h1 hx2 hPR hHD hμv hro hi hCL hcd hcx hcof hLc) k] at hy
+      rw [comps_gamS_nil hHD.seedS hSr.lt_om (mu_lt_viS S hC hRM V hlen h1 hx2 hPR hHD hμv hro hi hCL hcd hcx hcof hLc) k] at hy
       simp at hy
 
 
 
-/-- **VSmallF is carried** (`t = 1`) with the frames of the `v` calls of `D` done by `vsf_frame`; residual
+/-- **VSmallF is carried** (`t = 1`) with the frames of the `v` calls of `D` done by `vsf_frameS`; residual
 `PassRootRes` only. -/
-theorem expStep_vsmallF2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+theorem expStep_vsmallF2S {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (S : SInv M) (hC : Cons M ρ) (hRM : Rk M rk) (V : ValInv M ρ)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
@@ -307,16 +307,16 @@ theorem expStep_vsmallF2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : 
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   obtain ⟨q0, hq0⟩ := par0_of_anc hA (by omega)
   have hpath := hpath_of_par1 h1 hA (by omega)
-  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq0
+  have hOS := hOS_t1 hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hx2 hq0
   intro n hn ρP Z hCP hGP hQP0 hCN hGN hoto hotv hle hlex hH
-  refine ⟨expStep_vrle I hlen h1 hx2 n hn ρP Z hCP hGP hQP0.1 hCN hGN hoto hotv hle hlex hH, ?_⟩
+  refine ⟨expStep_vrleS S hlen h1 hx2 n hn ρP Z hCP hGP hQP0.1 hCN hGN hoto hotv hle hlex hH, ?_⟩
   have hQP := hQP0.2
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
   have hlP := len_P (d0 := d0) (n := n) hlen
   have hSA := sameAt_lt hlen hL hA hd0e hn hpath hx2
-    (hxnb_t1 hlen hL hA hd0e I.z2 I.z1 h1 n hn)
-    (hiu_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn)
+    (hxnb_t1 hlen hL hA hd0e S.z2 S.z1c h1 n hn)
+    (hiu_t1 hlen hL hA hd0e hpath hx2 (S.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (S.z2 r) hn)
   have hσo : ∀ a, σ.o (r + L + a) = ρP.o (r + a) := by
     intro a; rw [hσ, glueZ_o_ge ρ (shiftV ρP L) Z (by omega)]
     show ρP.o (r + L + a - L) = ρP.o (r + a); congr 1; omega
@@ -397,15 +397,15 @@ theorem expStep_vsmallF2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : 
         rw [hcxe, hσ, glueZ_v_ge ρ (shiftV ρP L) Z (le_refl _)]
         show ρP.v (r + L - L) = ρP.v r; rw [Nat.add_sub_cancel]
       have hle' : ρP.v r ≤ ρ.v i :=
-        le_trans hQP0.1 (v_par1_le_par0 I.cons I.good I.rank hcM h0 (by rw [hcxe]; exact h1))
+        le_trans hQP0.1 (v_par1_le_par0 hC V.g hRM hcM h0 (by rw [hcxe]; exact h1))
       have hot : isOT (ρP.v r) = true := hGP.ot_v r (by rw [hlP]; have := Nat.mul_pos (show 0 < n - 1 by omega) hL; omega)
       rw [hvx, comps_nil_of_le hot hle'] at hg
       simp at hg
     · have hcx : c < r + L := by omega
       by_cases hcv : DepX M (r + L) false c
-      · exact vsf_frame I hlen hL hd0e h1 hx2 hn hH hCN hGN h hCL hcv hcx hPR
+      · exact vsf_frameS S hC hRM V hlen hL hd0e h1 hx2 hn hH hCN hGN h hCL hcv hcx hPR
       · rw [hσ, glueZ_v_lt ρ (shiftV ρP L) Z hcx hcv]
-        exact I.vs i (by omega) Lc c R hCL
+        exact V.vs i (by omega) Lc c R hCL
   · obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
     have ha : a < (n - 1) * L := by omega
     have hCLs : CL (TRIO.gexp M r L d0 0 n) (r + L + a) =
@@ -420,7 +420,7 @@ theorem expStep_vsmallF2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : 
       show decide (Counted (TRIO.gexp M r L d0 0 n) (r + L + a) (d + L)) =
         decide (Counted (TRIO.gexp M r L d0 0 (n - 1)) (r + a) d)
       apply decide_eq_decide.mpr
-      apply counted_iff_of_cnt1 (cnt_copy hlen hL hA hd0e hn hpath (I.z2 r) (ρ := ρ) (Z := Z) ha hd)
+      apply counted_iff_of_cnt1 (cnt_copy hlen hL hA hd0e hn hpath (S.z2 r) (ρ := ρ) (Z := Z) ha hd)
       · have := hσo (d - r); rw [show r + L + (d - r) = d + L by omega,
           show r + (d - r) = d by omega] at this
         exact this
@@ -449,6 +449,43 @@ theorem expStep_vsmallF2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : 
       exact this
     rw [hσv, hLo, hvc]
     exact hQP (r + a) (by rw [hlP]; omega) Lc' c' R' hsplit
+
+/-- Compatibility with the old bundle. -/
+theorem mu_lt_vi {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L : Nat} (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hPR : PassRootRes M r L ρ)
+    {μ br vr seed : T} (hHD : HoleData M (r + L) ρ μ br vr seed) (hμv : μ = vr) (hro : ρ.o r = psi vr br z)
+    {i : Nat} {Lc : List Nat} {c : Nat} {R : List Nat} (hi : i < r + L) (hCL : CL M i = Lc ++ c :: R)
+    (hcd : DepX M (r + L) false c) (hcx : c < r + L)
+    (hcof : cof (last (ρ.v c)) = .big μ) (hLc : Lc ≠ []) : lt μ (ρ.v i) = true := by
+  exact mu_lt_viS ⟨I.r0p, I.z2, I.sd, I.z1, I.uat, I.uab, I.r12, I.be, I.r01, I.e00⟩
+    I.cons I.rank ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hlen h1 hx2 hPR hHD hμv hro hi hCL hcd hcx hcof hLc
+
+/-- Compatibility with the old bundle. -/
+theorem vsf_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    {n : Nat} (hn : 2 ≤ n) {ρP : Valn} {Z : Nat → T} (hH : HoleInfo M r L n ρ ρP Z)
+    (hCN : Cons (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z))
+    (hGN : Good3 (TRIO.gexp M r L d0 0 n) (glueZ M (r + L) ρ (shiftV ρP L) Z))
+    {i : Nat} (hi : i < r + L) {Lc : List Nat} {c : Nat} {R : List Nat} (hCL : CL M i = Lc ++ c :: R)
+    (hcd : DepX M (r + L) false c) (hcx : c < r + L)
+    (hPR : PassRootRes M r L ρ) :
+    ∀ g ∈ comps (ρ.v i) ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c),
+      g ≤ psi ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)) := by
+  exact vsf_frameS ⟨I.r0p, I.z2, I.sd, I.z1, I.uat, I.uab, I.r12, I.be, I.r01, I.e00⟩
+    I.cons I.rank ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hlen hL hd0e h1 hx2 hn hH hCN hGN hi hCL hcd hcx hPR
+
+/-- Compatibility with the old bundle. -/
+theorem expStep_vsmallF2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hPR : PassRootRes M r L ρ) :
+    ExpStepT1 (fun N σ => VrLe r ρ N σ ∧ VSmallF N σ) M r L d0 ρ := by
+  exact expStep_vsmallF2S ⟨I.r0p, I.z2, I.sd, I.z1, I.uat, I.uab, I.r12, I.be, I.r01, I.e00⟩
+    I.cons I.rank ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hlen hL hd0e h1 hx2 hPR
 
 /-- **`t = 1`, `n ≥ 2`, in the `gexp` form** with VSmallF carried by `expStep_vsmallF2` (residual `PassRootRes`
 in place of `VSFRes2`). -/

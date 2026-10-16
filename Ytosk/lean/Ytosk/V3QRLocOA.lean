@@ -39,7 +39,7 @@ section
 variable {M : Mat} {x r : Nat} {ρ : Valn} {μ b seed : T} (hx : x + 1 = M.length)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
   (hx2 : entry M 2 x = 0) (h1 : par M 1 x = some r) (hq : par M 0 x = some r)
-  (hC : Cons M ρ) (hG : Good3 M ρ) (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAD : AbsD M ρ)
+  (hC : Cons M ρ) (hG : Good3 M ρ) (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
   (hro : ρ.o r = psi μ (app b (psi (succ μ) z z)) z) (hvr : ρ.v r = μ)
   (hb : AllGeT (psi (succ μ) z z) b)
   (hpre : preState M ρ r ((children M r).filter (fun d => decide (d < x))) = b)
@@ -59,11 +59,11 @@ variable {M : Mat} {x r : Nat} {ρ : Valn} {μ b seed : T} (hx : x + 1 = M.lengt
     ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →
     lt (preState M ρ i L) (app b (psi (succ μ) z z)) = true →
     lt (psi (ρ.v i) z z) (psi s (app b (psi (succ μ) z z)) z) = true →
-    ∀ m', lt (preState M ρ i L) (app b (gamS μ (app b (psi (succ μ) z z)) seed m')) = true)
+    ∀ m', lt (preState M ρ i L) (app b (gamS μ (app b (psi (succ μ) z z)) seed (m' + dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c))) = true)
   (hLs : ∀ c, c < x → DepX M x true c → dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
     ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) →
     (split y (psi (succ s) z z)).2 = z → (split (fsD y seed) (psi (succ s) z z)).2 = z)
-include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hvr hb hpre hox hOS hVS hBk hxv
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hvr hb hpre hox hOS hVS hBk hxv
   hS hseedS hsp0 hTP hTPL hYB hLs
 
 /-- **`OLocZ` on all `o` calls of `D`** (`t = 1`, `q = r`). -/
@@ -83,7 +83,7 @@ theorem qr_oloc (m : Nat) : ∀ i, i < x → DepX M x true i →
   have hHx : HoleT μ br μ (ρ.o x) := Or.inl (by rw [hox]; exact cof_omega_succ μ)
   have hF1 : ∀ i, r < i → i < x → DepX M x true i → ¬ DepX M x false i → lt μ (ρ.v i) = true :=
     fun i h2 h3 h4 _ => absurd h4 (hdep.2.2 true i h2 h3)
-  have hHole := t1_hole0 hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hrx hA hro'
+  have hHole := t1_hole0 hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hrx hA hro'
     cof_br rfl hbr hHx hF1 hOS (hS2_t1 hR0 hA (by omega)) (hS3_t1 h1 hA (by omega) hx hR0 hZ2 hSD hZ1)
   have hok : ∀ t k, isOT t = true → HoleT μ br μ t →
       isOT (fsD t (gamS μ br seed k)) = true ∧ fsD t (gamS μ br seed k) < t :=
@@ -152,7 +152,7 @@ theorem qr_oloc (m : Nat) : ∀ i, i < x → DepX M x true i →
         exact qr_frame_lift hC hG hiM hch hcb hcu hR hcM hb hcA
           (by rw [← gamS_succ_q]; exact gamS_ot hrot cof_br hμ (hS μ hμ hrot) (k + 1))
           ⟨htr1, htr2⟩ (gamS_lt_om hrot cof_br hμ (hS μ hμ hrot) k) hζz
-          (hYB i L c R hi hd hch ⟨hcb, hcu⟩ hdc μ hcA htr1 htr2 k)
+          (hYB i L c R hi hd hch ⟨hcb, hcu⟩ hdc μ hcA htr1 htr2 m)
       · exact absurd hl (by omega)
     · -- no lift
       have hlo0 : lo i c = 0 := by
@@ -165,7 +165,7 @@ theorem qr_oloc (m : Nat) : ∀ i, i < x → DepX M x true i →
         by_cases hyb : y = br
         · subst hyb
           rw [fsD_eq_fs cof_br, fs_br]
-          exact hYB i L c R hi hd hch ⟨hcb, hcu⟩ hdc s hcv htr1 htr2 k
+          exact hYB i L c R hi hd hch ⟨hcb, hcu⟩ hdc s hcv htr1 htr2 m
         · have hyz : y ≠ z := by intro h; subst h; simp [lt] at htr1
           have hDy : DiagAt a' br μ y := DiagAt.arg_inv (by rw [← hcv]; exact hDc) hyz
             (fun h => hyb h.2)

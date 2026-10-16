@@ -103,11 +103,11 @@ section
 variable {M : Mat} {x r : Nat} {ρ : Valn} {μ b seed : T} (hx : x + 1 = M.length)
   (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
   (hx2 : entry M 2 x = 0) (h1 : par M 1 x = some r) (hq : par M 0 x = some r)
-  (hC : Cons M ρ) (hG : Good3 M ρ) (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAD : AbsD M ρ)
+  (hC : Cons M ρ) (hG : Good3 M ρ) (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
   (hro : ρ.o r = psi μ (app b (psi (succ μ) z z)) z)
   (hox : ρ.o x = psi (succ μ) z z)
   (hOS : ∀ i, i < x → DepX M x true i → OShape M x i)
-include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS
 
 /-- **Every `D` value below `x` has a hole and a diagonal point** (`q = r`). -/
 theorem qr_holeD : ∀ bb i, DepX M x bb i → i < x →
@@ -121,7 +121,7 @@ theorem qr_holeD : ∀ bb i, DepX M x bb i → i < x →
     Or.inl (by rw [hox]; exact cof_omega_succ μ)
   have hF1 : ∀ i, r < i → i < x → DepX M x true i → ¬ DepX M x false i → lt μ (ρ.v i) = true :=
     fun i h2 h3 h4 _ => absurd h4 (hdep.2.2 true i h2 h3)
-  have hHole := t1_hole0 hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hAD hrx hA hro
+  have hHole := t1_hole0 hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hC hG hKD hTD hrx hA hro
     cof_br rfl hbr hHx hF1 hOS (hS2_t1 hR0 hA (by omega)) (hS3_t1 h1 hA (by omega) hx hR0 hZ2 hSD hZ1)
   intro bb i hD hi
   have hir : i ≤ r := by
@@ -149,7 +149,7 @@ theorem qr_lkeep (m : Nat) {c : Nat} (hc : c < x) (hdc : DepX M x true c) {s y :
     (split (fsD y (gamS μ (app b (psi (succ μ) z z)) seed
       (m + dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c))) (psi (succ s) z z)).2 = z := by
   have hseedz : seed ≠ z := by obtain ⟨a, X, he⟩ := hseedS; rw [he]; simp
-  obtain ⟨_, a', _, hDc⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS
+  obtain ⟨_, a', _, hDc⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS
     true c hdc hc
   simp only [valB, cond_true] at hDc
   rw [hcv] at hDc
@@ -206,7 +206,7 @@ theorem qr_vloc (m : Nat) : ∀ i, i < x → DepX M x false i →
   have hrot : isOT (psi μ br z) = true := by rw [← hro]; exact hG.ot_o r hrM
   have hμ : ¬ lt μ μ = true := lt_irrefl' μ
   have hSμ := hS μ hμ hrot
-  have hHD := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS
+  have hHD := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS
   have hok : ∀ t k, isOT t = true → HoleT μ br μ t →
       isOT (fsD t (gamS μ br seed k)) = true ∧ fsD t (gamS μ br seed k) < t :=
     fun t k hot hH => hok_of_holeT hrot cof_br hμ hS hot hH k
@@ -366,7 +366,7 @@ theorem qr_vloc (m : Nat) : ∀ i, i < x → DepX M x false i →
               exact sumN_ne_z_of_single (fun t ht => hBD.sK t (List.mem_append_left _ ht))
                 (List.pairwise_append.mp hBD.pK).1 (by simpa using hKne) hK0
             rw [hchj, hKn]; rfl
-          exact qr_lkeep hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hAD hro hox hOS hb hVS
+          exact qr_lkeep hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS hb hVS
             hBk hxv hseedS hTPL hLs m hkx hdk hok' hb' hnA hl
         have hLY2 : ∀ s b', app (sumN P) (omega G) = psi s b' z → b' ≠ z →
             (split b' (psi (succ s) z z)).2 = z → (split (fsD b' ζ) (psi (succ s) z z)).2 = z := by

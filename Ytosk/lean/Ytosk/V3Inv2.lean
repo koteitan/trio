@@ -1,14 +1,16 @@
 /-
-**Inv3V の作り直しの下書き `Inv3V2`（2026-10-12、t1-exp）。**
+**Inv3V の作り直し `Inv3V2`（2026-10-12）。**
 
-偽だった欄を、使う所（消費者）が本当に要る形に替える。共有の定義は変えない（この版はまだどこからも使われない）。
+偽だった欄を、使う所（消費者）が本当に要る形に替える。
+V3BaseInv2 と V3TakeInv2 で基底と 1 列落としに使用。既存の最上位と展開側への移行は未完。
 
 - `AbsUW`（T2Ext で偽）→ `AbsUWL`（最後の列の枠、鎖の下限 gamS μ b_r 1 (max 1 d_i)）＋ `AbsUW0`（添字 0 = 種）。
 - `AbsD`（ext1 で偽、t = 1・q ≠ r の DepX の枠）→ `AbsDS`（q ≠ r の最後の列の枠、種 o_{M.take x}(r) での吸収）。
 - `TPLo`（ext1 で偽、同じ枠）→ `TPLoS`（q ≠ r の最後の列の枠、種での TPL の比較）。
 - `AbsU`（偽ではないが生産者 absU_of_absD・absU_of_phiX の元が偽）→ `AbsUS`（q ≠ r の最後の列の枠、種での吸収）。
   本当に使うのは vlocal_t1 の上げの枠だけ。
-- `TrigOmC`（T2Ext で 2 行列偽、t = 1・q = r の DepX）→ `TrigS`（qr_final3 の hYBs の形: 種 < ψ_μ(1) のとき状態 < b + 種）。
+- `TrigOmC` → `TrigS0`（種 < ψ_μ(1)、子の持ち上げ回数 = 0 の枠で状態 < b + 種）。
+  子の持ち上げ回数を制限しない `TrigS` は T2Ext で偽。
 - 新しい欄: `PH3cG`・`FC3`（closure、今は最上位の大域の仮定 hPH）、`VSmallRAll`（t0-exp の V3VSRAll、全部の数える子の枠。t2 の VSmallRA は VSmallRAll.toLast）。
 - そのまま: Cons・Good3・Rk・VSmallF・FrameClosed・FrameOT・BumpKidsDec・BumpTermDec・TP1C・TP1WC・
   TPLoW・AbsDW・TPLoN・AbsDN・rootS・rootP。
@@ -22,57 +24,12 @@ import Ytosk.V3QRFinal4
 import Ytosk.V3PDef
 import Ytosk.V3DepRWU
 import Ytosk.V3VSRAll
+import Ytosk.V3TrigSeed
+import Ytosk.V3SeedFields
 
 namespace Ytosk
 
 open T
-
-/-- **AbsD at the seed** (t1-exp の absds.py): in the frame of the last column `x` (`t = 1`, `q ≠ r`,
-`o(r) = ψ_μ(b)`), at a bump call `i` of `D` whose bump term `W` has a hole at the level `μ`, the summands of
-`v(P_1 i)` absorbed by `W` stay absorbed by `fsD(W, o_{M.take x}(r))`. Every chain index `ζ` is at least the
-seed, so this gives the hypothesis `hADζ` of `vlocal_t1` by `fsD_mono_eta`. -/
-def AbsDS (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop :=
-  ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) ≠ some r →
-    entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ b z →
-    ∀ i, i < M.length - 1 → DepX M (M.length - 1) false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
-    OHole (bumpW M ρ i) → holeLev (bumpW M ρ i) = μ →
-    ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
-      q < fsD (bumpW M ρ i) ((drop1 M (M.length - 1) rk).o r)
-
-/-- `AbsDS` gives `hADζ` of `vlocal_t1` at every index `ζ` above the seed. -/
-theorem hADζ_of_absDS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (h : AbsDS M ρ rk) {r : Nat} {μ b ζ : T}
-    (h1 : par M 1 (M.length - 1) = some r) (h0 : par M 0 (M.length - 1) ≠ some r)
-    (h2 : entry M 2 (M.length - 1) = 0) (hro : ρ.o r = psi μ b z)
-    (hζ : (drop1 M (M.length - 1) rk).o r ≤ ζ) :
-    ∀ i, i < M.length - 1 → DepX M (M.length - 1) false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
-      OHole (bumpW M ρ i) → holeLev (bumpW M ρ i) = μ → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-        q < bumpW M ρ i → q < fsD (bumpW M ρ i) ζ :=
-  fun i hi hv he1 he2 hO hl q hq hlt =>
-    lt_of_lt_of_le (h r μ b h1 h0 h2 hro i hi hv he1 he2 hO hl q hq hlt) (fsD_mono_eta hO hζ)
-
-/-- **TPLo at the seed** (t1-exp の tplos.py): in the frame of the last column `x` (`t = 1`, `q ≠ r`,
-`o(r) = ψ_μ(b)`), at an `o` call `c` of `D` with `o(c) = ψ_s(y)`, `y` without a part below `Ω_{s+1}`, ending with
-`Ω_a` (`a` a limit with a hole) and the hole at the level `μ`, the comparison holds at the seed
-`o_{M.take x}(r)`. `TPLo` (at `ψ_μ(Ω_{μ+1})`) is false here on ext1 (1 matrix). -/
-def TPLoS (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop :=
-  ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) ≠ some r →
-    entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ b z →
-    ∀ c, c < M.length - 1 → DepX M (M.length - 1) true c →
-    ∀ s y, ρ.o c = psi s y z → (split y (psi (succ s) z z)).2 = z →
-    ∀ a, last y = psi a z z → isSucc a = false → OHole a → holeLev y = μ →
-    ¬ psi (fsD a ((drop1 M (M.length - 1) rk).o r)) z z < psi (succ s) z z
-
-/-- **AbsU at the seed** (t1-exp の absus.py): in the frame of the last column `x` (`t = 1`, `q ≠ r`,
-`o(r) = ψ_μ(b)`), at a `v` call `i` of `D` upgrading to `k` with a hole of `last v(k)` at the level `μ`, the
-summands of `v(P_1 i)` below `last v(k)` stay below `fsD(last v(k), o_{M.take x}(r))`. The only real use of
-`AbsU` is this frame in `vlocal_t1`, at `ζ ≥` the seed. -/
-def AbsUS (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop :=
-  ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) ≠ some r →
-    entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ b z →
-    ∀ i k, i < M.length - 1 → DepX M (M.length - 1) false i → upg M i = some k →
-    OHole (last (ρ.v k)) → holeLev (last (ρ.v k)) = μ →
-    ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) →
-      q < fsD (last (ρ.v k)) ((drop1 M (M.length - 1) rk).o r)
 
 /-- **The trigger at the seed** (`hYBs` of `qr_final3`; t1-exp の trigs.py): in the frame of the last column `x`
 (`t = 1`, `q = r`, `o(r) = ψ_μ(b + Ω_{μ+1})`) with the seed `o_{M.take x}(r) < ψ_μ(1)`, at a frame `i` of `D`
@@ -88,86 +45,14 @@ def TrigS (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop :=
     lt (psi (ρ.v i) z z) (psi s (app b (psi (succ μ) z z)) z) = true →
     lt (preState M ρ i L') (app b ((drop1 M (M.length - 1) rk).o r)) = true
 
-/-- `lo_keep_of_TPL` with the comparison at any index `η ≤ ζ` (for `TPLoS`: `η` = the seed). -/
-theorem lo_keep_of_TPLη {μ br vr s y η ζ : T} (hTPLf : (split y (psi (succ s) z z)).2 = z →
-      ∀ a, last y = psi a z z → isSucc a = false → OHole a →
-      ¬ psi (fsD a η) z z < psi (succ s) z z)
-    (hy : y ≠ z) (hH : HoleT μ br vr (psi s y z)) (hcb : cof br = .big μ)
-    (hbrl : last br ≠ psi (succ μ) z z) (hζΩ : η ≤ ζ)
-    (hl : (split y (psi (succ s) z z)).2 = z) :
-    (split (fsD y ζ) (psi (succ s) z z)).2 = z := by
-  have hHy := holeT_arg hy hH hcb
-  apply lo_z_keep hy hl
-  have hyall : ∀ q ∈ summands y, ¬ q < psi (succ s) z z := by
-    intro q hq
-    have e := split_app (psi (succ s) z z) y
-    rw [hl, app_z_right] at e
-    rw [← e] at hq
-    exact split_fst_ge _ y q hq
-  have hHl := holeT_last hHy
-  have hlh := hyall _ (last_mem hy)
-  obtain ⟨a, b, hlc⟩ := last_psi_form hy
-  rw [hlc] at hlh hHl ⊢
-  by_cases hb : b = z
-  · subst hb
-    by_cases ha : isSucc a = true
-    · -- the last summand is `Ω_{μ+1}`
-      exfalso
-      have haz : a ≠ z := by
-        intro h; subst h
-        have h1 : isSucc (z : T) = false := rfl
-        rw [h1] at ha; cases ha
-      have hcf : cof (psi a z z) = .big (init a) := by
-        unfold cof; rw [if_pos rfl, if_neg haz, if_pos ha]
-      have hia : init a = μ := by
-        rcases hHl with h | ⟨_, _, hD⟩
-        · rw [hcf] at h; cases h; rfl
-        · rw [hD.not_omega_succ] at ha; cases ha
-      have hsa : succ μ = a := by rw [← hia]; unfold succ; exact init_app_one ha
-      rcases hH with hcof | ⟨a', _, hD⟩
-      · have hμs := (cof_psi_inv hy hcof).2
-        apply hlh
-        rw [← hsa, psi_lt_psi_z_iff]
-        left
-        exact lt_of_le_of_lt (le_refl _) (show succ μ < succ s from by
-          rw [lt_succ_iff]; exact succ_le_of_lt (show μ < s from hμs))
-      · cases hD with
-        | here _ _ _ => exact hbrl (by rw [hlc, ← hsa])
-        | arg _ _ hDy =>
-          have := hDy.last'
-          rw [hlc] at this
-          rw [this.not_omega_succ] at ha; cases ha
-        | sub _ _ _ => exact hy rfl
-    · have haz : a ≠ z := by
-        intro h; subst h
-        have := holeT_not_succ hHl
-        have h1 : isSucc (psi z z z) = true := rfl
-        rw [h1] at this; cases this
-      have hns : isSucc a = false := by simpa using ha
-      have hOa : OHole a := by
-        have h := ohole_of_holeT hHl
-        unfold OHole at h
-        rw [if_pos rfl] at h
-        rcases h.2 with h' | h'
-        · rw [hns] at h'; cases h'
-        · exact h'
-      rw [fsD_sub haz hns]
-      intro q hq
-      simp only [summands, List.mem_cons, List.mem_nil_iff, or_false] at hq
-      subst hq
-      intro hlt
-      apply hTPLf hl a hlc hns hOa
-      exact lt_of_le_of_lt (le_psi_sub (fsD_mono_eta hOa hζΩ)) hlt
-  · intro q hq
-    obtain ⟨b', rfl⟩ := summands_fsD_psi hb q hq
-    intro hlt
-    apply hlh
-    rw [psi_lt_psi_z_iff] at hlt ⊢
-    rcases hlt with h | ⟨h, h'⟩
-    · exact Or.inl h
-    · exact absurd h' (T.not_lt_z _)
+/-- Exhaustive success of the older, stronger test also validates TrigS0.
+This implication is only for comparing the measurements; production uses TrigS0. -/
+theorem trigS0_of_trigS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (h : TrigS M ρ rk) : TrigS0 M ρ rk :=
+  fun r μ b h1 h0 h2 hro hs i L' c R hi hd hch hcnt hdc _ =>
+    h r μ b h1 h0 h2 hro hs i L' c R hi hd hch hcnt hdc
 
-/-- **The redesigned value part** (draft). -/
+/-- **The redesigned value part**. -/
 structure Inv3V2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   cons : Cons M ρ
   good : Good3 M ρ
@@ -189,10 +74,71 @@ structure Inv3V2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   auwl : AbsUWL M ρ
   auw0 : AbsUW0 M ρ rk
   adw : AbsDW M ρ
-  trigs : TrigS M ρ rk
+  trigs : TrigS0 M ρ rk
   tplon : TPLoN M ρ
   adn : AbsDN M ρ
   rootS : ∀ i ∈ roots M, Single (ρ.o i)
   rootP : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)
+
+/-- The `t = 1`, `q = r` expansion engine with Inv3V2 as its input.
+The drop residual, the smaller matrix, the seed components, and preservation
+of Inv3V2 in one expansion step remain explicit obligations. -/
+theorem qr_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L d0 : Nat}
+    (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (S : SInv M) (I : Inv3V2 M ρ rk)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hq : par M 0 (r + L) = some r)
+    (R : DropRes M (r + L) ρ (drop1 M (r + L) rk))
+    (I1 : Inv3V2 (M.take (r + L)) (drop1 M (r + L) rk) rk)
+    (hcs : lt (sf ((drop1 M (r + L) rk).v r)) (ρ.v r) = true →
+      ∀ a', ¬ lt (ρ.v r) a' = true →
+      isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
+      ∀ g ∈ comps a' ((drop1 M (r + L) rk).o r),
+        g < app (qrB M ρ r (r + L)) ((drop1 M (r + L) rk).o r))
+    (hPs : ExpStepT1 (fun N σ => ∃ rkN, Inv3V2 N σ rkN) M r L d0 ρ) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (TRIO.gexp M r L d0 0 n) ρN rkN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧
+      root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  intro n hn
+  obtain ⟨ρN, _, _, _, _, ⟨rkN, IN⟩, hot, hlt⟩ :=
+    qr_final4S hlen hL hd0e S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00
+      h1 hx2 hq I.cons I.good I.rank I.vs I.fc I.fo R.argT I.kd I.td R.ab R.ws R.vst R.ua
+      I.tp1w I.tplow I.auwl I.auw0 I.adw I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP hcs
+      (fun N σ => ∃ rkN, Inv3V2 N σ rkN) ⟨rk, I1⟩ hPs n hn
+  exact ⟨ρN, rkN, IN, hot, hlt⟩
+
+/-- The `t = 1`, `q != r` expansion engine with Inv3V2 as its input.
+Its remaining obligations are the drop, the prefix, and one-copy preservation.
+The seed-local fields replace the false global AbsD and TPLo. -/
+theorem qn_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L d0 : Nat}
+    (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (S : SInv M) (I : Inv3V2 M ρ rk)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hqr : par M 0 (r + L) ≠ some r)
+    (R : DropRes M (r + L) ρ (drop1 M (r + L) rk))
+    (I1 : Inv3V2 (M.take (r + L)) (drop1 M (r + L) rk) rk)
+    (hPs : ExpStepT1 (fun N σ => ∃ rkN, Inv3V2 N σ rkN) M r L d0 ρ) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (TRIO.gexp M r L d0 0 n) ρN rkN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧
+      root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  have hrM : r < M.length := by omega
+  obtain ⟨br, hro⟩ := o_psi_sub I.cons hrM
+  rw [sf_ot (I.good.ot_v r hrM)] at hro
+  have hdrop := drop_all hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good I1.cons I1.rank
+    I.vs R.vst I.fc I.fo R.argT
+    (bump_drop hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good I1.cons I1.rank
+      I.kd I.td R.ab R.ws) R.ua
+  have hne : (drop1 M (r + L) rk).o r ≠ ρ.o r :=
+    ne_of_lt (o_r_strict0 hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2
+      h1 hx2 hqr I.cons I.good I1.cons I1.rank hdrop)
+  intro n hn
+  obtain ⟨ρN, _, _, _, _, ⟨rkN, IN⟩, hot, hlt⟩ :=
+    t1_main_vlocS hlen hL hd0e S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00
+      h1 hx2 hqr I.cons I.good I.rank I.vs I.fc I.fo I.tp1 I.tplos I.ads I.aus R.argT
+      I.kd I.td R.ab R.ws R.vst R.ua hne rfl hro I.rootS I.rootP I1.good
+      (fun N σ => ∃ rkN, Inv3V2 N σ rkN) ⟨rk, I1⟩ hPs n hn
+  exact ⟨ρN, rkN, IN, hot, hlt⟩
 
 end Ytosk

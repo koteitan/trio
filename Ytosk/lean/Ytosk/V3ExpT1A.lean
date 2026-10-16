@@ -668,13 +668,19 @@ theorem not_depX_v_r1 {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length)
 /-- `v(r)` does not grow (carried along the `t = 1` chain). -/
 def VrLe (r : Nat) (ρ : Valn) (_N : Mat) (σ : Valn) : Prop := σ.v r ≤ ρ.v r
 
-theorem expStep_vrle {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+theorem expStep_vrleS {M : Mat} {ρ : Valn} (S : SInv M)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) : ExpStepT1 (VrLe r ρ) M r L d0 ρ := by
   intro n hn ρP Z _ _ _ _ _ _ _ _ _ _
   have hrx : r < r + L := par_lt M 1 _ r h1
   show (glueZ M (r + L) ρ (shiftV ρP L) Z).v r ≤ ρ.v r
-  rw [glueZ_v_lt ρ (shiftV ρP L) Z hrx (not_depX_v_r1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab h1 hx2)]
+  rw [glueZ_v_lt ρ (shiftV ρP L) Z hrx (not_depX_v_r1 hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab h1 hx2)]
+
+/-- Compatibility with the old bundle. -/
+theorem expStep_vrle {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) : ExpStepT1 (VrLe r ρ) M r L d0 ρ := by
+  exact expStep_vrleS ⟨I.r0p, I.z2, I.sd, I.z1, I.uat, I.uab, I.r12, I.be, I.r01, I.e00⟩ hlen h1 hx2
 
 /-- `v(r)` does not grow by the drop (the drop lemma, `PV`). -/
 theorem vrle_base {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
@@ -710,7 +716,7 @@ def VSFRes (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
 /-- **VSmallF is carried** (`t = 1`): the frames off the changed children are those of `M` (the parent's
 `v` and the earlier counted children do not change, as for FrameOT), the copy frames those of `P`.
 Residual `VSFRes`. -/
-theorem expStep_vsmallF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+theorem expStep_vsmallFS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (S : SInv M) (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rk) (hVS : VSmallF M ρ)
     {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
@@ -719,17 +725,17 @@ theorem expStep_vsmallF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
   have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
   obtain ⟨q0, hq0⟩ := par0_of_anc hA (by omega)
   have hpath := hpath_of_par1 h1 hA (by omega)
-  have hOS := hOS_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hq0
+  have hOS := hOS_t1 hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hx2 hq0
   intro n hn ρP Z hCP hGP hQP0 hCN hGN hoto hotv hle hlex hH
-  refine ⟨expStep_vrle I hlen h1 hx2 n hn ρP Z hCP hGP hQP0.1 hCN hGN hoto hotv hle hlex hH, ?_⟩
+  refine ⟨expStep_vrleS S hlen h1 hx2 n hn ρP Z hCP hGP hQP0.1 hCN hGN hoto hotv hle hlex hH, ?_⟩
   have hQP := hQP0.2
   have hR := hRes n hn ρP Z hH hCN
   set σ := glueZ M (r + L) ρ (shiftV ρP L) Z with hσ
   have hlN := len_N (d0 := d0) hlen hn
   have hlP := len_P (d0 := d0) (n := n) hlen
   have hSA := sameAt_lt hlen hL hA hd0e hn hpath hx2
-    (hxnb_t1 hlen hL hA hd0e I.z2 I.z1 h1 n hn)
-    (hiu_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (I.z2 r) hn)
+    (hxnb_t1 hlen hL hA hd0e S.z2 S.z1c h1 n hn)
+    (hiu_t1 hlen hL hA hd0e hpath hx2 (S.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (S.z2 r) hn)
   have hσo : ∀ a, σ.o (r + L + a) = ρP.o (r + a) := by
     intro a; rw [hσ, glueZ_o_ge ρ (shiftV ρP L) Z (by omega)]
     show ρP.o (r + L + a - L) = ρP.o (r + a); congr 1; omega
@@ -810,7 +816,7 @@ theorem expStep_vsmallF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
         rw [hcxe, hσ, glueZ_v_ge ρ (shiftV ρP L) Z (le_refl _)]
         show ρP.v (r + L - L) = ρP.v r; rw [Nat.add_sub_cancel]
       have hle' : ρP.v r ≤ ρ.v i :=
-        le_trans hQP0.1 (v_par1_le_par0 I.cons I.good I.rank hcM h0 (by rw [hcxe]; exact h1))
+        le_trans hQP0.1 (v_par1_le_par0 hC hG hRM hcM h0 (by rw [hcxe]; exact h1))
       have hot : isOT (ρP.v r) = true := hGP.ot_v r (by rw [hlP]; have := Nat.mul_pos (show 0 < n - 1 by omega) hL; omega)
       rw [hvx, comps_nil_of_le hot hle'] at hg
       simp at hg
@@ -818,7 +824,7 @@ theorem expStep_vsmallF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
       by_cases hcv : DepX M (r + L) false c
       · exact hR i h Lc c R hCL hcv hcx
       · rw [hσ, glueZ_v_lt ρ (shiftV ρP L) Z hcx hcv]
-        exact I.vs i (by omega) Lc c R hCL
+        exact hVS i (by omega) Lc c R hCL
   · obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
     have ha : a < (n - 1) * L := by omega
     have hCLs : CL (TRIO.gexp M r L d0 0 n) (r + L + a) =
@@ -833,7 +839,7 @@ theorem expStep_vsmallF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
       show decide (Counted (TRIO.gexp M r L d0 0 n) (r + L + a) (d + L)) =
         decide (Counted (TRIO.gexp M r L d0 0 (n - 1)) (r + a) d)
       apply decide_eq_decide.mpr
-      apply counted_iff_of_cnt1 (cnt_copy hlen hL hA hd0e hn hpath (I.z2 r) (ρ := ρ) (Z := Z) ha hd)
+      apply counted_iff_of_cnt1 (cnt_copy hlen hL hA hd0e hn hpath (S.z2 r) (ρ := ρ) (Z := Z) ha hd)
       · have := hσo (d - r); rw [show r + L + (d - r) = d + L by omega,
           show r + (d - r) = d by omega] at this
         exact this
@@ -863,6 +869,16 @@ theorem expStep_vsmallF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
     rw [hσv, hLo, hvc]
     exact hQP (r + a) (by rw [hlP]; omega) Lc' c' R' hsplit
 
+/-- Compatibility with the old bundle. -/
+theorem expStep_vsmallF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
+    (hRes : VSFRes M r L d0 ρ) :
+    ExpStepT1 (fun N σ => VrLe r ρ N σ ∧ VSmallF N σ) M r L d0 ρ := by
+  exact expStep_vsmallFS ⟨I.r0p, I.z2, I.sd, I.z1, I.uat, I.uab, I.r12, I.be, I.r01, I.e00⟩
+    I.cons I.good I.rank I.vs hlen hL hd0e h1 hx2 hRes
+
 /-- **The residual of VSmallF on the last summand**: at a frame below `x` whose counted child `c` is a `v`
 call of `D`, the components of the new last summand `fsD(last v(c), Z c)`. -/
 def VSFRes2 (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
@@ -874,7 +890,7 @@ def VSFRes2 (M : Mat) (r L d0 : Nat) (ρ : Valn) : Prop :=
         g ≤ psi ((glueZ M (r + L) ρ (shiftV ρP L) Z).v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))
 
 /-- **`VSFRes` from the last-summand form.** -/
-theorem vsfRes_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+theorem vsfRes_of_values {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rk)
     {r L d0 : Nat} (h2 : VSFRes2 M r L d0 ρ) : VSFRes M r L d0 ρ := by
   intro n hn ρP Z hH hCN i hi Lc c R hCL hcd hcx g hg
   have hcCL : c ∈ CL M i := by rw [hCL]; simp
@@ -884,9 +900,14 @@ theorem vsfRes_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M 
   rw [glueZ_v_dep ρ (shiftV ρP L) Z hcx hcd] at hg
   by_cases hz : ρ.v c = z
   · rw [hz] at hg; simp [fsD, comps] at hg
-  rw [fsD_init_last hz, comps_app, comps_init_v_nil I.cons I.good I.rank hcM h0] at hg
+  rw [fsD_init_last hz, comps_app, comps_init_v_nil hC hG hRM hcM h0] at hg
   have := h2 n hn ρP Z hH hCN i hi Lc c R hCL hcd hcx g hg
   rwa [glueZ_v_dep ρ (shiftV ρP L) Z hcx hcd] at this ⊢
+
+/-- Compatibility with the old bundle. -/
+theorem vsfRes_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+    {r L d0 : Nat} (h2 : VSFRes2 M r L d0 ρ) : VSFRes M r L d0 ρ := by
+  exact vsfRes_of_values I.cons I.good I.rank h2
 
 /-! ## 組み立て: AbsD・AbsUW・AbsDN を運んだ形の hExp（t = 1） -/
 

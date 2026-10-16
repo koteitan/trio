@@ -1,0 +1,960 @@
+{
+  "date": "2026-10-12",
+  "scripts": [
+    "tools/probe_inv2.py",
+    "tools/probe_trigs0.py"
+  ],
+  "sampling": false,
+  "filter": "M < SRO",
+  "workers": 4,
+  "nice": 15,
+  "input_total_with_overlap": 5375155,
+  "measured_total_with_overlap": 5375152,
+  "original_fields": [
+    {
+      "set": "Cprime",
+      "counts": {
+        "input": 404051,
+        "measured": 404051,
+        "VSmallRAll.cases": 2244252,
+        "TrigS.cases": 33749,
+        "TPLoS.cases": 110567,
+        "AbsUS.cases": 398
+      },
+      "examples": {},
+      "seconds": 97.12,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3VSRAll.lean"
+      ],
+      "case_unit": "quantified summand/component, or TPLoS/TrigS frame"
+    },
+    {
+      "set": "t0ext",
+      "counts": {
+        "input": 181290,
+        "measured": 181287,
+        "VSmallRAll.cases": 1196689,
+        "outside_SRO": 3
+      },
+      "examples": {},
+      "seconds": 30.96,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3VSRAll.lean"
+      ],
+      "case_unit": "quantified summand/component, or TPLoS/TrigS frame"
+    },
+    {
+      "set": "d3s",
+      "counts": {
+        "input": 15000,
+        "measured": 15000,
+        "VSmallRAll.cases": 134137,
+        "TPLoS.cases": 18669,
+        "TrigS.cases": 2017,
+        "AbsUS.cases": 233
+      },
+      "examples": {},
+      "seconds": 8.06,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3VSRAll.lean"
+      ],
+      "case_unit": "quantified summand/component, or TPLoS/TrigS frame"
+    },
+    {
+      "set": "deep2",
+      "counts": {
+        "input": 128150,
+        "measured": 128150,
+        "VSmallRAll.cases": 1207899,
+        "TPLoS.cases": 156467,
+        "TrigS.cases": 17110,
+        "AbsUS.cases": 1790
+      },
+      "examples": {},
+      "seconds": 74.84,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3VSRAll.lean"
+      ],
+      "case_unit": "quantified summand/component, or TPLoS/TrigS frame"
+    },
+    {
+      "set": "deep3",
+      "counts": {
+        "input": 123493,
+        "measured": 123493,
+        "TPLoS.cases": 154154,
+        "VSmallRAll.cases": 1111864,
+        "TrigS.cases": 15623,
+        "AbsUS.cases": 1726
+      },
+      "examples": {},
+      "seconds": 72.79,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3VSRAll.lean"
+      ],
+      "case_unit": "quantified summand/component, or TPLoS/TrigS frame"
+    },
+    {
+      "set": "ext1",
+      "counts": {
+        "input": 1082667,
+        "measured": 1082667,
+        "VSmallRAll.cases": 4605591,
+        "TrigS.cases": 15904,
+        "TPLoS.cases": 46690,
+        "AbsUS.cases": 2
+      },
+      "examples": {},
+      "seconds": 111.9,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3VSRAll.lean"
+      ],
+      "case_unit": "quantified summand/component, or TPLoS/TrigS frame"
+    },
+    {
+      "set": "ext1x",
+      "counts": {
+        "input": 119974,
+        "measured": 119974,
+        "VSmallRAll.cases": 936699,
+        "TPLoS.cases": 11569,
+        "TrigS.cases": 12714,
+        "AbsUS.cases": 57
+      },
+      "examples": {},
+      "seconds": 31.7,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3VSRAll.lean"
+      ],
+      "case_unit": "quantified summand/component, or TPLoS/TrigS frame"
+    },
+    {
+      "set": "t2ext",
+      "counts": {
+        "input": 1207960,
+        "measured": 1207960,
+        "VSmallRAll.cases": 11130033,
+        "TrigS.cases": 231592,
+        "TPLoS.cases": 390133,
+        "AbsUS.cases": 5862,
+        "TrigS.failures": 1
+      },
+      "examples": {
+        "TrigS": {
+          "matrix": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              1
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              3,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              1
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              3,
+              0,
+              0
+            ],
+            [
+              4,
+              1,
+              1
+            ],
+            [
+              5,
+              1,
+              1
+            ],
+            [
+              6,
+              1,
+              0
+            ],
+            [
+              4,
+              1,
+              1
+            ],
+            [
+              5,
+              1,
+              1
+            ],
+            [
+              6,
+              0,
+              0
+            ],
+            [
+              7,
+              1,
+              1
+            ],
+            [
+              8,
+              1,
+              1
+            ],
+            [
+              9,
+              1,
+              0
+            ],
+            [
+              7,
+              1,
+              1
+            ],
+            [
+              8,
+              1,
+              1
+            ],
+            [
+              9,
+              0,
+              0
+            ],
+            [
+              10,
+              1,
+              1
+            ],
+            [
+              11,
+              1,
+              1
+            ],
+            [
+              12,
+              1,
+              0
+            ],
+            [
+              10,
+              1,
+              1
+            ],
+            [
+              11,
+              1,
+              0
+            ],
+            [
+              12,
+              2,
+              1
+            ],
+            [
+              13,
+              2,
+              1
+            ],
+            [
+              14,
+              1,
+              0
+            ],
+            [
+              15,
+              0,
+              0
+            ],
+            [
+              13,
+              2,
+              0
+            ],
+            [
+              14,
+              3,
+              0
+            ]
+          ],
+          "i": 18,
+          "c": 22,
+          "state": [
+            [
+              [
+                [],
+                [
+                  [],
+                  [],
+                  []
+                ],
+                []
+              ],
+              [],
+              []
+            ],
+            [],
+            []
+          ],
+          "seed": [
+            [
+              [],
+              [
+                [],
+                [],
+                []
+              ],
+              [
+                [],
+                [],
+                []
+              ]
+            ],
+            [],
+            []
+          ]
+        }
+      },
+      "seconds": 331.73,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3VSRAll.lean"
+      ],
+      "case_unit": "quantified summand/component, or TPLoS/TrigS frame"
+    },
+    {
+      "set": "ext2",
+      "counts": {
+        "input": 1497986,
+        "measured": 1497986,
+        "VSmallRAll.cases": 15542051,
+        "TrigS.cases": 80174,
+        "TPLoS.cases": 779462,
+        "AbsUS.cases": 29063
+      },
+      "examples": {},
+      "seconds": 605.03,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3VSRAll.lean"
+      ],
+      "case_unit": "quantified summand/component, or TPLoS/TrigS frame"
+    },
+    {
+      "set": "expP",
+      "counts": {
+        "input": 614584,
+        "measured": 614584,
+        "VSmallRAll.cases": 10219525,
+        "TrigS.cases": 118808,
+        "TPLoS.cases": 152140,
+        "AbsUS.cases": 4734,
+        "TrigS.failures": 1
+      },
+      "examples": {
+        "TrigS": {
+          "matrix": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              1
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              3,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              1
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              3,
+              0,
+              0
+            ],
+            [
+              4,
+              1,
+              1
+            ],
+            [
+              5,
+              1,
+              1
+            ],
+            [
+              6,
+              1,
+              0
+            ],
+            [
+              4,
+              1,
+              1
+            ],
+            [
+              5,
+              1,
+              1
+            ],
+            [
+              6,
+              0,
+              0
+            ],
+            [
+              7,
+              1,
+              1
+            ],
+            [
+              8,
+              1,
+              1
+            ],
+            [
+              9,
+              1,
+              0
+            ],
+            [
+              7,
+              1,
+              1
+            ],
+            [
+              8,
+              1,
+              1
+            ],
+            [
+              9,
+              0,
+              0
+            ],
+            [
+              10,
+              1,
+              1
+            ],
+            [
+              11,
+              1,
+              1
+            ],
+            [
+              12,
+              1,
+              0
+            ],
+            [
+              10,
+              1,
+              1
+            ],
+            [
+              11,
+              1,
+              0
+            ],
+            [
+              12,
+              2,
+              1
+            ],
+            [
+              13,
+              2,
+              1
+            ],
+            [
+              14,
+              1,
+              0
+            ],
+            [
+              15,
+              0,
+              0
+            ],
+            [
+              13,
+              2,
+              0
+            ],
+            [
+              14,
+              3,
+              0
+            ]
+          ],
+          "i": 18,
+          "c": 22,
+          "state": [
+            [
+              [
+                [],
+                [
+                  [],
+                  [],
+                  []
+                ],
+                []
+              ],
+              [],
+              []
+            ],
+            [],
+            []
+          ],
+          "seed": [
+            [
+              [],
+              [
+                [],
+                [],
+                []
+              ],
+              [
+                [],
+                [],
+                []
+              ]
+            ],
+            [],
+            []
+          ]
+        }
+      },
+      "seconds": 186.09,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3VSRAll.lean"
+      ],
+      "case_unit": "quantified summand/component, or TPLoS/TrigS frame"
+    }
+  ],
+  "repaired_trigger": [
+    {
+      "set": "t2ext",
+      "counts": {
+        "input": 1207960,
+        "below_SRO": 1207960,
+        "seed_frames": 238490,
+        "TrigS.cases": 231592,
+        "child_lifts.0": 132229,
+        "TrigS0.cases": 132229,
+        "child_lifts.1": 82346,
+        "child_lifts.2": 17017,
+        "TrigS.failures": 1
+      },
+      "examples": {
+        "TrigS": {
+          "matrix": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              1
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              3,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              1
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              3,
+              0,
+              0
+            ],
+            [
+              4,
+              1,
+              1
+            ],
+            [
+              5,
+              1,
+              1
+            ],
+            [
+              6,
+              1,
+              0
+            ],
+            [
+              4,
+              1,
+              1
+            ],
+            [
+              5,
+              1,
+              1
+            ],
+            [
+              6,
+              0,
+              0
+            ],
+            [
+              7,
+              1,
+              1
+            ],
+            [
+              8,
+              1,
+              1
+            ],
+            [
+              9,
+              1,
+              0
+            ],
+            [
+              7,
+              1,
+              1
+            ],
+            [
+              8,
+              1,
+              1
+            ],
+            [
+              9,
+              0,
+              0
+            ],
+            [
+              10,
+              1,
+              1
+            ],
+            [
+              11,
+              1,
+              1
+            ],
+            [
+              12,
+              1,
+              0
+            ],
+            [
+              10,
+              1,
+              1
+            ],
+            [
+              11,
+              1,
+              0
+            ],
+            [
+              12,
+              2,
+              1
+            ],
+            [
+              13,
+              2,
+              1
+            ],
+            [
+              14,
+              1,
+              0
+            ],
+            [
+              15,
+              0,
+              0
+            ],
+            [
+              13,
+              2,
+              0
+            ],
+            [
+              14,
+              3,
+              0
+            ]
+          ],
+          "i": 18,
+          "c": 22,
+          "dOf_c": 2
+        }
+      },
+      "seconds": 181.64,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3QRIdx.lean",
+        "V3QRDiag.lean"
+      ],
+      "fields": [
+        "TrigS0",
+        "TrigS"
+      ],
+      "case_unit": "trigger frame"
+    },
+    {
+      "set": "expP",
+      "counts": {
+        "input": 614584,
+        "below_SRO": 614584,
+        "seed_frames": 128968,
+        "TrigS.cases": 118808,
+        "child_lifts.0": 68892,
+        "TrigS0.cases": 68892,
+        "child_lifts.1": 40736,
+        "child_lifts.2": 9180,
+        "TrigS.failures": 1
+      },
+      "examples": {
+        "TrigS": {
+          "matrix": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              1
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              3,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              1
+            ],
+            [
+              2,
+              1,
+              1
+            ],
+            [
+              3,
+              0,
+              0
+            ],
+            [
+              4,
+              1,
+              1
+            ],
+            [
+              5,
+              1,
+              1
+            ],
+            [
+              6,
+              1,
+              0
+            ],
+            [
+              4,
+              1,
+              1
+            ],
+            [
+              5,
+              1,
+              1
+            ],
+            [
+              6,
+              0,
+              0
+            ],
+            [
+              7,
+              1,
+              1
+            ],
+            [
+              8,
+              1,
+              1
+            ],
+            [
+              9,
+              1,
+              0
+            ],
+            [
+              7,
+              1,
+              1
+            ],
+            [
+              8,
+              1,
+              1
+            ],
+            [
+              9,
+              0,
+              0
+            ],
+            [
+              10,
+              1,
+              1
+            ],
+            [
+              11,
+              1,
+              1
+            ],
+            [
+              12,
+              1,
+              0
+            ],
+            [
+              10,
+              1,
+              1
+            ],
+            [
+              11,
+              1,
+              0
+            ],
+            [
+              12,
+              2,
+              1
+            ],
+            [
+              13,
+              2,
+              1
+            ],
+            [
+              14,
+              1,
+              0
+            ],
+            [
+              15,
+              0,
+              0
+            ],
+            [
+              13,
+              2,
+              0
+            ],
+            [
+              14,
+              3,
+              0
+            ]
+          ],
+          "i": 18,
+          "c": 22,
+          "dOf_c": 2
+        }
+      },
+      "seconds": 99.84,
+      "definitions": [
+        "V3Inv2.lean",
+        "V3QRIdx.lean",
+        "V3QRDiag.lean"
+      ],
+      "fields": [
+        "TrigS0",
+        "TrigS"
+      ],
+      "case_unit": "trigger frame"
+    }
+  ],
+  "TrigS0_coverage": {
+    "Cprime": "full stronger TrigS scan; trigS0_of_trigS",
+    "t0ext": "full stronger TrigS scan; trigS0_of_trigS",
+    "d3s": "full stronger TrigS scan; trigS0_of_trigS",
+    "deep2": "full stronger TrigS scan; trigS0_of_trigS",
+    "deep3": "full stronger TrigS scan; trigS0_of_trigS",
+    "ext1": "full stronger TrigS scan; trigS0_of_trigS",
+    "ext1x": "full stronger TrigS scan; trigS0_of_trigS",
+    "t2ext": "direct full scan",
+    "ext2": "full stronger TrigS scan; trigS0_of_trigS",
+    "expP": "direct full scan"
+  },
+  "result": "AbsUS, TPLoS, VSmallRAll, TrigS0: zero failures on all ten sets; original TrigS is false"
+}
