@@ -10,7 +10,7 @@
 - `HAbSV2`: t = 0・t = 2 の強い吸収 `AbsSR`（drop）。
 
 各段の残り:
-- `HTakeV2`: 1 列落とし。`inv3V2_take` の残り `TakeResV2`（落とした行列の枠の欄・葉・根の RootP）（drop）。
+- `HTakeV2`: 1 列落とし。`inv3V2_take` の残り `TakeResV2`（落とした行列の枠の欄・葉）（drop）。根の RootP は証明済み。
 - `ExpT0V2`: t = 0、n ≥ 2 の展開の Inv3V2（t0）。下降は最上位で t0_main' から出す。
 - `ExpT1V2`: t = 1 の 1 コピーごとの Inv3V2 の保存 `ExpStepT1`（t1）。
   `qr_final_inv3V2`・`qn_final_inv3V2` に渡し、展開の Inv3V2 と下降の両方を出す（`expT1Out_of_step`）。
@@ -46,14 +46,13 @@ def HAbSV2 : Prop :=
 
 /-! ## 1 列落とし -/
 
-/-- The residual of `inv3V2_take`: the frame fields, the two leaf conditions and `RootP` at a root column,
-of the dropped matrix `M.take x` with the drop valuation `drop1 M x rk`. -/
+/-- The residual of `inv3V2_take`: the frame fields and the two leaf conditions of the dropped matrix
+`M.take x` with the drop valuation `drop1 M x rk`. (`RootP` at a root column `x` is proved,
+`rootP0_take` in V3MainV2.) -/
 structure TakeResV2 (M : Mat) (rk : Bool → Nat → Nat) : Prop where
   frame : TakeFrameV2 (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) rk
   leaf : TP1LeafG (M.take (M.length - 1)) (drop1 M (M.length - 1) rk)
   leafW : TP1WLeafG (M.take (M.length - 1)) (drop1 M (M.length - 1) rk)
-  rootP0 : entry M 0 (M.length - 1) = 0 →
-    RootP (M.take (M.length - 1)) (drop1 M (M.length - 1) rk)
 
 /-- **R-take**: the one-column drop step. -/
 def HTakeV2 : Prop :=

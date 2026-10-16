@@ -417,6 +417,18 @@ theorem res3A_of_V2 (hD : HDropV2) (hSd : HSeedV2) (hA : HAbSV2) {M : Mat} {ρ :
     ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ (hD M ρ rk hM hS hE I) (cons_of_rk hRk1) hRk1,
     hSd M ρ rk hM hS hE I, hA M ρ rk hM hS hE I⟩
 
+/-- **`RootP` of `M.take x` when `x` is a root column** (the residual `hRP0` of `inv3V2_take`). -/
+theorem rootP0_take {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (S : SInv M) (I : Inv3V2 M ρ rk)
+    (hl : 2 ≤ M.length) (h0 : entry M 0 (M.length - 1) = 0) :
+    RootP (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last (M := M) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have h1 := S.r01 _ h0
+  have h2 := S.r12 _ h1
+  have hk : col M (M.length - 1) = (0, 0, 0) := (col_zero_iff M _).mpr ⟨h0, h1, h2⟩
+  exact rootP_take_root hx hk I.cons (cons_of_rk hRk1) hRk1 I.rootP
+
 /-- **The one-column drop** with the drop valuation and the same ranking. -/
 theorem last_V2 (hD : HDropV2) (hSd : HSeedV2) (hA : HAbSV2) (hT : HTakeV2) {M : Mat} {ρ : Valn}
     {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hl : 2 ≤ M.length) (I : Inv3V2 M ρ rk) :
@@ -424,7 +436,8 @@ theorem last_V2 (hD : HDropV2) (hSd : HSeedV2) (hA : HAbSV2) (hT : HTakeV2) {M :
   have hE : M ≠ [] := by intro h; rw [h] at hl; simp at hl
   have R := res3A_of_V2 hD hSd hA hM hS hE I
   have T := hT M ρ rk hM hS hl I R
-  exact inv3V2_take (sInv_std hM hS) I hl R.drop T.frame T.leaf T.leafW T.rootP0
+  exact inv3V2_take (sInv_std hM hS) I hl R.drop T.frame T.leaf T.leafW
+    (rootP0_take (sInv_std hM hS) I hl)
 
 theorem take_ne_nil_of {M : Mat} {j : Nat} (hj : 1 ≤ j) (hjl : j ≤ M.length) : M.take j ≠ [] := by
   exact List.ne_nil_of_length_pos (by rw [List.length_take]; omega)
