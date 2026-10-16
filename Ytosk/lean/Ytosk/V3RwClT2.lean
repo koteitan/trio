@@ -20,7 +20,8 @@ set_option linter.unusedSectionVars false
 /-- **`σ`-invariance of closedness** (named residual; a statement about terms only). -/
 def ClSh : Prop :=
   ∀ V V' a B : T, isOT V = true → isOT V' = true → V < V' → isOT a = true → V ≤ a →
-    isOT B = true → (∀ q ∈ summands B, V < lev q) → ClosedA a B → ClosedA (shf V V' a) (sh V V' B)
+    isOT B = true → (∀ q ∈ summands B, V < lev q) → (∀ q ∈ summands B, a ≤ lev q) → ClosedA a B →
+    ClosedA (shf V V' a) (sh V V' B)
 
 /-- `QRC` with the standard form of the child. -/
 def QRCo (a : T) (Lv : List T) (cv : T) : Prop := isOT cv = true ∧ QRC a Lv cv
@@ -99,7 +100,9 @@ theorem qRCo_sh (hCl : ClSh) (V V' a : T) (Lv : List T) (cv : T) (hV : isOT V = 
     have hnp : ¬ ∃ R', (split y (psi (succ s) z z)).1 = app (spArg a z (sumN Lv)) R' := by
       rintro ⟨R', hR'⟩
       exact hnp' ⟨sh V V' R', by simp only; rw [hR', sh_app]⟩
-    exact hCl V V' a _ hV hV' hVV ha hVa hBot hBV (hQ.2 s y rfl ⟨h1, h2⟩ hhi hnp)
+    have hBa : ∀ q ∈ summands (spArg a z (sumN Lv)), a ≤ lev q := fun q hq =>
+      le_trans has (lev_le_of_le (hBc q hq))
+    exact hCl V V' a _ hV hV' hVV ha hVa hBot hBV hBa (hQ.2 s y rfl ⟨h1, h2⟩ hhi hnp)
   · rw [sh_psi_le hVs, sh_z] at hcv'
     simp only [psi.injEq] at hcv'
     obtain ⟨rfl, rfl, -⟩ := hcv'
