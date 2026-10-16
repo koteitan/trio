@@ -623,11 +623,12 @@ def BumpAbsLo (M : Mat) (r : Nat) (ρ : Valn) : Prop :=
   ∀ i, i < r → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
     ∀ s ∈ summands (vOpt ρ (par M 1 i)), ¬ s < psi z two z → s < bumpW M ρ i → Lhd z s (bumpW M ρ i)
 
-/-- The strong absorption of the last column `x = |M| - 1` that the expansions use: `BumpAbsS` at
-`t = 2` (`abs_of_absC`), `BumpAbsLo` at `t = 0` (`t0_core`). -/
+/-- The strong absorption of the last column `x = |M| - 1` that the expansions use: `BumpAbsLo` at `t = 0`
+(`t0_core`). (2026-10-16, drop: the earlier first conjunct `srow M x = 2 → BumpAbsS M x ρ` had no consumer
+and is false on a standard matrix, (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(1,1,1),
+`i = 7`, `r = ω²`, `W = Ω_ω`.) -/
 def AbsSR (M : Mat) (ρ : Valn) : Prop :=
-  (TRIO.srow M (M.length - 1) = 2 → BumpAbsS M (M.length - 1) ρ) ∧
-  (∀ r, par M 0 (M.length - 1) = some r → entry M 1 (M.length - 1) = 0 → BumpAbsLo M r ρ)
+  ∀ r, par M 0 (M.length - 1) = some r → entry M 1 (M.length - 1) = 0 → BumpAbsLo M r ρ
 
 /-- `BRelS 0 ψ_w(0)` forces `w = 0`. -/
 theorem brelS_z_psi {w : T} (h : BRelS z (psi w z z)) : w = z := by

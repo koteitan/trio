@@ -471,7 +471,7 @@ theorem desc_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
     have hdr := R.drop
     have hch := R.chain
     have ht0 := R.t0
-    have hab0 := R.abS.2 r hr he1
+    have hab0 := R.abS r hr he1
     have hrx : r < M.length - 1 := par_lt M 0 _ r hr
     obtain ⟨L, hL⟩ : ∃ L, M.length - 1 = r + L := ⟨M.length - 1 - r, by omega⟩
     rw [hL] at hexp hr he1 hx2 hdr

@@ -76,7 +76,7 @@ theorem t0DF_of (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res
   intro r L hlen hL hp he1 n hn σ hCN
   have hDr := R.drop
   rw [show M.length - 1 = r + L by omega] at hDr
-  have hab0 := R.abS.2 r (by rw [show M.length - 1 = r + L by omega]; exact hp)
+  have hab0 := R.abS r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
   have h := t0_otdR hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
@@ -720,7 +720,7 @@ theorem hExp_t0A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hOTD : T0DF 
   rw [hexp n]
   have hDr := R.drop
   rw [show M.length - 1 = r + L by omega] at hDr
-  have hab0 := R.abS.2 r (by rw [show M.length - 1 = r + L by omega]; exact hp)
+  have hab0 := R.abS r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
   have hcore := t0_core hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP

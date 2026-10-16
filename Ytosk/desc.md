@@ -3078,3 +3078,11 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - M.take x の r の子はどれも v > V + 1（`sv_children_ctx`）なので、X₁ の加数は Ω_{V+2} 以上（`summands_spArg_ge`）。σ はこの下限を保つ（`summands_sh_ge`、`shIt_facts`）。よって H(V + 1, σ^{k+1} X₁) = σ^{k+1} X₁ で、書き換えの条件は X₁ < σ^{k+1} X₁ だけ。
 - `chg_free_sub`（V3T2ChgSub）: x − 1 が上げず、列 k の部分木が x を含まず、部分木の出口へ上げがなければ、k の部分木のどの呼び出しも M.take x で変わらない（ChgX の帰納法）。
 - どちらも緑、公理は propext・Classical.choice・Quot.sound。T2SeedSVResR への接続（rw を T2SVStrict に替えた形）はまだ。
+
+### AbsSR から偽の t = 2 の欄を外した（2026-10-16、drop）
+
+- `AbsSR M ρ` の第 1 成分「srow M x = 2 → BumpAbsS M x ρ」は標準形で偽: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(1,1,1)（bms -s = 1）、i = 7、r = ω²、W = Ω_ω で ω² ◁ Ω_ω が偽（probe_dropres の AbsSR.S、厳密な ◁）。2026-10-12 の ext1 の 22 件と同じ種類。
+- この成分を使う所はなかった（`.abS` の使い所は全部 t = 0 の第 2 成分 `.abS.2`。t = 2 の `abs_of_absC` は呼ばれていない）。
+- そこで `AbsSR M ρ` を t = 0 の成分だけにした: ∀ r, P_0(x) = r → 行 1 の x = 0 → BumpAbsLo M r ρ。使い所の `R.abS.2 r`・`hab.2 r` を `R.abS r`・`hab r` に直した（V3Top・V3MainV2・V3T0Inv2・V3ExpT0・V3T0Top*・V3T0Shadow、呼び出しだけ）。基底 `base_res3A` の証明も 1 成分にした。
+- これで top の `HAbSV2` は t = 0 の BumpAbsLo だけの主張になった。BumpAbsLo の 10 集合の測定は probe_dropres（AbsSR.Lo）で行う（キューに入れた）。
+- 全体ビルド緑（997 jobs）。

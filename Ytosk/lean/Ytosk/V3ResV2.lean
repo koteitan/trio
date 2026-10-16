@@ -7,7 +7,7 @@
 行列ごとの残り（どの標準形でも、Inv3V2 から言う）:
 - `HDropV2`: 1 列落としの残り `DropResH`（drop）。
 - `HSeedV2`: t = 1・q = r の始点の条件 `SeedR`（drop）。
-- `HAbSV2`: t = 0・t = 2 の強い吸収 `AbsSR`（drop）。
+- `HAbSV2`: t = 0 の強い吸収 `AbsSR`（drop）。t = 2 の欄は使われておらず偽だったので外した（2026-10-16）。
 
 各段の残り:
 - `HTakeV2`: 1 列落とし。`inv3V2_take` の残り `TakeResV2`（落とした行列の枠の欄・葉）（drop）。根の RootP は証明済み。
@@ -40,7 +40,7 @@ def HDropV2 : Prop :=
 def HSeedV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk → SeedR M ρ rk
 
-/-- **R-abs**: the strong absorption `AbsSR` (`t = 0`, `t = 2`) of every standard matrix. -/
+/-- **R-abs**: the strong absorption `AbsSR` (`t = 0`) of every standard matrix. -/
 def HAbSV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk → AbsSR M ρ
 

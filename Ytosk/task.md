@@ -40,6 +40,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - 落とす補題の残り（DropRes など）。強い UpgAbsX の反例も修正する
         - UpgAbsXW（T2Ext の x − 1 の族の修正）を今の main に載せ直した。ローカルのブランチ `drop-wkx2` で全体ビルド緑、main には未コミット。全 10 集合の測定（`tools/probe_newpv3.py`、厳密な ◁）が途中で止まっていて、その結果を見てからコミットする
         - DropResH の残り（HardArg・VSmallNew・BumpWeakSrc・BumpAbsC）と SeedR・AbsSR の 10 集合の測定（`tools/probe_dropres.py` は下書き、試しの実行のみ）
+        - ✅ AbsSR から t = 2 の欄（srow = 2 → BumpAbsS）を外した。使う所がなく、標準形で偽だった（HAbSV2 は t = 0 の BumpAbsLo だけになった）
       - 落とした行列の枠の条件（TakeFrameV2）、TP1LeafG・TP1WLeafG（最後の列が根の場合の RootP は top の `rootP0_take` で済み）
         - 10 集合と、落とした行列の追加分（`tmp/ytosk-handoff/sets_take/`）での測定（`tools/probe_frame7.py`・`tools/probe_leafg.py`）。top の `tools/probe_hframe.py` と同じ欄だが、top とは drop が測ると決めた（top は走らせない）
     - t = 0 の展開

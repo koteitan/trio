@@ -51,7 +51,7 @@ theorem t0DF_ofC (hCut : T0CutResGGC) {M : Mat} {ρ : Valn} {rk : Bool → Nat �
   intro r L hlen hL hp he1 n hn σ hCN
   have hDr := R.drop
   rw [show M.length - 1 = r + L by omega] at hDr
-  have hab0 := R.abS.2 r (by rw [show M.length - 1 = r + L by omega]; exact hp)
+  have hab0 := R.abS r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
   have h := t0_otdU hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
@@ -87,7 +87,7 @@ theorem t0_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L :
   have hx : r + L + 1 = M.length := hlen
   have hDr := R
   rw [show M.length - 1 = r + L by omega] at hDr
-  have hab0 := hab.2 r (by rw [show M.length - 1 = r + L by omega]; exact hp)
+  have hab0 := hab r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
   have hDF := t0DF_ofC hCut hM hS IC RC I.ph I.vra.toLast
   have hx2 : entry M 2 (r + L) = 0 := S.r12 _ he1

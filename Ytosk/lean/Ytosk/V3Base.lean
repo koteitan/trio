@@ -119,8 +119,8 @@ theorem base_res3A : Res3A (Mlen (1 + 3 * n)) (bval (1 + 3 * n) one) (brk (1 + 3
       rw [Mlen_par0_BD (by omega) (by omega) (by omega)] at h0
       have := Option.some.inj h0; omega
   · -- AbsSR: `v(P_1 i) = 0`
-    refine ⟨fun _ i _ _ _ _ r hr => ?_, fun _ _ _ i _ _ _ r hr => ?_⟩ <;>
-      (rw [vOpt_par1] at hr; simp [summands] at hr)
+    intro _ _ _ i _ _ _ r hr
+    rw [vOpt_par1] at hr; simp [summands] at hr
 
 end
 
