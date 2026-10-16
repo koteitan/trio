@@ -3552,3 +3552,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 小さい標本（各集合の一部）での結果: probe_dropres（1/60）で HardArg・VSmallNew・BumpWeakSrc（旧）・BumpAbsC・SeedR・VSmallNewR・ShadowC は例外 0。probe_pv2 の F1・F3・F4・F5・F6・F7 は expP の破れの行列と ext1 の旧反例で成り立つ。
 
 **ブランチ drop-wkx2（4f7e3f84、main af831702 の上、全体ビルド緑 1022 jobs、公理は標準の 3 つ）**: 上の (1)(2) の直しと SmallSelf(V + 1)。main には未コミット（新しい定義の 11 集合の測定待ち）。t1 はこの上で q = r の L = 1 の枝を直し、hUA1・T1UpgQRV2 を外す予定（t1-qr）。取り込み手順: `tmp/drop/land.sh`（rebase・全体ビルド・main の作業ツリーの衝突確認）のあと、変更したファイルを main の作業ツリーに写してコミット。
+- 追記（top）: SibVCol を 1 列落とし M → M.take x で運ぶ場合の見通し。落とす補題の PV から v′(b) ≤ v(b) は出る。しかし v′(a) = v(a) は一般に言えない: a の部分木の列の P_1 は p より上の祖先 g を指しうり、v(g) は g の bump 子の子の o を通して x を含む部分木に依る。a と b は同じ祖先の文脈を共有するので、文脈が下がったときに両方が同じように動くことを示す必要がある（文脈についての単調性）。展開の場合も同じ問題がある。
