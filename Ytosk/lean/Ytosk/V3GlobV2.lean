@@ -67,9 +67,9 @@ theorem t0Leaf_of_glob (hL0 : HLeafV2) : T0NRes (fun N σ _ => TP1LeafG N σ ∧
 `t = 0`. -/
 theorem trio_terminates_main_V2_glob (hD : HDropV2) (hSd : HSeedV2) (hA : HAbSV2)
     (hF : HFrameV2) (hLf : HLeafV2)
-    (hCut : T0CutResGGC) (hVRA0 : T0NRes (fun N σ _ => VSmallRAll N σ))
+    (hCut : T0CutResGGC)
     (h1 : ExpT1V2) (h2 : ExpT2V2) (hR2 : R2V2) : WellFounded Step' :=
-  trio_terminates_main_V2_now hD hSd hA (hTake_of_glob hF hLf) hCut hVRA0 (t0Leaf_of_glob hLf)
+  trio_terminates_main_V2_now hD hSd hA (hTake_of_glob hF hLf) hCut (t0Leaf_of_glob hLf)
     (t0Frame_of_glob hF) h1 h2 hR2
 
 end Ytosk

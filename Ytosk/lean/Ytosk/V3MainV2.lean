@@ -640,11 +640,12 @@ theorem trio_terminates_main_V2 (hD : HDropV2) (hSd : HSeedV2) (hA : HAbSV2) (hT
   terminates_of_desc3 (desc3_V2 hD hSd hA hT h0 h1 h2 hR2)
 
 /-- **The current form**: `trio_terminates_main_V2` with the producers committed so far plugged in.
-`t = 0`: `expT0V2_of` (V3T0Inv2), residuals `T0CutResGGC` and the three `T0NRes` of `M[n]`. -/
+`t = 0`: `expT0V2_of2` (V3T0Inv2), residuals `T0CutResGGC` and the two `T0NRes` of `M[n]`
+(leaves, frame fields). -/
 theorem trio_terminates_main_V2_now (hD : HDropV2) (hSd : HSeedV2) (hA : HAbSV2) (hT : HTakeV2)
-    (hCut : T0CutResGGC) (hVRA0 : T0NRes (fun N σ _ => VSmallRAll N σ))
+    (hCut : T0CutResGGC)
     (hLeaf0 : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm0 : T0NRes TakeFrameV2)
     (h1 : ExpT1V2) (h2 : ExpT2V2) (hR2 : R2V2) : WellFounded Step' :=
-  trio_terminates_main_V2 hD hSd hA hT (expT0V2_of hCut hVRA0 hLeaf0 hFrm0) h1 h2 hR2
+  trio_terminates_main_V2 hD hSd hA hT (expT0V2_of2 hCut hLeaf0 hFrm0) h1 h2 hR2
 
 end Ytosk
