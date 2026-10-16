@@ -3506,3 +3506,49 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 見通し: SibVCol は Good3 の「数える子の o は増えない」と同じ種類の兄弟の値の条件。Good3 と同じく値の不変条件として運ぶ形が自然。
 - 追記（t0、V3VAnc、ae36813c）: VAnc の逃げ道を Ω_{v(j)} に弱めた（推移的になる）。`VAncStep N σ`（行 1 の親子の 1 段の VAnc）と `vMono1_of`（行 1 の親から v は増える。値の等式 vRhs から証明）から、`vAnc_of_step` で行 1 の祖先すべてへ。`le1_copy2`: P の守られた列 i ≥ r は N で r + L の行 1 の子孫（par1_copy2 で親が L ずれる）。`t2CopyK_vDom_of`: 写しの枠の VDomF ⟸ `T2VAncStep M`（すべての M[n] が VAncStep）。`rwClosed_expand_t2SV` の残りは T2CopyK CopyLowK・T2VAncStep・T2X1Cl・T2SeedPRes・T2BelowXResAt。
 - 測定: VAncStep（1 段）は std_a・ext2・ext1 各 2 万と d3s 1.5 万で 73434 件例外 0（tmp/t0/probes/vanc1.py）。add が落とす v(P_1 j) の加数の成分は、足した項の成分か Ω_{v(j)} で押さえられる。v の成分そのものは Ω_{v} で押さえられない（VCompSmall は偽: d3s 12586 件など、tmp/t0/probes/vsmall.py）。T2X1Cl（前提つき）は 11 集合の全数で例外 0（t2ext 35514・ext1 28155・ext2 ほか、tmp/t0/x1cl.txt）。RwClosed の前提が立つ枠では、どの行列でも B は段 ≤ a で閉じている（ClosedLow、a の成分の枝が要らない）: t2ext・expP 各 6 万、ext1x 6 万、std_a 6 万、d3s で 50397 件例外 0（tmp/t0/probes/closedL.py）。ただし RwClosed を ClosedLow に強めても、N 側では V′ の成分を σB で押さえられない（VDomF は f(a) の成分までしか言わない）ので、今の分け方のままにした。
+
+### 落とす補題の測定と、偽だった仮定の直し（2026-10-17、drop）
+
+**測定 newpv3（厳密な ◁、全 10 集合）**: 落とす補題の結論 PO・PV（drop-wkx2 の定義）と UpgAbsXW（x − 1）。
+
+- PO は全集合で例外 0。PV は expP で 100 件偽、他の集合は例外 0。UpgAbsXW は t2ext・expP で各 1 件偽（同じ行列）。
+
+**(1) PV の偽: 崩れが上げを通って伝わる族**（expP）
+
+- 例（bms -s = 1）: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,0)(5,0,0)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,2,0)。
+- 末尾は A(3,2,1) B(4,2,1) C(5,2,0) A′(3,2,1) B′(4,2,1) x(5,2,0)。x は B′（A′ ののりしろの子）のただ一つの子。x を落とすと A′（列 16）は崩れで弱く下がり（v = Ω_{a+1} → a + ω²、a = v(P_1) = ψ_0(ψ_1(1))）、C（列 15）は A′ へ上げられるので同じ値に弱く下がる。
+- PV の弱い枝の成分の条件 WCSP は「CS、または v(P_0 i) の成分で押さえられ（WCS）、かつ親がのりしろの子でなく、かつ上げの的でない」だった。A′ は上げの的、C は親 B がのりしろの子なので外れる。WCS 自体は成り立つ。
+- 同じ行列で BumpWeakSrc（DropRes.ws）も偽（i = 16 の WCSP の欄）。2026-10-12 に ext1 で見つかった 1 件と同じ種類。
+- **直し（drop-wkx2）**:
+  - `WCSP M ρ i w := CS w ∨ WCS (v(P_0 i)) w`（副条件を外した）。使う所は親の枠（WCS が要る）だけになった。
+  - 弱く変わる列の成分の条件そのもの `WeakCS M x ρ ρ′`（∀ i < x、v′(i) ⋬ v(i) なら WCSP M ρ i v′(i)）を、落とす補題の仮定にした。前は副条件から導いていたが、副条件は偽。
+  - `BumpWeakSrc` の中身を「形の部分 `BumpWeakShapeSrc`（children i = [j]、j の最初の子が k）∧ WeakCS」にした（名前と引数はそのまま）。前の第 3 の欄 WCSP i v(P_1 i) は WeakCS で要らなくなった。
+  - のりしろの弱い関係 `BWk` から CS を外した（CS は v_weak で WCSP を作るためだけだった）。`v_weak` は WkVA だけを出し、成分の条件は WeakCS から。
+  - `pv_of` の上げの場合（i が k へ上げられ、k が弱い）は WeakCS で i の WCSP を出す。
+  - `drop_all` の hBump に WeakCS を同梱した（`bump_drop` の結論を「のりしろの枠 ∧ WeakCS」に）。呼び手は変えずに済む。`drop_all_hard`・`drop_all_R`・`bump_dropW`・`DropRes.congr`・基底も同じに直した。基底では落とした行列の v′ は 0・tw w2 k・ω で、どれも CS。
+
+**(2) UpgAbsXW の偽: t = 1・q = r = x − 1**（t2ext・expP で同じ 1 行列）
+
+- (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,0,0)(7,1,1)(8,1,1)(9,1,0)(7,1,1)(8,1,1)(9,0,0)(10,1,1)(11,1,1)(12,1,0)(10,1,1)(11,1,0)(12,2,1)(13,2,1)(14,1,0)(15,0,0)(13,2,0)(14,3,0)（bms -s = 1）。
+- x = (14,3,0)、r = P_1 x = P_0 x = 28 = x − 1。28 は M で祖先 24 へ上げられ v(28) = W = ψ_ω(ψ_ω(ψ_ω(1)))、M.take x では上げを失い v′ = ω + 1。弱い選択肢の条件のうち WCSP・NBPar は成り立ち、「x の行 2 ≠ 0」だけが外れる。
+- t = 1・q = r のエンジン（V3QRFinal3）の hlhd「始点 o′(r) ◁ o(r)」もここで偽（o′(r) = Ω_{ω+1}、o(r) = ψ_W(Ω_{W+1})）。ただし M[n] では r は上げを保ち、o_N(r) = ψ_W(ψ_W(…ψ_W(Ω_{ω+1})))（鎖の形）で o_N(r) ◁ o(r) は成り立つ（n = 2, 3, 4）。壊れているのは始点を経由する道だけ。
+- **直し（drop-wkx2）**:
+  - UpgAbsXW の弱い選択肢の第 3 条件を「x の行 1 ≠ 0」（t ≠ 0）にした。t = 0 の使い所は `UpgAbsXW.toX he1` で強い形が出る。
+  - t = 1 のエンジンの引数を UpgAbsXW にした（落とす補題には弱い形で足りる）。強い形が要るのは q = r のエンジンの r での PO の形（`PO.zero_of_strong`）だけで、r ≠ x − 1（L ≥ 2）なら新しい `PO.zero_of_ne` で強い形なしに出る。残る L = 1 の場合だけを仮定 `hUA1 : L = 1 → UpgAbsX M (r + L) ρ` にした（qr_final3・qr_final4*・qr_*_final_inv3V2）。
+  - その仮定の出どころ: 旧い組み立て（Res3A の abS を持つ）では `AbsSR` の欄にした。`AbsSR` を構造にし、欄 `lo`（t = 0 の BumpAbsLo、前の AbsSR）と欄 `upg`（t = 1・P_1 x = P_0 x = r・r + 2 = |M| の強い UpgAbsX）。`AbsSR.upgX` で q = r のエンジンの形にする。旧い最上位の型は変わらない。
+  - Inv3V2 の最上位（top の Res3AW の文脈、abS なし）では名前つきの残り `T1UpgQRV2`（V3ResV2、偽）にし、`expT1Out_of_step`・`desc3_V2`・`trio_terminates_main_V2`、t1 の `expT1Out_of_res`・`expT1Out_V2`・`expT1Out_V2_glob`、top の `trio_terminates_main_V2_cur` に通した。t1 が L = 1 の枝を作れば外れる。
+  - t1 の `frameMapT1_take`（V3T1VSRAll）は PV の弱い枝で「数える子なし」を使っていたので、L ≥ 2 は `CntX.nocnt_of_ne`、L = 1 は強い形で直した（引数が 1 つ増えた）。
+  - t2 の強い形は前から予告の `T2UpgAbs`（`expT2V2_of`・`r2V2_of` の引数、最上位 `_cur` にも）。
+
+**次の測定**: `tools/probe_pv2.py`（F5 = WeakCS、F6 = 形の部分、F7 = 新しい PV、他）と `tools/probe_uaw1.py`（新しい UpgAbsXW）を全 10 集合で。
+
+**測定の結果と止めた状態**（2026-10-17 02:35 に止めた）:
+
+- newpv3（drop-wkx2 の旧い PV・旧い UpgAbsXW、厳密な ◁）は 9 集合で済み: t2ext・expP・ext1・ext1x・Cprime・t0ext・d3s・deep2・deep3。PO は 9 集合で例外 0。旧い PV の偽は expP の 100 件だけ、旧い UpgAbsXW の偽は t2ext・expP の同じ 1 行列だけ（どちらも上の直しの対象）。結果は `tmp/ytosk-handoff/results/drop/newpv3_*.json`。
+- 未実行・途中で止めたもの:
+  - newpv3 の ext2（途中で止めた）と std_a: `nice -n 15 python3 tools/probe_newpv3.py ext2 std_a`
+  - 新しい定義の測定（drop-wkx2 を main に入れる前に要る、11 集合）: `nice -n 15 python3 tools/probe_uaw1.py`（新 UpgAbsXW と SmallSelf(V + 1)。UAW1.failures・SmallSelf.failures が 0 であること）、`nice -n 15 python3 tools/probe_pv2.py`（F7 = 新しい PV、F5 = WeakCS、F6 = BumpWeakSrc の形が 0 であること。F2・F2u・F3 は参考）。
+  - その後: `nice -n 15 python3 tools/probe_dropres.py --output tmp/ytosk-handoff/results/drop/dropres`（HardArg・VSmallNew・BumpWeakSrc の形・WeakCS・BumpAbsC・SeedR ほか）、`nice -n 15 python3 tools/probe_abswn_t0.py`（t0 の AbsWN と単調性）、probe_frame7・probe_leafg（10 集合 + sets_take、HFrameV2・HLeafV2 の別実装での確認。主な測定 probe_hframe は top が走らせている）、probe_inv2・probe_trigs0 の sets_take。手順は `tmp/drop/queue.sh`。
+- 小さい標本（各集合の一部）での結果: probe_dropres（1/60）で HardArg・VSmallNew・BumpWeakSrc（旧）・BumpAbsC・SeedR・VSmallNewR・ShadowC は例外 0。probe_pv2 の F1・F3・F4・F5・F6・F7 は expP の破れの行列と ext1 の旧反例で成り立つ。
+
+**ブランチ drop-wkx2（4f7e3f84、main af831702 の上、全体ビルド緑 1022 jobs、公理は標準の 3 つ）**: 上の (1)(2) の直しと SmallSelf(V + 1)。main には未コミット（新しい定義の 11 集合の測定待ち）。t1 はこの上で q = r の L = 1 の枝を直し、hUA1・T1UpgQRV2 を外す予定（t1-qr）。取り込み手順: `tmp/drop/land.sh`（rebase・全体ビルド・main の作業ツリーの衝突確認）のあと、変更したファイルを main の作業ツリーに写してコミット。

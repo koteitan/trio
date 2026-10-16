@@ -36,8 +36,9 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - ✅ 残りの条件を仮定した組み立て（`inv3V2_take`）
       - ✅ PH3cG・FC3・VSmallRAll の保存。落とす補題の結論を仮定した証明
       - 落とす補題の残り（DropRes など）。強い UpgAbsX の反例も修正する
-        - UpgAbsXW（T2Ext の x − 1 の族の修正）を今の main に載せ直した。ローカルのブランチ `drop-wkx2` で全体ビルド緑、main には未コミット。全 10 集合の測定（`tools/probe_newpv3.py`、厳密な ◁）が途中で止まっていて、その結果を見てからコミットする
-        - DropResH の残り（HardArg・VSmallNew・BumpWeakSrc・BumpAbsC）と SeedR・AbsSR の 10 集合の測定（`tools/probe_dropres.py` は下書き、試しの実行のみ）
+        - UpgAbsXW（T2Ext の x − 1 の族）と落とす補題の弱い枝の一般化（WCSP の副条件を外し、WeakCS を BumpWeakSrc へ。UpgAbsXW の第 3 条件を行 1 に、SmallSelf(V + 1) を追加）。ブランチ `drop-wkx2`（4f7e3f84）で全体ビルド緑、main には未コミット。newpv3 は 9 集合済み（PO 例外 0、旧い PV・UpgAbsXW の偽は直しの対象）。新しい定義の 11 集合の測定（probe_uaw1・probe_pv2）が未実行で、その後に取り込む（desc.md「落とす補題の測定と、偽だった仮定の直し（2026-10-17、drop）」）
+        - t = 1・q = r・L = 1 の強い UpgAbsX（hUA1・T1UpgQRV2、偽）は t1 が drop-wkx2 の上で外す（t1-qr）
+        - DropResH の残り（HardArg・VSmallNew・BumpWeakSrc（形 ∧ WeakCS）・UpgAbsXW・BumpAbsC）と SeedR の 11 集合の測定（`tools/probe_dropres.py`、標本では例外 0）と証明。AbsSR は最上位から外れた（top）。AbsSR の t = 0 の欄 BumpAbsLo も偽で、t0 が弱い形 AbsWN に替えた（落とし側は BumpAbsC から出る）
         - ✅ AbsSR から t = 2 の欄（srow = 2 → BumpAbsS）を外した。使う所がなく、標準形で偽だった（HAbSV2 は t = 0 の BumpAbsLo だけになった）
       - 落とした行列の枠の条件（TakeFrameV2）、TP1LeafG・TP1WLeafG（最後の列が根の場合の RootP は top の `rootP0_take` で済み）
         - 10 集合と、落とした行列の追加分（`tmp/ytosk-handoff/sets_take/`）での測定（`tools/probe_frame7.py`・`tools/probe_leafg.py`）。top の `tools/probe_hframe.py` と同じ欄だが、top とは drop が測ると決めた（top は走らせない）
