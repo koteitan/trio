@@ -3173,3 +3173,14 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 残り `T1VSRAllStep`: VSmallRAll の 1 コピーごとの保存（T1Core を前後で仮定してよい）。t = 1 では D の値が fsD で変わり、写しの段の道が元の P の道と違う（写しの根 r + L の親は q、P では g）ので、t0 の frameMap の議論はそのまま使えない。
 - 測定 `tools/probe_eqsib.py`（EqSibUpg と強い形 PassFirst「v(c) が D の数える c は r の最初の子」）: d3s・deep2・deep3・Cprime・t0ext・ext1x・expP・ext1 で例外 0（t2ext・ext2 は実行中）。EqSibUpg は S1 から証明したので、この測定は確認のため。結果は `tmp/ytosk-handoff/results/t1/eqsib/`。
 - 公理はどれも propext・Classical.choice・Quot.sound。
+
+### S1 はすべての標準形で成り立つ（2026-10-17、t0、V3S1Std、緑）
+
+- `S1_std : Std M → S1 M`。公理は標準の 3 つ。展開ごとの場合分け（V3S1T0・V3S1T1）は要らなくなった（t = 2 も含む）。
+- trio の結果から出す:
+  - Ytosk の標準形は trio の ST_TS（`std_stts`、V3Order）。
+  - ST_TS の translate は CNF（trio `cnf_ST_TS`: 木の兄弟は `<o` で増えない）。
+  - 深さ d のブロックの上で translate は列の辞書式順序と `<o` の順序同型（trio `olt_iff_seqlex`）。
+- 新しい補題:
+  - `cnf_sibChain`: CNF は「列 p から、p の部分木と後の兄弟の部分木（親の部分木の終わりまで）」の translate に降りる（列の長さの帰納法。p が先頭の子の部分木にあるか、兄弟の側にあるかで分ける）。
+  - `S1s_of_cnf`: 隣り合う兄弟 a < b で、a の兄弟の鎖の translate は P a (a の部分木) (P b (b の部分木) …)。CNF の比較から ¬(translate (subT a) <o translate (subT b))。subT a・subT b は深さ e0 a のブロック（`blockok_subT`）なので、順序同型で列の辞書式に戻す（`seqLtB_iff_seqlex`）。
