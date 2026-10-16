@@ -3155,3 +3155,21 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - t = 1 の第 k コピーは悪い部分の行 0 を k·d0 だけ一様にずらしたもの（`colT1_per`）。行 0 の一様なずれは辞書式の順序を変えない（`seqLtB_map_shc`）。
 - 場合分けは t = 0 と同じ 3 つ。違うのは a < x ≤ b の場合で、b = x（コピーの行 0 は e0 x 以上で、等しいのは x だけ、`e0T1_copies`）、a は M での x の前の兄弟。M の S1 から [col x] ≤ subT a で、N の x は (e0 x, e1 r, e2 r) < col x から始まる。
 - t = 2 はまだ。行 1 の上昇が le1 のガードつきの列だけなので、ずれが一様でなく、辞書式の順序の保存に構造の議論が要る。
+
+### PassRootRes を S1 から・t = 1 の組み立て（2026-10-17、t1、V3PassRoot・V3EqSibS1・V3ExpT1Inv2、緑）
+
+- **PassRootRes は値でなく展開の履歴の主張だった。** SInv も Good3 も満たす非標準の行列 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(1,1,1)(2,1,1)(3,1,0)（bms -s = 0）で PassRootRes が偽（r = 0、CL = [1, 6]、c = 6、v(6) = Ω_1 で共終数は big(v(0))）。o(1) = ψ_{Ω_{ω²}}(…) > o(6) なので Good3 は破れない。
+- `dep_child_bumpdesc`（V3PassRoot）: t = 1 で v(c) が D の r = P_1(x) の子 c（c < x）は、のりしろの子 j の真の子孫 y で P_1(y) = r のものを持つ。c が x の祖先なら y = x（c は M.take x で topped なので x の上の子はのりしろの子）。そうでなければ D の出口（dep_exit）の c′ について y = c′ − 1（upg_spec で P_1(c′ − 1) = r）。
+- `EqSibUpg M`: r の子 c に前の兄弟があり、上の y があれば c は上げ先。`dep_child_first`: EqSibUpg なら、数える c には前の兄弟がまったくない（c は topped なので、上げ先なら数えない）。`passRootRes_of_eqSib`: PassRootRes（共終数の条件なしの強い形）。
+- `eqSibUpg_of_S1`（V3EqSibS1）: S1 と R0P・R1S・Z2・SibDec・Z1C・BumpE2・BumpLeaf から EqSibUpg。
+  - y の上の j の子 k は e1 k = e1 c なので、BumpLeaf で k は葉・j の最後の子、j は c の最後の子。y = k。
+  - S1(j′, j)（j′ は j の直前の兄弟）: j′ の最初の子の行 1 が e1 c になり、BumpLeaf で j′ が c の最後の子になって矛盾。よって c の部分木は c, j, k。
+  - S1(b′, c)（b′ は c の直前の兄弟）: b′ の部分木は b′, b′+1（のりしろの子）, b′+2（行 1 が e1 c の葉）だけで c = b′ + 3。b′ + 2 は P_1 = r・行 2 が 0 なので upg(b′ + 2) = c。
+- `passRootRes_of_S1`: SInvX と S1 から PassRootRes。標準形の S1 は `S1Std`（t0 の S1_t0、t = 1 の S1_t1 は済み）。
+- `expT1Out_of_res`（V3ExpT1Inv2）: ExpT1OutV2 ⟸ HFrameV2 ∧ HLeafV2 ∧ S1Std ∧ T1VSRAllStep。
+  - エンジン qr_final4S・t1_main_vlocS に運ぶ述語は T1Core（CopyCoreV2 ∧ VrLe ∧ VSmallF）∧ VSmallRAll。始点は StepCtxV2.pre の M.take x の Inv3V2、落とす補題は Res3A.drop、q = r の始点は Res3A.seed。
+  - `ExpStepT1R P Q`: 前後の P を仮定して Q を運ぶ形。`expStep_andR` で ExpStepT1 (P ∧ Q) にする。
+  - N = M[n] の Std は Std.exp、N ≠ SRO は ne_SRO_of_rk、枠の 10 欄・葉は HFrameV2・HLeafV2、TP1C・TP1WC は tp1C_of_ph3cG・tp1WC_of_ph3cG。
+  - 残り `T1VSRAllStep`: VSmallRAll の 1 コピーごとの保存（T1Core を前後で仮定してよい）。t = 1 では D の値が fsD で変わり、写しの段の道が元の P の道と違う（写しの根 r + L の親は q、P では g）ので、t0 の frameMap の議論はそのまま使えない。
+- 測定 `tools/probe_eqsib.py`（EqSibUpg と強い形 PassFirst「v(c) が D の数える c は r の最初の子」）: d3s・deep2・deep3・Cprime・t0ext・ext1x・expP・ext1 で例外 0（t2ext・ext2 は実行中）。EqSibUpg は S1 から証明したので、この測定は確認のため。結果は `tmp/ytosk-handoff/results/t1/eqsib/`。
+- 公理はどれも propext・Classical.choice・Quot.sound。

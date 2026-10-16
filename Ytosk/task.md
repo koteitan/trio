@@ -59,20 +59,9 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t1OP`）
       - ✅ q = r の条件付き入口を Inv3V2 に接続。実際の添字を使い、旧 AbsD・TrigOmC を外す（`qr_final_inv3V2`）
       - ✅ q != r の条件付き入口を Inv3V2 に接続。旧 AbsD・AbsU・TPLo を始点の条件に替える（`qn_final_inv3V2`）
-      - コピーを 1 個増やす各段で Inv3V2 が保たれること（ExpStepT1）
-        - ✅ PH3cG・FC3 の保存を Inv3V2 に接続（`expStep_closure_inv3V2`）。旧い偽の欄を使わない
-        - ✅ Cons・Good3・FrameClosed・FrameOT・BumpKidsDec・BumpTermDec・PH3cG・FC3・rootS・rootP の 10 条件をまとめて保存（`expStep_core_inv3V2`）
-        - ✅ この 10 条件と下降を、両入口で各段の保存を仮定せずに出す（`qr_core_final_inv3V2`・`qn_core_final_inv3V2`）。束全体の結論ではない
-        - ✅ 最後の加数の成分の条件を仮定した VSmallF の保存（`expStep_vsmallF_inv3V2`）
-        - ✅ VSFRes2 を仮定せず、元の行列の PassRootRes だけで VSmallF を保存する経路を接続（`expStep_vsmallF_pass_inv3V2`）
-        - ✅ この経路で、両入口から 10 条件＋VSmallF と下降を出す（`qr_vsmallF_final_inv3V2`・`qn_vsmallF_final_inv3V2`）。DropRes・始点の束・PassRootRes などは仮定
-        - ✅ PassRootRes の全 10 集合の全数確認。47,654 枠で反例・評価失敗 0（測定であり証明ではない）
-        - PassRootRes を証明（元の成分の経路を使うなら VSFRes2）。条件そのものは未証明
-        - ✅ 葉の条件を仮定して TP1C・TP1WC を出す組み立て（`expStep_tp1_inv3V2`）
-        - 葉の条件（T1LeavesV2）と、束の残りの条件の保存を証明
-      - 落とす補題と始点の成分の残りを証明
-      - VSmallRAll の保存
-      - 新しい枠の条件・段 0 の扱いの証明
+      - ✅ ExpT1OutV2 の組み立て（`expT1Out_of_res`、V3ExpT1Inv2）。運ぶ述語は CopyCoreV2 ∧ VrLe ∧ VSmallF ∧ VSmallRAll。枠の 10 欄・葉は top の共通の残り HFrameV2・HLeafV2、TP1C・TP1WC は PH3cG と葉から。残りは下の 2 つと HFrameV2・HLeafV2
+      - ✅ PassRootRes を S1 から証明（`passRootRes_of_S1`、V3EqSibS1・V3PassRoot）。値は使わない。残りは標準形の S1（`S1Std`、t0・top の共通の履歴の不変条件。t = 0・t = 1 の展開での保存は済み）
+      - VSmallRAll の 1 コピーごとの保存（`T1VSRAllStep`）。値が変わる（D の値は fsD）ので t0 の写像の議論はそのまま使えない
     - t = 2 の展開と下降
       - ✅ 旧 Inv3V 上の条件付きエンジン（`hExp_t2_G`・`hR2_t2_of`）
       - Inv3V2 への接続と、新しい枠の条件の証明
