@@ -11,6 +11,7 @@ import Ytosk.V3InvT2
 import Ytosk.V3T2DS
 import Ytosk.V3InvPer
 import Ytosk.V3TopB
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -917,12 +918,14 @@ structure Res3T2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
 
 /-- **Step 1 for `t = 2`**: from the invariants, the remaining hypotheses (`Res3`, `Res3T2`) and a
 valuation of each `M[n]` (`n ≥ 2`), every expansion drops the root value. -/
-theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (I : Inv3 M ρ rk) (R : Res3 M ρ rk) (R2 : Res3T2 M ρ rk) (hX : SInvX M) (hJ : RowJ M)
+theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (R2 : Res3T2 M ρ rk) (hX : SInvX M) (hJ : RowJ M)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hNval : ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
       ∃ σ rkN, Cons (expand M n) σ ∧ Rk (expand M n) rkN ∧ Good3 (expand M n) σ) :
-    ∀ n, DropsAt M ρ n := by
+    (isOT (root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk)) = true ∧
+      root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ) ∧
+    ∀ n, 2 ≤ n → DropsAt M ρ n := by
   obtain ⟨r, hr⟩ := parLast_of I.e00 I.r01 I.r12 hz
   have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
       TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
@@ -1152,13 +1155,8 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       exact t2_qn_main hlen hL0 hA hq' (by omega) hd0e hn Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hpq'
         Tqb Te2pq Tclq Tclpq hIUt Tp1 TqL Tdv Tos Tvsh I.cons I.good I.rank hCN hGN hRN
         I.fc I.vs I.td I.kd hAbs hseed
-  intro n
-  rcases n with _ | _ | n
-  · apply dropsAt_of (by rw [hexp 0, gexp_zero_gen])
-    exact drop_n0_gen hlen hL0 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
-      ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr (fun j _ hj => R.chain j (by omega)) hlast.2
-  · apply dropsAt_of (by rw [hexp 1, gexp_one_gen hlen])
-    exact ⟨_, _, hC1, hRk1, hlast⟩
+  refine ⟨by rw [hL]; exact hlast, fun n hn2 => ?_⟩
+  obtain ⟨n, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
   · have hne := gexp_ne_SRO (n := n + 2) hlen hL0 hA hd0e
       (show entry M 1 (r + L) = entry M 1 r + (entry M 1 (r + L) - entry M 1 r) by omega) he2r h1lt
       (by omega)
@@ -1176,6 +1174,45 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     apply dropsAt_of (hexp (n + 2))
     exact ⟨σ, rkN, hCN, hRN, hbig (n + 2) (by omega) σ rkN hCN hRN hGN⟩
 
+/-- **Step 1 for `t = 2`**: every expansion drops the root value (`n = 0` by the chain of drops). -/
+theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (I : Inv3W M ρ rk) (R : Res3 M ρ rk) (R2 : Res3T2 M ρ rk) (hX : SInvX M) (hJ : RowJ M)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hNval : ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
+      ∃ σ rkN, Cons (expand M n) σ ∧ Rk (expand M n) rkN ∧ Good3 (expand M n) σ) :
+    ∀ n, DropsAt M ρ n := by
+  obtain ⟨hlast, hge⟩ := t2_drops_ge I R.toW R2 hX hJ hz h2 hNval
+  obtain ⟨r, hr⟩ := parLast_of I.e00 I.r01 I.r12 hz
+  have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
+  rw [h2] at hr
+  have hrx : r < M.length - 1 := par_lt M 2 _ r hr
+  have hlen2 : 2 ≤ M.length := by omega
+  obtain ⟨L, hL⟩ : ∃ L, M.length - 1 = r + L := ⟨M.length - 1 - r, by omega⟩
+  have hlen : r + L + 1 = M.length := by omega
+  have hL0 : 0 < L := by omega
+  rw [hL] at hr hlast
+  have hexp : ∀ n, expand M n = TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+      (entry M 1 (r + L) - entry M 1 r) n := by
+    intro n
+    have h := expand_eq_gexp M n hlen2 hzT (by rw [h2]; rw [hL]; exact hr)
+    rw [h2, hL] at h
+    simp only [show (0 < 2) from by omega, show (1 < 2) from by omega, if_true,
+      Nat.add_sub_cancel_left] at h
+    exact h
+  have hdr : DropRes M (r + L) ρ (drop1 M (r + L) rk) := by
+    have := R.drop; rw [hL] at this; exact this
+  have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank (hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat)
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rk) := cons_of_rk hRk1
+  intro n
+  rcases n with _ | _ | n
+  · apply dropsAt_of (by rw [hexp 0, gexp_zero_gen])
+    exact drop_n0_gen hlen hL0 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
+      ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr (fun j _ hj => R.chain j (by omega)) hlast.2
+  · apply dropsAt_of (by rw [hexp 1, gexp_one_gen hlen])
+    exact ⟨_, _, hC1, hRk1, hlast⟩
+  · exact hge (n + 2) (by omega)
+
 /-- **`hT2` of `trio_terminatesA`** from the remaining hypotheses `Res3T2`: the valuation of `M[n]`
 (`n ≥ 2`) comes from the top hypothesis `HInvA` (`M[n]` is standard, not SRO, not empty). -/
 theorem t2_hT2
@@ -1186,7 +1223,7 @@ theorem t2_hT2
   intro hInv M ρ rk hM I R hz h2
   have hne : M ≠ SRO := by intro h; subst h; revert h2; decide
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hne
-  apply t2_drops I R (hR2 M ρ rk hM I R hz h2) hX hJ hz h2
+  apply t2_drops I.toW R (hR2 M ρ rk hM I R hz h2) hX hJ hz h2
   intro n _ hS hE
   unfold HInvA at hInv
   obtain ⟨⟨rkN, hRN⟩, hall⟩ := hInv _ (Std.exp n hM) hS hE

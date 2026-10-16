@@ -7,6 +7,7 @@
   o(q) を通らない呼び出しは同じ値。CL_N(r) = CL_{M.take x}(r) ++ [q]、o_N(q) は q ≠ r の主の場合と同じ形。
 -/
 import Ytosk.V3T2SeedSV
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -66,7 +67,7 @@ theorem agree_by_rank {M' : Mat} {ρ ρ' : Valn} {rk' : Bool → Nat → Nat} (E
 
 /-- **C: `q` is not counted at `r` in `M.take x`** (it is an upgrade target, and all its children are bump
 children, so it stays topped). -/
-theorem qP_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+theorem qP_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q])
     (hun : upg M (r + L - 1) = none) : ¬ Counted (M.take (r + L)) r q := by
@@ -127,7 +128,7 @@ theorem qP_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS 
 /-- **The frame of the seed `r` in `M[n]`** (C case, `n ≥ 2`): the counted children of `r` are those of
 `M.take x` with the values of `M.take x`, then `q` with `o_N(q)` as in the main `q ≠ r` case. -/
 theorem C_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)
@@ -455,7 +456,7 @@ theorem C_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 /-- **The value of the seed `r` in `M[n]`** (C case, `n ≥ 2`). -/
 theorem o_r_level_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)
@@ -500,7 +501,7 @@ theorem o_r_level_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 /-- **The counted children of the seed `r` in `M[n]` decrease** (C case), when the last counted child of `r` in
 `M.take x` has a subscript above `s′ = v_N(q)`. -/
 theorem seed_dec_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)
@@ -557,7 +558,7 @@ structure T2SeedCRes (M : Mat) (ρ : Valn) (r L q : Nat) : Prop where
 
 /-- **The value of the seed `r` in every `M[n]`** (C case, `n ≥ 2`): `ψ_V(σ^{n−1} X₁)`. -/
 theorem seed_r_value_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q]) (hRes : T2SeedCRes M ρ r L q)
@@ -636,7 +637,7 @@ theorem seed_r_value_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 /-- **SeedL in the C case**: `o_N(r) ◁ o_M(r)` for every `M[n]` (`n ≥ 2`). -/
 theorem seedL_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q]) (hRes : T2SeedCRes M ρ r L q) :

@@ -6,6 +6,7 @@ main_G では展開は M[n] の Inv3V だけを出せばよい（Res3 の欄は�
 -/
 import Ytosk.V3ExpT2M3
 import Ytosk.V3DropRH
+import Ytosk.V3InvW
 
 namespace Ytosk
 

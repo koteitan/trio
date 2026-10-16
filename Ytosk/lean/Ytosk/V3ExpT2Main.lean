@@ -8,6 +8,7 @@
 -/
 import Ytosk.V3ExpT2W
 import Ytosk.V3ExpT2F
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -17,7 +18,7 @@ open T
 valuation of `N` with its ranking and `Good3`. -/
 def T2Ctx (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (n : Nat) (σ : Valn)
     (rkN : Bool → Nat → Nat) : Prop :=
-  Std M ∧ M ≠ SRO ∧ Inv3 M ρ rk ∧ Res3A M ρ rk ∧ col M (M.length - 1) ≠ (0, 0, 0) ∧
+  Std M ∧ M ≠ SRO ∧ Inv3W M ρ rk ∧ Res3W M ρ rk ∧ col M (M.length - 1) ≠ (0, 0, 0) ∧
     TRIO.srow M (M.length - 1) = 2 ∧ 2 ≤ n ∧ Cons (expand M n) σ ∧ Rk (expand M n) rkN ∧
     Good3 (expand M n) σ
 
@@ -52,12 +53,12 @@ structure T2Rest : Prop where
 
 /-- The part of `Good3` before `x`, for every `M` of type `t = 2`. -/
 def T2BelowXAll : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → T2BelowXE M
 
 /-- The boundary facts of the copies, for every `M` of type `t = 2`. -/
 def T2CopyResAll : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → T2CopyResE M
 
 /-- **`T2ExpRes` from the residuals**: `Good3` of `M[n]` from `T2BelowXAll` and `T2CopyResAll`, `rootS`
@@ -76,7 +77,7 @@ theorem t2ExpRes_of (hBX : T2BelowXAll) (hCR : T2CopyResAll) (hRest : T2Rest) : 
 
 /-- **`hExp` for `t = 2` from the residuals.** -/
 theorem hExp_t2_main (hBX : T2BelowXAll) (hCR : T2CopyResAll) (hRest : T2Rest) :
-    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
+    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3W M ρ rk → Res3W M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN :=
   hExp_t2 (t2ExpRes_of hBX hCR hRest)

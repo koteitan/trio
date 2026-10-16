@@ -8,6 +8,7 @@ o_M(r) = ψ_V(B + Ω_s)（s = v(q)、CL(q) = []）。ψ_V(B + Ω_t) ◁ ψ_V(B +
 -/
 import Ytosk.V3T2SeedQNL
 import Ytosk.V3ExpT2BD
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -26,7 +27,7 @@ theorem qnS_vxs (M : Mat) (ρ : Valn) (r L q : Nat) : add (ρ.v r) (last (qnS M 
   rw [hP, last_app P (by simp), show last (psi s y z) = psi s y z from rfl, hP]
 
 /-- `s′` is standard. -/
-theorem qnS_ot {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) {r : Nat} (hr : r < M.length)
+theorem qnS_ot {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {r : Nat} (hr : r < M.length)
     (L q : Nat) : isOT (qnS M ρ r L q) = true := by
   unfold qnS
   refine isOT_add (I.good.ot_v r hr) (isOT_omega (isOT_sumN _ ?_))
@@ -44,7 +45,7 @@ theorem qnS_gt (M : Mat) (ρ : Valn) (r L q : Nat) : ρ.v r < qnS M ρ r L q := 
   rw [hW]; exact lt_add_principal s y _
 
 /-- **`P_0(q) = r`** for `t = 2`, `q ≠ r`. -/
-theorem par0_q_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+theorem par0_q_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) : par M 0 q = some r := by
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
@@ -64,7 +65,7 @@ theorem par0_q_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
     (par1_x_r (by omega) I.z2 I.z1 hr) hqr Txb0 hJ hX.r0p I.be
 
 /-- **C: `r` is not topped in `M.take x`** (its last child is `q`, not a bump child). -/
-theorem topP_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+theorem topP_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) : topped (M.take (r + L)) r = false := by
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
@@ -97,7 +98,7 @@ theorem topP_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (h
   exact decide_eq_false Tqb
 
 /-- **`v` of a column that is not topped in `M.take x` is that of `M`** (`chg_off` and `chg_struct`). -/
-theorem v_take_of_untopped {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) {x i : Nat}
+theorem v_take_of_untopped {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {x i : Nat}
     (hx : x + 1 = M.length) (hi : i < x) (ht : topped (M.take x) i = false) {τ : Valn}
     (hτ : Cons (M.take x) τ) : τ.v i = ρ.v i := by
   have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
@@ -121,7 +122,7 @@ structure T2SeedQNRes (M : Mat) (ρ : Valn) (r L q : Nat) (Lc : List Nat) : Prop
         (tqN (ρ.v r) (qnS M ρ r L q) t1 k = ρ.v q ∨ Lhd z (tqN (ρ.v r) (qnS M ρ r L q) t1 k) (ρ.v q)))
 
 /-- **The seed `r` of `M` itself** with a leaf as last counted child: `o_M(r) = ψ_V(B + Ω_s)`. -/
-theorem leaf_M_side {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+theorem leaf_M_side {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk)
     {r c : Nat} {s : T} (hrM : r < M.length) {Lc : List Nat} (hCLM : CL M r = Lc ++ [c])
     (hoc : ρ.o c = psi s z z) :
     (∀ g ∈ summands (t2B (ρ.v r) ρ Lc), psi s z z ≤ g) ∧ isOT (t2B (ρ.v r) ρ Lc) = true ∧
@@ -149,7 +150,7 @@ theorem leaf_M_side {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
 
 /-- **The value of the seed `r` in every `M[n]`** (`n ≥ 2`, `q ≠ r`): `ψ_V(B + Ω_{t_{n−1}})`. -/
 theorem seed_r_value_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)
@@ -240,7 +241,7 @@ theorem seed_r_value_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 /-- **SeedL for `q ≠ r`** (`q` the last counted child of `r`): `o_N(r) ◁ o_M(r)` for every `M[n]` (`n ≥ 2`). -/
 theorem seedL_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)

@@ -8,6 +8,7 @@
 import Ytosk.V3T2SeedRec
 import Ytosk.V3ExpT2FO
 import Ytosk.V3T2M
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -64,7 +65,7 @@ theorem o_copy_root {N P : Mat} {σ ρ : Valn} {r L : Nat} {V' : T} {g : Nat →
 /-- **The seed column `r` of `M[n]`** (`t = 2`, `q = r`, no upgrade into `x`): with `CL M r = Lc ++ [x]`,
 `o_N(r) = ψ_V(step_V(B, V + 1, σ_{V_P, V+1}(arg of o_P(r))))`, `P = M[n − 1]`. -/
 theorem o_r_level_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hXu : ∀ i, upg M i ≠ some (r + L))
@@ -212,7 +213,7 @@ theorem o_r_level_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 /-- **The counted children of the seed `r` in `M[n]` decrease** (`q = r`, no upgrade into `x`). -/
 theorem seed_dec_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hXu : ∀ i, upg M i ≠ some (r + L))
@@ -358,7 +359,7 @@ theorem seed_dec_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 /-- **The frame of the seed `r` in `M[n]`** (`q = r`, no upgrade into `x`): the data used by the seed frames. -/
 theorem qr_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hXu : ∀ i, upg M i ≠ some (r + L))

@@ -18,6 +18,7 @@ import Ytosk.V3PSeedQNG
 import Ytosk.V3Tame
 import Ytosk.V3DropPres
 import Ytosk.V3BumpDrop
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -258,7 +259,7 @@ theorem po_le {ρ ρ' : Valn} {i : Nat} (h : PO ρ ρ' i) : ρ'.o i ≤ ρ.o i :
 open Classical in
 /-- **`t1` in `M.take x`** (qn, `CL_M(r) = [q]`): `t1 = V + ω^{W_T}` with `ω^{W_T} ≤ ω^W`. -/
 theorem qn_take_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hCLM : CL M r = [q])
     {τ : Valn} (hτ : Cons (M.take (r + L)) τ) {t1 : T}
@@ -386,7 +387,7 @@ namespace G
 
 /-- **`T2SeedQNFC` holds** (qn, from `Inv3`・`Res3A` of `M`). -/
 theorem t2SeedQNFC_holds {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) {Lc : List Nat} (hCLM : CL M r = Lc ++ [q]) :
     T2SeedQNFC M ρ r L q Lc := by

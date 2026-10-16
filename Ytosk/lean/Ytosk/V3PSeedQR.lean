@@ -12,6 +12,7 @@ N = M[n] での r の数える子は CL_N(r) = Lc ++ [x′]（x′ = r + L は�
 import Ytosk.V3Tame
 import Ytosk.V3T2SeedQRL
 import Ytosk.V3PT2
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -93,7 +94,7 @@ open Classical in
 `CL N r = Lc ++ [x]`, `v_N(r) = v(r)`, the children before `x` keep their values, and
 `o_N(x) = ψ_{V+1}(σ_{V_P, V+1}(arg of o_P(r)))` with `P = M[n − 1]`. -/
 theorem seed_frame_data_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hXu : ∀ i, upg M i ≠ some (r + L))
@@ -241,7 +242,7 @@ open Classical in
 /-- **PH3c and FC3 at the frames of the seed `r` of `M[n]`** (`t = 2`, `q = r`, no upgrade into `x`), from
 PH3c・FC3 of `M` and t2 の残り `T2SeedQRRes` (σB is `tame_sigmaB_std`). -/
 theorem seed_frames_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hXu : ∀ i, upg M i ≠ some (r + L))

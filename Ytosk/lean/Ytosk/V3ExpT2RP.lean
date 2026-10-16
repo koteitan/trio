@@ -6,6 +6,7 @@ Rt 以後、`depS_ge` と `agree_N`）、Rt の値は M の値以下（`T2BelowX
 -/
 import Ytosk.V3ExpT2FO
 import Ytosk.V3ExpT2F
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -15,7 +16,7 @@ set_option linter.unusedSectionVars false
 
 /-- **`RootP` of every `M[n]`** (`t = 2`, `n ≥ 2`). -/
 theorem rootP_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2) :
     ∀ n, 2 ≤ n → ∀ σ, Cons (expand M n) σ → RootP (expand M n) σ := by
   have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXAll_of hB M ρ rk hM hS I R hz h2)

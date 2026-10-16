@@ -7,6 +7,7 @@ n の強い帰納法で、M[n] の r の値は ψ_V(seqZ V B W_1 (n − 2))（o_
 -/
 import Ytosk.V3T2SeedQR
 import Ytosk.V3Tame
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -45,7 +46,7 @@ theorem step_app_leaf {a B s y : T} (hB : isOT B = true) (hnr : ¬ B < y)
 
 /-- **The value of the seed `r` in every `M[n]`** (`n ≥ 2`): `ψ_V(seqZ V B W₁ (n − 2))`. -/
 theorem seed_r_value_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hXu : ∀ i, upg M i ≠ some (r + L))
@@ -146,7 +147,7 @@ theorem seed_r_value_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     rfl
 
 /-- **The seed `r` of `M` itself**: `o_M(r) = ψ_V(B + Ω_s)`, the summands of `B` are at least `Ω_s`. -/
-theorem qr_M_side {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk)
+theorem qr_M_side {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hrx : r < r + L)
     {Lc : List Nat} (hCLM : CL M r = Lc ++ [r + L]) :
     (∀ q ∈ summands (t2B (ρ.v r) ρ Lc), psi (ρ.v (r + L)) z z ≤ q) ∧ isOT (t2B (ρ.v r) ρ Lc) = true ∧
@@ -182,7 +183,7 @@ theorem qr_M_side {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M 
 
 /-- **SeedL for `q = r` without an upgrade into `x`**: `o_N(r) ◁ o_M(r)` for every `M[n]` (`n ≥ 2`). -/
 theorem seedL_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hXu : ∀ i, upg M i ≠ some (r + L))

@@ -8,6 +8,7 @@ M.take x = M[n].take x で、x より前の列の右辺が M[n] と M.take x で
 import Ytosk.V3T2SeedQNV
 import Ytosk.V3T2V
 import Ytosk.V3ExpT2SB
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -52,7 +53,7 @@ theorem vRhs_takeX {N : Mat} {x i : Nat} {σ : Valn} (hi : i < x) (hupg : upg (N
     rw [List.map_congr_left hbt]
 
 /-- **sv: the counted children before `x`** are the same in `M[n]`, `M` and `M.take x`. -/
-theorem sv_cnt {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+theorem sv_cnt {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2) {r L : Nat}
     (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
@@ -126,7 +127,7 @@ theorem sv_cnt {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (h
   exact ⟨hcntN, hcntP⟩
 
 /-- **sv: `M[n]` and `M.take x` agree below `o(r)`** (in the ranking of `M.take x`). -/
-theorem sv_agree {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+theorem sv_agree {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2) {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
     (htP : topped (M.take (r + L)) r = false)
@@ -262,7 +263,7 @@ theorem sv_agree {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) 
 /-- **The frame of the seed `r` in `M[n]`** (sv, `n ≥ 2`): the counted children of `r` are those of `M.take x`
 with the values of `M.take x`, then the copy root `x′` with `v = V + 1`. -/
 theorem sv_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
@@ -378,7 +379,7 @@ theorem sv_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 /-- **The value of the seed `r` in `M[n]`** (sv, `n ≥ 2`). -/
 theorem o_r_level_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
@@ -418,7 +419,7 @@ theorem o_r_level_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 /-- **The counted children of the seed `r` in `M[n]` decrease** (sv), when the last counted child of `r` in
 `M.take x` has a subscript above `V + 1`. -/
 theorem seed_dec_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
@@ -522,7 +523,7 @@ structure T2SeedSVRes (M : Mat) (ρ : Valn) (r L : Nat) : Prop where
 
 /-- **The value of the seed `r` in every `M[n]`** (sv, `n ≥ 2`): `ψ_V(σ^{n−1} X₁)`. -/
 theorem seed_r_value_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
@@ -597,7 +598,7 @@ theorem seed_r_value_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 /-- **SeedL in the sv case**: `o_N(r) ◁ o_M(r)` for every `M[n]` (`n ≥ 2`). -/
 theorem seedL_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))

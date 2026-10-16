@@ -11,6 +11,7 @@ t = 2 の一般形 `clField_expand_t2`（V3ExpT2FO）に差し込む。枠の性
 import Ytosk.V3ExpT2FO
 import Ytosk.V3PT1
 import Ytosk.V3PSh
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -259,7 +260,7 @@ end
 /-- **PH3c of every `M[n]`** (`t = 2`), from PH3c・FrameOT of `M` and `M.take x`, the residual of the frames
 below `x` (`T2BelowXRes`), and the seed frames. -/
 theorem ph3c_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk) (hP : PH3c M ρ)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hP : PH3c M ρ)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ →
       FrameOT (M.take (M.length - 1)) τ ∧ PH3c (M.take (M.length - 1)) τ)
@@ -274,7 +275,7 @@ theorem ph3c_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → N
 
 /-- **FC3 of every `M[n]`** (`t = 2`). -/
 theorem fc3_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk) (hP : FC3 M ρ)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hP : FC3 M ρ)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ →
       FrameOT (M.take (M.length - 1)) τ ∧ FC3 (M.take (M.length - 1)) τ)

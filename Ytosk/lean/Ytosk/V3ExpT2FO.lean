@@ -9,6 +9,7 @@
 -/
 import Ytosk.V3ExpT2CG
 import Ytosk.V3ExpT2BA
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -164,7 +165,7 @@ theorem clField_expand_t2 {Q : T → List T → T → Prop}
       Q a Lv cv → Q (shf V V' a) (Lv.map (sh V V')) (sh V V' cv))
     (hQlow : ∀ a Lv cv cv', Q a Lv cv → Lhd z cv' cv → isOT cv' = true → Q a Lv cv')
     (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
-    (I : Inv3 M ρ rk) (R : Res3A M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
+    (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
     (h2 : TRIO.srow M (M.length - 1) = 2) (hQM : CLField Q M ρ)
     (hQT : ∀ τ, Cons (M.take (M.length - 1)) τ → CLField Q (M.take (M.length - 1)) τ)
     (hSeed : T2SeedFrames Q M) :
@@ -285,7 +286,7 @@ theorem qFO_sh (V V' a : T) (Lv : List T) (cv : T) (hV : isOT V = true) (hV' : i
 
 /-- **`FrameOT` of every `M[n]`** (`t = 2`), from `FrameOT` of `M` and `M.take x` and the seed frames. -/
 theorem frameOT_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ → FrameOT (M.take (M.length - 1)) τ)
     (hSeed : T2SeedFrames QFO M) :

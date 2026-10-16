@@ -7,6 +7,7 @@
 -/
 import Ytosk.V3ExpT2BD
 import Ytosk.V3ExpT2RP
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -48,12 +49,12 @@ structure T2Rest2 : Prop where
   tplon : T2Field TPLoN
   adn : T2Field AbsDN
   res : T2Res3A
-  foSeed : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  foSeed : ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → T2SeedFrames QFO M
 
 /-- **`hExp` for `t = 2`** with the prefix invariants given. -/
 theorem hExp_t2_v2 (hB : T2BelowXRes) (hRest : T2Rest2) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ j, j < M.length → M.take j ≠ SRO → M.take j ≠ [] →
       ∃ τ rkT, Inv3 (M.take j) τ rkT ∧ Res3A (M.take j) τ rkT)
@@ -101,7 +102,7 @@ theorem hExp_t2_of_last
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN := by
   intro M ρ rk hM hS hE I R hz h2 n hn
-  apply hExp_t2_v2 hB hRest hM hS I R hz h2 _ n hn
+  apply hExp_t2_v2 hB hRest hM hS I.toW R.toW hz h2 _ n hn
   intro j hj hjS hjE
   obtain ⟨τ, rkT, V, R'⟩ := hTake_of_last hLast M ρ rk hM hS hE I R j hj hjS hjE
   exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩

@@ -13,6 +13,7 @@ V = τ(v r)、V′ = V + 1、σ = σ_{V,V′}、f = shf V V′。e = x − 1 は
 -/
 import Ytosk.V3CutOps
 import Ytosk.V3QNFC
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -125,7 +126,7 @@ theorem sumN_snoc_add {l : List T} {t : T} (hl : ∀ u ∈ l, isOT u = true) (ht
 
 section
 open Classical
-variable {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hX : SInvX M) (hJ : RowJ M) (I : Inv3 M ρ rk)
+variable {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hX : SInvX M) (hJ : RowJ M) (I : Inv3W M ρ rk)
   {r x : Nat} (hx : x + 1 = M.length) (hr : par M 2 x = some r) (hq : par M 0 x = some r)
   (hux : upg M (x - 1) = some x)
   {τ : Valn} {rkT : Bool → Nat → Nat} (hXT : SInvX (M.take x)) (hJT : RowJ (M.take x))
@@ -627,7 +628,7 @@ theorem hg_to_nsg {s : T} : ∀ {h t : T}, t ∈ cutsHG s h → AllGeT (psi (suc
 open Classical in
 /-- **`T2SeedSVFix` holds** (sv, from `Inv3`・`Res3A` of `M`). -/
 theorem t2SeedSVFix_holds {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L)) : T2SeedSVFix M ρ r L := by
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS

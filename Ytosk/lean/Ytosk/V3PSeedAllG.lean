@@ -18,6 +18,7 @@ import Ytosk.V3QNFC
 import Ytosk.V3SVFix
 import Ytosk.V3CFix
 import Ytosk.V3CBig
+import Ytosk.V3InvW
 
 namespace Ytosk.G
 
@@ -66,7 +67,7 @@ theorem cl_qr {M : Mat} {r L : Nat} (hZ2 : Z2 M) (hlen : r + L + 1 = M.length) (
 
 /-- **The case split of the seed frames** for any frame property `Q`. -/
 theorem t2_seed_frames_of {Q : T → List T → T → Prop} {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
     (hQR : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
       (∀ i, upg M i ≠ some (r + L)) → ∀ Lc, CL M r = Lc ++ [r + L] → SeedFr Q M r L r)
     (hSV : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
@@ -113,7 +114,7 @@ structure T2SeedPRes (M : Mat) (ρ : Valn) : Prop where
 
 /-- **PH3cG and FC3 at the seed frames of every `M[n]`** (`t = 2`). -/
 theorem seed_frames_PF {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk) (hP : PH3cG M ρ) (hF : FC3 M ρ)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hP : PH3cG M ρ) (hF : FC3 M ρ)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ →
       FrameOT (M.take (M.length - 1)) τ ∧ PH3cG (M.take (M.length - 1)) τ ∧ FC3 (M.take (M.length - 1)) τ)
@@ -169,7 +170,7 @@ theorem t2SeedFrames_and {Q₁ Q₂ : T → List T → T → Prop} {M : Mat} (h�
 
 /-- **PH3cG of every `M[n]`** (`t = 2`), with the seed frames reduced to the named residuals. -/
 theorem ph3c_expand_t2S (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk) (hP : PH3cG M ρ) (hF : FC3 M ρ)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hP : PH3cG M ρ) (hF : FC3 M ρ)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ →
       FrameOT (M.take (M.length - 1)) τ ∧ PH3cG (M.take (M.length - 1)) τ ∧ FC3 (M.take (M.length - 1)) τ)
@@ -182,7 +183,7 @@ theorem ph3c_expand_t2S (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → 
 
 /-- **FC3 of every `M[n]`** (`t = 2`), with the seed frames reduced to the named residuals. -/
 theorem fc3_expand_t2S (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk) (hP : PH3cG M ρ) (hF : FC3 M ρ)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hP : PH3cG M ρ) (hF : FC3 M ρ)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ →
       FrameOT (M.take (M.length - 1)) τ ∧ PH3cG (M.take (M.length - 1)) τ ∧ FC3 (M.take (M.length - 1)) τ)

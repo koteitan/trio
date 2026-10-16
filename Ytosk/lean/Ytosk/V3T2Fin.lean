@@ -7,6 +7,7 @@ t = 2 の残りの仮定は `Res3T2`（V3T2Top）だけ。
 -/
 import Ytosk.V3IndV
 import Ytosk.V3T2Top
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -21,7 +22,7 @@ theorem t2_hT2E
   intro hInv M ρ rk hM I R hz h2
   have hne : M ≠ SRO := by intro h; subst h; revert h2; decide
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hne
-  apply t2_drops I R (hR2 M ρ rk hM I R hz h2) hX hJ hz h2
+  apply t2_drops I.toW R (hR2 M ρ rk hM I R hz h2) hX hJ hz h2
   intro n _ _ hE
   obtain ⟨σ, rkN, IN, _⟩ := inv_expand_of_E hInv hM hE
   exact ⟨σ, rkN, IN.cons, IN.rank, IN.good⟩

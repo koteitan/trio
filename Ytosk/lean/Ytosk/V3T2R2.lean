@@ -10,6 +10,7 @@
 -/
 import Ytosk.V3T2Seed1
 import Ytosk.V3ExpT2BA
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -19,24 +20,24 @@ set_option linter.unusedSectionVars false
 
 /-- **Residual of seed1**: `x − 1` upgrades to `x` (`q = r`). -/
 def T2Seed1SV : Prop :=
-  ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  ∀ M ρ rk, Std M → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
     par M 0 (r + L) = some r → upg M (r + L - 1) = some (r + L) → (drop1 M (r + L) rk).o r ≠ ρ.o r
 
 /-- **Residual of seed1**: `q ≠ r` is not a counted child of `pq`. -/
 def T2Seed1C : Prop :=
-  ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  ∀ M ρ rk, Std M → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → ∀ r L q pq, r + L + 1 = M.length → par M 2 (r + L) = some r →
     par M 0 (r + L) = some q → q ≠ r → par M 0 q = some pq → q ∉ CL M pq →
     (drop1 M (r + L) rk).o pq ≠ ρ.o pq
 
 /-- **`hR2` for `t = 2`** from `T2BelowXRes` and the two seed1 residuals. -/
 theorem hR2_t2 (hB : T2BelowXRes) (hSV : T2Seed1SV) (hQC : T2Seed1C) :
-    ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    ∀ M ρ rk, Std M → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk := by
   intro M ρ rk hM I R hz h2
   have hS : M ≠ SRO := ne_SRO_of_rk I.rank
-  have RA : Res3A M ρ rk := ⟨R.drop, R.seed, R.abS⟩
+  have RA : Res3W M ρ rk := R
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
       TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)

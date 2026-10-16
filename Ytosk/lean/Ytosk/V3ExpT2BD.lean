@@ -7,6 +7,7 @@
 -/
 import Ytosk.V3ExpT2CG
 import Ytosk.V3ExpT2FO
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -235,7 +236,7 @@ def T2SeedBump (M : Mat) : Prop :=
 
 /-- **`BumpKidsDec` and `BumpTermDec` of every `M[n]`** (`t = 2`, `n ≥ 1`). -/
 theorem bumpFields_expand_t2 (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hT : ∀ τ, Cons (M.take (M.length - 1)) τ →
       BumpKidsDec (M.take (M.length - 1)) τ ∧ BumpTermDec (M.take (M.length - 1)) τ)
@@ -373,7 +374,7 @@ open T Classical
 /-- **The bump fields at the `v`-seed columns hold**: at `q ≠ r` the bump children other than the lost
 `x` keep their children and values (`vq_kids_N`), and `x − 1` (upgrading to `x`) has row 2 equal to `0`. -/
 theorem t2SeedBump_holds {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2) : T2SeedBump M := by
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   intro r L hlen hr n hn σ hCN _ i hsc
@@ -469,7 +470,7 @@ open T Classical
 
 /-- **`v_N(q)` in terms of `M`** (`q ≠ r`): `v_M(r) + ω^{1 + Σ bump terms of q before x}`. -/
 theorem vq_eq_gexp {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L n q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r) (hn : 2 ≤ n)
     {σ : Valn} (hCN : Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)

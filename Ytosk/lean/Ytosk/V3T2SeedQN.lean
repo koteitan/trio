@@ -5,6 +5,7 @@
 - `upg_N_x_q`: N = M[n] で写しの根 x′ は q へ上げる（x′ + 1 は行 0 が大きすぎ、climb の最初の候補 q が合う）。
 -/
 import Ytosk.V3T2SeedQRL
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -181,7 +182,7 @@ theorem depS_SQ_inv {M : Mat} {rk : Bool → Nat → Nat} (hR : Rk M rk) {q r : 
 
 /-- **The frame of the seed `r` in `M[n]`** (`q ≠ r`, `q` the last counted child of `r`). -/
 theorem qn_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)
@@ -415,7 +416,7 @@ theorem qn_frame {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 /-- **The value of the seed `r` in `M[n]`** (`q ≠ r`, `q` the last counted child of `r`). -/
 theorem o_r_level_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)
@@ -458,7 +459,7 @@ theorem o_r_level_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 /-- **The counted children of the seeds decrease** (`q ≠ r`, `q` the last counted child of `r`), when
 `s′ = v_N(q) < v_M(q)`. -/
 theorem seed_dec_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)

@@ -14,6 +14,7 @@ v > s′ が要る: 数える子は t2 の `decP` と o の減少から、数え
 -/
 import Ytosk.V3SVFix
 import Ytosk.V3PSeedCG
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -259,7 +260,7 @@ theorem qsub_no_p1r {M : Mat} (hX : SInvX M) {r x q : Nat} (hx : x + 1 = M.lengt
 
 section
 open Classical
-variable {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hX : SInvX M) (hJ : RowJ M) (I : Inv3 M ρ rk)
+variable {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hX : SInvX M) (hJ : RowJ M) (I : Inv3W M ρ rk)
   {r x q : Nat} (hx : x + 1 = M.length) (hr : par M 2 x = some r) (hq : par M 0 x = some q) (hqr : q ≠ r)
   (hpq : par M 0 q = some r) (hxb : col M x = bump M q) (hCLq : CL M q = [])
   {τ : Valn} {rkT : Bool → Nat → Nat} (hXT : SInvX (M.take x)) (hJT : RowJ (M.take x))
@@ -786,7 +787,7 @@ structure T2SeedCBig (M : Mat) (ρ : Valn) (r L q : Nat) : Prop where
 open Classical in
 /-- **`T2SeedCFix` from `T2SeedCBig`** (C, with t2's `T2SeedCRes`). -/
 theorem t2SeedCFix_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q])
     (hRes : T2SeedCRes M ρ r L q) (hBig : T2SeedCBig M ρ r L q) : T2SeedCFix M ρ r L q := by

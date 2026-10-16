@@ -15,6 +15,7 @@ import Ytosk.V3ExpT2V
 import Ytosk.V3ExpT2E
 import Ytosk.V3ExpT2I
 import Ytosk.V3Congr
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -346,7 +347,7 @@ before `x` (`T2BelowXE`) and the boundary facts of the copies (`T2CopyResE`). Th
 the base `M[1] = M.take x` come from the invariants of `M` (`rk_expand_t2`, `sInvX_expand`,
 `good3_drop1`). -/
 theorem good3_expand_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
-    (I : Inv3 M ρ rk) (R : Res3A M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
+    (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
     (h2 : TRIO.srow M (M.length - 1) = 2) (hBX : T2BelowXE M) (hCR : T2CopyResE M) :
     ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → Good3 (expand M n) σ := by
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS

@@ -10,6 +10,7 @@ N = M[n] で CL_N(r) = CL_{M.take x}(r) ++ [q]、CL_N(q) = [x′]（t2 の `C_fr
 -/
 import Ytosk.V3PSeedQNG
 import Ytosk.V3T2SeedC
+import Ytosk.V3InvW
 
 namespace Ytosk.G
 
@@ -26,7 +27,7 @@ structure T2SeedCFix (M : Mat) (ρ : Valn) (r L q : Nat) : Prop where
   hi : ∀ τ, Cons (M.take (r + L)) τ → AllGeT (psi (succ (qnS M ρ r L q)) z z) (t2X1 M r L τ)
 
 /-- `last (V + ω^W) ≠ 1` for `s′ = qnS`. -/
-theorem qnS_last_ne_one {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) (r L q : Nat) :
+theorem qnS_last_ne_one {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) (r L q : Nat) :
     last (qnS M ρ r L q) ≠ one := by
   have hlW : ∀ u ∈ ((children M q).filter (fun d => decide (d < r + L))).map (bumpTerm M ρ q),
       isOT u = true := by
@@ -52,7 +53,7 @@ theorem qnS_last_ne_one {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
 open Classical in
 /-- **PH3cG and FC3 at the frames of the seeds `r` and `q` of `M[n]`** (C case). -/
 theorem seed_frames_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q])

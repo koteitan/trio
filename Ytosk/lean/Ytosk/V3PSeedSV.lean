@@ -12,6 +12,7 @@ N = M[n] での r の数える子は CL_N(r) = CL_{M.take x}(r) ++ [x′]（t2 �
 import Ytosk.V3PSeedE
 import Ytosk.V3PSeedQR
 import Ytosk.V3T2SeedSV
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -23,7 +24,7 @@ open Classical in
 /-- **The data of the seed frames of `r` in `N = M[n]`** (sv): `CL N r = CL (M.take x) r ++ [x]`, the values
 before `x` are those of `M.take x`, and `o_N(x) = ψ_{V+1}(σ_{V_P, V+1}(arg of o_P(r)))`. -/
 theorem seed_frame_data_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
@@ -177,7 +178,7 @@ open Classical in
 /-- **PH3c and FC3 at the frames of the seed `r` of `M[n]`** (sv), from PH3c・FC3・FrameOT of `M.take x`,
 t2 の残り `T2SeedSVRes`, and the residual `T2SeedSVFix`. -/
 theorem seed_frames_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))

@@ -9,6 +9,7 @@ clField_expand_t2 の「最後の子を ◁ で下げても保つ」を、FrameS
 import Ytosk.V3ExpT2FO
 import Ytosk.V3ExpT1R
 import Ytosk.V3T0VSR
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -77,7 +78,7 @@ theorem clField_expand_t2S {Q : T → List T → T → Prop}
     (hQlow : ∀ a Lv cv cv', Q a Lv cv → Lhd z cv' cv → isOT cv' = true → (∃ s y, cv = psi s y z) →
       (∀ s y s' y', cv = psi s y z → cv' = psi s' y' z → s' ≠ s → y' = z) → Q a Lv cv')
     (hB : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
-    (I : Inv3 M ρ rk) (R : Res3A M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
+    (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
     (h2 : TRIO.srow M (M.length - 1) = 2) (hQM : CLField Q M ρ)
     (hQT : ∀ τ, Cons (M.take (M.length - 1)) τ → CLField Q (M.take (M.length - 1)) τ)
     (hSeed : T2SeedFrames Q M) :
@@ -196,9 +197,9 @@ theorem vsmallR_iff {N : Mat} {σ : Valn} : VSmallR N σ ↔ CLField QVR N σ :=
 /-- **`hVSRexp` of `trio_terminates_main_GP`, the `t = 2` part**, from the residuals `QVRsh`, `T2BelowXRes` and
 the seed frames. -/
 theorem hVSRexp_t2 (hSh : QVRsh) (hB : T2BelowXRes)
-    (hSeedF : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hSeedF : ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2SeedFrames QVR M) :
-    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
+    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3W M ρ rk → Res3W M ρ rk → VSmallR M ρ →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
       ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
         ∀ ρN rkN, Inv3V (expand M n) ρN rkN → VSmallR (expand M n) ρN := by

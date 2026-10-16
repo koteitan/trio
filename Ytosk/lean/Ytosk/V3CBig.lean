@@ -11,6 +11,7 @@
 - 兄弟を右から帰納: q は v = s′（vqP）、数える子は decP と o の減少で v > s′。
 -/
 import Ytosk.V3CFix
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -206,7 +207,7 @@ structure T2SeedCNext (M : Mat) (r L q : Nat) : Prop where
 open Classical in
 /-- **`T2SeedCBig` from `T2SeedCNext`** (C, with t2's `T2SeedCRes`). -/
 theorem t2SeedCBig_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q])
     (hRes : T2SeedCRes M ρ r L q) (hN : T2SeedCNext M r L q) : T2SeedCBig M ρ r L q := by

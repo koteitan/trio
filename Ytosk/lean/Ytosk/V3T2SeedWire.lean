@@ -9,6 +9,7 @@ T2BelowResL は T2BelowRes から種と q の欄（◁・標準形・数える�
 4 つで t = 2 のすべての場合を尽くす（`t2_seed_cases`）。
 -/
 import Ytosk.V3T2SeedOT
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -59,31 +60,31 @@ def T2BelowResL (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
 
 /-- `T2BelowResL` for every standard `M` of type `t = 2`. -/
 def T2BelowXResL : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       T2BelowResL M ρ r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r)
 
 /-- The seed residual of `q = r` without an upgrade into `x`, for every standard `M` of type `t = 2`. -/
 def T2SeedQRAll : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       T2QRNoUpg M r L → ∀ Lc, CL M r = Lc ++ [r + L] → T2SeedQRRes M ρ r L Lc
 
 /-- The seed residual of `q ≠ r` with `q` the last counted child of `r`, for every standard `M` of type `t = 2`. -/
 def T2SeedQNAll : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       ∀ q Lc, par M 0 (r + L) = some q → q ≠ r → CL M r = Lc ++ [q] → T2SeedQNRes M ρ r L q Lc
 
 /-- The seed residual of the sv case, for every standard `M` of type `t = 2`. -/
 def T2SeedSVAll : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       T2SVCase M r L → T2SeedSVRes M ρ r L
 
 /-- The seed residual of the C case, for every standard `M` of type `t = 2`. -/
 def T2SeedCAll : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       ∀ q, par M 0 (r + L) = some q → q ≠ r → (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCRes M ρ r L q
 
@@ -104,7 +105,7 @@ theorem cl_r_split {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hq : par
 
 /-- The standard-form residual of the closed forms, for every standard `M` of type `t = 2`, in the four cases. -/
 def T2SeedOTAll : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       (T2QRNoUpg M r L → ∀ Lc, CL M r = Lc ++ [r + L] → T2SeedQROT M ρ r L Lc) ∧
       (∀ q Lc, par M 0 (r + L) = some q → q ≠ r → CL M r = Lc ++ [q] → T2SeedQNOT M ρ r L q Lc) ∧

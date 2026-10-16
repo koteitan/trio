@@ -24,6 +24,7 @@ import Ytosk.V3T0Sh3
 import Ytosk.V3ExpT1A
 import Ytosk.V3SubstC
 import Ytosk.V3PhiLevLink
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -613,7 +614,7 @@ end
 /-- **`T2SeedQRRes.σB`** in t2's setting (`t = 2`, `q = r`, no upgrade into `x = r + L`,
 `CL M r = Lc ++ [x]`). The right side is `t2B (ρ.v r) ρ Lc` unfolded. -/
 theorem tame_sigmaB_std {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
-    (I : Inv3 M ρ rk) {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (I : Inv3W M ρ rk) {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hXu : ∀ i, upg M i ≠ some (r + L)) {Lc : List Nat}
     (hCLM : CL M r = Lc ++ [r + L]) :
     sh (ρ.v r) (succ (ρ.v r)) (spArg (ρ.v r) z (sumN (Lc.map ρ.o))) = spArg (ρ.v r) z (sumN (Lc.map ρ.o)) := by

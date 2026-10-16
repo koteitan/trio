@@ -9,6 +9,7 @@ q ≠ r の o(q) の標準形と数える子の減少。
 import Ytosk.V3ExpT2QB
 import Ytosk.V3ExpT2SB
 import Ytosk.V3ExpT2NB
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -34,7 +35,7 @@ def T2BelowRes (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
 
 /-- `T2BelowRes` for every standard `M` of type `t = 2`. -/
 def T2BelowXRes : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  ∀ M ρ rk, Std M → M ≠ SRO → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
     TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       T2BelowRes M ρ r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r)
 
@@ -70,7 +71,7 @@ def T2BelowXS (M : Mat) (ρ : Valn) (r L d0 d1 : Nat) : Prop :=
 
 /-- **`T2BelowXS` from `T2BelowXRes`.** -/
 theorem t2BelowXS_of (hRes : T2BelowXRes) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r) :
     T2BelowXS M ρ r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) := by
@@ -336,7 +337,7 @@ theorem t2BelowXAll_of (hRes : T2BelowXRes) : T2BelowXAll := by
 (`T2BelowXRes`) and the remaining value fields `T2Rest`; the boundary facts of the copies are proved
 (`t2CopyResAll_holds`). -/
 theorem hExp_t2_res (hB : T2BelowXRes) (hRest : T2Rest) :
-    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
+    ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3W M ρ rk → Res3W M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN ∧ Res3A (expand M n) ρN rkN :=
   hExp_t2_main (t2BelowXAll_of hB) t2CopyResAll_holds hRest

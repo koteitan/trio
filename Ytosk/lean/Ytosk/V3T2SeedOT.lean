@@ -6,6 +6,7 @@
 q の値は前の段の r の引数から（qn_frame・C_frame）。
 -/
 import Ytosk.V3T2SeedC
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -66,7 +67,7 @@ def T2SeedCOT (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
 
 /-- **The seed `r` is standard** (`q = r` without an upgrade into `x`). -/
 theorem seed_ot_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hXu : ∀ i, upg M i ≠ some (r + L))
@@ -88,7 +89,7 @@ theorem seed_ot_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 /-- **The seed `r` is standard** (sv). -/
 theorem seed_ot_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
@@ -111,7 +112,7 @@ theorem seed_ot_sv {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 /-- **The seeds `q` and `r` are standard** (`q ≠ r`, `q` the last counted child of `r`). -/
 theorem seed_ot_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)
@@ -200,7 +201,7 @@ theorem seed_ot_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 /-- **The seeds `q` and `r` are standard** (C case). -/
 theorem seed_ot_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q]) (hRes : T2SeedCRes M ρ r L q)

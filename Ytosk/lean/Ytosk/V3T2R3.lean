@@ -8,6 +8,7 @@
 -/
 import Ytosk.V3T2R2
 import Ytosk.V3T2Seed1G
+import Ytosk.V3InvW
 
 namespace Ytosk
 
@@ -16,7 +17,7 @@ open T Classical
 set_option linter.unusedSectionVars false
 
 /-- The drop to `M.take x` from `Inv3 ∧ Res3`: consistency, ranking, `Good3` and the drop lemma. -/
-theorem t2_drop_ctx {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) (R : Res3 M ρ rk)
+theorem t2_drop_ctx {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     {x : Nat} (hlen : x + 1 = M.length) :
     Cons (M.take x) (drop1 M x rk) ∧ Rk (M.take x) rk ∧ Good3 (M.take x) (drop1 M x rk) ∧
       ∀ i, i < x → PO ρ (drop1 M x rk) i ∧ PV M ρ (drop1 M x rk) i := by
@@ -194,9 +195,15 @@ theorem t2Seed1C_holds : T2Seed1C := by
   exact ne_of_lt hlt
 
 /-- **`hR2` for `t = 2`** from `T2BelowXRes` only. -/
+theorem hR2_t2_ofW (hB : T2BelowXRes) :
+    ∀ M ρ rk, Std M → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk :=
+  hR2_t2 hB t2Seed1SV_holds t2Seed1C_holds
+
+/-- **`hR2` for `t = 2`** from `T2BelowXRes` only (the form with `Inv3`・`Res3`). -/
 theorem hR2_t2_of (hB : T2BelowXRes) :
     ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk :=
-  hR2_t2 hB t2Seed1SV_holds t2Seed1C_holds
+  fun M ρ rk hM I R => hR2_t2_ofW hB M ρ rk hM I.toW R.toW
 
 end Ytosk

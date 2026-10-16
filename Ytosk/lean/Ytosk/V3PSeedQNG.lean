@@ -7,6 +7,7 @@ N = M[n] で CL_N(r) = Lc ++ [q]、CL_N(q) = [x′]（t2 の `o_r_level_qn`）�
 -/
 import Ytosk.V3PSeedSVG
 import Ytosk.V3T2SeedQNV
+import Ytosk.V3InvW
 
 namespace Ytosk.G
 
@@ -17,7 +18,7 @@ set_option linter.unusedSectionVars false
 open Classical in
 /-- **The data of the seed frames of `r` and `q` in `N = M[n]`** (`q ≠ r` counted at `r`). -/
 theorem seed_frame_data_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)
@@ -263,7 +264,7 @@ open Classical in
 /-- **PH3cG and FC3 at the frames of the seeds `r` and `q` of `M[n]`** (`q ≠ r` counted at `r`), from PH3cG・FC3
 of `M`, t2 の残り `T2SeedQNRes`, and `T2SeedQNFC`. -/
 theorem seed_frames_qn {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)
