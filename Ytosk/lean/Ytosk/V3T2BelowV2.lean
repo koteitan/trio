@@ -16,10 +16,16 @@ open T Classical
 
 set_option linter.unusedSectionVars false
 
-/-- `T2BelowResL` at every `r, L` of one `M`. -/
+/-- `T2BelowResL` at every `r, L` of one `M`, given the standard forms of the seeds and the decrease of the
+counted children of `r` in `M[n]` (which `t2BelowXResAt_of_L` proves first). -/
 def T2BelowResLAt (M : Mat) (ρ : Valn) : Prop :=
-  ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
-    T2BelowResL M ρ r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r)
+  ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ n, 2 ≤ n →
+    (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) m) τ → Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) m) τ) →
+    ∀ σ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
+    (∀ b j, r + L ≤ j → j < (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n).length → isOT (valB σ b j) = true) →
+    isOT (σ.o r) = true → (∀ q, par M 0 (r + L) = some q → q ≠ r → isOT (σ.o q) = true) →
+    ((CL (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) r).map σ.o).Pairwise (fun a b => b ≤ a) →
+    (∀ p, T2Seed M r L p → T2HardB M (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) (r + L) p ρ σ) ∧ AbsWN M (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) (r + L) ρ σ
 
 /-- The standard forms of the seed closed forms at one `M` (the body of `T2SeedOTAll`). -/
 def T2SeedOTAt (M : Mat) (ρ : Valn) : Prop :=
@@ -33,7 +39,6 @@ def T2SeedOTAt (M : Mat) (ρ : Valn) : Prop :=
 theorem t2BelowXResAt_of_L {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hL : T2BelowResLAt M ρ)
     (hP : G.T2SeedPRes M ρ) (hOTs : T2SeedOTAt M ρ) : T2BelowXResAt M ρ rk := by
   intro hM hS I R hz h2 r L hlen hr n hn hGlow σ hCN hOT
-  obtain ⟨h2', h3⟩ := hL r L hlen hr n hn hGlow σ hCN hOT
   obtain ⟨hO1, hO2, hO3, hO4⟩ := hOTs r L hlen hr
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   have hrx : r < r + L := par_lt M 2 _ _ hr
@@ -157,6 +162,7 @@ theorem t2BelowXResAt_of_L {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hL
         ((hP.C r L q hlen hr hq hqr hncl).1) (hO4 q hq hqr hncl) n hn hGlow σ hCN hdecr
       refine ⟨hro, fun q' hq' _ => ?_⟩
       rw [hq] at hq'; cases hq'; exact hqo
+  obtain ⟨h2', h3⟩ := hL r L hlen hr n hn hGlow σ hCN hOT hOTr.1 hOTr.2 hdecr
   refine ⟨fun p hp => by have e := hpr p hp; rw [e] at hp ⊢; exact T2HardA.of_B (h2' r hp) hvr, fun p hp => ?_, fun q hq hqr => ⟨hOTr.2 q hq hqr, hD.2 q hq hqr⟩, h3⟩
   have hp' := hpr p hp
   subst p
@@ -197,6 +203,9 @@ def T2BelowRV2 : Prop :=
       ∀ σ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
       (∀ b j, r + L ≤ j → j < (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
         (entry M 1 (r + L) - entry M 1 r) n).length → isOT (valB σ b j) = true) →
+      isOT (σ.o r) = true → (∀ q, par M 0 (r + L) = some q → q ≠ r → isOT (σ.o q) = true) →
+      ((CL (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) r).map
+        σ.o).Pairwise (fun a b => b ≤ a) →
       (∀ p, T2Seed M r L p → T2SeedRR M ρ σ p) ∧
       AbsWN M (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n)
         (r + L) ρ σ
@@ -211,9 +220,9 @@ def T2SeedOTV2 : Prop :=
 theorem t2BelowXResV2_of (hRw : T0RwRes) (hR : T2BelowRV2) (hP : T2SeedPResV2) (hOT : T2SeedOTV2) :
     T2BelowXResV2 := by
   intro M ρ rk C hM hS I R hz h2
-  refine t2BelowXResAt_of_L (fun r L hlen hr n hn hG σ hCN hOTx => ?_) (hP M ρ rk C hz h2) (hOT M ρ rk C hz h2)
-    hM hS I R hz h2
-  obtain ⟨h1, h3⟩ := hR M ρ rk C hz h2 r L hlen hr n hn hG σ hCN hOTx
+  refine t2BelowXResAt_of_L (fun r L hlen hr n hn hG σ hCN hOTx hor hoq hdec => ?_) (hP M ρ rk C hz h2)
+    (hOT M ρ rk C hz h2) hM hS I R hz h2
+  obtain ⟨h1, h3⟩ := hR M ρ rk C hz h2 r L hlen hr n hn hG σ hCN hOTx hor hoq hdec
   exact ⟨fun p hp => ⟨C.I.vra.toLast, C.I.ph, hRw M ρ rk C, (h1 p hp).1, (h1 p hp).2⟩, h3⟩
 
 end Ytosk
