@@ -3042,3 +3042,11 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 次の手順: (1) 測定の続き: `nice -n 15 python3 trio/tmp/ytosk-handoff/probes/t0/cutpos.py <ext1・ext1x・t2ext・ext2・expP の .pkl>`（4 プロセス、1 集合あたり 1 時間ほど）。途中結果は同じ場所の cutpos_partial.txt。(2) 証明の筋の候補: 変化の元（Y0 = 0 の ψ_v(1) ↦ Ω_v、または v の変化 Ω_{v(e)} ↦ Ω_{v′(e)}）を D の帰納法で運び、「元より浅い道の上の項は Ω_s を越えたまま」を不変条件にする。B の切り口が元より浅いことは、B が前の兄弟 d の o(d) から来ることから示す必要がある。
 - 再起動のため測定を止めた（2026-10-16）。止めたのは cutpos.py の残り 5 集合（ext1・ext1x・t2ext・ext2・expP）。
 
+### t = 2 の種の残り（2026-10-16、t2）
+
+- V3T2SeedRes（緑）: 種の残り 4 つのうち、M だけで決まる欄を証明で外した。
+  - qr: x は最後の列で行 2 が 1、P_1(x) = r なので v(x) = v(r) + ω（`v_x_qr`）。`T2SeedQRRes.ks`（v(r) + k < v(x)、`app_natT_lt_add_w`）と `vs`（v(r) + 1 ◁ v(x)、`lhd_succ_add_w`）が出る。残りは `T2SeedQRResR`（w1・dom）。
+  - qn: v(q) = V + ω^{S+1}（x は q の最後の bump 子で子がないので bump の項は 1）、s′ = V + ω^S。`vqlt`（s′ < v(q)、`qn_vqlt`）と `Bc`（B の加数は o(q) 以上なので Ω_{s′+1} 以上、`qn_Bc`）。残りは `T2SeedQNResR`（σB・base）。
+  - sv: M.take x の r の最後の数える子 c0 は列 (e0 r + 1, e1 r + 1, 1) で P_1 = r、v(c0) = V + ω^W > V + 1（`v_child_gt`、`sv_decP`）。残りは `T2SeedSVResR`（rw・lhd）。
+  - 接続: `t2SeedPRes_of`（減らした `T2SeedPResR` から `G.T2SeedPRes`、C は元のまま）、`t2SeedQRAll_of`・`t2SeedQNAll_of`・`t2SeedSVAll_of`（V3T2SeedWire の All の形）。
+- T2SeedCNext は扱わない（top が今の構造の不変条件から出ないことを示し、新しい不変条件を準備中）。
