@@ -226,14 +226,14 @@ theorem good3_take_any {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : In
   have hG1 := good3_take hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 hdrop
   exact good3_congr hG1 (agree_of_cons hC1 hτ hRk1)
 
-/-- **`T2SeedSVRes.decP`**: in `M.take x` the last counted child `c0` of `r` has subscript above `V + 1`. -/
-theorem sv_decP {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
+/-- **The children of `r` in `M.take x`** (sv): `Good3`, `v(r)` is unchanged, and every child has `v > V + 1`. -/
+theorem sv_children_ctx {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
     (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
-    (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L)) :
-    ∀ τ, Cons (M.take (r + L)) τ → ∀ Lc c0, CL (M.take (r + L)) r = Lc ++ [c0] →
-      ∃ s y, τ.o c0 = psi s y z ∧ succ (ρ.v r) < s := by
-  intro τ hτ Lc c0 hCL
+    (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L))
+    {τ : Valn} (hτ : Cons (M.take (r + L)) τ) :
+    Good3 (M.take (r + L)) τ ∧ τ.v r = ρ.v r ∧
+      ∀ d ∈ children (M.take (r + L)) r, succ (ρ.v r) < τ.v d := by
   obtain ⟨hX, _⟩ := sInvXJ_std hM hS
   have hxM : r + L < M.length := by omega
   have hrx : r < r + L := par_lt M 0 _ _ hq
@@ -245,7 +245,9 @@ theorem sv_decP {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (
   have hτ' : Cons (M.take (M.length - 1)) τ := by rw [show M.length - 1 = r + L by omega]; exact hτ
   have hG := good3_take_any I R (by omega) hτ'
   rw [show M.length - 1 = r + L by omega] at hG
-  have hc0 : c0 ∈ children (M.take (r + L)) r := cl_mem_children (by rw [hCL]; simp)
+  have hvr : τ.v r = ρ.v r :=
+    v_take_of_untopped I (by omega) hrx (topP_sv hlen I.z2 I.z1 hr hq hux) hτ
+  refine ⟨hG, hvr, fun c0 hc0 => ?_⟩
   have hc0x : c0 < r + L := by have := (mem_children hc0).2; rw [List.length_take] at this; omega
   have hpc : par M 0 c0 = some r := by
     have := (mem_children_iff.mp hc0).2; rwa [par_take M 0 c0 hc0x] at this
@@ -256,17 +258,26 @@ theorem sv_decP {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (
     have : entry M 1 c0 = (col M c0).2.1 := rfl; rw [this, hcol, hcx]
   have h2 : entry M 2 c0 = 1 := by
     have : entry M 2 c0 = (col M c0).2.2 := rfl; rw [this, hcol, hcx]
-  have hTlen : (M.take (r + L)).length = r + L := by rw [List.length_take]; omega
   have hp1 : par (M.take (r + L)) 1 c0 = some r := by
     rw [par_take M 1 c0 hc0x]; exact par1_of_child hpc (by omega)
-  have hlt := v_child_gt hτ hG (by omega) (by omega) hp1 (by rw [entry_take M 1 hc0x]; omega)
-    (by rw [entry_take M 2 hc0x]; exact h2)
-  have hvr : τ.v r = ρ.v r :=
-    v_take_of_untopped I (by omega) hrx (topP_sv hlen I.z2 I.z1 hr hq hux) hτ
-  rw [hvr] at hlt
-  obtain ⟨y, hy⟩ := o_psi_sub hτ (show c0 < (M.take (r + L)).length by omega)
-  rw [sf_ot (hG.ot_v c0 (by omega))] at hy
-  exact ⟨_, y, hy, hlt⟩
+  have hlt := v_child_gt hτ hG (by rw [List.length_take]; omega) (by rw [List.length_take]; omega) hp1
+    (by rw [entry_take M 1 hc0x]; omega) (by rw [entry_take M 2 hc0x]; exact h2)
+  rwa [hvr] at hlt
+
+/-- **`T2SeedSVRes.decP`**: in `M.take x` the last counted child `c0` of `r` has subscript above `V + 1`. -/
+theorem sv_decP {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
+    (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+    {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hq : par M 0 (r + L) = some r) (hux : upg M (r + L - 1) = some (r + L)) :
+    ∀ τ, Cons (M.take (r + L)) τ → ∀ Lc c0, CL (M.take (r + L)) r = Lc ++ [c0] →
+      ∃ s y, τ.o c0 = psi s y z ∧ succ (ρ.v r) < s := by
+  intro τ hτ Lc c0 hCL
+  obtain ⟨hG, _, hch⟩ := sv_children_ctx hM hS I R hlen hr hq hux hτ
+  have hc0 : c0 ∈ children (M.take (r + L)) r := cl_mem_children (by rw [hCL]; simp)
+  have hcT := (mem_children hc0).2
+  obtain ⟨y, hy⟩ := o_psi_sub hτ hcT
+  rw [sf_ot (hG.ot_v c0 hcT)] at hy
+  exact ⟨_, y, hy, hch c0 hc0⟩
 
 /-! ## 残りを減らした形と接続 -/
 

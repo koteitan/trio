@@ -3071,3 +3071,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - x より前の種でない列: FrameShape で M の枠と同じか、最後の子だけが ◁ で下がる（`qVSF_of_shape`）。添字が変わる子は M でも N でも引数 0 なので、M の VSmallF と `vs_changed_bound` から出る。このために FrameShape に M 側の葉の事実（添字が変わる子の o は M で ψ_v(0)、段が上がる）を足した（V3ExpT2BX・QB・AO・FO・VSR の最小の直し）。
   - 残り: 種の列の枠 `T2SeedFrames QVSF M`、M.take x の Good3・VSmallF（どの Cons の評価でも）。
 - T2VSFCV2 の残りは FrameClosed と、上の 2 つの残り。
+
+### sv の rw を厳しい増加 1 つに・1 列落としで動かない部分木（2026-10-16、t2、V3T2SeedRes2・V3T2ChgSub）
+
+- `sv_rw_of`（V3T2SeedRes2）: `T2SeedSVResR.rw` は `T2SVStrict`（X₁ < σ_{V,V+1}(X₁)、X₁ = M.take x の r の子の状態）だけから出る。
+  - M.take x の r の子はどれも v > V + 1（`sv_children_ctx`）なので、X₁ の加数は Ω_{V+2} 以上（`summands_spArg_ge`）。σ はこの下限を保つ（`summands_sh_ge`、`shIt_facts`）。よって H(V + 1, σ^{k+1} X₁) = σ^{k+1} X₁ で、書き換えの条件は X₁ < σ^{k+1} X₁ だけ。
+- `chg_free_sub`（V3T2ChgSub）: x − 1 が上げず、列 k の部分木が x を含まず、部分木の出口へ上げがなければ、k の部分木のどの呼び出しも M.take x で変わらない（ChgX の帰納法）。
+- どちらも緑、公理は propext・Classical.choice・Quot.sound。T2SeedSVResR への接続（rw を T2SVStrict に替えた形）はまだ。
