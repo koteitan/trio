@@ -8,13 +8,15 @@ N = M[n]（n ≥ 2）の Inv3V2・根の標準性・根の下降を組み立て�
 - VSmallF: t0_vsmallF_atC（D の部分は T0DF から、M の VSmallRP は M の VSmallRAll から）。
 - PH3cG・FC3: G.ph3c_N_t0・G.fc3_N_t0（M と M.take x の PH3cG・FC3、側条件は t0_core と同じ式で出す）。
 - TP1C・TP1WC: N の PH3cG と葉の条件 TP1LeafG・TP1WLeafG から。
-- 名前つきの残り: 切り口 T0CutResGGC、N の VSmallRAll、N の葉の条件、N の最後の列の枠の 10 欄（TakeFrameV2 N）。
+- VSmallRAll: vsmallRAll_N_t0（V3T0VSRAllN、M の VSmallRAll から、残りなし）。
+- 名前つきの残り: 切り口 T0CutResGGC、N の葉の条件、N の最後の列の枠の 10 欄（TakeFrameV2 N）。
 -/
 import Ytosk.V3T0C
 import Ytosk.V3T0VSRA
 import Ytosk.V3TakeInv2
 import Ytosk.V3PT0G
 import Ytosk.V3ResV2
+import Ytosk.V3T0VSRAllN
 
 namespace Ytosk
 
@@ -62,7 +64,7 @@ theorem t0DF_ofC (hCut : T0CutResGGC) {M : Mat} {ρ : Valn} {rk : Bool → Nat �
   exact ⟨h1, h2, trivial, h4, h5⟩
 
 /-- **`t = 0`, `n ≥ 2`: Inv3V2 of `N = M[n]`**, the standard root value and its descent.
-Named residuals: the cut `T0CutResGGC`, and for `N` its `VSmallRAll`, the leaves `TP1LeafG`・`TP1WLeafG`
+Named residuals: the cut `T0CutResGGC`, and for `N` the leaves `TP1LeafG`・`TP1WLeafG`
 and the ten last-column frame fields (`TakeFrameV2 N`). -/
 theorem t0_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat}
     (hM : Std M) (hS : M ≠ SRO) (S : SInv M) (I : Inv3V2 M ρ rk)
@@ -71,8 +73,6 @@ theorem t0_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L :
     (R : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)) (hab : AbsSR M ρ)
     (I1 : Inv3V2 (M.take (r + L)) (drop1 M (r + L) rk) rk)
     (hCut : T0CutResGGC)
-    (hVRA : ∀ n, 2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
-      Good3 (TRIO.gexp M r L 0 0 n) σ → VSmallRAll (TRIO.gexp M r L 0 0 n) σ)
     (hLeaf : ∀ n, 2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
       Good3 (TRIO.gexp M r L 0 0 n) σ →
       TP1LeafG (TRIO.gexp M r L 0 0 n) σ ∧ TP1WLeafG (TRIO.gexp M r L 0 0 n) σ)
@@ -180,9 +180,11 @@ theorem t0_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L :
   have hfc3 : FC3 N σ := G.fc3_N_t0 hlen hL hp hn S.r0p S.z2 S.sibDec S.z1c S.uat S.uab he1 hx2 hn2
     I.cons I.good hCN hGN.toOT I.fc3 I1.fc3 hσB hoffD hσmid hσlast hLastN hC1 I1.good (le_of_lt hlt0) hO'le
     hy' hdl hss
+  have hvra : VSmallRAll N σ := vsmallRAll_N_t0 hlen hL hp hn S.r0p S.z2 S.sibDec S.z1c S.uat S.uab he1 hx2 hn2
+    I.cons I.good hCN hGN.toOT hC1 hRk1 I1.good hdrop hσB hoffD hσmid hσlast hLastN hO'le hy' hdl hss I.vra
   obtain ⟨hTP, hTPW⟩ := hLeaf n hn2 σ rkN hCN hRN hGN
   have F := hFrm n hn2 σ rkN hCN hRN hGN
-  exact ⟨σ, rkN, ⟨hCN, hGN, hRN, hvs, hFCN, hFON, hKDN, hTDN, hph, hfc3, hVRA n hn2 σ rkN hCN hRN hGN,
+  exact ⟨σ, rkN, ⟨hCN, hGN, hRN, hvs, hFCN, hFON, hKDN, hTDN, hph, hfc3, hvra,
     F.ads, F.aus, tp1C_of_ph3cG hCN hGN.toOT hph hTP, F.tplos, tp1WC_of_ph3cG hCN hGN.toOT hph hTPW,
     F.tplow, F.auwl, F.auw0, F.adw, F.trigs, F.tplon, F.adn, rootS_of_good hCN hGN, hpN⟩, hot, hlt⟩
 
@@ -214,8 +216,8 @@ def T0NRes (F : Mat → Valn → (Bool → Nat → Nat) → Prop) : Prop :=
     entry M 1 (r + L) = 0 → ∀ n, 2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ →
       Rk (TRIO.gexp M r L 0 0 n) rkN → Good3 (TRIO.gexp M r L 0 0 n) σ → F (TRIO.gexp M r L 0 0 n) σ rkN
 
-/-- **top's `ExpT0V2`** from the cut residual and the three residual fields of `N`. -/
-theorem expT0V2_of (hCut : T0CutResGGC) (hVRA : T0NRes (fun N σ _ => VSmallRAll N σ))
+/-- **top's `ExpT0V2`** from the cut residual and the two residual fields of `N`. -/
+theorem expT0V2_of2 (hCut : T0CutResGGC)
     (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
     ExpT0V2 := by
   intro M ρ rk C hz hs0 n hn2
@@ -223,8 +225,15 @@ theorem expT0V2_of (hCut : T0CutResGGC) (hVRA : T0NRes (fun N σ _ => VSmallRAll
   rw [hexp n]
   have hpre := (C.pre (r + L) (by omega) (by omega)).1
   obtain ⟨ρN, rkN, IN, _, _⟩ := t0_final_inv3V2 C.std C.ne C.S C.I hlen hL hp he1 C.R.drop C.R.abS hpre hCut
-    (hVRA M ρ rk r L C hlen hL hp he1) (hLeaf M ρ rk r L C hlen hL hp he1) (hFrm M ρ rk r L C hlen hL hp he1)
+    (hLeaf M ρ rk r L C hlen hL hp he1) (hFrm M ρ rk r L C hlen hL hp he1)
     n hn2
   exact ⟨ρN, rkN, IN⟩
+
+/-- The earlier interface of `expT0V2_of2` with the `VSmallRAll` residual of `N`, which is now proved
+(`vsmallRAll_N_t0`) and not used. -/
+theorem expT0V2_of (hCut : T0CutResGGC) (_hVRA : T0NRes (fun N σ _ => VSmallRAll N σ))
+    (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
+    ExpT0V2 :=
+  expT0V2_of2 hCut hLeaf hFrm
 
 end Ytosk
