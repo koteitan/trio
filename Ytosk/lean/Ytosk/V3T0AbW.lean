@@ -7,6 +7,11 @@ AbsWN M N bnd ρ σ の前件「q は bumpW N σ i に吸収されない」は�
 - 展開側: i < r（行 1・2 が 0 でない列）で bumpW (M.take x) τ i ≤ bumpW M[n] σ i（`T0BumpMono`）。測定（tools/probe_abswn_t0.py の mono、
   t0ext の 2 万行列、n = 2, 3）で 154034 件例外 0。なお bumpW M ρ i ≤ bumpW M[n] σ i は偽（18470 件で
   M[n] の方が小さい。x が i ののりしろの子の子のとき）。
+- T0BumpMono は M[n] の接頭辞を 1 列ずつ落とす連鎖で出る（`bumpW_chain`）。1 列の落としは drop の `bumpW_take_le`
+  （`drop_all_H` の PO・PV がどれも ≤ を含む）。`t0BumpDrop_of`: HDropV2 と接頭辞 M[n].take k（k ≥ r + L）の
+  Std・≠ SRO・Inv3V2 から。
+- 落とし側の AbsWN は DropResH の `ab : BumpAbsC` から、t = 0 では v(x) = 0 なので前提が自明（`absWN_take_t0`）。
+- まとめ `t0AbWRes_of : HDropV2 → T0PrefixInv → T0AbWRes`。残りは `T0PrefixInv`（M[n] の接頭辞の不変条件）。
 -/
 import Ytosk.V3T0Inv2S
 import Ytosk.V3Congr
@@ -148,5 +153,35 @@ theorem t0AbsW_of_drop (hD : HDropV2) {M : Mat} {r L : Nat} {ρ τ : Valn} (hlen
       Std ((TRIO.gexp M r L 0 0 n).take k) ∧ (TRIO.gexp M r L 0 0 n).take k ≠ SRO ∧
       ∃ ρk rkk, Inv3V2 ((TRIO.gexp M r L 0 0 n).take k) ρk rkk) : T0AbsW M r L ρ :=
   t0AbsW_of hτ hA (t0BumpMono_of hlen (t0BumpDrop_of hD hP))
+
+/-- **The drop-side AbsWN at `t = 0`** from `BumpAbsC` (in `DropResH`): `v(x) = 0` since row 1 of `x` is `0`. -/
+theorem absWN_take_t0 {M : Mat} {x bnd : Nat} {ρ τ : Valn} (hAbsC : BumpAbsC M x ρ) (hC : Cons M ρ)
+    (hx : x < M.length) (he1 : entry M 1 x = 0) (hτ : Cons (M.take x) τ) : AbsWN M (M.take x) bnd ρ τ := by
+  have hvx : ρ.v x = z := by rw [(hC x hx).2]; unfold vRhs; rw [if_pos he1]
+  intro i _ h1 h2 q hq _ hn hlt
+  exact hAbsC τ hτ i h1 h2 (fun _ _ _ _ => hvx) (Or.inr (Or.inr hvx)) q hq hn hlt
+
+/-- **Residual: the invariants of the prefixes of `M[n]`** (`t = 0`) from `M.take x` on. -/
+def T0PrefixInv : Prop :=
+  ∀ M ρ rk, StepCtxV2 M ρ rk → ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r →
+    entry M 1 (r + L) = 0 → ∀ n, 2 ≤ n → ∀ k, r + L ≤ k → k ≤ (TRIO.gexp M r L 0 0 n).length →
+      Std ((TRIO.gexp M r L 0 0 n).take k) ∧ (TRIO.gexp M r L 0 0 n).take k ≠ SRO ∧
+      ∃ ρk rkk, Inv3V2 ((TRIO.gexp M r L 0 0 n).take k) ρk rkk
+
+/-- **`T0AbWRes` from drop's `HDropV2` and the prefix invariants of `M[n]`.** -/
+theorem t0AbWRes_of (hD : HDropV2) (hP : T0PrefixInv) : T0AbWRes := by
+  intro M ρ rk C r L hlen hr he1
+  have hK : 1 ≤ M.length := by omega
+  have hKne : M ≠ [] := fun h => by rw [h] at hK; simp at hK
+  have hDr := hD M ρ rk C.std C.ne hKne C.I
+  have hxl : M.length - 1 = r + L := by omega
+  rw [hxl] at hDr
+  have hS := C.S
+  have hcnt := counted_take_last hK hS.r0p hS.z2 hS.sibDec hS.z1c hS.uat
+  rw [hxl] at hcnt
+  have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) C.I.rank hcnt
+  have hτ := cons_of_rk hRk1
+  exact t0AbsW_of_drop hD hlen hτ (absWN_take_t0 hDr.ab C.I.cons (by omega) he1 hτ)
+    (hP M ρ rk C r L hlen hr he1)
 
 end Ytosk
