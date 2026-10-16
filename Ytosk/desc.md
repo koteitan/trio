@@ -3402,3 +3402,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 測定（tools/probe_qrseed.py）: 10 集合・std_a・std_b（741 万行列、q = r は 156 万）で、始点が ◁ でない例は 93 件、すべて SmallSelf(w′)。CS でない例が 3 件（std_b の (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,0) など、V = ψ_0(Ω_1)）。一般の v の値では SmallSelf は偽（d3s に ψ_0(Ω_{Ω_1})）。
   - lead の承認で、drop が UpgAbsXW の弱い選択肢に SmallSelf(V + 1) を足す。t1-qr（drop-wkx2 の上）では q = r の qr_final3 と t = 1 のエンジン全部を UpgAbsXW に替えた（全体ビルド緑、残り sorry 1 か所 = WCSP の第 2 の場合、drop の変更が入ったら閉じる）。
 - EqSibUpg の 10 集合の測定は全部で例外 0（ext2 も 0）。
+
+### QNUncRes を UpgSibV から・最上位を t2 の最新の形に（2026-10-17、top、V3QNUncV・V3TopV2）
+
+- `qnUncRes_of_sibV`（V3QNUncV）: t2 の QNUncRes（qn の場合、q は r の最後の数える子、r の q より前の数えない子 d は s′ < v(d)）を、M の UpgSibV から証明。T2SeedCBig と同じ右からの帰納法: r の子はどれも q 以下で列は (e0 r + 1, e1 r + 1, 1)・P_1 = r（t_child_col）、数える子は CL の o の減少で v ≥ v(q) > s′（qn_vqlt）、数えない子 d は次の兄弟 dn が上げられれば upg_next_lt、上げられなければ UpgSibV。
+- 最上位の種の残り `T2SeedPResRC`（V3TopV2）を t2 の最新の形に: qr は T2SeedQRResR、sv は T2SVStrict（sv_rw_of で rw を出す、V3T2SeedRes2）と lhd、qn は base だけ（unc は UpgSibV から）、C は T2SeedCRes だけ（CBig は UpgSibV から）。
+- T2VRAV2 を t2 の `t2VRAV2_of`（V3T2VRA）で埋めた。`trio_terminates_main_V2_cur` の t2 の残りは T2BelowXRes・T2FOSeedV2・T2SeedPResRCV2・FDsh・T2SeedVSFV2・T2SeedFCV2・QVRAsh・T2VRASeed・T2VRAPre・T2VRACopy。
+- Ytosk 全体のビルド緑（1023 jobs）、公理は標準の 3 つ。

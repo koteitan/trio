@@ -79,6 +79,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と C の値の残り UpgSibV
         - ✅ M だけで決まる欄（qr の ks・vs、qn の vqlt・Bc、sv の decP）を証明（V3T2SeedRes）
         - ✅ sv の rw を T2SVStrict 1 つに（V3T2SeedRes2）、qn の σB を数えない子の残り QNUncRes に（V3T2QNSig、一般の V′ の closure V3T2TameG）
+        - ✅ QNUncRes を UpgSibV から証明（`qnUncRes_of_sibV`、V3QNUncV、top）。最上位の種の残り T2SeedPResRC は qr・sv（T2SVStrict と lhd）・qn の base・C の T2SeedCRes
         - ✅ 構造の残り T2SeedCNext は標準形で偽（反例は desc.md、候補 UpgRun も偽）。C の欄を CRes ∧ CBig に替え、CBig を値の残り UpgSibV から証明（`t2SeedCBig_of_sibV`、V3CBigV）。UpgSibV は全 10 集合で例外 0
         - ✅ UpgSibV を難しい形 UpgSibVHard に絞った（`upgSibV_of_hard`、V3SibV。a に子がない同じ列と、b = (e0 p+1, y, 0) は S1 から証明）
         - ✅ (ii) e1 b < e1 a を次の列への上げ（upg b = b + 1、10 集合で 0 件）だけに絞った（V3SibV）
@@ -92,7 +93,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ t2 の expT2V2_of・r2V2_of を差し込んだ現状の最上位（`trio_terminates_main_V2_t2`、種の残りを T2SeedPResR に減らした `_t2R`、V3TopV2）
     - ✅ 全員の生産者を差し込んだ現状の最上位 `trio_terminates_main_V2_cur`（V3TopV2）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
-    - 現状の最上位の残りを証明して閉じる: HDropV2・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0RwRes・T0AbWRes（t0）、T2BelowXRes・T2FOSeedV2・T2SeedPResRCV2・FDsh・T2SeedVSFV2・T2SeedFCV2・T2VRAV2（t2）、HSibHardV2（top）
+    - 現状の最上位の残りを証明して閉じる: HDropV2・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0RwRes・T0AbWRes（t0）、T2BelowXRes・T2FOSeedV2・T2SeedPResRCV2・FDsh・T2SeedVSFV2・T2SeedFCV2・QVRAsh・T2VRASeed・T2VRAPre・T2VRACopy（t2）、HSibHardV2（top）
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
   - Desc3 の証明 → **目標 4 が残っている**
