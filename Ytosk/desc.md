@@ -3102,3 +3102,15 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - **M[1] = M.take x と比べる道はだめ**: o_take(c) < o_N(c) は例外 0 だが、B ≤ y_take は deep2 で 11 件偽（例 上の行列、y_take = Ω_{Ω_1} < B = Ω_{Ω_ω}）。
   - **書き換えない場合（影）を直接扱う道**: RelRU で要るのは comps_u(B + ψ_s(y′)) の上限。M だけの条件 ShB（path の段 u ≤ v(i) で、comps_u(B) の元は B 以下か comps_u(v(i)) の元以下）は d3s・deep2 で例外 0。ただし T′ の低い段の成分を抑える方法がまだない（Lhd z (ψ_s y′) (ψ_s y) から出せるのは P + κ + Ω_{s+1} 以下まで）。
 - 次: 展開の履歴を運ぶ値の不変条件（兄弟の切り口は、最後の列が変える列の鎖より 2 段以上浅い）を Std の帰納法で示す形を設計する。t2 の T2CutA と共有する。
+
+### t = 2 の M[n] の FrameClosed（2026-10-16、t2、V3T2FC・V3T2VSFC）
+
+- `frameClosed_expand_t2`（V3T2FC）: t = 2 の M[n]（n ≥ 1）の FrameClosed。骨組みは VSmallF と同じ `clField_expand_t2S`。枠の性質は t0 の `QFC`（V3T0Frm）に子の標準形を足した `QFCo`。
+  - x より前の種でない列: 最後の子が ◁ で下がる枠は、下がった子の書き換えが元の子の書き換えで、H が単調なので `frameDom_drop`。
+  - 写し（`qFCo_sh`）: 書き換えの条件は σ で同値（`sh_lt_iff`・`shf_lt_iff`）、状態は σ と交換（`sh_spArg`）、新しい状態は `sh_H`。添字 s ≤ V の子は f(a) > s なので書き換えない。残るのは FrameDom そのものの σ 不変性 `FDsh`。
+- `FDsh`（名前つきの残り、項だけの主張）: V < V′、V ≤ a、V < s、B の加数は子 ψ_s(y) 以上、子が書き換える枠で、FrameDom a B s H(s, y) ⟹ FrameDom f(a) σ(B) f(s) H(f(s), σ(y))（σ = sh V V′、f = shf V V′）。
+  - 難しさ: FrameDom は区間 (max(B, Ω_s), H] のすべての C（標準形に限らない木）について述べる。σ の像に入らない C（添字が (V, V′] の項を含む C）も N の区間に入るので、枠の値を σ で写すだけでは出ない。VSmallF・FrameOT は 1 つの段 v(i) の主張なので `comps_sh` で済んだが、FrameDom はすべての段 u ≤ a の主張。
+  - 測定（試験であり、10 集合の全数ではない）: FrameDom の厳密な判定 `tools/fdom_exact.py`（drop の lhd_exact と同じ区間の分解。失敗 ⟺ ある段 u・成分 g で、区間 (m, min(H, g)) に K_u(C) < g の木 C がある。u は B・s・a の添字と a だけ調べればよい）。人工の反例で失敗を検出することを確認。`tools/probe_fdsh.py`: 実際の書き換える枠 (a, B, s, y) に、V = 行列の v の値で V ≤ a・V < s のもの、V′ ∈ {V + 1, V + ω, V + ω², 行列の v の値で V より大きいもの} を当てた。Cprime 500・ext2・t2ext・expP・ext1 各 400 行列で、FrameDom 13,101 枠と FDsh 242,477 件、例外 0。
+- `t2VSFCV2_of`（V3T2VSFC）: T2VSFCV2 ⟸ T2BelowXRes ∧ FDsh ∧ 種の列の枠 `T2SeedVSFV2`（QVSF）・`T2SeedFCV2`（QFC）。M.take x の Good3・VSmallF・FrameClosed は StepCtxV2 の接頭辞の Inv3V2 から `agree_of_cons` で任意の Cons の評価へ（`take_fields_ctx`）。
+- 公理は propext・Classical.choice・Quot.sound。Ytosk 全体のビルド緑（999 jobs）。
+- 写しの枠の強い局所形の観察（`tmp/t2/probes/fcs*.py`）: 「B と s の成分は B・Ω_s・a の成分で押さえられる」は写しの枠でもまれに偽（P の対応する枠が偽のときだけ。r の新しい子の枠の写し）。FrameDom はそこでは B が H の接頭辞であることで成り立つ。
