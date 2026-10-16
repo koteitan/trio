@@ -3148,3 +3148,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - i < r で bumpW (M.take x) i ≤ bumpW N i: 46 万件で例外 0。等号でないこともある（5.6 万件、そのときいつも bumpW N i < bumpW M i）。
 - AbsWN を出す筋: t = 0 では M[n] = M.take x ++（r の下に吊るした写し）なので、落とし側の BumpAbsC（DropResH.ab。t = 0 では v(x) = 0 で側条件が立つ）と、上の単調性から AbsWN が出る。単調性は M.take x と M[n] の値の比較で、まだ証明はない。
 - エンジンを弱い形に替えるかは t0 に任せた（連絡済み）。全 10 集合の測定は drop のキューに入れた（結果は tmp/ytosk-handoff/results/drop/abswn_t0/）。
+
+### S1 は t = 1 の展開でも保たれる（2026-10-17、t0、V3S1T1、緑）
+
+- `S1_t1`: R0P M・R0P N・S1 M と、x の行 1 の親 r が x の行 0 の祖先（Anc0）、e0 x = e0 r + d0、e1 r < e1 x から S1 N（N = gexp M r L d0 0 n、n ≥ 1）。公理は標準の 3 つ。
+- t = 1 の第 k コピーは悪い部分の行 0 を k·d0 だけ一様にずらしたもの（`colT1_per`）。行 0 の一様なずれは辞書式の順序を変えない（`seqLtB_map_shc`）。
+- 場合分けは t = 0 と同じ 3 つ。違うのは a < x ≤ b の場合で、b = x（コピーの行 0 は e0 x 以上で、等しいのは x だけ、`e0T1_copies`）、a は M での x の前の兄弟。M の S1 から [col x] ≤ subT a で、N の x は (e0 x, e1 r, e2 r) < col x から始まる。
+- t = 2 はまだ。行 1 の上昇が le1 のガードつきの列だけなので、ずれが一様でなく、辞書式の順序の保存に構造の議論が要る。
