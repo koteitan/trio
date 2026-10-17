@@ -128,7 +128,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | T0UpgAbsV2 | 11 集合と std_b で例外 0 | ¬T0Easy の場合だけ |
         | T0ArgBRes | 11 集合と std_b で例外 0 | t0argB.py |
         | HBumpExt | 1 列の場合が 11 集合で例外 0 | bumpdrop1.py（3950 万件） |
-        | T2SeedQNBase | d3s・deep2 で例外 0（他は測定中） | qncl.py |
+        | T2SeedQNBase | 11 集合と ext3s で例外 0（qn 7.7 万件） | qncl.py |
         | T2SeedCBase の σX₁ の欄 | d3s・deep2 で例外 0（他は測定中） | ccl.py（hiS） |
         | T2SeedSVBase・T2SeedCBase | 11 集合と ext3s で例外 0（sv 4.5 万件・C 1.2 万件。すべての段の形は expP・ext3s で偽） | svcbase.py。C の σX₁ の欄は ccl.py |
         | T2SeedPResRCV2 | 11 集合と std_b で例外 0 | seedqr.py・seedsvc.py。C の un は StepCtxT2 で悪い形を外した |
