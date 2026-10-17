@@ -3863,3 +3863,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - すると T2CFrRes の第 3 欄（M の段で s′ の成分は Ω_{s′}・X₁・V の成分以下）は、段 V と PathLvAll で s′ の成分 < X₁ から出る。T2CFrRes は「CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0」だけになった。ビルド緑、公理は標準の 3 つ。
 
 - 追記: T2SeedQNBase から σ B = B と V < t₁ の欄を外した。どちらも既存の種の残り T2SeedQNRes（σB と base の k = 0）から出る（`qnRes_base_facts`、X₁ の式の t₁ は `app_left_cancel` で一致）。`t2SeedClV2_of_B`・`t2SeedOTRestV2_of_B` は T2SeedPResV2 も受ける。ビルド緑。
+- 追記: T2SeedCDom の第 2 欄（段 V で s′ の成分は Ω_{s′} か X₁ 以下）は T2SeedCBase の段 V から出る（`t2SeedCDom_of`）。最上位は T2SeedDomV2 の代わりに `T2SeedDomV2B`（C の欄は第 1 欄 `T2SeedCDom1` だけ）を受ける。ビルド緑。
