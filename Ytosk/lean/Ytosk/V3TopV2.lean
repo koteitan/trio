@@ -10,7 +10,7 @@
   （`t2SeedPResR_of_sib`）。HSibV2 は難しい形 `HSibHardV2`（V3SibV）に絞った（`hSib_of_hard`）。
 - `expT0Out_of4`: t0 の `t0_final_inv3V2D` の下降まで含めた結論 ExpT0OutV2（残り T0RwRes・T0AbWRes と N の 2 つ）。
   最上位は t = 0 の下降もここから受け、偽の強い吸収 HAbSV2 を使わない（2026-10-17）。
-- `trio_terminates_main_V2_cur`: 現状の最上位。種の枠（T2FOSeedV2・T2VSFCV2 の種）は t2 の `t2FOSeedV2_of`・
+- `trio_terminates_main_V2_base`: 最上位の中間の形（今の最上位は V3TopT2B の `trio_terminates_main_V2_cur`）。種の枠（T2FOSeedV2・T2VSFCV2 の種）は t2 の `t2FOSeedV2_of`・
   `t2VSFCV2_of2`（V3T2SeedFrV2、残り T2SeedDomV2）、T2VRAV2 は t2 の `t2VRAV2_of`（V3T2VRA）と `t2VRAPre_of`
   （V3T2VRAPre、残り T2SeedPreShape）、t = 1 の結論
   ExpT1OutV2 は t1 の `expT1Out_V2_glob`（V3T1VSRAll）、t = 0 は `expT0Out_of4`。
@@ -113,13 +113,13 @@ theorem expT0Out_of4 (hRw : T0RwRes) (hAbW : T0AbWRes)
     (hLeaf M ρ rk r L C hlen hL hp he1) (hFrm M ρ rk r L C hlen hL hp he1)
     n hn2
 
-/-- **The current top theorem**: everything committed so far plugged in. The hypotheses are the named
+/-- **The top theorem before the split of `T2BelowXRes`** (the single current form is `trio_terminates_main_V2_cur`, V3TopT2B): everything committed so far plugged in. The hypotheses are the named
 residuals: drop `HDropV2`・`HSeedV2`; shared `HFrameV2`・`HLeafV2`; t0 `T0RwRes`・`T0AbWRes`;
 t2 `T2BelowXRes`・`T2SeedPResRCV2`・`T2SeedDomV2`・`FDsh`・the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`)・
 the prefix shape `T2SeedPreShape`・the copy levels `T2VRACopy`・the `σ`-step at the guarded copy frames
 `T2VRAK KStepVRA` (t1); top `HSibHardV2`.
 None of them is the false strong absorption `HAbSV2`. -/
-theorem trio_terminates_main_V2_cur (hD : HDropV2) (hSd : HSeedV2)
+theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hRw : T0RwRes) (hAbW : T0AbWRes)
     (hB : T2BelowXResV2) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)

@@ -109,10 +109,10 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 落とした行列の根の RootP（`rootP0_take`）。t0 の `expT0V2_of` を差し込んだ現状の最上位（`trio_terminates_main_V2_now`）
     - ✅ 枠の 10 欄・葉の条件の行列ごとの共通の残り HFrameV2・HLeafV2 と drop・t0 への変換（V3GlobV2、`trio_terminates_main_V2_glob`）
     - ✅ t2 の expT2V2_of・r2V2_of を差し込んだ現状の最上位（`trio_terminates_main_V2_t2`、種の残りを T2SeedPResR に減らした `_t2R`、V3TopV2）
-    - ✅ 全員の生産者を差し込んだ現状の最上位 `trio_terminates_main_V2_cur`（V3TopV2）
+    - ✅ 全員の生産者を差し込んだ最上位（V3TopV2 の中間の形 `trio_terminates_main_V2_base`）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
-    - 現状の最上位の残りを証明して閉じる（2026-10-17 停止時）: `trio_terminates_main_V2_cur`（V3TopV2）と、T2BelowXRes を T2BelowRV2・T2SeedOTV2 に分けた `trio_terminates_main_V2_t2B`、さらに T2SeedClV2・T2BumpMonoV2・T2SeedOTRestV2・T2SeedPreShapeSVC に減らした `trio_terminates_main_V2_t2C`（V3TopT2B）。残り: HDropV2・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0RwRes・T0AbWRes（t0。T0AbWRes ⟸ HDropV2 ∧ T0PrefixInv）、T2BelowXRes（_t2B では T2BelowRV2・T2SeedOTV2）・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・T2VRAK KStepVRA（t1）・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShape・T2VRACopy（t2）、HSibHardV2（top）
-    - _t2B を 1 本の `_cur` にまとめる（top の次の作業、未着手）
+    - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0RwRes・T0AbWRes（t0。T0AbWRes ⟸ HDropV2 ∧ T0PrefixInv）、T2SeedClV2（qn・sv・C）・T2BumpMonoV2・T2SeedOTRestV2（qn・C）・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShapeSVC・T2VRACopy（t2）、T2VRAK KStepVRA（t1）、HSibHardV2（top）
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
   - Desc3 の証明 → **目標 4 が残っている**
