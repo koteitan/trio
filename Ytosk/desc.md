@@ -3828,3 +3828,11 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - qn も同じ形: X′_k = B + Ω_{t_k}、t_{k+1} = f(t_k) = s′ + σ(t_k − V)。σ B = B と V < t_k から σ(B + Ω_{t_k}) = B + Ω_{t_{k+1}}（`qn_closed_tqN`）。t_{k+1} の成分は s′ の成分か、t_k の成分 g₀ か σ g₀ なので、道の段で t₁ と s′ の成分が B + Ω_{t₁} より小さければすべての k で同じ。実測（qncl.py）: d3s・deep2 の qn 5800 件で例外 0（σ B = B・V < t₁ も）。
 - qn の標準形 T2SeedQNOT も出る（`qn_ot_of`）: σ^k (B + Ω_{t₁}) = B + Ω_{t_k}（`tqN_shIt`）。ψ_V(X_k) は段 V の閉じ方（ψ_V(X₁) の標準形と、段 V で s′ の成分 < X₁）から、ψ_{s′}(X_{k+1}) は σ Y の段 s′ = f(V) の成分が Y の段 V の成分の σ 像であること（`comps_sh`）から。
 - 残り `T2SeedQNBase`（標準形のための 2 欄つき）・`T2SeedSVBase`・`T2SeedCBase`（M と M.take x だけ、k を含まない）。C の q の値 ψ_{s′}(step s′ 0 s′ (σ X_k)) も出る（`seedCOT2_of_base`）: σ X₁ の加数が Ω_{s′+1} 以上なら（T2SeedCBase の欄、d3s・deep2 で例外 0）σ で保たれ、q の枠は σ X_k のまま（`H_of_high`）、ψ_{s′}(σ X_k) は qn と同じ理由で標準形。これで最上位の残り T2SeedOTRestV2 は消えた（`t2SeedOTRestV2_of_B : T2SeedClV2B → T2SeedOTRestV2`）。最上位は `T2SeedClV2B`（qn・sv・C とも k を含まない形）だけを受け、`t2SeedClV2_of_B`・`t2SeedOTRestV2_of_B` で元の T2SeedClV2・T2SeedOTRestV2 を作る。ビルド緑、公理は標準の 3 つ。
+
+### 種の列の枠の VSmallRAll の sv の欄を M と M.take x の残りに（2026-10-17、lead、V3T2VRASV、緑）
+
+- 残り T2VRASeedSVC（sv・C の種の枠の QVRAt、すべての M[n]）を、sv の欄 `T2SVc0` と C の欄 `T2VRASeedC` に分け、sv を証明した（`t2VRASeedSVC_of`）。
+- sv では x は r で数えられない（x − 1 が x へ上げ、x は子がないので topped）。よって CL_M(r) = CL_{M.take x}(r)（`cl_sv`、counted_take_of・counted_take_last）。N = M[n] では CL_N(r) = CL_{M.take x}(r) ++ [x]（既存の `sv_frame`）。
+- r の枠（`vra_lift_sv`）: c₀（M.take x での r の最後の数える子）より前は M の枠そのもの。c₀ の枠は、N の値 o_{M.take x}(c₀) = ψ_s(y) が y ≠ 0 なら M の値 ψ_s(y_M)（同じ添字、y ≤ y_M）なので、引き金（B < y ≤ y_M）と split（`split_fst_ne_of_le`）が M の枠に移り、QVRAt の結論は添字 s・B・V・段だけによる。最後の枠（子 x、添字 V + 1）は z か V の成分（`comps_succ_sub`）。段は t2VRASeed_of と同じく M の段。
+- 残り `T2SVc0`（M と M.take x だけ）: c₀ より前の子の値は M と同じ、c₀ の値は y ≠ 0 なら M と同じ添字で引数は小さいか等しい。実測（svpre.py）: d3s・deep2・expP の sv の種 6900 件で例外 0（c₀ で y ≠ 0 は 1300 件）。
+- 最上位は hSVCG の代わりに `T2SVc0`（sv）と `T2VRASeedC`（C）を受ける。ビルド緑、公理は標準の 3 つ。
