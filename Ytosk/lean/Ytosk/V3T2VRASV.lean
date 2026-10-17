@@ -17,6 +17,8 @@ import Ytosk.V3T2SeedSV
 import Ytosk.V3ExpT1R
 import Ytosk.V3T2SeedPre
 import Ytosk.V3T2SeedSVCl
+import Ytosk.V3DropH
+import Ytosk.V3ResV2
 
 namespace Ytosk
 
@@ -563,5 +565,59 @@ def T2SVc0' (M : Mat) (ρ : Valn) (r L : Nat) : Prop :=
 theorem t2SVc0_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {r L : Nat}
     (hlen : r + L + 1 = M.length) (h : T2SVc0' M ρ r L) : T2SVc0 M ρ r L :=
   fun τ hτ Lc0 c0 hT => ⟨o_take_before_last I hlen hτ hT, h τ hτ Lc0 c0 hT⟩
+
+/-- **`T2SVc0'` from the drop lemma**: with a nonzero argument, `c₀` has a counted child in `M.take x`, so it is not
+`TopC` and its `v` does not change (`chg_struct`, `chg_off`); the drop lemma gives `o_{M.take x}(c₀) ◁= o_M(c₀)`
+(`drop_all_H`, the weak alternative has argument `0`), hence the same subscript and a smaller argument. -/
+theorem t2SVc0'_of_drop {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk)
+    (hD : DropResH M (M.length - 1) ρ (drop1 M (M.length - 1) rk)) {r L : Nat} (hlen : r + L + 1 = M.length) :
+    T2SVc0' M ρ r L := by
+  intro τ hτ Lc0 c0 hT s y hsy hy
+  have IW := Inv3W.ofV2 C.S C.I
+  have hx : M.length - 1 = r + L := by omega
+  rw [hx] at hD
+  have hcnt := counted_take_last (M := M) (by omega) IW.r0p IW.z2 IW.sd IW.z1 IW.uat
+  rw [hx] at hcnt
+  have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) IW.rank hcnt
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rk) := cons_of_rk hRk1
+  have hc0m : c0 ∈ CL (M.take (r + L)) r := by rw [hT]; simp
+  have hc0 := List.mem_filter.mp hc0m
+  have hc0T : c0 < (M.take (r + L)).length := (mem_children hc0.1).2
+  have hc0x : c0 < r + L := by rw [List.length_take] at hc0T; omega
+  have hag := agree_of_cons hτ hC1 hRk1 c0 hc0T
+  have hPO := (drop_all_H hlen IW.r0p IW.z2 IW.sd IW.z1 IW.uat IW.uab IW.cons ⟨C.I.good, C.I.vs, C.I.fc, C.I.fo, C.I.kd, C.I.td⟩ hD hC1 hRk1 c0 hc0x).1.1
+  -- `τ` on `M.take x` is good
+  have hτ' : Cons (M.take (M.length - 1)) τ := by rw [hx]; exact hτ
+  have hG := good3_take_any IW ⟨C.R.drop⟩ (by omega) hτ'
+  rw [hx] at hG
+  -- `v(c₀)` does not change
+  have hnch : ¬ ChgX M (r + L) false c0 := by
+    intro hch
+    have hTop := (chg_struct hlen IW.r0p IW.z2 IW.sd IW.z1 IW.uat IW.uab hch).1 rfl hc0x
+    have hCLe : CL (M.take (r + L)) c0 = [] := by
+      unfold CL; rw [List.filter_eq_nil_iff]
+      intro d hd hdc; exact hTop.2.1 d hd (by simpa using hdc)
+    have ho := o_spArg hτ hG hc0T
+    rw [cvals_eq_map hτ hG, hCLe, hsy] at ho
+    simp only [psi.injEq] at ho
+    exact hy (by rw [ho.2.1]; rfl)
+  have hv := (chg_off hlen IW.cons IW.good hC1 hRk1 c0 hc0x).2 hnch
+  -- the subscript of `o_{M.take x}(c₀)` is `v(c₀)`
+  have hoT := o_spArg hτ hG hc0T
+  rw [hsy] at hoT
+  simp only [psi.injEq] at hoT
+  have hs : s = ρ.v c0 := by rw [hoT.1, hag.2, hv]
+  obtain ⟨Xm, hXm⟩ := o_arg_form IW (show c0 < M.length by omega)
+  refine ⟨Xm, by rw [hXm, hs], ?_⟩
+  have hle := LhdE.le (show LhdE ((drop1 M (r + L) rk).o c0) (ρ.o c0) from ?_)
+  · rw [← hag.1, hsy, hXm, ← hs] at hle
+    rcases (le_iff _ _).mp hle with h | h
+    · rcases psi_lt_psi_z_iff.mp h with h' | ⟨_, h'⟩
+      · exact absurd h' (lt_irrefl' _)
+      · exact le_of_lt h'
+    · simp only [psi.injEq] at h; rw [h.2.1]
+  · rcases hPO with h | ⟨⟨w', w, X, h1, _, _⟩, _⟩
+    · exact h
+    · rw [← hag.1, hsy] at h1; simp only [psi.injEq] at h1; exact absurd h1.2.1 hy
 
 end Ytosk

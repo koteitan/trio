@@ -3874,3 +3874,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - `no_chg_before_c0`: r の M.take x での数える子 c₀ について、r < c < c₀ の列 c はどれも変わらない（ChgX M x b c でない）。証明: c が変わると ICC（`chg_struct`）から、c の部分木の次の列 c′ が上げの的で v が変わる（ChgX false c′）。c′ ≤ c₀（c₀ < c′ なら c₀ が c の部分木に入り、c₀ の親 r が c の子孫になる）。c′ < c₀ なら c′ で繰り返す（c₀ − c が減る）。c′ = c₀ なら c₀ は M.take x で topped（TopC）かつ上げの的（`upg_take`）なので数えられず、矛盾。c が x − 1 の祖先でないことは `anc0_interval` と `par0_spec`（c₀ の親は r）から。
 - `o_take_before_last`: CL_{M.take x}(r) = Lc₀ ++ [c₀] なら Lc₀ の子の o は M と同じ（`chg_off`）。
 - これで T2SVc0 の第 1 欄が証明になり、最上位の残りは c₀ の欄だけの `T2SVc0'`（sv）と「CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0'」（C）になった。ビルド緑、公理は標準の 3 つ。
+- 追記: c₀ の欄 T2SVc0′ も証明した（`t2SVc0'_of_drop`）。y ≠ 0 なら c₀ は M.take x に数える子を持つので TopC でなく、v(c₀) は変わらない（`chg_struct`・`chg_off`）。落とす補題（`drop_all_H`、最上位では HDropV2W・T0UpgAbsV2 から）の PO は、引数 0 の弱い形を除いて o_{M.take x}(c₀) ◁= o_M(c₀) を与え、添字が同じなので y ≤ y_M。最上位から sv の仮定が消え、C の仮定は CL_M(r) = CL_{M.take x}(r) だけになった。最上位の仮定は 19 個。ビルド緑、公理は標準の 3 つ。
