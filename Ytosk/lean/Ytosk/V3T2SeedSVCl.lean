@@ -228,13 +228,15 @@ theorem t2SeedSVCl_of_base {M : Mat} {ρ : Valn} {r L : Nat} (hV : isOT (ρ.v r)
   obtain ⟨P, b, x, T1, hXe, hX1, hT1, hP, hB0, hB1, hot, hcl⟩ := h τ hC X hX
   exact seedClB0_of_base hV hXe hX1 hT1 hP hB0 hB1 hot hcl k
 
-/-- **Residual (t2, C): the `k`-free facts on the seed `r`**, as `T2SeedSVBase` with `V′ = s′ = qnS`. -/
+/-- **Residual (t2, C): the `k`-free facts on the seed `r`**, as `T2SeedSVBase` with `V′ = s′ = qnS`, and the summands
+of `σ X₁` are at least `Ω_{s′+1}` (for the value of `q`). -/
 def T2SeedCBase (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
   ∀ τ, Cons (M.take (r + L)) τ → ∀ X, ρ.o r = psi (ρ.v r) X z →
     ∃ P b x T1, X = app P (psi b x z) ∧ t2X1 M r L τ = app P T1 ∧ T1 ≠ z ∧
       sh (ρ.v r) (qnS M ρ r L q) P = P ∧
       (∀ q ∈ summands X, ¬ q < psi (succ (ρ.v r)) z z) ∧
       (∀ q ∈ summands (t2X1 M r L τ), ¬ q < psi (succ (ρ.v r)) z z) ∧
+      (∀ g ∈ summands (sh (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ)), ¬ g < psi (succ (qnS M ρ r L q)) z z) ∧
       isOT (t2X1 M r L τ) = true ∧
       ∀ u, (u = ρ.v r ∨ PathLvA M ρ r u) → ¬ lt (ρ.v r) u = true →
         ∀ g ∈ comps u (t2X1 M r L τ) ++ comps u (qnS M ρ r L q), g < t2X1 M r L τ
@@ -243,7 +245,7 @@ def T2SeedCBase (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
 theorem t2SeedCCl_of_base {M : Mat} {ρ : Valn} {r L q : Nat} (hV : isOT (ρ.v r) = true)
     (hs : isOT (qnS M ρ r L q) = true) (h : T2SeedCBase M ρ r L q) : T2SeedCCl M ρ r L q := by
   intro τ hC k _ X hX
-  obtain ⟨P, b, x, T1, hXe, hX1, hT1, hP, hB0, hB1, hot, hcl⟩ := h τ hC X hX
+  obtain ⟨P, b, x, T1, hXe, hX1, hT1, hP, hB0, hB1, -, hot, hcl⟩ := h τ hC X hX
   exact seedClB0_of_baseG hV hs (qnS_gt M ρ r L q) hXe hX1 hT1 hP hB0 hB1 hot hcl k
 
 
@@ -377,7 +379,7 @@ theorem seedCOT1_of_base {M : Mat} {ρ : Valn} {r L q : Nat} (hV : isOT (ρ.v r)
       isOT (psi (ρ.v r) (shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ) k) z) = true := by
   intro τ hτ k
   obtain ⟨X, hX⟩ := hXex
-  obtain ⟨_, _, _, _, -, -, -, -, -, -, hot, hcl⟩ := h τ hτ X hX
+  obtain ⟨_, _, _, _, -, -, -, -, -, -, -, hot, hcl⟩ := h τ hτ X hX
   obtain ⟨hk, hclk⟩ := closed_shIt hV hs (qnS_gt M ρ r L q) hot hcl k
   rw [isOT_psi_iff]
   exact ⟨hV, hk, rfl, z_le _, fun g hg => hclk _ (Or.inl rfl) (lt_irrefl' _) g (List.mem_append_left _ hg)⟩
@@ -388,25 +390,53 @@ def T2SeedCOT2 (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
     ∀ k, isOT (psi (qnS M ρ r L q) (step (qnS M ρ r L q) z (qnS M ρ r L q)
       (sh (ρ.v r) (qnS M ρ r L q) (shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ) k)) z) z) = true
 
-/-- **Residual (t2)**: what remains of `T2SeedOTRest` (qn and the first half of C come from `T2SeedClV2B`): the value
-of `q` in the C case, `T2SeedCOT2`. -/
-def T2SeedOTRestB (M : Mat) (ρ : Valn) : Prop :=
-  ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
-    ∀ q, par M 0 (r + L) = some q → q ≠ r → (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCOT2 M ρ r L q
+theorem shIt_succ' {V V' : T} : ∀ (X : T) (k : Nat), shIt V V' X (k + 1) = shIt V V' (sh V V' X) k
+  | _, 0 => rfl
+  | X, k + 1 => by
+    show sh V V' (shIt V V' X (k + 1)) = sh V V' (shIt V V' (sh V V' X) k)
+    rw [shIt_succ' X k]
 
-def T2SeedOTRestV2B : Prop :=
-  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
-    T2SeedOTRestB M ρ
+/-- **The C value of `q` is standard** (`T2SeedCOT2`) from `T2SeedCBase` and the summands of `σ X₁` being at least
+`Ω_{s′+1}`: the frame of `q` keeps `σ X_k` (`H_of_high`), and `ψ_{s′}(σ X_k)` is standard since the components of
+`σ X_k` at `s′ = f(V)` are the images of those of `X_k` at `V`. -/
+theorem seedCOT2_of_base {M : Mat} {ρ : Valn} {r L q : Nat} (hV : isOT (ρ.v r) = true)
+    (hs : isOT (qnS M ρ r L q) = true) (hXex : ∃ X, ρ.o r = psi (ρ.v r) X z) (h : T2SeedCBase M ρ r L q) :
+    T2SeedCOT2 M ρ r L q := by
+  intro τ hτ k
+  obtain ⟨X, hX⟩ := hXex
+  obtain ⟨_, _, _, T1, -, hX1, hT1, -, -, -, hhi, hot, hcl⟩ := h τ hτ X hX
+  have hVV := qnS_gt M ρ r L q
+  set V := ρ.v r
+  set s' := qnS M ρ r L q
+  set X1 := t2X1 M r L τ
+  obtain ⟨hk, hclk⟩ := closed_shIt hV hs hVV hot hcl k
+  have hX1z : X1 ≠ z := by rw [hX1]; exact app_ne_z_right hT1
+  have hY : sh V s' (shIt V s' X1 k) = shIt V s' (sh V s' X1) k := shIt_succ' X1 k
+  have hhigh : ∀ g ∈ summands (sh V s' (shIt V s' X1 k)), ¬ g < psi (succ s') z z := by
+    rw [hY]; exact b0_shIt hV hs hVV (isOT_sh hV hs hVV hot) hhi k
+  have hne : sh V s' (shIt V s' X1 k) ≠ z := sh_ne_z (shIt_ne_z hX1z k)
+  have hzlt : z < sh V s' (shIt V s' X1 k) := z_lt_of_ne_z hne
+  have hin : step s' z s' (sh V s' (shIt V s' X1 k)) z = sh V s' (shIt V s' X1 k) := by
+    unfold step
+    rw [if_pos ⟨hzlt, psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, hzlt⟩)⟩]
+    exact H_of_high hs hhigh
+  rw [hin, isOT_psi_iff]
+  refine ⟨hs, isOT_sh hV hs hVV hk, rfl, z_le _, fun g hg => ?_⟩
+  have hcs := comps_sh hV hs hVV hV (le_refl V) hk
+  rw [shf_self] at hcs
+  obtain ⟨g0, hg0, rfl⟩ := hcs g hg
+  exact sh_lt_sh hV hs (le_of_lt hVV) (isOT_of_mem_comps V hk hg0) hk
+    (hclk V (Or.inl rfl) (lt_irrefl' _) g0 (List.mem_append_left _ hg0))
 
-/-- **`T2SeedOTRestV2` from `T2SeedClV2B` (its qn and C parts) and `T2SeedOTRestV2B`.** -/
-theorem t2SeedOTRestV2_of_B (hCl : T2SeedClV2B) (h : T2SeedOTRestV2B) : T2SeedOTRestV2 := by
+/-- **`T2SeedOTRestV2` from `T2SeedClV2B`** (its qn and C parts). -/
+theorem t2SeedOTRestV2_of_B (hCl : T2SeedClV2B) : T2SeedOTRestV2 := by
   intro M ρ rk C hz h2 r L hlen hr
-  have hC2 := h M ρ rk C hz h2 r L hlen hr
   obtain ⟨hQN, _, hCC⟩ := hCl M ρ rk C hz h2 r L hlen hr
   have hrM : r < M.length := by omega
   have IW := Inv3W.ofV2 C.S C.I
   refine ⟨fun q Lc hq hqr hCL => t2SeedQNOT_of_base (IW.good.ot_v r hrM) (qnS_ot IW hrM L q) (hQN q Lc hq hqr hCL),
-    fun q hq hqr hncl τ hτ => ⟨fun k _ => ?_, hC2 q hq hqr hncl τ hτ⟩⟩
-  exact seedCOT1_of_base (IW.good.ot_v r hrM) (qnS_ot IW hrM L q) (o_arg_form IW hrM) (hCC q hq hqr hncl) τ hτ k
+    fun q hq hqr hncl τ hτ => ⟨fun k _ => ?_, ?_⟩⟩
+  · exact seedCOT1_of_base (IW.good.ot_v r hrM) (qnS_ot IW hrM L q) (o_arg_form IW hrM) (hCC q hq hqr hncl) τ hτ k
+  · exact seedCOT2_of_base (IW.good.ot_v r hrM) (qnS_ot IW hrM L q) (o_arg_form IW hrM) (hCC q hq hqr hncl) τ hτ
 
 end Ytosk
