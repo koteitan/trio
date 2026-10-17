@@ -16,7 +16,7 @@ set_option linter.unusedSectionVars false
 
 /-- **Residual (t2): the closedness of the seed argument in `M[n]`** (qn・sv・C; `M` and `M.take x` only). -/
 def T2SeedClV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
       (∀ q Lc, par M 0 (r + L) = some q → q ≠ r → CL M r = Lc ++ [q] → T2SeedQNCl M ρ r L q Lc) ∧
       (T2SVCase M r L → T2SeedSVCl M ρ r L) ∧
@@ -24,7 +24,7 @@ def T2SeedClV2 : Prop :=
 
 /-- **Residual (t2): the bump term grows from `M.take x` to `M[n]`** before `x`. -/
 def T2BumpMonoV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → T2BumpMono M r L
 
 /-- **`T2BelowRV2` from the seed residuals, the closedness and the bump monotonicity.** -/

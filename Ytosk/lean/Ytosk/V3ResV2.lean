@@ -104,6 +104,17 @@ structure StepCtxV2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop whe
   /-- The state of every rewriting frame is closed (2026-10-17: carried by the induction, `hInvV2_all`). -/
   rw : RwClosed M ρ
 
+/-- **The bad shape of the C case at `t = 2`** (2026-10-17): `q = P_0(x) ≠ r`, `q` is not the last counted child of `r`,
+and `x − 1` upgrades (to an ancestor of `r`). The seed residual `T2SeedCResR.un` is false here (ext2: 6 standard matrices);
+the `t = 2` engines assume its absence (`StepCtxT2`), and the shape is the separate residual `T2CBadOut`. -/
+def T2CBad (M : Mat) : Prop :=
+  ∃ r L q, r + L + 1 = M.length ∧ par M 2 (r + L) = some r ∧ par M 0 (r + L) = some q ∧ q ≠ r ∧
+    (¬ ∃ Lc, CL M r = Lc ++ [q]) ∧ upg M (r + L - 1) ≠ none
+
+/-- **The step context of the `t = 2` engines**: `StepCtxV2` outside the bad C shape. -/
+structure StepCtxT2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop extends StepCtxV2 M ρ rk where
+  good : ¬ T2CBad M
+
 /-- **R-t0**: the expansions `M[n]` (`n ≥ 2`) with a last column of type `t = 0` have the invariant. -/
 def ExpT0V2 : Prop :=
   ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
@@ -133,7 +144,7 @@ def ExpT1OutV2 : Prop :=
 
 /-- **R-t2**: the expansions `M[n]` (`n ≥ 2`) with a last column of type `t = 2` have the invariant. -/
 def ExpT2V2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (expand M n) ρN rkN
 
 /-! ## RwClosed を運ぶ形（2026-10-17） -/
@@ -152,12 +163,22 @@ def ExpT1OutR : Prop :=
 
 /-- **R-t2 with `RwClosed`**. -/
 def ExpT2R : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (expand M n) ρN rkN ∧ RwClosed (expand M n) ρN
 
 /-- **`RwClosed` of a `t = s` expansion with the invariant** (the residual of the carrying, per type `s`). -/
 def TRwOut (t : Nat) : Prop :=
   ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = t →
+    ∀ n, 2 ≤ n → ∀ ρN rkN, Inv3V2 (expand M n) ρN rkN → RwClosed (expand M n) ρN
+
+/-- **Residual: the `t = 2` step at the bad C shape** (the output of the `t = 2` engines there). -/
+def T2CBadOut : Prop :=
+  ∀ M ρ rk, StepCtxV2 M ρ rk → T2CBad M → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+    (∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (expand M n) ρN rkN ∧ RwClosed (expand M n) ρN) ∧ Res3T2 M ρ rk
+
+/-- `TRwOut 2` in the context of the `t = 2` engines. -/
+def TRwOutT2 : Prop :=
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ n, 2 ≤ n → ∀ ρN rkN, Inv3V2 (expand M n) ρN rkN → RwClosed (expand M n) ρN
 
 theorem expT0OutR_of (h : ExpT0OutV2) (hR : TRwOut 0) : ExpT0OutR := fun M ρ rk C hz hs n hn => by
@@ -168,13 +189,13 @@ theorem expT1OutR_of (h : ExpT1OutV2) (hR : TRwOut 1) : ExpT1OutR := fun M ρ rk
   obtain ⟨ρN, rkN, IN, hot, hlt⟩ := h M ρ rk C hz hs n hn
   exact ⟨ρN, rkN, IN, hot, hlt, hR M ρ rk C hz hs n hn ρN rkN IN⟩
 
-theorem expT2R_of (h : ExpT2V2) (hR : TRwOut 2) : ExpT2R := fun M ρ rk C hz hs n hn => by
+theorem expT2R_of (h : ExpT2V2) (hR : TRwOutT2) : ExpT2R := fun M ρ rk C hz hs n hn => by
   obtain ⟨ρN, rkN, IN⟩ := h M ρ rk C hz hs n hn
   exact ⟨ρN, rkN, IN, hR M ρ rk C hz hs n hn ρN rkN IN⟩
 
 /-- **R-t2d**: the remaining facts `Res3T2` of the descent at `t = 2`. -/
 def R2V2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     Res3T2 M ρ rk
 
 end Ytosk

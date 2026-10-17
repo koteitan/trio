@@ -17,7 +17,7 @@ set_option linter.unusedSectionVars false
 
 /-- **t2-seed-dom**: the components of `s′ = v_N(q)` at the seed frames (qn and C). -/
 def T2SeedDomV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     (∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
       ∀ Lc, CL M r = Lc ++ [q] → T2SeedQNDom M ρ r L q Lc) ∧
     (∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
@@ -103,7 +103,7 @@ theorem t2SeedFrames3 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 /-- **The seed-frame residuals of the top level** from `T2SeedPResV2` and `T2SeedDomV2`. -/
 theorem t2SeedFrV2_of (hPR : T2SeedPResV2) (hD : T2SeedDomV2) :
     T2SeedVSFV2 ∧ T2SeedFCV2 ∧ T2FOSeedV2 := by
-  have main : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  have main : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 →
       T2SeedFrames QVSF M ∧ T2SeedFrames QFO M ∧ T2SeedFrames QFCo M := by
     intro M ρ rk C hz h2
@@ -114,7 +114,7 @@ theorem t2SeedFrV2_of (hPR : T2SeedPResV2) (hD : T2SeedDomV2) :
       have := par_lt M 2 _ r hr; omega
     obtain ⟨hQND, hCD⟩ := hD M ρ rk C hz h2
     exact t2SeedFrames3 C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hPR M ρ rk C hz h2) hQND hCD
-      (fun τ hτ => ⟨(take_fields_ctx C hl2 hτ).2.1, take_fo_ctx C hl2 hτ, (take_fields_ctx C hl2 hτ).2.2⟩)
+      (fun τ hτ => ⟨(take_fields_ctx C.toStepCtxV2 hl2 hτ).2.1, take_fo_ctx C.toStepCtxV2 hl2 hτ, (take_fields_ctx C.toStepCtxV2 hl2 hτ).2.2⟩)
   refine ⟨fun M ρ rk C hz h2 => (main M ρ rk C hz h2).1, fun M ρ rk C hz h2 => ?_,
     fun M ρ rk C hz h2 => (main M ρ rk C hz h2).2.1⟩
   intro r L hlen hr n hn hGlow σ hCN hGN i hi Lc c R hCL

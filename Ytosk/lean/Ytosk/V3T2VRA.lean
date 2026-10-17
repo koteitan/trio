@@ -345,13 +345,13 @@ theorem vsmallRAll_congr {N : Mat} {σ τ : Valn} (h : Agree N σ τ) (hV : VSma
 
 /-- **T2VRAV2 from the named residuals.** -/
 theorem t2VRAV2_of {K : T → T → T → List T → T → T → Prop} (hsh : QVRAshK K) (hB : T2BelowXResV2)
-    (hSeedG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hSeedG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRASeed M)
-    (hPreG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hPreG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ)
-    (hCopyG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hCopyG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRACopy M)
-    (hKG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hKG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK K M) : T2VRAV2 := by
   intro M ρ rk C hz h2 n hn σ rkN hCN _ _ _
   obtain ⟨hX, _⟩ := sInvXJ_std C.std C.ne

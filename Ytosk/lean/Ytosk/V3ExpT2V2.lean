@@ -17,29 +17,29 @@ set_option linter.unusedSectionVars false
 
 /-- **t2-fo**: the FrameOT part of the seed frames (`T2Rest3.foSeed` with the new context). -/
 def T2FOSeedV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     T2SeedFrames QFO M
 
 /-- **t2-seed**: the PH3cG・FC3 residuals of the seed frames (`T2SeedQRRes`・`QNRes`・`SVRes`・`CRes`・
 `T2SeedCNext`). -/
 def T2SeedPResV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     G.T2SeedPRes M ρ
 
 /-- **`T2BelowXRes` in the step context**: the part before `x` only at the matrices of the induction. -/
-def T2BelowXResV2 : Prop := ∀ M ρ rk, StepCtxV2 M ρ rk → T2BelowXResAt M ρ rk
+def T2BelowXResV2 : Prop := ∀ M ρ rk, StepCtxT2 M ρ rk → T2BelowXResAt M ρ rk
 
 theorem T2BelowXRes.toV2 (h : T2BelowXRes) : T2BelowXResV2 := fun M ρ rk _ => h M ρ rk
 
 /-- **t2-vs**: `VSmallF` and `FrameClosed` of `M[n]` (`T2Rest3.vs`・`fc` with the new context). -/
 def T2VSFCV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ n, 2 ≤ n → ∀ σ rkN, Cons (expand M n) σ → Rk (expand M n) rkN → Good3 (expand M n) σ →
       PH3cG (expand M n) σ → VSmallF (expand M n) σ ∧ FrameClosed (expand M n) σ
 
 /-- **t2-vra**: `VSmallRAll` of `M[n]`. -/
 def T2VRAV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ n, 2 ≤ n → ∀ σ rkN, Cons (expand M n) σ → Rk (expand M n) rkN → Good3 (expand M n) σ →
       PH3cG (expand M n) σ → VSmallRAll (expand M n) σ
 

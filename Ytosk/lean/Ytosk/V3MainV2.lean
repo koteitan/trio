@@ -606,7 +606,7 @@ theorem expT1Out_of_step (h1 : ExpT1V2) : ExpT1OutV2 := by
 
 /-- **Every nonempty standard matrix other than SRO has a valuation with `Inv3V2`.** -/
 theorem hInvV2_all (hD : HDropV2) (hSd : HSeedV2) (hT : HTakeV2)
-    (h0 : ExpT0OutR) (h1 : ExpT1OutR) (h2 : ExpT2R) :
+    (h0 : ExpT0OutR) (h1 : ExpT1OutR) (h2 : ExpT2R) (hCB : T2CBadOut) :
     ∀ M, Std M → M ≠ SRO → M ≠ [] → ∃ ρ rk, Inv3V2 M ρ rk ∧ RwClosed M ρ := by
   intro M hM
   induction hM with
@@ -649,7 +649,9 @@ theorem hInvV2_all (hD : HDropV2) (hSd : HSeedV2) (hT : HTakeV2)
         exact ⟨ρN, rkN, IN, hR⟩
       · obtain ⟨ρN, rkN, IN, _, _, hR⟩ := h1 M ρ rk C hz hs n hn
         exact ⟨ρN, rkN, IN, hR⟩
-      · exact h2 M ρ rk C hz hs n hn
+      · by_cases hb : T2CBad M
+        · exact (hCB M ρ rk C hb hz hs).1 n hn
+        · exact h2 M ρ rk ⟨C, hb⟩ hz hs n hn
 
 /-! ## 下降の残り `Res3` -/
 
@@ -680,26 +682,31 @@ theorem hT1_V2 (h1 : ExpT1OutR) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat
   obtain ⟨ρN, rkN, IN, hot, hlt, _⟩ := h1 M ρ rk C hz hs n hn
   exact dropsAt_of rfl ⟨ρN, rkN, IN.cons, IN.rank, hot, hlt⟩
 
-theorem hT2_V2 (h2 : ExpT2R) (hR2 : R2V2) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem hT2_V2 (h2 : ExpT2R) (hR2 : R2V2) (hCB : T2CBadOut) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (C : StepCtxV2 M ρ rk) (R : Res3D M ρ rk) :
     col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n := by
   intro hz hs
   obtain ⟨hX, hJ⟩ := sInvXJ_std C.std C.ne
-  apply t2_dropsC (Inv3V2.toC C.S C.I) R (hR2 M ρ rk C hz hs) hX hJ hz hs
-  intro n hn _ _
-  obtain ⟨ρN, rkN, IN, _⟩ := h2 M ρ rk C hz hs n hn
-  exact ⟨ρN, rkN, IN.cons, IN.rank, IN.good⟩
+  by_cases hb : T2CBad M
+  · apply t2_dropsC (Inv3V2.toC C.S C.I) R (hCB M ρ rk C hb hz hs).2 hX hJ hz hs
+    intro n hn _ _
+    obtain ⟨ρN, rkN, IN, _⟩ := (hCB M ρ rk C hb hz hs).1 n hn
+    exact ⟨ρN, rkN, IN.cons, IN.rank, IN.good⟩
+  · apply t2_dropsC (Inv3V2.toC C.S C.I) R (hR2 M ρ rk ⟨C, hb⟩ hz hs) hX hJ hz hs
+    intro n hn _ _
+    obtain ⟨ρN, rkN, IN, _⟩ := h2 M ρ rk ⟨C, hb⟩ hz hs n hn
+    exact ⟨ρN, rkN, IN.cons, IN.rank, IN.good⟩
 
 /-- **Desc3 from the residuals**, with `t = 0` and `t = 1` in the conclusion forms `ExpT0OutV2`・`ExpT1OutV2`
 (2026-10-17: no strong absorption `HAbSV2`; the `t = 0` descent comes from t0's engine). -/
 theorem desc3_V2O (hD : HDropV2) (hSd : HSeedV2) (hT : HTakeV2)
-    (h0 : ExpT0OutR) (h1 : ExpT1OutR) (h2 : ExpT2R) (hR2 : R2V2) : Desc3 := by
+    (h0 : ExpT0OutR) (h1 : ExpT1OutR) (h2 : ExpT2R) (hR2 : R2V2) (hCB : T2CBadOut) : Desc3 := by
   intro M n hM hS hE
-  obtain ⟨ρ, rk, I, hRw⟩ := hInvV2_all hD hSd hT h0 h1 h2 M hM hS hE
+  obtain ⟨ρ, rk, I, hRw⟩ := hInvV2_all hD hSd hT h0 h1 h2 hCB M hM hS hE
   have C := ctx_V2 hD hSd hT hM hS hE I hRw
   have R := res3D_of_V2 C
   obtain ⟨t', hv, _, hlt⟩ := desc_stepV2 hE (Inv3V2.toC C.S I) R (hT0_V2 h0 C) (hT1_V2 h1 C)
-    (hT2_V2 h2 hR2 C R) n
+    (hT2_V2 h2 hR2 hCB C R) n
   exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
 
 end Ytosk

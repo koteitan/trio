@@ -195,7 +195,7 @@ def T2SeedRR (M : Mat) (ρ σ : Valn) (p : Nat) : Prop :=
 /-- **Residual (t2): the part before `x` in the step context**: at the seeds `RClaimU` and `REr`, and the weak
 absorption `AbsWN`. (`VSmallRA`・`PH3cG` come from `Inv3V2`, `RwClosed` from t0's `T0RwRes`.) -/
 def T2BelowRV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ n, 2 ≤ n →
       (∀ m, 1 ≤ m → m < n → ∀ τ, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
         (entry M 1 (r + L) - entry M 1 r) m) τ → Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
@@ -212,7 +212,7 @@ def T2BelowRV2 : Prop :=
 
 /-- **Residual (t2): the standard forms of the seed closed forms** in the step context. -/
 def T2SeedOTV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     T2SeedOTAt M ρ
 
 /-- **`T2BelowXResV2` from the named residuals** (`T0RwRes` for `RwClosed M`, the seed residuals
@@ -223,6 +223,6 @@ theorem t2BelowXResV2_of (hRw : T0RwRes) (hR : T2BelowRV2) (hP : T2SeedPResV2) (
   refine t2BelowXResAt_of_L (fun r L hlen hr n hn hG σ hCN hOTx hor hoq hdec => ?_) (hP M ρ rk C hz h2)
     (hOT M ρ rk C hz h2) hM hS I R hz h2
   obtain ⟨h1, h3⟩ := hR M ρ rk C hz h2 r L hlen hr n hn hG σ hCN hOTx hor hoq hdec
-  exact ⟨fun p hp => ⟨C.I.vra.toLast, C.I.ph, hRw M ρ rk C, (h1 p hp).1, (h1 p hp).2⟩, h3⟩
+  exact ⟨fun p hp => ⟨C.I.vra.toLast, C.I.ph, hRw M ρ rk C.toStepCtxV2, (h1 p hp).1, (h1 p hp).2⟩, h3⟩
 
 end Ytosk

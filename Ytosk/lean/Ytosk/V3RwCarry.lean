@@ -46,12 +46,12 @@ theorem rw_take_ctx {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepC
 /-- **`TRwOut 2`** from `rwClosed_expand_t2SV`: the residuals are `T2X1Cl`, `T2CopyK CopyLowK` and
 `T2VAncStep` of the matrices of the induction (the seed residual is t2's `T2SeedPResV2`). -/
 theorem tRwOut2_of (hB : T2BelowXResV2) (hP : T2SeedPResV2)
-    (hX1 : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hX1 : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → G.T2X1Cl M ρ)
-    (hLow : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hLow : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2CopyK CopyLowK M)
-    (hVS : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
-      TRIO.srow M (M.length - 1) = 2 → T2VAncStep M) : TRwOut 2 := by
+    (hVS : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VAncStep M) : TRwOutT2 := by
   intro M ρ rk C hz hs n hn ρN rkN IN
   have hl : 2 ≤ M.length := by
     have := (sInvXJ_std C.std C.ne).1
@@ -59,7 +59,7 @@ theorem tRwOut2_of (hB : T2BelowXResV2) (hP : T2SeedPResV2)
     rw [hs] at hr
     have := par_lt M 2 _ r hr; omega
   exact rwClosed_expand_t2SV (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz hs C.rw
-    (fun τ hτ => rw_take_ctx C hl hτ) (hX1 M ρ rk C hz hs) (hP M ρ rk C hz hs) (hLow M ρ rk C hz hs)
+    (fun τ hτ => rw_take_ctx C.toStepCtxV2 hl hτ) (hX1 M ρ rk C hz hs) (hP M ρ rk C hz hs) (hLow M ρ rk C hz hs)
     (hVS M ρ rk C hz hs) n (by omega) ρN IN.cons
 
 end Ytosk

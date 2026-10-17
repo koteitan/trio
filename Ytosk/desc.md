@@ -3772,3 +3772,11 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 種の残り（Lean と同じ形）: qr（w1・dom）・qn（base）は 11 集合と std_b で例外 0（tmp/lead/probes/seedqr.py、qr 144 万・qn 37 万件）。sv（T2SVStrict・decP・lhd）は 11 集合と std_b で例外 0。C の decP・rw・lhd は例外 0、C の un だけが ext2 で 6 件偽（上の節）。
 - T2VRASeedSVC は、それを含む T2VRASeed が 11 集合で例外 0（t1 の tools/probe_t2vra.py、tmp/ytosk-handoff/results/t1/t2vra2）。
 - BumpDrop1（HBumpExt の 1 列の場合）: 測定中、ここまで 6 集合で例外 0。
+
+### C の悪い形を最上位の別の残りに切り出した（2026-10-17、lead）
+
+- `T2CBad M`（V3ResV2）: C の場合（q = P_0(x) ≠ r、q は r の最後の数える子でない）で upg(x − 1) ≠ none。
+- `StepCtxT2`（StepCtxV2 に ¬T2CBad M を足した構造）: t = 2 のエンジンと残り（T2SeedPResRCV2・T2BelowXResV2・ExpT2V2・ExpT2R・R2V2・`TRwOutT2` など）はこの文脈を受ける。これで最上位の残り T2SeedPResRCV2 の C の欄の un は真になった（悪い形でなければ C の場合 x − 1 は上げない）。
+- 新しい残り `T2CBadOut`: 悪い形の M では、t = 2 の展開の結論（すべての M[n] で Inv3V2 ∧ RwClosed）と Res3T2 M。`hInvV2_all`・`hT2_V2` が T2CBad M で場合分けする。
+- 最上位 `trio_terminates_main_V2_cur` の残りに T2CBadOut が増えた。全体ビルド緑 1049 jobs、公理は標準の 3 つ。
+- T2CBadOut は大づかみな残り（悪い形の展開がうまくいくことそのもの）。上の計画（K = M[2].take (x + 1) を基準にした C の種）で、n = 2 の r の q より前の枠以外は証明できる見込み。

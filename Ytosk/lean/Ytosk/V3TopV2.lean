@@ -38,7 +38,7 @@ open T
 
 /-- **t2-seed, reduced**: the seed residual with the fields fixed by `M` alone removed (V3T2SeedRes). -/
 def T2SeedPResRV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     T2SeedPResR M ρ
 
 theorem t2SeedPResV2_of (h : T2SeedPResRV2) : T2SeedPResV2 := by
@@ -78,7 +78,7 @@ structure T2SeedPResRC (M : Mat) (ρ : Valn) : Prop where
 
 /-- **t2-seed, reduced** (the residuals of `T2SeedPResRC`). -/
 def T2SeedPResRCV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     T2SeedPResRC M ρ
 
 theorem t2SeedPResR_of_sib (hSib : HSibV2) (h : T2SeedPResRCV2) : T2SeedPResRV2 := by
@@ -125,22 +125,22 @@ at the last column for `t = 2`, which the drop lemma no longer gives. The `t = 1
 t1 handles the weak seed with `SmallSelf` in `qr_final3`.) -/
 theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
-    (hAbW : T0AbWRes) (hArgB : T0ArgBRes) (hR2w : TRwOut 2)
+    (hAbW : T0AbWRes) (hArgB : T0ArgBRes) (hR2w : TRwOutT2) (hCB : T2CBadOut)
     (hB : T2BelowXResV2) (hU2 : T2UpgAbsW) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
     (hFD : FDsh)
-    (hQNG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hQNG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
         par M 0 (r + L) = some q → q ≠ r → ∀ Lc, CL M r = Lc ++ [q] → T2VRAQNDom M ρ r L q Lc)
-    (hSVCG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hSVCG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRASeedSVC M)
-    (hVPr : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hVPr : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2SeedPreShape M ρ)
-    (hVCp : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hVCp : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRACopy M)
-    (hVK : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hVK : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KVRA M) : WellFounded Step' :=
   have hP : T2SeedPResV2 := t2SeedPResV2_of (t2SeedPResR_of_sib (hSib_of_hard hSib) hPR)
-  have hPreG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+  have hPreG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ := fun M ρ rk C hz h2 =>
     t2VRAPre_of (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)
   terminates_of_desc3 (desc3_V2O hD hSd (hTake_of_glob hF hLf)
@@ -148,6 +148,6 @@ theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
     (expT1OutR_V2_glob hF hLf)
     (expT2R_of (expT2V2_of hB hU2 (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
       (t2VRAV2_of qVRAshK_KVRA hB (t2VRASeedG_of hB hP hPreG hQNG hSVCG) hPreG hVCp hVK) hF hLf) hR2w)
-    (r2V2_of hB hU2))
+    (r2V2_of hB hU2) hCB)
 
 end Ytosk

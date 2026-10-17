@@ -156,7 +156,7 @@ def T2SeedOTRest (M : Mat) (ρ : Valn) : Prop :=
 
 /-- **Residual (t2): `T2SeedOTRest` in the step context.** -/
 def T2SeedOTRestV2 : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     T2SeedOTRest M ρ
 
 /-- **`T2SeedOTV2` from the seed residuals and `T2SeedOTRestV2`** (qr and sv are proved). -/
