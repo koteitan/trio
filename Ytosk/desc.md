@@ -3749,3 +3749,5 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - この形では M.take x で x − 1 が最後の列になって上げを失い、v(x − 1)・o(x − 1) が変わり、q の bump 項を通して v_{M.take x}(q) も変わる（例で v′(q) = Ω_1、qnS = Ω_ω）。よって `c_vqP_of_un` の結論 vqP も偽。M[n]（n ≥ 2）では x − 1 は M と同じく k へ上げる（次の列 r + L の行 0 は e0 x）ので、qnS = v_N(q) は保たれる見込み。
 - 同じ行列で C の他の欄（decP・rw・lhd、tmp/lead/probes/seedsvc.py）は成り立つ。sv の欄（T2SVStrict・decP・lhd）は 11 集合で例外 0（std_b は測定中）。
 - 直し方の見通し: C のエンジン（V3T2SeedC の C_frame・seed_dec_C、V3T2CVq）を「x − 1 が r の真の祖先へ上げる」形でも動くようにする。q = r の悪い形 T2UABad を扱った `t2_qu_take_bad`（V3T2QUBad）と同じ種類の作業。それまで最上位の T2SeedPResRCV2 は偽を含む。
+- 追記（同日）: 悪い形では C のエンジンの中の補題 `C_frame` の結論「r の q より前の数える子 d で σ.o d = τ.o d（τ は M.take x の値）」も偽（例で o_N(9) ≠ o_{M.take x}(9)）。q − 1 が q へ上げ（upg 11 = 12）、v(q) が M.take x と M[n] で違う（Ω_1 と Ω_ω）ので、q より前の部分木の値が変わる。tmp/lead/probes/cbad.py: 6 個とも n = 2, 3 で、列 r < i < q の値は M.take x とは一致せず、K = M[2].take (x + 1)（M.take x に r の写しの最初の列を 1 つ足したもの）とは一致する。v_N(q) も K の v(q) と一致。
+- よって悪い形の C は、M.take x の値でなく K の値で種の状態 X1 を作り直す必要がある。C の残り（decP・rw・lhd）、`T2SeedCCl`、`T2VRASeedSVC` の C、`C_frame`・`seed_dec_C`・`o_r_level_C`・`seed_r_value_C` が同じ前提（un）に立つ。
