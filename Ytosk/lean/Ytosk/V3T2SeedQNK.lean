@@ -70,11 +70,10 @@ theorem c_rw_of_base {M : Mat} {ρ : Valn} {r L q : Nat} (hV : isOT (ρ.v r) = t
   rw [if_pos ⟨lt_of_lt_of_le hlt0 (hchain k), psi_lt_psi_z_iff.mpr (Or.inl hVV)⟩]
   exact H_of_high hs hhigh
 
-/-- **`T2SeedCResR` with `rw` replaced by the `k`-free `X₁ < σ X₁`.** -/
+/-- **`T2SeedCResR` with `rw` replaced by the `k`-free `X₁ < σ X₁`** (`un` is `¬ T2CBad` of the context). -/
 structure T2SeedCResR2 (M : Mat) (ρ : Valn) (r L q : Nat) : Prop where
   decP : ∀ τ, Cons (M.take (r + L)) τ → ∀ Lc c0, CL (M.take (r + L)) r = Lc ++ [c0] →
     ∃ s y, τ.o c0 = psi s y z ∧ qnS M ρ r L q < s
-  un : upg M (r + L - 1) = none
   strict : ∀ τ, Cons (M.take (r + L)) τ → t2X1 M r L τ < sh (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ)
   lhd : ∀ τ, Cons (M.take (r + L)) τ → ∀ k, 1 ≤ k →
     Lhd z (psi (ρ.v r) (shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ) k) z) (ρ.o r)
@@ -111,7 +110,10 @@ theorem t2SeedPResRCV2_of_B (hCl : T2SeedClV2B) (h : T2SeedPResRCV2B) : T2SeedPR
   · have hrM : r < M.length := by omega
     have HC := H.C r L q hlen hr hq hqr hncl
     obtain ⟨_, _, hCC⟩ := hCl M ρ rk C hz h2 r L hlen hr
-    exact ⟨HC.decP, HC.un, c_rw_of_base (IW.good.ot_v r hrM) (qnS_ot IW hrM L q) (o_arg_form IW hrM)
+    have hun : upg M (r + L - 1) = none := by
+      by_contra hne
+      exact C.good ⟨r, L, q, hlen, hr, hq, hqr, hncl, hne⟩
+    exact ⟨HC.decP, hun, c_rw_of_base (IW.good.ot_v r hrM) (qnS_ot IW hrM L q) (o_arg_form IW hrM)
       (hCC q hq hqr hncl) HC.strict, HC.lhd⟩
   obtain ⟨t1, he, hVt, ht1, hk⟩ := H.qn r L q hlen hr hq hqr Lc hCL τ hτ
   have hrM : r < M.length := by omega
