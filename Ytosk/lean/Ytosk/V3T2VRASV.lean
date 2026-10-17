@@ -620,4 +620,102 @@ theorem t2SVc0'_of_drop {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : S
     · exact h
     · rw [← hag.1, hsy] at h1; simp only [psi.injEq] at h1; exact absurd h1.2.1 hy
 
+/-- **In the C case `x` does not change the counted children of `r`**: `q` (the parent of `x`) is the last child of
+`r`, so it is not counted (else `CL_M(r)` would end with `q`); it is an upgrade target with all children bump columns
+(`all_bump_of_last`), so it stays uncounted in `M.take x`; the other children count alike (`counted_take_of` with the
+parent `q` of `x`, `counted_take_last`). -/
+theorem cl_C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) {r L q : Nat}
+    (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r) (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)
+    (hncl : ¬ ∃ Lc, CL M r = Lc ++ [q]) (hun : upg M (r + L - 1) = none) :
+    CL M r = CL (M.take (r + L)) r := by
+  have hx : r + L + 1 = M.length := hlen
+  have hqx : q < r + L := par_lt M 0 _ _ hq
+  have hpq : par M 0 q = some r := par0_q_t2 hM hS I hlen hr hq hqr
+  have hrq : r < q := par_lt M 0 _ _ hpq
+  have hqM : q ∈ children M r := mem_children_iff.mpr ⟨by omega, hpq⟩
+  have hxr : r + L ∉ children M r := fun h => by
+    have := (mem_children_iff.mp h).2; rw [hq] at this; cases this; exact hqr rfl
+  -- `q` is the largest child of `r`
+  have hmax : ∀ d ∈ children M r, d ≤ q := by
+    intro d hd
+    by_contra hlt
+    have hdl := (mem_children hd).2
+    have hdx : d ≠ r + L := fun e => hxr (e ▸ hd)
+    have hpd := (mem_children_iff.mp hd).2
+    have h1 := ((par0_spec M).mp hpd).2.2 q (by omega) (by omega)
+    have h2 := ((par0_spec M).mp hq).2.1
+    have h3 := ((par0_spec M).mp hq).2.2 d (by omega) (by omega)
+    omega
+  have hsplit := split_last_max _ _ (children_sorted M r) hqM hmax
+  have hnq : ¬ Counted M r q := by
+    intro hc
+    apply hncl
+    refine ⟨((children M r).filter (fun d => decide (d < q))).filter (fun d => decide (Counted M r d)), ?_⟩
+    unfold CL; rw [hsplit, List.filter_append]; simp [hc]
+  -- `q` stays uncounted in `M.take x`
+  have hnqT : ¬ Counted (M.take (r + L)) r q := by
+    rintro ⟨hb, hu⟩
+    rw [col_take M hqx, bump_take M (by omega)] at hb
+    apply hnq
+    refine ⟨hb, fun ⟨hU, hTp⟩ => hu ⟨?_, ?_⟩⟩
+    · unfold isUpg at hU ⊢
+      rw [List.any_eq_true] at hU ⊢
+      obtain ⟨k, hk, hkq⟩ := hU
+      have hkq' : upg M k = some q := by simpa using hkq
+      have hk1 : k + 1 < r + L := by
+        have hkl := List.mem_range.mp hk
+        rcases Nat.lt_or_ge (k + 1) (r + L) with h | h
+        · exact h
+        · exfalso
+          rcases Nat.lt_or_ge k (r + L) with h' | h'
+          · rw [show k = r + L - 1 by omega, hun] at hkq'; cases hkq'
+          · rw [show k = r + L by omega, upg_last_none hx] at hkq'; cases hkq'
+      exact ⟨k, List.mem_range.mpr (by rw [List.length_take]; omega), by rw [upg_take M hk1]; simp [hkq']⟩
+    · -- all children of `q` are bump columns
+      unfold isUpg at hU
+      rw [List.any_eq_true] at hU
+      obtain ⟨k, _, hkq⟩ := hU
+      have he2 : entry M 2 q = 1 := by
+        have := upg_target_e2 (show upg M k = some q by simpa using hkq); have := I.z2 q; omega
+      have hxq : r + L ∈ children M q := mem_children_iff.mpr ⟨by omega, hq⟩
+      have hchq := children_split_x hx hxq
+      have hxb : col M (r + L) = bump M q := by
+        unfold topped at hTp
+        rw [hchq] at hTp
+        simpa using hTp
+      have hall := all_bump_of_last I.r0p I.z2 I.sd I.z1 he2 hchq hxb
+      unfold topped
+      rw [children_take]
+      cases hl : ((children M q).filter (fun c => decide (c < r + L))).getLast? with
+      | none => rfl
+      | some ℓ =>
+        have hℓ := List.mem_filter.mp (List.mem_of_getLast? hl)
+        have hℓx : ℓ < r + L := by simpa using hℓ.2
+        simp only [decide_eq_true_eq]
+        rw [col_take M hℓx, bump_take M hqx]
+        exact hall ℓ hℓ.1
+  have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+  rw [show M.length - 1 = r + L by omega] at hcnt
+  unfold CL
+  rw [children_take, children_filter_x hx hxr]
+  apply List.filter_congr
+  intro d hd
+  have hdx : d < r + L := by
+    have := (mem_children hd).2
+    rcases Nat.lt_or_ge d (r + L) with h | h
+    · exact h
+    · exact absurd (show d = r + L by omega ▸ hd) hxr
+  simp only [decide_eq_decide]
+  by_cases hdq : d = q
+  · subst hdq
+    exact ⟨fun h => absurd h hnq, fun h => absurd h hnqT⟩
+  · constructor
+    · intro hM
+      have h := counted_take_of (r := q) (L := r + L - q) (by omega) (by omega)
+        (by rw [show q + (r + L - q) = r + L by omega]; exact hq) (show d < q + (r + L - q) by omega) hdq hM
+        (show r < q + (r + L - q) by omega)
+      rwa [show q + (r + L - q) = r + L by omega] at h
+    · intro hT
+      exact hcnt r d (by omega) (by rw [children_take]; exact List.mem_filter.mpr ⟨hd, by simpa using hdx⟩) hT
+
 end Ytosk

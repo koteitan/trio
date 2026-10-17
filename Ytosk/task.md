@@ -117,13 +117,13 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 全員の生産者を差し込んだ最上位（V3TopV2 の中間の形 `trio_terminates_main_V2_base`）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
-    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残りは 19 個（2026-10-17 夜）:
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残りは 18 個（2026-10-17 夜）:
       - drop: HDropV2W（落とす補題の 5 欄）・T0UpgAbsV2（t = 0 の強い吸収、易しい形の外）・HSeedV2（SeedR）
       - 共通: HFrameV2・HLeafV2（枠の 10 欄・葉の条件）、HBumpExt（標準形の接頭辞で bump 項は増える）、HRwClL（すべての標準形で RwClosedL）、HSibColV2（同じ列の兄弟 SibColU）
       - t0: T0ArgBRes
-      - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom と T2SeedCDom1）、C の CL_M(r) = CL_{M.take x}(r)（sv・C の種の枠の残り。c₀ より前の子の値は `no_chg_before_c0`、c₀ は落とす補題から `t2SVc0'_of_drop` で証明）
+      - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom と T2SeedCDom1）
       - t2 のそのほか: T2CBadOut（悪い形の展開、大づかみ）、T2UpgAbsW、FDsh、T2VRACopy、T2VAncStep・T2VRAK KAG（写しの枠の KVRA）
-      - 消えたもの（このセッション）: T2SeedOTRestV2、T2SVc0（sv の種の枠）、T2VRAQNDom（T2SeedQNDom と T2SeedQNBase から）、T2VRASeedSVC・T2SeedPreShapeSVC（T2SVc0・T2CFrRes に）、T2X1Cl・CopyLowK（偽、HRwClL に）
+      - 消えたもの（このセッション）: T2SeedOTRestV2、T2SVc0・T2CFrRes（sv・C の種の枠: `no_chg_before_c0`・`t2SVc0'_of_drop`・`cl_C` で証明）、T2VRAQNDom（T2SeedQNDom と T2SeedQNBase から）、T2VRASeedSVC・T2SeedPreShapeSVC（T2SVc0・T2CFrRes に）、T2X1Cl・CopyLowK（偽、HRwClL に）
       - 残りの測定の状態（2026-10-17、lead。どれも Lean と同じ形の probe）
 
         | 残り | 測定 | 備考 |
@@ -141,8 +141,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | T2CBadOut | — | 悪い形（ext2 に 6 個）の t = 2 の展開。全体の主張の帰結 |
         | T2SeedDomV2B | 11 集合と std_b で例外 0 | seeddom2.py（T2VRAQNDom は T2SeedQNDom と T2SeedQNBase から） |
         | FDsh | 11 集合で例外 0 | probe_fdsh 全数 |
-        | T2SVc0 | 11 集合と ext3s で例外 0（sv 4.5 万件、c₀ で y ≠ 0 は 2.7 万件） | svpre.py |
-        | T2CFrRes | 11 集合と ext3s で例外 0（C 1.2 万件） | cvra.py |
+        | （証明済み）T2SVc0 | 11 集合と ext3s で例外 0 だった。証明した | svpre.py |
+        | （証明済み）T2CFrRes | 11 集合と ext3s で例外 0 だった。証明した | cvra.py |
         | T2VRACopy・T2VAncStep | 11 集合と ext3s で例外 0 | probe_t2vra・vanc1 |
         | HRwClL | 12 集合（11 集合＋ext3s）で例外 0 | rwl2.py。偽の RwClosed・T2X1Cl・CopyLowK の代わり |
         | T2VRAK KAG | 11 集合で例外 0 | probe_t2vrak |
