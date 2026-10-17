@@ -14,6 +14,7 @@ import Ytosk.V3T2BelowR
 import Ytosk.V3T2SeedPre
 import Ytosk.V3T2SeedOTP
 import Ytosk.V3RwCarry
+import Ytosk.V3BumpExt
 
 namespace Ytosk
 
@@ -27,22 +28,22 @@ theorem hSibHard_of_col (h : HSibColV2) : HSibHardV2 := fun N σ rk hN hS hC hR 
     (sibColW_of_U (sInvXJ_std hN hS).1 hC hG (h N σ rk hN hS hC hR hG))
 
 /-- **The current top theorem.** The hypotheses are the named residuals:
-drop `HDropV2W`・`HSeedV2`, the strong absorption at `t = 0` `T0UpgAbsV2` (t0); shared `HFrameV2`・`HLeafV2`; t0 `T0AbWRes`・`T0ArgBRes`; `RwClosed` of the `t = 2` expansions from `T2X1Cl`・`T2CopyK CopyLowK`・`T2VAncStep` (`RwClosed` is carried by the induction, so `T0RwRes` holds);
-t2 the closedness of the seed argument `T2SeedClV2` (qn・sv・C), the bump monotonicity `T2BumpMonoV2`,
+drop `HDropV2W`・`HSeedV2`, the strong absorption at `t = 0` `T0UpgAbsV2` (t0); shared `HFrameV2`・`HLeafV2`; t0 `T0ArgBRes`; the bump monotonicity along prefixes `HBumpExt` (gives t0's `T0AbWRes` and t2's `T2BumpMonoV2`); `RwClosed` of the `t = 2` expansions from `T2X1Cl`・`T2CopyK CopyLowK`・`T2VAncStep` (`RwClosed` is carried by the induction, so `T0RwRes` holds);
+t2 the closedness of the seed argument `T2SeedClV2` (qn・sv・C),
 the strong `UpgAbsX` at the last column `T2UpgAbsW` (drop-wkx2), the seed standard forms for qn・C `T2SeedOTRestV2`, the seed residual `T2SeedPResRCV2`, `T2SeedDomV2`, `FDsh`,
 the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`), the prefix shape of the seed frames for sv・C
 (`T2SeedPreShapeSVC`), the copy levels `T2VRACopy`; t1 the `σ`-step at the guarded copy frames
 `T2VRAK KAG` (with `T2VAncStep` it gives the frame condition `KVRA` of `qVRAshK_KVRA`); top `HSibColV2` (adjacent siblings with the same column, not both counted, `SibColU`). -/
 theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
-    (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
+    (hBE : HBumpExt) (hArgB : T0ArgBRes)
     (hX1 : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → G.T2X1Cl M ρ)
     (hLow : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2CopyK CopyLowK M)
     (hVS : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VAncStep M)
-    (hCl : T2SeedClV2) (hBM : T2BumpMonoV2) (hU2 : T2UpgAbsW) (hOT : T2SeedOTRestV2) (hPR : T2SeedPResRCV2) (hSC : HSibColV2)
+    (hCl : T2SeedClV2) (hU2 : T2UpgAbsW) (hOT : T2SeedOTRestV2) (hPR : T2SeedPResRCV2) (hSC : HSibColV2)
     (hDom : T2SeedDomV2) (hFD : FDsh)
     (hQNG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
@@ -57,8 +58,9 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : H
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : WellFounded Step' :=
   have hSib : HSibHardV2 := hSibHard_of_col hSC
   have hP : T2SeedPResV2 := t2SeedPResV2_of (t2SeedPResR_of_sib (hSib_of_hard hSib) hPR)
-  have hBX : T2BelowXResV2 := t2BelowXResV2_of t0RwRes_ctx (t2BelowRV2_of hP hCl hBM) hP (t2SeedOTV2_of hP hOT)
-  trio_terminates_main_V2_base (hDropV2_of hDW hU0) hSd hF hLf hAbW hArgB
+  have hBX : T2BelowXResV2 := t2BelowXResV2_of t0RwRes_ctx (t2BelowRV2_of hP hCl (t2BumpMonoV2_of_ext hBE)) hP (t2SeedOTV2_of hP hOT)
+  trio_terminates_main_V2_base (hDropV2_of hDW hU0) hSd hF hLf
+    (t0AbWRes_of_ext (hDropV2_of hDW hU0) hBE) hArgB
     (tRwOut2_of hBX hP hX1 hLow hVS) hBX hU2
     hPR hSib hDom hFD hQNG hSVCG
     (fun M ρ rk C hz h2 => t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2))
