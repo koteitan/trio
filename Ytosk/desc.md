@@ -3740,3 +3740,12 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - HBumpExt を帰納法で運べない理由: M → M[n] の段で M[n] の接頭辞（M[n] 自身を含む）の 1 列の落としが要り、それは M[n] の Inv3V2 からしか出ない。
 
 - 追記（lead、2026-10-17）: SibColW（tmp/lead/probes/sibcolall.py、上げの有無・topped で分けて数えた）は 11 集合と std_b（741 万行列）の全数で例外 0。よって最上位の残り HSibColV2（SibColU ⊆ SibColW）は測って真。BumpAbsC は直した probe で Cprime・d3s・deep2・deep3・ext1x・t0ext まで例外 0（残りの集合は測定中）。
+
+### 偽の残りを見つけた: T2SeedCResR.un（2026-10-17、lead）
+
+- 最上位の種の残り T2SeedPResRCV2 の C の欄 `T2SeedCResR` の `un`（C の場合 x − 1 は上げない、upg(x − 1) = none）は標準形で偽。ext2 に 6 個（bms -s で標準形）。例:
+  (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(4,2,1)、x = 15、r = 8、q = 12、upg(14) = 7。
+- 6 個とも x − 1 の上げ先は k = P_0(r)（r の親、r の真の祖先）。前の測定（tmp/t2/probes/cun.py）は std_b だけで、この形がなかった。
+- この形では M.take x で x − 1 が最後の列になって上げを失い、v(x − 1)・o(x − 1) が変わり、q の bump 項を通して v_{M.take x}(q) も変わる（例で v′(q) = Ω_1、qnS = Ω_ω）。よって `c_vqP_of_un` の結論 vqP も偽。M[n]（n ≥ 2）では x − 1 は M と同じく k へ上げる（次の列 r + L の行 0 は e0 x）ので、qnS = v_N(q) は保たれる見込み。
+- 同じ行列で C の他の欄（decP・rw・lhd、tmp/lead/probes/seedsvc.py）は成り立つ。sv の欄（T2SVStrict・decP・lhd）は 11 集合で例外 0（std_b は測定中）。
+- 直し方の見通し: C のエンジン（V3T2SeedC の C_frame・seed_dec_C、V3T2CVq）を「x − 1 が r の真の祖先へ上げる」形でも動くようにする。q = r の悪い形 T2UABad を扱った `t2_qu_take_bad`（V3T2QUBad）と同じ種類の作業。それまで最上位の T2SeedPResRCV2 は偽を含む。
