@@ -117,6 +117,27 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
     - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2・T0ArgBRes（t0）、HBumpExt（標準形の接頭辞で bump 項は増える。t0 の T0AbWRes と t2 の T2BumpMonoV2 を出す）、T2SeedClV2（qn・sv・C）・T2SeedOTRestV2（qn・C）・T2SeedPResRCV2（C は T2SeedCResR。その un は悪い形 T2CBad で偽なので、t = 2 の文脈を StepCtxT2（¬T2CBad）に限った）、T2CBadOut（悪い形の t = 2 の展開、大づかみな残り）・T2SeedDomV2・FDsh・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShapeSVC・T2VRACopy・T2UpgAbsW・T2X1Cl・T2CopyK CopyLowK・T2VAncStep（t2。最後の 3 つは RwClosed の運搬から）、T2VRAK KAG（t1。T2VAncStep と合わせて qVRAshK_KVRA の枠の条件 KVRA）、HSibColV2（top。HSibHardV2 から帰着、残りは SibColU: 片方が上げの的 topped の同じ列の兄弟）。T0RwRes・TRwOut 0/1 は RwClosed を帰納法で運んで消えた
+      - 残りの測定の状態（2026-10-17、lead。どれも Lean と同じ形の probe）
+
+        | 残り | 測定 | 備考 |
+        |---|---|---|
+        | HDropV2W | 11 集合で例外 0 | DropResH0 の 5 欄（probe_dropres・probe_uaw1・bumpabsc.py） |
+        | HSeedV2 | 11 集合で例外 0 | SeedR（probe_dropres） |
+        | HFrameV2・HLeafV2 | 11 集合と落とした行列で例外 0 | probe_hframe |
+        | T0UpgAbsV2 | 11 集合と std_b で例外 0 | ¬T0Easy の場合だけ |
+        | T0ArgBRes | 11 集合と std_b で例外 0 | t0argB.py |
+        | HBumpExt | 1 列の場合が 11 集合で例外 0 | bumpdrop1.py（3950 万件） |
+        | T2SeedClV2・T2SeedOTRestV2 | 10 集合と d3s で例外 0 | seedrr3.py（clPath・otR・otQ） |
+        | T2SeedPResRCV2 | 11 集合と std_b で例外 0 | seedqr.py・seedsvc.py。C の un は StepCtxT2 で悪い形を外した |
+        | T2CBadOut | — | 悪い形（ext2 に 6 個）の t = 2 の展開。全体の主張の帰結 |
+        | T2SeedDomV2・T2VRAQNDom | 11 集合で例外 0 | seeddom2.py（std_b は測定中） |
+        | FDsh | 11 集合で例外 0 | probe_fdsh 全数 |
+        | T2VRASeedSVC | 11 集合で例外 0 | T2VRASeed（t1 の probe_t2vra） |
+        | T2SeedPreShapeSVC | 10 集合で例外 0 | preshape.py（t0ext には t = 2 がない） |
+        | T2VRACopy・T2X1Cl・T2VAncStep・CopyLowK | 11 集合で例外 0 | probe_t2vra・x1cl・vanc1・closedL |
+        | T2VRAK KAG | 11 集合で例外 0 | probe_t2vrak |
+        | T2UpgAbsW | 11 集合と std_b で例外 0 | 強い形か悪い形 T2UABad |
+        | HSibColV2 | 11 集合と std_b で例外 0 | sibcolall.py（SibColW） |
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
   - Desc3 の証明 → **目標 4 が残っている**
