@@ -262,17 +262,68 @@ theorem v_le_of_counted_pair {N : Mat} {τ : Valn} (hC : Cons N τ) (hG : Good3 
   rw [hyu, hyw] at this
   exact this
 
-/-- **`SibColW` outside two counted children** (the residual form): one of `u`, `w` is a bump child or an
-upgraded topped child. -/
+/-- A bump child has no bump child (`BumpLeaf`: such a grandchild would have row 2 equal to `0`). -/
+theorem bumpTerm_bump_child_z {N : Mat} {τ : Valn} (hX : SInvX N) {p c : Nat} (hc : c ∈ children N p)
+    (hcb : col N c = bump N p) : ∀ j ∈ children N c, bumpTerm N τ c j = z := by
+  intro j hj
+  unfold bumpTerm
+  rw [if_neg]
+  intro hjb
+  have he1c : entry N 1 c = entry N 1 p := by
+    have := congrArg (fun q => q.2.1) hcb; simp only [bump] at this; rw [entry_col] at this; exact this
+  have he1j : entry N 1 j = entry N 1 c := by
+    have := congrArg (fun q => q.2.1) hjb; simp only [bump] at this; rw [entry_col] at this; exact this
+  have he2j : entry N 2 j = 1 := by
+    have := congrArg (fun q => q.2.2) hjb; simp only [bump] at this; rw [entry_col] at this; exact this
+  have := (hX.loc.2.2.2 p c j hc hcb hj (by omega)).1
+  omega
+
+/-- `sumN (one :: L) = one` when every term of `L` is `0`. -/
+theorem sumN_one_zeros {L : List T} (h : ∀ t ∈ L, t = z) : sumN (one :: L) = sumN [one] := by
+  have hot : ∀ t ∈ one :: L, isOT t = true := by
+    intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · exact isOT_one
+    · rw [h t ht]; rfl
+  rw [sumN_nzs hot, show one :: L = [one] ++ L from rfl, nzs_append, nzs_zeros L h, List.append_nil,
+    nzs_single (by simp [one])]
+
+/-- **Two bump children of the same column** have the same `v`. -/
+theorem v_bump_sib {N : Mat} {τ : Valn} (hX : SInvX N) (hC : Cons N τ) {p u w : Nat}
+    (hu : u ∈ children N p) (hw : w ∈ children N p) (hbu : col N u = bump N p) (hbw : col N w = bump N p) :
+    τ.v w = τ.v u := by
+  have hpu : par N 0 u = some p := (mem_children_iff.mp hu).2
+  have hpw : par N 0 w = some p := (mem_children_iff.mp hw).2
+  have e1 : ∀ c, col N c = bump N p → entry N 1 c = entry N 1 p := fun c h => by
+    have := congrArg (fun q => q.2.1) h; simp only [bump] at this; rw [entry_col] at this; exact this
+  have e2 : ∀ c, col N c = bump N p → entry N 2 c = 1 := fun c h => by
+    have := congrArg (fun q => q.2.2) h; simp only [bump] at this; rw [entry_col] at this; exact this
+  have hp1 : par N 1 u = par N 1 w := by
+    rw [par1_find, par1_find, ancL_eq hpu, ancL_eq hpw, e1 u hbu, e1 w hbw]
+  have hsum : ∀ c, c ∈ children N p → col N c = bump N p →
+      sumN (one :: (children N c).map (bumpTerm N τ c)) = sumN [one] := fun c hc hcb =>
+    sumN_one_zeros (fun t ht => by
+      obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ht; exact bumpTerm_bump_child_z hX hc hcb j hj)
+  rw [(hC w (mem_children hw).2).2, (hC u (mem_children hu).2).2]
+  unfold vRhs
+  rw [e1 u hbu, e1 w hbw, e2 u hbu, e2 w hbw]
+  by_cases h0 : entry N 1 p = 0
+  · rw [if_pos h0, if_pos h0]
+  · rw [if_neg h0, if_neg h0, if_neg one_ne_zero, if_neg one_ne_zero, hp1, hsum u hu hbu, hsum w hw hbw]
+
+/-- **`SibColW` outside two counted children and two bump children** (the residual form): the column is not
+the bump column of `p`, and one of `u`, `w` is an upgraded topped child. -/
 def SibColU (N : Mat) (τ : Valn) : Prop :=
   ∀ p u w, u ∈ children N p → w ∈ children N p → u < w → (∀ e ∈ children N p, u < e → w ≤ e) →
-    col N u = col N w → ¬ (Counted N p u ∧ Counted N p w) → τ.v w ≤ τ.v u
+    col N u = col N w → col N u ≠ bump N p → ¬ (Counted N p u ∧ Counted N p w) → τ.v w ≤ τ.v u
 
-theorem sibColW_of_U {N : Mat} {τ : Valn} (hC : Cons N τ) (hG : Good3 N τ) (h : SibColU N τ) :
-    SibColW N τ := by
+theorem sibColW_of_U {N : Mat} {τ : Valn} (hX : SInvX N) (hC : Cons N τ) (hG : Good3 N τ)
+    (h : SibColU N τ) : SibColW N τ := by
   intro p u w hu hw huw hcons hcol
+  by_cases hb : col N u = bump N p
+  · exact le_of_eq (v_bump_sib hX hC hu hw hb (hcol ▸ hb))
   by_cases hc : Counted N p u ∧ Counted N p w
   · exact v_le_of_counted_pair hC hG hu hw huw hcons hc.1 hc.2
-  · exact h p u w hu hw huw hcons hcol hc
+  · exact h p u w hu hw huw hcons hcol hb hc
 
 end Ytosk

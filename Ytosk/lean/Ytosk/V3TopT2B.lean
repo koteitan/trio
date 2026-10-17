@@ -18,13 +18,13 @@ import Ytosk.V3RwCarry
 namespace Ytosk
 
 /-- **The sibling value condition `SibColU` of every standard matrix** (replaces `HSibHardV2`; two counted
-children are covered by `Good3.dec`). -/
+children are covered by `Good3.dec`, two bump children by `v_bump_sib`). -/
 def HSibColV2 : Prop :=
   ∀ N σ rk, Std N → N ≠ SRO → Cons N σ → Rk N rk → Good3 N σ → SibColU N σ
 
 theorem hSibHard_of_col (h : HSibColV2) : HSibHardV2 := fun N σ rk hN hS hC hR hG =>
   upgSibVHard_of_col (sInvXJ_std hN hS).1 (sInvXJ_std hN hS).2 hC hR hG
-    (sibColW_of_U hC hG (h N σ rk hN hS hC hR hG))
+    (sibColW_of_U (sInvXJ_std hN hS).1 hC hG (h N σ rk hN hS hC hR hG))
 
 /-- **The current top theorem.** The hypotheses are the named residuals:
 drop `HDropV2W`・`HSeedV2`, the strong absorption at `t = 0` `T0UpgAbsV2` (t0); shared `HFrameV2`・`HLeafV2`; t0 `T0AbWRes`・`T0ArgBRes`; `RwClosed` of the `t = 2` expansions from `T2X1Cl`・`T2CopyK CopyLowK`・`T2VAncStep` (`RwClosed` is carried by the induction, so `T0RwRes` holds);

@@ -293,10 +293,6 @@ def measure(matrix):
                 if not (a1 or a2): continue
                 okc = chM(i) == [j] and chM(j)[:1] == [k]       # BumpWeakShapeSrc (2026-10-17)
                 note('BumpWeakSrc', okc, i=i, j=j, k=k)
-    # WeakCS (2026-10-17, the second half of BumpWeakSrc): every weakly changed v' has CS or WCS (v(P_0 i))
-    for i in range(x):
-        if T.v(i) == C.v(i) or lhdE(T.v(i), C.v(i)): continue
-        note('WeakCS', CS(T.v(i)) or WCS(vOpt(par0(i)), T.v(i)), i=i)
         if not all(chM(j) != [x] or vx_zero for j in bj): continue
         W = bumpW_M(i)
         guard = xparnb or vx_zero or strongG(i)
@@ -310,6 +306,10 @@ def measure(matrix):
                     ok = lhd(r, W)
                     note('BumpAbsS', ok, i=i, r=r, W=W)
                     if e(2, x) > 0: note('AbsSR.S', ok, i=i, r=r, W=W)
+    # WeakCS (2026-10-17, the second half of BumpWeakSrc): every weakly changed v' has CS or WCS (v(P_0 i))
+    for i in range(x):
+        if T.v(i) == C.v(i) or lhdE(T.v(i), C.v(i)): continue
+        note('WeakCS', CS(T.v(i)) or WCS(vOpt(par0(i)), T.v(i)), i=i)
     # AbsSR conj 2: BumpAbsLo M r (r = P_0 x, entry M 1 x = 0)
     rr = par0(x)
     if rr is not None and e(1, x) == 0:
