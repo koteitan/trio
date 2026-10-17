@@ -3881,3 +3881,8 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 
 - Lean の形で例外 0: RwClosedL（rwl2）、C の種の FrameShape（cfs）、T2SeedDom の dom1・dom2 と T2VRAQNDom の道の段の形（seeddom2。すべての段の形 vraAllU は 3 件偽で、これは前から偽と分かっている形）、qr・qn の種（seedqr）、sv・C の種（seedsvc）、SibColW（sibcolall）、T0ArgBRes（t0argB）、T0UpgAbsV2（t0uaV2。強い形が破れる 3 件はどれも易しい形で、Lean の形は成り立つ）、UpgAbsXW0・T2UABad（uaw0b。強い形の破れ 23 件はどれも弱い形で受かる）、VAncStep（vanc1）、HBumpExt の 1 列の場合（bumpdrop1）、DropResH0 の欄（dropres。失敗は最上位から外した強い形 AbsSR・BumpAbsS だけ）、HFrameV2・HLeafV2（hframe）、VSmallRAll（inv2）、TrigS0（probe_trigs0、2.1 万件。制限のない TrigS は 1 件偽で、これは前から偽と分かっている形）。FDsh（probe_fdsh、5650 万件）、種の閉じた条件の道の段の形 clPath と標準形（seedrr3。すべての段の形 clAll は qn で 6 件偽）、種の枠の形（preshape）も例外 0。
 - FDsh（行列によらない全称の主張）を小さい標準形の項でも試した（fdshrand.py）: 大きさ 7 までの 3599 項から前提を満たす 4578 組で例外 0。
+
+### HRwClL は FrameDom からは出ない（2026-10-17、lead、fd2cl.py）
+
+- Inv3V2 の FrameClosed（書き換える枠の FrameDom a B s (H s y)）と枠の前提（B < y、ψ_a(0) < ψ_s(y)、B < hi、B は hi の先頭部分でない、B の加数 ≥ ψ_s(y)）から ClosedL a B (H a (H s y)) が出るかを、一般の小さい標準形の項で試した。反例がある: a = ψ_0(ψ_{ψ_{ω}(0)}(1) + 1)、B = ψ_{Ω_1}(ψ_{Ω_1+1}(0))、s = Ω_1、y = ψ_{Ω_1+1}(0)。
+- よって HRwClL を外すには FrameDom より強い値の不変条件が要る（この反例が標準形の行列に現れるかは未確認）。
