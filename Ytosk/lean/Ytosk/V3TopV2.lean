@@ -30,6 +30,7 @@ import Ytosk.V3T2VRAPre
 import Ytosk.V3T2CVq
 import Ytosk.V3T2VRASeed
 import Ytosk.V3RwCarryT1
+import Ytosk.V3T2VRAK
 
 namespace Ytosk
 
@@ -118,7 +119,7 @@ theorem expT0Out_of4 (hRw : T0RwRes) (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
 residuals: drop `HDropV2`・`HSeedV2`; shared `HFrameV2`・`HLeafV2`; t0 `T0RwRes`・`T0AbWRes`;
 t2 `T2BelowXRes`・`T2SeedPResRCV2`・`T2SeedDomV2`・`FDsh`・the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`)・
 the prefix shape `T2SeedPreShape`・the copy levels `T2VRACopy`・the `σ`-step at the guarded copy frames
-`T2VRAK KStepVRA` (t1); top `HSibHardV2`.
+`T2VRAK KVRA` (t1, the frame condition of `qVRAshK_KVRA`); top `HSibHardV2`.
 None of them is the false strong absorption `HAbSV2`. (2026-10-17, drop: also `T2UpgAbsW`, the strong `UpgAbsX`
 at the last column for `t = 2`, which the drop lemma no longer gives. The `t = 1` analogue `T1UpgQRV2` is removed:
 t1 handles the weak seed with `SmallSelf` in `qr_final3`.) -/
@@ -137,7 +138,7 @@ theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
     (hVCp : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRACopy M)
     (hVK : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
-      TRIO.srow M (M.length - 1) = 2 → T2VRAK KStepVRA M) : WellFounded Step' :=
+      TRIO.srow M (M.length - 1) = 2 → T2VRAK KVRA M) : WellFounded Step' :=
   have hP : T2SeedPResV2 := t2SeedPResV2_of (t2SeedPResR_of_sib (hSib_of_hard hSib) hPR)
   have hPreG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ := fun M ρ rk C hz h2 =>
@@ -146,7 +147,7 @@ theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
     (expT0Out_of4 t0RwRes_ctx hAbW hArgB (t0Leaf_of_glob hLf) (t0Frame_of_glob hF))
     (expT1OutR_V2_glob hF hLf)
     (expT2R_of (expT2V2_of hB hU2 (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
-      (t2VRAV2_of qVRAshK_step hB (t2VRASeedG_of hB hP hPreG hQNG hSVCG) hPreG hVCp hVK) hF hLf) hR2w)
+      (t2VRAV2_of qVRAshK_KVRA hB (t2VRASeedG_of hB hP hPreG hQNG hSVCG) hPreG hVCp hVK) hF hLf) hR2w)
     (r2V2_of hB hU2))
 
 end Ytosk

@@ -3715,3 +3715,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 最上位の HSibHardV2 を `HSibColV2`（すべての標準形で SibColW）に替えた。全体ビルド緑 1048 jobs、公理は標準の 3 つ。
 - 測定: UpgSibLate は std_b（329 万件）でも例外 0、11 集合のうち測った 10 集合と std_b で例外 0。SibColW（tmp/lead/probes/sibcolall.py）は std_a・d3s・Cprime の標本で例外 0、全数を測定中（tmp/lead/qE.sh）。
 - SibColW の証明の見通し: 両方が数える子なら Good3.dec（o(w) ≤ o(u)）から。e2 = 0 では上げの的の候補は g の子で道の上の列 c_g か次の列だけで、両方に子があれば upg u = upg w。子がない場合は c_g と次の列 w + 1（g の同じ列の子）の比較になり、より低い段の兄弟に戻る。e2 = 1 では bump 子の子の o の比較になり、より高い段に進む。上下に再帰するので、部分木の辞書式の順から値の順を出す一般の定理（目標 3 の局所形）が要る。
+
+### 最上位の T2VRAK KStepVRA を T2VRAK KAG に（2026-10-17、lead）
+
+- t1 が証明した `qVRAshK_KVRA`（V3T2VRAK）を最上位に差し込んだ。`trio_terminates_main_V2_base` は `T2VRAK KVRA` を受け、`qVRAshK_KVRA` で VSmallRAll を運ぶ。
+- 最上位では KVRA = VDomF ∧ KAG のうち VDomF を `t2CopyK_vDom_of`（既にある残り T2VAncStep から）、KAG を新しい残り `T2VRAK KAG` から（`t2VRAK_KVRA_of`）。移送そのものを仮定する `KStepVRA` は最上位から消えた。KAG は 11 集合の全数で例外 0（上の節）。
+- 全体ビルド緑 1048 jobs、公理は標準の 3 つ。

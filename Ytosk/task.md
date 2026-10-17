@@ -116,7 +116,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 全員の生産者を差し込んだ最上位（V3TopV2 の中間の形 `trio_terminates_main_V2_base`）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
-    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2・T0ArgBRes・T0AbWRes（t0。T0AbWRes ⟸ HDropV2 ∧ T0PrefixInv）、T2SeedClV2（qn・sv・C）・T2BumpMonoV2・T2SeedOTRestV2（qn・C）・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShapeSVC・T2VRACopy・T2UpgAbsW・T2X1Cl・T2CopyK CopyLowK・T2VAncStep（t2。最後の 3 つは RwClosed の運搬から）、T2VRAK KStepVRA（t1）、HSibColV2（top。HSibHardV2 から帰着）。T0RwRes・TRwOut 0/1 は RwClosed を帰納法で運んで消えた
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2・T0ArgBRes・T0AbWRes（t0。T0AbWRes ⟸ HDropV2 ∧ T0PrefixInv）、T2SeedClV2（qn・sv・C）・T2BumpMonoV2・T2SeedOTRestV2（qn・C）・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShapeSVC・T2VRACopy・T2UpgAbsW・T2X1Cl・T2CopyK CopyLowK・T2VAncStep（t2。最後の 3 つは RwClosed の運搬から）、T2VRAK KAG（t1。T2VAncStep と合わせて qVRAshK_KVRA の枠の条件 KVRA）、HSibColV2（top。HSibHardV2 から帰着）。T0RwRes・TRwOut 0/1 は RwClosed を帰納法で運んで消えた
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
   - Desc3 の証明 → **目標 4 が残っている**
