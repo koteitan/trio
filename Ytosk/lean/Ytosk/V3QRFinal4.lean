@@ -96,7 +96,7 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsX M (r + L) ρ)
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsXW M (r + L) ρ)
     -- value invariants
     (hAD : AbsD M ρ) (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUW M ρ) (hAD' : AbsDW M ρ)
     (hTP1 : TP1C M ρ) (hTO : TrigOmC M ρ) (hTPN : TPLoN M ρ) (hADN : AbsDN M ρ)
@@ -310,7 +310,7 @@ theorem qr_final4_seed {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsX M (r + L) ρ)
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsXW M (r + L) ρ)
     -- value invariants
     (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUWL M ρ) (hAU0 : AbsUW0 M ρ rkM) (hAD' : AbsDW M ρ)
     (hTP1 : TP1C M ρ) (hYBs : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z →
@@ -489,7 +489,7 @@ theorem qr_final4L {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsX M (r + L) ρ)
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsXW M (r + L) ρ)
     -- value invariants
     (hAD : AbsD M ρ) (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUWL M ρ) (hAU0 : AbsUW0 M ρ rkM) (hAD' : AbsDW M ρ)
     (hTP1 : TP1C M ρ) (hTO : TrigOmC M ρ) (hTPN : TPLoN M ρ) (hADN : AbsDN M ρ)
@@ -569,7 +569,7 @@ theorem qr_final4S {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsX M (r + L) ρ)
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsXW M (r + L) ρ)
     -- value invariants
     (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUWL M ρ) (hAU0 : AbsUW0 M ρ rkM) (hAD' : AbsDW M ρ)
     (hTP1 : TP1C M ρ) (hTS : TrigS0 M ρ rkM) (hTPN : TPLoN M ρ) (hADN : AbsDN M ρ)

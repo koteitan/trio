@@ -36,8 +36,11 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - ✅ 残りの条件を仮定した組み立て（`inv3V2_take`）
       - ✅ PH3cG・FC3・VSmallRAll の保存。落とす補題の結論を仮定した証明
       - 落とす補題の残り（DropRes など）。強い UpgAbsX の反例も修正する
-        - UpgAbsXW（T2Ext の x − 1 の族）と落とす補題の弱い枝の一般化（WCSP の副条件を外し、WeakCS を BumpWeakSrc へ。UpgAbsXW の第 3 条件を行 1 に、SmallSelf(V + 1) を追加）。ブランチ `drop-wkx2`（4f7e3f84）で全体ビルド緑、main には未コミット。newpv3 は 9 集合済み（PO 例外 0、旧い PV・UpgAbsXW の偽は直しの対象）。新しい定義の 11 集合の測定（probe_uaw1・probe_pv2）が未実行で、その後に取り込む（desc.md「落とす補題の測定と、偽だった仮定の直し（2026-10-17、drop）」）
-        - t = 1・q = r・L = 1 の強い UpgAbsX（hUA1・T1UpgQRV2、偽）は t1 が drop-wkx2 の上で外す（t1-qr）
+        - ✅ UpgAbsXW（T2Ext の x − 1 の族）と落とす補題の弱い枝の一般化（WCSP の副条件を外し、WeakCS を BumpWeakSrc へ。UpgAbsXW の第 3 条件を行 1 に、SmallSelf(V + 1) を追加）。drop-wkx2 を main に入れた（2026-10-17、desc.md「drop-wkx2 を main に入れる・t = 2 の強い吸収を悪い形だけに」）
+        - ✅ t = 1・q = r・L = 1 の強い UpgAbsX（hUA1・T1UpgQRV2、偽）を外した（t1-qr2、drop-wkx2 と一緒に main へ）
+        - 最上位の落とす補題の残りは HDropV2W（弱い選択肢に行 1 の条件なしの UpgAbsXW0、11 集合で例外 0）。t = 0 の強い吸収は名前つきの残り T0UpgAbsV2（偽: std_a 2 件・std_b 240 件）。易しい形（r ≠ x − 1 で r はのりしろの子でない、T0Easy）ではエンジンは強い形を使わない（PO.zero_t0・CntX.nocnt_t0）。T0UpgAbsV2 は ¬T0Easy の場合だけで、偽なのは r = x − 1 の形（std_a 1・std_b 105 件）
+          - ✅ 核 `s1_core_weak` と種 S1 の弱い版 `t0_S1W`（V3T0Weak）
+          - 次: 引数の段の弱い版（s1_core_arg、t0_S1A・t0_S1A_RE が使う）、t0_vsmallF_atC の hlv の弱い版、dec_g0・frameOT_g0 を hl.1 だけに、t0_core・t0_otdS・t0_vsmallF_atC への差し込み、UpgAbsXW の第 3 条件を NBPar にして T0UpgAbsV2 をのりしろの場合だけに
         - DropResH の残り（HardArg・VSmallNew・BumpWeakSrc（形 ∧ WeakCS）・UpgAbsXW・BumpAbsC）と SeedR の 11 集合の測定（`tools/probe_dropres.py`、標本では例外 0）と証明。AbsSR は最上位から外れた（top）。AbsSR の t = 0 の欄 BumpAbsLo も偽で、t0 が弱い形 AbsWN に替えた（落とし側は BumpAbsC から出る）
         - ✅ AbsSR から t = 2 の欄（srow = 2 → BumpAbsS）を外した。使う所がなく、標準形で偽だった（HAbSV2 は t = 0 の BumpAbsLo だけになった）
       - 落とした行列の枠の条件（TakeFrameV2）、TP1LeafG・TP1WLeafG（最後の列が根の場合の RootP は top の `rootP0_take` で済み）
@@ -85,8 +88,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         - ✅ T2VRAPre ⟸ T2SeedPreShape（種の列 p の枠の形）（`t2VRAPre_of`、V3T2VRAPre）
         - ✅ T2VRASeed（種の列の枠）を qr・qn・C の q で証明（`t2VRASeedG_of`、V3T2VRASeed、t2）。残りは T2VRAQNDom（9 集合・std_b で例外 0）と T2VRASeedSVC（sv・C の r の枠）
         - ✅ `qVRAshK_KVRA`（V3T2VRAK）: K = VDomF ∧ KAG のもとで σ 移送。残り T2VRAK KVRA ⟸ T2CopyK CopyVDomK（t0 と共有）∧ T2VRAK KAG（`t2VRAK_KVRA_of`）
-        - 残り（t1）: T2VRAK KAG（KA・KG、6 集合で例外 0、expP・ext1・t2ext・ext2・std_a 未測定）、T2VRACopy（11 集合で例外 0）、T2SeedPreShape。最上位の K を KStepVRA から KVRA に替えるのは測定の後（VDomF 側は t0 の t2CopyK_vDom_of）
-        - q = r の偽の仮定 T1UpgQRV2 は t1-qr2 2b93435a（drop-wkx2 の上）で除去済み、drop-wkx2 と一緒に main へ
+        - 残り（t1）: T2VRAK KAG（KA・KG、11 集合で例外 0）、T2VRACopy（11 集合で例外 0）、T2SeedPreShape。最上位の K を KStepVRA から KVRA に替えるのは測定の後（VDomF 側は t0 の t2CopyK_vDom_of）
+        - ✅ q = r の偽の仮定 T1UpgQRV2 を除去（t1-qr2、main に入った）
       - 始点の残り（T2SeedQRRes・QNRes・SVRes・CRes）と C の値の残り UpgSibV
         - ✅ M だけで決まる欄（qr の ks・vs、qn の vqlt・Bc、sv の decP）を証明（V3T2SeedRes）
         - ✅ sv の rw を T2SVStrict 1 つに（V3T2SeedRes2）、qn の σB を数えない子の残り QNUncRes に（V3T2QNSig、一般の V′ の closure V3T2TameG）
@@ -101,8 +104,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - ✅ T2BelowRV2 ⟸ T2SeedClV2（種の閉じた条件、qn・sv・C）∧ T2BumpMonoV2（`t2BelowRV2_of`、V3T2BelowR）。種の RClaimU は類 B0・共通の接頭辞・道の段の閉じた条件から（`rclaim_of_hiB0`）、qr は dom の欄から証明。AbsWN の落とし側は BumpAbsC から（V3T2AbW）
       - ✅ 種の標準形を qr・sv で証明（V3T2SeedOTP）。残り T2SeedOTRestV2（qn・C）
       - ✅ T2SeedPreShape を qr・qn で証明（V3T2SeedPre）。残り T2SeedPreShapeSVC（sv・C）
-      - 測定: T2SeedClV2・T2SeedOTRestV2 の中身は 10 集合で例外 0（seedrr3.py）。T2BumpMono（bumpmono.py）・T2SeedPreShape（preshape.py）は測定中
-      - 強い T2UpgAbs の反例を扱える形への修正
+      - 測定: T2SeedClV2・T2SeedOTRestV2 の中身は 10 集合で例外 0（seedrr3.py）。T2BumpMono（bumpmono.py、TleN）は 11 集合で例外 0。T2SeedPreShape（preshape.py）は測定中
+      - ✅ 強い T2UpgAbs（偽、11 集合で 175 件）を T2UpgAbsW（強い吸収か悪い形 T2UABad、11 集合で例外 0）に替えた。悪い形 q = r = x − 1・上げ先 k < x の n ≤ 1 は `t2_qu_take_bad`（種を r の親の o に移し、r の o・v を弱い呼び出しに。V3T2QUBad）
   - **各段をまとめて Desc3 を得る**
     - ✅ 旧 Inv3V 上の条件付き最上位の組み立て（`trio_terminates_main_GH`）
     - ✅ Inv3V2 上の最上位の組み立て（`trio_terminates_main_V2`、V3MainV2）。旧 Inv3・Inv3V を使わない
@@ -112,7 +115,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 全員の生産者を差し込んだ最上位（V3TopV2 の中間の形 `trio_terminates_main_V2_base`）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
-    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0RwRes・T0AbWRes（t0。T0AbWRes ⟸ HDropV2 ∧ T0PrefixInv）、T2SeedClV2（qn・sv・C）・T2BumpMonoV2・T2SeedOTRestV2（qn・C）・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShapeSVC・T2VRACopy（t2）、T2VRAK KStepVRA（t1）、HSibHardV2（top）
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2（t0、偽）・T0RwRes・T0AbWRes（t0。T0AbWRes ⟸ HDropV2 ∧ T0PrefixInv）、T2SeedClV2（qn・sv・C）・T2BumpMonoV2・T2SeedOTRestV2（qn・C）・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShapeSVC・T2VRACopy・T2UpgAbsW（t2）、T2VRAK KStepVRA（t1）、HSibHardV2（top）
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
   - Desc3 の証明 → **目標 4 が残っている**

@@ -527,7 +527,7 @@ theorem t0_vsmallF_atC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         · rcases h with h | h
           · exact absurd h hv
           · exact h
-        · exact absurd hxcnt (hno _ hxr)
+        · exact absurd hxcnt (CntX.nocnt_t0 hx hDr.ua he1 hp hno _ hxr)
       -- a changed `v(r)`: `o′(r) = ψ_{v′(r)}(0)`
       have hyz : y = z := by
         have hCv : ChgX M (r + L) false r := by
@@ -561,7 +561,7 @@ theorem t0_vsmallF_atC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         have hot2 : isOT (psi (ρ.v g) (psi (ρ.v r) (app Y0 one) z) z) := hot
         rw [← hY0] at hot2
         have hl0 : LhdE (ρ'.o r) (ρ.o r) := by
-          rcases hPO.1 with h | ⟨_, w, hw⟩
+          rcases PO.zero_t0 hx hDr.ua he1 hp I.cons I.good (by omega) hPO hPV with h | ⟨_, w, hw⟩
           · exact h
           · rw [hY0] at hw; simp only [psi.injEq] at hw
             exact absurd hw.2.1 (fun h => by cases Y0 <;> simp [app, one] at h)

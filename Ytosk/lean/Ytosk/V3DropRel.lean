@@ -165,6 +165,64 @@ theorem o_frame_weakA {a w' w F : T} {L : List T}
       (fun u hu g hg => (self_small_weakA hWC hW.2.1 u hu g hg).imp
         (fun h => le_trans h (le_app_of_ge B hBge)) id) hlt
 
+theorem add_le_add_single : ∀ (V : T) {W' W : T}, (∃ s y, W' = psi s y z) → (∃ s y, W = psi s y z) →
+    W' ≤ W → add V W' ≤ add V W
+  | z, _, _, _, _, hle => by simpa using hle
+  | psi a b c, _, _, ⟨s', y', rfl⟩, ⟨s, y, rfl⟩, hle => by
+    rw [add_psi_psi, add_psi_psi]
+    by_cases h1 : psi a b z < psi s' y' z
+    · rw [if_pos h1, if_pos (lt_of_lt_of_le h1 hle)]; exact hle
+    · rw [if_neg h1]
+      by_cases h2 : psi a b z < psi s y z
+      · rw [if_pos h2]; apply le_of_lt; rw [psi_lt_psi_z_iff] at h2 ⊢; exact h2
+      · rw [if_neg h2]; exact psi_le_psi_rest (add_le_add_single c ⟨s', y', rfl⟩ ⟨s, y, rfl⟩ hle)
+
+theorem le_add_single : ∀ (V : T) {W : T}, (∃ s y, W = psi s y z) → W ≤ add V W
+  | z, _, _ => by simp
+  | psi a b c, _, ⟨s, y, rfl⟩ => by
+    rw [add_psi_psi]
+    split
+    · exact le_refl _
+    · rename_i h
+      exact le_trans (not_lt.mp h) (psi_le_psi_rest (z_le _))
+
+/-- **A leaf child below the old child gives a smaller state**: `B + ψ_{w′}(0) < step(a, B, s, y)` when
+`ψ_{w′}(0) < ψ_s(y)` (the old child may rewrite). -/
+theorem leaf_lt_step {a B s y w' : T} (hc : isOT (psi s y z) = true)
+    (hBc : ∀ q ∈ summands B, psi s y z ≤ q) (hlt : psi w' z z < psi s y z) :
+    app B (psi w' z z) < step a B s y z := by
+  have hw's : w' ≤ s := by
+    rcases psi_lt_psi_z_iff.mp hlt with h | ⟨h, _⟩
+    · exact le_of_lt h
+    · rw [h]
+  unfold step
+  split_ifs with ht
+  · rw [H_eq hc]
+    have hBhi := B_le_hi hc ht.1 hBc
+    have hall : ∀ q ∈ summands (split y (psi (succ s) z z)).1, psi w' z z < q := by
+      intro q hq
+      have := split_fst_ge (psi (succ s) z z) y q hq
+      exact lt_of_lt_of_le (psi_lt_psi_z_iff.mpr (Or.inl (lt_of_le_of_lt hw's (lt_succ_self s))))
+        (not_lt.mp this)
+    rcases (le_iff _ _).mp hBhi with hBlt | hBeq
+    · apply app_lt_of_lt (lt_of_lt_of_le hBlt (le_app_self _ _))
+      intro q hq
+      rw [summands_app] at hq
+      rcases List.mem_append.mp hq with hq | hq
+      · exact hall q hq
+      · split at hq
+        · simp [summands] at hq
+        · simp [summands] at hq; rw [hq]; exact hlt
+    · have hlo : (split y (psi (succ s) z z)).2 ≠ z := by
+        intro h0
+        have hy := split_app (psi (succ s) z z) y
+        rw [h0, app_z_right, ← hBeq] at hy
+        rw [hy] at ht; exact lt_irrefl' _ ht.1
+      rw [if_neg hlo, ← hBeq]
+      exact app_lt_app_left B hlt
+  · rw [add_eq_app_of_ge ⟨s, y, rfl⟩ B hBc]
+    exact app_lt_app_left B hlt
+
 /-- The former form (countable components). -/
 theorem o_frame_weak {a w' w F : T} {L : List T}
     (hs' : ∀ t ∈ L ++ [psi w' z z], Single t) (hp' : (L ++ [psi w' z z]).Pairwise (fun a b => b ≤ a))
@@ -347,7 +405,7 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     (hclT : CL (M.take x) i = Lc ++ [cs]) (hcl : CL M i = Lc ++ [cs] ++ Tl)
     (hsame : ∀ d ∈ Lc, ρ'.o d = ρ.o d)
     (hcs' : Single (ρ'.o cs))
-    (hrel : LhdE (ρ'.o cs) (ρ.o cs) ∨ (WkOA (ρ'.o cs) (ρ.o cs) ∧ (∃ w, ρ.o cs = psi w z z) ∧
+    (hrel : LhdE (ρ'.o cs) (ρ.o cs) ∨ (WkOA (ρ'.o cs) (ρ.o cs) ∧
       ∀ w', ρ'.o cs = psi w' z z → WCS (ρ.v i) w'))
     (hss : ∀ s y s' y', ρ.o cs = psi s y z → ρ'.o cs = psi s' y' z → y' ≠ z → s' = s) :
     LhdE (ρ'.o i) (ρ.o i) := by
@@ -446,10 +504,13 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     rw [hs'y'] at hs' hp'
     rw [hsy] at hsM hpM
     exact o_frame_term (L := Lv) (Tl := Tv) hsM hpM hs' hp' hN hT
-  · -- weak child
-    obtain ⟨⟨w', w, X, hw', hw, hWk⟩, ⟨w0, hw0⟩, hwc⟩ := hW
-    have hWC := hwc w' hw' 
-    rw [hw] at hw0; simp only [psi.injEq] at hw0; obtain ⟨rfl, rfl, -⟩ := hw0
+  · -- weak child: the new child is a leaf `ψ_{w′}(0)`, the old child `ψ_s(y)` is arbitrary
+    obtain ⟨⟨w', w, X, hw', hw, hWk⟩, hwc⟩ := hW
+    have hWC := hwc w' hw'
+    rw [hsy] at hw; simp only [psi.injEq] at hw; obtain ⟨rfl, rfl, -⟩ := hw
+    have hc : isOT (psi s y z) = true := by rw [← hsy]; exact hcsS.1
+    have hBc : ∀ q ∈ summands B, psi s y z ≤ q := by
+      have := hBge _ hcsS (le_refl _); rwa [hsy] at this
     have hF' : spArg a z (sumN (Lv ++ [ρ.o cs] ++ Tv)) = spArg a B (sumN (ρ.o cs :: Tv)) := by
       rw [List.append_assoc, show [ρ.o cs] ++ Tv = ρ.o cs :: Tv from rfl,
         sumN_append_dec (fun t ht => hsM t (by simpa using ht)) (by simpa using hpM), spArg_app]
@@ -457,43 +518,34 @@ theorem o_frame_eval {M : Mat} {x : Nat} {ρ ρ' : Valn} {i cs : Nat} {Lc Tl : L
     have hTcl := tailcl_of_frame hC hG hF hiM (cs :: Tl) Lc (by rw [hCL])
     have hdrop := drop_tail a (ρ.o cs :: Tv) B hsC hpcT
       (fun u hu q hq => hBge u (hsC u hu) (hLC u hu) q hq) (by simpa using hTcl)
-    -- the old state after `cs` is `B + ψ_w(0)`, and the rest only grows
-    have hstep : spArg a B (ρ.o cs) = app B (psi w z z) := by
-      rw [hw, spArg_single, step_leaf]
-      exact add_eq_app_of_ge ⟨w, z, rfl⟩ B (hBge _ hcsS (le_refl _) |> fun h => by rw [hw] at h; exact h)
+    -- the old state after `cs` is `step a B w X`, and the rest only grows
+    have hstate : spArg a z (sumN ((Lc ++ [cs]).map ρ.o)) = step a B s y z := by
+      rw [List.map_append, List.map_singleton, ← hLv, sumN_append_dec hsLc hpLc,
+        sumN_singleton hcsS, spArg_app, hsy, spArg_single]
     have hTcl2 := tailcl_of_frame hC hG hF hiM Tl (Lc ++ [cs]) (by rw [hcl])
-    have hgrow : app B (psi w z z) ≤ spArg a B (sumN (ρ.o cs :: Tv)) := by
-      have e : spArg a B (sumN (ρ.o cs :: Tv)) = spArg a (app B (psi w z z)) (sumN Tv) := by
-        rw [sumN_cons_dec hsC hpcT, hw,
-          show app (psi w z z) (sumN Tv) = psi w z (sumN Tv) from rfl, spArg_cons, step_rest a B w z (sumN Tv) z,
-          step_leaf, add_eq_app_of_ge ⟨w, z, rfl⟩ B (hBge _ hcsS (le_refl _) |> fun h => by rw [hw] at h; exact h)]
-      have hs2 : spArg a z (sumN ((Lc ++ [cs]).map ρ.o)) = app B (psi w z z) := by
-        rw [List.map_append, List.map_singleton, ← hLv, sumN_append_dec hsLc hpLc,
-          sumN_singleton hcsS, spArg_app, hstep]
-      rw [hs2] at hTcl2
-      have hd := drop_tail a Tv (app B (psi w z z)) hsT hp1.2.1
-        (fun u hu q hq => by
-          obtain ⟨s2, y2, hu2⟩ := (hsT u hu).2
-          have hcw : isOT (psi w z z) = true := by rw [← hw]; exact hcsS.1
-          have := spArg_summands_ge (a := a) (c := u) ⟨s2, y2, hu2⟩ (psi w z z) B hcw
-            (by intro q2 hq2; simp [summands] at hq2; rw [hq2, ← hw]; exact hp1.2.2 _ (by simp) u hu)
-            (hBge u (hsT u hu) (hp1.2.2 _ (by simp) u hu))
-          rw [spArg_single, step_leaf, add_eq_app_of_ge ⟨w, z, rfl⟩ B
-            (hBge _ hcsS (le_refl _) |> fun h => by rw [hw] at h; exact h)] at this
-          exact this q hq) hTcl2
+    rw [hstate] at hTcl2
+    have hT := drop_tail a Tv (step a B s y z) hsT hp1.2.1
+      (fun u hu q hq => by
+        obtain ⟨s2, y2, hu2⟩ := (hsT u hu).2
+        have := spArg_summands_ge (a := a) (c := u) ⟨s2, y2, hu2⟩ (psi s y z) B hc
+          (by intro q2 hq2; simp [summands] at hq2; rw [hq2, ← hsy]; exact hp1.2.2 _ (by simp) u hu)
+          (hBge u (hsT u hu) (hp1.2.2 _ (by simp) u hu))
+        rw [spArg_single] at this
+        exact this q hq) hTcl2
+    have hgrow : step a B s y z ≤ spArg a B (sumN (ρ.o cs :: Tv)) := by
+      have e : spArg a B (sumN (ρ.o cs :: Tv)) = spArg a (step a B s y z) (sumN Tv) := by
+        rw [sumN_cons_dec hsC hpcT, hsy,
+          show app (psi s y z) (sumN Tv) = psi s y (sumN Tv) from rfl, spArg_cons, step_rest a B s y (sumN Tv) z]
       rw [e]
-      clear e
-      have := hd.le
+      have := hT.le
       rcases (le_iff _ _).mp this with h | h
       · rw [psi_lt_psi_z_iff] at h
         rcases h with h | ⟨_, h⟩
         · exact absurd h (lt_irrefl' _)
         · exact le_of_lt h
       · simp only [psi.injEq] at h; exact (le_iff _ _).mpr (Or.inr h.2.1)
-    have hlt : app B (psi w' z z) < spArg a B (sumN (ρ.o cs :: Tv)) := by
-      apply lt_of_lt_of_le _ hgrow
-      apply app_lt_app_left
-      rw [psi_lt_psi_z_iff]; exact Or.inl hWk.1
+    have hlt : app B (psi w' z z) < spArg a B (sumN (ρ.o cs :: Tv)) :=
+      lt_of_lt_of_le (leaf_lt_step hc hBc (psi_lt_psi_z_iff.mpr (Or.inl hWk.1))) hgrow
     rw [hw'] at hs' hp'
     rw [hw']
     exact o_frame_weakA hs' hp' hWk hWC hdrop hlt

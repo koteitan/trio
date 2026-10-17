@@ -204,10 +204,8 @@ theorem root_gen {M N : Mat} {bnd : Nat} (hlenM : bnd + 1 = M.length) (hbN : bnd
     have hn' := hcol0 (hRl i h1 (by omega))
     simp only [hf', hf]; exact ⟨if_neg hn', if_neg hn'⟩
 
-/-- **`t = 2` assembly** (general form): from the structural agreement before `bnd`, the shape of
-`D = DepS M S` in `M`, the weak calls `W` read only by seeds, and the seeds, the root value of `N` is
-standard and below that of `M`. -/
-theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ σ : Valn}
+/-- **`t = 2` assembly** (general form, weak calls may include a `v` read by nothing but its own `o`). -/
+theorem t2_assemble2 {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ σ : Valn}
     {rkM rkN : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
     (hCN : Cons N σ) (hGN : Good3 N σ) (hRN : Rk N rkN)
@@ -231,7 +229,7 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ 
     (hposN : ∀ j, bnd ≤ j → j < N.length → entry N 0 j ≠ 0) (hposM : entry M 0 bnd ≠ 0)
     -- the shape of `D` in `M`
     (hWD : ∀ i, W true i → DepS M S true i)
-    (hWv : ∀ i, ¬ W false i)
+    (hWv : ∀ i, W false i → W true i ∧ ∀ j, upg M j ≠ some i)
     (hWo : ∀ i c, c ∈ children M i → Counted M i c → W true c → S true i)
     (hWb : ∀ i j c, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → j ∈ children M i → col M j = bump M i →
       c ∈ children M j → W true c → S false i)
@@ -250,7 +248,7 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ 
     (hWle : ∀ i, i < bnd → W true i → σ.o i ≤ ρ.o i)
     -- values
     (hAbs : AbsWN M N bnd ρ σ)
-    (hSeed : ∀ b i, S b i → i < bnd → DepS M S b i →
+    (hSeed : ∀ b i, S b i → ¬ W b i → i < bnd → DepS M S b i →
       (∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i)) →
       (∀ b' i', rkM b' i' < rkM b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →
         Lhd z (valB σ b' i') (valB ρ b' i')) →
@@ -272,8 +270,8 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ 
     (fun i k hi hk hkx => DepS.seed (hupS i k hi hk hkx)) hbjN
     (fun i j hi hj hjx hjb => DepS.seed (hbjS i j hi hj hjx hjb))
     (fun i j k hi hj hjx hjb hk hkx => DepS.seed (hbkS i j k hi hj hjx hjb hk hkx))
-  have hdl := deps_lhd_genW (S := S) (W := W) (bnd := bnd) hC hG hCN hGN hRM (by omega) hbN
-    hF hVS hTD hKD hoff hWv hWo hWb (fun b i hs hi hd ih => hSeed b i hs hi hd hoff ih) hDvNil
+  have hdl := deps_lhd_genW2 (S := S) (W := W) (bnd := bnd) hC hG hCN hGN hRM (by omega) hbN
+    hF hVS hTD hKD hoff hWv hWo hWb (fun b i hs hw hi hd ih => hSeed b i hs hw hi hd hoff ih) hDvNil
     (fun c hc hw hd => by
       by_cases hs : S true c
       · exact hDvNilS c hc hw hs hd
@@ -347,5 +345,59 @@ theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ 
   · intro R hR hRA hR0
     obtain ⟨hDR, hWR⟩ := hRD R hR hRA hR0
     exact (hdl true R hDR hR hWR).1
+
+/-- **`t = 2` assembly** (general form): from the structural agreement before `bnd`, the shape of
+`D = DepS M S` in `M`, the weak calls `W` read only by seeds, and the seeds, the root value of `N` is
+standard and below that of `M`. -/
+theorem t2_assemble {M N : Mat} {S W : Bool → Nat → Prop} {bnd p : Nat} {ρ σ : Valn}
+    {rkM rkN : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hCN : Cons N σ) (hGN : Good3 N σ) (hRN : Rk N rkN)
+    (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
+    (hR01 : R01 M) (hR12 : R12 M) (h00 : entry M 0 0 = 0)
+    (hlenM : bnd + 1 = M.length) (hbN : bnd ≤ N.length)
+    -- structural agreement before `bnd` (the children may differ only at `p`)
+    (hch : ∀ i, i < bnd → i ≠ p → children N i = children M i)
+    (hpS : S true p ∨ W true p) (hp2 : entry M 2 p = 0 ∨ S false p)
+    (hpb : ∀ i, p ∈ children M i → col M p ≠ bump M i)
+    (he : ∀ y i, i < bnd → entry N y i = entry M y i)
+    (hpar1 : ∀ i, i < bnd → par N 1 i = par M 1 i)
+    (hupg : ∀ i, i < bnd → ¬ S false i → upg N i = upg M i)
+    (hcnt : ∀ i c, i < bnd → ¬ S true i → c ∈ children M i → c < bnd → (Counted N i c ↔ Counted M i c))
+    (hxSW : ∀ i c, i < bnd → c ∈ children M i → bnd ≤ c → S true i ∨ W true i)
+    (hupS : ∀ i k, i < bnd → upg M i = some k → bnd ≤ k → S false i)
+    (hbjN : ∀ i j, i < bnd → j ∈ children N i → bnd ≤ j → col N j ≠ bump N i)
+    (hbjS : ∀ i j, i < bnd → j ∈ children M i → bnd ≤ j → col M j = bump M i → S false i)
+    (hbkS : ∀ i j k, i < bnd → j ∈ children M i → j < bnd → col M j = bump M i → k ∈ children M j →
+      bnd ≤ k → S false i)
+    (hposN : ∀ j, bnd ≤ j → j < N.length → entry N 0 j ≠ 0) (hposM : entry M 0 bnd ≠ 0)
+    -- the shape of `D` in `M`
+    (hWD : ∀ i, W true i → DepS M S true i)
+    (hWv : ∀ i, ¬ W false i)
+    (hWo : ∀ i c, c ∈ children M i → Counted M i c → W true c → S true i)
+    (hWb : ∀ i j c, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → j ∈ children M i → col M j = bump M i →
+      c ∈ children M j → W true c → S false i)
+    (hDvNil : ∀ c, c < bnd → ¬ W true c → ¬ S true c → DepS M S false c → CL M c = [])
+    (hDvNilS : ∀ c, c < bnd → ¬ W true c → S true c → DepS M S false c → CL N c = [])
+    (hCLnil : ∀ c, c < bnd → ¬ W true c → CL M c = [] → CL N c = [])
+    (hOS : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S true i → ¬ DepS M S false i →
+      ∃ L c R, children M i = L ++ c :: R ∧ Counted M i c ∧ DepS M S true c ∧
+        (∀ d ∈ R, ¬ Counted M i d) ∧ (∀ d ∈ L, Counted M i d → ¬ DepS M S true d))
+    (hVSh : ∀ i, i < bnd → ¬ S false i → DepS M S false i →
+      (∀ m, par M 1 i = some m → ¬ DepS M S false m) ∧
+      (entry M 2 i ≠ 0 → ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ col M j = bump M i ∧
+        children M j = Kb ++ [k] ∧ (∀ d ∈ Kb, ¬ DepS M S true d) ∧
+        (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepS M S true e)))
+    (hRD : ∀ R, R < bnd → Anc0 M R bnd → col M R = (0, 0, 0) → DepS M S true R ∧ ¬ W true R)
+    (hWle : ∀ i, i < bnd → W true i → σ.o i ≤ ρ.o i)
+    -- values
+    (hAbs : AbsWN M N bnd ρ σ)
+    (hSeed : ∀ b i, S b i → i < bnd → DepS M S b i →
+      (∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i)) →
+      (∀ b' i', rkM b' i' < rkM b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →
+        Lhd z (valB σ b' i') (valB ρ b' i')) →
+      Lhd z (valB σ b i) (valB ρ b i)) :
+    isOT (root N σ) = true ∧ root N σ < root M ρ :=
+  t2_assemble2 hC hG hRM hCN hGN hRN hF hVS hTD hKD hR01 hR12 h00 hlenM hbN hch hpS hp2 hpb he hpar1 hupg hcnt hxSW hupS hbjN hbjS hbkS hposN hposM hWD (fun i h => absurd h (hWv i)) hWo hWb hDvNil hDvNilS hCLnil hOS hVSh hRD hWle hAbs (fun b i hs _ hi hd hoff' ih => hSeed b i hs hi hd hoff' ih)
 
 end Ytosk

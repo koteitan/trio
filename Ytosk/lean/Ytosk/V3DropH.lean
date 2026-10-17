@@ -22,8 +22,20 @@ structure DropResH (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
   hard : HardArg N x σ σ'
   vst : VSmallNew N x σ σ'
   ws : BumpWeakSrc N x σ σ'
-  ua : UpgAbsX N x σ
+  ua : UpgAbsXW N x σ
   ab : BumpAbsC N x σ
+
+/-- **`DropResH` with `UpgAbsXW0`** (no row-1 condition on the weak alternative, 2026-10-17). -/
+structure DropResH0 (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
+  hard : HardArg N x σ σ'
+  vst : VSmallNew N x σ σ'
+  ws : BumpWeakSrc N x σ σ'
+  ua : UpgAbsXW0 N x σ
+  ab : BumpAbsC N x σ
+
+theorem DropResH0.toH {N : Mat} {x : Nat} {σ σ' : Valn} (h : DropResH0 N x σ σ')
+    (h0 : entry N 1 x = 0 → ¬ T0Easy N x → UpgAbsX N x σ) : DropResH N x σ σ' :=
+  ⟨h.hard, h.vst, h.ws, UpgAbsXW.of0 h.ua h0, h.ab⟩
 
 /-- **The drop lemma from `DropResH`.** -/
 theorem drop_all_H {N : Mat} {x : Nat} (hx : x + 1 = N.length)

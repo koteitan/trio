@@ -7,8 +7,9 @@
 行列ごとの残り（どの標準形でも、Inv3V2 から言う）:
 - `HDropV2`: 1 列落としの残り `DropResH`（drop）。
 - `HSeedV2`: t = 1・q = r の始点の条件 `SeedR`（drop）。
-- `HAbSV2`: t = 0 の強い吸収 `AbsSR`（drop）。標準形で偽（drop、2026-10-17）。最上位はもう使わない（文脈の
-  `Res3AW` は abS を持たない、2026-10-17）。古い t0 の入口（expT0V2_of・of2・of3）だけが引数で受ける。
+- `HAbSV2`: 展開が使う強い吸収 `AbsSR`（drop）。欄 lo（t = 0 の BumpAbsLo）と欄 upg（t = 1・q = r = x − 1 の強い
+  UpgAbsX）。どちらも標準形で偽（drop、2026-10-17）。最上位はもう使わない（文脈の `Res3AW` は abS を持たない、
+  2026-10-17）。古い t0 の入口（expT0V2_of・of2・of3）だけが引数で受ける。
 
 各段の残り:
 - `HTakeV2`: 1 列落とし。`inv3V2_take` の残り `TakeResV2`（落とした行列の枠の欄・葉）（drop）。根の RootP は証明済み。
@@ -37,11 +38,27 @@ def HDropV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk →
     DropResH M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
 
+/-- **R-drop without the row-1 condition** (2026-10-17): `DropResH0` of every standard matrix. -/
+def HDropV2W : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk →
+    DropResH0 M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
+
+/-- **The strong absorption at `x − 1` for `t = 0` outside the easy shape** (2026-10-17): the parent `r` of
+`x` is `x − 1` or a bump child (`¬ T0Easy`). False on 1 standard matrix of std_a
+(…(5,1,0)(4,2,0)(5,0,0), `r = x − 1`) and 105 of std_b; the `t = 0` engines still use it there
+(`UpgAbsXW.toX`: the seed at `r`, `hl`, of `t0_S1`). -/
+def T0UpgAbsV2 : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk → entry M 1 (M.length - 1) = 0 →
+    ¬ T0Easy M (M.length - 1) → UpgAbsX M (M.length - 1) ρ
+
+theorem hDropV2_of (hD : HDropV2W) (h0 : T0UpgAbsV2) : HDropV2 := fun M ρ rk hM hS hE I =>
+  (hD M ρ rk hM hS hE I).toH (h0 M ρ rk hM hS hE I)
+
 /-- **R-seed**: the seed condition (`hcs` of `t = 1`, `q = r`) of every standard matrix. -/
 def HSeedV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk → SeedR M ρ rk
 
-/-- **R-abs**: the strong absorption `AbsSR` (`t = 0`) of every standard matrix. -/
+/-- **R-abs**: the strong absorptions `AbsSR` (`t = 0` and `t = 1`, `q = r = x − 1`) of every standard matrix. -/
 def HAbSV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk → AbsSR M ρ
 

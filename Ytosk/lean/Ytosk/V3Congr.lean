@@ -105,27 +105,38 @@ theorem dropRes_congr {N : Mat} {x : Nat} {σ σ' τ τ' : Valn} (hx : x < N.len
     rw [← hvc', ← hvc] at hne
     have h1 := hD.vst i hi Lc cs hcl hne
     rw [← hv, ← hvc', ← map_o_congr h hL]; exact h1
-  · intro i h1 h2 j hj hjb k hk hw hcase
-    have hkN := (mem_children hk).2
-    have hiN := lt_of_entry_ne h1
-    have hok := (h k hkN).1
-    rw [← vOpt_par_congr h hiN]
-    unfold WCSP; rw [← vOpt_par_congr h hiN (r := 0)]
-    apply hD.ws i h1 h2 j hj hjb k hk (by rw [hok]; exact hw)
-    rcases hcase with ⟨hkx, hch, hl⟩ | ⟨hkx, hne, hl⟩
-    · have hij : i < j := (mem_children hj).1
-      have hjk : j < k := (mem_children hk).1
-      refine Or.inl ⟨hkx, hch, ?_⟩
-      rw [(h' i (by omega)).2, (h i hiN).2]; exact hl
-    · right
-      refine ⟨hkx, ?_, ?_⟩
-      · rw [(h' k (by omega)).1, hok]; exact hne
-      · rw [(h' k (by omega)).2, (h k hkN).2]; exact hl
-  · intro i k W hix hu hv hW r hr hrW
+  · refine ⟨fun i h1 h2 j hj hjb k hk hw hcase => ?_, fun i hi hl => ?_⟩
+    · have hkN := (mem_children hk).2
+      have hiN := lt_of_entry_ne h1
+      have hok := (h k hkN).1
+      apply hD.ws.1 i h1 h2 j hj hjb k hk (by rw [hok]; exact hw)
+      rcases hcase with ⟨hkx, hch, hl⟩ | ⟨hkx, hne, hl⟩
+      · have hij : i < j := (mem_children hj).1
+        have hjk : j < k := (mem_children hk).1
+        refine Or.inl ⟨hkx, hch, ?_⟩
+        rw [(h' i (by omega)).2, (h i hiN).2]; exact hl
+      · right
+        refine ⟨hkx, ?_, ?_⟩
+        · rw [(h' k (by omega)).1, hok]; exact hne
+        · rw [(h' k (by omega)).2, (h k hkN).2]; exact hl
+    · have hiN : i < N.length := by omega
+      have hl' : ¬ LhdE (σ'.v i) (σ.v i) := by rw [(h' i (by omega)).2, (h i hiN).2]; exact hl
+      have hw := hD.ws.2 i hi hl'
+      unfold WCSP at hw ⊢
+      rw [← vOpt_par_congr h hiN (r := 0), ← (h' i (by omega)).2]
+      exact hw
+  · intro i k W hix hu hv hW
     have hiN : i < N.length := by omega
-    rw [← vOpt_par_congr h hiN] at hv hr
+    rw [← vOpt_par_congr h hiN] at hv
     rw [← (h k (upg_lt hiN hu)).2] at hv
-    exact hD.ua i k W hix hu hv hW r hr hrW
+    rcases hD.ua i k W hix hu hv hW with h1 | ⟨hwc, hss, hnb, he⟩
+    · left; rw [← vOpt_par_congr h hiN]; exact h1
+    · right
+      refine ⟨?_, ?_, hnb, he⟩
+      · simp only [WCSP, WCS] at hwc ⊢
+        rw [← vOpt_par_congr (r := 1) h hiN, ← vOpt_par_congr (r := 0) h hiN]
+        exact hwc
+      · rw [← vOpt_par_congr (r := 1) h hiN]; exact hss
   · intro σ'' hC'' i h1 h2 hcol hsg r hr hrW hr2
     have hiN := lt_of_entry_ne h1
     rw [← vOpt_par_congr h hiN] at hr

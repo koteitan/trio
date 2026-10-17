@@ -699,7 +699,7 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ) (hAbsS : T0AbsW M r L ρ)
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
-    (hUA : UpgAbsX M (r + L) ρ)
+    (hUA : UpgAbsXW M (r + L) ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     (hLast : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g → Counted M g r →
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
@@ -793,7 +793,7 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     have hDr : DepX M (r + L) true r := depLike_r hlen hL hp hx2 (depLike_depX M (r + L))
     have hlt : ρ'.o r < ρ.o r := hD true r hDr (by omega)
     have hl : Lhd z (ρ'.o r) (ρ.o r) := by
-      rcases (hdrop r (by omega)).1.1 with hE | ⟨_, w, hw⟩
+      rcases PO.zero_t0 hx hUA he1 hp hC hG (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
       · exact lhd_of_lhdE_lt hE hlt
       · exfalso
         rw [hor] at hw; simp only [psi.injEq] at hw
@@ -821,7 +821,7 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
         hC1 hRk1 hKD hWS h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG)
         (fun k _ hk => hdrop k hk)
         (fun k hk hkx _ => v_lhd_B (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
-          hC hG hC1 hRk1 hKD hTD hAbs hWS hUA hdrop k (mem_children hk).1 hkx)).2).le
+          hC hG hC1 hRk1 hKD hTD hAbs hWS (hUA.toX_bump he1 hp hg hjb) hdrop k (mem_children hk).1 hkx)).2).le
     -- seed S2
     have hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g) := by
       intro hjb h1 h2
@@ -842,7 +842,7 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
             h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG)
             (fun k _ hk => hdrop k hk)
             (fun k hk hkx _ => v_lhd_B (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
-              hC hG hC1 hRk1 hKD hTD hAbs hWS hUA hdrop k (mem_children hk).1 hkx)
+              hC hG hC1 hRk1 hKD hTD hAbs hWS (hUA.toX_bump he1 hp hg hjb) hdrop k (mem_children hk).1 hkx)
         have hG0ot : isOT (sumN ((children (M.take (j' + L)) j').map ρ.o)) = true := isOT_sumN _ (fun t ht => by
           obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
           rw [children_take, List.mem_filter] at hc

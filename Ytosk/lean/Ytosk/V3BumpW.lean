@@ -262,7 +262,7 @@ theorem bump_relW {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         rcases hkx with ⟨hk1, hk2⟩ | hk'
         · exact Or.inl ⟨hk1, hk2, hli⟩
         · exact Or.inr hk'
-      obtain ⟨hone, _, hcsV⟩ := hWS i h1 h2 jl hjlM hjlb k hk ⟨w, hw, hok⟩ hkx'
+      obtain ⟨hone, _⟩ := hWS.1 i h1 h2 jl hjlM hjlb k hk ⟨w, hw, hok⟩ hkx'
       have hnil : A0 = [] ∧ XI = [] := by
         rw [hXI, hA] at hone
         have hl := congrArg List.length hone
@@ -282,10 +282,12 @@ theorem bump_relW {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       have hW := bwk_omega hp'ot1 hpot1 hp
       have e' : ρ'.v i = add V (omega (sumN [one, omega G'])) := by rw [ev']; simp [hPldef]
       have e : ρ.v i = add V (omega (sumN [one, omega G])) := by rw [ev, hmapM]; simp [hPldef]
+      have hwc := hWS.2 i hi hli
+      rw [e'] at hwc
       rw [e', e]
-      rcases v_weak hVot hcsV (single_omega hp'ot1) (single_omega hpot1) hW with heq | hwk
+      rcases v_weak hVot (single_omega hp'ot1) (single_omega hpot1) hW with heq | hwk
       · exact Or.inl (Or.inl heq)
-      · refine Or.inr ⟨hwk.1, hwk.2, fun c hc hcnt => ?_⟩
+      · refine Or.inr ⟨hwk, hwc, fun c hc hcnt => ?_⟩
         rw [hone] at hc
         simp at hc
         rw [hc] at hcnt
@@ -297,12 +299,12 @@ theorem bump_dropW {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsW M x ρ) (hWS : BumpWeakSrc M x ρ ρ') :
-    ∀ i, i < x → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
+    (∀ i, i < x → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
         PO ρ ρ' k ∧ PV M ρ ρ' k) → ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
-      PV M ρ ρ' i := by
-  intro i hi hIH hCv h1 h2
+      PV M ρ ρ' i) ∧ WeakCS M x ρ ρ' := by
+  refine ⟨fun i hi hIH hCv h1 h2 => ?_, hWS.2⟩
   obtain ⟨hot, hrel⟩ := bump_relW hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hKD hTD hAbs hWS hi hIH
     hCv h1 h2
-  exact ⟨hrel, hot⟩
+  exact ⟨hrel.imp id (fun h => ⟨h.1, h.2.1, Or.inl h.2.2⟩), hot⟩
 
 end Ytosk

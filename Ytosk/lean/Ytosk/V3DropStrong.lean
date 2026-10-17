@@ -172,12 +172,14 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
     have ho' := o_of_no_counted hC' hiT hv.2 hT.2.1
     refine ⟨?_, by rw [ho']; exact ⟨by rw [isOT_psi_iff]; exact ⟨hv.2, rfl, rfl, z_le _,
       fun g hg => by simp [comps] at hg⟩, _, _, rfl⟩⟩
-    rcases hv.1 with h | ⟨hW, -, hnc⟩
-    · rw [ho', o_spArg hC hG hiM]; exact Or.inl (lhdE_oq_v h)
+    by_cases hl : LhdE (ρ'.v i) (ρ.v i)
+    · rw [ho', o_spArg hC hG hiM]; exact Or.inl (lhdE_oq_v hl)
+    rcases hv.1 with h | ⟨hW, -, -⟩
+    · exact absurd h hl
     · right
-      have ho := o_of_no_counted hC hiM (hG.ot_v i hiM) hnc
-      rw [ho', ho]
-      exact ⟨⟨_, _, z, rfl, rfl, hW⟩, _, rfl⟩
+      refine ⟨?_, Or.inr hl⟩
+      rw [ho', o_spArg hC hG hiM]
+      exact ⟨_, _, _, rfl, rfl, hW⟩
   · -- `v(i)` does not change
     have hv' : ρ'.v i = ρ.v i := (hoff i hi).2 hCv
     obtain ⟨Tl, hTl⟩ := cl_prefix hx hR0 hZ2 hSD hZ1 hUAT hi
@@ -257,7 +259,7 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
       rw [hclM] at hsM hpM
       simp only [List.map_append, List.map_cons, List.map_nil] at hsM hpM
       have hle' : ρ'.o cs ≤ ρ.o cs := by
-        rcases hPOc.1 with h | ⟨h, _⟩
+        rcases hPOc.1 with h | ⟨h, -⟩
         · exact h.le
         · exact DRelOA.le (Or.inr h)
       have hp1 := List.pairwise_append.mp hpM
@@ -331,10 +333,13 @@ theorem po_of_hard {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
 
 /-- **One `v` step of the drop.** The bump-type frame (`hBump`) and the absorption at `x − 1` (`hX1`)
 are hypotheses. -/
-theorem pv_of_hard {i : Nat} (hi : i < x)
+theorem pv_of_hard {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
     (hBump : ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → PV M ρ ρ' i)
     (hX1 : ∀ k W, i + 1 = x → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
-      ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W)
+      (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
+        (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
+          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
+          NBPar M i ∧ (entry M 1 (i + 1) ≠ 0 ∨ T0Easy M (i + 1))))
     (hup : ∀ k, upg (M.take x) i = some k → PV M ρ ρ' k ∧
       ∀ j ∈ children (M.take x) k, col (M.take x) j = bump (M.take x) k →
         ∀ k' ∈ children (M.take x) j, Single (ρ'.o k')) :
@@ -392,16 +397,18 @@ theorem pv_of_hard {i : Nat} (hi : i < x)
       unfold PV
       rw [ek, ek']
       refine ⟨?_, hPVk.2⟩
-      rcases hPVk.1 with h | ⟨hW, hwk, _⟩
+      rcases hPVk.1 with h | ⟨hW, -, _⟩
       · exact Or.inl h
-      · right
+      · by_cases hlv : LhdE (ρ'.v k) (ρ.v k)
+        · exact Or.inl hlv
+        right
         refine ⟨hW, ?_, ?_⟩
-        · rcases hwk with hcs | ⟨_, _, hnu⟩
-          · exact Or.inl hcs
-          · exact absurd hu (hnu i)
+        · have h' := hWC i hi (by rw [ek, ek']; exact hlv)
+          rw [ek'] at h'; exact h'
         obtain ⟨m, _, _, _, hcase⟩ := upg_spec hu
         rcases hcase with rfl | ⟨hA, hki⟩
-        · intro c hc _
+        · left
+          intro c hc _
           have := leaf_of_upg_next hR0 hu c (Anc0.step (mem_children_iff.mp hc).2 (Anc0.refl i))
           have := (mem_children hc).1; omega
         · exfalso
@@ -441,18 +448,30 @@ theorem pv_of_hard {i : Nat} (hi : i < x)
       obtain ⟨sW, yW, hvk, hWot, hW1⟩ := v_bump_form hC hk hk1 hk2 (by rw [hVk]; exact hVot) (hoot k)
       rw [hVk] at hvk
       rw [ek, hvk]
-      have := v_frame_xm1 hVot hWot hW1 (fun r hr _ hlt =>
-        hX1 k _ hixe hu hvk (by simp) r hr hlt)
-      rw [sf_ot hot1] at this
-      exact Or.inl this
+      by_cases hR : ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < psi sW yW z → Lhd z r (psi sW yW z)
+      · have := v_frame_xm1 hVot hWot hW1 (fun r hr _ hlt => hR r hr hlt)
+        rw [sf_ot hot1] at this
+        exact Or.inl this
+      · -- the weak alternative: `v′ = V + 1 < V + W`, `x` is the only possible counted child
+        obtain ⟨hwc, -, hnb, -⟩ := (hX1 k _ hixe hu hvk (by simp)).resolve_left hR
+        rcases (le_iff _ _).mp (add_le_add_single (vOpt ρ (par M 1 i)) ⟨z, z, rfl⟩ ⟨sW, yW, rfl⟩ hW1)
+          with hlt | heq
+        · refine Or.inr ⟨⟨hlt, le_add_single _ ⟨z, z, rfl⟩, hot1⟩, hwc,
+            Or.inr ⟨fun c hc _ => ?_, hnb, k, _, by omega, hu, hvk, by simp, hR⟩⟩
+          have := mem_children hc; omega
+        · exact Or.inl (Or.inl heq)
 
 /-- **The drop lemma** (modulo the bump-type frames and the absorption at `x − 1`): at every column of
 `M.take x`, `o` and `v` are `⊴` the values in `M` or weakly below them, and standard. -/
 theorem drop_all_hard
-    (hBump : ∀ i, i < x → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
-        PO ρ ρ' k ∧ PV M ρ ρ' k) → ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → PV M ρ ρ' i)
+    (hBump : (∀ i, i < x → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
+        PO ρ ρ' k ∧ PV M ρ ρ' k) → ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → PV M ρ ρ' i) ∧
+      WeakCS M x ρ ρ')
     (hX1 : ∀ i k W, i + 1 = x → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
-      ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) :
+      (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
+        (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
+          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
+          NBPar M i ∧ (entry M 1 (i + 1) ≠ 0 ∨ T0Easy M (i + 1)))) :
     ∀ i, i < x → PO ρ ρ' i ∧ PV M ρ ρ' i := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have key : ∀ N, ∀ i, i < x → (rk true i ≤ N → PO ρ ρ' i) ∧ (rk false i ≤ N → PV M ρ ρ' i) := by
@@ -462,9 +481,9 @@ theorem drop_all_hard
       have hPV : ∀ i, i < x → rk false i ≤ N → PV M ρ ρ' i := by
         intro i hi hN
         obtain ⟨_, _, hR⟩ := hRk' i (by omega)
-        apply pv_of_hard hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hVN hF hFO hHard hi
+        apply pv_of_hard hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hVN hF hFO hHard hi hBump.2
         · intro hCv h1 h2
-          apply hBump i hi _ hCv h1 h2
+          apply hBump.1 i hi _ hCv h1 h2
           intro j hj hjb k hk hkx
           have hjx : j < x := by have := (mem_children hk).1; omega
           have hjT : j ∈ children (M.take x) i := by
@@ -530,7 +549,7 @@ theorem t1_main_drop_hard {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
     (hHard : HardArg M (r + L) ρ (drop1 M (r + L) rkM))
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
-    (hUA : UpgAbsX M (r + L) ρ)
+    (hUA : UpgAbsXW M (r + L) ρ)
     (hne : (drop1 M (r + L) rkM).o r ≠ ρ.o r)
     {μ br vr : T}
     (hcb : cof br = .big μ) (hμr : μ = vr) (hbr : br ≠ z) (hro : ρ.o r = psi vr br z)

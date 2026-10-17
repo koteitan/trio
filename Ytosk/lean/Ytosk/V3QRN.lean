@@ -29,7 +29,7 @@ theorem qr_n1 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
-    (hUA : UpgAbsX M (r + L) ρ) :
+    (hUA : UpgAbsXW M (r + L) ρ) :
     ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 1) ρN ∧ Rk (TRIO.gexp M r L d0 0 1) rkN ∧
       isOT (root (TRIO.gexp M r L d0 0 1) ρN) = true ∧ root (TRIO.gexp M r L d0 0 1) ρN < root M ρ := by
   have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
@@ -71,7 +71,7 @@ theorem qr_n0 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
-    (hUA : UpgAbsX M (r + L) ρ)
+    (hUA : UpgAbsXW M (r + L) ρ)
     (hstep : ∀ j, r ≤ j → j < r + L →
       DropHyp (M.take (j + 1)) j (drop1 M (j + 1) rkM) (drop1 M j rkM)) :
     ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 0) ρN ∧ Rk (TRIO.gexp M r L d0 0 0) rkN ∧
@@ -147,7 +147,7 @@ theorem qr_n0r {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
-    (hUA : UpgAbsX M (r + L) ρ)
+    (hUA : UpgAbsXW M (r + L) ρ)
     (hres : ∀ j, r ≤ j → j < r + L →
       DropRes (M.take (j + 1)) j (drop1 M (j + 1) rkM) (drop1 M j rkM)) :
     ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 0) ρN ∧ Rk (TRIO.gexp M r L d0 0 0) rkN ∧

@@ -527,7 +527,7 @@ structure DropRes (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
     ∀ g ∈ comps (σ.v i) y, g ≤ step (σ.v i) (spArg (σ.v i) z (sumN (Lc.map σ.o))) s y z
   vst : VSmallNew N x σ σ'
   ws : BumpWeakSrc N x σ σ'
-  ua : UpgAbsX N x σ
+  ua : UpgAbsXW N x σ
   ab : BumpAbsC N x σ
 
 theorem DropHypV.of {N : Mat} {x : Nat} {σ σ' : Valn} (hI : ValInv N σ) (hD : DropRes N x σ σ') :
@@ -564,7 +564,7 @@ theorem t1_n0r {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length)
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
-    (hUA : UpgAbsX M (r + L) ρ)
+    (hUA : UpgAbsXW M (r + L) ρ)
     {ζ μ : T} (hVL : ∀ i, i < r + L → DepX M (r + L) false i → VLocal M (r + L) ρ ζ μ i)
     (hres : ∀ j, r ≤ j → j < r + L →
       DropRes (M.take (j + 1)) j (drop1 M (j + 1) rkM) (drop1 M j rkM)) :

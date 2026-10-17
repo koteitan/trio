@@ -31,9 +31,16 @@ def T2Seed1C : Prop :=
     par M 0 (r + L) = some q → q ≠ r → par M 0 q = some pq → q ∉ CL M pq →
     (drop1 M (r + L) rk).o pq ≠ ρ.o pq
 
+/-- **The strong absorption at `x − 1` for `t = 2`, outside the shape `T2UABad`** (2026-10-12, drop-fix:
+`DropRes.ua` is now the weak `UpgAbsXW`. 2026-10-17: the strong form alone is false on T2Ext (175 matrices on the
+11 sets, 89 of std_b), all of the shape `T2UABad`; with the exception the 11 sets and std_b have no counterexample). -/
+def T2UpgAbsW : Prop :=
+  ∀ M ρ rk, Std M → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    TRIO.srow M (M.length - 1) = 2 → UpgAbsX M (M.length - 1) ρ ∨ T2UABad M (M.length - 1)
+
 /-- **`hR2` for `t = 2`** from `T2BelowXRes` and the two seed1 residuals. -/
 theorem hR2_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
-    (hSV : T2Seed1SV) (hQC : T2Seed1C) :
+    (hSV : T2Seed1SV) (hQC : T2Seed1C) (hU2 : T2UpgAbsW) :
     Std M → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk := by
   intro hM I R hz h2
@@ -126,7 +133,8 @@ theorem hR2_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXR
     exact ne_of_lt (o_strict_cl_x hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1
       (hdropOf r L hlen) hrx hxin)
   refine ⟨fun r L hlen hr n σ hn hCN _ => (hbig r L hlen hr n σ hn hCN).2,
-    fun r L qp pq hlen hr hq hqp hpq => ⟨?_, ?_⟩, fun r L hlen hr hq => ⟨?_, ?_, ?_, ?_⟩⟩
+    fun r L qp pq hlen hr hq hqp hpq => ⟨?_, ?_⟩, fun r L hlen hr hq => ⟨?_, ?_, ?_, ?_⟩,
+    hU2 M ρ rk hM I R hz h2⟩
   · -- `q ≠ r`: seed1 at `pq`
     have hqx : r + qp < r + L := par_lt M 0 _ _ hq
     by_cases hcl : r + qp ∈ CL M pq

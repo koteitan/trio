@@ -20,7 +20,7 @@ open T
 structure DropResR (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
   vst : VSmallNew N x σ σ'
   ws : BumpWeakSrc N x σ σ'
-  ua : UpgAbsX N x σ
+  ua : UpgAbsXW N x σ
   ab : BumpAbsC N x σ
   vnr : VSmallNewR N x σ σ'
   sh : ShadowC N x σ σ'

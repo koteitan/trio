@@ -195,15 +195,15 @@ theorem t2Seed1C_holds : T2Seed1C := by
   exact ne_of_lt hlt
 
 /-- **`hR2` for `t = 2`** from `T2BelowXRes` only. -/
-theorem hR2_t2_ofW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) :
+theorem hR2_t2_ofW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hU2 : T2UpgAbsW) :
     Std M → Inv3W M ρ rk → Res3W M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk :=
-  hR2_t2 hB t2Seed1SV_holds t2Seed1C_holds
+  hR2_t2 hB t2Seed1SV_holds t2Seed1C_holds hU2
 
 /-- **`hR2` for `t = 2`** from `T2BelowXRes` only (the form with `Inv3`・`Res3`). -/
-theorem hR2_t2_of (hB : T2BelowXRes) :
+theorem hR2_t2_of (hB : T2BelowXRes) (hU2 : T2UpgAbsW) :
     ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk :=
-  fun M ρ rk hM I R => hR2_t2_ofW (hB M ρ rk) hM I.toW R.toW
+  fun M ρ rk hM I R => hR2_t2_ofW (hB M ρ rk) hU2 hM I.toW R.toW
 
 end Ytosk

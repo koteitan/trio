@@ -997,7 +997,7 @@ bounds `hVR` (old child) and `hVNR` (a changed subscript) are needed only when t
 theorem relR_frame {q a B s y s' y' : T}
     (hc : isOT (psi s y z) = true) (hc' : isOT (psi s' y' z) = true)
     (hBc : ∀ r ∈ summands B, psi s y z ≤ r)
-    (hrel : (LhdE (psi s' y' z) (psi s y z) ∧ (y' ≠ z → s' = s)) ∨ (y' = z ∧ y = z ∧ WkVA s' s ∧ WCS a s'))
+    (hrel : (LhdE (psi s' y' z) (psi s y z) ∧ (y' ≠ z → s' = s)) ∨ (y' = z ∧ WkVA s' s ∧ WCS a s'))
     (hX' : isOT (psi a (step a B s' y' z) z) = true) (hY0 : isOT (psi a (step a B s y z) z) = true)
     (hN : LhdE (psi a (step a B s' y' z) z) (psi a (step a B s y z) z))
     (hRC : s' = s → ∀ q', ¬ lt s q' = true →
@@ -1029,7 +1029,7 @@ theorem relR_frame {q a B s y s' y' : T}
     fun u hu h => hu (lt_of_le_of_lt (not_lt.mp hqa) (show a < u from h))
   have hc'z : psi s' y' z ≠ z := by simp
   have hc'c : psi s' y' z ≤ psi s y z := by
-    rcases hrel with ⟨h, _⟩ | ⟨rfl, rfl, hw⟩
+    rcases hrel with ⟨h, _⟩ | ⟨rfl, hw⟩
     · exact h.le
     · exact le_of_lt (psi_lt_psi_z_iff.mpr (Or.inl hw.1.1))
   have hBc' : ∀ r ∈ summands B, psi s' y' z ≤ r := fun r hr => le_trans hc'c (hBc r hr)
@@ -1039,7 +1039,7 @@ theorem relR_frame {q a B s y s' y' : T}
   have happ : ¬ (lt B y = true ∧ lt (psi a z z) (psi s y z) = true) →
       step a B s y z = app B (psi s y z) := by
     intro hn; unfold step; rw [if_neg hn]; exact add_eq_app_of_ge ⟨s, y, rfl⟩ B hBc
-  rcases hrel with ⟨hle, hss⟩ | ⟨rfl, rfl, hwk⟩
+  rcases hrel with ⟨hle, hss⟩ | ⟨rfl, hwk⟩
   · rcases hle with heq | hl
     · simp only [psi.injEq] at heq; obtain ⟨rfl, rfl, -⟩ := heq; exact relR_refl _ _
     by_cases ht' : lt B y' = true ∧ lt (psi a z z) (psi s' y' z) = true
@@ -1145,21 +1145,42 @@ theorem relR_frame {q a B s y s' y' : T}
               psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_of_le_of_ne (z_le _) (Ne.symm hy)⟩)
             have hyB : y' ≤ B := not_lt.mp (fun h => ht' ⟨h, hs'a⟩)
             exact lt_of_le_of_lt hyB (lt_app_of hc'z)
-  · -- weak child
+  · -- weak child `ψ_{s′}(0)` (2026-10-12: the old child `ψ_s(y)` may have `y ≠ 0` and rewrite)
     have hn' : ¬ (lt B z = true ∧ lt (psi a z z) (psi s' z z) = true) := fun h => T.not_lt_z _ h.1
-    have hn : ¬ (lt B z = true ∧ lt (psi a z z) (psi s z z) = true) := fun h => T.not_lt_z _ h.1
+    have hc'lt : psi s' z z < psi s y z := psi_lt_psi_z_iff.mpr (Or.inl hwk.1.1)
     rw [happ' hn'] at hX' hyp'
-    rw [happ hn] at hY0
-    rw [happ' hn', happ hn] at hN ⊢
-    refine rc_nn (psi_lt_psi_z_iff.mpr (Or.inl hwk.1.1)) hBc hX' hY0 hN ?_ ?_ hyp'
-    · intro c0 _ _ u hu g hg
+    rw [happ' hn'] at hN ⊢
+    have hkey0 : ∀ u, ¬ lt q u = true → ∀ g ∈ comps u (psi s' z z),
+        g < app B (psi s' z z) ∨ ∃ d ∈ comps u a, g ≤ d := by
+      intro u hu g hg
       rcases self_small_weakA hwk.2 hwk.1.2.1 u (hau u hu) g hg with h1 | h1
       · left
         have hne : g ≠ psi s' z z := by
           intro h; have := size_comps hg; rw [h] at this; omega
         exact lt_of_lt_of_le (lt_of_le_of_ne h1 hne) (le_app_psi hBc')
-      · right; right; exact h1
-    · intro hθ; exact psi_lt_psi_app hθ (z_lt_app_psi _ _ _)
+      · exact Or.inr h1
+    by_cases ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true
+    · -- the old child rewrites
+      have e : step a B s y z = H s y := by unfold step; rw [if_pos ht]
+      rw [e] at hY0 ⊢
+      by_cases hpre : ∃ R, (split y (psi (succ s) z z)).1 = app B R
+      · obtain ⟨R, hR⟩ := hpre
+        have hH : app B (psi s' z z) ≤ H a (app B (psi s' z z)) := le_H hX'
+        refine rc_tn_core hc hc'lt (fun hθ => psi_lt_psi_app hθ (z_lt_app_psi _ _ _)) ht hR hX' hY0 ?_ hyp'
+        intro u hu g hg
+        rcases hkey0 u hu g hg with h | ⟨d, hd, hgd⟩
+        · exact Or.inl (lt_of_lt_of_le h hH)
+        · rcases hyp' u hu d hd with h' | ⟨d', hd', hdd'⟩
+          · exact Or.inl (lt_of_le_of_lt hgd h')
+          · exact Or.inr (Or.inr (Or.inr ⟨d', hd', le_trans hgd hdd'⟩))
+      · exact relR_of_closed hX' hqa (hSh ht hn' hpre) hyp'
+    · rw [happ ht] at hY0 hN ⊢
+      refine rc_nn hc'lt hBc hX' hY0 hN ?_ ?_ hyp'
+      · intro c0 _ _ u hu g hg
+        rcases hkey0 u hu g hg with h1 | h1
+        · exact Or.inl h1
+        · right; right; exact h1
+      · intro hθ; exact psi_lt_psi_app hθ (z_lt_app_psi _ _ _)
 
 /-- **A non-rewriting tail `T` only raises the top** (general form of `relR_tl`). -/
 theorem relR_tail {q p b Y0 T0 : T} (hR : RelR q b (H p Y0)) (hb : b ≤ H p Y0)

@@ -19,6 +19,7 @@ import Ytosk.V3ExpT1Inv2
 import Ytosk.V3VSRAllDrop
 import Ytosk.V3T0VSRAllN
 import Ytosk.V3S1Std
+import Ytosk.V3QRWeak
 
 namespace Ytosk
 
@@ -50,11 +51,11 @@ def FrameMapT1 (M : Mat) (ρ : Valn) (r L : Nat) (N : Mat) (σ : Valn) : Prop :=
       (lt (spArg (ρ.v (phiT1 r L k)) z (sumN (Lc'.map ρ.o))) yM = true ∧
         lt (psi (ρ.v (phiT1 r L k)) z z) (psi s yM z) = true)) ∨
     (phiT1 r L k = r ∧ phiT1 r L c = r ∧ σ.v k = ρ.v r ∧
-      ∀ u, ∀ g ∈ comps u s, g ≤ z ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d)
+      ∀ u, ∀ g ∈ comps u s, g ≤ psi s z z ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d)
 
 /-- The components of `v(r)` in `N` are dominated by those in `M` (when `q = r`). -/
 def VrDomQ (M : Mat) (ρ : Valn) (r L : Nat) (_N : Mat) (σ : Valn) : Prop :=
-  par M 0 (r + L) = some r → ∀ u, ∀ g ∈ comps u (σ.v r), g ≤ z ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d
+  par M 0 (r + L) = some r → ∀ u, ∀ g ∈ comps u (σ.v r), g ≤ psi (σ.v r) z z ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d
 
 section
 variable {M : Mat} {ρ : Valn} {r L : Nat} {N : Mat} {σ : Valn}
@@ -96,7 +97,7 @@ theorem vsmallRAll_of_mapT1 (hF : FrameMapT1 M ρ r L N σ) (hVA : VSmallRAll M 
         · exact Or.inr (by rw [hφ]; exact h)
     exact hVA _ _ Lc' R' s yM hM hsyM htM (split_hi_ne_z_of_le hyy hhz) u hu' hku g hg
   · rcases hdom u g hg with h | ⟨d, hd, hgd⟩
-    · exact Or.inl (le_trans h (z_le _))
+    · exact Or.inl h
     · exact Or.inr (Or.inr ⟨d, hv ▸ hd, hgd⟩)
 
 end
@@ -295,7 +296,7 @@ end
 theorem frameMapT1_take {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {r L : Nat} (S : SInv M)
     (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take (r + L)) ρ') (hRk' : Rk (M.take (r + L)) rk)
     (hlen : r + L + 1 = M.length) (hx2 : entry M 2 (r + L) = 0)
-    (hdrop : ∀ i, i < r + L → PO ρ ρ' i ∧ PV M ρ ρ' i) :
+    (hdrop : ∀ i, i < r + L → PO ρ ρ' i ∧ PV M ρ ρ' i) (hUA : UpgAbsXW M (r + L) ρ) :
     FrameMapT1 M ρ r L (M.take (r + L)) ρ' ∧ VrDomQ M ρ r L (M.take (r + L)) ρ' := by
   constructor
   · intro k c Lc R s y hcl hsy ht
@@ -316,14 +317,26 @@ theorem frameMapT1_take {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {r
       · obtain ⟨d, hd, hgd⟩ := h.2 u (ρ.v r) h.1 (le_refl _) g hg
         rcases List.mem_append.mp hd with hd | hd
         · exact Or.inr ⟨d, hd, hgd⟩
-        · simp [Gc, comps] at hd; subst hd; exact Or.inl hgd
-    · exfalso
-      have hxch : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hq⟩
-      apply hnc (r + L) hxch
-      refine ⟨fun h => ?_, fun h => ?_⟩
-      · have : entry M 2 (r + L) = (bump M r).2.2 := by rw [← h]; rfl
-        rw [hx2] at this; simp [bump] at this
-      · rw [not_isUpg_e2z hx2] at h; cases h.1
+        · simp [Gc, comps] at hd; subst hd; exact Or.inl (le_trans hgd (z_le _))
+    · rcases hnc with hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩
+      · exfalso
+        have hxch : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hq⟩
+        apply hn (r + L) hxch
+        refine ⟨fun h => ?_, fun h => ?_⟩
+        · have : entry M 2 (r + L) = (bump M r).2.2 := by rw [← h]; rfl
+          rw [hx2] at this; simp [bump] at this
+        · rw [not_isUpg_e2z hx2] at h; cases h.1
+      · -- `r = x − 1` lost its upgrade: `v′(r) = v(P_1 r) + 1`, whose components are below `Ω_{v′(r)}`
+        rcases hUA r k W (by omega) hu hvk hWz with h | ⟨_, hSm, _, _⟩
+        · exact absurd h hbad
+        · have h12 := upg_e12 hu
+          have h2r : entry M 2 r = 0 := by have := S.z2 r; omega
+          have hvr := v_last_take (x := r + L) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hC hG hC' hRk'
+            (r := r) (by omega) h12.1 h2r
+          have hVot : isOT (add (vOpt ρ (par M 1 r)) one) = true :=
+            isOT_add (vOpt_ot hG (by omega)) isOT_one
+          rw [hvr, sf_ot hVot] at hg ⊢
+          exact Or.inl (le_of_lt (hSm g (comps_mono (z_le u) hg)))
 
 /-- **`ExpT1OutV2` from the frame and leaf residuals and `S1`** (VSmallRAll is proved, `expStep_frameMapT1`). -/
 theorem expT1Out_V2 (hF : HFrameV2) (hLf : HLeafV2) (hS1 : S1Std) : ExpT1OutV2 := by
@@ -367,7 +380,7 @@ theorem expT1Out_V2 (hF : HFrameV2) (hLf : HLeafV2) (hS1 : S1Std) : ExpT1OutV2 :
       (FrameMapT1 M ρ r L (M.take (r + L)) (drop1 M (r + L) rk) ∧
         VrDomQ M ρ r L (M.take (r + L)) (drop1 M (r + L) rk)) :=
     ⟨(t1_base S I hlen hr hdr hI1).1,
-      frameMapT1_take S I.cons I.good hI1.cons hI1.rank hlen hx2 hdrop⟩
+      frameMapT1_take S I.cons I.good hI1.cons hI1.rank hlen hx2 hdrop hdr.ua⟩
   rw [hexp] at hStdN ⊢
   have hfin : ∃ ρN rkN, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN ∧
       Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) rkN ∧

@@ -16,16 +16,16 @@ import Ytosk.V3T2SeedOTP
 namespace Ytosk
 
 /-- **The current top theorem.** The hypotheses are the named residuals:
-drop `HDropV2`・`HSeedV2`; shared `HFrameV2`・`HLeafV2`; t0 `T0RwRes`・`T0AbWRes`;
+drop `HDropV2W`・`HSeedV2`, the strong absorption at `t = 0` `T0UpgAbsV2` (t0); shared `HFrameV2`・`HLeafV2`; t0 `T0RwRes`・`T0AbWRes`;
 t2 the closedness of the seed argument `T2SeedClV2` (qn・sv・C), the bump monotonicity `T2BumpMonoV2`,
-the seed standard forms for qn・C `T2SeedOTRestV2`, the seed residual `T2SeedPResRCV2`, `T2SeedDomV2`, `FDsh`,
+the strong `UpgAbsX` at the last column `T2UpgAbsW` (drop-wkx2), the seed standard forms for qn・C `T2SeedOTRestV2`, the seed residual `T2SeedPResRCV2`, `T2SeedDomV2`, `FDsh`,
 the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`), the prefix shape of the seed frames for sv・C
 (`T2SeedPreShapeSVC`), the copy levels `T2VRACopy`; t1 the `σ`-step at the guarded copy frames
 `T2VRAK KStepVRA`; top `HSibHardV2`. -/
-theorem trio_terminates_main_V2_cur (hD : HDropV2) (hSd : HSeedV2)
+theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hRw : T0RwRes) (hAbW : T0AbWRes)
-    (hCl : T2SeedClV2) (hBM : T2BumpMonoV2) (hOT : T2SeedOTRestV2) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2)
+    (hCl : T2SeedClV2) (hBM : T2BumpMonoV2) (hU2 : T2UpgAbsW) (hOT : T2SeedOTRestV2) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2)
     (hDom : T2SeedDomV2) (hFD : FDsh)
     (hQNG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
@@ -39,8 +39,8 @@ theorem trio_terminates_main_V2_cur (hD : HDropV2) (hSd : HSeedV2)
     (hVK : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KStepVRA M) : WellFounded Step' :=
   have hP : T2SeedPResV2 := t2SeedPResV2_of (t2SeedPResR_of_sib (hSib_of_hard hSib) hPR)
-  trio_terminates_main_V2_base hD hSd hF hLf hRw hAbW
-    (t2BelowXResV2_of hRw (t2BelowRV2_of hP hCl hBM) hP (t2SeedOTV2_of hP hOT))
+  trio_terminates_main_V2_base (hDropV2_of hDW hU0) hSd hF hLf hRw hAbW
+    (t2BelowXResV2_of hRw (t2BelowRV2_of hP hCl hBM) hP (t2SeedOTV2_of hP hOT)) hU2
     hPR hSib hDom hFD hQNG hSVCG
     (fun M ρ rk C hz h2 => t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2))
     hVCp hVK

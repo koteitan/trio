@@ -17,10 +17,18 @@ import Ytosk.V3SeedLhd
 import Ytosk.V3MainT1F
 import Ytosk.V3DropPres
 import Ytosk.V3TrigSeed
+import Ytosk.V3QRWeak
 
 namespace Ytosk
 
 open T
+
+/-- The `upg` field of `AbsSR` in the shape of the `q = r` engine (`L = 1`, `x − 1 = r`). -/
+theorem AbsSR.upgX {M : Mat} {ρ : Valn} (h : AbsSR M ρ) {r L : Nat} (hlen : r + L + 1 = M.length)
+    (h1 : par M 1 (r + L) = some r) (hq : par M 0 (r + L) = some r) : L = 1 → UpgAbsX M (r + L) ρ := by
+  intro hL1 i k W hi hu hv hW
+  have e : M.length - 1 = r + L := by omega
+  exact h.upg r (by rw [e]; exact h1) (by rw [e]; exact hq) (by omega) i k W (by omega) hu hv hW
 
 /-- **`t = 1`, `q = r`, all `n ≥ 2`**, with the seed conditions from the drop lemma. -/
 theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
@@ -37,7 +45,7 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsX M (r + L) ρ)
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsXW M (r + L) ρ)
     -- value invariants
     (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUWL M ρ) (hAD' : AbsDW M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
@@ -107,13 +115,38 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
   have hlt : seed < ρ.o r := dep_strict0 hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop hx2 hq hxv
     true r hdep.1 hr
   obtain ⟨hPO, hsing⟩ := (hdrop r hr).1
-  have hlhd : Lhd z seed (ρ.o r) := by
-    rcases hPO with hl | ⟨_, w, hw⟩
+  -- the seed: `◁ o(r)`, or (only at `r = x − 1`, which lost its upgrade) `Ω_{w′}` with `SmallSelf w′`
+  have hold : (LhdE seed (ρ.o r) ∨ (WkOA seed (ρ.o r) ∧ ∃ w, ρ.o r = psi w z z)) → Lhd z seed (ρ.o r) := by
+    intro h
+    rcases h with hl | ⟨_, w, hw⟩
     · rcases hl with he | hl
       · exact absurd (he ▸ hlt) (lt_irrefl' _)
       · exact hl
     · rw [hro] at hw
       exact absurd (T.psi.inj hw).2.1 (fun he => absurd (app_eq_z he).2 (by simp))
+  have hseedC : Lhd z seed (ρ.o r) ∨ ∃ w', seed = psi w' z z ∧ w' < μ ∧ SmallSelf w' := by
+    rcases hPO with hl | ⟨hW, hw | hnl⟩
+    · exact Or.inl (hold (Or.inl hl))
+    · exact Or.inl (hold (Or.inr ⟨hW, hw⟩))
+    rcases (hdrop r hr).2.1 with hl | ⟨hWV, _, hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩⟩
+    · exact absurd hl hnl
+    · exact Or.inl (hold (Or.inr ⟨hW, _, o_of_no_counted hC hrM (hG.ot_v r hrM) hn⟩))
+    rcases hUA r k W (by omega) hu hvk hWz with h | ⟨_, hSm, _, _⟩
+    · exact absurd h hbad
+    have h12 := upg_e12 hu
+    have h2r : entry M 2 r = 0 := by have := hZ2 r; omega
+    have hvr := v_last_take (x := r + L) (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1
+      (r := r) (by omega) h12.1 h2r
+    have hVot : isOT (add (vOpt ρ (par M 1 r)) one) = true := isOT_add (vOpt_ot hG hrM) isOT_one
+    rw [sf_ot hVot] at hvr
+    obtain ⟨w', w, X, hs, _, _⟩ := hW
+    obtain ⟨σ0, hs0⟩ := o_psi_sub hC1 hrT
+    rw [hs] at hs0
+    simp only [psi.injEq] at hs0
+    have hw' : w' = (drop1 M (r + L) rkM).v r := by rw [hs0.1, sf_ot (hdrop r hr).2.2]
+    rw [hw'] at hs
+    refine Or.inr ⟨_, hs, hWV.1, ?_⟩
+    rw [hvr]; exact hSm
   -- the form of the seed
   obtain ⟨σ1, hs1⟩ := o_psi_sub hC1 hrT
   set s1 := sf ((drop1 M (r + L) rkM).v r) with hs1def
@@ -128,20 +161,30 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
   have hS : ∀ a', ¬ lt μ a' = true → isOT (psi a' (app b (psi (succ μ) z z)) z) = true →
       SeedOK a' (app b (psi (succ μ) z z)) μ seed := by
     intro a' ha' hot'
-    rw [hs1']
-    have hsub := hlt'
-    rw [psi_lt_psi_z_iff] at hsub
-    rcases hsub with hsμ | ⟨hsμ, hσb⟩
-    · -- the subscript is below `μ`
-      apply seedOK_of_lhd_below ha' hsot hsμ
-      · rw [← hro, ← hs1']; exact hlhd
-      · have h := hcs hsμ a' ha' hot'
-        rw [hs1'] at h; exact h
-    · -- the subscript is `μ`
-      rw [hsμ] at hsot ⊢
-      have hl' : Lhd z (psi μ σ1 z) (psi μ (app b (psi (succ μ) z z)) z) := by
-        rw [← hro]; rw [hs1', hsμ] at hlhd; exact hlhd
-      exact seedOK_of_lhd_top hot' cof_br ha' hsot hσb hl'
+    rcases hseedC with hlhd | ⟨w', hw', hwμ, hsm⟩
+    · rw [hs1']
+      have hsub := hlt'
+      rw [psi_lt_psi_z_iff] at hsub
+      rcases hsub with hsμ | ⟨hsμ, hσb⟩
+      · -- the subscript is below `μ`
+        apply seedOK_of_lhd_below ha' hsot hsμ
+        · rw [← hro, ← hs1']; exact hlhd
+        · have h := hcs hsμ a' ha' hot'
+          rw [hs1'] at h; exact h
+      · -- the subscript is `μ`
+        rw [hsμ] at hsot ⊢
+        have hl' : Lhd z (psi μ σ1 z) (psi μ (app b (psi (succ μ) z z)) z) := by
+          rw [← hro]; rw [hs1', hsμ] at hlhd; exact hlhd
+        exact seedOK_of_lhd_top hot' cof_br ha' hsot hσb hl'
+    · -- the weak seed `Ω_{w′}`
+      have hs1w : s1 = w' := by
+        have h := hs1'.symm.trans hw'
+        simp only [psi.injEq] at h; exact h.1
+      have hsμ : lt s1 (ρ.v r) = true := by rw [hs1w]; exact hwμ
+      have hca := hcs hsμ a' ha' hot'
+      rw [hw'] at hca ⊢
+      have hsotw : isOT (psi w' z z) = true := by rw [← hw']; exact hsing.1
+      exact seedOK_of_small_below hb hsotw hwμ hsm hca
   -- the (L)(ii) at the seed
   have hLs : ∀ c, c < r + L → DepX M (r + L) true c →
       dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →

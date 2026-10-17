@@ -118,11 +118,13 @@ residuals: drop `HDropV2`・`HSeedV2`; shared `HFrameV2`・`HLeafV2`; t0 `T0RwRe
 t2 `T2BelowXRes`・`T2SeedPResRCV2`・`T2SeedDomV2`・`FDsh`・the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`)・
 the prefix shape `T2SeedPreShape`・the copy levels `T2VRACopy`・the `σ`-step at the guarded copy frames
 `T2VRAK KStepVRA` (t1); top `HSibHardV2`.
-None of them is the false strong absorption `HAbSV2`. -/
+None of them is the false strong absorption `HAbSV2`. (2026-10-17, drop: also `T2UpgAbsW`, the strong `UpgAbsX`
+at the last column for `t = 2`, which the drop lemma no longer gives. The `t = 1` analogue `T1UpgQRV2` is removed:
+t1 handles the weak seed with `SmallSelf` in `qr_final3`.) -/
 theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hRw : T0RwRes) (hAbW : T0AbWRes)
-    (hB : T2BelowXResV2) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
+    (hB : T2BelowXResV2) (hU2 : T2UpgAbsW) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
     (hFD : FDsh)
     (hQNG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
@@ -142,8 +144,8 @@ theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
   terminates_of_desc3 (desc3_V2O hD hSd (hTake_of_glob hF hLf)
     (expT0Out_of4 hRw hAbW (t0Leaf_of_glob hLf) (t0Frame_of_glob hF))
     (expT1Out_V2_glob hF hLf)
-    (expT2V2_of hB (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
+    (expT2V2_of hB hU2 (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
       (t2VRAV2_of qVRAshK_step hB (t2VRASeedG_of hB hP hPreG hQNG hSVCG) hPreG hVCp hVK) hF hLf)
-    (r2V2_of hB))
+    (r2V2_of hB hU2))
 
 end Ytosk

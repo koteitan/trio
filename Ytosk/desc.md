@@ -3634,3 +3634,38 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 停止時（2026-10-17、lead の指示）に止めた。どの集合も済んでいない: bumpmono.py（T2BumpMono、TleN の欄。MleN は偽で参考）と preshape.py（T2SeedPreShape、全場合）。d3s 400 行列の試しでは TleN 例外 0。結果の置き場 tmp/t2/bumpmono_all.txt・preshape_all.txt。
 - 再開: `env --chdir=/home/koteitan/proofs/trio/tmp/t2/probes nice -n 15 python3 bumpmono.py Cprime deep2 deep3 d3s expP ext1 ext1x t2ext ext2 std_a`、続けて `… preshape.py <同じ 10 集合>`（4 プロセス、1 本ずつ）。
 - 停止時のブランチ: t2 の作業はすべて main（d2656d1d まで）。私的な worktree trio/tmp/t2/wt（t2-work）は main と同じ。測定スクリプトは trio/tmp/t2/probes/（seedrr3.py・bumpmono.py・preshape.py）。最上位の変種は _cur・_t2B・_t2C の 3 つ（top が 1 つにまとめる予定）。
+
+### drop-wkx2 を main に入れる・t = 2 の強い吸収を悪い形だけに（2026-10-17、lead）
+
+**最上位を 1 本に**（758b16c6）: `trio_terminates_main_V2_cur`（V3TopT2B）が今の最上位。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base`（V3TopV2）にした。
+
+**drop-wkx2 のマージ**（ブランチ drop-wkx3 の 86852b2d を main に写した。全体ビルド緑 1045 jobs、公理は標準の 3 つ）: drop-wkx2（UpgAbsXW の x − 1 の族の直し、WeakCS、SmallSelf(V + 1)、t1 の q = r の偽の仮定 hUA1・T1UpgQRV2 の除去）に main をマージした（ブランチ drop-wkx3）。t2 のエンジンは main の「M ごとの hB」の形に、drop 側の引数 hU2 を足した。
+
+**偽の T2UpgAbs を外した**（V3T2QUBad・V3T2Top・V3MainV2・V3T2G・V3DepLhd）:
+
+- drop-wkx2 は落とす補題の ua を弱い UpgAbsXW にし、t = 2 の下降が使う強い吸収（x − 1 の上げで、V の加数が W に ◁）を残り `T2UpgAbs` にしていた。これは偽: 11 集合で 175 件（t2ext 141・expP 32・deep2 1・std_a 1）。
+- 破れはどれも同じ形 `T2UABad`: q = P_0 x と r = P_2 x がどちらも x − 1、x − 1 は祖先 k < x へ上げる、r の親 pr はのりしろの子でない（tmp/lead/probes/t2ua.py・t2ua2.py）。例 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,1)。
+- この形では v′(r) = V + 1 は v(r) = V + W に ◁ で下がらず、o′(r) = ψ_{V+1}(0) も o(r) に ◁ で下がらない。しかし親 pr では o′(pr) ◁ o(pr) が成り立つ（175 件すべて）。
+- **`t2_qu_take_bad`**: この形の n ≤ 1（M[n] = M.take x）の下降。r の o と v を弱い呼び出し W（≤ だけを運ぶ）にし、種を o(pr) にする。
+  - o′(pr) ◁ o(pr): 落とす補題の PO は pr ≠ x − 1 で LhdE か弱い形（o(pr) = ψ_w(0)）。pr は数える子 r を持つので弱い形はない。等号は `o_strict_frame`（r は pr の最後の数える子、o′(r) < o(r) は x を失うことから）で除く。
+  - v(r) を読む列はない（r の行 2 は 0 なので上げの的にならない）。r は pr の数える子（行 2 が 0 なので上げの的でも pr ののりしろの子でもない）。
+  - 種の集合 SV r r ∪ {o(pr)} の D は SV r r の D と同じ（`depS_SVp`）。t2_qu_take の形の仮定をそのまま使える。
+- 一般化: `deps_lhd_genW2`・`t2_assemble2` は弱い呼び出しに v を許す（W false i なら W true i で、i は上げの的でない）。種の仮定は W でない種だけ。旧い名前は包みとして残した。
+- **形を広げた**: std_b（740 万個）で測ると、形に入らない破れが 1 件あった: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,1)(6,2,0)(5,3,1)。q = r = 10 だが r ≠ x − 1（L = 3）で、上げを失う x − 1 = 12 は r の孫。x − 1 の親 11 では ◁ が戻る。そこで `T2UABad` から r = x − 1 を外し、「q = r（P_0 x = P_2 x）、x − 1 は k < x へ上げる、x − 1 の親 pr はのりしろの子でない」にした。`t2_qu_take_bad` は x − 1 の o と v を弱い呼び出しにし、種を o(r)（r ≠ x − 1 なら PO.zero_of_ne から）と o(pr) にする。o′(x − 1) < o(x − 1) は、r = x − 1 なら x を失うことから、r ≠ x − 1 なら上げを失って v が下がること（`v_upg_drop_lt`）から。pr = r なら種 o(r) そのもの。
+- 残り `T2UpgAbsW`（V3T2R2）: 強い吸収、または形 `T2UABad`。11 集合と std_b で例外 0（std_b の t = 2 型の破れ 89 件、tmp/lead/probes/uaw0b.py）。Res3T2.ua もこの形。t2_dropsC・t2_drops_ge は qr の上げの場合で `T2UABad` なら `t2_qu_take_bad`、それ以外の場合（nn・sv・qn）は `T2UABad` と矛盾するので強い形が出る。
+
+**測定**（drop-wkx2 の新しい定義、11 集合）:
+
+- `probe_uaw1`（新しい UpgAbsXW）: std_a で 2 件偽（UAW1.failures）。t = 0 型（x の行 1 が 0）で、弱い選択肢を使えない場合: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(4,0,0) と、最後を (5,0,0) にしたもの。どちらも x − 1 = (4,2,0) が祖先 6 への上げを失う族（t2ext の族の x を t = 0 にしたもの）。弱い選択肢の中身（WCSP・SmallSelf・NBPar）は成り立つ。main の強い形も同じ行列で偽なので、drop-wkx2 は偽の範囲を狭めている。
+  - 1 件目は r = P_0 x = 6 ≠ x − 1 で、弱く下がるのは x の兄弟 9。o′(r) ◁ o(r) は成り立つ。
+  - 2 件目は r = x − 1 = 9 で、o′(r) ◁ o(r) は偽、親 6 では成り立つ（t = 2 の悪い形と同じ）。
+  - std_b では t = 0 の破れが 240 件: r = x − 1 が 105 件、x − 1 が r の子（x の兄弟）が 117 件、どちらでもない（x − 1 は r のより深い子孫）が 18 件。どれも r はのりしろの子でなく、o′(P_0 r) ◁ o(P_0 r) は成り立つ。o′(r) ◁ o(r) は r = x − 1 の 105 件だけで偽（tmp/lead/probes/t0ua.py）。
+  - **最上位の残りを分けた**（V3MainT1D・V3DropH・V3ResV2・V3TopT2B）: 弱い選択肢に行 1 の条件をつけない `UpgAbsXW0` と、それを ua に持つ `DropResH0`、最上位の残り `HDropV2W`（すべての標準形で DropResH0）。t = 0 の強い吸収は名前つきの残り `T0UpgAbsV2`（標準形で x の行 1 が 0 なら x − 1 で UpgAbsX）にした。`hDropV2_of : HDropV2W → T0UpgAbsV2 → HDropV2`（`UpgAbsXW.of0`）。落とす補題とエンジンの型（UpgAbsXW）は変えていない。
+  - **t = 0 の易しい形では強い吸収を使わない**（V3DropMain・V3MainT1D・t = 0 のエンジン 10 個）: `T0Easy M x` = x の親 r が x − 1 でなく、r はのりしろの子でない。UpgAbsXW の第 3 条件を「x の行 1 ≠ 0 か T0Easy」にした。エンジンの強い形の使い所は、r での PO（`PO.zero_t0`: r ≠ x − 1 なら PO.zero_of_ne）、r での CntX（`CntX.nocnt_t0`）、のりしろの場合の v_lhd_B（`toX_bump`）、r = x − 1 の場合（`toX_xm1`）に分けた。t0_otdS は弱い形を受ける。
+  - 残り `T0UpgAbsV2` は「t = 0 で ¬T0Easy なら強い形」に狭まった。偽なのは r = x − 1 の形だけ（std_a 1 件・std_b 105 件。のりしろの形の破れは 0 件）。
+  - r = x − 1 の形の調べ: L = 1 で M[n] = M.take r の後ろに r の写しが n 個。最後の写し以外は上げを保ち（次の列も r の写しで、上げ先の祖先を通る）o = omid = ψ_{v(r)}(0)、最後の写しは上げを失い o = X′ = ψ_{V+1}(0)。M[n] の親 g では o_N(g) ◁ o_M(g) が成り立つ（例の n = 1〜4）。しかし t0_S1 の核 `s1_core` は X′ ◁ ψ_{v(r)}(1)（hl）か X′ ◁ omid を使い、どちらも偽（tmp/lead/probes/t0b.py）。和の中で前の omid の写しが X′ の成分を押さえることを使う、◁_η 型の節点の補題が要る。
+- `probe_pv2`（11 集合）: F5（WeakCS）・F6（BumpWeakSrc の形）・F7（新しい PV）は例外 0。F0（旧い PV）は expP で 100 件偽（直しの対象）、F2（参考の欄）は ext1 で 1 件。
+- `UpgAbsXW0`（HDropV2W の ua）の弱い選択肢: std_b の破れ 899 件で例外 0（tmp/lead/probes/uaw0.py）。11 集合は probe_uaw1 の core 欄で例外 0。
+- t = 0 の r = x − 1 の形の核 `s1_core_weak`（V3T0Weak、緑）: g の枠で omid の写しが m ≥ 1 個あり最後の子が弱い葉 ψ_{w′}(0)（w′ < v、WCS a w′）なら ◁。ψ_a(B + omid·m) は基本列の項（t0_frame_*）で、そこへ弱い葉を足すのは落とす補題と同じ `lhd_weak_childA`。エンジンへの差し込み（t0_S1・t0_S1A・t0_S1A_RE・dec_g0・frameOT_g0・bumpTermDec_N_t0・t0_S3 が hl を受ける）は次の仕事。
+- T2VRAK KAG（t1 の KA・KG）: 残りの 5 集合（expP・ext1・t2ext・ext2・std_a）も例外 0。11 集合すべてで例外 0。
+- T2BumpMono（t2 の bumpmono.py、TleN）: 11 集合で例外 0（t0ext は t = 2 の行列がない）。

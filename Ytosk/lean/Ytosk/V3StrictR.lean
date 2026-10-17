@@ -682,7 +682,7 @@ theorem t1_main_strict {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h
       ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
     (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ) (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM))
-    (hUA : UpgAbsX M (r + L) ρ)
+    (hUA : UpgAbsXW M (r + L) ρ)
     {μ br vr : T} (hμr : μ = vr) (hro : ρ.o r = psi vr br z)
     (hV : ∀ m i, i < r + L → DepX M (r + L) false i →
       VLocal M (r + L) ρ (gamS μ br ((drop1 M (r + L) rkM).o r) m) μ i)

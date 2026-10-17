@@ -76,7 +76,7 @@ theorem t0DF_of (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res
   intro r L hlen hL hp he1 n hn σ hCN
   have hDr := R.drop
   rw [show M.length - 1 = r + L by omega] at hDr
-  have hab0 := R.abS r (by rw [show M.length - 1 = r + L by omega]; exact hp)
+  have hab0 := R.abS.lo r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
   have h := t0_otdR hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
@@ -160,7 +160,7 @@ theorem t0_vsmallR_DF : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN →
   -- the drop at `r`: `o′(r) ≤ o(r)`, and a new subscript comes with the argument `0`
   have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
   have hO'le : ρ'.o r ≤ ρ.o r := by
-    rcases (hdrop r (by omega)).1.1 with hE | ⟨_, w, hw⟩
+    rcases PO.zero_t0 hx hDr.ua he1 hp I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
     · exact hE.le
     · exfalso
       rw [hor] at hw; simp only [psi.injEq] at hw
@@ -587,7 +587,9 @@ theorem t0_vsmallF_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         · rcases h with h | h
           · exact absurd h hv
           · exact h
-        · exact absurd hxcnt (hno _ hxr)
+        · rcases hno with hno | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩
+          · exact absurd hxcnt (hno _ hxr)
+          · exact absurd ((hDr.ua.toX_xm1 he1 (by rw [show r + L - 1 = r by omega]; exact hp)) r k W (by omega) hu hvk hWz) hbad
       -- a changed `v(r)`: `o′(r) = ψ_{v′(r)}(0)`
       have hyz : y = z := by
         have hCv : ChgX M (r + L) false r := by
@@ -621,7 +623,7 @@ theorem t0_vsmallF_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         have hot2 : isOT (psi (ρ.v g) (psi (ρ.v r) (app Y0 one) z) z) := hot
         rw [← hY0] at hot2
         have hl0 : LhdE (ρ'.o r) (ρ.o r) := by
-          rcases hPO.1 with h | ⟨_, w, hw⟩
+          rcases PO.zero_t0 hx hDr.ua he1 hp I.cons I.good (by omega) hPO hPV with h | ⟨_, w, hw⟩
           · exact h
           · rw [hY0] at hw; simp only [psi.injEq] at hw
             exact absurd hw.2.1 (fun h => by cases Y0 <;> simp [app, one] at h)
@@ -720,7 +722,7 @@ theorem hExp_t0A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hOTD : T0DF 
   rw [hexp n]
   have hDr := R.drop
   rw [show M.length - 1 = r + L by omega] at hDr
-  have hab0 := R.abS r (by rw [show M.length - 1 = r + L by omega]; exact hp)
+  have hab0 := R.abS.lo r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
   have hcore := t0_core hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab (T0AbsW.of_strong hab0) hDr.ws hDr.vst hDr.ua I.rootS I.rootP

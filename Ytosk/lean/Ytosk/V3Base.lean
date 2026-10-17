@@ -71,8 +71,19 @@ theorem base_dropRes : DropRes (Mlen (1 + 3 * n)) ((Mlen (1 + 3 * n)).length - 1
     · exact z_le _
     · left; show two < psi (tw w2 (Kd (3 * n) cs)) z z
       unfold two; rw [psi_lt_psi]; left; exact z_lt_tw hβ2 _
-  · -- BumpWeakSrc
-    intro i h1 _ j hj hb k hk _ _
+  · -- BumpWeakSrc: the shape, and `WeakCS` (every `v′` is countable here)
+    refine ⟨fun i h1 _ j hj hb k hk _ _ => ?_, fun i hi _ => Or.inl ?_⟩
+    swap
+    · rw [(drop_eq n i hi).2]
+      intro g hg
+      rcases Nat.eq_zero_or_pos i with h0 | h0
+      · subst h0; rw [bval_v0] at hg; simp [comps] at hg
+      · by_cases hk : (i - 1) % 3 = 1
+        · rw [bval_vB (by omega) hk] at hg
+          simp [wT, one, comps] at hg
+          rcases hg.2 with rfl | ⟨_, rfl⟩ <;> decide
+        · rw [bval_vAD (by omega) hk] at hg
+          rcases comps_tw hβ2 _ _ g hg with rfl | ⟨rfl, _⟩ <;> decide
     have hiL : i < 1 + 3 * n := by
       rcases Nat.lt_or_ge i (1 + 3 * n) with h | h
       · exact h
@@ -93,10 +104,9 @@ theorem base_dropRes : DropRes (Mlen (1 + 3 * n)) ((Mlen (1 + 3 * n)).length - 1
       rw [Mlen_children_nil (Or.inl (by omega))] at hk; simp at hk
     have hchj := Mlen_children_AB hk' (by omega) (by omega)
     rw [hchj] at hk; simp at hk; subst hk
-    refine ⟨hch, by rw [hchj]; rfl, Or.inl ?_⟩
-    rw [vOpt_par1]; intro g hg; simp [comps] at hg
+    exact ⟨hch, by rw [hchj]; rfl⟩
   · -- UpgAbsX
-    intro i k W _ _ _ _ r hr; rw [vOpt_par1] at hr; simp [summands] at hr
+    intro i k W _ _ _ _; left; intro r hr; rw [vOpt_par1] at hr; simp [summands] at hr
   · -- BumpAbsC
     intro _ _ i _ _ _ _ r hr; rw [vOpt_par1] at hr; simp [summands] at hr
 
@@ -119,8 +129,8 @@ theorem base_res3A : Res3A (Mlen (1 + 3 * n)) (bval (1 + 3 * n) one) (brk (1 + 3
       rw [Mlen_par0_BD (by omega) (by omega) (by omega)] at h0
       have := Option.some.inj h0; omega
   · -- AbsSR: `v(P_1 i) = 0`
-    intro _ _ _ i _ _ _ r hr
-    rw [vOpt_par1] at hr; simp [summands] at hr
+    refine ⟨fun _ _ _ i _ _ _ r hr => ?_, fun _ _ _ _ i _ _ _ _ _ _ r hr => ?_⟩ <;>
+      (rw [vOpt_par1] at hr; simp [summands] at hr)
 
 end
 

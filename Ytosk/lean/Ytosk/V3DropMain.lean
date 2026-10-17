@@ -43,34 +43,60 @@ theorem VSmallV.subSmall {t : T} (h : VSmallV t) (a : T) : SubSmall a t := fun u
 /-- The claim at an `o` call. (2026-10-12: the weak alternative without the component condition `CS`; the
 component condition is in `PV`.) -/
 def PO (ρ ρ' : Valn) (i : Nat) : Prop :=
-  (LhdE (ρ'.o i) (ρ.o i) ∨ (WkOA (ρ'.o i) (ρ.o i) ∧ ∃ w, ρ.o i = psi w z z)) ∧ Single (ρ'.o i)
+  (LhdE (ρ'.o i) (ρ.o i) ∨
+    (WkOA (ρ'.o i) (ρ.o i) ∧ ((∃ w, ρ.o i = psi w z z) ∨ ¬ LhdE (ρ'.v i) (ρ.v i)))) ∧ Single (ρ'.o i)
 
 /-- The parent of `i` is not a bump child. -/
 def NBPar (M : Mat) (i : Nat) : Prop :=
   ∀ p g, par M 0 i = some p → par M 0 p = some g → col M p ≠ bump M g
 
-/-- **The component condition of a weak `v`** (2026-10-12): countable components, or components at the levels
-`u ≤ v(P_0 i)` countable or dominated by a component of `v(P_0 i)` when the parent of `i` is not a bump child
-(ext1: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0), `i = 11`). -/
+/-- **The easy `t = 0` shape** (2026-10-17): the parent `r` of `x` is not `x − 1` and is not a bump child.
+There the `t = 0` engines do not need the strong absorption at `x − 1` (`PO.zero_t0`, `CntX.nocnt_t0`). -/
+def T0Easy (M : Mat) (x : Nat) : Prop := par M 0 x ≠ some (x - 1) ∧ NBPar M x
+
+/-- **The component condition of a weak `v`** (2026-10-12; 2026-10-17 without the side conditions): countable
+components, or components at the levels `u ≤ v(P_0 i)` countable or dominated by a component of `v(P_0 i)`
+(ext1: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0), `i = 11`).
+The earlier side conditions "the parent of `i` is not a bump child" and "`i` is not an upgrade target" are false
+on standard matrices (expP: …(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,2,0), desc.md 2026-10-17); the component
+condition at such columns is the hypothesis `WeakCS` (inside `BumpWeakSrc`). -/
 def WCSP (M : Mat) (ρ : Valn) (i : Nat) (w : T) : Prop :=
-  CS w ∨ (WCS (vOpt ρ (par M 0 i)) w ∧ NBPar M i ∧ ∀ j, upg M j ≠ some i)
+  CS w ∨ WCS (vOpt ρ (par M 0 i)) w
 
 theorem WCSP.wcs {M : Mat} {ρ : Valn} {i p : Nat} {w : T} (h : WCSP M ρ i w) (hp : par M 0 i = some p) :
     WCS (ρ.v p) w := by
-  rcases h with h | ⟨h, _⟩
+  rcases h with h | h
   · exact WCS.of_cs h _
   · rw [hp] at h; exact h
 
 
+/-- **The upgrade of `x − 1` fails the absorption condition** of `UpgAbsX` (the only source of a weak `v` at
+`x − 1` with a counted child). -/
+def UpgBad (M : Mat) (ρ : Valn) (i : Nat) : Prop :=
+  ∃ k W, i + 2 = M.length ∧ upg M i = some k ∧ ρ.v k = add (vOpt ρ (par M 1 i)) W ∧ W ≠ z ∧
+    ¬ ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W
+
+/-- **The counted children of a weak column** (2026-10-12): none, or only the last column `x` when the parent
+is not a bump child (T2Ext: `x − 1` loses its upgrade to an ancestor and has `x` as its counted child). -/
+def CntX (M : Mat) (ρ : Valn) (i : Nat) : Prop :=
+  (∀ c ∈ children M i, ¬ Counted M i c) ∨
+    ((∀ c ∈ children M i, Counted M i c → c + 1 = M.length) ∧ NBPar M i ∧ UpgBad M ρ i)
+
 /-- The claim at a `v` call. -/
 def PV (M : Mat) (ρ ρ' : Valn) (i : Nat) : Prop :=
   (LhdE (ρ'.v i) (ρ.v i) ∨
-    (WkVA (ρ'.v i) (ρ.v i) ∧ WCSP M ρ i (ρ'.v i) ∧ ∀ c ∈ children M i, ¬ Counted M i c)) ∧
+    (WkVA (ρ'.v i) (ρ.v i) ∧ WCSP M ρ i (ρ'.v i) ∧ CntX M ρ i)) ∧
     isOT (ρ'.v i) = true
 
-/-- Under a bump child the component condition is `CS`. -/
-theorem WCSP.cs_of_bump {M : Mat} {ρ : Valn} {k j i : Nat} {w : T} (h : WCSP M ρ k w)
-    (hk : par M 0 k = some j) (hj : par M 0 j = some i) (hb : col M j = bump M i) : CS w := by
+/-- **Hypothesis on the drop** (2026-10-17): every weakly changed `v` of `M.take x` has the component condition
+`WCSP`. (The drop lemma derived it before from the side conditions of the old `WCSP`, which are false.) -/
+def WeakCS (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
+  ∀ i, i < x → ¬ LhdE (ρ'.v i) (ρ.v i) → WCSP M ρ i (ρ'.v i)
+
+/-- Under a bump child a weak column has no counted child. -/
+theorem CntX.nocnt_of_bump {M : Mat} {ρ : Valn} {k j i : Nat} (h : CntX M ρ k)
+    (hk : par M 0 k = some j) (hj : par M 0 j = some i) (hb : col M j = bump M i) :
+    ∀ c ∈ children M k, ¬ Counted M k c := by
   rcases h with h | ⟨_, hn, _⟩
   · exact h
   · exact absurd hb (hn j i hk hj)
@@ -80,9 +106,9 @@ theorem WCSP.cs_of_bump {M : Mat} {ρ : Valn} {k j i : Nat} {w : T} (h : WCSP M 
 theorem rel_of_po_pv {M : Mat} {ρ ρ' : Valn} {c i : Nat} (hPO : PO ρ ρ' c) (hPV : PV M ρ ρ' c)
     (hp : par M 0 c = some i) (hvT : ∀ s y, ρ'.o c = psi s y z → s = ρ'.v c)
     (hvM : ∀ s y, ρ.o c = psi s y z → s = ρ.v c) :
-    LhdE (ρ'.o c) (ρ.o c) ∨ (WkOA (ρ'.o c) (ρ.o c) ∧ (∃ w, ρ.o c = psi w z z) ∧
+    LhdE (ρ'.o c) (ρ.o c) ∨ (WkOA (ρ'.o c) (ρ.o c) ∧
       ∀ w', ρ'.o c = psi w' z z → WCS (ρ.v i) w') := by
-  rcases hPO.1 with h | ⟨hW, hw⟩
+  rcases hPO.1 with h | ⟨hW, -⟩
   · exact Or.inl h
   rcases hPV.1 with hl | ⟨_, hwc, _⟩
   · left
@@ -90,7 +116,7 @@ theorem rel_of_po_pv {M : Mat} {ρ ρ' : Valn} {c i : Nat} (hPO : PO ρ ρ' c) (
     rw [h1, h2, hvT _ _ h1, hvM _ _ h2]
     exact lhdE_oq_v hl
   · right
-    refine ⟨hW, hw, fun w' h' => ?_⟩
+    refine ⟨hW, fun w' h' => ?_⟩
     rw [hvT _ _ h']
     exact hwc.wcs hp
 
@@ -204,12 +230,14 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
     have ho' := o_of_no_counted hC' hiT hv.2 hT.2.1
     refine ⟨?_, by rw [ho']; exact ⟨by rw [isOT_psi_iff]; exact ⟨hv.2, rfl, rfl, z_le _,
       fun g hg => by simp [comps] at hg⟩, _, _, rfl⟩⟩
-    rcases hv.1 with h | ⟨hW, -, hnc⟩
-    · rw [ho', o_spArg hC hG hiM]; exact Or.inl (lhdE_oq_v h)
+    by_cases hl : LhdE (ρ'.v i) (ρ.v i)
+    · rw [ho', o_spArg hC hG hiM]; exact Or.inl (lhdE_oq_v hl)
+    rcases hv.1 with h | ⟨hW, -, -⟩
+    · exact absurd h hl
     · right
-      have ho := o_of_no_counted hC hiM (hG.ot_v i hiM) hnc
-      rw [ho', ho]
-      exact ⟨⟨_, _, z, rfl, rfl, hW⟩, _, rfl⟩
+      refine ⟨?_, Or.inr hl⟩
+      rw [ho', o_spArg hC hG hiM]
+      exact ⟨_, _, _, rfl, rfl, hW⟩
   · -- `v(i)` does not change
     have hv' : ρ'.v i = ρ.v i := (hoff i hi).2 hCv
     obtain ⟨Tl, hTl⟩ := cl_prefix hx hR0 hZ2 hSD hZ1 hUAT hi
@@ -282,7 +310,7 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
       rw [hclM] at hsM hpM
       simp only [List.map_append, List.map_cons, List.map_nil] at hsM hpM
       have hle' : ρ'.o cs ≤ ρ.o cs := by
-        rcases hPOc.1 with h | ⟨h, _⟩
+        rcases hPOc.1 with h | ⟨h, -⟩
         · exact h.le
         · exact DRelOA.le (Or.inr h)
       have hp1 := List.pairwise_append.mp hpM
@@ -321,10 +349,13 @@ theorem po_of {i : Nat} (hi : i < x) (hv : PV M ρ ρ' i)
 
 /-- **One `v` step of the drop.** The bump-type frame (`hBump`) and the absorption at `x − 1` (`hX1`)
 are hypotheses. -/
-theorem pv_of {i : Nat} (hi : i < x)
+theorem pv_of {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
     (hBump : ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → PV M ρ ρ' i)
     (hX1 : ∀ k W, i + 1 = x → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
-      ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W)
+      (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
+        (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
+          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
+          NBPar M i ∧ (entry M 1 (i + 1) ≠ 0 ∨ T0Easy M (i + 1))))
     (hup : ∀ k, upg (M.take x) i = some k → PV M ρ ρ' k ∧
       ∀ j ∈ children (M.take x) k, col (M.take x) j = bump (M.take x) k →
         ∀ k' ∈ children (M.take x) j, Single (ρ'.o k')) :
@@ -382,16 +413,18 @@ theorem pv_of {i : Nat} (hi : i < x)
       unfold PV
       rw [ek, ek']
       refine ⟨?_, hPVk.2⟩
-      rcases hPVk.1 with h | ⟨hW, hwk, _⟩
+      rcases hPVk.1 with h | ⟨hW, -, _⟩
       · exact Or.inl h
-      · right
+      · by_cases hlv : LhdE (ρ'.v k) (ρ.v k)
+        · exact Or.inl hlv
+        right
         refine ⟨hW, ?_, ?_⟩
-        · rcases hwk with hcs | ⟨_, _, hnu⟩
-          · exact Or.inl hcs
-          · exact absurd hu (hnu i)
+        · have h' := hWC i hi (by rw [ek, ek']; exact hlv)
+          rw [ek'] at h'; exact h'
         obtain ⟨m, _, _, _, hcase⟩ := upg_spec hu
         rcases hcase with rfl | ⟨hA, hki⟩
-        · intro c hc _
+        · left
+          intro c hc _
           have := leaf_of_upg_next hR0 hu c (Anc0.step (mem_children_iff.mp hc).2 (Anc0.refl i))
           have := (mem_children hc).1; omega
         · exfalso
@@ -431,18 +464,30 @@ theorem pv_of {i : Nat} (hi : i < x)
       obtain ⟨sW, yW, hvk, hWot, hW1⟩ := v_bump_form hC hk hk1 hk2 (by rw [hVk]; exact hVot) (hoot k)
       rw [hVk] at hvk
       rw [ek, hvk]
-      have := v_frame_xm1 hVot hWot hW1 (fun r hr _ hlt =>
-        hX1 k _ hixe hu hvk (by simp) r hr hlt)
-      rw [sf_ot hot1] at this
-      exact Or.inl this
+      by_cases hR : ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < psi sW yW z → Lhd z r (psi sW yW z)
+      · have := v_frame_xm1 hVot hWot hW1 (fun r hr _ hlt => hR r hr hlt)
+        rw [sf_ot hot1] at this
+        exact Or.inl this
+      · -- the weak alternative: `v′ = V + 1 < V + W`, `x` is the only possible counted child
+        obtain ⟨hwc, -, hnb, -⟩ := (hX1 k _ hixe hu hvk (by simp)).resolve_left hR
+        rcases (le_iff _ _).mp (add_le_add_single (vOpt ρ (par M 1 i)) ⟨z, z, rfl⟩ ⟨sW, yW, rfl⟩ hW1)
+          with hlt | heq
+        · refine Or.inr ⟨⟨hlt, le_add_single _ ⟨z, z, rfl⟩, hot1⟩, hwc,
+            Or.inr ⟨fun c hc _ => ?_, hnb, k, _, by omega, hu, hvk, by simp, hR⟩⟩
+          have := mem_children hc; omega
+        · exact Or.inl (Or.inl heq)
 
 /-- **The drop lemma** (modulo the bump-type frames and the absorption at `x − 1`): at every column of
 `M.take x`, `o` and `v` are `⊴` the values in `M` or weakly below them, and standard. -/
 theorem drop_all
-    (hBump : ∀ i, i < x → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
-        PO ρ ρ' k ∧ PV M ρ ρ' k) → ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → PV M ρ ρ' i)
+    (hBump : (∀ i, i < x → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
+        PO ρ ρ' k ∧ PV M ρ ρ' k) → ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → PV M ρ ρ' i) ∧
+      WeakCS M x ρ ρ')
     (hX1 : ∀ i k W, i + 1 = x → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
-      ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) :
+      (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
+        (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
+          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
+          NBPar M i ∧ (entry M 1 (i + 1) ≠ 0 ∨ T0Easy M (i + 1)))) :
     ∀ i, i < x → PO ρ ρ' i ∧ PV M ρ ρ' i := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have key : ∀ N, ∀ i, i < x → (rk true i ≤ N → PO ρ ρ' i) ∧ (rk false i ≤ N → PV M ρ ρ' i) := by
@@ -452,9 +497,9 @@ theorem drop_all
       have hPV : ∀ i, i < x → rk false i ≤ N → PV M ρ ρ' i := by
         intro i hi hN
         obtain ⟨_, _, hR⟩ := hRk' i (by omega)
-        apply pv_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hVN hF hFO hArgT hi
+        apply pv_of hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hVS hVN hF hFO hArgT hi hBump.2
         · intro hCv h1 h2
-          apply hBump i hi _ hCv h1 h2
+          apply hBump.1 i hi _ hCv h1 h2
           intro j hj hjb k hk hkx
           have hjx : j < x := by have := (mem_children hk).1; omega
           have hjT : j ∈ children (M.take x) i := by

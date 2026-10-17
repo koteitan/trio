@@ -12,6 +12,7 @@ import Ytosk.V3T2DS
 import Ytosk.V3InvPer
 import Ytosk.V3TopB
 import Ytosk.V3InvW
+import Ytosk.V3T2QUBad
 
 namespace Ytosk
 
@@ -201,9 +202,11 @@ def SeedL (ρ σ : Valn) (p : Nat) : Prop := Lhd z (σ.o p) (ρ.o p)
 /-- **The seed of `M.take x` from the drop lemma**: `PO` at `p` with counted children in `M` and a
 changed value gives `◁`. -/
 theorem lhd_of_po {M : Mat} {ρ ρ' : Valn} {p : Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
-    (hpM : p < M.length) (hcl : CL M p ≠ []) (hPO : PO ρ ρ' p) (hne : ρ'.o p ≠ ρ.o p) :
+    (hpM : p < M.length) (hcl : CL M p ≠ [])
+    (hPO : LhdE (ρ'.o p) (ρ.o p) ∨ (WkOA (ρ'.o p) (ρ.o p) ∧ ∃ w, ρ.o p = psi w z z))
+    (hne : ρ'.o p ≠ ρ.o p) :
     Lhd z (ρ'.o p) (ρ.o p) := by
-  rcases hPO.1 with hE | ⟨_, w, hw⟩
+  rcases hPO with hE | ⟨_, w, hw⟩
   · apply lhd_of_lhdE_lt hE
     rcases (le_iff _ _).mp hE.le with h | h
     · exact h
@@ -321,17 +324,6 @@ theorem qr_shapes {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < 
       exact ⟨Lb, Kb, j, k, hch, hjb, hchj,
         fun d hd h => hKnd d hd ((hiff true d (by have := hKk d hd; omega)).mp h),
         fun d hd e he h => (hLnd d hd e he).2 ((hiff true e (hLnd d hd e he).1).mp h)⟩
-
-/-- `DepS` is monotone in the seeds. -/
-theorem DepS.mono {M : Mat} {S S' : Bool → Nat → Prop} (hS : ∀ b i, S b i → S' b i) {b : Bool} {i : Nat}
-    (h : DepS M S b i) : DepS M S' b i := by
-  induction h with
-  | seed hs => exact DepS.seed (hS _ _ hs)
-  | ochild hc hcb hcu _ ih => exact DepS.ochild hc hcb hcu ih
-  | ov _ ih => exact DepS.ov ih
-  | vpar h1 hpm _ ih => exact DepS.vpar h1 hpm ih
-  | vupg h1 h2 hu _ ih => exact DepS.vupg h1 h2 hu ih
-  | vbump h1 h2 hj hjb hk _ ih => exact DepS.vbump h1 h2 hj hjb hk ih
 
 /-- **`r = x − 1`**: below `x`, `D` from `{o(r), v(r)}` is `D` from `{o(r)}` plus `v(r)`. -/
 theorem depS_SV_sub {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hp : par M 0 (r + L) = some r)
@@ -905,6 +897,13 @@ structure T2R (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat) : Pr
   big : upg M (r + L - 1) ≠ some (r + L) → ∀ n σ, 2 ≤ n → Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
     SeedL ρ σ r
 
+/-- **The shape where the strong absorption at `x − 1` may fail for `t = 2`** (2026-10-17): `q = r`
+(`P_0 x = P_2 x`), `x − 1` upgrades to `k < x`, and the parent of `x − 1` is not a bump child (every failure on
+the 11 sets and std_b has this shape; the descent of `M.take x` is `t2_qu_take_bad` there). -/
+def T2UABad (M : Mat) (x : Nat) : Prop :=
+  (∃ r, par M 0 x = some r ∧ par M 2 x = some r) ∧ (∃ k, upg M (x - 1) = some k ∧ k < x) ∧
+    ∀ pr g, par M 0 (x - 1) = some pr → par M 0 pr = some g → col M pr ≠ bump M g
+
 /-- **The remaining hypotheses of `t = 2`** (`x = r + L`, `r = P_2(x)`). -/
 structure Res3T2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   absN : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ n σ, 2 ≤ n →
@@ -915,6 +914,10 @@ structure Res3T2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
     par M 0 (r + L) = some (r + qp) → 0 < qp → par M 0 (r + qp) = some pq → T2QN M ρ rk r L qp pq
   qr : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
     T2R M ρ rk r L
+  /-- The strong absorption at `x − 1` outside the shape `T2UABad` (2026-10-12, drop-fix: moved here from
+  `DropRes.ua`, which is now the weak `UpgAbsXW`; 2026-10-17: the strong form is false on T2Ext, but only in
+  the shape `T2UABad`, which the descent handles without it). -/
+  ua : UpgAbsX M (M.length - 1) ρ ∨ T2UABad M (M.length - 1)
 
 /-- **Step 1 for `t = 2`**: from the invariants, the remaining hypotheses (`Res3`, `Res3T2`) and a
 valuation of each `M[n]` (`n ≥ 2`), every expansion drops the root value. -/
@@ -988,9 +991,11 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     I.fc I.fo hdr.argT
     (bump_drop (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hdr.ab hdr.ws)
     hdr.ua
-  have hseed1 : ∀ p, p < r + L → CL M p ≠ [] → (drop1 M (r + L) rk).o p ≠ ρ.o p →
+  have hua' : UpgAbsX M (r + L) ρ ∨ T2UABad M (r + L) := by have := R2.ua; rw [hL] at this; exact this
+  have hseed1 : UpgAbsX M (r + L) ρ → ∀ p, p < r + L → CL M p ≠ [] → (drop1 M (r + L) rk).o p ≠ ρ.o p →
       Lhd z ((drop1 M (r + L) rk).o p) (ρ.o p) :=
-    fun p hp hcl hne => lhd_of_po I.cons I.good (by omega) hcl (hdrop p hp).1 hne
+    fun hua p hp hcl hne => lhd_of_po I.cons I.good (by omega) hcl
+      (PO.zero_of_strong (by omega) hua I.cons I.good (by omega) (hdrop p hp).1 (hdrop p hp).2) hne
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
   have hrq : r ≤ q := (anc0_par hA (by omega) hq).le
   have hqx : q < r + L := par_lt M 0 _ q hq
@@ -1004,21 +1009,25 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       cases hux : upg M (r + L - 1) with
       | none =>
         have T' := T.nn hux
+        have hua := hua'.resolve_right (fun hb => by
+          obtain ⟨_, ⟨k, hk, _⟩, _⟩ := hb; rw [hux] at hk; cases hk)
         obtain ⟨hdv, hos, hvsh⟩ := qr_shapes hlen hL0 hq (hXu_of (by rw [hux]; simp)) hxbr hrb
           I.r0p I.z2 I.sd I.z1 I.uat I.uab
         exact t2_qr_take hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (hrcl_of hq (by rw [hux]; simp)) hrU hux
           hdv hos hvsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs
-          (hseed1 r (by omega) (hrcl_of hq (by rw [hux]; simp)) T'.seed1)
+          (hseed1 hua r (by omega) (hrcl_of hq (by rw [hux]; simp)) T'.seed1)
       | some k =>
         have hkl := upg_lt (by omega) hux
         by_cases hkx : k = r + L
         · rw [hkx] at hux
           have T' := T.sv hux
+          have hua := hua'.resolve_right (fun hb => by
+            obtain ⟨_, ⟨k', hk', hk'x⟩, _⟩ := hb; rw [hux] at hk'; cases hk'; omega)
           obtain ⟨Sp1, _, Sdv, Sos, Svsh⟩ := sv_shapes hlen hL0 hq hux (rx_of_sv hlen I.z2 I.z1 hr hux) hrb he2r
             I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be
           exact t2_sv_take hlen hL0 hq hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (rcl_sv hlen hq hr hux I.z2 I.z1 I.r0p I.uat I.be he2r) hrU
             Sp1 Sdv Sos Svsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs
-            (hseed1 r (by omega) (rcl_sv hlen hq hr hux I.z2 I.z1 I.r0p I.uat I.be he2r) T'.seed1)
+            (hseed1 hua r (by omega) (rcl_sv hlen hq hr hux I.z2 I.z1 I.r0p I.uat I.be he2r) T'.seed1)
         · have hk : k < r + L := by omega
           have T' := T.up k hux hk
           obtain ⟨hp1, hdv, hos, hvsh⟩ :
@@ -1031,12 +1040,39 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
             · obtain ⟨h1, _, h3, h4, h5⟩ := sv_shapes hlen hL0 hq hux hrx hrb he2r I.r0p I.z2 I.sd I.z1 I.uat
                 I.uab I.r12 I.be
               exact ⟨h1, fun c hc _ hd => h3 c hc hd, h4, h5⟩
+          by_cases hbad : T2UABad M (r + L)
+          · -- the strong absorption may fail: the seed moves to the parent of `x − 1`
+            obtain ⟨_, _, hbp⟩ := hbad
+            have hux' : upg M (r + L - 1) = some k := hux
+            have he1j : entry M 1 (r + L - 1) ≠ 0 := (upg_e12 hux').1
+            have he0j : entry M 0 (r + L - 1) ≠ 0 := fun h => he1j (I.r01 _ h)
+            have hj0 : 0 < r + L - 1 := by
+              rcases Nat.eq_zero_or_pos (r + L - 1) with h | h
+              · rw [h] at he0j; exact absurd I.e00 he0j
+              · exact h
+            obtain ⟨pr, hpr⟩ := par0_some_of (M := M) hj0 (by rw [I.e00]; omega)
+            exact t2_qu_take_bad hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb
+              (hrcl_of hq (by rw [hux]; intro h; cases h; omega)) hrU hux hk
+              (I.uat _ k hux (by omega)) hp1 hdv
+              (fun hrx => (sv_shapes hlen hL0 hq hux hrx hrb he2r I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be).2.1)
+              hos hvsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs
+              (fun h => lhd_of_po I.cons I.good (by omega) (hrcl_of hq (by rw [hux]; intro h'; cases h'; omega))
+                (PO.zero_of_ne (by omega) I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2)
+                (T'.seed1 h))
+              hpr (fun g hg => hbp pr g (by rw [show r + L - 1 = r + L - 1 from rfl]; exact hpr) hg)
+              (fun hrx => by
+                have hcnt : Counted M r (r + L) :=
+                  ⟨hxbr, by rw [isUpg_x_false (hXu_of (by rw [hux]; intro h; cases h; omega))]; simp⟩
+                unfold CL; rw [List.mem_filter]
+                exact ⟨mem_children_iff.mpr ⟨by omega, hq⟩, by simpa using hcnt⟩)
+              I.r0p I.sd I.z1 I.uab hdrop
+          have hua := hua'.resolve_right hbad
           exact t2_qu_take hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (hrcl_of hq (by rw [hux]; intro h; cases h; omega)) hrU hux hk
             (I.uat _ k hux (by omega)) hp1 hdv
             (fun hrx => (sv_shapes hlen hL0 hq hux hrx hrb he2r I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be).2.1)
             hos hvsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd
-            hdr.ua hAbs
-            (fun h => hseed1 r (by omega) (hrcl_of hq (by rw [hux]; intro h'; cases h'; omega)) (T'.seed1 h))
+            hua hAbs
+            (fun h => hseed1 hua r (by omega) (hrcl_of hq (by rw [hux]; intro h'; cases h'; omega)) (T'.seed1 h))
     · obtain ⟨pq, hpq⟩ := par0_of_anc (anc0_par hA (by omega) hq) (fun h => hqr h.symm)
       have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
       have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
@@ -1045,7 +1081,11 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       obtain ⟨Tp1, TqL, Tdv, Tos, Tvsh⟩ := qn_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
         I.uat I.uab I.r12 hpq' Tqb
       have hAbs := absWN_of_absC hdr.ab hC1 hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
-      have hs1 := hseed1 pq (by have := par_lt M 0 _ _ hpq; omega) Tclpq T.seed1
+      have hua := hua'.resolve_right (fun hb => by
+        obtain ⟨⟨r', hb0, hb2⟩, _, _⟩ := hb
+        rw [hq'] at hb0; rw [hr] at hb2
+        have := Option.some.inj hb0; have := Option.some.inj hb2; omega)
+      have hs1 := hseed1 hua pq (by have := par_lt M 0 _ _ hpq; omega) Tclpq T.seed1
       cases hux : upg M (r + L - 1) with
       | none =>
         exact t2_qn_take hlen hL0 hA hq' (by omega) Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 hpq' Tqb Te2pq
@@ -1056,7 +1096,7 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
           I.z1 I.uat I.uab I.r12 hpq' Tqb hux
         exact t2_qnu_take hlen hL0 hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1 I.uat I.r12 I.r01 I.e00
           hpq' Tqb Te2pq Tclq Tclpq hux Up1 Up1a Uqsh Udv Uos Uvsh I.cons I.good I.rank hC1 hG1
-          hRk1 I.fc I.vs I.td I.kd hdr.ua hAbs hs1
+          hRk1 I.fc I.vs I.td I.kd hua hAbs hs1
   -- `n ≥ 2`
   have hbig : ∀ n, 2 ≤ n → ∀ σ rkN,
       Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →

@@ -389,16 +389,16 @@ theorem deps_lhd_gen {M N : Mat} {S : Bool → Nat → Prop} {bnd : Nat} {ρ σ 
   exact fun b i hD hi => key _ b i (le_refl _) hD hi
 
 /-- **The `◁` propagation through `DepS M S` with weak calls `W`** (excluded from the conclusion; only seeds read them) for two matrices agreeing in structure off the seeds. -/
-theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ : Valn} {rk : Bool → Nat → Nat}
+theorem deps_lhd_genW2 {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ : Valn} {rk : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hCN : Cons N σ) (hGN : Good3 N σ) (hRM : Rk M rk)
     (hbM : bnd ≤ M.length) (hbN : bnd ≤ N.length)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hoff : ∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i))
-    (hWv : ∀ i, ¬ W false i)
+    (hWv : ∀ i, W false i → W true i ∧ ∀ j, upg M j ≠ some i)
     (hWo : ∀ i c, c ∈ children M i → Counted M i c → W true c → S true i)
     (hWb : ∀ i j c, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → j ∈ children M i → col M j = bump M i →
       c ∈ children M j → W true c → S false i)
-    (hSeed : ∀ b i, S b i → i < bnd → DepS M S b i →
+    (hSeed : ∀ b i, S b i → ¬ W b i → i < bnd → DepS M S b i →
       (∀ b' i', rk b' i' < rk b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →
         Lhd z (valB σ b' i') (valB ρ b' i')) →
       Lhd z (valB σ b i) (valB ρ b i))
@@ -435,13 +435,13 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
       have hiN : i < N.length := by omega
       obtain ⟨hRv, hRc, hRr⟩ := hRM i hiM
       by_cases hs : S b i
-      · exact hSeed b i hs hi hD (fun b' i' hlt hD' hi' hW' => ih _ (by omega) b' i' (le_refl _) hD' hi' hW')
+      · exact hSeed b i hs hWi hi hD (fun b' i' hlt hD' hi' hW' => ih _ (by omega) b' i' (le_refl _) hD' hi' hW')
       cases b with
       | true =>
         show Lhd z (σ.o i) (ρ.o i)
         by_cases hv : DepS M S false i
         · -- through `v`
-          have hIH : Lhd z (σ.v i) (ρ.v i) := ih _ (by omega) false i (le_refl _) hv hi (hWv i)
+          have hIH : Lhd z (σ.v i) (ρ.v i) := ih _ (by omega) false i (le_refl _) hv hi (fun hw => hWi (hWv i hw).1)
           have hclM := hDvNil i hi hWi hs hv
           rw [hnoc i hi hWi hv, o_of_no_counted hC hiM (hG.ot_v i hiM) (no_cnt_of_cl_nil hclM)]
           exact lhd_of_lhdE_lt (lhdE_oq_v (Or.inr hIH)) (psi_lt_psi_z_iff.mpr (Or.inl hIH.1))
@@ -507,7 +507,7 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
         | @vupg _ k h1 h2 hu hdk =>
           have hkb := hupgb k hu hdk
           have hIH : Lhd z (σ.v k) (ρ.v k) :=
-            ih _ (by have := (hRr h1).2.1 h2 k hu; omega) false k (le_refl _) hdk hkb (hWv k)
+            ih _ (by have := (hRr h1).2.1 h2 k hu; omega) false k (le_refl _) hdk hkb (fun hw => (hWv k hw).2 i hu)
           have hVot' : isOT (vOpt σ (par N 1 i)) = true := by
             cases hpp : par N 1 i with
             | none => rfl
@@ -561,7 +561,8 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
               have ho0 := hnoc k0 hkb (fun hw => hs (hWb i j0 k0 h1 h2 hj hjb hk hw)) hdv
               have hvIH : Lhd z (σ.v k0) (ρ.v k0) :=
                 ih _ (by have := (hRM k0 hkM).1; have := (hRr h1).2.2 h2 j0 hj hjb k0 hk; omega)
-                  false k0 (le_refl _) hdv hkb (hWv k0)
+                  false k0 (le_refl _) hdv hkb
+                  (fun hw => hs (hWb i j0 k0 h1 h2 hj hjb hk (hWv k0 hw).1))
               have he1k' : entry M 1 k0 ≠ 0 := by
                 intro he; apply hvk
                 rw [v_z_of_e1 hC hkM he, v_z_of_e1 hCN (by omega) (by rw [he1k]; exact he)]
@@ -576,5 +577,41 @@ theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ 
           exact v_bump_lhdW hC hG hCN hiM hiN h1 h2 he1 he2 hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt
             hTD (hAbs i hi h1 h2)
   exact fun b i hD hi hW => key _ b i (le_refl _) hD hi hW
+
+
+/-- **The `◁` propagation with weak calls `W` that read no `v`** (the original form of `deps_lhd_genW2`). -/
+theorem deps_lhd_genW {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {ρ σ : Valn} {rk : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hCN : Cons N σ) (hGN : Good3 N σ) (hRM : Rk M rk)
+    (hbM : bnd ≤ M.length) (hbN : bnd ≤ N.length)
+    (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
+    (hoff : ∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i))
+    (hWv : ∀ i, ¬ W false i)
+    (hWo : ∀ i c, c ∈ children M i → Counted M i c → W true c → S true i)
+    (hWb : ∀ i j c, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → j ∈ children M i → col M j = bump M i →
+      c ∈ children M j → W true c → S false i)
+    (hSeed : ∀ b i, S b i → i < bnd → DepS M S b i →
+      (∀ b' i', rk b' i' < rk b i → DepS M S b' i' → i' < bnd → ¬ W b' i' →
+        Lhd z (valB σ b' i') (valB ρ b' i')) →
+      Lhd z (valB σ b i) (valB ρ b i))
+    (hDvNil : ∀ c, c < bnd → ¬ W true c → ¬ S true c → DepS M S false c → CL M c = [])
+    (hDvNilN : ∀ c, c < bnd → ¬ W true c → DepS M S false c → CL N c = [])
+    (hCLnil : ∀ c, c < bnd → ¬ W true c → CL M c = [] → CL N c = [])
+    (hOc : ∀ i, i < bnd → ¬ S true i → ¬ W true i → DepS M S true i → ¬ DepS M S false i →
+      ∃ Lc c, CL M i = Lc ++ [c] ∧ CL N i = Lc ++ [c] ∧ DepS M S true c ∧ c < bnd ∧
+        ∀ d ∈ Lc, ¬ DepS M S true d ∧ d < bnd)
+    (hVc : ∀ i, i < bnd → ¬ S false i → DepS M S false i →
+      entry N 1 i = entry M 1 i ∧ entry N 2 i = entry M 2 i ∧ par N 1 i = par M 1 i ∧
+      (∀ m, par M 1 i = some m → ¬ DepS M S false m) ∧ upg N i = upg M i ∧
+      (∀ k, upg M i = some k → DepS M S false k → k < bnd) ∧
+      (entry M 2 i ≠ 0 → ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ children N i = Lb ++ [j] ∧
+        col M j = bump M i ∧ col N j = bump N i ∧ children M j = Kb ++ [k] ∧
+        children N j = Kb ++ [k] ∧ k < bnd ∧ entry N 1 k = entry M 1 k ∧
+        (∀ d ∈ Kb, ¬ DepS M S true d ∧ d < bnd) ∧
+        (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepS M S true e) ∧
+        (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d)))
+    (hAbs : AbsWN M N bnd ρ σ) :
+    ∀ b i, DepS M S b i → i < bnd → ¬ W b i → Lhd z (valB σ b i) (valB ρ b i) :=
+  deps_lhd_genW2 hC hG hCN hGN hRM hbM hbN hF hVS hTD hKD hoff (fun i h => absurd h (hWv i)) hWo hWb
+    (fun b i hs _ hi hd ih => hSeed b i hs hi hd ih) hDvNil hDvNilN hCLnil hOc hVc hAbs
 
 end Ytosk
