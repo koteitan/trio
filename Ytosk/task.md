@@ -121,7 +121,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - drop: HDropV2W（落とす補題の 5 欄）・T0UpgAbsV2（t = 0 の強い吸収、易しい形の外）・HSeedV2（SeedR）
       - 共通: HFrameV2・HLeafV2（枠の 10 欄・葉の条件）、HBumpExt（標準形の接頭辞で bump 項は増える）、HRwClL（すべての標準形で RwClosedL）、HSibColV2（同じ列の兄弟 SibColU）
       - t0: T0ArgBRes
-      - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom と T2SeedCDom1）、T2SVc0（sv）・T2CFrRes（C: CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0）
+      - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom と T2SeedCDom1）、T2SVc0′（sv、c₀ の値だけ。c₀ より前の子の値は `no_chg_before_c0` で証明）・C の CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0′
       - t2 のそのほか: T2CBadOut（悪い形の展開、大づかみ）、T2UpgAbsW、FDsh、T2VRACopy、T2VAncStep・T2VRAK KAG（写しの枠の KVRA）
       - 消えたもの（このセッション）: T2SeedOTRestV2、T2VRAQNDom（T2SeedQNDom と T2SeedQNBase から）、T2VRASeedSVC・T2SeedPreShapeSVC（T2SVc0・T2CFrRes に）、T2X1Cl・CopyLowK（偽、HRwClL に）
       - 残りの測定の状態（2026-10-17、lead。どれも Lean と同じ形の probe）

@@ -495,4 +495,73 @@ theorem t2SeedPreShapeC_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB
     refine ⟨Lc, _, y, hclM, hvr, hLm, by rw [← hσρ c hcs]; exact hsy, le_refl _, ?_⟩
     rw [hLm, ← hvr]; exact ht
 
+/-! ## c₀ より前の子の値は M と同じ（ChgX の ICC から） -/
+
+/-- **No column strictly between `r` and a counted child `c₀` of `r` in `M.take x` changes**: by `ICC` a change at
+`c` enters through the next column `c′` after the subtree of `c` (an upgrade target with a changed `v`), and
+`c < c′ ≤ c₀`; at `c₀` that column would be topped and an upgrade target in `M.take x`, hence not counted. -/
+theorem no_chg_before_c0 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {x r c0 : Nat}
+    (hx : x + 1 = M.length) (hr0 : par M 0 c0 = some r) (hc0x : c0 < x) (hcnt : Counted (M.take x) r c0) :
+    ∀ n c, c0 - c ≤ n → r < c → c < c0 → ∀ b, ¬ ChgX M x b c := by
+  intro n
+  induction n with
+  | zero => intro c hn _ hcc0; omega
+  | succ n ih =>
+    intro c hn hrc hcc0 b hch
+    have hICC := (chg_struct hx I.r0p I.z2 I.sd I.z1 I.uat I.uab hch).2
+    have hnA : ¬ Anc0 M c (x - 1) := fun hA => by
+      have h1 := anc0_interval hA c0 (by omega) (by omega)
+      have h2 := ((par0_spec M).mp hr0).2.2 c (by omega) (by omega)
+      omega
+    obtain ⟨c', ⟨hcc', hint, _⟩, hc'x, hu, hch'⟩ := hICC c (by omega) (Anc0.refl c) hnA
+    have hc'c0 : c' ≤ c0 := by
+      by_contra h
+      have hA := hint c0 (by omega) (by omega)
+      have := (anc0_par hA (by omega) hr0).le
+      omega
+    rcases Nat.lt_or_eq_of_le hc'c0 with hlt | heq
+    · exact ih c' (by omega) (by omega) hlt false hch'
+    · subst heq
+      have hT := (chg_struct hx I.r0p I.z2 I.sd I.z1 I.uat I.uab hch').1 rfl hc0x
+      apply hcnt.2
+      refine ⟨?_, hT.1⟩
+      unfold isUpg
+      rw [List.any_eq_true]
+      refine ⟨c' - 1, List.mem_range.mpr (by rw [List.length_take]; omega), ?_⟩
+      rw [upg_take M (show c' - 1 + 1 < x by omega)]
+      simp [hu]
+
+/-- **The counted children of `r` in `M.take x` before the last keep their values.** -/
+theorem o_take_before_last {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {x r : Nat}
+    (hx : x + 1 = M.length) {τ : Valn} (hτ : Cons (M.take x) τ) {Lc0 : List Nat} {c0 : Nat}
+    (hT : CL (M.take x) r = Lc0 ++ [c0]) : ∀ d ∈ Lc0, τ.o d = ρ.o d := by
+  intro d hd
+  have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+  rw [show M.length - 1 = x by omega] at hcnt
+  have hRk1 : Rk (M.take x) rk := rk_take (by omega) I.rank hcnt
+  have hc0m : c0 ∈ CL (M.take x) r := by rw [hT]; simp
+  have hdm : d ∈ CL (M.take x) r := by rw [hT]; exact List.mem_append_left _ hd
+  have hc0 := List.mem_filter.mp hc0m
+  have hdc := List.mem_filter.mp hdm
+  have hc0x : c0 < x := by have := (mem_children hc0.1).2; rw [List.length_take] at this; omega
+  have hdx : d < x := by have := (mem_children hdc.1).2; rw [List.length_take] at this; omega
+  have hrd : r < d := (mem_children hdc.1).1
+  have hr0 : par M 0 c0 = some r := by
+    have := (mem_children_iff.mp hc0.1).2; rwa [par_take M 0 c0 hc0x] at this
+  have hsort : (CL (M.take x) r).Pairwise (· < ·) := (children_sorted _ r).filter _
+  rw [hT, List.pairwise_append] at hsort
+  have hdc0 : d < c0 := hsort.2.2 d hd c0 (by simp)
+  have hno := no_chg_before_c0 I hx hr0 hc0x (by simpa using hc0.2) (c0 - d) d (le_refl _) hrd hdc0 true
+  exact (chg_off hx I.cons I.good hτ hRk1 d hdx).1 hno
+
+/-- **Residual (t2, sv・C): the last counted child `c₀` of `r` in `M.take x`** — with a nonzero argument it has the
+subscript of `o_M(c₀)` and a smaller argument. (The children before `c₀` keep their values, `o_take_before_last`.) -/
+def T2SVc0' (M : Mat) (ρ : Valn) (r L : Nat) : Prop :=
+  ∀ τ, Cons (M.take (r + L)) τ → ∀ Lc0 c0, CL (M.take (r + L)) r = Lc0 ++ [c0] →
+    ∀ s y, τ.o c0 = psi s y z → y ≠ z → ∃ yM, ρ.o c0 = psi s yM z ∧ y ≤ yM
+
+theorem t2SVc0_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {r L : Nat}
+    (hlen : r + L + 1 = M.length) (h : T2SVc0' M ρ r L) : T2SVc0 M ρ r L :=
+  fun τ hτ Lc0 c0 hT => ⟨o_take_before_last I hlen hτ hT, h τ hτ Lc0 c0 hT⟩
+
 end Ytosk

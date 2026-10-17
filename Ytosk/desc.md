@@ -3868,3 +3868,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 ### 展開の不変条件の主な欄を大きい集合で（2026-10-17、lead、invexp.py）
 
 - Inv3V2 の主な欄（Good3 の標準形と数える子の o の減少、FrameOT、FrameClosed（FrameDom を厳密に）、VSmallF）を、集合の行列とその M[2]・M[3] で測った。ext3s（59 万行列）と ext2（150 万行列）で例外 0。t2ext は測定中。
+
+### c₀ より前の子の値は M と同じ（証明、2026-10-17、lead、V3T2VRASV、緑）
+
+- `no_chg_before_c0`: r の M.take x での数える子 c₀ について、r < c < c₀ の列 c はどれも変わらない（ChgX M x b c でない）。証明: c が変わると ICC（`chg_struct`）から、c の部分木の次の列 c′ が上げの的で v が変わる（ChgX false c′）。c′ ≤ c₀（c₀ < c′ なら c₀ が c の部分木に入り、c₀ の親 r が c の子孫になる）。c′ < c₀ なら c′ で繰り返す（c₀ − c が減る）。c′ = c₀ なら c₀ は M.take x で topped（TopC）かつ上げの的（`upg_take`）なので数えられず、矛盾。c が x − 1 の祖先でないことは `anc0_interval` と `par0_spec`（c₀ の親は r）から。
+- `o_take_before_last`: CL_{M.take x}(r) = Lc₀ ++ [c₀] なら Lc₀ の子の o は M と同じ（`chg_off`）。
+- これで T2SVc0 の第 1 欄が証明になり、最上位の残りは c₀ の欄だけの `T2SVc0'`（sv）と「CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0'」（C）になった。ビルド緑、公理は標準の 3 つ。
