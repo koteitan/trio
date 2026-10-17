@@ -153,7 +153,7 @@ theorem t2VRAQNDom0_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : In
   rw [show M.length - 1 = r + L by omega] at hcnt
   have hC0 := cons_of_rk (rk_take (by omega) I.rank hcnt)
   obtain ⟨t1, ht1⟩ := hP _ hC0
-  obtain ⟨-, -, -, hcV, hts, hcl⟩ := h _ hC0 t1 ht1
+  obtain ⟨-, hcV, hts, hcl⟩ := h _ hC0 t1 ht1
   have hB : app (t2B (ρ.v r) ρ []) (psi t1 z z) = psi t1 z z := rfl
   have hle : psi t1 z z ≤ psi (qnS M ρ r L q) z z := by
     rcases (le_iff _ _).mp (hts rfl) with h5 | h5

@@ -3861,3 +3861,5 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 
 - T2SeedCBase の閉じ方の段を PathLvA から PathLvAll に強めた（svcbase.py の pathAll: d3s・deep2・expP・ext3s の sv・C 1.7 万件で例外 0、全集合は測定中）。SeedClB0 には PathLvA.toAll で渡す。
 - すると T2CFrRes の第 3 欄（M の段で s′ の成分は Ω_{s′}・X₁・V の成分以下）は、段 V と PathLvAll で s′ の成分 < X₁ から出る。T2CFrRes は「CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0」だけになった。ビルド緑、公理は標準の 3 つ。
+
+- 追記: T2SeedQNBase から σ B = B と V < t₁ の欄を外した。どちらも既存の種の残り T2SeedQNRes（σB と base の k = 0）から出る（`qnRes_base_facts`、X₁ の式の t₁ は `app_left_cancel` で一致）。`t2SeedClV2_of_B`・`t2SeedOTRestV2_of_B` は T2SeedPResV2 も受ける。ビルド緑。
