@@ -3798,3 +3798,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - M[3]（37 列、標準形、SRO より下）で直接確かめた: 枠 (4, 15) と (15, 26) で RwClosed が偽。枠 (4, 15) は v(4) = 1、B = o(5) = ψ_s(Ω_2)（s = ψ_0(Ω_{Ω_1} + ψ_1(Ω_3))）、B の段 0 の成分 Ω_{Ω_1} + ψ_1(Ω_3) は B より大きく、v(4) = 1 の成分にも押さえられない。
 - よって (1) 最上位の残り T2X1Cl（sv）は偽。(2) **RwClosed はすべての標準形の不変条件ではない**。RwClosed を帰納法で運ぶ形（StepCtxV2.rw、hInvV2_all）は偽の不変条件の上にある。前の残り T0RwRes（文脈の RwClosed M）も同じく偽。M（16 列）自身は RwClosed（ext3s の closedL で例外 0）で、M[n] で初めて破れる。
 - RwClosed は t0 の影の枠（t0_otdS・T0DF）と t2 の切り口（T2CutA を替えた V3DepRWU）で使っている。どの枠で本当に要るかを調べて、真で足りる弱い形に替える必要がある。
+- 追記（lead、RwClosed の破れの調べ）:
+  - RwClosed の破れは t = 2 の M[2]・M[3] で sv の種の枠 (r, r の写し) だけ（tmp/lead/probes/rwfail.py、ext3s）。M の枠と、写し・x より前の枠では例外 0。
+  - RwClosed の使い所は t0（V3T0DepS）と t2（V3DepRWU）の `shadow_hSh` だけで、`relR_frameU` の影の場合（古い子は書き換え、新しい子は書き換えない）の仮定 hSh を出すため。反例の枠 (4, 15) は、M[3] の接頭辞 K = M[3].take k（k = 17〜26）の展開で実際に影になる（28 回）。そこでは hSh の結論（新しい状態 X′ = B + ψ_s(y′) の成分は X′ より小さいか v(i) の成分以下）も偽。
+  - しかし relR_frameU の結論 RelRU U q b A（区間 (b, A] のどの c でも、b の成分は c の成分か z か q の成分で押さえられる）はそこで真: (b, A] の項はどれも B の先頭の添字 s_B を先頭に持ち（A < Ω_{s_B + 1}）、悪い成分 g は s_B の成分なので c の成分に入る。強すぎるのは hSh（ClosedA）の形。
+  - FrameClosed（FrameDom、Inv3V2.fc）は反例の 2 つの枠で真（tools/fdom_exact.py）。ただし FrameDom は「g ≤ C」の逃げ道を許すので、そのままでは RelRU（c 自身は許さない）を出せない。
+  - 直しの方向: relR_frameU の影の場合を、hSh（閉じた状態）でなく「B の成分は B 以下、a の成分以下、または区間の項すべての成分に入る（先頭の添字の成分）」の形で示す。RwClosed を運ぶ形とその残り（T2X1Cl・CopyLowK・T2VAncStep・TRwOutT2）はこの直しのあと外せる見込み。今は最上位の残り T2X1Cl が偽なので、最上位は偽の仮定を含む。
