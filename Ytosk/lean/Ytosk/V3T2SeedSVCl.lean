@@ -246,12 +246,62 @@ theorem t2SeedCCl_of_base {M : Mat} {ρ : Valn} {r L q : Nat} (hV : isOT (ρ.v r
   obtain ⟨P, b, x, T1, hXe, hX1, hT1, hP, hB0, hB1, hot, hcl⟩ := h τ hC X hX
   exact seedClB0_of_baseG hV hs (qnS_gt M ρ r L q) hXe hX1 hT1 hP hB0 hB1 hot hcl k
 
-/-- **Residual (t2)**: `T2SeedClV2` with the sv and C parts replaced by the `k`-free `T2SeedSVBase` and
-`T2SeedCBase`. -/
+
+/-! ## qn: X′_k = B + Ω_{t_k}、t_{k+1} = f(t_k) -/
+
+/-- **The qn closed forms stay closed**: with `σ B = B` and `V < t₁`, `σ(B + Ω_{t_k}) = B + Ω_{t_{k+1}}`, so the
+components of `t_{k+1} = V′ + σ(t_k − V)` are below `B + Ω_{t_{k+1}}` when those of `t₁` and `V′` are below `B + Ω_{t₁}`. -/
+theorem qn_closed_tqN {Lv : T → Prop} {V V' B t1 : T} (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hσB : sh V V' B = B) (hVt : V < t1) (hot : isOT (app B (psi t1 z z)) = true)
+    (hcl : ∀ u, Lv u → ¬ V < u → ∀ g ∈ comps u t1 ++ comps u V', g < app B (psi t1 z z)) :
+    ∀ k, isOT (app B (psi (tqN V V' t1 k) z z)) = true ∧ V < tqN V V' t1 k ∧
+      ∀ u, Lv u → ¬ V < u → ∀ g ∈ comps u (tqN V V' t1 k) ++ comps u V', g < app B (psi (tqN V V' t1 k) z z)
+  | 0 => ⟨hot, hVt, hcl⟩
+  | k + 1 => by
+    obtain ⟨hk, hVk, hclk⟩ := qn_closed_tqN hV hV' hVV hσB hVt hot hcl k
+    have hσ : sh V V' (app B (psi (tqN V V' t1 k) z z)) = app B (psi (tqN V V' t1 (k + 1)) z z) := by
+      rw [sh_app, hσB, sh_psi_gt hVk, sh_z]; rfl
+    have hle : app B (psi (tqN V V' t1 k) z z) ≤ app B (psi (tqN V V' t1 (k + 1)) z z) :=
+      hσ ▸ le_sh hV hV' (le_of_lt hVV) hk
+    have hot' : isOT (app B (psi (tqN V V' t1 (k + 1)) z z)) = true := hσ ▸ isOT_sh hV hV' hVV hk
+    have htk : isOT (tqN V V' t1 k) = true := isOT_sub (isOT_app_right hk)
+    refine ⟨hot', lt_trans hVV (lt_shf hV hV' (le_of_lt hVV) htk hVk), fun u hu hVu g hg => ?_⟩
+    rcases List.mem_append.mp hg with hg | hg
+    · change g ∈ comps u (add V' (sh V V' (sub (tqN V V' t1 k) V))) at hg
+      obtain ⟨P, hP, hPs⟩ := add_eq_app_prefix V' (sh V V' (sub (tqN V V' t1 k) V))
+      rw [hP, comps_app, List.mem_append] at hg
+      rcases hg with hg | hg
+      · exact lt_of_lt_of_le (hclk u hu hVu g (List.mem_append_right _ (comps_sub_of_summands u hPs g hg))) hle
+      · rcases comps_sh_low hVu _ _ (Nat.le_refl _) g hg with ⟨g0, hg0, rfl | rfl⟩ | h
+        · exact lt_of_lt_of_le (hclk u hu hVu _ (List.mem_append_left _ (comps_sub_sub u _ V hg0))) hle
+        · rw [← hσ]
+          exact sh_lt_sh hV hV' (le_of_lt hVV) (isOT_of_mem_comps u (isOT_sub_sfx htk V) hg0) hk
+            (hclk u hu hVu _ (List.mem_append_left _ (comps_sub_sub u _ V hg0)))
+        · exact lt_of_lt_of_le (hclk u hu hVu g (List.mem_append_right _ h)) hle
+    · exact lt_of_lt_of_le (hclk u hu hVu g (List.mem_append_right _ hg)) hle
+
+/-- **Residual (t2, qn): the `k`-free facts on the seed `r`**: `X₁ = B + Ω_{t₁}` (`B = t2B`), `σ B = B`, `V < t₁`,
+and at the path levels `u ≤ V` the components of `t₁` and `s′` are below `X₁`. -/
+def T2SeedQNBase (M : Mat) (ρ : Valn) (r L q : Nat) (Lc : List Nat) : Prop :=
+  ∀ τ, Cons (M.take (r + L)) τ → ∀ t1,
+    spArg (τ.v r) z (sumN ((CL (M.take (r + L)) r).map τ.o)) = app (t2B (ρ.v r) ρ Lc) (psi t1 z z) →
+    sh (ρ.v r) (qnS M ρ r L q) (t2B (ρ.v r) ρ Lc) = t2B (ρ.v r) ρ Lc ∧ ρ.v r < t1 ∧
+      isOT (app (t2B (ρ.v r) ρ Lc) (psi t1 z z)) = true ∧
+      ∀ u, PathLvA M ρ r u → ¬ lt (ρ.v r) u = true →
+        ∀ g ∈ comps u t1 ++ comps u (qnS M ρ r L q), g < app (t2B (ρ.v r) ρ Lc) (psi t1 z z)
+
+theorem t2SeedQNCl_of_base {M : Mat} {ρ : Valn} {r L q : Nat} {Lc : List Nat} (hV : isOT (ρ.v r) = true)
+    (hs : isOT (qnS M ρ r L q) = true) (h : T2SeedQNBase M ρ r L q Lc) : T2SeedQNCl M ρ r L q Lc := by
+  intro τ hτ t1 ht1 k _ u hu hVu g hg
+  obtain ⟨hσB, hVt, hot, hcl⟩ := h τ hτ t1 ht1
+  exact Or.inl ((qn_closed_tqN hV hs (qnS_gt M ρ r L q) hσB hVt hot hcl k).2.2 u hu hVu g (List.mem_append_left _ hg))
+
+/-- **Residual (t2)**: `T2SeedClV2` with the qn, sv and C parts replaced by the `k`-free `T2SeedQNBase`,
+`T2SeedSVBase` and `T2SeedCBase`. -/
 def T2SeedClV2B : Prop :=
   ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
-      (∀ q Lc, par M 0 (r + L) = some q → q ≠ r → CL M r = Lc ++ [q] → T2SeedQNCl M ρ r L q Lc) ∧
+      (∀ q Lc, par M 0 (r + L) = some q → q ≠ r → CL M r = Lc ++ [q] → T2SeedQNBase M ρ r L q Lc) ∧
       (T2SVCase M r L → T2SeedSVBase M ρ r L) ∧
       (∀ q, par M 0 (r + L) = some q → q ≠ r → (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCBase M ρ r L q)
 
@@ -260,7 +310,8 @@ theorem t2SeedClV2_of_B (h : T2SeedClV2B) : T2SeedClV2 := by
   obtain ⟨hQN, hSV, hCC⟩ := h M ρ rk C hz h2 r L hlen hr
   have hrM : r < M.length := by omega
   have IW := Inv3W.ofV2 C.S C.I
-  exact ⟨hQN, fun hc => t2SeedSVCl_of_base (IW.good.ot_v r hrM) (hSV hc),
+  exact ⟨fun q Lc hq hqr hCL => t2SeedQNCl_of_base (IW.good.ot_v r hrM) (qnS_ot IW hrM L q) (hQN q Lc hq hqr hCL),
+    fun hc => t2SeedSVCl_of_base (IW.good.ot_v r hrM) (hSV hc),
     fun q hq hqr hncl => t2SeedCCl_of_base (IW.good.ot_v r hrM) (qnS_ot IW hrM L q) (hCC q hq hqr hncl)⟩
 
 /-! ## C の種の標準形の前半 -/
