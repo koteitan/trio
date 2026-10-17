@@ -3687,3 +3687,14 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 **使われていない古い経路**: 変えた補題に依存する、今の最上位から使われていない定理（t0_otd・t0_otdH/R/U/H0/T・t0_vsmallR*・t0_main・desc_step・古い最上位 trio_terminates* など 64 個、Lean で依存を調べた）は、強い吸収を至る所で仮定する `OldUpgAbs`（偽）を引数に取る形にした（tmp/lead/thread_dead.py）。
 
 **測定**: HFrameV2・HLeafV2（top の probe_hframe）は残りの 6 集合と落とした行列の集合でも例外 0（11 集合すべて）。T2SeedPreShape（preshape.py）は 10 集合で例外 0。VAncStep（vanc1.py）は 11 集合で例外 0。
+
+### 残りの調べ: T0ArgBRes・FDsh・HSibHardV2 の形 (ii)・T2SVStrict（2026-10-17、lead）
+
+- **T0ArgBRes**: std_b でも例外 0（r = x − 1 の形 72 万件、n = 2, 3）。11 集合と std_b で測って真。証明の筋は未: x − 1 の上げの W が V を吸収するので、弱い葉の成分を前の加数（omid の写し）の成分で押さえる理由が構造からは出ない（例で W の添字が偶然 V に等しい）。
+- **FDsh**: 標本を各集合 5000 行列に増やした（11 集合、5.5 万行列）。FrameDom 枠と FDsh 748 万件で例外 0。全数を測定中（tmp/lead/qD.sh、tools/probe_fdsh.py）。証明には Lhd 型の主張の σ 不変性（区間の任意の C での支配）が要り、既存の補題はない。
+- **HSibHardV2 の形 (ii)**（a は上げの的で topped、b は次の列 b + 1 へ上げる、e1 b < e1 a）を鎖に分けた（tmp/lead/probes/sib2.py、std_b の 154 件で各段とも例外 0）:
+  - v(b) = v(b + 1)。g = P_1 b で、b + 1 は g の子。g の子で p の祖先（か p）の u がただ 1 つあり、u と b + 1 は g の隣り合う子（u の部分木は b で終わる）。
+  - o(b + 1) ≤ o(u)、よって v(b + 1) ≤ v(u)（ψ の大小は添字から）。b + 1 が g で数える子なら（36 件）Good3 の減少から出る。数えない 118 件では b + 1 は上げの的で topped。
+  - v(u) ≤ v(p) ≤ v(a)。P_1 a = p。
+  - 数えない場合の形を一般にした **UpgSibLate**（p の隣り合う子 u < w で w が w − 1 から上げられ topped なら v(w) ≤ v(u)、o(w) ≤ o(u)）は std_a・d3s で 2.6 万件例外 0（tmp/lead/probes/siblate.py、全数を測定中）。w が上げの的なら w の親 p は w − 1 の行 1 の親に等しく、col w = (e0 p + 1, e1(w − 1), 1)。v(w) ≤ v(u) は w の bump 項と u の増分の比較で、兄弟の値の比較になる。SibVCol と同じく値の不変条件として運ぶ候補。
+- **T2SVStrict**（sv の種の引数 X1 が σ_{V,V+1} で真に増える）: sv の 11 集合のうち調べた分で、X1 の最後の加数の添字は V を超え、r の数える子に P_1 = r のものがあり、v′(r) = v(r)（tmp/lead/probes/svstrict.py）。X1 の形は ψ_{Ω_{V+1}}(0) が多いが一様でない（ψ_ω(Ω_1) など）。どの例でも σ が届く位置に ψ_{V+1}(…)（上げを失った x − 1 の o′ に由来）があり、σ はそれを ψ_{V+2} にする。添字が V を超えるだけでは足りない（加法の吸収で f(s) = s になりうる: V = 1、s = ω）。証明には r から x − 1 への道の o の構造を追う必要がある。
