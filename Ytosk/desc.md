@@ -3783,3 +3783,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - FDsh（tools/probe_fdsh.py、全数）: 11 集合で例外 0（FDsh 欄は ext1 で 2.6 億件など）。
 - T2VRAQNDom はすべての段 u ≤ V の形では偽（Cprime 6・ext1x 2・expP 2・ext1 27 件）だが、Lean の形（段は LevAt = v(r) か道の段 PathLvAll）では Cprime・ext1x で例外 0（tmp/lead/probes/seeddom2.py の qn.vraPath）。T2SeedDomV2（qn の T2SeedQNDom・C の T2SeedCDom）と合わせて 11 集合と std_b で測定中（前は std_b だけ）。
 - HBumpExt の 1 列の場合（tmp/lead/probes/bumpdrop1.py）: 11 集合の全数で例外 0（前件 3950 万件）。T2SeedDomV2（qn の dom1・dom2、C の dom1・dom2）と T2VRAQNDom（道の段）も 11 集合で例外 0（tmp/lead/seeddom2.txt）。C の悪い形 6 個でも C の dom は成り立つ。std_b は測定中。
+- 追記（lead、C の種の作り直しの基礎）: C の場合はすべて（良い形 1.2 万件・悪い形 12 件、Cprime 30 万・ext2・t2ext、tmp/lead/probes/cfs.py）で、M[n] の r の枠の q より前の部分は M の r の枠に対して FrameShape の形（最後の数える子だけが ◁ で下がり、他は等しい）。よって C の種の q より前の枠は、種でない列と同じく M の枠と比べて扱え、M.take x の値（un を要る）も K も要らない見込み。書き換えの条件は B_N ≤ X_M から X_M で判定でき、種の再帰の始まり（n = 2 の P = M.take x の r の引数 X1）はそのまま。
