@@ -3753,3 +3753,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - よって悪い形の C は、M.take x の値でなく K の値で種の状態 X1 を作り直す必要がある。C の残り（decP・rw・lhd）、`T2SeedCCl`、`T2VRASeedSVC` の C、`C_frame`・`seed_dec_C`・`o_r_level_C`・`seed_r_value_C` が同じ前提（un）に立つ。
 - 追記（同日）: qn の場合にも x − 1 が r の親へ上げる形が ext2 に 163 個あるが、そこでは列 r < i < q の M[n] の値は M.take x と一致する（tmp/lead/probes/qnbad.py）。壊れているのは C の場合だけ。種の qr・qn の欄（seedqr.py）は 8 集合まで例外 0、sv・C の欄（seedsvc.py）は std_b でも例外 0（C の un だけが ext2 で偽）。
 - 直しの見通し（C の悪い形）: M[n] の B の部分（列 r … x − 1）の値は、x − 1 の後ろに r の写しの最初の列が来る K = M[2].take (x + 1) の値（x − 1 が k へ上げる）。最後の写しの値は前の P = M[n − 1] の値の σ 像（最後の列は上げない）。よって n − 1 = 1 のときだけ P = M.take x（上げなし）で、n − 1 ≥ 2 では P の B の部分は K の値。C の種の状態を、M[n] の側は K の値で作り直す。
+- 追記（同日、設計の調べ）: C のエンジン（V3T2SeedC）の流れは、M[n] の r の枠 = [q より前の数える子（値は M.take x の τ）] ++ [q]（`C_frame`）、r の引数 = step V X1 s′ (… σ(P の r の引数) …)、P = M[n − 1]、n = 2 では P = M.take x で P の r の引数 = X1。rw の欄で X1 の部分が書き換えで消え、o_N(r) = ψ_V(σ^{n−1} X1)（`seed_r_value_C`）。
+  - 悪い形では q より前の数える子の値が K の値 τK（≠ τ）になる。それでも rw の形「step V X1_K s′ (step s′ 0 s′ (σ(σ^k X1_T))) = σ(σ^k X1_T)」が成り立てば o_N(r) = ψ_V(σ^{n−1} X1_T) は同じ式で出る（X1_T は M.take x の状態で、n = 2 の P の引数）。
+  - 本当の壁: M[n] の r の枠の性質（FrameOT・PH3cG・FC3・VSmallF・FrameClosed・VSmallRAll・RwClosed など）を、良い形では M.take x の不変条件（文脈の pre）から写すが、悪い形では K の枠の性質が要る。K = M.take x ++ [r の写しの最初の列] は M の接頭辞でも M より前の展開でもなく、今の帰納法では K の不変条件が使えない（T0PrefixInv と同じ種類の循環）。
+  - 例では τK は τ の中の v(q) の値 Ω_1 を qnS = Ω_ω に置き換えた形に見える（q − 1 が q へ上げ、q より前の部分木に v(q) が入る）。σ の写しと同じ移送の機構で K の枠の性質を τ の枠から運べるかもしれない。未確認。
