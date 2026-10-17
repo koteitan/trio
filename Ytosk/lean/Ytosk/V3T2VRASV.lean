@@ -15,6 +15,7 @@
 import Ytosk.V3T2VRASeed
 import Ytosk.V3T2SeedSV
 import Ytosk.V3ExpT1R
+import Ytosk.V3T2SeedPre
 
 namespace Ytosk
 
@@ -215,5 +216,106 @@ theorem t2VRASeedSVC_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : 
       (fun d hd => by rw [hσT d (by rw [hT]; exact List.mem_append_left _ hd)]; exact hLc0 d hd)
       (fun s y hs hy => hc0' s y (by rw [← hσT c0 (by rw [hT]; simp)]; exact hs) hy)
       (hlev hvr) (fun u _ => hlastG _ u) Lc c R' hCL u hu
+
+/-! ## 種の列の枠の形（T2SeedPreShapeSVC）の sv の欄 -/
+
+/-- **The C part of `T2SeedPreShapeSVC`.** -/
+def T2SeedPreShapeC (M : Mat) (ρ : Valn) : Prop :=
+  ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → T2CCase M r L → ∀ n, 2 ≤ n →
+    ∀ σ, Cons (G2 M r L n) σ → Good3 (G2 M r L n) σ →
+    ∀ p, T2Seed M r L p → ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL (G2 M r L n) p = Lc ++ c :: R →
+      c < r + L → (∀ q, par M 0 (r + L) = some q → c ≠ q) → ∀ s y, σ.o c = psi s y z →
+      (lt (spArg (σ.v p) z (sumN (Lc.map σ.o))) y = true ∧ lt (psi (σ.v p) z z) (psi s y z) = true) →
+      ∃ (Lc' R' : List Nat) (yM : T), CL M p = Lc' ++ c :: R' ∧ σ.v p = ρ.v p ∧ Lc'.map ρ.o = Lc.map σ.o ∧
+        ρ.o c = psi s yM z ∧ y ≤ yM ∧
+        (lt (spArg (ρ.v p) z (sumN (Lc'.map ρ.o))) yM = true ∧ lt (psi (ρ.v p) z z) (psi s yM z) = true)
+
+/-- **`T2SeedPreShapeSVC` from the sv residual `T2SVc0` and the C part.** -/
+theorem t2SeedPreShapeSVC_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hc0 : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → T2SVCase M r L → T2SVc0 M ρ r L)
+    (hC : T2SeedPreShapeC M ρ) : T2SeedPreShapeSVC M ρ := by
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
+    (t2CopyResAll_holds M ρ rk hM hS I R hz h2)
+  intro r L hlen hr hcase n hn σ hCN hGN p hp Lc c R' hCL hcx hcq s y hsy ht
+  rcases hcase with ⟨hq, hux⟩ | hCc
+  swap
+  · exact hC r L hlen hr hCc n hn σ hCN hGN p hp Lc c R' hCL hcx hcq s y hsy ht
+  have hpr : p = r := by
+    rcases hp with ⟨_, h⟩ | ⟨q, hq', hqr, _⟩
+    · exact h
+    · rw [hq] at hq'; cases hq'; exact absurd rfl hqr
+  subst hpr
+  have hx : M.length - 1 = p + L := by omega
+  have hlen2 : 2 ≤ M.length := by omega
+  have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
+  have hexp : ∀ m, expand M m = G2 M p L m := by
+    intro m
+    have h := expand_eq_gexp M m hlen2 hzT (by rw [h2, hx]; exact hr)
+    rw [h2, hx] at h
+    simp only [show (0 < 2) from by omega, show (1 < 2) from by omega, if_true,
+      Nat.add_sub_cancel_left] at h
+    exact h
+  have hGlow : ∀ m, 1 ≤ m → m < n → ∀ τ, Cons (G2 M p L m) τ → Good3 (G2 M p L m) τ :=
+    fun m hm _ τ hτ => by rw [← hexp m] at hτ ⊢; exact hGall m hm τ hτ
+  have hRk : ∀ m, 1 ≤ m → ∃ rk', Rk (G2 M p L m) rk' := fun m hm => by
+    obtain ⟨rk', h'⟩ := rk_expand_t2 hX hJ hz h2 I.rank m hm
+    rw [hexp m] at h'; exact ⟨rk', h'⟩
+  have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+  rw [hx] at hcnt
+  have hRk1 : Rk (M.take (p + L)) rk := rk_take (by omega) I.rank hcnt
+  have hC0 := cons_of_rk hRk1
+  obtain ⟨hG0, hv0, _⟩ := sv_children_ctx hM hS I R hlen hr hq hux hC0
+  obtain ⟨rkN, hRN⟩ := hRk n (by omega)
+  obtain ⟨rkP, hRP⟩ := hRk (n - 1) (by omega)
+  have hCP := cons_of_rk hRP
+  have hGP := hGlow (n - 1) (by omega) (by omega) _ hCP
+  obtain ⟨hCLN, hσT, hσv, _, _⟩ := sv_frame hM hS I R hz h2 hlen hr hq hux (topP_sv hlen I.z2 I.z1 hr hq hux)
+    hn hCN hRN hCP hGP hRP hC0 hG0 hRk1
+  have hvr : σ.v p = ρ.v p := by rw [hσv, hv0]
+  have hCLM := cl_sv I hlen hq hux
+  rw [hCLN] at hCL
+  have hR : R' ≠ [] := by
+    rintro rfl
+    obtain ⟨_, h2'⟩ := List.append_inj' hCL rfl
+    simp only [List.cons.injEq, and_true] at h2'
+    omega
+  have h1 : CL (M.take (p + L)) p = Lc ++ c :: R'.dropLast := by
+    have := congrArg List.dropLast hCL
+    rw [List.dropLast_concat, List.dropLast_append_of_ne_nil (by simp), List.dropLast_cons_of_ne_nil hR] at this
+    exact this
+  rcases List.eq_nil_or_concat (CL (M.take (p + L)) p) with hT | ⟨Lc0, c0, hT0⟩
+  · rw [hT] at h1; simp at h1
+  have hT : CL (M.take (p + L)) p = Lc0 ++ [c0] := by rw [hT0, List.concat_eq_append]
+  obtain ⟨hLc0, hc0'⟩ := hc0 p L hlen hr ⟨hq, hux⟩ _ hC0 Lc0 c0 hT
+  have hσρ : ∀ d ∈ Lc0, σ.o d = ρ.o d := fun d hd => by
+    rw [hσT d (by rw [hT]; exact List.mem_append_left _ hd)]; exact hLc0 d hd
+  rw [hT] at h1
+  by_cases hR2 : R'.dropLast = []
+  · rw [hR2] at h1
+    obtain ⟨h3, h4⟩ := List.append_inj' h1 rfl
+    simp only [List.cons.injEq, and_true] at h4
+    subst h3; subst h4
+    have hLm : Lc0.map ρ.o = Lc0.map σ.o := List.map_congr_left (fun d hd => (hσρ d hd).symm)
+    have hy : y ≠ z := fun h0 => by rw [h0] at ht; exact T.not_lt_z _ ht.1
+    obtain ⟨yM, hyM, hyy⟩ := hc0' s y (by rw [← hσT c0 (by rw [hT]; simp)]; exact hsy) hy
+    have hpp : psi s y z ≤ psi s yM z := by
+      rcases (le_iff _ _).mp hyy with h5 | h5
+      · exact psi_le_psi_of (Or.inr ⟨rfl, Or.inl h5⟩)
+      · exact psi_le_psi_of (Or.inr ⟨rfl, Or.inr ⟨h5, le_refl _⟩⟩)
+    refine ⟨Lc0, [], yM, by rw [hCLM, hT], hvr, hLm, hyM, hyy, ?_⟩
+    rw [hLm, ← hvr]
+    exact ⟨lt_of_lt_of_le ht.1 hyy, lt_of_lt_of_le ht.2 hpp⟩
+  · have hdl : (Lc ++ c :: R'.dropLast).dropLast = Lc0 := by rw [← h1]; simp
+    rw [List.dropLast_append_of_ne_nil (by simp), List.dropLast_cons_of_ne_nil hR2] at hdl
+    have hLs : ∀ d ∈ Lc, d ∈ Lc0 := fun d hd => by rw [← hdl]; exact List.mem_append_left _ hd
+    have hcs : c ∈ Lc0 := by rw [← hdl]; simp
+    have hclM : CL M p = Lc ++ c :: (R'.dropLast.dropLast ++ [c0]) := by rw [hCLM, hT, ← hdl]; simp
+    have hLm : Lc.map ρ.o = Lc.map σ.o := List.map_congr_left (fun d hd => (hσρ d (hLs d hd)).symm)
+    refine ⟨Lc, _, y, hclM, hvr, hLm, by rw [← hσρ c hcs]; exact hsy, le_refl _, ?_⟩
+    rw [hLm, ← hvr]; exact ht
 
 end Ytosk

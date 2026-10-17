@@ -117,7 +117,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 全員の生産者を差し込んだ最上位（V3TopV2 の中間の形 `trio_terminates_main_V2_base`）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
-    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2・T0ArgBRes（t0）、HBumpExt（標準形の接頭辞で bump 項は増える。t0 の T0AbWRes と t2 の T2BumpMonoV2 を出す）、T2SeedClV2B（k を含まない T2SeedQNBase・T2SeedSVBase・T2SeedCBase。種の標準形もここから）・T2SeedPResRCV2（C は T2SeedCResR。その un は悪い形 T2CBad で偽なので、t = 2 の文脈を StepCtxT2（¬T2CBad）に限った）、T2CBadOut（悪い形の t = 2 の展開、大づかみな残り）・T2SeedDomV2・FDsh・T2VRAQNDom・T2SVc0（sv の種の枠の VSmallRAll を M と M.take x の値の比較に減らした）・T2VRASeedC（C の種の枠）・T2SeedPreShapeSVC・T2VRACopy・T2UpgAbsW・T2VAncStep（t2）、HRwClL（すべての標準形で RwClosedL。文脈の rw を作る）、T2VRAK KAG（t1。T2VAncStep と合わせて qVRAshK_KVRA の枠の条件 KVRA）、HSibColV2（top。HSibHardV2 から帰着、残りは SibColU: 片方が上げの的 topped の同じ列の兄弟）。T0RwRes・TRwOut 0/1・偽の T2X1Cl・CopyLowK は HRwClL に替わって消えた
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2・T0ArgBRes（t0）、HBumpExt（標準形の接頭辞で bump 項は増える。t0 の T0AbWRes と t2 の T2BumpMonoV2 を出す）、T2SeedClV2B（k を含まない T2SeedQNBase・T2SeedSVBase・T2SeedCBase。種の標準形もここから）・T2SeedPResRCV2（C は T2SeedCResR。その un は悪い形 T2CBad で偽なので、t = 2 の文脈を StepCtxT2（¬T2CBad）に限った）、T2CBadOut（悪い形の t = 2 の展開、大づかみな残り）・T2SeedDomV2・FDsh・T2VRAQNDom・T2SVc0（sv の種の枠の VSmallRAll と枠の形を M と M.take x の値の比較に減らした）・T2VRASeedC・T2SeedPreShapeC（C の種の枠）・T2VRACopy・T2UpgAbsW・T2VAncStep（t2）、HRwClL（すべての標準形で RwClosedL。文脈の rw を作る）、T2VRAK KAG（t1。T2VAncStep と合わせて qVRAshK_KVRA の枠の条件 KVRA）、HSibColV2（top。HSibHardV2 から帰着、残りは SibColU: 片方が上げの的 topped の同じ列の兄弟）。T0RwRes・TRwOut 0/1・偽の T2X1Cl・CopyLowK は HRwClL に替わって消えた
       - 残りの測定の状態（2026-10-17、lead。どれも Lean と同じ形の probe）
 
         | 残り | 測定 | 備考 |
@@ -137,7 +137,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | FDsh | 11 集合で例外 0 | probe_fdsh 全数 |
         | T2VRASeedC（旧 T2VRASeedSVC の C の欄） | 11 集合で例外 0 | T2VRASeed（t1 の probe_t2vra） |
         | T2SVc0 | d3s・deep2・expP で例外 0（他は測定中） | svpre.py |
-        | T2SeedPreShapeSVC | 10 集合で例外 0 | preshape.py（t0ext には t = 2 がない） |
+        | T2SeedPreShapeC（旧 T2SeedPreShapeSVC の C の欄） | 10 集合で例外 0 | preshape.py（t0ext には t = 2 がない） |
         | T2VRACopy・T2VAncStep | 11 集合と ext3s で例外 0 | probe_t2vra・vanc1 |
         | HRwClL | 12 集合（11 集合＋ext3s）で例外 0 | rwl2.py。偽の RwClosed・T2X1Cl・CopyLowK の代わり |
         | T2VRAK KAG | 11 集合で例外 0 | probe_t2vrak |
