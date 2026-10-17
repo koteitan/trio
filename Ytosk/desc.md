@@ -3707,3 +3707,11 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - t = 2: `tRwOut2_of`（V3RwCarry、`rwClosed_expand_t2SV`）。残りは T2X1Cl（前提つき）・T2CopyK CopyLowK・T2VAncStep。
 - 最上位 `trio_terminates_main_V2_cur` から T0RwRes と TRwOut 0 が消え、t2 の上の 3 つが増えた。全体ビルド緑 1047 jobs、公理は標準の 3 つ。
 - 測定: VAncStep（vanc1.py）・ClosedLow（closedL.py）は 11 集合で例外 0。古い強い VAnc（vanc.py、Ω_{v(j)} に弱める前）は ext1 に 1 件の破れがあるが、今は使っていない。UpgSibLate（siblate.py）は std_b を除く 9 集合（118 万件）で例外 0。
+
+### HSibHardV2 を SibColW に帰着（2026-10-17、lead、V3SibCol）
+
+- `SibColW N τ`: 同じ親の隣り合う子 u < w で col u = col w なら v(w) ≤ v(u)。SibVCol（w は w − 1 から上げられない）と UpgSibLate（w は上げられ topped）を合わせ、上げの有無を問わない形。
+- `upgSibVHard_of_col`: UpgSibVHard ⟸ SibColW。(i)（同じ列）はそのまま。(ii)（e1 b < e1 a、e2 b = 0、upg b = b + 1）: g = P_1 b は m = P_0 b の真の祖先。u を g の子で m の祖先とすると、b + 1 は g の子で u の次の子（u の部分木は b で終わる）。R1S と P_1 b = g から e1 u = e1 b = e1 g + 1、SibDec から e2 u = 1、よって col u = col (b + 1)。v(b) = v(b + 1)（`v_upg_eq`）≤ v(u)（SibColW）≤ v(m)（`v_le_path_anchor`、V3SibV の key を取り出したもの）≤ v(a)。
+- 最上位の HSibHardV2 を `HSibColV2`（すべての標準形で SibColW）に替えた。全体ビルド緑 1048 jobs、公理は標準の 3 つ。
+- 測定: UpgSibLate は std_b（329 万件）でも例外 0、11 集合のうち測った 10 集合と std_b で例外 0。SibColW（tmp/lead/probes/sibcolall.py）は std_a・d3s・Cprime の標本で例外 0、全数を測定中（tmp/lead/qE.sh）。
+- SibColW の証明の見通し: 両方が数える子なら Good3.dec（o(w) ≤ o(u)）から。e2 = 0 では上げの的の候補は g の子で道の上の列 c_g か次の列だけで、両方に子があれば upg u = upg w。子がない場合は c_g と次の列 w + 1（g の同じ列の子）の比較になり、より低い段の兄弟に戻る。e2 = 1 では bump 子の子の o の比較になり、より高い段に進む。上下に再帰するので、部分木の辞書式の順から値の順を出す一般の定理（目標 3 の局所形）が要る。

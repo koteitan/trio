@@ -98,7 +98,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         - ✅ UpgSibV を難しい形 UpgSibVHard に絞った（`upgSibV_of_hard`、V3SibV。a に子がない同じ列と、b = (e0 p+1, y, 0) は S1 から証明）
         - ✅ (ii) e1 b < e1 a を次の列への上げ（upg b = b + 1、10 集合で 0 件）だけに絞った（V3SibV）
         - ✅ C の vqP を un から（`c_vqP_of_un`、V3T2CVq、t2）。C の残りは decP・un（std_b で例外 0）・rw・lhd
-        - UpgSibVHard（最上位の HSibHardV2）の証明（top）: 同じ列で a に子がある場合（一般の形 SibVCol を値の不変条件として運ぶ。lead 承認、未着手）と、(ii) の次の列への上げ（標準形で 154 件ある）
+        - ✅ UpgSibVHard を同じ列の兄弟の値の条件 SibColW（上げの有無を問わない）に帰着（`upgSibVHard_of_col`、V3SibCol）。(ii) は v(b) = v(b+1) ≤ v(u) ≤ v(p) ≤ v(a)（u は g = P_1 b の子で p の祖先、col u = col (b+1)）
+        - UpgSibVHard（旧 HSibHardV2）の証明（top）: 同じ列で a に子がある場合（一般の形 SibVCol を値の不変条件として運ぶ。lead 承認、未着手）と、(ii) の次の列への上げ（標準形で 154 件ある）
       - ✅ T2BelowXRes の切り口の仮定 T2CutA を RwClosed に替えた（V3DepRWU、t0 の影の補題を使う）。T2BelowXRes の残りは種での RClaimU・REr、AbsWN
       - ✅ T2BelowXRes を M ごとに（T2BelowXResAt・T2BelowXResV2）。V2 の文脈で T0RwRes・T2SeedPResV2・T2BelowRV2・T2SeedOTV2 に分解（`t2BelowXResV2_of`、V3T2BelowV2）
       - ✅ T2BelowRV2 ⟸ T2SeedClV2（種の閉じた条件、qn・sv・C）∧ T2BumpMonoV2（`t2BelowRV2_of`、V3T2BelowR）。種の RClaimU は類 B0・共通の接頭辞・道の段の閉じた条件から（`rclaim_of_hiB0`）、qr は dom の欄から証明。AbsWN の落とし側は BumpAbsC から（V3T2AbW）
@@ -115,7 +116,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 全員の生産者を差し込んだ最上位（V3TopV2 の中間の形 `trio_terminates_main_V2_base`）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
-    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2・T0ArgBRes・T0AbWRes（t0。T0AbWRes ⟸ HDropV2 ∧ T0PrefixInv）、T2SeedClV2（qn・sv・C）・T2BumpMonoV2・T2SeedOTRestV2（qn・C）・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShapeSVC・T2VRACopy・T2UpgAbsW・T2X1Cl・T2CopyK CopyLowK・T2VAncStep（t2。最後の 3 つは RwClosed の運搬から）、T2VRAK KStepVRA（t1）、HSibHardV2（top）。T0RwRes・TRwOut 0/1 は RwClosed を帰納法で運んで消えた
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2・T0ArgBRes・T0AbWRes（t0。T0AbWRes ⟸ HDropV2 ∧ T0PrefixInv）、T2SeedClV2（qn・sv・C）・T2BumpMonoV2・T2SeedOTRestV2（qn・C）・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShapeSVC・T2VRACopy・T2UpgAbsW・T2X1Cl・T2CopyK CopyLowK・T2VAncStep（t2。最後の 3 つは RwClosed の運搬から）、T2VRAK KStepVRA（t1）、HSibColV2（top。HSibHardV2 から帰着）。T0RwRes・TRwOut 0/1 は RwClosed を帰納法で運んで消えた
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
   - Desc3 の証明 → **目標 4 が残っている**
