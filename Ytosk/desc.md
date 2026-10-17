@@ -3785,3 +3785,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - HBumpExt の 1 列の場合（tmp/lead/probes/bumpdrop1.py）: 11 集合の全数で例外 0（前件 3950 万件）。T2SeedDomV2（qn の dom1・dom2、C の dom1・dom2）と T2VRAQNDom（道の段）も 11 集合で例外 0（tmp/lead/seeddom2.txt）。C の悪い形 6 個でも C の dom は成り立つ。std_b は測定中。
 - 追記（lead、C の種の作り直しの基礎）: C の場合はすべて（良い形 1.2 万件・悪い形 12 件、Cprime 30 万・ext2・t2ext、tmp/lead/probes/cfs.py）で、M[n] の r の枠の q より前の部分は M の r の枠に対して FrameShape の形（最後の数える子だけが ◁ で下がり、他は等しい）。よって C の種の q より前の枠は、種でない列と同じく M の枠と比べて扱え、M.take x の値（un を要る）も K も要らない見込み。書き換えの条件は B_N ≤ X_M から X_M で判定でき、種の再帰の始まり（n = 2 の P = M.take x の r の引数 X1）はそのまま。
 - 追記（lead、C の種の作り直しの調べ）: 種でない列の FrameShape は `good_below_of`（V3ExpT2BX）が DepS の解析（hoff: DepS の外は M と同じ値、hD: DepS の中は ◁）と構造の事実 hOc（DepS の o の呼び出しでは最後の数える子だけが DepS）から出す。C の種 r の q より前の部分も同じ形で出る見込み（cfs.py で全件 FrameShape）。ただし今の組み立てでは種の事実（cvals の減少・標準形・RClaimU など）が DepS の解析の前提になっている。r の q より前の子は o(r) より低い順位なので、DepS の解析を「o(r) より低い呼び出し」と「残り」に分ければ循環しない。V3ExpT2B* と V3DepOTW の順位の帰納法を分ける大きな作り直しになるので、今は T2CBadOut のままにする。
+
+### 3 列伸ばしの標本 ext3s での確かめ（2026-10-17、lead）
+
+- 集合 ext3s（tmp/ytosk-handoff/sets/ext3s.pkl、59 万行列）: ext2 の長さ 16 以下から 3 万個を選び、bms -s で標準形になる列を 1 つ足したもの（tmp/lead/probes/gen_ext3.py）。ext2 で偽の欄が見つかったので、さらに 1 列伸ばした形で偽を探す。
+- 例外 0: 種の残り（seedsvc・seedqr）、T2SeedDomV2・T2VRAQNDom（道の段）、SibColW、BumpDrop1（269 万件）、落とす補題の欄（probe_dropres。BumpAbsC を含む。破れは使っていない AbsSR・BumpAbsS だけ）、T0ArgBRes、T0UpgAbsV2（強い形の破れ 26 件はどれも T0Easy）、VAncStep、ClosedLow、C の種の FrameShape、UpgAbsXW0・T2UABad の形（uaw0b）。
+- 測定中: HFrameV2・HLeafV2・AbsUS・TPLoS・TrigS0・T2VRA・KAG・FDsh・種の閉じた条件・PreShape・X1Cl（tmp/lead/qJ.sh、集合の名前の制限は --data の別の場所に ext2.pkl として置いて回避）。
