@@ -135,8 +135,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | T2CBadOut | — | 悪い形（ext2 に 6 個）の t = 2 の展開。全体の主張の帰結 |
         | T2SeedDomV2・T2VRAQNDom0 | 11 集合と std_b で例外 0 | seeddom2.py（T2VRAQNDom0 は T2VRAQNDom の Lc = [] の場合） |
         | FDsh | 11 集合で例外 0 | probe_fdsh 全数 |
-        | T2SVc0 | d3s・deep2・expP で例外 0（他は測定中） | svpre.py |
-        | T2CFrRes | d3s・deep2・expP で例外 0（他は測定中） | cvra.py |
+        | T2SVc0 | 11 集合と ext3s で例外 0（sv 4.5 万件、c₀ で y ≠ 0 は 2.7 万件） | svpre.py |
+        | T2CFrRes | 8 集合で例外 0（expP・std_a・ext3s は測定中） | cvra.py |
         | T2VRACopy・T2VAncStep | 11 集合と ext3s で例外 0 | probe_t2vra・vanc1 |
         | HRwClL | 12 集合（11 集合＋ext3s）で例外 0 | rwl2.py。偽の RwClosed・T2X1Cl・CopyLowK の代わり |
         | T2VRAK KAG | 11 集合で例外 0 | probe_t2vrak |
