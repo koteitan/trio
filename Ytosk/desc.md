@@ -3904,3 +3904,5 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 
 - 前の RwClosed の運び方（V3RwClT0・V3RwClDrop・V3RwClT1）の鍵は「子の引数が下がっても B < hi(y′) ≤ hi(y)、ClosedA は a と B だけによる」。RwClosedL の ClosedL a B (H a (H s y)) は区間の上の端が y による。H が y について単調なら区間は狭まる向きなので、落とし・t0・t1 は同じ形で運べる見込み。
 - t2（V3RwClT2・V3RwClCopy）は、写しの枠で ClosedL が σ で保たれること（ClosedA の版 ClSh は項だけでは偽）と種の枠の条件が残りになる。よって HRwClL 1 つが t2 の残り 2〜3 個に替わるだけで、今は得にならない。
+- 追記（2026-10-18）: 部品を測った。H の y についての単調性は既存の `H_mono`（V3NodeLhd）、H a (H s ·) も小さい項 1 万組で単調。t2 の写しの部品 ClShL（書き換える枠で ClosedL a B (H a (H s y)) なら σ = σ_{V,V′} の像 ClosedL (f a) (σB) (H (f a) (H (f s) (σ y)))）は、大きさ 7 までの項の 386 組で例外 0（clshl.py）。ClosedA の版 ClSh は項だけでは偽だったが、ClosedL は区間の逃げ道があるので σ で保たれる見込み。
+- 計画: (1) V3RwClT0・V3RwClDrop・V3RwClT1 を RwClosedL に作り直す（子の引数が下がると区間の上の端も下がる、`H_mono`）。(2) t2 の写しは ClShL（項の補題、証明を試みる）。(3) 種の枠は残り。(4) hInvV2_all で RwClosedL を運び、HRwClL を外す。
