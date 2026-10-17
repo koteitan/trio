@@ -3782,3 +3782,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - T2CBadOut は大づかみな残り（悪い形の展開がうまくいくことそのもの）。上の計画（K = M[2].take (x + 1) を基準にした C の種）で、n = 2 の r の q より前の枠以外は証明できる見込み。
 - FDsh（tools/probe_fdsh.py、全数）: 11 集合で例外 0（FDsh 欄は ext1 で 2.6 億件など）。
 - T2VRAQNDom はすべての段 u ≤ V の形では偽（Cprime 6・ext1x 2・expP 2・ext1 27 件）だが、Lean の形（段は LevAt = v(r) か道の段 PathLvAll）では Cprime・ext1x で例外 0（tmp/lead/probes/seeddom2.py の qn.vraPath）。T2SeedDomV2（qn の T2SeedQNDom・C の T2SeedCDom）と合わせて 11 集合と std_b で測定中（前は std_b だけ）。
+- HBumpExt の 1 列の場合（tmp/lead/probes/bumpdrop1.py）: 11 集合の全数で例外 0（前件 3950 万件）。T2SeedDomV2（qn の dom1・dom2、C の dom1・dom2）と T2VRAQNDom（道の段）も 11 集合で例外 0（tmp/lead/seeddom2.txt）。C の悪い形 6 個でも C の dom は成り立つ。std_b は測定中。
