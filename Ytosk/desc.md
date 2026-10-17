@@ -3813,3 +3813,14 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 文脈 StepCtxV2.rw は RwClosedL。最上位の帰納法は RwClosed を運ばない（hInvV2_all は Inv3V2 だけを運び、文脈の RwClosedL は新しい残り `HRwClL`: すべての標準形で RwClosedL から）。t0_final_inv3V2D の RwClosed の出力、V3RwCarry・V3RwCarryT1 は外した。
 - 最上位の残り: T2X1Cl（偽）と T2CopyK CopyLowK が消え、HRwClL が増えた。T2VAncStep は VSmallRAll の枠の条件 KVRA のために残る。全体ビルド緑 1048 jobs、公理は標準の 3 つ。
 - 測定（tmp/lead/probes/rwl2.py、区間の上の端は H(a, H(s, y))、lhd_exact.ex_K で厳密）: ext3s では RwClosed（ClosedA）が偽の 3 枠も含めて RwClosedL は全部真（M の枠 2.7 万、M[2] 1.2 万、M[3] 2.0 万）。11 集合（Cprime, t0ext, d3s, deep2, deep3, ext1, ext1x, t2ext, ext2, expP, std_a）でも RwClosedL は例外 0（M・M[2]・M[3] の枠。ClosedA が偽なのは ext3s の 3 枠だけ）。
+
+### sv の種の閉じた条件を k を含まない残りに（2026-10-17、lead、V3T2SeedSVCl、緑）
+
+- sv（q = r、x − 1 が x へ上げる）の種の引数は X′ = σ^k X₁（σ = σ_{V,V+1}、X₁ = M.take x での r の引数、V = v(r)）。残り T2SeedSVCl はすべての k についての主張だった。
+- 実測（svcl.py、d3s・deep2・Cprime・ext2 の sv の種 1.9 万件）: 段 u ≤ V で X₁ の成分はいつも X₁ より小さく（V の成分の逃げ道は一度も使わない）、V の成分も X₁ より小さい。X は P + ψ_b(x)、X₁ は P + T₁ で σ P = P。X・X₁ は類 B0。σ^k X₁（k = 1..4）も閉じている。
+- すべての列の o(i) の引数で同じ閉じ方は成り立たない（argcl.py、d3s で 1.7 万件の例外）。sv の種に特有の性質。
+- 項の補題（行列によらない）:
+  - `comps_sh_low`: 段 u ≤ V で σ t の成分 g は、t の成分 g₀ について g = g₀ か g = σ g₀、または V′ の成分。σ は添字 ≤ V の項の中に入らず、添字 > V の項の新しい添字 V′ + σ(s − V) の成分は V′ の成分か σ(s − V) の成分。
+  - `closed_shIt`: X₁ が標準形で、段 u ≤ V で X₁ と V′ の成分が X₁ より小さければ、すべての k で σ^k X₁ も同じ（t ≤ σ t と σ の狭義単調性）。V′ = V + 1 の成分は V の成分と 0。
+  - `b0_shIt`（加数 ≥ W は σ で保たれる、`summands_sh`）、`shIt_app`（σ P = P なら σ^k (P + T₁) = P + σ^k T₁）。
+- 残り `T2SeedSVBase`（M と M.take x だけ、k を含まない）。最上位は `T2SeedClV2B`（qn・C の欄はそのまま、sv の欄が T2SeedSVBase）を受け、`t2SeedClV2_of_B` で T2SeedClV2 を作る。ビルド緑、公理は標準の 3 つ。
