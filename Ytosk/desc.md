@@ -3721,3 +3721,11 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - t1 が証明した `qVRAshK_KVRA`（V3T2VRAK）を最上位に差し込んだ。`trio_terminates_main_V2_base` は `T2VRAK KVRA` を受け、`qVRAshK_KVRA` で VSmallRAll を運ぶ。
 - 最上位では KVRA = VDomF ∧ KAG のうち VDomF を `t2CopyK_vDom_of`（既にある残り T2VAncStep から）、KAG を新しい残り `T2VRAK KAG` から（`t2VRAK_KVRA_of`）。移送そのものを仮定する `KStepVRA` は最上位から消えた。KAG は 11 集合の全数で例外 0（上の節）。
 - 全体ビルド緑 1048 jobs、公理は標準の 3 つ。
+
+### SibColW の場合分け（2026-10-17、lead、V3SibCol）
+
+- 2 つとも数える子: Good3.dec から o(w) ≤ o(u)、ψ の添字で v(w) ≤ v(u)（`v_le_of_counted_pair`）。
+- 2 つとも p の bump 子: bump 子は bump 子を持たない（その孫は BumpLeaf で行 2 が 0 になるが、bump 列の行 2 は 1）。よって v(c) = v(P_1 c) + ω^1 で、P_1 u = P_1 w（`par1_find` と ancL_eq）から v(w) = v(u)（`v_bump_sib`）。
+- 最上位の残り `HSibColV2` は `SibColU`（col u = col w ≠ bump p で、片方が上げの的 topped で数えない）だけになった。このとき e2 = 1 で v(c) = v(g) + ω^{W_c}（g = P_1 u = P_1 w）なので、W_w ≤ W_u（bump 子の子の o の和の比較）に帰着する。w に子がなければ W_w = 1 で自明。
+- 標本の内訳（tmp/lead/probes/sibcolk.py、std_a・Cprime 各 3 万）: 両方数える 8.3 万、bump 子どうし 7.2 千、片方が上げの的 1.4 万。
+- 測定の誤りの修正: tools/probe_dropres.py の BumpAbsC・BumpAbsS の欄が WeakCS のループの中に入っていて（de91ce2e から）、11 集合の BumpAbsC は 0 件しか数えていなかった。直した probe（tmp/lead/probes/bumpabsc.py、落とす補題の枠の欄を除いた写し）で測り直し中。d3s は 414 件で例外 0。
