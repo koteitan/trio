@@ -3729,3 +3729,12 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 最上位の残り `HSibColV2` は `SibColU`（col u = col w ≠ bump p で、片方が上げの的 topped で数えない）だけになった。このとき e2 = 1 で v(c) = v(g) + ω^{W_c}（g = P_1 u = P_1 w）なので、W_w ≤ W_u（bump 子の子の o の和の比較）に帰着する。w に子がなければ W_w = 1 で自明。
 - 標本の内訳（tmp/lead/probes/sibcolk.py、std_a・Cprime 各 3 万）: 両方数える 8.3 万、bump 子どうし 7.2 千、片方が上げの的 1.4 万。
 - 測定の誤りの修正: tools/probe_dropres.py の BumpAbsC・BumpAbsS の欄が WeakCS のループの中に入っていて（de91ce2e から）、11 集合の BumpAbsC は 0 件しか数えていなかった。直した probe（tmp/lead/probes/bumpabsc.py、落とす補題の枠の欄を除いた写し）で測り直し中。d3s は 414 件で例外 0。
+
+### T0AbWRes・T2BumpMonoV2 を HBumpExt にまとめた（2026-10-17、lead、V3BumpExt）
+
+- `HBumpExt`: 標準形 K（≠ SRO）と接頭辞 K.take k、i < k（行 1・2 が 0 でない）で bumpW (K.take k) τ i ≤ bumpW K σ i。1 列の場合は落とす補題の `bumpW_take_le` と同じ主張。
+- t = 0: M.take x = M[n].take (r + L)（`gexp_take_x`）なので T0BumpMono が直接出る（`t0BumpMono_of_ext`）。落とし側の AbsWN は文脈の BumpAbsC から（`absWN_take_t0`）。よって `t0AbWRes_of_ext : HDropV2 → HBumpExt → T0AbWRes`。前の経路の残り T0PrefixInv（M[n] の接頭辞の Inv3V2、今の帰納法では使えない）は要らなくなった。
+- t = 2: `t2BumpMonoV2_of_ext : HBumpExt → T2BumpMonoV2`（同じ形）。
+- 最上位の残りは 2 つ（T0AbWRes・T2BumpMonoV2）から 1 つ（HBumpExt）に。全体ビルド緑 1049 jobs、公理は標準の 3 つ。
+- 測定: 1 列の場合（tmp/lead/probes/bumpdrop1.py）は d3s・t0ext の各 5000 行列（8.8 万件）で例外 0、11 集合の全数を測定中（tmp/lead/qF.sh）。集合が接頭辞で閉じていれば 1 列の場合から一般の k が出る。
+- HBumpExt を帰納法で運べない理由: M → M[n] の段で M[n] の接頭辞（M[n] 自身を含む）の 1 列の落としが要り、それは M[n] の Inv3V2 からしか出ない。
