@@ -3738,3 +3738,5 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 最上位の残りは 2 つ（T0AbWRes・T2BumpMonoV2）から 1 つ（HBumpExt）に。全体ビルド緑 1049 jobs、公理は標準の 3 つ。
 - 測定: 1 列の場合（tmp/lead/probes/bumpdrop1.py）は d3s・t0ext の各 5000 行列（8.8 万件）で例外 0、11 集合の全数を測定中（tmp/lead/qF.sh）。集合が接頭辞で閉じていれば 1 列の場合から一般の k が出る。
 - HBumpExt を帰納法で運べない理由: M → M[n] の段で M[n] の接頭辞（M[n] 自身を含む）の 1 列の落としが要り、それは M[n] の Inv3V2 からしか出ない。
+
+- 追記（lead、2026-10-17）: SibColW（tmp/lead/probes/sibcolall.py、上げの有無・topped で分けて数えた）は 11 集合と std_b（741 万行列）の全数で例外 0。よって最上位の残り HSibColV2（SibColU ⊆ SibColW）は測って真。BumpAbsC は直した probe で Cprime・d3s・deep2・deep3・ext1x・t0ext まで例外 0（残りの集合は測定中）。
