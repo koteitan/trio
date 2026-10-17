@@ -3812,4 +3812,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - t0（V3T0DepS）と t2（V3DepRWU）のエンジンは relR_frameUL と shadow_hShL を使い、仮定は RwClosedL だけになった（T2HardB の欄、T0RwRes、t0DF_ofS も RwClosedL）。
 - 文脈 StepCtxV2.rw は RwClosedL。最上位の帰納法は RwClosed を運ばない（hInvV2_all は Inv3V2 だけを運び、文脈の RwClosedL は新しい残り `HRwClL`: すべての標準形で RwClosedL から）。t0_final_inv3V2D の RwClosed の出力、V3RwCarry・V3RwCarryT1 は外した。
 - 最上位の残り: T2X1Cl（偽）と T2CopyK CopyLowK が消え、HRwClL が増えた。T2VAncStep は VSmallRAll の枠の条件 KVRA のために残る。全体ビルド緑 1048 jobs、公理は標準の 3 つ。
-- 測定（tmp/lead/probes/rwl2.py、区間の上の端は H(a, H(s, y))、lhd_exact.ex_K で厳密）: ext3s では RwClosed（ClosedA）が偽の 3 枠も含めて RwClosedL は全部真（M の枠 2.7 万、M[2] 1.2 万、M[3] 2.0 万）。他の集合は測定中。
+- 測定（tmp/lead/probes/rwl2.py、区間の上の端は H(a, H(s, y))、lhd_exact.ex_K で厳密）: ext3s では RwClosed（ClosedA）が偽の 3 枠も含めて RwClosedL は全部真（M の枠 2.7 万、M[2] 1.2 万、M[3] 2.0 万）。11 集合（Cprime, t0ext, d3s, deep2, deep3, ext1, ext1x, t2ext, ext2, expP, std_a）でも RwClosedL は例外 0（M・M[2]・M[3] の枠。ClosedA が偽なのは ext3s の 3 枠だけ）。
