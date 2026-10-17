@@ -123,6 +123,11 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - t0: T0ArgBRes
       - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom と T2SeedCDom1）
       - t2 のそのほか: T2CBadOut（悪い形の展開、大づかみ）、T2UpgAbsW、FDsh、T2VRACopy、T2VAncStep・T2VRAK KAG（写しの枠の KVRA）
+      - 次の大きな仕事の候補（2026-10-18）: 手早く減らせる残りは尽きた。どれも新しい値の不変条件を帰納法で運ぶ仕事。
+        - HRwClL: RwClosed を運んだ仕組み（V3RwClT0・V3RwClDrop・V3RwClT1・V3RwClT2・V3RwClSeed・V3RwClSh・V3RwClCopy）を弱い RwClosedL に作り直して運ぶ。FrameDom だけからは出ない（desc の反例）
+        - T2VAncStep: VAncStep はすべての標準形で測って真。Inv3V2 の欄にして落とし・t0・t1・t2 で運ぶ。中身は「落ちる加数の成分 ≤ Ω_h」（desc）
+        - T2CBadOut: C の種を K = M[2].take (x + 1) を基準に作り直す（desc の計画）
+        - T2SeedPResRCV2B の qr の w1・dom、sv・C の lhd: σ が X₁ を動かさない構造（吸収）と、σ で保たれる逃げ道
       - 消えたもの（このセッション）: T2SeedOTRestV2、T2SVc0・T2CFrRes（sv・C の種の枠: `no_chg_before_c0`・`t2SVc0'_of_drop`・`cl_C` で証明）、T2VRAQNDom（T2SeedQNDom と T2SeedQNBase から）、T2VRASeedSVC・T2SeedPreShapeSVC（T2SVc0・T2CFrRes に）、T2X1Cl・CopyLowK（偽、HRwClL に）
       - 残りの測定の状態（2026-10-17、lead。どれも Lean と同じ形の probe）
 
