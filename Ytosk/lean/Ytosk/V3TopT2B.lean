@@ -83,7 +83,8 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : H
       (t2VRASeedC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 C.I.vra
         (t2VRAPre_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2
           (t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)))
-        (hP M ρ rk C hz h2) (hCF M ρ rk C hz h2))
+        (hP M ρ rk C hz h2) (hCF M ρ rk C hz h2)
+        (fun r L q hlen hr hq hqr hncl => (hCl M ρ rk C hz h2 r L hlen hr).2.2 q hq hqr hncl))
   trio_terminates_main_V2_base (hDropV2_of hDW hU0) hSd hF hLf
     (t0AbWRes_of_ext (hDropV2_of hDW hU0) hBE) hArgB
     hRL hCB hBX hU2

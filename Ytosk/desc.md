@@ -3856,3 +3856,8 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 
 - T2SVc0・T2CFrRes の c₀ の欄（o_{M.take x}(c₀) = ψ_s(y)、y ≠ 0 なら o_M(c₀) = ψ_s(y′)、y ≤ y′）は、すべての標準形 M とすべての列 i < x で成り立つ（dropo.py、d3s の 26 万件で例外 0。値が等しい 7.9 万件、y = 0 の 5.2 万件は別）。
 - 落とす補題の結論 PO は y ≠ 0 なら o_{M.take x}(i) ◁= o_M(i) を与える。しかし ◁ から「同じ添字」は一般には出ない（b = ψ_s(y) ◁ a = ψ_{s′}(y′) で s < s′ なら c = Ω_{s+1} が区間にあり、y が s の段 s の成分以下であることだけが要る。s の段 s の成分が大きい項はある）。
+
+### T2CFrRes の s′ の成分の欄を T2SeedCBase から（2026-10-17、lead、緑）
+
+- T2SeedCBase の閉じ方の段を PathLvA から PathLvAll に強めた（svcbase.py の pathAll: d3s・deep2・expP・ext3s の sv・C 1.7 万件で例外 0、全集合は測定中）。SeedClB0 には PathLvA.toAll で渡す。
+- すると T2CFrRes の第 3 欄（M の段で s′ の成分は Ω_{s′}・X₁・V の成分以下）は、段 V と PathLvAll で s′ の成分 < X₁ から出る。T2CFrRes は「CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0」だけになった。ビルド緑、公理は標準の 3 つ。

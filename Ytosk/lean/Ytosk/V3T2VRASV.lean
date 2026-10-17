@@ -16,6 +16,7 @@ import Ytosk.V3T2VRASeed
 import Ytosk.V3T2SeedSV
 import Ytosk.V3ExpT1R
 import Ytosk.V3T2SeedPre
+import Ytosk.V3T2SeedSVCl
 
 namespace Ytosk
 
@@ -347,12 +348,10 @@ theorem seed_lev_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2Be
       exact hPre r L hlen hr n hn σ hCN hGN k (by omega) (hns k hkr) u hku
 
 /-- **Residual (t2, C): the seed `r` of the C case in `M` and `M.take x`.** `x` does not change the counted children
-of `r`, the last counted child `c₀` of `r` in `M.take x` is as in `T2SVc0`, and at the levels of `r` in `M` the
-components of `s′ = qnS` are below `Ω_{s′}`, below `X₁` or below a component of `V`. -/
+of `r`, and the last counted child `c₀` of `r` in `M.take x` is as in `T2SVc0` (the components of `s′` at the levels of
+`r` come from `T2SeedCBase`). -/
 def T2CFrRes (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
-  CL M r = CL (M.take (r + L)) r ∧ T2SVc0 M ρ r L ∧
-    ∀ τ, Cons (M.take (r + L)) τ → ∀ u, LevAt M ρ r u → ¬ lt (ρ.v r) u = true →
-      ∀ g ∈ comps u (qnS M ρ r L q), g ≤ psi (qnS M ρ r L q) z z ∨ g ≤ t2X1 M r L τ ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d
+  CL M r = CL (M.take (r + L)) r ∧ T2SVc0 M ρ r L
 
 /-- **The C seed frames of `M[n]`** from `seed_last_C` and `T2CFrRes`. -/
 theorem seed_C_data {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
@@ -397,13 +396,22 @@ theorem t2VRASeedC_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hVM : VSmallRAll M ρ) (hPre : T2VRAPre M ρ) (hRes : G.T2SeedPRes M ρ)
     (hCF : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
-      (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2CFrRes M ρ r L q) : T2VRASeedC M := by
+      (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2CFrRes M ρ r L q)
+    (hCB : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+      (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCBase M ρ r L q) : T2VRASeedC M := by
   intro r L hlen hr hcase n hn σ hCN hGN Lc c R' hCL u hu
   obtain ⟨q, hq, hqr, hncl⟩ := hcase
   obtain ⟨hGlow, τ0, hC0, hv0, hCLN, hσT, hvr, Y, hoq⟩ :=
     seed_C_data hB hM hS I R hz h2 hRes hlen hr hq hqr hncl hn hCN hGN
   have hlev := seed_lev_of hB hM hS I R hz h2 hPre hlen hr hn hGlow hCN hGN hvr
-  obtain ⟨hCLM, hc0, hdom⟩ := hCF r L q hlen hr hq hqr hncl
+  obtain ⟨hCLM, hc0⟩ := hCF r L q hlen hr hq hqr hncl
+  have hdom : ∀ τ, Cons (M.take (r + L)) τ → ∀ u, LevAt M ρ r u → ¬ lt (ρ.v r) u = true →
+      ∀ g ∈ comps u (qnS M ρ r L q), g ≤ psi (qnS M ρ r L q) z z ∨ g ≤ t2X1 M r L τ ∨
+        ∃ d ∈ comps u (ρ.v r), g ≤ d := by
+    intro τ hτ u hu' hVu g hg
+    obtain ⟨X, hX⟩ := o_arg_form I (show r < M.length by omega)
+    obtain ⟨_, _, _, _, -, -, -, -, -, -, -, -, hcl⟩ := hCB r L q hlen hr hq hqr hncl τ hτ X hX
+    exact Or.inr (Or.inl (le_of_lt (hcl u hu' hVu g (List.mem_append_right _ hg))))
   have hlastG : ∀ u, LevAt M ρ r u → QVRAt (ρ.v r) ((CL (M.take (r + L)) r).map σ.o) (σ.o q) u := by
     intro u hu'
     rw [hoq]
@@ -445,7 +453,7 @@ theorem t2SeedPreShapeC_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB
       rw [par0_q_t2 hM hS I hlen hr hq hqr] at hpq; cases hpq; rfl
   subst hpr
   obtain ⟨_, τ0, hC0, _, hCLN, hσT, hvr, _⟩ := seed_C_data hB hM hS I R hz h2 hRes hlen hr hq hqr hncl hn hCN hGN
-  obtain ⟨hCLM, hc0, _⟩ := hCF p L q hlen hr hq hqr hncl
+  obtain ⟨hCLM, hc0⟩ := hCF p L q hlen hr hq hqr hncl
   rw [hCLN] at hCL
   have hR : R' ≠ [] := by
     rintro rfl

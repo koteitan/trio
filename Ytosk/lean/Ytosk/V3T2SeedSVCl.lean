@@ -238,7 +238,7 @@ def T2SeedCBase (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
       (∀ q ∈ summands (t2X1 M r L τ), ¬ q < psi (succ (ρ.v r)) z z) ∧
       (∀ g ∈ summands (sh (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ)), ¬ g < psi (succ (qnS M ρ r L q)) z z) ∧
       isOT (t2X1 M r L τ) = true ∧
-      ∀ u, (u = ρ.v r ∨ PathLvA M ρ r u) → ¬ lt (ρ.v r) u = true →
+      ∀ u, (u = ρ.v r ∨ PathLvAll M ρ r u) → ¬ lt (ρ.v r) u = true →
         ∀ g ∈ comps u (t2X1 M r L τ) ++ comps u (qnS M ρ r L q), g < t2X1 M r L τ
 
 /-- **`T2SeedCCl` from the `k`-free residual.** -/
@@ -246,7 +246,8 @@ theorem t2SeedCCl_of_base {M : Mat} {ρ : Valn} {r L q : Nat} (hV : isOT (ρ.v r
     (hs : isOT (qnS M ρ r L q) = true) (h : T2SeedCBase M ρ r L q) : T2SeedCCl M ρ r L q := by
   intro τ hC k _ X hX
   obtain ⟨P, b, x, T1, hXe, hX1, hT1, hP, hB0, hB1, -, hot, hcl⟩ := h τ hC X hX
-  exact seedClB0_of_baseG hV hs (qnS_gt M ρ r L q) hXe hX1 hT1 hP hB0 hB1 hot hcl k
+  exact seedClB0_of_baseG hV hs (qnS_gt M ρ r L q) hXe hX1 hT1 hP hB0 hB1 hot
+    (fun u hu => hcl u (hu.imp id PathLvA.toAll)) k
 
 
 /-! ## qn: X′_k = B + Ω_{t_k}、t_{k+1} = f(t_k) -/
