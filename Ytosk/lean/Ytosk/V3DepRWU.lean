@@ -61,7 +61,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
     (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ)
     (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hSv : ∀ c, S true c → σ.v c = ρ.v c)
-    (hVR : VSmallRS M S bnd ρ) (hPH : PH3cG M ρ) (hClB : RwClosed M ρ)
+    (hVR : VSmallRS M S bnd ρ) (hPH : PH3cG M ρ) (hClB : RwClosedL M ρ)
     (hoff : ∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i))
     (hOTout : ∀ b j, bnd ≤ j → j < N.length → isOT (valB σ b j) = true)
     (hWv : ∀ i, ¬ W false i)
@@ -348,7 +348,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
           have hc0 : isOT (psi s y z) = true := by rw [← hsy]; exact hG.ot_o c hcM
           have hc'0 : isOT (psi s' y' z) = true := by rw [← hs'y']; exact hIHot
           have hlc : Lhd z (psi s' y' z) (psi s y z) := by rw [← hs'y', ← hsy]; exact hIH
-          exact relR_frameU hc0 hc'0 hBc (Or.inl ⟨Or.inr hlc, fun hy' => hss s y s' y' hsy hs'y' hy'⟩) hSi hot
+          exact relR_frameUL hc0 hc'0 hBc (Or.inl ⟨Or.inr hlc, fun hy' => hss s y s' y' hsy hs'y' hy'⟩) hSi hot
             (Or.inr hLi')
             (fun htr hss0 q' hq' hyp' => by
               subst hss0
@@ -375,7 +375,10 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
                     have e := split_app (psi (succ s) z z) y
                     rw [h0, hlo] at e; simp [app] at e; exact hyz e.symm
                   have hl' : Lhd z (psi s y' z) (psi s y z) := by have h := hlc; rw [es] at h; exact h
-                  exact shadow_hSh hBc ht hnt hyz' hl' (hClB i hiM Lc c [] (by rw [hclM]) s y hsy ht (by
+                  exact shadow_hShL hBc ht hnt hyz' hl' (by
+                    have h := hSi
+                    rw [es, step_eq_app_of_not (fun r hr => le_trans (le_of_lt hl'.1) (hBc r hr)) hnt] at h
+                    exact h) (hClB i hiM Lc c [] (by rw [hclM]) s y hsy ht (by
                     have e := split_app (psi (succ s) z z) y
                     rw [hlo, app_z_right] at e
                     rw [e]; exact ht.1) (by
@@ -618,7 +621,7 @@ the cut condition `T2CutA` (with `PH3cG` and the right-end change it gives the a
 and `RClaimU` and the right-end change at the seed. (`T2VSN` and `VSmallNewR` are not needed: off the seeds
 a changed `v(c)` has no counted child, and `v` of the seed does not change.) -/
 def T2HardB (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
-  VSmallRA M ρ ∧ PH3cG M ρ ∧ RwClosed M ρ ∧
+  VSmallRA M ρ ∧ PH3cG M ρ ∧ RwClosedL M ρ ∧
     (∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimU U ρ σ p) ∧
     (∀ X X', ρ.o p = psi (ρ.v p) X z → σ.o p = psi (ρ.v p) X' z → X' ≠ X → REr X X')
 

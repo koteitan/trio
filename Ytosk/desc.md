@@ -3804,3 +3804,12 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - しかし relR_frameU の結論 RelRU U q b A（区間 (b, A] のどの c でも、b の成分は c の成分か z か q の成分で押さえられる）はそこで真: (b, A] の項はどれも B の先頭の添字 s_B を先頭に持ち（A < Ω_{s_B + 1}）、悪い成分 g は s_B の成分なので c の成分に入る。強すぎるのは hSh（ClosedA）の形。
   - FrameClosed（FrameDom、Inv3V2.fc）は反例の 2 つの枠で真（tools/fdom_exact.py）。ただし FrameDom は「g ≤ C」の逃げ道を許すので、そのままでは RelRU（c 自身は許さない）を出せない。
   - 直しの方向: relR_frameU の影の場合を、hSh（閉じた状態）でなく「B の成分は B 以下、a の成分以下、または区間の項すべての成分に入る（先頭の添字の成分）」の形で示す。RwClosed を運ぶ形とその残り（T2X1Cl・CopyLowK・T2VAncStep・TRwOutT2）はこの直しのあと外せる見込み。今は最上位の残り T2X1Cl が偽なので、最上位は偽の仮定を含む。
+
+### RwClosed を弱い RwClosedL に替え、運ぶ形をやめた（2026-10-17、lead、V3ShadowL）
+
+- `ClosedL a B A`: 段 u ≤ a の B の成分 g は B 以下、a の成分以下、または区間 (B, A] のどの c でも z か c の成分以下。`RwClosedL`: RwClosed の結論を ClosedL（A = H(a, H(s, y))）に弱めた形。ClosedA から出る（`ClosedA.toL`・`RwClosed.toL`）。
+- `shadow_hShL`・`relR_of_closedLU`・`relR_frameUL`（V3ShadowL）: 影の場合の RelRU を ClosedL から出す。relR_frameUL は hSh を弱い形 hShL に替えた relR_frameU（影の場合は relR_of_closedLU、それ以外は relR_frameU に渡す）。
+- t0（V3T0DepS）と t2（V3DepRWU）のエンジンは relR_frameUL と shadow_hShL を使い、仮定は RwClosedL だけになった（T2HardB の欄、T0RwRes、t0DF_ofS も RwClosedL）。
+- 文脈 StepCtxV2.rw は RwClosedL。最上位の帰納法は RwClosed を運ばない（hInvV2_all は Inv3V2 だけを運び、文脈の RwClosedL は新しい残り `HRwClL`: すべての標準形で RwClosedL から）。t0_final_inv3V2D の RwClosed の出力、V3RwCarry・V3RwCarryT1 は外した。
+- 最上位の残り: T2X1Cl（偽）と T2CopyK CopyLowK が消え、HRwClL が増えた。T2VAncStep は VSmallRAll の枠の条件 KVRA のために残る。全体ビルド緑 1048 jobs、公理は標準の 3 つ。
+- 測定（tmp/lead/probes/rwl2.py、区間の上の端は H(a, H(s, y))、lhd_exact.ex_K で厳密）: ext3s では RwClosed（ClosedA）が偽の 3 枠も含めて RwClosedL は全部真（M の枠 2.7 万、M[2] 1.2 万、M[3] 2.0 万）。他の集合は測定中。

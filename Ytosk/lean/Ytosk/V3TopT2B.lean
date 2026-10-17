@@ -13,7 +13,6 @@ import Ytosk.V3T2BelowV2
 import Ytosk.V3T2BelowR
 import Ytosk.V3T2SeedPre
 import Ytosk.V3T2SeedOTP
-import Ytosk.V3RwCarry
 import Ytosk.V3BumpExt
 
 namespace Ytosk
@@ -36,11 +35,7 @@ the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`), the prefix shape of the seed f
 `T2VRAK KAG` (with `T2VAncStep` it gives the frame condition `KVRA` of `qVRAshK_KVRA`); top `HSibColV2` (adjacent siblings with the same column, not both counted, `SibColU`). -/
 theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
-    (hBE : HBumpExt) (hArgB : T0ArgBRes) (hCB : T2CBadOut)
-    (hX1 : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
-      TRIO.srow M (M.length - 1) = 2 → G.T2X1Cl M ρ)
-    (hLow : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
-      TRIO.srow M (M.length - 1) = 2 → T2CopyK CopyLowK M)
+    (hBE : HBumpExt) (hArgB : T0ArgBRes) (hCB : T2CBadOut) (hRL : HRwClL)
     (hVS : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VAncStep M)
     (hCl : T2SeedClV2) (hU2 : T2UpgAbsW) (hOT : T2SeedOTRestV2) (hPR : T2SeedPResRCV2) (hSC : HSibColV2)
@@ -61,7 +56,7 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : H
   have hBX : T2BelowXResV2 := t2BelowXResV2_of t0RwRes_ctx (t2BelowRV2_of hP hCl (t2BumpMonoV2_of_ext hBE)) hP (t2SeedOTV2_of hP hOT)
   trio_terminates_main_V2_base (hDropV2_of hDW hU0) hSd hF hLf
     (t0AbWRes_of_ext (hDropV2_of hDW hU0) hBE) hArgB
-    (tRwOut2_of hBX hP hX1 hLow hVS) hCB hBX hU2
+    hRL hCB hBX hU2
     hPR hSib hDom hFD hQNG hSVCG
     (fun M ρ rk C hz h2 => t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2))
     hVCp (fun M ρ rk C hz h2 => t2VRAK_KVRA_of

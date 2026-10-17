@@ -30,7 +30,7 @@ def T0ArgBRes : Prop :=
 /-- **`T0DF` from the core bundles**, `PH3cG`, `VSmallRA` and `RwClosed` of `M` (no cut residual). -/
 theorem t0DF_ofS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
     (hS : M ≠ SRO) (I : Inv3C M ρ rk) (R : Res3C M ρ rk) (hPH : PH3cG M ρ) (hVA : VSmallRA M ρ)
-    (hClB : RwClosed M ρ)
+    (hClB : RwClosedL M ρ)
     (hAbW : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 → T0AbsW M r L ρ)
     (hArgB : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 → T0ArgBAt M ρ r L) :
     T0DF M ρ := by
@@ -50,7 +50,7 @@ theorem t0DF_ofS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
   exact ⟨h1, h2, trivial, h4, h5⟩
 
 /-- **Residual: the state of every rewriting frame is closed**, for the standard forms in top's step context. -/
-def T0RwRes : Prop := ∀ M ρ rk, StepCtxV2 M ρ rk → RwClosed M ρ
+def T0RwRes : Prop := ∀ M ρ rk, StepCtxV2 M ρ rk → RwClosedL M ρ
 
 /-- **`T0RwRes` holds**: the step context carries `RwClosed` (2026-10-17, `StepCtxV2.rw`). -/
 theorem t0RwRes_ctx : T0RwRes := fun _ _ _ C => C.rw
@@ -72,7 +72,7 @@ theorem expT0V2_of4 (hRw : T0RwRes) (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
   obtain ⟨ρN, rkN, IN, _, _⟩ := t0_final_inv3V2D C.std C.ne C.S C.I hlen hL hp he1 C.R.drop
     (hAbW M ρ rk C r L hlen hp he1) hpre
     (t0DF_ofS C.std C.ne (C.I.toC C.S) ⟨C.R.drop⟩ C.I.ph C.I.vra.toLast (hRw M ρ rk C)
-      (fun r' L' hl' hp' he' => hAbW M ρ rk C r' L' hl' hp' he') (hArgB M ρ rk C)) C.rw
+      (fun r' L' hl' hp' he' => hAbW M ρ rk C r' L' hl' hp' he') (hArgB M ρ rk C))
     (hLeaf M ρ rk r L C hlen hL hp he1) (hFrm M ρ rk r L C hlen hL hp he1)
     n hn2
   exact ⟨ρN, rkN, IN⟩

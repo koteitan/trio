@@ -7,6 +7,7 @@ V3T0DepU の `t0_dep_otU`・`t0_otdU` の写し。書き換えの一致（hagree
 -/
 import Ytosk.V3T0Weak
 import Ytosk.V3T0ShB
+import Ytosk.V3ShadowL
 
 namespace Ytosk
 
@@ -24,6 +25,9 @@ def RwClosed (M : Mat) (ρ : Valn) : Prop :=
     spArg (ρ.v i) z (sumN (Lc.map ρ.o)) < (split y (psi (succ s) z z)).1 →
     (¬ ∃ R', (split y (psi (succ s) z z)).1 = app (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) R') →
     ClosedA (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
+
+theorem RwClosed.toL {M : Mat} {ρ : Valn} (h : RwClosed M ρ) : RwClosedL M ρ :=
+  fun i hi Lc c R hCL s y hc ht hB hnp => ClosedA.toL (h i hi Lc c R hCL s y hc ht hB hnp)
 
 section
 variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
@@ -59,7 +63,7 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
       Lhd z (σ.v p) (ρ.v p))
     (hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g))
     (hPH : PH3cG M ρ)
-    (hClB : RwClosed M ρ)
+    (hClB : RwClosedL M ρ)
     (hVchgR : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
@@ -613,7 +617,7 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                 simp only [psi.injEq] at hyy hyy'
                 obtain ⟨rfl, rfl, -⟩ := hyy
                 obtain ⟨-, rfl, -⟩ := hyy'
-                exact relR_frameU hc0 hc0' hBc (Or.inl ⟨Or.inr hlc', hss⟩) hSi hot (Or.inr hLi')
+                exact relR_frameUL hc0 hc0' hBc (Or.inl ⟨Or.inr hlc', hss⟩) hSi hot (Or.inr hLi')
                   (fun htr hss0 q' hq' hyp' => by
                     subst hss0
                     exact hIHR U (fun u hu => PathLv.step hi hcr hclM hdi hdc hsy htr (hU u hu))
@@ -638,7 +642,10 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                           have e := split_app (psi (succ s) z z) y
                           rw [h0, hlo] at e; simp [app] at e; exact hyz e.symm
                         have hl' : Lhd z (psi s y' z) (psi s y z) := by have h := hlc'; rw [es] at h; exact h
-                        exact shadow_hSh hBc ht hnt hyz' hl' (hClB i hiM Lc c [] (by rw [hclM]) s y hsy ht (by
+                        exact shadow_hShL hBc ht hnt hyz' hl' (by
+                    have h := hSi
+                    rw [es, step_eq_app_of_not (fun r hr => le_trans (le_of_lt hl'.1) (hBc r hr)) hnt] at h
+                    exact h) (hClB i hiM Lc c [] (by rw [hclM]) s y hsy ht (by
                           have e := split_app (psi (succ s) z z) y
                           rw [hlo, app_z_right] at e
                           rw [e]; exact ht.1) (by
@@ -716,7 +723,7 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
     (hVR : VSmallRP M (r + L) r ρ)
     (hPH : PH3cG M ρ)
-    (hClB : RwClosed M ρ)
+    (hClB : RwClosedL M ρ)
     (hVchgRN : ∀ g, par M 0 r = some g → ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0N : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →

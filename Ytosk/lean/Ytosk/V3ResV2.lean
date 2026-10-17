@@ -102,7 +102,7 @@ structure StepCtxV2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop whe
   pre : ∀ j, 1 ≤ j → j < M.length →
     Inv3V2 (M.take j) (drop1 M j rk) rk ∧ Res3AW (M.take j) (drop1 M j rk) rk
   /-- The state of every rewriting frame is closed (2026-10-17: carried by the induction, `hInvV2_all`). -/
-  rw : RwClosed M ρ
+  rw : RwClosedL M ρ
 
 /-- **The bad shape of the C case at `t = 2`** (2026-10-17): `q = P_0(x) ≠ r`, `q` is not the last counted child of `r`,
 and `x − 1` upgrades (to an ancestor of `r`). The seed residual `T2SeedCResR.un` is false here (ext2: 6 standard matrices);
@@ -171,10 +171,16 @@ def TRwOut (t : Nat) : Prop :=
   ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = t →
     ∀ n, 2 ≤ n → ∀ ρN rkN, Inv3V2 (expand M n) ρN rkN → RwClosed (expand M n) ρN
 
+/-- **Residual: the weak closedness `RwClosedL` of every standard matrix with the invariant** (2026-10-17). The
+strong `RwClosed` is false on standard matrices (an sv seed frame of an `M[3]`, desc.md); the engines need only the
+weak form at the shadow frames (`relR_frameUL`). -/
+def HRwClL : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk → RwClosedL M ρ
+
 /-- **Residual: the `t = 2` step at the bad C shape** (the output of the `t = 2` engines there). -/
 def T2CBadOut : Prop :=
   ∀ M ρ rk, StepCtxV2 M ρ rk → T2CBad M → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
-    (∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (expand M n) ρN rkN ∧ RwClosed (expand M n) ρN) ∧ Res3T2 M ρ rk
+    (∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (expand M n) ρN rkN) ∧ Res3T2 M ρ rk
 
 /-- `TRwOut 2` in the context of the `t = 2` engines. -/
 def TRwOutT2 : Prop :=
