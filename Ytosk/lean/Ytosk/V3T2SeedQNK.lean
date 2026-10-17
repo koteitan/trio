@@ -142,4 +142,27 @@ theorem t2VRAQNDom_of {M : Mat} {ρ : Valn} {r L q : Nat} {Lc : List Nat} (hD : 
     · exact Or.inr (Or.inl h)
     · exact Or.inr (Or.inr h)
 
+/-- **`T2VRAQNDom0` from `T2SeedQNBase` with `Lc = []`**: `X₁ = Ω_{t₁}` with `t₁ ≤ s′`, and the components of `s′` at the
+level `V` and the path levels are below `X₁`. -/
+theorem t2VRAQNDom0_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {r L q : Nat}
+    (hlen : r + L + 1 = M.length) (h : T2SeedQNBase M ρ r L q [])
+    (hP : ∀ τ, Cons (M.take (r + L)) τ → ∃ t1,
+      spArg (τ.v r) z (sumN ((CL (M.take (r + L)) r).map τ.o)) = app (t2B (ρ.v r) ρ []) (psi t1 z z)) :
+    T2VRAQNDom0 M ρ r L q := by
+  have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+  rw [show M.length - 1 = r + L by omega] at hcnt
+  have hC0 := cons_of_rk (rk_take (by omega) I.rank hcnt)
+  obtain ⟨t1, ht1⟩ := hP _ hC0
+  obtain ⟨-, -, -, hcV, hts, hcl⟩ := h _ hC0 t1 ht1
+  have hB : app (t2B (ρ.v r) ρ []) (psi t1 z z) = psi t1 z z := rfl
+  have hle : psi t1 z z ≤ psi (qnS M ρ r L q) z z := by
+    rcases (le_iff _ _).mp (hts rfl) with h5 | h5
+    · exact psi_le_psi_of (Or.inl h5)
+    · rw [h5]
+  intro u hu hVu g hg
+  left
+  rcases hu with rfl | hu
+  · have := hcV g hg; rw [hB] at this; exact le_trans (le_of_lt this) hle
+  · have := hcl u hu hVu g (List.mem_append_right _ hg); rw [hB] at this; exact le_trans (le_of_lt this) hle
+
 end Ytosk

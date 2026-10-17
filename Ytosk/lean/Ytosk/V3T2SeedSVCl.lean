@@ -327,27 +327,29 @@ theorem qn_ot_of {V V' B t1 : T} (hV : isOT V = true) (hV' : isOT V' = true) (hV
       (hclk V rfl (lt_irrefl' _) g0 (List.mem_append_left _ hg0))
 
 /-- **Residual (t2, qn): the `k`-free facts on the seed `r`**: `X₁ = B + Ω_{t₁}` (`B = t2B`), `σ B = B`, `V < t₁`,
-and at the path levels `u ≤ V` the components of `t₁` and `s′` are below `X₁`. -/
+and at the path levels `u ≤ V` (any counted child, `PathLvAll`) the components of `t₁` and `s′` are below `X₁`;
+for `Lc = []` also `t₁ ≤ s′` (for `T2VRAQNDom0`). -/
 def T2SeedQNBase (M : Mat) (ρ : Valn) (r L q : Nat) (Lc : List Nat) : Prop :=
   ∀ τ, Cons (M.take (r + L)) τ → ∀ t1,
     spArg (τ.v r) z (sumN ((CL (M.take (r + L)) r).map τ.o)) = app (t2B (ρ.v r) ρ Lc) (psi t1 z z) →
     sh (ρ.v r) (qnS M ρ r L q) (t2B (ρ.v r) ρ Lc) = t2B (ρ.v r) ρ Lc ∧ ρ.v r < t1 ∧
       isOT (psi (ρ.v r) (app (t2B (ρ.v r) ρ Lc) (psi t1 z z)) z) = true ∧
       (∀ g ∈ comps (ρ.v r) (qnS M ρ r L q), g < app (t2B (ρ.v r) ρ Lc) (psi t1 z z)) ∧
-      ∀ u, PathLvA M ρ r u → ¬ lt (ρ.v r) u = true →
+      (Lc = [] → t1 ≤ qnS M ρ r L q) ∧
+      ∀ u, PathLvAll M ρ r u → ¬ lt (ρ.v r) u = true →
         ∀ g ∈ comps u t1 ++ comps u (qnS M ρ r L q), g < app (t2B (ρ.v r) ρ Lc) (psi t1 z z)
 
 theorem t2SeedQNCl_of_base {M : Mat} {ρ : Valn} {r L q : Nat} {Lc : List Nat} (hV : isOT (ρ.v r) = true)
     (hs : isOT (qnS M ρ r L q) = true) (h : T2SeedQNBase M ρ r L q Lc) : T2SeedQNCl M ρ r L q Lc := by
   intro τ hτ t1 ht1 k _ u hu hVu g hg
-  obtain ⟨hσB, hVt, hot, -, hcl⟩ := h τ hτ t1 ht1
-  exact Or.inl ((qn_closed_tqN hV hs (qnS_gt M ρ r L q) hσB hVt (isOT_arg hot) hcl k).2.2 u hu hVu g
+  obtain ⟨hσB, hVt, hot, -, -, hcl⟩ := h τ hτ t1 ht1
+  exact Or.inl ((qn_closed_tqN hV hs (qnS_gt M ρ r L q) hσB hVt (isOT_arg hot) hcl k).2.2 u hu.toAll hVu g
     (List.mem_append_left _ hg))
 
 theorem t2SeedQNOT_of_base {M : Mat} {ρ : Valn} {r L q : Nat} {Lc : List Nat} (hV : isOT (ρ.v r) = true)
     (hs : isOT (qnS M ρ r L q) = true) (h : T2SeedQNBase M ρ r L q Lc) : T2SeedQNOT M ρ r L q Lc := by
   intro τ hτ t1 ht1 k hk
-  obtain ⟨hσB, hVt, hot, hcV, -⟩ := h τ hτ t1 ht1
+  obtain ⟨hσB, hVt, hot, hcV, -, -⟩ := h τ hτ t1 ht1
   obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
   exact ⟨(qn_ot_of hV hs (qnS_gt M ρ r L q) hσB hVt hot hcV (k' + 1)).1,
     (qn_ot_of hV hs (qnS_gt M ρ r L q) hσB hVt hot hcV k').2⟩

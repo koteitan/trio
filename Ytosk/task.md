@@ -117,7 +117,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 全員の生産者を差し込んだ最上位（V3TopV2 の中間の形 `trio_terminates_main_V2_base`）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
-    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2・T0ArgBRes（t0）、HBumpExt（標準形の接頭辞で bump 項は増える。t0 の T0AbWRes と t2 の T2BumpMonoV2 を出す）、T2SeedClV2B（k を含まない T2SeedQNBase・T2SeedSVBase・T2SeedCBase。種の標準形もここから）・T2SeedPResRCV2B（qn の欄の V < t_k・f(t_k) ≥ s′ + 1 と C の rw は外した。C は T2SeedCResR2（decP・lhd と、rw の代わりに X₁ < σX₁。un は ¬T2CBad から）。その un は悪い形 T2CBad で偽なので、t = 2 の文脈を StepCtxT2（¬T2CBad）に限った）、T2CBadOut（悪い形の t = 2 の展開、大づかみな残り）・T2SeedDomV2・FDsh・T2VRAQNDom0（T2VRAQNDom の Lc = [] の場合。他は T2SeedQNDom から）・T2SVc0・T2CFrRes（sv・C の種の枠の VSmallRAll と枠の形を M と M.take x の値の比較に減らした。旧 T2VRASeedSVC・T2SeedPreShapeSVC）・T2VRACopy・T2UpgAbsW・T2VAncStep（t2）、HRwClL（すべての標準形で RwClosedL。文脈の rw を作る）、T2VRAK KAG（t1。T2VAncStep と合わせて qVRAshK_KVRA の枠の条件 KVRA）、HSibColV2（top。HSibHardV2 から帰着、残りは SibColU: 片方が上げの的 topped の同じ列の兄弟）。T0RwRes・TRwOut 0/1・偽の T2X1Cl・CopyLowK は HRwClL に替わって消えた
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2・T0ArgBRes（t0）、HBumpExt（標準形の接頭辞で bump 項は増える。t0 の T0AbWRes と t2 の T2BumpMonoV2 を出す）、T2SeedClV2B（k を含まない T2SeedQNBase・T2SeedSVBase・T2SeedCBase。種の標準形もここから）・T2SeedPResRCV2B（qn の欄の V < t_k・f(t_k) ≥ s′ + 1 と C の rw は外した。C は T2SeedCResR2（decP・lhd と、rw の代わりに X₁ < σX₁。un は ¬T2CBad から）。その un は悪い形 T2CBad で偽なので、t = 2 の文脈を StepCtxT2（¬T2CBad）に限った）、T2CBadOut（悪い形の t = 2 の展開、大づかみな残り）・T2SeedDomV2・FDsh・T2SVc0・T2CFrRes（sv・C の種の枠の VSmallRAll と枠の形を M と M.take x の値の比較に減らした。旧 T2VRASeedSVC・T2SeedPreShapeSVC）・T2VRACopy・T2UpgAbsW・T2VAncStep（t2）、HRwClL（すべての標準形で RwClosedL。文脈の rw を作る）、T2VRAK KAG（t1。T2VAncStep と合わせて qVRAshK_KVRA の枠の条件 KVRA）、HSibColV2（top。HSibHardV2 から帰着、残りは SibColU: 片方が上げの的 topped の同じ列の兄弟）。T0RwRes・TRwOut 0/1・偽の T2X1Cl・CopyLowK は HRwClL に替わって消えた
       - 残りの測定の状態（2026-10-17、lead。どれも Lean と同じ形の probe）
 
         | 残り | 測定 | 備考 |
@@ -128,12 +128,12 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | T0UpgAbsV2 | 11 集合と std_b で例外 0 | ¬T0Easy の場合だけ |
         | T0ArgBRes | 11 集合と std_b で例外 0 | t0argB.py |
         | HBumpExt | 1 列の場合が 11 集合で例外 0 | bumpdrop1.py（3950 万件） |
-        | T2SeedQNBase | 11 集合と ext3s で例外 0（qn 23 万件） | qncl.py |
+        | T2SeedQNBase | 旧形（PathLvA）は 11 集合と ext3s で例外 0（qn 23 万件）。強めた形（PathLvAll・Lc = [] で t₁ ≤ s′）は d3s・deep2・expP で例外 0、他は測定中 | qncl.py |
         | T2SeedCBase の σX₁ の欄 | 11 集合と ext3s で例外 0 | ccl.py（hiS） |
         | T2SeedSVBase・T2SeedCBase | 11 集合と ext3s で例外 0（sv 4.5 万件・C 1.2 万件。すべての段の形は expP・ext3s で偽） | svcbase.py。C の σX₁ の欄は ccl.py |
         | T2SeedPResRCV2B | 11 集合と std_b で例外 0（qn の V < t₁ は qncl.py） | seedqr.py・seedsvc.py。C の un は StepCtxT2 で悪い形を外した |
         | T2CBadOut | — | 悪い形（ext2 に 6 個）の t = 2 の展開。全体の主張の帰結 |
-        | T2SeedDomV2・T2VRAQNDom0 | 11 集合と std_b で例外 0 | seeddom2.py（T2VRAQNDom0 は T2VRAQNDom の Lc = [] の場合） |
+        | T2SeedDomV2 | 11 集合と std_b で例外 0 | seeddom2.py（T2VRAQNDom は T2SeedQNDom と T2SeedQNBase から） |
         | FDsh | 11 集合で例外 0 | probe_fdsh 全数 |
         | T2SVc0 | 11 集合と ext3s で例外 0（sv 4.5 万件、c₀ で y ≠ 0 は 2.7 万件） | svpre.py |
         | T2CFrRes | 11 集合と ext3s で例外 0（C 1.2 万件） | cvra.py |
