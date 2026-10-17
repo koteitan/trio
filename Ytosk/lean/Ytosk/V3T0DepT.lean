@@ -403,7 +403,7 @@ theorem t0_dep_otT {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
             intro hvg X1 X1' h1 h1' hne1
             refine ⟨?_, hThrG X1 X1' h1 h1' hne1⟩
             obtain ⟨X2, X2', h2, h2', hre⟩ := t0_S1A_RE hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
-              hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl hy' hC1 hGT hm1
+              hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl.1 hy' hC1 hGT hm1
             rw [h2] at h1; rw [h2'] at h1'
             simp only [psi.injEq] at h1 h1'
             rw [← h1.2.1, ← h1'.2.1]; exact hre
@@ -662,7 +662,7 @@ end
 /-- **`hOTD` in the RClaim scheme** (`t = 0`): the `D` columns before `r` of `N = M[n]` are standard, drop
 by `◁`, and carry `RClaim`; a changed `v` gives `ψ_{v}(0)`. Residuals: PH3cG of `M` and `hCutN` (the cut in the
 last summand), with which the right-end change RE is carried and a rewriting frame keeps rewriting. -/
-theorem t0_otdT {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+theorem t0_otdT (hU0 : OldUpgAbs) {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
     (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0)
@@ -779,7 +779,7 @@ theorem t0_otdT {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     have hDr : DepX M (r + L) true r := depLike_r hlen hL hp hx2 (depLike_depX M (r + L))
     have hlt : ρ'.o r < ρ.o r := hD true r hDr (by omega)
     have hl : Lhd z (ρ'.o r) (ρ.o r) := by
-      rcases PO.zero_t0 (by omega) hUA he1 hp hC hG (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
+      rcases PO.zero_t0 (by omega) hUA he1 hp (fun _ _ => hU0 _ _ _) hC hG (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
       · exact lhd_of_lhdE_lt hE hlt
       · exfalso
         rw [hor] at hw; simp only [psi.injEq] at hw

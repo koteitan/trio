@@ -162,7 +162,7 @@ theorem t0RWResAt_of2 (P : T → T → T → T → Prop)
 
 /-- **`hExp` for `t = 0`, the shadow frames narrowed** to the cut in the last summand (`T0ShCutRes`) and the
 frames of `g` (`T0ShGRes`). -/
-theorem hExp_t0_topS
+theorem hExp_t0_topS (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hNG : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ) (hFrm : FrmLF)
@@ -181,8 +181,8 @@ theorem hExp_t0_topS
   have hFF := t0_frameFields hFrm (t0_absD hRest.phi) (f _ (t0_tplo hRest.tploR))
   have H2 : T0RestNV := ⟨g _ (t0_absD hRest.phi), g _ (t0_absU hRest.phi), g _ (f _ (t0_tplo hRest.tploR)),
     g _ (f _ (t0_absUW hRest.auwR)), g _ hFF.2.2, g _ (f _ (t0_absDN hRest.adnR)), g _ hFF.1, g _ hFF.2.1⟩
-  have hDF := t0DF_of hPH hCut hIV hM hS I R hVR
-  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF.toH) hIV) H2
+  have hDF := (t0DF_of hU0) hPH hCut hIV hM hS I R hVR
+  apply hExp_t0A hDF ((t0_vsmallF_at hU0) (t0VSD_at hDF.toH) hIV) H2
     (t0RWResAt_of2 PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht)
       (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) (fun _ _ _ _ _ h1 h2 => ptp1_gt h1 h2) hD1 hG1
       (hPH M ρ rk hM hS I R) hDF)
@@ -217,7 +217,7 @@ theorem t0_frameFieldsF (hF : FrmLF) (hAD : T0Field AbsD) (hTP : T0Field TPLo) :
 
 /-- **`hExp` for `t = 0` without `NoGapP`**: `AbsD`・`AbsU` of `N` are explicit hypotheses (NoGapP is false on
 standard matrices, groupA 2026-10-12). -/
-theorem hExp_t0_topA
+theorem hExp_t0_topA (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hAD : T0Field AbsD) (hAU : T0Field AbsU) (hFrm : FrmLF)
@@ -232,8 +232,8 @@ theorem hExp_t0_topA
   have hIV := t0IVRes_holds
   have hFF := t0_frameFieldsF hFrm hAD (t0_tplo hTPR)
   have H2 : T0RestNV := ⟨hAD, hAU, t0_tplo hTPR, t0_absUW hAUWR, hFF.2.2, t0_absDN hADNR, hFF.1, hFF.2.1⟩
-  have hDF := t0DF_of hPH hCut hIV hM hS I R hVR
-  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF.toH) hIV) H2
+  have hDF := (t0DF_of hU0) hPH hCut hIV hM hS I R hVR
+  apply hExp_t0A hDF ((t0_vsmallF_at hU0) (t0VSD_at hDF.toH) hIV) H2
     (t0RWResAt_of2 PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht)
       (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) (fun _ _ _ _ _ h1 h2 => ptp1_gt h1 h2) hD1 hG1
       (hPH M ρ rk hM hS I R) hDF)
@@ -311,7 +311,7 @@ theorem hExp_t0B {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hOTD : T0DFH
 
 /-- **`hExp` for `t = 0` with the rewriting-frame fields of `N` from PH3c of `N`** (drop-fix's V3TP1Cut:
 `tp1C_of_ph3c`・`tp1WC_of_ph3c`・`trigOmC_of_ph3c`). No shadow residual of `t = 0`. -/
-theorem hExp_t0_topB
+theorem hExp_t0_topB (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hAD : T0Field AbsD) (hAU : T0Field AbsU) (hFrm : FrmLF)
@@ -326,8 +326,8 @@ theorem hExp_t0_topB
   have hIV := t0IVRes_holds
   have hFF := t0_frameFieldsF hFrm hAD (t0_tplo hTPR)
   have H2 : T0RestNV := ⟨hAD, hAU, t0_tplo hTPR, t0_absUW hAUWR, hFF.2.2, t0_absDN hADNR, hFF.1, hFF.2.1⟩
-  have hDF := t0DF_of hPH hCut hIV hM hS I R hVR
-  apply hExp_t0B hDF.toH (t0_vsmallF_at (t0VSD_at hDF.toH) hIV) H2
+  have hDF := (t0DF_of hU0) hPH hCut hIV hM hS I R hVR
+  apply hExp_t0B hDF.toH ((t0_vsmallF_at hU0) (t0VSD_at hDF.toH) hIV) H2
     (fun N σ hN hNS hC hO => by
       obtain ⟨h1, h2, h3, h4⟩ := hPHN N σ hN hNS hC hO
       exact ⟨tp1C_of_ph3c hC hO h1 h2, tp1WC_of_ph3c hC hO h1 h3, trigOmC_of_ph3c hC hO h1 h4⟩)

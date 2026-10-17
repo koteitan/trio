@@ -82,7 +82,7 @@ theorem hStep_of_parts
   · exact hExp M ρ rk hM hS hE I R hz n hn hNS hNE
 
 /-- **Termination from the three parts of the induction** and the case `t = 2` of the descent. -/
-theorem trio_terminates_ind
+theorem trio_terminates_ind (hU0 : OldUpgAbs)
     (hBase : ∀ n, expand SRO n ≠ [] → ∃ ρ rk, Inv3 (expand SRO n) ρ rk ∧ Res3A (expand SRO n) ρ rk)
     (hTake : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       ∀ j, j < M.length → M.take j ≠ SRO → M.take j ≠ [] →
@@ -93,6 +93,6 @@ theorem trio_terminates_ind
     (hT2 : HInvE → ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n) :
     WellFounded Step' :=
-  trio_terminatesE (hInvE_of_step hBase (hStep_of_parts hTake hExp)) hT2
+  (trio_terminatesE hU0) (hInvE_of_step hBase (hStep_of_parts hTake hExp)) hT2
 
 end Ytosk

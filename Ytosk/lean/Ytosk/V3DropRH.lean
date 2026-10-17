@@ -74,7 +74,7 @@ theorem Res3A.ofR {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠
 
 /-- **The top theorem without `HardArg`**: `VSmallR` on every standard matrix (`hVSR`), and `hLast`・`hExp`
 give `Inv3V ∧ Res3R`. -/
-theorem trio_terminates_main_R
+theorem trio_terminates_main_R (hU0 : OldUpgAbs)
     (hVSR : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → VSmallR M ρ)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3R (M.take (M.length - 1)) ρ' rk')
@@ -84,7 +84,7 @@ theorem trio_terminates_main_R
     (hR2 : ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk) :
     WellFounded Step' := by
-  apply trio_terminates_main_T2 _ _ hR2
+  apply (trio_terminates_main_T2 hU0) _ _ hR2
   · intro M ρ rk hM hS hl I R
     obtain ⟨ρ', rk', V, R'⟩ := hLast M ρ rk hM hS hl I R
     have hne : M.take (M.length - 1) ≠ [] := by
@@ -137,7 +137,7 @@ theorem inv3V_take_of
 /-- **The top theorem with the per-matrix residuals made global.** The drop residual `DropResR`, the seed
 condition and `VSmallR` are hypotheses on every standard matrix; the one-column drop needs only the eleven
 hole fields of `M.take x` (`hRest`), and an expansion only `Inv3V` of `M[n]`. -/
-theorem trio_terminates_main_G
+theorem trio_terminates_main_G (hU0 : OldUpgAbs)
     (hVSR : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → VSmallR M ρ)
     (hDR : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk →
       DropResR M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
@@ -155,7 +155,7 @@ theorem trio_terminates_main_G
     (hR2 : ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk) :
     WellFounded Step' := by
-  apply trio_terminates_main_R hVSR _ _ hR2
+  apply (trio_terminates_main_R hU0) hVSR _ _ hR2
   · intro M ρ rk hM hS hl I R
     have V := inv3V_take_of hRest M ρ rk hM hS hl I R
     have hne : M.take (M.length - 1) ≠ [] := by

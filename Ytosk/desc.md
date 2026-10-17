@@ -3669,3 +3669,21 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - t = 0 の r = x − 1 の形の核 `s1_core_weak`（V3T0Weak、緑）: g の枠で omid の写しが m ≥ 1 個あり最後の子が弱い葉 ψ_{w′}(0)（w′ < v、WCS a w′）なら ◁。ψ_a(B + omid·m) は基本列の項（t0_frame_*）で、そこへ弱い葉を足すのは落とす補題と同じ `lhd_weak_childA`。エンジンへの差し込み（t0_S1・t0_S1A・t0_S1A_RE・dec_g0・frameOT_g0・bumpTermDec_N_t0・t0_S3 が hl を受ける）は次の仕事。
 - T2VRAK KAG（t1 の KA・KG）: 残りの 5 集合（expP・ext1・t2ext・ext2・std_a）も例外 0。11 集合すべてで例外 0。
 - T2BumpMono（t2 の bumpmono.py、TleN）: 11 集合で例外 0（t0ext は t = 2 の行列がない）。
+
+### t = 0 の r = x − 1 の形を弱い葉で扱う・偽の残りをなくす（2026-10-17、lead）
+
+**易しい形の定義を変えた**（V3DropMain・V3MainT1D）: `T0Easy M x` = x の親 r はのりしろの子でなく、r = x − 1 なら r の親 g ものりしろの子でない。UpgAbsXW の第 3 条件は「x の行 1 ≠ 0 か T0Easy」。`toX_xm1` は g がのりしろの子のときだけ。`PO.zero_t0`・`CntX.nocnt_t0` は r = x − 1 で易しい形の場合の強い形を引数 hS で受ける。
+
+**r = x − 1（g はのりしろの子でない）の弱い場合**（V3T0Weak・V3T0OT・V3T0DepR・V3T0DepS・V3T0C・V3T0M）:
+
+- `po_lhd_or_weak`・`lhd_or_weak_t0`: r での落とし o′(r) は o(r) に ◁、または弱い葉 ψ_{w′}(0)（WkVA w′ v(r)、WCS (v(g)) w′、落とす補題の PV の弱い枝から）。`lhd_t0_of`: r ≠ x − 1 か g がのりしろの子なら ◁。
+- `counted_first0`: r の行 2 が 0 なら r は M[n] でも g で数えられる（上げの的にならない）。だから omid の写しは m ≥ 1 個。
+- t0_core（N の Good3 などを出す）: 種 S1 は弱い場合 `t0_S1W`（核 `s1_core_weak`: ψ_a(B + omid·m) は基本列の項で ◁、そこへ弱い葉を足しても `lhd_weak_childA` で ◁）。good3_N_t0・dec_g0・frameOT_g0 は hl の真の大小だけを使うように弱めた。bumpTermDec_N_t0 と種 S3 の hl は g がのりしろの子の場合だけ（そこは強い形がある）。
+- t0_otdS（T0DF: D の列の標準形・◁・RClaimU・REr）: g での引数の段は弱い場合 `t0_S1AW`。ClsNode は `s1_core_cls`（hl を使わない）、REr は t0_S1A_RE（hl の真の大小だけを使うように弱めた、m ≥ 1 では s1_re）。引数の段の ◁ だけは証明できず、名前つきの残り `T0ArgBRes`（`T0ArgBAt`: r = x − 1、g はのりしろの子でない、r は g で数えられる、のとき M[n] の g の引数どうしが ◁）にした。11 集合で例外 0（r = x − 1 の形の行列すべて、n = 2, 3、tmp/lead/probes/t0argB.py）。x − 1 の上げの W が V を吸収するので、X′ の成分を B′ の成分で押さえる構造的な理由は見つかっていない。
+- t0_vsmallF_atC（N の VSmallF）: 弱い場合は WCS (v(g)) w′ と `comps_self_nil`（v(g) の段 v(g) の成分は空）から、w′ の成分は Ω_1 未満で ψ_{w′}(0) 以下。強い場合の hlv・hl0 も強い吸収を使わずに PO・PV から出す。
+
+**残りの入れ替え**: `T0UpgAbsV2` は「t = 0 で ¬T0Easy（r がのりしろの子か、r = x − 1 で g がのりしろの子）なら強い形」に狭まった。強い形の破れ（std_a 2・std_b 240 件）はどれも易しい形なので、**測って真**（11 集合と std_b で例外 0）。新しい残り `T0ArgBRes` は 11 集合で例外 0（std_b は測定中）。最上位 `trio_terminates_main_V2_cur` の引数に T0ArgBRes が増えた。
+
+**使われていない古い経路**: 変えた補題に依存する、今の最上位から使われていない定理（t0_otd・t0_otdH/R/U/H0/T・t0_vsmallR*・t0_main・desc_step・古い最上位 trio_terminates* など 64 個、Lean で依存を調べた）は、強い吸収を至る所で仮定する `OldUpgAbs`（偽）を引数に取る形にした（tmp/lead/thread_dead.py）。
+
+**測定**: HFrameV2・HLeafV2（top の probe_hframe）は残りの 6 集合と落とした行列の集合でも例外 0（11 集合すべて）。T2SeedPreShape（preshape.py）は 10 集合で例外 0。VAncStep（vanc1.py）は 11 集合で例外 0。

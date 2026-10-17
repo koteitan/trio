@@ -44,9 +44,9 @@ def HDropV2W : Prop :=
     DropResH0 M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
 
 /-- **The strong absorption at `x − 1` for `t = 0` outside the easy shape** (2026-10-17): the parent `r` of
-`x` is `x − 1` or a bump child (`¬ T0Easy`). False on 1 standard matrix of std_a
-(…(5,1,0)(4,2,0)(5,0,0), `r = x − 1`) and 105 of std_b; the `t = 0` engines still use it there
-(`UpgAbsXW.toX`: the seed at `r`, `hl`, of `t0_S1`). -/
+`x` is a bump child, or `r = x − 1` and its parent is a bump child (`¬ T0Easy`). The strong form fails on 2
+standard matrices of std_a and 240 of std_b, all in the easy shape (the `t = 0` engines handle it: `r ≠ x − 1` by
+`PO.zero_of_ne`, `r = x − 1` by the weak leaf, `t0_S1W`・`t0_S1AW`); outside it no counterexample. -/
 def T0UpgAbsV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk → entry M 1 (M.length - 1) = 0 →
     ¬ T0Easy M (M.length - 1) → UpgAbsX M (M.length - 1) ρ

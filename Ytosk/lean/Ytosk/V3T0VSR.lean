@@ -59,7 +59,7 @@ theorem t0v_split_fst_ne_of_le {y' y θ : T} (h : (split y' θ).1 ≠ z) (hle : 
 
 /-- **`VSmallR` of `N = M[n]`** (`t = 0`, `n ≥ 2`) from that of `M`, given the class residuals `T0Shape`
 (the `D` columns before `r`: with the same `v` the argument drops by `◁`, with a new `v` it is `0`). -/
-theorem t0_vsmallR (hSh : T0Shape) : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → VSmallR M ρ →
+theorem t0_vsmallR (hU0 : OldUpgAbs) (hSh : T0Shape) : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → VSmallR M ρ →
     VSmallR (TRIO.gexp M r L 0 0 n) σ := by
   intro M ρ rk r L n σ rkN hctx hVR
   obtain ⟨hM, hS, I, R, hlen, hL, hp, he1, _, hn2, hCN, hRN, hGN, _⟩ := id hctx
@@ -113,7 +113,7 @@ theorem t0_vsmallR (hSh : T0Shape) : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L
   -- the drop at `r`: `o′(r) ≤ o(r)`, and a new subscript comes with the argument `0`
   have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
   have hO'le : ρ'.o r ≤ ρ.o r := by
-    rcases PO.zero_t0 hx hDr.ua he1 hp I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
+    rcases PO.zero_t0 hx hDr.ua he1 hp (fun _ _ => hU0 _ _ _) I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
     · exact hE.le
     · exfalso
       rw [hor] at hw; simp only [psi.injEq] at hw
@@ -210,7 +210,7 @@ theorem t0_vsmallR (hSh : T0Shape) : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L
         · exfalso; have : c = r := by omega
           rw [this] at hccnt; exact hng ⟨hig, hccnt⟩
       · exact children_lt_r hlen hL hp hi hig hcM
-    obtain ⟨_, hsame, hchg⟩ := t0_D_of_shape hSh hM hS I R hlen hL hp he1 hn2 hCN c hcr hDc
+    obtain ⟨_, hsame, hchg⟩ := (t0_D_of_shape hU0) hSh hM hS I R hlen hL hp he1 hn2 hCN c hcr hDc
     by_cases hv : σ.v c = ρ.v c
     · obtain ⟨X, X', hX, hX', hlx⟩ := hsame hv
       rw [hX'] at hsy; simp only [psi.injEq] at hsy
@@ -227,7 +227,7 @@ theorem t0_vsmallR (hSh : T0Shape) : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L
 
 /-- **`hVSRexp` for `t = 0`** (main_GP's form, restricted to `srow = 0`), from the class residuals of
 `T0Shape` (the same ones as `hExp_t0_mainC2`) and the one-column drop `hLast` for the prefix. -/
-theorem hVSRexp_t0
+theorem hVSRexp_t0 (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hIV : T0IVRes) (hII : T0IIRes) (hS : T0ShapeR3) :
@@ -252,7 +252,7 @@ theorem hVSRexp_t0
       simp only [List.length_nil] at this; omega
     obtain ⟨τ, rkT, VT, RT⟩ := hTake_of_last hLast M ρ rk hM hSRO hE I R (r + L) (by omega) hjS hjE
     exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM (r + L) (by omega)) hjS) VT, RT⟩
-  exact t0_vsmallR (t0Shape_of (t0ShapeR_of (t0ShapeR2_of hIV hII hS))) M ρ rk r L n ρN rkN
+  exact (t0_vsmallR hU0) (t0Shape_of (t0ShapeR_of (t0ShapeR2_of hIV hII hS))) M ρ rk r L n ρN rkN
     ⟨hM, hSRO, I, R, hlen, hL, hp, he1, hTx, hn2, V.cons, V.rank, V.good, V.fo, V.fc, V.kd, V.td⟩ hVR
 
 end Ytosk

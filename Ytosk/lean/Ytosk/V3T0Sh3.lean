@@ -278,7 +278,7 @@ theorem t0Shape_of (h : T0ShapeR) : T0Shape := by
   exact ⟨h1, h2, t0_shape3 hM hS I R hlen hL hp he1, h4⟩
 
 /-- **`hExp` for `t = 0`** with `T0Shape` (iii) proved. -/
-theorem hExp_t0_mainR
+theorem hExp_t0_mainR (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hS : T0ShapeR) (hRest : T0Rest) (hC1 : T0RWResC PTP1) (hC1W : T0RWResC PTP1W)
@@ -286,6 +286,6 @@ theorem hExp_t0_mainR
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
-  hExp_t0_mainC hLast (t0Shape_of hS) hRest hC1 hC1W hCT
+  (hExp_t0_mainC hU0) hLast (t0Shape_of hS) hRest hC1 hC1W hCT
 
 end Ytosk

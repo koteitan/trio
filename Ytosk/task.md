@@ -39,8 +39,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         - ✅ UpgAbsXW（T2Ext の x − 1 の族）と落とす補題の弱い枝の一般化（WCSP の副条件を外し、WeakCS を BumpWeakSrc へ。UpgAbsXW の第 3 条件を行 1 に、SmallSelf(V + 1) を追加）。drop-wkx2 を main に入れた（2026-10-17、desc.md「drop-wkx2 を main に入れる・t = 2 の強い吸収を悪い形だけに」）
         - ✅ t = 1・q = r・L = 1 の強い UpgAbsX（hUA1・T1UpgQRV2、偽）を外した（t1-qr2、drop-wkx2 と一緒に main へ）
         - 最上位の落とす補題の残りは HDropV2W（弱い選択肢に行 1 の条件なしの UpgAbsXW0、11 集合で例外 0）。t = 0 の強い吸収は名前つきの残り T0UpgAbsV2（偽: std_a 2 件・std_b 240 件）。易しい形（r ≠ x − 1 で r はのりしろの子でない、T0Easy）ではエンジンは強い形を使わない（PO.zero_t0・CntX.nocnt_t0）。T0UpgAbsV2 は ¬T0Easy の場合だけで、偽なのは r = x − 1 の形（std_a 1・std_b 105 件）
-          - ✅ 核 `s1_core_weak` と種 S1 の弱い版 `t0_S1W`（V3T0Weak）
-          - 次: 引数の段の弱い版（s1_core_arg、t0_S1A・t0_S1A_RE が使う）、t0_vsmallF_atC の hlv の弱い版、dec_g0・frameOT_g0 を hl.1 だけに、t0_core・t0_otdS・t0_vsmallF_atC への差し込み、UpgAbsXW の第 3 条件を NBPar にして T0UpgAbsV2 をのりしろの場合だけに
+          - ✅ r = x − 1 の弱い場合を t0_core・t0_otdS・t0_vsmallF_atC で扱う（t0_S1W・t0_S1AW・counted_first0・lhd_or_weak_t0）。T0UpgAbsV2 はのりしろの場合だけになり測って真
+          - 残り `T0ArgBRes`（r = x − 1 の形の g の引数の段の ◁、11 集合で例外 0）の証明
         - DropResH の残り（HardArg・VSmallNew・BumpWeakSrc（形 ∧ WeakCS）・UpgAbsXW・BumpAbsC）と SeedR の 11 集合の測定（`tools/probe_dropres.py`、標本では例外 0）と証明。AbsSR は最上位から外れた（top）。AbsSR の t = 0 の欄 BumpAbsLo も偽で、t0 が弱い形 AbsWN に替えた（落とし側は BumpAbsC から出る）
         - ✅ AbsSR から t = 2 の欄（srow = 2 → BumpAbsS）を外した。使う所がなく、標準形で偽だった（HAbSV2 は t = 0 の BumpAbsLo だけになった）
       - 落とした行列の枠の条件（TakeFrameV2）、TP1LeafG・TP1WLeafG（最後の列が根の場合の RootP は top の `rootP0_take` で済み）
@@ -115,7 +115,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 全員の生産者を差し込んだ最上位（V3TopV2 の中間の形 `trio_terminates_main_V2_base`）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
-    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2（t0、偽）・T0RwRes・T0AbWRes（t0。T0AbWRes ⟸ HDropV2 ∧ T0PrefixInv）、T2SeedClV2（qn・sv・C）・T2BumpMonoV2・T2SeedOTRestV2（qn・C）・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShapeSVC・T2VRACopy・T2UpgAbsW（t2）、T2VRAK KStepVRA（t1）、HSibHardV2（top）
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2・T0ArgBRes・T0RwRes・T0AbWRes（t0。T0AbWRes ⟸ HDropV2 ∧ T0PrefixInv）、T2SeedClV2（qn・sv・C）・T2BumpMonoV2・T2SeedOTRestV2（qn・C）・T2SeedPResRCV2（C は T2SeedCResR）・T2SeedDomV2・FDsh・T2VRAQNDom・T2VRASeedSVC・T2SeedPreShapeSVC・T2VRACopy・T2UpgAbsW（t2）、T2VRAK KStepVRA（t1）、HSibHardV2（top）
 - **5. 全射**
   - ✅ 目標 4 と EvalCof が成り立てば全射、という証明（`surj`、V3Surj）
   - Desc3 の証明 → **目標 4 が残っている**

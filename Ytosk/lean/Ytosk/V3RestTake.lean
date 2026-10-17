@@ -88,7 +88,7 @@ theorem DropResS.toR {N : Mat} {x : Nat} {σ σ' : Valn} {rk : Bool → Nat → 
 /-- **The top theorem with the drop fields reduced** (2026-10-12): as `trio_terminates_main_GP`, with
 `hRest` replaced by `PH3c`・`NoGapP`・`PhiX0R` of the standard matrices, the level-0 drop residual `DropPhi0Res`,
 the matrix-wise `FrmLF` and `TP1Res`, and the three fields `TakeRest3`, and `DropResR` by `DropResS` (no tail field). -/
-theorem trio_terminates_main_GR
+theorem trio_terminates_main_GR (hU0 : OldUpgAbs)
     (hDR : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk →
       DropResS M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
     (hSeed : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → SeedR M ρ rk)
@@ -110,7 +110,7 @@ theorem trio_terminates_main_GR
     (hR2 : ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk) :
     WellFounded Step' := by
-  apply trio_terminates_main_GP _ hSeed hAbS _ hExp hVSRexp hR2
+  apply (trio_terminates_main_GP hU0) _ hSeed hAbS _ hExp hVSRexp hR2
   · intro M ρ rk hM hS hE V
     have hl : 0 < M.length := by
       cases M with

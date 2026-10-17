@@ -554,7 +554,7 @@ end
 /-- **`hOTD` without VSmallR** (`t = 0`, residual `HardArgN`): the `D` columns before `r` of `N = M[n]` are standard, drop
 by `◁`, and carry `RClaim`; a changed `v` gives `ψ_{v}(0)`. Residuals: PH3c of `M` and `hCutN` (the cut in the
 last summand), with which the right-end change RE is carried and a rewriting frame keeps rewriting. -/
-theorem t0_otdH0 {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+theorem t0_otdH0 (hU0 : OldUpgAbs) {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
     (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0)
@@ -659,7 +659,7 @@ theorem t0_otdH0 {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
     have hDr : DepX M (r + L) true r := depLike_r hlen hL hp hx2 (depLike_depX M (r + L))
     have hlt : ρ'.o r < ρ.o r := hD true r hDr (by omega)
     have hl : Lhd z (ρ'.o r) (ρ.o r) := by
-      rcases PO.zero_t0 (by omega) hUA he1 hp hC hG (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
+      rcases PO.zero_t0 (by omega) hUA he1 hp (fun _ _ => hU0 _ _ _) hC hG (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
       · exact lhd_of_lhdE_lt hE hlt
       · exfalso
         rw [hor] at hw; simp only [psi.injEq] at hw

@@ -5,6 +5,7 @@ V3T0DepU の `t0_dep_otU`・`t0_otdU` の写し。書き換えの一致（hagree
 - RelRU の影の枠の成分の条件: `trig_or_shadow` で影の形に絞り、`shadow_hSh`（Closed と VSmallRP と Lhd）で出す。
 - RE: 影の枠では `re_shadow`。
 -/
+import Ytosk.V3T0Weak
 import Ytosk.V3T0ShB
 
 namespace Ytosk
@@ -47,7 +48,11 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
     (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hVR : VSmallRP M (r + L) r ρ)
     (hFO : FrameOT M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ) (hAbs : AbsWN M (TRIO.gexp M r L 0 0 n) r ρ σ)
-    (hl : Lhd z (ρ'.o r) (ρ.o r))
+    (hlt : ρ'.o r < ρ.o r)
+    (hl : Lhd z (ρ'.o r) (ρ.o r) ∨
+      (∃ w', ρ'.o r = psi w' z z ∧ WkVA w' (ρ.v r) ∧ isOT (psi w' z z) = true) ∧
+        (Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r) ∧
+        (Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → Lhd z X' X))
     (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
     (hLastC : Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
     (hS3 : ∀ p, par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 → col M g = bump M p →
@@ -391,9 +396,15 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
               by_cases h : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
               · exact Or.inl h
               · exact Or.inr (hG0 hcnt (fun k hk hk' => h ⟨k, hk, hk'⟩))
-            obtain ⟨X, X', hX, hX', hlX, hXo, hcls⟩ := t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
-              hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl hy' hC1 hGT hm1
-              hVchgR
+            obtain ⟨X, X', hX, hX', hlX, hXo, hcls⟩ : ∃ X X', ρ.o g = psi (ρ.v g) X z ∧
+                σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true ∧ ClsNode (ρ.v g) X' X := by
+              rcases hl with hl | ⟨hw, hrN, hArg⟩
+              · exact t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
+                  hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl hy' hC1 hGT hm1
+                  hVchgR
+              · exact t0_S1AW hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
+                  hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hw hy' hC1 hGT
+                  (hrN hcnt) (hArg hcnt) hVchgR
             have hot := hG.ot_o g (by omega)
             rw [hX] at hot
             have hot' : isOT (psi (ρ.v g) X' z) = true := ot_parent_lhd hot hXo (Or.inr hlX)
@@ -401,7 +412,7 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
               fun _ _ => rclaim_of_clsU hX hX' hot hot' hlX hcls, ?_⟩
             intro _ X1 X1' h1 h1' _
             obtain ⟨X2, X2', h2, h2', hre⟩ := t0_S1A_RE hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
-              hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl hy' hC1 hGT hm1
+              hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hlt hy' hC1 hGT hm1
             rw [h2] at h1; rw [h2'] at h1'
             simp only [psi.injEq] at h1 h1'
             rw [← h1.2.1, ← h1'.2.1]; exact hre
@@ -711,7 +722,10 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hG0N : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
       ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
-        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true)) :
+        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true))
+    (hArgB : ∀ g, par M 0 r = some g → Counted M g r → r = r + L - 1 → NBPar M (r + L - 1) → ∀ n, 2 ≤ n →
+      ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
+        ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → Lhd z X' X) :
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i, i < r → (DepX M (r + L) true i → isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ (∀ U : T → Prop, (∀ u, U u → PathLv M (r + L) r ρ i u) → RClaimU U ρ σ i) ∧
         (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z) ∧
@@ -792,14 +806,43 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     -- the drop at `r`
     have hDr : DepX M (r + L) true r := depLike_r hlen hL hp hx2 (depLike_depX M (r + L))
     have hlt : ρ'.o r < ρ.o r := hD true r hDr (by omega)
-    have hl : Lhd z (ρ'.o r) (ρ.o r) := by
-      rcases PO.zero_t0 hx hUA he1 hp hC hG (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
-      · exact lhd_of_lhdE_lt hE hlt
-      · exfalso
-        rw [hor] at hw; simp only [psi.injEq] at hw
-        have := lt_app_one (spArg (ρ.v r) z
-          (sumN (((children M r).filter (fun c => decide (c < r + L))).map (cnt M ρ r))))
-        rw [hw.2.1] at this; exact T.not_lt_z _ this
+    have hnzr : ∀ w, ρ.o r ≠ psi w z z := by
+      intro w hw
+      rw [hor] at hw; simp only [psi.injEq] at hw
+      have := lt_app_one (spArg (ρ.v r) z
+        (sumN (((children M r).filter (fun c => decide (c < r + L))).map (cnt M ρ r))))
+      rw [hw.2.1] at this; exact T.not_lt_z _ this
+    have hl' := lhd_or_weak_t0 hx hUA he1 hp hg hC hG hC1 (by omega)
+      (hdrop r (by omega)).1 (hdrop r (by omega)).2 hnzr hlt
+    have hlB : ∀ i, par M 0 g = some i → col M g = bump M i → Lhd z (ρ'.o r) (ρ.o r) := by
+      intro i hi hb
+      apply lhd_t0_of hx hUA he1 hp hC hG (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 hnzr hlt
+      by_cases hr : r = r + L - 1
+      · exact Or.inr (fun hnb => hnb g i (by rw [← hr]; exact hg) hi hb)
+      · exact Or.inl hr
+    have hl2 : Lhd z (ρ'.o r) (ρ.o r) ∨
+        (∃ w', ρ'.o r = psi w' z z ∧ WkVA w' (ρ.v r) ∧ isOT (psi w' z z) = true) ∧
+          (Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r) ∧
+          (Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → Lhd z X' X) := by
+      rcases hl' with hl | ⟨hrx, hnb, hCX, w', hw', hWk, _, hwot⟩
+      · exact Or.inl hl
+      · right
+        refine ⟨⟨w', hw', hWk, hwot⟩, fun hc => ?_, fun hc => hArgB g hg hc hrx hnb n hn2 σ hCN⟩
+        have hxcnt : Counted M r (r + L) := by
+          refine ⟨fun h => ?_, fun h => ?_⟩
+          · have h2 : entry M 2 (r + L) = (bump M r).2.2 := by
+              show (col M (r + L)).2.2 = _; rw [h]
+            rw [hx2] at h2; simp [bump] at h2
+          · obtain ⟨hu, _⟩ := h
+            unfold isUpg at hu
+            obtain ⟨k, _, hk⟩ := List.any_eq_true.mp hu
+            have := upg_target_e2 (of_decide_eq_true hk)
+            omega
+        have he2r : entry M 2 r = 0 := by
+          rcases hCX with hno | ⟨_, _, k, W, _, hu, _⟩
+          · exact absurd hxcnt (hno _ hxr)
+          · have := hZ2 r; have := (upg_e12 hu).2; omega
+        exact counted_first0 hlen hL hp (by omega) hR0 hZ2 hx2 hn2 hg hc he2r
     have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
     have hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z := by
       intro s' y' hs hne
@@ -959,7 +1002,7 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           exact (hoffD d hdr).1 (hKnd d hdK)
         · exact hor
         · intro k hk; rw [hσmid k hk, hom]
-        · rw [hσlast]; exact hl
+        · rw [hσlast]; exact hlB pp hpg hjb
         · rw [par1_pre0 hlen hL hp hn (by omega)]
           cases hpp : par M 1 pp with
           | none => rfl
@@ -972,7 +1015,7 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           · rw [show k = n - 1 by omega, hσlast]; exact hGT.ot_o r (by rw [List.length_take]; omega)
     intro i hi
     have hdep := t0_dep_otS hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT hσB hσBv
-      hoffD hσmid hσlast hF hVS hVR hFO hTD hKD (hAbsS n hn2 σ hCN) hl hy' (hLast n hn2 g hg) hS3 hS2
+      hoffD hσmid hσlast hF hVS hVR hFO hTD hKD (hAbsS n hn2 σ hCN) hlt hl2 hy' (hLast n hn2 g hg) hS3 hS2
       hPH hClB (hVchgRN g hg) (hG0N n hn2 g hg)
     refine ⟨fun hd => ?_, fun hd => ⟨(hdep false i hi).1, (hdep false i hi).2.1 hd⟩⟩
     obtain ⟨hot, hlt, hR, hRE⟩ := hdep true i hi

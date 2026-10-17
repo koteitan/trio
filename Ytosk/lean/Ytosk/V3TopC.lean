@@ -97,10 +97,10 @@ theorem hInv_of_E (h : HInvE) :
 
 /-- **Termination of the 3-row BMS from SRO**, with the top hypothesis for some valuation (the form an
 induction on `Std` produces). The case `t = 2` may use `HInvE` and that `M` is standard. -/
-theorem trio_terminatesE (hInv : HInvE)
+theorem trio_terminatesE (hU0 : OldUpgAbs) (hInv : HInvE)
     (hT2 : HInvE → ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n) :
     WellFounded Step' :=
-  trio_terminates' (hInv_of_E hInv) (hT2 hInv)
+  (trio_terminates' hU0) (hInv_of_E hInv) (hT2 hInv)
 
 end Ytosk

@@ -44,7 +44,7 @@ theorem Inv3.ofV {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (S : SInv M) 
 
 /-- **Termination from the value parts of the induction.** The structural invariants of every standard
 matrix other than SRO are `sInv_std`. -/
-theorem trio_terminates_indV
+theorem trio_terminates_indV (hU0 : OldUpgAbs)
     (hBase : ∀ n, expand SRO n ≠ [] → ∃ ρ rk, Inv3V (expand SRO n) ρ rk ∧ Res3A (expand SRO n) ρ rk)
     (hTake : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       ∀ j, j < M.length → M.take j ≠ SRO → M.take j ≠ [] →
@@ -61,7 +61,7 @@ theorem trio_terminates_indV
     rw [expand_SRO_length] at this
     simp [SRO] at this
     omega
-  apply trio_terminates_ind _ _ _ hT2
+  apply (trio_terminates_ind hU0) _ _ _ hT2
   · intro n hE
     obtain ⟨ρ, rk, V, R⟩ := hBase n hE
     exact ⟨ρ, rk, Inv3.ofV (sInv_std (Std.exp n Std.sro) (hSRO n)) V, R⟩
@@ -107,7 +107,7 @@ theorem hTake_of_last
 
 /-- **The final form of the top theorem**: the remaining work is the base SRO[n], the one-column drop,
 the expansions with `n ≥ 2`, and the descent for `t = 2`, each producing only the value part. -/
-theorem trio_terminates_final
+theorem trio_terminates_final (hU0 : OldUpgAbs)
     (hBase : ∀ n, expand SRO n ≠ [] → ∃ ρ rk, Inv3V (expand SRO n) ρ rk ∧ Res3A (expand SRO n) ρ rk)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
@@ -117,7 +117,7 @@ theorem trio_terminates_final
     (hT2 : HInvE → ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n) :
     WellFounded Step' :=
-  trio_terminates_indV hBase (hTake_of_last hLast) hExp hT2
+  (trio_terminates_indV hU0) hBase (hTake_of_last hLast) hExp hT2
 
 /-- **The one-column drop from its residual**: the drop lemma (`drop_pres` through `valInv_drop1`) gives the
 valuation `drop1 M x rk` of `M.take x` with `Cons`, `Rk`, `Good3`, `VSmallF`, `FrameClosed`, `FrameOT`,

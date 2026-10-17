@@ -52,7 +52,7 @@ structure T0RestF : Prop where
   adnR : T0AbsDNRes
 
 /-- **`hExp` for `t = 0`, the current residuals**, with TPLoW・AbsDW・TPLoN from the matrix-wise `FrmLF`. -/
-theorem hExp_t0_mainF
+theorem hExp_t0_mainF (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hNG : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ) (hFrm : FrmLF)
@@ -63,7 +63,7 @@ theorem hExp_t0_mainF
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
   have f : ∀ F, T0Field F → T0FieldG F := fun _ h M ρ rk r L n σ rkN hctx _ => h M ρ rk r L n σ rkN hctx
   have hFF := t0_frameFields hFrm (t0_absD hRest.phi) (f _ (t0_tplo hRest.tploR))
-  hExp_t0_mainC2 hLast hNG hIV hII hG hS
+  (hExp_t0_mainC2 hU0) hLast hNG hIV hII hG hS
     ⟨hRest.vsD, hRest.phi, hRest.tploR, hRest.auwR, hRest.adnR, hFF.2.2, hFF.1, hFF.2.1⟩ hC1 hC1W hCT
 
 end Ytosk

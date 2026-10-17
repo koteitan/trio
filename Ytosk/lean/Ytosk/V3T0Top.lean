@@ -22,7 +22,7 @@ structure T0RestV : Prop where
   adnR : T0AbsDNRes
 
 /-- **`hExp` for `t = 0`, the current residuals.** -/
-theorem hExp_t0_top
+theorem hExp_t0_top (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hNG : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ) (hFrm : FrmLF)
@@ -32,11 +32,11 @@ theorem hExp_t0_top
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
-  hExp_t0_mainF hLast hNG hFrm hIV hII hG (t0ShapeR3_of hPH hRE hCut)
+  (hExp_t0_mainF hU0) hLast hNG hFrm hIV hII hG (t0ShapeR3_of hPH hRE hCut)
     ⟨t0VSResD2_of hOnly, hRest.phi, hRest.tploR, hRest.auwR, hRest.adnR⟩ hC1 hC1W hCT
 
 /-- **`hVSRexp` for `t = 0`** with (i) from PH3c and RE. -/
-theorem hVSRexp_t0_top
+theorem hVSRexp_t0_top (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
@@ -44,6 +44,6 @@ theorem hVSRexp_t0_top
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk → VSmallR M ρ →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∀ ρN rkN, Inv3V (expand M n) ρN rkN → VSmallR (expand M n) ρN :=
-  hVSRexp_t0 hLast hIV hII (t0ShapeR3_of hPH hRE hCut)
+  (hVSRexp_t0 hU0) hLast hIV hII (t0ShapeR3_of hPH hRE hCut)
 
 end Ytosk

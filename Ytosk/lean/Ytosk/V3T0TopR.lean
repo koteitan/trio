@@ -69,7 +69,7 @@ theorem T0DF.toH {M : Mat} {ρ : Valn} (h : T0DF M ρ) : T0DFH M ρ := by
   exact ⟨a, b, c, d, trivial⟩
 
 /-- **`T0DF` from the residuals and `VSmallR` of `M`.** -/
-theorem t0DF_of (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
+theorem t0DF_of (hU0 : OldUpgAbs) (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
     (hCut : T0CutResG) (hIV : T0IVRes) {M : Mat} {ρ : Valn}
     {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk)
     (hVR : VSmallR M ρ) : T0DF M ρ := by
@@ -78,7 +78,7 @@ theorem t0DF_of (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res
   rw [show M.length - 1 = r + L by omega] at hDr
   have hab0 := R.abS.lo r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
-  have h := t0_otdR hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
+  have h := (t0_otdR hU0) hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
     hVR (hPH M ρ rk hM hS I R) (hCut M ρ rk r L hM hS I R hlen hL hp he1)
@@ -106,7 +106,7 @@ theorem df_same {M N : Mat} {ρ σ : Valn} {c : Nat} (hC : Cons M ρ) (hG : Good
   · exact h
 
 /-- **`VSmallR` of `N = M[n]`** (`t = 0`, `n ≥ 2`) from that of `M` and the `D` facts `T0DF`. -/
-theorem t0_vsmallR_DF : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → VSmallR M ρ → T0DF M ρ →
+theorem t0_vsmallR_DF (hU0 : OldUpgAbs) : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN → VSmallR M ρ → T0DF M ρ →
     VSmallR (TRIO.gexp M r L 0 0 n) σ := by
   intro M ρ rk r L n σ rkN hctx hVR hDF
   obtain ⟨hM, hS, I, R, hlen, hL, hp, he1, _, hn2, hCN, hRN, hGN, _⟩ := id hctx
@@ -160,7 +160,7 @@ theorem t0_vsmallR_DF : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ rk r L n σ rkN →
   -- the drop at `r`: `o′(r) ≤ o(r)`, and a new subscript comes with the argument `0`
   have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
   have hO'le : ρ'.o r ≤ ρ.o r := by
-    rcases PO.zero_t0 hx hDr.ua he1 hp I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
+    rcases PO.zero_t0 hx hDr.ua he1 hp (fun _ _ => hU0 _ _ _) I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
     · exact hE.le
     · exfalso
       rw [hor] at hw; simp only [psi.injEq] at hw
@@ -450,7 +450,7 @@ theorem t0VSD_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hDF : T0DFH 
   exact vs_changed_bound hvcot hlv hBc (I.vs i hiM Lc c [] hCL) hot
 
 /-- **`VSmallF` of `N = M[n]`** (`t = 0`) at one matrix, from the `D` part `hD` (for this `M`) and `T0VSResG`. -/
-theorem t0_vsmallF_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem t0_vsmallF_at (hU0 : OldUpgAbs) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hD : ∀ r L n σ rkN, T0Ctx M ρ rk r L n σ rkN →
       ∀ i (Lc : List Nat) c (R : List Nat), i < r → c < r → CL M i = Lc ++ c :: R → σ.v c ≠ ρ.v c →
         ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o)))
@@ -589,7 +589,7 @@ theorem t0_vsmallF_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
           · exact h
         · rcases hno with hno | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩
           · exact absurd hxcnt (hno _ hxr)
-          · exact absurd ((hDr.ua.toX_xm1 he1 (by rw [show r + L - 1 = r by omega]; exact hp)) r k W (by omega) hu hvk hWz) hbad
+          · exact absurd ((hU0 M (r + L) ρ) r k W (by omega) hu hvk hWz) hbad
       -- a changed `v(r)`: `o′(r) = ψ_{v′(r)}(0)`
       have hyz : y = z := by
         have hCv : ChgX M (r + L) false r := by
@@ -623,7 +623,7 @@ theorem t0_vsmallF_at {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         have hot2 : isOT (psi (ρ.v g) (psi (ρ.v r) (app Y0 one) z) z) := hot
         rw [← hY0] at hot2
         have hl0 : LhdE (ρ'.o r) (ρ.o r) := by
-          rcases PO.zero_t0 hx hDr.ua he1 hp I.cons I.good (by omega) hPO hPV with h | ⟨_, w, hw⟩
+          rcases PO.zero_t0 hx hDr.ua he1 hp (fun _ _ => hU0 _ _ _) I.cons I.good (by omega) hPO hPV with h | ⟨_, w, hw⟩
           · exact h
           · rw [hY0] at hw; simp only [psi.injEq] at hw
             exact absurd hw.2.1 (fun h => by cases Y0 <;> simp [app, one] at h)
@@ -779,7 +779,7 @@ theorem hExp_t0A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hOTD : T0DF 
 /-- **`hExp` for `t = 0` in the `RClaim` scheme** (`VSmallR M ρ` given, as carried by main_GP). Residuals:
 PH3c of `M` and `T0CutResG` (the `D` frames; `T0IVRes` is proved, V3T0IV), `T0RestV`・`FrmLF`・`hNG` (value fields), and the
 shadow frames `T0RWResCR`. No class residual (`T0IIRes`, `T0ShapeR3`). -/
-theorem hExp_t0_topR
+theorem hExp_t0_topR (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hNG : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ) (hFrm : FrmLF)
@@ -796,8 +796,8 @@ theorem hExp_t0_topR
   have hFF := t0_frameFields hFrm (t0_absD hRest.phi) (f _ (t0_tplo hRest.tploR))
   have H2 : T0RestNV := ⟨g _ (t0_absD hRest.phi), g _ (t0_absU hRest.phi), g _ (f _ (t0_tplo hRest.tploR)),
     g _ (f _ (t0_absUW hRest.auwR)), g _ hFF.2.2, g _ (f _ (t0_absDN hRest.adnR)), g _ hFF.1, g _ hFF.2.1⟩
-  have hDF := t0DF_of hPH hCut hIV hM hS I R hVR
-  apply hExp_t0A hDF (t0_vsmallF_at (t0VSD_at hDF.toH) hIV) H2
+  have hDF := (t0DF_of hU0) hPH hCut hIV hM hS I R hVR
+  apply hExp_t0A hDF ((t0_vsmallF_at hU0) (t0VSD_at hDF.toH) hIV) H2
     (t0RWResAt_of PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht)
       (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) hC1 hDF)
     (t0RWResAt_of PTP1W (fun _ _ _ _ _ hc hBc hl hA ht => ptp1w_classA hc hBc hl hA ht)
@@ -810,7 +810,7 @@ theorem hExp_t0_topR
   exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩
 
 /-- **`hVSRexp` for `t = 0` in the `RClaim` scheme.** -/
-theorem hVSRexp_t0_topR
+theorem hVSRexp_t0_topR (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hPH : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → PH3c M ρ)
@@ -837,8 +837,8 @@ theorem hVSRexp_t0_topR
       simp only [List.length_nil] at this; omega
     obtain ⟨τ, rkT, VT, RT⟩ := hTake_of_last hLast M ρ rk hM hSRO hE I R (r + L) (by omega) hjS hjE
     exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM (r + L) (by omega)) hjS) VT, RT⟩
-  exact t0_vsmallR_DF M ρ rk r L n ρN rkN
+  exact (t0_vsmallR_DF hU0) M ρ rk r L n ρN rkN
     ⟨hM, hSRO, I, R, hlen, hL, hp, he1, hTx, hn2, V.cons, V.rank, V.good, V.fo, V.fc, V.kd, V.td⟩ hVR
-    (t0DF_of hPH hCut hIV hM hSRO I R hVR)
+    ((t0DF_of hU0) hPH hCut hIV hM hSRO I R hVR)
 
 end Ytosk

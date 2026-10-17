@@ -77,6 +77,65 @@ theorem s1_core_weak {a B v Y0 w' : T} {m : Nat} (hm : 1 ≤ m)
     (fun u hu g hg => (self_small_weakA hWC hW.2.1 u hu g hg).imp
       (fun h => le_trans h (le_app_of_ge B' hB'X)) id) (lt_trans hlt1 hlt2)
 
+/-- **The drop at a column with a counted child**: `o′(i) ◁ o(i)`, or `o′(i)` is a weak leaf `ψ_{w′}(0)` with
+`w′ < v(i)` and the components of `w′` dominated by the parent's subscript (the weak branch of the drop lemma). -/
+theorem po_lhd_or_weak {M : Mat} {x : Nat} {ρ ρ' : Valn} {i p : Nat} (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hC' : Cons (M.take x) ρ') (hiM : i < M.length) (hix : i < x)
+    (hPO : PO ρ ρ' i) (hPV : PV M ρ ρ' i) (hp : par M 0 i = some p) (hnz : ∀ w, ρ.o i ≠ psi w z z)
+    (hlt : ρ'.o i < ρ.o i) :
+    Lhd z (ρ'.o i) (ρ.o i) ∨
+      CntX M ρ i ∧ ∃ w', ρ'.o i = psi w' z z ∧ WkVA w' (ρ.v i) ∧ WCS (ρ.v p) w' ∧ isOT (psi w' z z) = true := by
+  rcases hPO.1 with h | ⟨⟨w', w, X, h1, h2, hW⟩, hw | hnl⟩
+  · rcases h with h | h
+    · rw [h] at hlt; exact absurd hlt (lt_irrefl _)
+    · exact Or.inl h
+  · obtain ⟨w0, hw0⟩ := hw
+    exact absurd hw0 (hnz w0)
+  · rcases hPV.1 with hv | ⟨hWv, hWC, hCX⟩
+    · exact absurd hv hnl
+    · right
+      have hiT : i < (M.take x).length := by rw [List.length_take]; omega
+      obtain ⟨y0, hy0⟩ := o_psi_sub hC' hiT
+      rw [sf_ot hPV.2] at hy0
+      have hw'v : w' = ρ'.v i := by
+        rw [h1] at hy0; simp only [psi.injEq] at hy0; exact hy0.1
+      subst hw'v
+      exact ⟨hCX, _, h1, hWv, hWC.wcs hp, by rw [← h1]; exact hPO.2.1⟩
+
+/-- **The drop at the parent `r` of a `t = 0` column `x`, outside the weak case**: `r ≠ x − 1` (no absorption
+needed) or the parent of `x − 1` is a bump child (the strong absorption from `UpgAbsXW`). -/
+theorem lhd_t0_of {M : Mat} {x : Nat} {ρ ρ' : Valn} {r : Nat} (hx : x + 1 = M.length)
+    (hUA : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0) (hp : par M 0 x = some r)
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hrM : r < M.length) (hPO : PO ρ ρ' r) (hPV : PV M ρ ρ' r)
+    (hnz : ∀ w, ρ.o r ≠ psi w z z) (hlt : ρ'.o r < ρ.o r) (h : r ≠ x - 1 ∨ ¬ NBPar M (x - 1)) :
+    Lhd z (ρ'.o r) (ρ.o r) := by
+  have hE : LhdE (ρ'.o r) (ρ.o r) ∨ (WkOA (ρ'.o r) (ρ.o r) ∧ ∃ w, ρ.o r = psi w z z) := by
+    by_cases hr : r = x - 1
+    · have hnb := h.resolve_left (fun h' => h' hr)
+      exact PO.zero_of_strong hx (hUA.toX_xm1 hx1 (by rw [← hr]; exact hp) hnb) hC hG hrM hPO hPV
+    · exact PO.zero_of_ne (by omega) hC hG hrM hPO hPV
+  rcases hE with hE | ⟨_, w, hw⟩
+  · exact lhd_of_lhdE_lt hE hlt
+  · exact absurd hw (hnz w)
+
+/-- **The drop at the parent `r` of a `t = 0` column `x`**: `◁`, or (when `r = x − 1` and its parent `g` is
+not a bump child) a weak leaf whose components are dominated by `v(g)`. -/
+theorem lhd_or_weak_t0 {M : Mat} {x : Nat} {ρ ρ' : Valn} {r g : Nat} (hx : x + 1 = M.length)
+    (hUA : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0) (hp : par M 0 x = some r) (hg : par M 0 r = some g)
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hrM : r < M.length)
+    (hPO : PO ρ ρ' r) (hPV : PV M ρ ρ' r) (hnz : ∀ w, ρ.o r ≠ psi w z z) (hlt : ρ'.o r < ρ.o r) :
+    Lhd z (ρ'.o r) (ρ.o r) ∨
+      r = x - 1 ∧ NBPar M (x - 1) ∧ CntX M ρ r ∧
+        ∃ w', ρ'.o r = psi w' z z ∧ WkVA w' (ρ.v r) ∧ WCS (ρ.v g) w' ∧ isOT (psi w' z z) = true := by
+  by_cases h : r ≠ x - 1 ∨ ¬ NBPar M (x - 1)
+  · exact Or.inl (lhd_t0_of hx hUA hx1 hp hC hG hrM hPO hPV hnz hlt h)
+  · have hr : r = x - 1 := by by_contra h'; exact h (Or.inl h')
+    have hnb : NBPar M (x - 1) := by by_contra h'; exact h (Or.inr h')
+    rcases po_lhd_or_weak hC hG hC' hrM (by have := par_lt M 0 x r hp; omega) hPO hPV hg hnz hlt with
+      h' | ⟨hCX, hw⟩
+    · exact Or.inl h'
+    · exact Or.inr ⟨hr, hnb, hCX, hw⟩
+
 section
 variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)
@@ -85,6 +144,25 @@ variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   {ρ σ : Valn} (hC : Cons M ρ) (hG : Good3 M ρ)
   (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) (hGN : GoodOT (TRIO.gexp M r L 0 0 n) σ)
 include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN hGN
+
+omit hSD hZ1 hUAT hUAB he1 hC hG hCN hGN in
+/-- **The first copy root `r` counts at `g` in `M[n]`** when it does in `M` and its row 2 is `0`
+(then nothing upgrades to it). -/
+theorem counted_first0 {g : Nat} (hg : par M 0 r = some g) (hc : Counted M g r) (he2r : entry M 2 r = 0) :
+    Counted (TRIO.gexp M r L 0 0 n) g r := by
+  have hgr : g < r := par_lt M 0 r g hg
+  have hcN : col (TRIO.gexp M r L 0 0 n) r = col M r := by
+    have := col_copy0 hlen (k := 0) (q := 0) (by omega) hL (M := M) (n := n)
+    simpa using this
+  have hbN : bump (TRIO.gexp M r L 0 0 n) g = bump M g := bump_pre0 hlen hL hp hn (by omega)
+  refine ⟨by rw [hcN, hbN]; exact hc.1, ?_⟩
+  rintro ⟨hU, _⟩
+  unfold isUpg at hU
+  obtain ⟨k, _, hk⟩ := List.any_eq_true.mp hU
+  have h1 := upg_target_e2 (of_decide_eq_true hk)
+  have h2 : entry (TRIO.gexp M r L 0 0 n) 2 r = entry M 2 r := by
+    rw [col_eq_entries, col_eq_entries] at hcN; simp only [Prod.mk.injEq] at hcN; exact hcN.2.2
+  omega
 
 /-- **Seed S1 with a weak last copy** (`r = x − 1` lost its upgrade in `M.take x`): `o′(r) = ψ_{w′}(0)`,
 `w′ < v(r)`, the components of `w′` dominated at `g`; `r` itself counts at `g` in `N` (a middle copy). -/

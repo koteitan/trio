@@ -269,7 +269,7 @@ theorem bumpTermDec_N_t0 {ρ' : Valn} (hKD : BumpKidsDec M ρ) (hTD : BumpTermDe
     (hdl : ∀ d, d < r → DepX M (r + L) true d → σ.o d ≤ ρ.o d)
     (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = omid M r L ρ)
     (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
-    (hl : par M 0 r ≠ none → Lhd z (ρ'.o r) (ρ.o r))
+    (hl : ∀ g i, par M 0 r = some g → par M 0 g = some i → col M g = bump M i → Lhd z (ρ'.o r) (ρ.o r))
     (hG0le : ∀ g, par M 0 r = some g → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
       sumN ((children (M.take (r + L)) r).map ρ'.o) ≤ sumN ((children (M.take (r + L)) r).map ρ.o)) :
     BumpTermDec (TRIO.gexp M r L 0 0 n) σ := by
@@ -466,7 +466,7 @@ theorem bumpTermDec_N_t0 {ρ' : Valn} (hKD : BumpKidsDec M ρ) (hTD : BumpTermDe
         rw [col_pre0 hlen hL hp hn (by omega), hbi, if_pos hjb', if_pos hjb']
         by_cases hjg : par M 0 r = some j'
         · -- `j′ = g`: the copy roots follow
-          have hl' := hl (by rw [hjg]; simp)
+          have hl' := hl j' i hjg (mem_children_iff.mp hj'M).2 hjb'
           have hlast := children_g_last hlen hL hp hjg
           have hKk : K = (children M j').filter (fun d => decide (d < r)) ∧ k' = r := by
             have h := hchj.symm.trans hlast

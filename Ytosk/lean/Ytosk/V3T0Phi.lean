@@ -67,7 +67,7 @@ structure T0RestG : Prop where
 
 /-- **`hExp` for `t = 0`, the current residuals**, with `NoGapP` of the standard matrices as a hypothesis
 (`hNG`, groupA's carried invariant). -/
-theorem hExp_t0_mainG
+theorem hExp_t0_mainG (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hNG : ∀ M ρ rk, Std M → M ≠ SRO → Inv3 M ρ rk → Res3A M ρ rk → NoGapP M ρ)
@@ -78,7 +78,7 @@ theorem hExp_t0_mainG
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
   have g : ∀ F, T0FieldG F → T0Field F := fun F h M ρ rk r L n σ rkN hctx =>
     h M ρ rk r L n σ rkN hctx (hNG M ρ rk hctx.1 hctx.2.1 hctx.2.2.1 hctx.2.2.2.1)
-  exact hExp_t0_mainN2 hLast hIV hII hG hS hRest.vsD (fun hD =>
+  exact (hExp_t0_mainN2 hU0) hLast hIV hII hG hS hRest.vsD (fun hD =>
     ⟨hD, g _ (t0_absD hRest.phi), g _ (t0_absU hRest.phi), g _ hRest.tplo, g _ hRest.auw, g _ hRest.tplon,
       g _ hRest.adn, g _ hRest.tplow, g _ hRest.adw⟩) hC1 hC1W hCT
 

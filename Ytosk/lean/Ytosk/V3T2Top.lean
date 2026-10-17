@@ -1272,10 +1272,10 @@ theorem t2_hT2
 
 /-- **Termination of the 3-row BMS from SRO**, with `t = 2` reduced to `Res3T2`: the remaining
 hypotheses are the top hypothesis `HInvA` and `Res3T2` on standard matrices with `t = 2`. -/
-theorem trio_terminates_T2 (hInv : HInvA)
+theorem trio_terminates_T2 (hU0 : OldUpgAbs) (hInv : HInvA)
     (hR2 : ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk) :
     WellFounded Step' :=
-  trio_terminatesA hInv (t2_hT2 hR2)
+  (trio_terminatesA hU0) hInv (t2_hT2 hR2)
 
 end Ytosk

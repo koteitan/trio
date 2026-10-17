@@ -24,7 +24,7 @@ the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`), the prefix shape of the seed f
 `T2VRAK KStepVRA`; top `HSibHardV2`. -/
 theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
-    (hRw : T0RwRes) (hAbW : T0AbWRes)
+    (hRw : T0RwRes) (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
     (hCl : T2SeedClV2) (hBM : T2BumpMonoV2) (hU2 : T2UpgAbsW) (hOT : T2SeedOTRestV2) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2)
     (hDom : T2SeedDomV2) (hFD : FDsh)
     (hQNG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -39,7 +39,7 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : H
     (hVK : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KStepVRA M) : WellFounded Step' :=
   have hP : T2SeedPResV2 := t2SeedPResV2_of (t2SeedPResR_of_sib (hSib_of_hard hSib) hPR)
-  trio_terminates_main_V2_base (hDropV2_of hDW hU0) hSd hF hLf hRw hAbW
+  trio_terminates_main_V2_base (hDropV2_of hDW hU0) hSd hF hLf hRw hAbW hArgB
     (t2BelowXResV2_of hRw (t2BelowRV2_of hP hCl hBM) hP (t2SeedOTV2_of hP hOT)) hU2
     hPR hSib hDom hFD hQNG hSVCG
     (fun M ρ rk C hz h2 => t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2))

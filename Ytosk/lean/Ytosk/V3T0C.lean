@@ -522,12 +522,25 @@ theorem t0_vsmallF_atC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
           obtain ⟨m, _, _, hcol, _⟩ := upg_spec hk'
           have := e2_of_col hcol
           rw [hx2] at this; omega
+      -- the weak case: `r = x − 1` lost its upgrade; the components of `v′(r)` at the level `v(g)` are
+      -- countable (those dominated by `v(g)` at its own level do not exist)
+      by_cases hweak : r = r + L - 1 ∧ NBPar M (r + L - 1) ∧ ¬ LhdE (ρ'.v r) (ρ.v r)
+      · left
+        rcases hPV.1 with hvE | ⟨hWk, hWC, _⟩
+        · exact absurd hvE hweak.2.2
+        rcases (hWC.wcs hg) (ρ.v g) (fun h => lt_irrefl' _ (show ρ.v g < ρ.v g from h)) g' hg' with
+          h1 | ⟨d, hd, _⟩
+        · exact le_of_lt (lt_of_lt_of_le h1 (Om_one_le_psi hWk.2.1))
+        · rw [comps_self_nil (I.good.ot_v g hgM)] at hd; simp at hd
       have hlv : Lhd z (ρ'.v r) (ρ.v r) := by
-        rcases hPV.1 with h | ⟨_, _, hno⟩
-        · rcases h with h | h
+        by_cases hE : LhdE (ρ'.v r) (ρ.v r)
+        · rcases hE with h | h
           · exact absurd h hv
           · exact h
-        · exact absurd hxcnt (CntX.nocnt_t0 hx hDr.ua he1 hp hno _ hxr)
+        rcases hPV.1 with h | ⟨_, _, hno⟩
+        · exact absurd h hE
+        · exact absurd hxcnt (CntX.nocnt_t0 hx hDr.ua he1 hp (fun hp' hnb => absurd
+            ⟨by rw [hp] at hp'; exact Option.some.inj hp', hnb, hE⟩ hweak) hno _ hxr)
       -- a changed `v(r)`: `o′(r) = ψ_{v′(r)}(0)`
       have hyz : y = z := by
         have hCv : ChgX M (r + L) false r := by
@@ -561,10 +574,11 @@ theorem t0_vsmallF_atC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         have hot2 : isOT (psi (ρ.v g) (psi (ρ.v r) (app Y0 one) z) z) := hot
         rw [← hY0] at hot2
         have hl0 : LhdE (ρ'.o r) (ρ.o r) := by
-          rcases PO.zero_t0 hx hDr.ua he1 hp I.cons I.good (by omega) hPO hPV with h | ⟨_, w, hw⟩
+          rcases hPO.1 with h | ⟨_, ⟨w, hw⟩ | hnl⟩
           · exact h
           · rw [hY0] at hw; simp only [psi.injEq] at hw
             exact absurd hw.2.1 (fun h => by cases Y0 <;> simp [app, one] at h)
+          · exact absurd (Or.inr hlv) hnl
         have hot' := ot_parent_lhd hot2 (single_o hC1 hVT.g hrT).1 hl0
         rw [hsy, hy0.1, hyz] at hot'
         by_cases hsa : ρ'.v r < ρ.v g

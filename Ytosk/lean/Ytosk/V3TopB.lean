@@ -118,7 +118,7 @@ theorem hInv_of_A (h : HInvA) :
   exact hD
 
 /-- `trio_terminates` with `t = 2` also given that `M` is standard. -/
-theorem trio_terminates'
+theorem trio_terminates' (hU0 : OldUpgAbs)
     (hInv : ∀ M, Std M → M ≠ SRO → M ≠ [] → ∃ ρ rk, Inv3 M ρ rk ∧ Res3 M ρ rk)
     (hT2 : ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n) :
@@ -126,16 +126,16 @@ theorem trio_terminates'
   apply terminates_of_desc3
   intro M n hM hne hne'
   obtain ⟨ρ, rk, I, R⟩ := hInv M hM hne hne'
-  obtain ⟨t', hv, _, hlt⟩ := desc_step hne' I R (hT2 M ρ rk hM I R) n
+  obtain ⟨t', hv, _, hlt⟩ := (desc_step hU0) hne' I R (hT2 M ρ rk hM I R) n
   exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
 
 /-- **Termination of the 3-row BMS from SRO**, with the top hypothesis stated for every valuation and
 without the prefix drops. The case `t = 2` may use the top hypothesis itself (for the valuation of the
 standard matrix `M[n]`) and that `M` is standard. -/
-theorem trio_terminatesA (hInv : HInvA)
+theorem trio_terminatesA (hU0 : OldUpgAbs) (hInv : HInvA)
     (hT2 : HInvA → ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n) :
     WellFounded Step' :=
-  trio_terminates' (hInv_of_A hInv) (hT2 hInv)
+  (trio_terminates' hU0) (hInv_of_A hInv) (hT2 hInv)
 
 end Ytosk

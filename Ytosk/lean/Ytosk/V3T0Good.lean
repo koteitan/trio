@@ -250,7 +250,7 @@ theorem g0_shape {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counte
     (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = omid M r L ρ)
     (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
     (hLast : Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
-    (hl : Lhd z (ρ'.o r) (ρ.o r)) :
+    (hl : ρ'.o r < ρ.o r) :
     ∃ Lc Cm : List Nat, CL M g = Lc ++ [r] ∧ CL (TRIO.gexp M r L 0 0 n) g = Lc ++ Cm ++ [r + (n - 1) * L] ∧
       Lc.map σ.o = Lc.map ρ.o ∧ Cm.map σ.o = List.replicate Cm.length (omid M r L ρ) := by
   have hx : r + L + 1 = M.length := hlen
@@ -320,7 +320,7 @@ theorem dec_g0 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted 
     (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = omid M r L ρ)
     (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
     (hLast : Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
-    (hl : Lhd z (ρ'.o r) (ρ.o r)) :
+    (hl : ρ'.o r < ρ.o r) :
     ((CL (TRIO.gexp M r L 0 0 n) g).map σ.o).Pairwise (fun a b => b ≤ a) := by
   have hx : r + L + 1 = M.length := hlen
   have hlN := lenN0 hlen hn (M := M) (L := L)
@@ -393,7 +393,7 @@ theorem dec_g0 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Counted 
       rw [hom, hor]; exact psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_app_one _⟩)
     have hlo : ρ'.o r ≤ omid M r L ρ := by
       obtain ⟨_, s', y', hs'⟩ := hsN (ρ'.o r) (by simp)
-      have h := hl.1
+      have h := hl
       rw [hs', hor] at h
       rw [hs', hom]
       rcases psi_lt_psi_z_iff.mp h with h1 | ⟨rfl, h2⟩
@@ -466,7 +466,7 @@ theorem good3_N_t0 {ρ' : Valn} (hC' : Cons (M.take (r + L)) ρ') (hGT : Good3 (
     (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
     (hLast : ∀ g, par M 0 r = some g → Counted M g r →
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
-    (hl : ∀ g, par M 0 r = some g → Counted M g r → Lhd z (ρ'.o r) (ρ.o r)) :
+    (hl : ∀ g, par M 0 r = some g → Counted M g r → ρ'.o r < ρ.o r) :
     Good3 (TRIO.gexp M r L 0 0 n) σ := by
   have hlN := lenN0 hlen hn (M := M) (L := L)
   apply good3_of_OT hCN hGN

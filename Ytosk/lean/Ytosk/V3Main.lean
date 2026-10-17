@@ -12,7 +12,7 @@ import Ytosk.V3T2Fin
 
 namespace Ytosk
 
-theorem trio_terminates_main_T2
+theorem trio_terminates_main_T2 (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hExp : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
@@ -21,6 +21,6 @@ theorem trio_terminates_main_T2
     (hR2 : ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk) :
     WellFounded Step' :=
-  trio_terminates_final_T2 hBaseV_holds hLast hExp hR2
+  (trio_terminates_final_T2 hU0) hBaseV_holds hLast hExp hR2
 
 end Ytosk

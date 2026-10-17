@@ -47,6 +47,11 @@ def UpgAbsX (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
   ∀ i k W, i + 1 = x → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
     ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W
 
+/-- **The strong absorption everywhere** (2026-10-17): assumed only by the superseded routes (the old `t = 0`
+engines `t0_otd*`, `t0_vsmallR*`, `t0_main`, and the old top theorems `trio_terminates*`, `desc_step` …), which the
+current top theorem `trio_terminates_main_V2_cur` does not use. It is false on standard matrices. -/
+def OldUpgAbs : Prop := ∀ (M : Mat) (x : Nat) (ρ : Valn), UpgAbsX M x ρ
+
 theorem UpgAbs.x {M : Mat} {ρ : Valn} (h : UpgAbs M ρ) (x : Nat) : UpgAbsX M x ρ :=
   fun i k W _ hu hv hW => h i k W hu hv hW
 
@@ -100,16 +105,16 @@ theorem UpgAbsXW.toX {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW M x ρ) (hx1 
     · exact h1 (by rw [hi]; exact hx1)
     · exact hh (by rw [hi] at h1; exact h1))
 
-/-- The strong form when the parent of `x` is `x − 1`. -/
+/-- The strong form when the parent of `x` is `x − 1` and its parent is a bump child. -/
 theorem UpgAbsXW.toX_xm1 {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0)
-    (hp : par M 0 x = some (x - 1)) : UpgAbsX M x ρ :=
-  h.toX hx1 (fun he => he.1 hp)
+    (hp : par M 0 x = some (x - 1)) (hnb : ¬ NBPar M (x - 1)) : UpgAbsX M x ρ :=
+  h.toX hx1 (fun he => hnb (he.2 hp))
 
 /-- The strong form when the parent `r` of `x` is a bump child. -/
 theorem UpgAbsXW.toX_bump {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0)
     {r g : Nat} (hp : par M 0 x = some r) (hg : par M 0 r = some g) (hb : col M r = bump M g) :
     UpgAbsX M x ρ :=
-  h.toX hx1 (fun he => he.2 r g hp hg hb)
+  h.toX hx1 (fun he => he.1 r g hp hg hb)
 
 /-- **Under the strong `UpgAbsX` a weak `o` has the argument `0`** (the shape of `PO` before 2026-10-12): the
 other weak case needs `UpgBad`, which `UpgAbsX` excludes. -/
@@ -154,22 +159,30 @@ theorem CntX.nocnt_of_ne {M : Mat} {ρ : Valn} {i : Nat} (hi : i + 2 ≠ M.lengt
   · exact hn
   · exact absurd hi2 hi
 
-/-- **The `PO` at the parent `r` of a `t = 0` column `x`** without the strong absorption in the easy shape:
-`r ≠ x − 1` gives `PO.zero_of_ne`, `r = x − 1` the strong form. -/
+/-- **The `PO` at the parent `r` of a `t = 0` column `x`** without the strong absorption when `r ≠ x − 1`
+(`PO.zero_of_ne`); when `r = x − 1` the strong form, from `hS` in the easy shape. -/
 theorem PO.zero_t0 {M : Mat} {x : Nat} {ρ ρ' : Valn} {r : Nat} (hx : x + 1 = M.length)
     (hUA : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0) (hp : par M 0 x = some r)
+    (hS : par M 0 x = some (x - 1) → NBPar M (x - 1) → UpgAbsX M x ρ)
     (hC : Cons M ρ) (hG : Good3 M ρ) (hrM : r < M.length) (hPO : PO ρ ρ' r) (hPV : PV M ρ ρ' r) :
     LhdE (ρ'.o r) (ρ.o r) ∨ (WkOA (ρ'.o r) (ρ.o r) ∧ ∃ w, ρ.o r = psi w z z) := by
   by_cases hr : r = x - 1
-  · exact PO.zero_of_strong hx (hUA.toX_xm1 hx1 (by rw [← hr]; exact hp)) hC hG hrM hPO hPV
+  · have hp' : par M 0 x = some (x - 1) := by rw [← hr]; exact hp
+    by_cases hnb : NBPar M (x - 1)
+    · exact PO.zero_of_strong hx (hS hp' hnb) hC hG hrM hPO hPV
+    · exact PO.zero_of_strong hx (hUA.toX_xm1 hx1 hp' hnb) hC hG hrM hPO hPV
   · exact PO.zero_of_ne (by omega) hC hG hrM hPO hPV
 
 /-- **No counted child of a weak parent `r` of a `t = 0` column `x`** in the easy shape. -/
 theorem CntX.nocnt_t0 {M : Mat} {x : Nat} {ρ : Valn} {r : Nat} (hx : x + 1 = M.length)
-    (hUA : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0) (hp : par M 0 x = some r) (h : CntX M ρ r) :
+    (hUA : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0) (hp : par M 0 x = some r)
+    (hS : par M 0 x = some (x - 1) → NBPar M (x - 1) → UpgAbsX M x ρ) (h : CntX M ρ r) :
     ∀ c ∈ children M r, ¬ Counted M r c := by
   by_cases hr : r = x - 1
-  · exact CntX.nocnt_of_strong hx (hUA.toX_xm1 hx1 (by rw [← hr]; exact hp)) h
+  · have hp' : par M 0 x = some (x - 1) := by rw [← hr]; exact hp
+    by_cases hnb : NBPar M (x - 1)
+    · exact CntX.nocnt_of_strong hx (hS hp' hnb) h
+    · exact CntX.nocnt_of_strong hx (hUA.toX_xm1 hx1 hp' hnb) h
   · have hrx : r < x := par_lt M 0 x r hp
     exact CntX.nocnt_of_ne (by omega) h
 

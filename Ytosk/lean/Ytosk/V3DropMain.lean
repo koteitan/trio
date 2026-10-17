@@ -50,9 +50,11 @@ def PO (ρ ρ' : Valn) (i : Nat) : Prop :=
 def NBPar (M : Mat) (i : Nat) : Prop :=
   ∀ p g, par M 0 i = some p → par M 0 p = some g → col M p ≠ bump M g
 
-/-- **The easy `t = 0` shape** (2026-10-17): the parent `r` of `x` is not `x − 1` and is not a bump child.
-There the `t = 0` engines do not need the strong absorption at `x − 1` (`PO.zero_t0`, `CntX.nocnt_t0`). -/
-def T0Easy (M : Mat) (x : Nat) : Prop := par M 0 x ≠ some (x - 1) ∧ NBPar M x
+/-- **The easy `t = 0` shape** (2026-10-17): the parent `r` of `x` is not a bump child, and when `r = x − 1`
+its parent is not a bump child either. Outside it the `t = 0` engines use the strong absorption at `x − 1`
+(`UpgAbsXW.toX`); inside, `r ≠ x − 1` needs no absorption (`PO.zero_of_ne`) and `r = x − 1` is the weak leaf
+(`po_lhd_or_weak`, V3T0Weak). -/
+def T0Easy (M : Mat) (x : Nat) : Prop := NBPar M x ∧ (par M 0 x = some (x - 1) → NBPar M (x - 1))
 
 /-- **The component condition of a weak `v`** (2026-10-12; 2026-10-17 without the side conditions): countable
 components, or components at the levels `u ≤ v(P_0 i)` countable or dominated by a component of `v(P_0 i)`

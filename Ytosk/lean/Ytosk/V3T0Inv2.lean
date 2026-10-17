@@ -45,7 +45,7 @@ def T0CutResGGC : Prop :=
 
 
 /-- **`T0DF` from the core bundles**, `PH3cG` and `VSmallRA` of `M` (as `t0DF_ofU`). -/
-theorem t0DF_ofC (hCut : T0CutResGGC) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
+theorem t0DF_ofC (hU0 : OldUpgAbs) (hCut : T0CutResGGC) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
     (hS : M ≠ SRO) (I : Inv3C M ρ rk) (R : Res3C M ρ rk) (hab : AbsSR M ρ) (hPH : PH3cG M ρ) (hVA : VSmallRA M ρ) :
     T0DF M ρ := by
   intro r L hlen hL hp he1 n hn σ hCN
@@ -53,7 +53,7 @@ theorem t0DF_ofC (hCut : T0CutResGGC) {M : Mat} {ρ : Valn} {rk : Bool → Nat �
   rw [show M.length - 1 = r + L by omega] at hDr
   have hab0 := hab.lo r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
-  have h := t0_otdU hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
+  have h := (t0_otdU hU0) hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
     (hVA.toP (r + L) r) hPH (hCut M ρ rk r L hM hS I R hlen hL hp he1)
@@ -188,7 +188,7 @@ theorem t0_final_inv3V2D {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L 
 /-- **`t = 0`, `n ≥ 2`: Inv3V2 of `N = M[n]`**, the standard root value and its descent.
 Named residuals: the cut `T0CutResGGC`, and for `N` the leaves `TP1LeafG`・`TP1WLeafG`
 and the ten last-column frame fields (`TakeFrameV2 N`). -/
-theorem t0_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat}
+theorem t0_final_inv3V2 (hU0 : OldUpgAbs) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat}
     (hM : Std M) (hS : M ≠ SRO) (S : SInv M) (I : Inv3V2 M ρ rk)
     (hlen : r + L + 1 = M.length) (hL : 0 < L) (hp : par M 0 (r + L) = some r)
     (he1 : entry M 1 (r + L) = 0)
@@ -205,7 +205,7 @@ theorem t0_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L :
   t0_final_inv3V2D hM hS S I hlen hL hp he1 R
     (T0AbsW.of_strong (hab.lo r (by rw [show M.length - 1 = r + L by omega]; exact hp)
       (by rw [show M.length - 1 = r + L by omega]; exact he1))) I1
-    (t0DF_ofC hCut hM hS (I.toC S) ⟨R⟩ hab I.ph I.vra.toLast) hLeaf hFrm
+    ((t0DF_ofC hU0) hCut hM hS (I.toC S) ⟨R⟩ hab I.ph I.vra.toLast) hLeaf hFrm
 
 /-- `t0_shape` from the structural invariants. -/
 theorem t0_shapeS {M : Mat} (S : SInv M)
@@ -236,14 +236,14 @@ def T0NRes (F : Mat → Valn → (Bool → Nat → Nat) → Prop) : Prop :=
       Rk (TRIO.gexp M r L 0 0 n) rkN → Good3 (TRIO.gexp M r L 0 0 n) σ → F (TRIO.gexp M r L 0 0 n) σ rkN
 
 /-- **top's `ExpT0V2`** from the cut residual and the two residual fields of `N`. -/
-theorem expT0V2_of2 (hA : HAbSV2) (hCut : T0CutResGGC)
+theorem expT0V2_of2 (hU0 : OldUpgAbs) (hA : HAbSV2) (hCut : T0CutResGGC)
     (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
     ExpT0V2 := by
   intro M ρ rk C hz hs0 n hn2
   obtain ⟨r, L, hlen, hL, hp, he1, hexp⟩ := t0_shapeS C.S hz hs0
   rw [hexp n]
   have hpre := (C.pre (r + L) (by omega) (by omega)).1
-  obtain ⟨ρN, rkN, IN, _, _⟩ := t0_final_inv3V2 C.std C.ne C.S C.I hlen hL hp he1 C.R.drop
+  obtain ⟨ρN, rkN, IN, _, _⟩ := (t0_final_inv3V2 hU0) C.std C.ne C.S C.I hlen hL hp he1 C.R.drop
     (hA M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.I) hpre hCut
     (hLeaf M ρ rk r L C hlen hL hp he1) (hFrm M ρ rk r L C hlen hL hp he1)
     n hn2
@@ -251,9 +251,9 @@ theorem expT0V2_of2 (hA : HAbSV2) (hCut : T0CutResGGC)
 
 /-- The earlier interface of `expT0V2_of2` with the `VSmallRAll` residual of `N`, which is now proved
 (`vsmallRAll_N_t0`) and not used. -/
-theorem expT0V2_of (hA : HAbSV2) (hCut : T0CutResGGC) (_hVRA : T0NRes (fun N σ _ => VSmallRAll N σ))
+theorem expT0V2_of (hU0 : OldUpgAbs) (hA : HAbSV2) (hCut : T0CutResGGC) (_hVRA : T0NRes (fun N σ _ => VSmallRAll N σ))
     (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
     ExpT0V2 :=
-  expT0V2_of2 hA hCut hLeaf hFrm
+  (expT0V2_of2 hU0) hA hCut hLeaf hFrm
 
 end Ytosk

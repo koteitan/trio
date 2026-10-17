@@ -58,7 +58,7 @@ theorem rest_take_ofG (hFrm : FrmLF) {M : Mat} {ρ : Valn} {rk : Bool → Nat �
 
 /-- **The top theorem without `VSmallR`** (2026-10-12): the drop residual is `DropResH` (`HardArg` of
 `M.take x` instead of `VSmallR` + `RClaim`), the hole fields of `M.take x` as in `rest_take_ofG`. -/
-theorem trio_terminates_main_GH
+theorem trio_terminates_main_GH (hU0 : OldUpgAbs)
     (hDH : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk →
       DropResH M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
     (hSeed : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → SeedR M ρ rk)
@@ -77,7 +77,7 @@ theorem trio_terminates_main_GH
     (hR2 : ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk) :
     WellFounded Step' := by
-  apply trio_terminates_main_H _ _ hR2
+  apply (trio_terminates_main_H hU0) _ _ hR2
   · intro M ρ rk hM hS hl I R
     have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
     have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt

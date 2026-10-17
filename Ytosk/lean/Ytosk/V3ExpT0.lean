@@ -194,7 +194,7 @@ def T0Shape : Prop :=
 
 /-- **The `D` columns of `N` from the class residuals**: standard, and with the same `v` their
 arguments drop by `◁`. -/
-theorem t0_D_of_shape (h : T0Shape) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L n : Nat}
+theorem t0_D_of_shape (hU0 : OldUpgAbs) (h : T0Shape) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L n : Nat}
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3 M ρ rk) (R : Res3A M ρ rk) (hlen : r + L + 1 = M.length)
     (hL : 0 < L) (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0) (hn : 2 ≤ n)
     {σ : Valn} (hCN : Cons (TRIO.gexp M r L 0 0 n) σ) :
@@ -206,15 +206,15 @@ theorem t0_D_of_shape (h : T0Shape) {M : Mat} {ρ : Valn} {rk : Bool → Nat →
   rw [show M.length - 1 = r + L by omega] at hDr
   have hab0 := R.abS.lo r (by rw [show M.length - 1 = r + L by omega]; exact hp)
     (by rw [show M.length - 1 = r + L by omega]; exact he1)
-  exact t0_otd hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
+  exact (t0_otd hU0) hlen hL I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hp he1 I.cons I.good
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
     h1 h2 h3 h4 n hn σ hCN
 
 /-- **`T0OTD` from the class residuals.** -/
-theorem t0OTD_of_shape (h : T0Shape) : T0OTD := by
+theorem t0OTD_of_shape (hU0 : OldUpgAbs) (h : T0Shape) : T0OTD := by
   intro M ρ rk r L n hM hS I R hlen hL hp he1 hn σ hCN i hi hd
-  exact (t0_D_of_shape h hM hS I R hlen hL hp he1 hn hCN i hi hd).1
+  exact ((t0_D_of_shape hU0) h hM hS I R hlen hL hp he1 hn hCN i hi hd).1
 
 /-- **The residual of a rewriting-frame field `P` at `N = M[n]`** (`t = 0`): the frames before `r`
 whose last counted child is in `D`, and the first copy root of `g` (the middle value or `o′(r)` after the
@@ -243,7 +243,7 @@ def T0RWResB (P : T → T → T → T → Prop) : Prop :=
       ∀ cv, (cv = omid M r L ρ ∨ cv = (drop1 M (r + L) rk).o r) → QP P (ρ.v g) (Lc.map ρ.o) cv)
 
 /-- **The class-A frames are free**: `T0RWRes P` from `T0RWResB P` when `P` holds at class-A rewrites. -/
-theorem t0RWRes_of (P : T → T → T → T → Prop)
+theorem t0RWRes_of (hU0 : OldUpgAbs) (P : T → T → T → T → Prop)
     (hPA : ∀ a B s y y', isOT (psi s y z) = true → (∀ q ∈ summands B, psi s y z ≤ q) → y' < y →
       ClsA s y' y → lt B y' = true → P a B s y')
     (hS : T0Shape) (hB : T0RWResB P) : T0RWRes P := by
@@ -284,9 +284,9 @@ theorem t0RWRes_of (P : T → T → T → T → Prop)
       have := hpL.2.2 q hq (ρ.o c) (by simp)
       rwa [hs0] at this
     · simp [summands]
-  have hDc' := t0_D_of_shape hS hM hSRO I R hlen hL hp he1 hn hCN c hcr hDc
+  have hDc' := (t0_D_of_shape hU0) hS hM hSRO I R hlen hL hp he1 hn hCN c hcr hDc
   by_cases hvc : σ.v c = ρ.v c
-  · obtain ⟨_, hArg, _⟩ := t0_D_of_shape hS hM hSRO I R hlen hL hp he1 hn hCN c hcr hDc
+  · obtain ⟨_, hArg, _⟩ := (t0_D_of_shape hU0) hS hM hSRO I R hlen hL hp he1 hn hCN c hcr hDc
     obtain ⟨X, X', hX, hX', hlX⟩ := hArg hvc
     rw [hcv] at hX'
     simp only [psi.injEq] at hX'
@@ -423,7 +423,7 @@ theorem hExp_t0_of_last
 
 /-- **`hExp` for `t = 0`, the current residuals**: the class residual `T0Shape` (for `hOTD`), the
 rewriting-frame fields outside class A (`T0RWResB` for `TP1C`・`TP1WC`・`TrigOmC`), and `T0Rest`. -/
-theorem hExp_t0_main
+theorem hExp_t0_main (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hS : T0Shape) (hRest : T0Rest) (hB1 : T0RWResB PTP1) (hB1W : T0RWResB PTP1W)
@@ -431,10 +431,10 @@ theorem hExp_t0_main
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
-  hExp_t0_of_last hLast (t0OTD_of_shape hS) hRest
-    (t0RWRes_of PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht) hS hB1)
-    (t0RWRes_of PTP1W (fun _ _ _ _ _ hc hBc hl hA ht => ptp1w_classA hc hBc hl hA ht) hS hB1W)
-    (t0RWRes_of PTrig (fun _ _ _ _ _ hc hBc hl hA ht => ptrig_classA hc hBc hl hA ht) hS hBT)
+  hExp_t0_of_last hLast ((t0OTD_of_shape hU0) hS) hRest
+    ((t0RWRes_of hU0) PTP1 (fun _ _ _ _ _ hc hBc hl hA ht => ptp1_classA hc hBc hl hA ht) hS hB1)
+    ((t0RWRes_of hU0) PTP1W (fun _ _ _ _ _ hc hBc hl hA ht => ptp1w_classA hc hBc hl hA ht) hS hB1W)
+    ((t0RWRes_of hU0) PTrig (fun _ _ _ _ _ hc hBc hl hA ht => ptrig_classA hc hBc hl hA ht) hS hBT)
 
 
 /-- `QP` only where the state is not `0` and not a prefix of the argument (the shadow frames). -/
@@ -476,7 +476,7 @@ theorem t0RWResB_of (P : T → T → T → T → Prop)
 /-- **`hExp` for `t = 0` with the shadow residuals**: `T0Shape`, `T0Rest`, and `T0RWResC` (the
 rewriting frames where the state is neither `0` nor a prefix of the argument, at `D` frames outside
 class A and at the first copy root of `g`). -/
-theorem hExp_t0_mainC
+theorem hExp_t0_mainC (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hS : T0Shape) (hRest : T0Rest) (hC1 : T0RWResC PTP1) (hC1W : T0RWResC PTP1W)
@@ -484,7 +484,7 @@ theorem hExp_t0_mainC
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
-  hExp_t0_main hLast hS hRest
+  (hExp_t0_main hU0) hLast hS hRest
     (t0RWResB_of PTP1 (fun _ _ _ _ hlt hpre => ptp1_prefix hlt hpre) hC1)
     (t0RWResB_of PTP1W (fun _ _ _ _ hlt hpre => ptp1w_prefix hlt hpre) hC1W)
     (t0RWResB_of PTrig (fun _ _ _ _ hlt hpre => ptrig_prefix hlt hpre) hCT)

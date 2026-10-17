@@ -101,7 +101,7 @@ theorem Res3A.toH {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (h : Res3A M
   ⟨h.drop.toH, h.seed, h.abS⟩
 
 /-- **The top theorem with the narrowed residual**: `hLast` and `hExp` only have to give `Res3H`. -/
-theorem trio_terminates_main_H
+theorem trio_terminates_main_H (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3H (M.take (M.length - 1)) ρ' rk')
     (hExp : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
@@ -110,7 +110,7 @@ theorem trio_terminates_main_H
     (hR2 : ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk) :
     WellFounded Step' := by
-  apply trio_terminates_main_T2 _ _ hR2
+  apply (trio_terminates_main_T2 hU0) _ _ hR2
   · intro M ρ rk hM hS hl I R
     obtain ⟨ρ', rk', V, R'⟩ := hLast M ρ rk hM hS hl I R
     have hne : M.take (M.length - 1) ≠ [] := by

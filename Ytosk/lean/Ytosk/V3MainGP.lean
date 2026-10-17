@@ -91,7 +91,7 @@ theorem hTakeR_of_last
 
 /-- **The top theorem carrying `VSmallR`.** As `trio_terminates_main_G`, with the global `hVSR` replaced by
 its preservation under the expansions `M → M[n]`, `n ≥ 2` (`hVSRexp`). -/
-theorem trio_terminates_main_GP
+theorem trio_terminates_main_GP (hU0 : OldUpgAbs)
     (hDR : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk →
       DropResR M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
     (hSeed : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V M ρ rk → SeedR M ρ rk)
@@ -172,6 +172,6 @@ theorem trio_terminates_main_GP
   have hE : HInvE := fun M hM hS hE' => by
     obtain ⟨ρ, rk, I, R, _⟩ := hER M hM hS hE'
     exact ⟨ρ, rk, I, R⟩
-  exact trio_terminatesE hE (t2_hT2E hR2)
+  exact (trio_terminatesE hU0) hE (t2_hT2E hR2)
 
 end Ytosk

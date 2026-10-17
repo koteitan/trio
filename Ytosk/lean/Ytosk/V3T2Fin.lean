@@ -28,7 +28,7 @@ theorem t2_hT2E
   exact ⟨σ, rkN, IN.cons, IN.rank, IN.good⟩
 
 /-- **Termination of the 3-row BMS from SRO** (`trio_terminates_final` with `t = 2` reduced to `Res3T2`). -/
-theorem trio_terminates_final_T2
+theorem trio_terminates_final_T2 (hU0 : OldUpgAbs)
     (hBase : ∀ n, expand SRO n ≠ [] → ∃ ρ rk, Inv3V (expand SRO n) ρ rk ∧ Res3A (expand SRO n) ρ rk)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
@@ -38,6 +38,6 @@ theorem trio_terminates_final_T2
     (hR2 : ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk) :
     WellFounded Step' :=
-  trio_terminates_final hBase hLast hExp (t2_hT2E hR2)
+  (trio_terminates_final hU0) hBase hLast hExp (t2_hT2E hR2)
 
 end Ytosk

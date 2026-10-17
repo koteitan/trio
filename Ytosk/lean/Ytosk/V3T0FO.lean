@@ -205,7 +205,7 @@ theorem frameOT_g0 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Coun
     (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = omid M r L ρ)
     (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
     (hLast : Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
-    (hl : Lhd z (ρ'.o r) (ρ.o r))
+    (hl : ρ'.o r < ρ.o r)
     (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
     (hFO : FrameOT M ρ) (hOTg : isOT (σ.o g) = true) :
     ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL (TRIO.gexp M r L 0 0 n) g = Lc ++ c :: R →
@@ -308,7 +308,7 @@ theorem frameOT_g0 {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : Coun
   rw [hsfin, spArg_app, spArg_app] at hog
   have hO' : ρ'.o r ≤ omid M r L ρ := by
     obtain ⟨_, s', y', hs'⟩ := hsN (ρ'.o r) (by simp)
-    have h := hl.1
+    have h := hl
     rw [hs', hor] at h
     rw [hs', hom]
     rcases psi_lt_psi_z_iff.mp h with h1 | ⟨rfl, h2⟩

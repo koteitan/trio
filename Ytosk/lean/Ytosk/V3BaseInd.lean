@@ -23,7 +23,7 @@ theorem hBaseV_holds : ∀ n, expand SRO n ≠ [] →
 
 /-- **Termination of the 3-row BMS from SRO**, with the base `SRO[n]` proved: the remaining work is the
 one-column drop, the expansions with `n ≥ 2`, and the descent for `t = 2`. -/
-theorem trio_terminates_main
+theorem trio_terminates_main (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hExp : ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
@@ -32,6 +32,6 @@ theorem trio_terminates_main
     (hT2 : HInvE → ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n) :
     WellFounded Step' :=
-  trio_terminates_final hBaseV_holds hLast hExp hT2
+  (trio_terminates_final hU0) hBaseV_holds hLast hExp hT2
 
 end Ytosk

@@ -110,7 +110,7 @@ theorem T0RestH2.toRestH (hG : T0VSResG) (h : T0RestH2) : T0RestH :=
 /-- **`hExp` for `t = 0`, the current residuals**: `T0IVRes`, `T0VSResG`, the class residuals
 `T0ShapeR3` ((i) at nonzero states, (ii)), `T0RestH2` (`T0VSResD`, the other value fields, `Res3H`), and the
 shadow frames `T0RWResC`. -/
-theorem hExp_t0_mainN
+theorem hExp_t0_mainN (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hIV : T0IVRes) (hII : T0IIRes) (hG : T0VSResG) (hS : T0ShapeR3) (hRest : T0RestH2) (hC1 : T0RWResC PTP1) (hC1W : T0RWResC PTP1W)
@@ -118,6 +118,6 @@ theorem hExp_t0_mainN
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
-  hExp_t0_mainH hLast (t0ShapeR2_of hIV hII hS) (hRest.toRestH hG) hC1 hC1W hCT
+  (hExp_t0_mainH hU0) hLast (t0ShapeR2_of hIV hII hS) (hRest.toRestH hG) hC1 hC1W hCT
 
 end Ytosk

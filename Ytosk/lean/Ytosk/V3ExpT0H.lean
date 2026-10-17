@@ -64,7 +64,7 @@ theorem T0RestH.toRest (h : T0RestH) : T0Rest :=
 
 /-- **`hExp` for `t = 0`, the current residuals**: `T0ShapeR2`, `T0RestH` (value fields and `Res3H`), and the
 shadow frames `T0RWResC`. -/
-theorem hExp_t0_mainH
+theorem hExp_t0_mainH (hU0 : OldUpgAbs)
     (hLast : ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Inv3 M ρ rk → Res3A M ρ rk →
       ∃ ρ' rk', Inv3V (M.take (M.length - 1)) ρ' rk' ∧ Res3A (M.take (M.length - 1)) ρ' rk')
     (hS : T0ShapeR2) (hRest : T0RestH) (hC1 : T0RWResC PTP1) (hC1W : T0RWResC PTP1W)
@@ -72,6 +72,6 @@ theorem hExp_t0_mainH
     ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3 M ρ rk → Res3A M ρ rk →
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN :=
-  hExp_t0_mainR2 hLast hS hRest.toRest hC1 hC1W hCT
+  (hExp_t0_mainR2 hU0) hLast hS hRest.toRest hC1 hC1W hCT
 
 end Ytosk
