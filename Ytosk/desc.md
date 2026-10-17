@@ -3845,3 +3845,8 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - qn の欄は「すべての k で V < t_k、f(t_k) は s′ + 1 より小さくない、k ≥ 1 で t_k < v(q) と（t_k = v(q) か t_k ◁ v(q)）」だった。前の 2 つは V < t₁ と t₁ の標準形から出る（`tqN_facts`）: V < t なら s′ < f(t)（`lt_shf`）なので f(t) < s′ + 1 ではない（`lt_succ_iff`）。V < s′ < f(t) で帰納法が進む。
 - C の rw の欄（すべての k で r の枠が σ X_k を保つ）も外した（`c_rw_of_base`）: σ X₁ の加数が Ω_{s′+1} 以上（T2SeedCBase の欄）なので q の枠は Y = σ X_k を保ち（`H_of_high`）、X₁ < σ X₁ ≤ Y で r の枠は書き換えて H(s′, Y) = Y。C の un（x − 1 は上げない）は文脈の ¬T2CBad そのものなので外した。残りの C の欄は decP・lhd と、rw の代わりに k を含まない X₁ < σ X₁（`T2SeedCResR2.strict`、sv の T2SVStrict と同じ形。d3s・deep2・expP・ext2・ext3s の C 5900 件で例外 0）。
 - 残り `T2SeedPResRCV2B`: qn の欄は ∃ t₁（X₁ = B + Ω_{t₁}）、V < t₁、t₁ の標準形、k ≥ 1 の欄。V < t₁ は qncl.py で 11 集合と ext3s で例外 0。`t2SeedPResRCV2_of_B : T2SeedClV2B → T2SeedPResRCV2B → T2SeedPResRCV2`。ビルド緑、公理は標準の 3 つ。
+
+### T2VRAQNDom の Lc ≠ [] の場合は T2SeedQNDom から（2026-10-17、lead、V3T2SeedQNK、緑）
+
+- T2VRAQNDom（M の段で s′ の成分は Ω_{s′}・B・V の成分以下）は、Lc ≠ [] なら既存の残り T2SeedQNDom の第 1 欄（すべての段 u ≤ V で z・B 以下・V の成分以下）から出る（`t2VRAQNDom_of`）。
+- 最上位の hQNG は Lc = [] の場合（q が r のただ一つの数える子、B = 0）の `T2VRAQNDom0` だけになった。ビルド緑、公理は標準の 3 つ。

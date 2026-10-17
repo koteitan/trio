@@ -9,6 +9,8 @@ C の rw（すべての k で r の枠が σ X_k を保つ）は X₁ < σ X₁ 
 -/
 import Ytosk.V3TopV2
 import Ytosk.V3T2SeedSVCl
+import Ytosk.V3T2SeedFrV2
+import Ytosk.V3T2VRASeed
 
 namespace Ytosk
 
@@ -119,5 +121,25 @@ theorem t2SeedPResRCV2_of_B (hCl : T2SeedClV2B) (h : T2SeedPResRCV2B) : T2SeedPR
   have hrM : r < M.length := by omega
   have hF := tqN_facts (IW.good.ot_v r hrM) (qnS_ot IW hrM L q) (qnS_gt M ρ r L q) hVt ht1
   exact ⟨t1, he, fun k => ⟨(hF k).2.1, (hF k).2.2, hk k⟩⟩
+
+/-! ## T2VRAQNDom の Lc ≠ [] の場合は T2SeedQNDom から -/
+
+/-- **The residual `T2VRAQNDom` for `Lc = []`** (`q` is the only counted child of `r`; `B = 0`). -/
+def T2VRAQNDom0 (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
+  ∀ u, LevAt M ρ r u → ¬ lt (ρ.v r) u = true → ∀ g ∈ comps u (qnS M ρ r L q),
+    g ≤ psi (qnS M ρ r L q) z z ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d
+
+/-- **`T2VRAQNDom` from `T2SeedQNDom` (`Lc ≠ []`, every level) and `T2VRAQNDom0` (`Lc = []`).** -/
+theorem t2VRAQNDom_of {M : Mat} {ρ : Valn} {r L q : Nat} {Lc : List Nat} (hD : T2SeedQNDom M ρ r L q Lc)
+    (h0 : Lc = [] → T2VRAQNDom0 M ρ r L q) : T2VRAQNDom M ρ r L q Lc := by
+  intro u hu hVu g hg
+  by_cases hL : Lc = []
+  · rcases h0 hL u hu hVu g hg with h | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inr h)
+  · rcases hD.1 hL u hVu g hg with h | h | h
+    · left; rw [h]; exact z_le _
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr h)
 
 end Ytosk

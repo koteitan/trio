@@ -33,7 +33,7 @@ theorem hSibHard_of_col (h : HSibColV2) : HSibHardV2 := fun N σ rk hN hS hC hR 
 drop `HDropV2W`・`HSeedV2`, the strong absorption at `t = 0` `T0UpgAbsV2` (t0); shared `HFrameV2`・`HLeafV2`; t0 `T0ArgBRes`; the bump monotonicity along prefixes `HBumpExt` (gives t0's `T0AbWRes` and t2's `T2BumpMonoV2`); the weak closedness `HRwClL` of every standard matrix (gives `T0RwRes` and the shadow frames of t0・t2); `T2VAncStep` (with `T2VRAK KAG` the frame condition `KVRA`);
 t2 the closedness of the seed argument `T2SeedClV2B` (qn, and the `k`-free sv・C parts `T2SeedSVBase`・`T2SeedCBase`),
 the strong `UpgAbsX` at the last column `T2UpgAbsW` (drop-wkx2), (the seed standard forms come from `T2SeedClV2B`), the seed residual `T2SeedPResRCV2B` (qn and C reduced), `T2SeedDomV2`, `FDsh`,
-the seed columns (`T2VRAQNDom`, sv `T2SVc0`, C `T2CFrRes`), the prefix shape of the seed frames (from `T2SVc0`・`T2CFrRes`), the copy levels `T2VRACopy`; t1 the `σ`-step at the guarded copy frames
+the seed columns (`T2VRAQNDom0` for `Lc = []`, the rest from `T2SeedDomV2`; sv `T2SVc0`, C `T2CFrRes`), the prefix shape of the seed frames (from `T2SVc0`・`T2CFrRes`), the copy levels `T2VRACopy`; t1 the `σ`-step at the guarded copy frames
 `T2VRAK KAG` (with `T2VAncStep` it gives the frame condition `KVRA` of `qVRAshK_KVRA`); top `HSibColV2` (adjacent siblings with the same column, not both counted, `SibColU`). -/
 theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
@@ -42,9 +42,9 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : H
       TRIO.srow M (M.length - 1) = 2 → T2VAncStep M)
     (hCl : T2SeedClV2B) (hU2 : T2UpgAbsW) (hPRB : T2SeedPResRCV2B) (hSC : HSibColV2)
     (hDom : T2SeedDomV2) (hFD : FDsh)
-    (hQNG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+    (hQN0 : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
-        par M 0 (r + L) = some q → q ≠ r → ∀ Lc, CL M r = Lc ++ [q] → T2VRAQNDom M ρ r L q Lc)
+        par M 0 (r + L) = some q → q ≠ r → CL M r = [q] → T2VRAQNDom0 M ρ r L q)
     (hSV0 : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
         T2SVCase M r L → T2SVc0 M ρ r L)
@@ -56,6 +56,12 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : H
     (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : WellFounded Step' :=
   have hSib : HSibHardV2 := hSibHard_of_col hSC
+  have hQNG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
+        par M 0 (r + L) = some q → q ≠ r → ∀ Lc, CL M r = Lc ++ [q] → T2VRAQNDom M ρ r L q Lc :=
+    fun M ρ rk C hz h2 r L q hlen hr hq hqr Lc hCL =>
+      t2VRAQNDom_of ((hDom M ρ rk C hz h2).1 r L q hlen hr hq hqr Lc hCL)
+        (fun hL => hQN0 M ρ rk C hz h2 r L q hlen hr hq hqr (by rw [hCL, hL]; rfl))
   have hPR : T2SeedPResRCV2 := t2SeedPResRCV2_of_B hCl hPRB
   have hP : T2SeedPResV2 := t2SeedPResV2_of (t2SeedPResR_of_sib (hSib_of_hard hSib) hPR)
   have hBX : T2BelowXResV2 := t2BelowXResV2_of t0RwRes_ctx (t2BelowRV2_of hP (t2SeedClV2_of_B hCl) (t2BumpMonoV2_of_ext hBE)) hP (t2SeedOTV2_of hP (t2SeedOTRestV2_of_B hCl))
