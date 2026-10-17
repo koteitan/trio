@@ -3765,3 +3765,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
     2. v_K(q) = qnS（K と M は q の部分木の x より前で値が同じ）。
     3. 残り T2SeedCResR を K の値で言い直す（un・vqP を外し、rw は「step V X1_K s′ (… σ^k X1_T …) = σ^{k+1} X1_T」、decP は τK で）。
     4. 枠の性質の写し（PF・FO・RC・VSF・VRA・FC の C の枠）: n ≥ 3 では r の q より前の枠は P = M[n − 1] の枠と同じ値（P の B の部分も x − 1 が上げる）なので帰納法の仮定から。n = 2 だけは M[2] 自身の枠になり、今の筋では出ない。ここは名前つきの残りにするか、新しい論法が要る。
+
+### 測定のまとめ（2026-10-17、lead）
+
+- BumpAbsC（直した probe、tmp/lead/probes/bumpabsc.py）: 11 集合の全数で例外 0（前件 4.1 万件）。
+- 種の残り（Lean と同じ形）: qr（w1・dom）・qn（base）は 11 集合と std_b で例外 0（tmp/lead/probes/seedqr.py、qr 144 万・qn 37 万件）。sv（T2SVStrict・decP・lhd）は 11 集合と std_b で例外 0。C の decP・rw・lhd は例外 0、C の un だけが ext2 で 6 件偽（上の節）。
+- T2VRASeedSVC は、それを含む T2VRASeed が 11 集合で例外 0（t1 の tools/probe_t2vra.py、tmp/ytosk-handoff/results/t1/t2vra2）。
+- BumpDrop1（HBumpExt の 1 列の場合）: 測定中、ここまで 6 集合で例外 0。
