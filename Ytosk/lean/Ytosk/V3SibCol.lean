@@ -239,4 +239,40 @@ theorem upgSibVHard_of_col {N : Mat} {τ : Valn} {rk : Bool → Nat → Nat} (hX
     (by rw [hcolu, hcolk]) m hAum (Anc0.refl m)
   rw [hvbk]; exact le_trans hku (le_trans hum' hma)
 
+/-- **Two counted adjacent children**: `Good3.dec` gives `o(w) ≤ o(u)`, hence `v(w) ≤ v(u)`. -/
+theorem v_le_of_counted_pair {N : Mat} {τ : Valn} (hC : Cons N τ) (hG : Good3 N τ) {p u w : Nat}
+    (hu : u ∈ children N p) (hw : w ∈ children N p) (huw : u < w)
+    (hcons : ∀ e ∈ children N p, u < e → w ≤ e) (hcu : Counted N p u) (hcw : Counted N p w) :
+    τ.v w ≤ τ.v u := by
+  have hpL : p < N.length := by have := (mem_children hu).1; have := (mem_children hu).2; omega
+  obtain ⟨l1, l2, hsplit⟩ := consec_split (children_sorted N p) hu hw huw
+    (fun e he ⟨h1, h2⟩ => by have := hcons e he h1; omega)
+  obtain ⟨yu, hyu⟩ := o_form hC hG (mem_children hu).2
+  obtain ⟨yw, hyw⟩ := o_form hC hG (mem_children hw).2
+  have hcntu : cnt N τ p u = τ.o u := by unfold cnt; rw [if_neg hcu.1, if_neg hcu.2]
+  have hcntw : cnt N τ p w = τ.o w := by unfold cnt; rw [if_neg hcw.1, if_neg hcw.2]
+  have hd := hG.dec p hpL
+  unfold cvals at hd
+  rw [hsplit, List.map_append, List.map_cons, List.map_cons, hcntu, hcntw,
+    show τ.o u :: τ.o w :: l2.map (cnt N τ p) = [τ.o u] ++ ([τ.o w] ++ l2.map (cnt N τ p)) from rfl,
+    nzs_append, nzs_append, nzs_append, nzs_single (by rw [hyu]; simp), nzs_single (by rw [hyw]; simp)] at hd
+  have h1 := (List.pairwise_append.mp hd).2.1
+  have h2 := (List.pairwise_append.mp h1).2.2 (τ.o u) (by simp) (τ.o w) (by simp)
+  have := lev_le_of_le h2
+  rw [hyu, hyw] at this
+  exact this
+
+/-- **`SibColW` outside two counted children** (the residual form): one of `u`, `w` is a bump child or an
+upgraded topped child. -/
+def SibColU (N : Mat) (τ : Valn) : Prop :=
+  ∀ p u w, u ∈ children N p → w ∈ children N p → u < w → (∀ e ∈ children N p, u < e → w ≤ e) →
+    col N u = col N w → ¬ (Counted N p u ∧ Counted N p w) → τ.v w ≤ τ.v u
+
+theorem sibColW_of_U {N : Mat} {τ : Valn} (hC : Cons N τ) (hG : Good3 N τ) (h : SibColU N τ) :
+    SibColW N τ := by
+  intro p u w hu hw huw hcons hcol
+  by_cases hc : Counted N p u ∧ Counted N p w
+  · exact v_le_of_counted_pair hC hG hu hw huw hcons hc.1 hc.2
+  · exact h p u w hu hw huw hcons hcol hc
+
 end Ytosk

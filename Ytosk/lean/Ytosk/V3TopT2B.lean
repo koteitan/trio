@@ -17,12 +17,14 @@ import Ytosk.V3RwCarry
 
 namespace Ytosk
 
-/-- **The sibling value condition `SibColW` of every standard matrix** (replaces `HSibHardV2`). -/
+/-- **The sibling value condition `SibColU` of every standard matrix** (replaces `HSibHardV2`; two counted
+children are covered by `Good3.dec`). -/
 def HSibColV2 : Prop :=
-  ∀ N σ rk, Std N → N ≠ SRO → Cons N σ → Rk N rk → Good3 N σ → SibColW N σ
+  ∀ N σ rk, Std N → N ≠ SRO → Cons N σ → Rk N rk → Good3 N σ → SibColU N σ
 
 theorem hSibHard_of_col (h : HSibColV2) : HSibHardV2 := fun N σ rk hN hS hC hR hG =>
-  upgSibVHard_of_col (sInvXJ_std hN hS).1 (sInvXJ_std hN hS).2 hC hR hG (h N σ rk hN hS hC hR hG)
+  upgSibVHard_of_col (sInvXJ_std hN hS).1 (sInvXJ_std hN hS).2 hC hR hG
+    (sibColW_of_U hC hG (h N σ rk hN hS hC hR hG))
 
 /-- **The current top theorem.** The hypotheses are the named residuals:
 drop `HDropV2W`・`HSeedV2`, the strong absorption at `t = 0` `T0UpgAbsV2` (t0); shared `HFrameV2`・`HLeafV2`; t0 `T0AbWRes`・`T0ArgBRes`; `RwClosed` of the `t = 2` expansions from `T2X1Cl`・`T2CopyK CopyLowK`・`T2VAncStep` (`RwClosed` is carried by the induction, so `T0RwRes` holds);
@@ -30,7 +32,7 @@ t2 the closedness of the seed argument `T2SeedClV2` (qn・sv・C), the bump mono
 the strong `UpgAbsX` at the last column `T2UpgAbsW` (drop-wkx2), the seed standard forms for qn・C `T2SeedOTRestV2`, the seed residual `T2SeedPResRCV2`, `T2SeedDomV2`, `FDsh`,
 the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`), the prefix shape of the seed frames for sv・C
 (`T2SeedPreShapeSVC`), the copy levels `T2VRACopy`; t1 the `σ`-step at the guarded copy frames
-`T2VRAK KAG` (with `T2VAncStep` it gives the frame condition `KVRA` of `qVRAshK_KVRA`); top `HSibColV2` (adjacent siblings with the same column, `SibColW`). -/
+`T2VRAK KAG` (with `T2VAncStep` it gives the frame condition `KVRA` of `qVRAshK_KVRA`); top `HSibColV2` (adjacent siblings with the same column, not both counted, `SibColU`). -/
 theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
