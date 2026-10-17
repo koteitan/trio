@@ -3836,4 +3836,6 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - r の枠（`vra_lift_sv`）: c₀（M.take x での r の最後の数える子）より前は M の枠そのもの。c₀ の枠は、N の値 o_{M.take x}(c₀) = ψ_s(y) が y ≠ 0 なら M の値 ψ_s(y_M)（同じ添字、y ≤ y_M）なので、引き金（B < y ≤ y_M）と split（`split_fst_ne_of_le`）が M の枠に移り、QVRAt の結論は添字 s・B・V・段だけによる。最後の枠（子 x、添字 V + 1）は z か V の成分（`comps_succ_sub`）。段は t2VRASeed_of と同じく M の段。
 - 残り `T2SVc0`（M と M.take x だけ）: c₀ より前の子の値は M と同じ、c₀ の値は y ≠ 0 なら M と同じ添字で引数は小さいか等しい。実測（svpre.py）: d3s・deep2・expP の sv の種 6900 件で例外 0（c₀ で y ≠ 0 は 1300 件）。
 - 同じ T2SVc0 から種の列の枠の形 T2SeedPreShapeSVC の sv の欄も出る（`t2SeedPreShapeSVC_of`）: N の r の枠で子 c < x は M.take x の子。c₀ より前は M の枠そのもの（y_M = y）、c₀ は T2SVc0 の y_M（引き金は y ≤ y_M で移る）。
-- 最上位は hSVCG・hVPr の代わりに `T2SVc0`（sv）と C の欄 `T2VRASeedC`・`T2SeedPreShapeC` を受ける。ビルド緑、公理は標準の 3 つ。
+- C も同じ形（cvra.py、d3s・deep2・expP）: CL_M(r) = CL_{M.take x}(r)、c₀ より前の値は同じ、c₀ は y ≠ 0 なら同じ添字で y ≤ y_M。N では CL_N(r) = CL_{M.take x}(r) ++ [q]（既存の `seed_last_C`）で、最後の枠の子 q の添字は s′。最後の枠の QVRAt には、M の段で s′ の成分が Ω_{s′} 以下・X₁ 以下・V の成分以下のどれかであることを使う（引き金なしで例外 0）。
+- 残り `T2CFrRes`（C、M と M.take x だけ）= CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0 ∧ s′ の成分の条件。`t2VRASeedC_of`・`t2SeedPreShapeC_of` で T2VRASeedC・T2SeedPreShapeC を出す（段の対応は `seed_lev_of`、N の値は `seed_C_data`）。
+- 最上位は hSVCG・hVPr の代わりに `T2SVc0`（sv）と `T2CFrRes`（C）を受ける。旧 T2VRASeedSVC・T2SeedPreShapeSVC は最上位から消えた。ビルド緑、公理は標準の 3 つ。
