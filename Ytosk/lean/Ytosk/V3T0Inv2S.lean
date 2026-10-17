@@ -52,6 +52,9 @@ theorem t0DF_ofS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
 /-- **Residual: the state of every rewriting frame is closed**, for the standard forms in top's step context. -/
 def T0RwRes : Prop := ∀ M ρ rk, StepCtxV2 M ρ rk → RwClosed M ρ
 
+/-- **`T0RwRes` holds**: the step context carries `RwClosed` (2026-10-17, `StepCtxV2.rw`). -/
+theorem t0RwRes_ctx : T0RwRes := fun _ _ _ C => C.rw
+
 /-- **Residual: the weak absorption** at the `t = 0` expansions (replaces the strong `AbsSR`, which is false
 on standard forms under the exact `◁`; drop, 2026-10-17). -/
 def T0AbWRes : Prop := ∀ M ρ rk, StepCtxV2 M ρ rk → ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r →
@@ -69,7 +72,7 @@ theorem expT0V2_of4 (hRw : T0RwRes) (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
   obtain ⟨ρN, rkN, IN, _, _⟩ := t0_final_inv3V2D C.std C.ne C.S C.I hlen hL hp he1 C.R.drop
     (hAbW M ρ rk C r L hlen hp he1) hpre
     (t0DF_ofS C.std C.ne (C.I.toC C.S) ⟨C.R.drop⟩ C.I.ph C.I.vra.toLast (hRw M ρ rk C)
-      (fun r' L' hl' hp' he' => hAbW M ρ rk C r' L' hl' hp' he') (hArgB M ρ rk C))
+      (fun r' L' hl' hp' he' => hAbW M ρ rk C r' L' hl' hp' he') (hArgB M ρ rk C)) C.rw
     (hLeaf M ρ rk r L C hlen hL hp he1) (hFrm M ρ rk r L C hlen hL hp he1)
     n hn2
   exact ⟨ρN, rkN, IN⟩

@@ -17,6 +17,8 @@ import Ytosk.V3TakeInv2
 import Ytosk.V3PT0G
 import Ytosk.V3ResV2
 import Ytosk.V3T0VSRAllN
+import Ytosk.V3RwClT0
+import Ytosk.V3RwClDrop
 
 namespace Ytosk
 
@@ -72,14 +74,15 @@ theorem t0_final_inv3V2D {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L 
     (he1 : entry M 1 (r + L) = 0)
     (R : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)) (hAbW : T0AbsW M r L ρ)
     (I1 : Inv3V2 (M.take (r + L)) (drop1 M (r + L) rk) rk)
-    (hDF : T0DF M ρ)
+    (hDF : T0DF M ρ) (hRw : RwClosed M ρ)
     (hLeaf : ∀ n, 2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
       Good3 (TRIO.gexp M r L 0 0 n) σ →
       TP1LeafG (TRIO.gexp M r L 0 0 n) σ ∧ TP1WLeafG (TRIO.gexp M r L 0 0 n) σ)
     (hFrm : ∀ n, 2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
       Good3 (TRIO.gexp M r L 0 0 n) σ → TakeFrameV2 (TRIO.gexp M r L 0 0 n) σ rkN) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (TRIO.gexp M r L 0 0 n) ρN rkN ∧
-      isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ := by
+      isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ ∧
+      RwClosed (TRIO.gexp M r L 0 0 n) ρN := by
   intro n hn2
   have hn : 1 ≤ n := by omega
   have IC := I.toC S
@@ -183,7 +186,10 @@ theorem t0_final_inv3V2D {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L 
   have F := hFrm n hn2 σ rkN hCN hRN hGN
   exact ⟨σ, rkN, ⟨hCN, hGN, hRN, hvs, hFCN, hFON, hKDN, hTDN, hph, hfc3, hvra,
     F.ads, F.aus, tp1C_of_ph3cG hCN hGN.toOT hph hTP, F.tplos, tp1WC_of_ph3cG hCN hGN.toOT hph hTPW,
-    F.tplow, F.auwl, F.auw0, F.adw, F.trigs, F.tplon, F.adn, rootS_of_good hCN hGN, hpN⟩, hot, hlt⟩
+    F.tplow, F.auwl, F.auw0, F.adw, F.trigs, F.tplon, F.adn, rootS_of_good hCN hGN, hpN⟩, hot, hlt,
+    rwClosed_N_t0 hlen hL hp hn S.r0p S.z2 S.sibDec S.z1c S.uat S.uab he1 hx2 hn2 I.cons I.good hCN hGN.toOT hRw
+      (rwClosed_take (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 hdrop hRw)
+      hσB hoffD hσmid hσlast hLastN hC1 I1.good (le_of_lt hlt0) hO'le hy' hdl hss⟩
 
 /-- **`t = 0`, `n ≥ 2`: Inv3V2 of `N = M[n]`**, the standard root value and its descent.
 Named residuals: the cut `T0CutResGGC`, and for `N` the leaves `TP1LeafG`・`TP1WLeafG`
@@ -194,18 +200,19 @@ theorem t0_final_inv3V2 (hU0 : OldUpgAbs) {M : Mat} {ρ : Valn} {rk : Bool → N
     (he1 : entry M 1 (r + L) = 0)
     (R : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)) (hab : AbsSR M ρ)
     (I1 : Inv3V2 (M.take (r + L)) (drop1 M (r + L) rk) rk)
-    (hCut : T0CutResGGC)
+    (hCut : T0CutResGGC) (hRw : RwClosed M ρ)
     (hLeaf : ∀ n, 2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
       Good3 (TRIO.gexp M r L 0 0 n) σ →
       TP1LeafG (TRIO.gexp M r L 0 0 n) σ ∧ TP1WLeafG (TRIO.gexp M r L 0 0 n) σ)
     (hFrm : ∀ n, 2 ≤ n → ∀ σ rkN, Cons (TRIO.gexp M r L 0 0 n) σ → Rk (TRIO.gexp M r L 0 0 n) rkN →
       Good3 (TRIO.gexp M r L 0 0 n) σ → TakeFrameV2 (TRIO.gexp M r L 0 0 n) σ rkN) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (TRIO.gexp M r L 0 0 n) ρN rkN ∧
-      isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ :=
+      isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ ∧
+      RwClosed (TRIO.gexp M r L 0 0 n) ρN :=
   t0_final_inv3V2D hM hS S I hlen hL hp he1 R
     (T0AbsW.of_strong (hab.lo r (by rw [show M.length - 1 = r + L by omega]; exact hp)
       (by rw [show M.length - 1 = r + L by omega]; exact he1))) I1
-    ((t0DF_ofC hU0) hCut hM hS (I.toC S) ⟨R⟩ hab I.ph I.vra.toLast) hLeaf hFrm
+    ((t0DF_ofC hU0) hCut hM hS (I.toC S) ⟨R⟩ hab I.ph I.vra.toLast) hRw hLeaf hFrm
 
 /-- `t0_shape` from the structural invariants. -/
 theorem t0_shapeS {M : Mat} (S : SInv M)
@@ -244,7 +251,7 @@ theorem expT0V2_of2 (hU0 : OldUpgAbs) (hA : HAbSV2) (hCut : T0CutResGGC)
   rw [hexp n]
   have hpre := (C.pre (r + L) (by omega) (by omega)).1
   obtain ⟨ρN, rkN, IN, _, _⟩ := (t0_final_inv3V2 hU0) C.std C.ne C.S C.I hlen hL hp he1 C.R.drop
-    (hA M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.I) hpre hCut
+    (hA M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.I) hpre hCut C.rw
     (hLeaf M ρ rk r L C hlen hL hp he1) (hFrm M ρ rk r L C hlen hL hp he1)
     n hn2
   exact ⟨ρN, rkN, IN⟩

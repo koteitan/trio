@@ -3698,3 +3698,12 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - v(u) ≤ v(p) ≤ v(a)。P_1 a = p。
   - 数えない場合の形を一般にした **UpgSibLate**（p の隣り合う子 u < w で w が w − 1 から上げられ topped なら v(w) ≤ v(u)、o(w) ≤ o(u)）は std_a・d3s で 2.6 万件例外 0（tmp/lead/probes/siblate.py、全数を測定中）。w が上げの的なら w の親 p は w − 1 の行 1 の親に等しく、col w = (e0 p + 1, e1(w − 1), 1)。v(w) ≤ v(u) は w の bump 項と u の増分の比較で、兄弟の値の比較になる。SibVCol と同じく値の不変条件として運ぶ候補。
 - **T2SVStrict**（sv の種の引数 X1 が σ_{V,V+1} で真に増える）: sv の 11 集合のうち調べた分で、X1 の最後の加数の添字は V を超え、r の数える子に P_1 = r のものがあり、v′(r) = v(r)（tmp/lead/probes/svstrict.py）。X1 の形は ψ_{Ω_{V+1}}(0) が多いが一様でない（ψ_ω(Ω_1) など）。どの例でも σ が届く位置に ψ_{V+1}(…)（上げを失った x − 1 の o′ に由来）があり、σ はそれを ψ_{V+2} にする。添字が V を超えるだけでは足りない（加法の吸収で f(s) = s になりうる: V = 1、s = ω）。証明には r から x − 1 への道の o の構造を追う必要がある。
+
+### RwClosed を最上位の帰納法で運ぶ（2026-10-17、lead）
+
+- 段の文脈 `StepCtxV2` に `rw : RwClosed M ρ` を足した。`hInvV2_all` は標準形の帰納法で Inv3V2 ∧ RwClosed を運ぶ（V3MainV2）。t0 の残り `T0RwRes` は文脈から出る（`t0RwRes_ctx`）。
+- t = 0: `t0_final_inv3V2D` が M[n] の RwClosed も出す（`rwClosed_N_t0`、前の枠は `rwClosed_take`）。必要な事実（tauN の値・omid・hdl・hss など）はこの定理の中に揃っていた。
+- t = 1: `expT1OutR_V2`（V3RwCarryT1）。写しを 1 つ足すごとに `expStep_rwClosed_t1S` で運ぶ。
+- t = 2: `tRwOut2_of`（V3RwCarry、`rwClosed_expand_t2SV`）。残りは T2X1Cl（前提つき）・T2CopyK CopyLowK・T2VAncStep。
+- 最上位 `trio_terminates_main_V2_cur` から T0RwRes と TRwOut 0 が消え、t2 の上の 3 つが増えた。全体ビルド緑 1047 jobs、公理は標準の 3 つ。
+- 測定: VAncStep（vanc1.py）・ClosedLow（closedL.py）は 11 集合で例外 0。古い強い VAnc（vanc.py、Ω_{v(j)} に弱める前）は ext1 に 1 件の破れがあるが、今は使っていない。UpgSibLate（siblate.py）は std_b を除く 9 集合（118 万件）で例外 0。

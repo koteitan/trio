@@ -8,7 +8,7 @@
 - C の欄: 構造の残り T2SeedCNext は標準形で偽なので、C の欄は T2SeedCRes ∧ T2SeedCBig に替えた。
   `HSibV2`（どの標準形でも値の残り UpgSibV、V3CBigV）と C の残り T2SeedCRes から CBig を出す
   （`t2SeedPResR_of_sib`）。HSibV2 は難しい形 `HSibHardV2`（V3SibV）に絞った（`hSib_of_hard`）。
-- `expT0Out_of4`: t0 の `t0_final_inv3V2D` の下降まで含めた結論 ExpT0OutV2（残り T0RwRes・T0AbWRes と N の 2 つ）。
+- `expT0Out_of4`: t0 の `t0_final_inv3V2D` の下降と RwClosed まで含めた結論 ExpT0OutR（残り T0RwRes・T0AbWRes と N の 2 つ）。
   最上位は t = 0 の下降もここから受け、偽の強い吸収 HAbSV2 を使わない（2026-10-17）。
 - `trio_terminates_main_V2_base`: 最上位の中間の形（今の最上位は V3TopT2B の `trio_terminates_main_V2_cur`）。種の枠（T2FOSeedV2・T2VSFCV2 の種）は t2 の `t2FOSeedV2_of`・
   `t2VSFCV2_of2`（V3T2SeedFrV2、残り T2SeedDomV2）、T2VRAV2 は t2 の `t2VRAV2_of`（V3T2VRA）と `t2VRAPre_of`
@@ -29,6 +29,7 @@ import Ytosk.V3T2SeedFrV2
 import Ytosk.V3T2VRAPre
 import Ytosk.V3T2CVq
 import Ytosk.V3T2VRASeed
+import Ytosk.V3RwCarryT1
 
 namespace Ytosk
 
@@ -98,10 +99,10 @@ theorem t2SeedPResR_of_sib (hSib : HSibV2) (h : T2SeedPResRCV2) : T2SeedPResRV2 
       (t2SeedCRes_of C.std C.ne IW hlen hr hq hqr (H.C r L q hlen hr hq hqr hncl))
       (fun τ hτ hG => hSib _ τ rk (std_take C.std (r + L) (by omega)) (ne_SRO_of_rk I1.rank) hτ I1.rank hG)
 
-/-- **`ExpT0OutV2` from t0's residuals** (`expT0V2_of4` with the descent of `t0_final_inv3V2D` kept). -/
+/-- **`ExpT0OutR` from t0's residuals** (`expT0V2_of4` with the descent and `RwClosed` of `t0_final_inv3V2D` kept). -/
 theorem expT0Out_of4 (hRw : T0RwRes) (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
     (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
-    ExpT0OutV2 := by
+    ExpT0OutR := by
   intro M ρ rk C hz hs0 n hn2
   obtain ⟨r, L, hlen, hL, hp, he1, hexp⟩ := t0_shapeS C.S hz hs0
   rw [hexp n]
@@ -109,7 +110,7 @@ theorem expT0Out_of4 (hRw : T0RwRes) (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
   exact t0_final_inv3V2D C.std C.ne C.S C.I hlen hL hp he1 C.R.drop
     (hAbW M ρ rk C r L hlen hp he1) hpre
     (t0DF_ofS C.std C.ne (C.I.toC C.S) ⟨C.R.drop⟩ C.I.ph C.I.vra.toLast (hRw M ρ rk C)
-      (fun r' L' hl' hp' he' => hAbW M ρ rk C r' L' hl' hp' he') (hArgB M ρ rk C))
+      (fun r' L' hl' hp' he' => hAbW M ρ rk C r' L' hl' hp' he') (hArgB M ρ rk C)) C.rw
     (hLeaf M ρ rk r L C hlen hL hp he1) (hFrm M ρ rk r L C hlen hL hp he1)
     n hn2
 
@@ -123,7 +124,7 @@ at the last column for `t = 2`, which the drop lemma no longer gives. The `t = 1
 t1 handles the weak seed with `SmallSelf` in `qr_final3`.) -/
 theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
-    (hRw : T0RwRes) (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
+    (hAbW : T0AbWRes) (hArgB : T0ArgBRes) (hR2w : TRwOut 2)
     (hB : T2BelowXResV2) (hU2 : T2UpgAbsW) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
     (hFD : FDsh)
     (hQNG : ∀ M ρ rk, StepCtxV2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -142,10 +143,10 @@ theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ := fun M ρ rk C hz h2 =>
     t2VRAPre_of (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)
   terminates_of_desc3 (desc3_V2O hD hSd (hTake_of_glob hF hLf)
-    (expT0Out_of4 hRw hAbW hArgB (t0Leaf_of_glob hLf) (t0Frame_of_glob hF))
-    (expT1Out_V2_glob hF hLf)
-    (expT2V2_of hB hU2 (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
-      (t2VRAV2_of qVRAshK_step hB (t2VRASeedG_of hB hP hPreG hQNG hSVCG) hPreG hVCp hVK) hF hLf)
+    (expT0Out_of4 t0RwRes_ctx hAbW hArgB (t0Leaf_of_glob hLf) (t0Frame_of_glob hF))
+    (expT1OutR_V2_glob hF hLf)
+    (expT2R_of (expT2V2_of hB hU2 (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
+      (t2VRAV2_of qVRAshK_step hB (t2VRASeedG_of hB hP hPreG hQNG hSVCG) hPreG hVCp hVK) hF hLf) hR2w)
     (r2V2_of hB hU2))
 
 end Ytosk
