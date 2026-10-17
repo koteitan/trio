@@ -3826,4 +3826,5 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - `b0_shIt`（加数 ≥ W は σ で保たれる、`summands_sh`）、`shIt_app`（σ P = P なら σ^k (P + T₁) = P + σ^k T₁）。
   - `seedCOT1_of_base`: 段 V の閉じ方から C の ψ_V(σ^k X₁) は標準形（T2SeedCOT の前半）。
 - qn も同じ形: X′_k = B + Ω_{t_k}、t_{k+1} = f(t_k) = s′ + σ(t_k − V)。σ B = B と V < t_k から σ(B + Ω_{t_k}) = B + Ω_{t_{k+1}}（`qn_closed_tqN`）。t_{k+1} の成分は s′ の成分か、t_k の成分 g₀ か σ g₀ なので、道の段で t₁ と s′ の成分が B + Ω_{t₁} より小さければすべての k で同じ。実測（qncl.py）: d3s・deep2 の qn 5800 件で例外 0（σ B = B・V < t₁ も）。
-- 残り `T2SeedQNBase`・`T2SeedSVBase`・`T2SeedCBase`（M と M.take x だけ、k を含まない）。最上位は `T2SeedClV2B`（qn・sv・C とも k を含まない形）と `T2SeedOTRestV2B`（qn の欄と、C の q の値の標準形 `T2SeedCOT2`）を受け、`t2SeedClV2_of_B`・`t2SeedOTRestV2_of_B` で元の形を作る。ビルド緑、公理は標準の 3 つ。
+- qn の標準形 T2SeedQNOT も出る（`qn_ot_of`）: σ^k (B + Ω_{t₁}) = B + Ω_{t_k}（`tqN_shIt`）。ψ_V(X_k) は段 V の閉じ方（ψ_V(X₁) の標準形と、段 V で s′ の成分 < X₁）から、ψ_{s′}(X_{k+1}) は σ Y の段 s′ = f(V) の成分が Y の段 V の成分の σ 像であること（`comps_sh`）から。
+- 残り `T2SeedQNBase`（標準形のための 2 欄つき）・`T2SeedSVBase`・`T2SeedCBase`（M と M.take x だけ、k を含まない）。標準形の残りは C の q の値 `T2SeedCOT2` だけ（`T2SeedOTRestV2B`）。最上位は `T2SeedClV2B`（qn・sv・C とも k を含まない形）と `T2SeedOTRestV2B`（qn の欄と、C の q の値の標準形 `T2SeedCOT2`）を受け、`t2SeedClV2_of_B`・`t2SeedOTRestV2_of_B` で元の形を作る。ビルド緑、公理は標準の 3 つ。
