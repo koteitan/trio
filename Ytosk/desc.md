@@ -3867,7 +3867,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 
 ### 展開の不変条件の主な欄を大きい集合で（2026-10-17、lead、invexp.py）
 
-- Inv3V2 の主な欄（Good3 の標準形と数える子の o の減少、FrameOT、FrameClosed（FrameDom を厳密に）、VSmallF）を、集合の行列とその M[2]・M[3] で測った。ext3s（59 万行列）と ext2（150 万行列）で例外 0。t2ext は測定中。
+- Inv3V2 の主な欄（Good3 の標準形と数える子の o の減少、FrameOT、FrameClosed（FrameDom を厳密に）、VSmallF）を、集合の行列とその M[2]・M[3] で測った。ext3s（59 万行列）・ext2（150 万行列）・t2ext（121 万行列）で例外 0。
 
 ### c₀ より前の子の値は M と同じ（証明、2026-10-17、lead、V3T2VRASV、緑）
 
@@ -3876,3 +3876,8 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - これで T2SVc0 の第 1 欄が証明になり、最上位の残りは c₀ の欄だけの `T2SVc0'`（sv）と「CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0'」（C）になった。ビルド緑、公理は標準の 3 つ。
 - 追記: c₀ の欄 T2SVc0′ も証明した（`t2SVc0'_of_drop`）。y ≠ 0 なら c₀ は M.take x に数える子を持つので TopC でなく、v(c₀) は変わらない（`chg_struct`・`chg_off`）。落とす補題（`drop_all_H`、最上位では HDropV2W・T0UpgAbsV2 から）の PO は、引数 0 の弱い形を除いて o_{M.take x}(c₀) ◁= o_M(c₀) を与え、添字が同じなので y ≤ y_M。最上位から sv の仮定が消え、C の仮定は CL_M(r) = CL_{M.take x}(r) だけになった。最上位の仮定は 19 個。ビルド緑、公理は標準の 3 つ。
 - 追記: C の CL_M(r) = CL_{M.take x}(r) も証明した（`cl_C`）。x は q の子なので q の部分木は x までで、q は r の最後の子（`par0_spec`）。q が M で数えられると CL_M(r) が q で終わり T2CCase に反する。q が数えられない理由が上げの的で topped なら、上げの的は行 2 が 1（`upg_target_e2`）で、最後の子 x が bump なので q の子はすべて bump（`all_bump_of_last`）、M.take x でも topped（x − 1 は上げないので上げの的のまま、`upg_take`）。q 以外の子は `counted_take_of`（x の親を q として）と `counted_take_last` で同じ。これで sv・C の種の枠の残りは最上位から消えた。最上位の仮定は 18 個。ビルド緑、公理は標準の 3 つ。
+
+### e3exp（ext3s の M[2] とその接頭辞、35 万行列）での最上位の残り（2026-10-17、lead）
+
+- Lean の形で例外 0: RwClosedL（rwl2）、C の種の FrameShape（cfs）、T2SeedDom の dom1・dom2 と T2VRAQNDom の道の段の形（seeddom2。すべての段の形 vraAllU は 3 件偽で、これは前から偽と分かっている形）、qr・qn の種（seedqr）、sv・C の種（seedsvc）、SibColW（sibcolall）、T0ArgBRes（t0argB）、T0UpgAbsV2（t0uaV2。強い形が破れる 3 件はどれも易しい形で、Lean の形は成り立つ）、UpgAbsXW0・T2UABad（uaw0b。強い形の破れ 23 件はどれも弱い形で受かる）、VAncStep（vanc1）。bumpdrop1・dropres・hframe・inv2 は測定中。
+- FDsh（行列によらない全称の主張）を小さい標準形の項でも試した（fdshrand.py）: 大きさ 7 までの 3599 項から前提を満たす 4578 組で例外 0。
