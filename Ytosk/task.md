@@ -117,7 +117,13 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 全員の生産者を差し込んだ最上位（V3TopV2 の中間の形 `trio_terminates_main_V2_base`）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
-    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残り: HDropV2W・HSeedV2（drop）、HFrameV2・HLeafV2（共通）、T0UpgAbsV2・T0ArgBRes（t0）、HBumpExt（標準形の接頭辞で bump 項は増える。t0 の T0AbWRes と t2 の T2BumpMonoV2 を出す）、T2SeedClV2B（k を含まない T2SeedQNBase・T2SeedSVBase・T2SeedCBase。種の標準形もここから）・T2SeedPResRCV2B（qn の欄の V < t_k・f(t_k) ≥ s′ + 1 と C の rw は外した。C は T2SeedCResR2（decP・lhd と、rw の代わりに X₁ < σX₁。un は ¬T2CBad から）。その un は悪い形 T2CBad で偽なので、t = 2 の文脈を StepCtxT2（¬T2CBad）に限った）、T2CBadOut（悪い形の t = 2 の展開、大づかみな残り）・T2SeedDomV2B（C の段 V の欄は T2SeedCBase から）・FDsh・T2SVc0・T2CFrRes（= CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0。sv・C の種の枠の VSmallRAll と枠の形を M と M.take x の値の比較に減らした。旧 T2VRASeedSVC・T2SeedPreShapeSVC）・T2VRACopy・T2UpgAbsW・T2VAncStep（t2）、HRwClL（すべての標準形で RwClosedL。文脈の rw を作る）、T2VRAK KAG（t1。T2VAncStep と合わせて qVRAshK_KVRA の枠の条件 KVRA）、HSibColV2（top。HSibHardV2 から帰着、残りは SibColU: 片方が上げの的 topped の同じ列の兄弟）。T0RwRes・TRwOut 0/1・偽の T2X1Cl・CopyLowK は HRwClL に替わって消えた
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残りは 20 個（2026-10-17 夕）:
+      - drop: HDropV2W（落とす補題の 5 欄）・T0UpgAbsV2（t = 0 の強い吸収、易しい形の外）・HSeedV2（SeedR）
+      - 共通: HFrameV2・HLeafV2（枠の 10 欄・葉の条件）、HBumpExt（標準形の接頭辞で bump 項は増える）、HRwClL（すべての標準形で RwClosedL）、HSibColV2（同じ列の兄弟 SibColU）
+      - t0: T0ArgBRes
+      - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom と T2SeedCDom1）、T2SVc0（sv）・T2CFrRes（C: CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0）
+      - t2 のそのほか: T2CBadOut（悪い形の展開、大づかみ）、T2UpgAbsW、FDsh、T2VRACopy、T2VAncStep・T2VRAK KAG（写しの枠の KVRA）
+      - 消えたもの（このセッション）: T2SeedOTRestV2、T2VRAQNDom（T2SeedQNDom と T2SeedQNBase から）、T2VRASeedSVC・T2SeedPreShapeSVC（T2SVc0・T2CFrRes に）、T2X1Cl・CopyLowK（偽、HRwClL に）
       - 残りの測定の状態（2026-10-17、lead。どれも Lean と同じ形の probe）
 
         | 残り | 測定 | 備考 |
