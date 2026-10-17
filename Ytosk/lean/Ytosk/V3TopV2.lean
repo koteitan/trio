@@ -8,7 +8,7 @@
 - C の欄: 構造の残り T2SeedCNext は標準形で偽なので、C の欄は T2SeedCRes ∧ T2SeedCBig に替えた。
   `HSibV2`（どの標準形でも値の残り UpgSibV、V3CBigV）と C の残り T2SeedCRes から CBig を出す
   （`t2SeedPResR_of_sib`）。HSibV2 は難しい形 `HSibHardV2`（V3SibV）に絞った（`hSib_of_hard`）。
-- `expT0Out_of4`: t0 の `t0_final_inv3V2D` の下降と RwClosed まで含めた結論 ExpT0OutR（残り T0RwRes・T0AbWRes と N の 2 つ）。
+- `expT0Out_of4`: t0 の `t0_final_inv3V2D` の下降まで含めた結論 ExpT0OutV2（残り T0RwRes・T0AbWRes と N の 2 つ）。
   最上位は t = 0 の下降もここから受け、偽の強い吸収 HAbSV2 を使わない（2026-10-17）。
 - `trio_terminates_main_V2_base`: 最上位の中間の形（今の最上位は V3TopT2B の `trio_terminates_main_V2_cur`）。種の枠（T2FOSeedV2・T2VSFCV2 の種）は t2 の `t2FOSeedV2_of`・
   `t2VSFCV2_of2`（V3T2SeedFrV2、残り T2SeedDomV2）、T2VRAV2 は t2 の `t2VRAV2_of`（V3T2VRA）と `t2VRAPre_of`
@@ -99,7 +99,7 @@ theorem t2SeedPResR_of_sib (hSib : HSibV2) (h : T2SeedPResRCV2) : T2SeedPResRV2 
       (t2SeedCRes_of C.std C.ne IW hlen hr hq hqr (H.C r L q hlen hr hq hqr hncl))
       (fun τ hτ hG => hSib _ τ rk (std_take C.std (r + L) (by omega)) (ne_SRO_of_rk I1.rank) hτ I1.rank hG)
 
-/-- **`ExpT0OutR` from t0's residuals** (`expT0V2_of4` with the descent and `RwClosed` of `t0_final_inv3V2D` kept). -/
+/-- **`ExpT0OutV2` from t0's residuals** (`expT0V2_of4` with the descent of `t0_final_inv3V2D` kept). -/
 theorem expT0Out_of4 (hRw : T0RwRes) (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
     (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
     ExpT0OutV2 := by
