@@ -3879,5 +3879,5 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 
 ### e3exp（ext3s の M[2] とその接頭辞、35 万行列）での最上位の残り（2026-10-17、lead）
 
-- Lean の形で例外 0: RwClosedL（rwl2）、C の種の FrameShape（cfs）、T2SeedDom の dom1・dom2 と T2VRAQNDom の道の段の形（seeddom2。すべての段の形 vraAllU は 3 件偽で、これは前から偽と分かっている形）、qr・qn の種（seedqr）、sv・C の種（seedsvc）、SibColW（sibcolall）、T0ArgBRes（t0argB）、T0UpgAbsV2（t0uaV2。強い形が破れる 3 件はどれも易しい形で、Lean の形は成り立つ）、UpgAbsXW0・T2UABad（uaw0b。強い形の破れ 23 件はどれも弱い形で受かる）、VAncStep（vanc1）。bumpdrop1・dropres・hframe・inv2 は測定中。
+- Lean の形で例外 0: RwClosedL（rwl2）、C の種の FrameShape（cfs）、T2SeedDom の dom1・dom2 と T2VRAQNDom の道の段の形（seeddom2。すべての段の形 vraAllU は 3 件偽で、これは前から偽と分かっている形）、qr・qn の種（seedqr）、sv・C の種（seedsvc）、SibColW（sibcolall）、T0ArgBRes（t0argB）、T0UpgAbsV2（t0uaV2。強い形が破れる 3 件はどれも易しい形で、Lean の形は成り立つ）、UpgAbsXW0・T2UABad（uaw0b。強い形の破れ 23 件はどれも弱い形で受かる）、VAncStep（vanc1）、HBumpExt の 1 列の場合（bumpdrop1）、DropResH0 の欄（dropres。失敗は最上位から外した強い形 AbsSR・BumpAbsS だけ）、HFrameV2・HLeafV2（hframe）、VSmallRAll（inv2）、TrigS0（probe_trigs0、2.1 万件。制限のない TrigS は 1 件偽で、これは前から偽と分かっている形）。FDsh（probe_fdsh）は測定中。
 - FDsh（行列によらない全称の主張）を小さい標準形の項でも試した（fdshrand.py）: 大きさ 7 までの 3599 項から前提を満たす 4578 組で例外 0。
