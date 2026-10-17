@@ -3839,3 +3839,8 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - C も同じ形（cvra.py、d3s・deep2・expP）: CL_M(r) = CL_{M.take x}(r)、c₀ より前の値は同じ、c₀ は y ≠ 0 なら同じ添字で y ≤ y_M。N では CL_N(r) = CL_{M.take x}(r) ++ [q]（既存の `seed_last_C`）で、最後の枠の子 q の添字は s′。最後の枠の QVRAt には、M の段で s′ の成分が Ω_{s′} 以下・X₁ 以下・V の成分以下のどれかであることを使う（引き金なしで例外 0）。
 - 残り `T2CFrRes`（C、M と M.take x だけ）= CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0 ∧ s′ の成分の条件。`t2VRASeedC_of`・`t2SeedPreShapeC_of` で T2VRASeedC・T2SeedPreShapeC を出す（段の対応は `seed_lev_of`、N の値は `seed_C_data`）。
 - 最上位は hSVCG・hVPr の代わりに `T2SVc0`（sv）と `T2CFrRes`（C）を受ける。旧 T2VRASeedSVC・T2SeedPreShapeSVC は最上位から消えた。ビルド緑、公理は標準の 3 つ。
+
+### 種の残り T2SeedPResRC の qn の欄を減らす（2026-10-17、lead、V3T2SeedQNK、緑）
+
+- qn の欄は「すべての k で V < t_k、f(t_k) は s′ + 1 より小さくない、k ≥ 1 で t_k < v(q) と（t_k = v(q) か t_k ◁ v(q)）」だった。前の 2 つは V < t₁ と t₁ の標準形から出る（`tqN_facts`）: V < t なら s′ < f(t)（`lt_shf`）なので f(t) < s′ + 1 ではない（`lt_succ_iff`）。V < s′ < f(t) で帰納法が進む。
+- 残り `T2SeedPResRCV2B`: qn の欄は ∃ t₁（X₁ = B + Ω_{t₁}）、V < t₁、t₁ の標準形、k ≥ 1 の欄。V < t₁ は qncl.py で 11 集合と ext3s で例外 0。`t2SeedPResRCV2_of_B` で元の T2SeedPResRCV2 を作る。ビルド緑、公理は標準の 3 つ。
