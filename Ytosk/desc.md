@@ -3850,7 +3850,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 
 - T2VRAQNDom（M の段で s′ の成分は Ω_{s′}・B・V の成分以下）は、Lc ≠ [] なら既存の残り T2SeedQNDom の第 1 欄（すべての段 u ≤ V で z・B 以下・V の成分以下）から出る（`t2VRAQNDom_of`）。
 - 最上位の hQNG は Lc = [] の場合（q が r のただ一つの数える子、B = 0）の `T2VRAQNDom0` だけになった。
-- さらに T2VRAQNDom0 も外した（`t2VRAQNDom0_of`）: Lc = [] では X₁ = Ω_{t₁} で t₁ ≤ s′、s′ の成分は段 V と道の段で X₁ より小さい（T2SeedQNBase）ので Ω_{s′} 以下。T2SeedQNBase の閉じ方の段を PathLvA から PathLvAll（どの数える子でもよい道）に強め、欄「Lc = [] なら t₁ ≤ s′」を足した。実測（qn0.py・qncl.py）: d3s・deep2・expP の qn 5.4 万件（Lc = [] は 5.2 万件）で例外 0、全集合は測定中。最上位の仮定は 20 個。ビルド緑、公理は標準の 3 つ。
+- さらに T2VRAQNDom0 も外した（`t2VRAQNDom0_of`）: Lc = [] では X₁ = Ω_{t₁} で t₁ ≤ s′、s′ の成分は段 V と道の段で X₁ より小さい（T2SeedQNBase）ので Ω_{s′} 以下。T2SeedQNBase の閉じ方の段を PathLvA から PathLvAll（どの数える子でもよい道）に強め、欄「Lc = [] なら t₁ ≤ s′」を足した。実測（qn0.py・qncl.py）: 11 集合と ext3s の qn 23 万件で例外 0（Lc = [] で t₁ ≤ s′ も）。最上位の仮定は 20 個。ビルド緑、公理は標準の 3 つ。
 
 ### 観察: c₀ の関係は一般の落とす性質の特別な場合（2026-10-17、lead）
 
@@ -3859,7 +3859,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 
 ### T2CFrRes の s′ の成分の欄を T2SeedCBase から（2026-10-17、lead、緑）
 
-- T2SeedCBase の閉じ方の段を PathLvA から PathLvAll に強めた（svcbase.py の pathAll: d3s・deep2・expP・ext3s の sv・C 1.7 万件で例外 0、全集合は測定中）。SeedClB0 には PathLvA.toAll で渡す。
+- T2SeedCBase の閉じ方の段を PathLvA から PathLvAll に強めた（svcbase.py の pathAll: 11 集合と ext3s の sv・C 5.7 万件で例外 0）。SeedClB0 には PathLvA.toAll で渡す。
 - すると T2CFrRes の第 3 欄（M の段で s′ の成分は Ω_{s′}・X₁・V の成分以下）は、段 V と PathLvAll で s′ の成分 < X₁ から出る。T2CFrRes は「CL_M(r) = CL_{M.take x}(r) ∧ T2SVc0」だけになった。ビルド緑、公理は標準の 3 つ。
 
 - 追記: T2SeedQNBase から σ B = B と V < t₁ の欄を外した。どちらも既存の種の残り T2SeedQNRes（σB と base の k = 0）から出る（`qnRes_base_facts`、X₁ の式の t₁ は `app_left_cancel` で一致）。`t2SeedClV2_of_B`・`t2SeedOTRestV2_of_B` は T2SeedPResV2 も受ける。ビルド緑。

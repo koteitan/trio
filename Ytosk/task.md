@@ -130,7 +130,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | HBumpExt | 1 列の場合が 11 集合で例外 0 | bumpdrop1.py（3950 万件） |
         | T2SeedQNBase | 11 集合と ext3s で例外 0（PathLvAll の段、Lc = [] で t₁ ≤ s′ も。qn 23 万件） | qncl.py |
         | T2SeedCBase の σX₁ の欄 | 11 集合と ext3s で例外 0 | ccl.py（hiS） |
-        | T2SeedSVBase・T2SeedCBase | 道の段 PathLvA の形は 11 集合と ext3s で例外 0（sv 4.5 万件・C 1.2 万件。すべての段の形は expP・ext3s で偽）。C の段を PathLvAll に強めた形は 4 集合で例外 0、他は測定中 | svcbase.py。C の σX₁ の欄は ccl.py |
+        | T2SeedSVBase・T2SeedCBase | 道の段 PathLvA の形は 11 集合と ext3s で例外 0（sv 4.5 万件・C 1.2 万件。すべての段の形は expP・ext3s で偽）。C の段を PathLvAll に強めた形も 11 集合と ext3s で例外 0 | svcbase.py。C の σX₁ の欄は ccl.py |
         | T2SeedPResRCV2B | 11 集合と std_b で例外 0（qn の V < t₁ は qncl.py、C の X₁ < σX₁ は cstrict.py で 11 集合と ext3s で例外 0） | seedqr.py・seedsvc.py。C の un は StepCtxT2 で悪い形を外した |
         | T2CBadOut | — | 悪い形（ext2 に 6 個）の t = 2 の展開。全体の主張の帰結 |
         | T2SeedDomV2 | 11 集合と std_b で例外 0 | seeddom2.py（T2VRAQNDom は T2SeedQNDom と T2SeedQNBase から） |
