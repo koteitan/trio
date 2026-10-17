@@ -3791,3 +3791,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 集合 ext3s（tmp/ytosk-handoff/sets/ext3s.pkl、59 万行列）: ext2 の長さ 16 以下から 3 万個を選び、bms -s で標準形になる列を 1 つ足したもの（tmp/lead/probes/gen_ext3.py）。ext2 で偽の欄が見つかったので、さらに 1 列伸ばした形で偽を探す。
 - 例外 0: 種の残り（seedsvc・seedqr）、T2SeedDomV2・T2VRAQNDom（道の段）、SibColW、BumpDrop1（269 万件）、落とす補題の欄（probe_dropres。BumpAbsC を含む。破れは使っていない AbsSR・BumpAbsS だけ）、T0ArgBRes、T0UpgAbsV2（強い形の破れ 26 件はどれも T0Easy）、VAncStep、ClosedLow、C の種の FrameShape、UpgAbsXW0・T2UABad の形（uaw0b）。
 - 測定中: HFrameV2・HLeafV2・AbsUS・TPLoS・TrigS0・T2VRA・KAG・FDsh・種の閉じた条件・PreShape・X1Cl（tmp/lead/qJ.sh、集合の名前の制限は --data の別の場所に ext2.pkl として置いて回避）。
+
+### 偽の残りと偽の不変条件を見つけた: T2X1Cl・RwClosed（2026-10-17、lead、ext3s）
+
+- ext3s の M = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,0,0)(5,1,1)(6,1,1)(7,1,0)(5,1,0)(6,2,0)(7,3,0)(3,2,0)(2,2,1)（bms -s で標準形、sv の場合: q = r = 4、x − 1 は x へ上げる）の M[2]・M[3] で、r の最後の枠が RwClosed の前提（書き換え、B < hi(y)、B は hi(y) の接頭辞でない）を満たすのに ClosedA が偽（tmp/t0/probes/x1cl.py、ext3s で 3 件）。
+- M[3]（37 列、標準形、SRO より下）で直接確かめた: 枠 (4, 15) と (15, 26) で RwClosed が偽。枠 (4, 15) は v(4) = 1、B = o(5) = ψ_s(Ω_2)（s = ψ_0(Ω_{Ω_1} + ψ_1(Ω_3))）、B の段 0 の成分 Ω_{Ω_1} + ψ_1(Ω_3) は B より大きく、v(4) = 1 の成分にも押さえられない。
+- よって (1) 最上位の残り T2X1Cl（sv）は偽。(2) **RwClosed はすべての標準形の不変条件ではない**。RwClosed を帰納法で運ぶ形（StepCtxV2.rw、hInvV2_all）は偽の不変条件の上にある。前の残り T0RwRes（文脈の RwClosed M）も同じく偽。M（16 列）自身は RwClosed（ext3s の closedL で例外 0）で、M[n] で初めて破れる。
+- RwClosed は t0 の影の枠（t0_otdS・T0DF）と t2 の切り口（T2CutA を替えた V3DepRWU）で使っている。どの枠で本当に要るかを調べて、真で足りる弱い形に替える必要がある。

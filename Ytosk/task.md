@@ -134,7 +134,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | FDsh | 11 集合で例外 0 | probe_fdsh 全数 |
         | T2VRASeedSVC | 11 集合で例外 0 | T2VRASeed（t1 の probe_t2vra） |
         | T2SeedPreShapeSVC | 10 集合で例外 0 | preshape.py（t0ext には t = 2 がない） |
-        | T2VRACopy・T2X1Cl・T2VAncStep・CopyLowK | 11 集合で例外 0 | probe_t2vra・x1cl・vanc1・closedL |
+        | T2VRACopy・T2VAncStep・CopyLowK | 11 集合で例外 0 | probe_t2vra・vanc1・closedL |
+        | **T2X1Cl** | **偽**（ext3s に 3 件、sv の場合） | x1cl.py。RwClosed そのものが M[3] で偽（desc.md の節） |
         | T2VRAK KAG | 11 集合で例外 0 | probe_t2vrak |
         | T2UpgAbsW | 11 集合と std_b で例外 0 | 強い形か悪い形 T2UABad |
         | HSibColV2 | 11 集合と std_b で例外 0 | sibcolall.py（SibColW） |
