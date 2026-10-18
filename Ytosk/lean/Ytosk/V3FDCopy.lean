@@ -272,6 +272,58 @@ def RetainedLowOutsidePath (P : Mat) (ρP : Valn) (r i : Nat)
     RetainedLowNeed (ρP.v r) V' (ρP.v i)
       (spArg (ρP.v i) z (sumN (Lc.map ρP.o))) s y u g
 
+/-- The already formal zero-state counterexample has old ancestor domination
+at ALL levels: a=V+1 contains every component of V. Its failure was KA, not
+old VAnc. This does not assert any matrix/path realization of those terms. -/
+theorem zero_counterexample_old_ancestor :
+    ∀ u g, g ∈ comps u FDCut.ZeroStateCounterexample.V →
+      g ≤ psi FDCut.ZeroStateCounterexample.a z z ∨
+        ∃ d ∈ comps u FDCut.ZeroStateCounterexample.a, g ≤ d := by
+  intro u g hg
+  right
+  refine ⟨g, ?_, le_refl _⟩
+  change g ∈ comps u (app FDCut.ZeroStateCounterexample.V one)
+  rw [comps_app]
+  exact List.mem_append_left _ hg
+
+/-- The known zero-state example lies in the precise retained-low branch. -/
+theorem zero_counterexample_pending : RetainedLowPending
+    FDCut.ZeroStateCounterexample.V FDCut.ZeroStateCounterexample.V'
+    FDCut.ZeroStateCounterexample.a FDCut.ZeroStateCounterexample.B
+    FDCut.ZeroStateCounterexample.s FDCut.ZeroStateCounterexample.y
+    z FDCut.ZeroStateCounterexample.D := by
+  unfold RetainedLowPending
+  rw [FDCut.ZeroStateCounterexample.images.1,
+    FDCut.ZeroStateCounterexample.images.2.1,
+    FDCut.ZeroStateCounterexample.images.2.2.1,
+    FDCut.ZeroStateCounterexample.images.2.2.2,
+    FDCut.ZeroStateCounterexample.B, sh_z]
+  refine ⟨by decide, by decide, by decide, by decide, by decide, by decide,
+    by decide, ?_⟩
+  rintro ⟨_, Y, hY⟩
+  have h := congrArg lev hY
+  exact (show lev FDCut.ZeroStateCounterexample.y ≠ FDCut.ZeroStateCounterexample.sf by decide) h
+
+/-- Old VAnc alone does not repair the bare retained-low term implication.
+The existing example lacks KA at the exceptional off-path low level. -/
+theorem zero_counterexample_not_need : ¬ RetainedLowNeed
+    FDCut.ZeroStateCounterexample.V FDCut.ZeroStateCounterexample.V'
+    FDCut.ZeroStateCounterexample.a FDCut.ZeroStateCounterexample.B
+    FDCut.ZeroStateCounterexample.s FDCut.ZeroStateCounterexample.y
+    z FDCut.ZeroStateCounterexample.D := by
+  unfold RetainedLowNeed
+  rw [FDCut.ZeroStateCounterexample.images.1,
+    FDCut.ZeroStateCounterexample.images.2.1,
+    FDCut.ZeroStateCounterexample.images.2.2.1,
+    FDCut.ZeroStateCounterexample.images.2.2.2,
+    FDCut.ZeroStateCounterexample.B, sh_z]
+  intro h
+  have hd := h FDCut.ZeroStateCounterexample.y
+    (by decide) (by decide) (le_refl _)
+  exact (show ¬ ∃ d ∈ FDCut.ZeroStateCounterexample.y ::
+      (comps z FDCut.ZeroStateCounterexample.y ++
+        comps z FDCut.ZeroStateCounterexample.af), FDCut.ZeroStateCounterexample.D ≤ d by decide) hd
+
 #print axioms old_vAnc_of_t2VAncStep
 #print axioms old_vAnc_copy
 #print axioms old_vAnc_component
@@ -284,4 +336,7 @@ def RetainedLowOutsidePath (P : Mat) (ρP : Valn) (r i : Nat)
 #print axioms old_vAnc_base_of_pair_values
 #print axioms v_take_of_counted_child
 #print axioms v_take_of_par1_child
+#print axioms zero_counterexample_old_ancestor
+#print axioms zero_counterexample_pending
+#print axioms zero_counterexample_not_need
 end Ytosk.FDCopy
