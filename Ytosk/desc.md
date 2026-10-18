@@ -3932,3 +3932,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 替えた補題 `CutClosed.shadow_hShL_from_kind`（新しい下のファイル V3CutClosed、公理は propext・Quot.sound）: 後ろに足すだけでない影の枠では PH3cKindG が G3 の切り口 B ∈ cutsNSG s hi(y) を与え、`cutsHG_closed`（切り口の成分は B 以下か s の成分以下か区間の逃げ道）と Ω_s ≤ B（`omega_le_of_shadow_cut`）で、段 U の hVR だけから hShL の結論が出る。全段の ClosedL は要らない。
 - その結果、StepCtxV2 の欄 rw、T2HardB の RwClosedL の欄、T0RwRes・`t0RwRes_ctx` の使用、ctx_V2・hInvV2_all・desc3_V2O の引数を外した。RwClosedL（すべての標準形での全段の閉じ方）自体は証明していない。要らなくなっただけ。
 - 13 集合の実測（trio-codex）: 影の枠 1,584,292 個で全段の種の上限は例外 0。段 v・道の段の外で区間の逃げ道が要る成分は 3 つ（ext3s の同じ行列、u = 0）で、どれも切り口の補題の区間の場合で閉じる。「成分を道の段へ持ち上げられる」は偽。
+
+### FDsh を実際の場面で狭める試み（2026-10-19、trio-codex、V3FDCut）
+
+- FDsh を使うのは qFCo_sh（V3T2FC）の 1 か所だけ（σ で動き書き換える写しの枠、V < s）。実際の場面の情報（B = spArg a z (sumN Lv)、FrameOT、PH3cKindG、古い FrameDom）を足した FDshCopy も偽: `FDCut.ZeroStateCounterexample.counterexample`（B = 0）と `FDCut.PrefixCounterexample.counterexample`（本物の接頭辞の種類）。Om(t) = ψ_t(0)、D = Om(Om(5))、V = ψ_1(D)、V′ = Om(2)、a = V + 1、s = V + V。f(a) = Om(2) + 1 で D が消え、f(s) = Om(2) + V に D が残る。どちらも KA が偽。
+- 13 集合の実測（t2 の行列 1,038,963 個、実際の写しの枠 2,281,140 回）: 新しい FrameDom は破れ 0。成分の義務 5,977,466 個のうち直接の上限 5,977,442、切り口・接頭辞 3、残り 21（すべて状態 0、ext3s、u = 0）は f(s) と同じ先頭の添字で閉じる（`zero_FrameDom_of_shared_level`）。
+- 次: KVRA（VDomF ∧ KAG、最上位がすでに持つ写しの枠の条件）を足した形を試す。
