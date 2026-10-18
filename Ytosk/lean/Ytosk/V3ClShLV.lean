@@ -116,6 +116,47 @@ theorem persistent_of_shared_level {u g p x r y t : T}
     refine ⟨g, List.mem_cons_of_mem _ ?_, le_refl _⟩
     exact comps_psi_mem_of (not_lt.mpr hup) (Or.inr (Or.inr (Or.inl hg)))
 
+/-- A lower argument bound persists between endpoints with the same index.
+The bound may vary from term to term; no literally shared component is needed. -/
+theorem persistent_of_argument_bound {u g p x r y t : T}
+    (hup : u ≤ p) (hg : g ≤ x) :
+    Persistent u g (psi p x r) (psi p y t) := by
+  intro c hc1 hc2
+  cases c with
+  | z => exact False.elim (T.not_lt_z _ hc1)
+  | psi q e f =>
+    have hpq : p ≤ q := by simpa only [lev] using lev_le_of_le (le_of_lt hc1)
+    have hqp : q ≤ p := by simpa only [lev] using lev_le_of_le hc2
+    have heq : q = p := le_antisymm hqp hpq
+    subst q
+    have hxe : x ≤ e := by
+      rcases T.psi_lt_psi.mp hc1 with h | ⟨_, h⟩ | ⟨_, h, _⟩
+      · exact False.elim (lt_irrefl' p h)
+      · exact le_of_lt h
+      · exact le_of_eq h
+    exact ⟨e, List.mem_cons_of_mem _ (comps_psi_mem_of (not_lt.mpr hup) (Or.inl rfl)),
+      le_trans hg hxe⟩
+
+/-- A fixed prefix preserves an interval-persistent bound. -/
+theorem persistent_app {u g B A : T} (P : T) (hp : Persistent u g B A) :
+    Persistent u g (app P B) (app P A) := by
+  intro c hc1 hc2
+  obtain ⟨c0, rfl, hBc, hcA⟩ := between_app hc1 hc2
+  obtain ⟨d, hd, hgd⟩ := hp c0 hBc hcA
+  refine ⟨d, ?_, hgd⟩
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact List.mem_cons_self
+  · exact List.mem_cons_of_mem _ (by rw [comps_app]; exact List.mem_append.mpr (Or.inr hd))
+
+/-- The same-index argument-bound case of interval transport through sh. -/
+theorem persistent_sh_argument_bound {V V' u g p x r y t : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hVp : V < p) (hup : u ≤ shf V V' p)
+    (hg : isOT g = true) (hx : isOT x = true) (hgx : g ≤ x) :
+    Persistent u (sh V V' g) (sh V V' (psi p x r)) (sh V V' (psi p y t)) := by
+  rw [sh_psi_gt hVp, sh_psi_gt hVp]
+  exact persistent_of_argument_bound hup (sh_le_sh hV hV' (le_of_lt hVV) hg hx hgx)
+
 /-- Components at moving positions survive the shift at every level at most V. -/
 theorem compsAN_sh_forward {V V' u : T}
     (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
@@ -304,6 +345,15 @@ theorem high_components_interval_only {V V' a B A w g' : T}
       high_index_sh hV hV' hVV ha hw hVw (le_refl _) hd,
       sh_le_sh hV hV' (le_of_lt hVV) hgo (isOT_of_mem_comps w ha hd) hgd⟩)
   · exact Or.inr (Or.inr ⟨g, hg, rfl, h⟩)
+
+/-- The same-index case of interval transport for a moving index witness. -/
+theorem persistent_sh_index {V V' u w g p x r y t : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hp : isOT p = true) (hw : isOT w = true) (hVw : V < w) (hVp : V < p)
+    (huw : u ≤ shf V V' w) (hup : u ≤ shf V V' p) (hg : g ∈ comps w p) :
+    Persistent u (sh V V' g) (sh V V' (psi p x r)) (sh V V' (psi p y t)) := by
+  rw [sh_psi_gt hVp, sh_psi_gt hVp]
+  exact persistent_of_shared_level hup (high_index_sh hV hV' hVV hp hw hVw huw hg)
 
 /-- Above V, frozen nodes are invisible: every component is a moving old
 component at succ V, or is introduced from V'. -/
@@ -715,6 +765,9 @@ theorem persistent_iff_rightCorners {u g B A : T} :
     obtain ⟨e, he, hde⟩ := hdom d hd
     exact ⟨e, he, le_trans hgd hde⟩
 
+#print axioms persistent_sh_index
+#print axioms persistent_sh_argument_bound
+#print axioms persistent_app
 #print axioms above_cut_interval_only
 #print axioms component_raise_to_matched
 #print axioms middle_components_interval_only
