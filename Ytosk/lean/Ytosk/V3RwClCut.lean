@@ -1,7 +1,8 @@
 /-
 Cut-shaped shadow frames: the Omega_s alternative is already bounded by B.
-At parent/path levels Inv3V2.vra supplies the remaining seed bound. The bridge
-from these levels to every level required by RwClosedL remains explicit.
+At parent/path levels Inv3V2.vra supplies the remaining seed bound. The actual
+shadow consumer is proved directly at its U-levels, without all-level RwClosedL.
+The stronger extension to every lower level is not asserted here.
 -/
 import Ytosk.V3ClShLV
 import Ytosk.V3Inv2
@@ -227,6 +228,52 @@ theorem shadow_hShL_from_cut {U : T → Prop} {a B s y y' : T}
   apply shadow_hShL_on_levels hBc ht hnt hy'z hl hX'ot _ hVR
   intro u hU hu
   exact closed_at_of_shadow_cut ha hBot hc (le_of_trig ht.2) hcut (hVR u hU hu)
+
+/-- A single PH3cKindG value gives the same levelwise conclusion. The
+zero state is immediate; strictness and nonprefix exclude the other kinds. -/
+theorem closed_at_of_shadow_kind {a B s y u : T}
+    (ha : isOT a = true) (hB : isOT B = true)
+    (hc : isOT (psi s y z) = true) (has : a ≤ s)
+    (hK : B ≠ z → PH3cKindG B (split y (psi (succ s) z z)).1
+      (split y (psi (succ s) z z)).2 s)
+    (hhi : B < (split y (psi (succ s) z z)).1)
+    (hnp : ¬ ∃ R, (split y (psi (succ s) z z)).1 = app B R)
+    (hseed : ∀ d ∈ comps u s,
+      d ≤ psi s z z ∨ d ≤ B ∨ ∃ e ∈ comps u a, d ≤ e) :
+    ∀ g ∈ comps u B, g ≤ B ∨ (∃ d ∈ comps u a, g ≤ d) ∨
+      Persistent u g B (H a (H s y)) := by
+  by_cases hBz : B = z
+  · simp [hBz, comps]
+  · have hcut : B ∈ cutsNSG s (split y (psi (succ s) z z)).1 := by
+      rcases hK hBz with ⟨h, _⟩ | ⟨_, ⟨R, _, h⟩ | ⟨_, h⟩⟩
+      · exact False.elim (lt_irrefl' _ (h ▸ hhi))
+      · exact False.elim (hnp ⟨R, h⟩)
+      · exact h
+    exact closed_at_of_shadow_cut ha hB hc has hcut hseed
+
+/-- A drop-in shadow consumer using PH3cKindG and the very same hVR already
+passed to relR_frameUL. No full RwClosedL hypothesis is required. -/
+theorem shadow_hShL_from_kind {U : T → Prop} {a B s y y' : T}
+    (ha : isOT a = true) (hBot : isOT B = true) (hc : isOT (psi s y z) = true)
+    (hK : B ≠ z → PH3cKindG B (split y (psi (succ s) z z)).1
+      (split y (psi (succ s) z z)).2 s)
+    (hhi : B < (split y (psi (succ s) z z)).1)
+    (hnp : ¬ ∃ R, (split y (psi (succ s) z z)).1 = app B R)
+    (hBc : ∀ q ∈ summands B, psi s y z ≤ q)
+    (ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true)
+    (hnt : ¬ (lt B y' = true ∧ lt (psi a z z) (psi s y' z) = true))
+    (hy'z : y' ≠ z) (hl : Lhd z (psi s y' z) (psi s y z))
+    (hX'ot : isOT (psi a (app B (psi s y' z)) z) = true)
+    (hVR : ∀ u, U u → ¬ lt a u = true → ∀ g ∈ comps u s,
+      g ≤ psi s z z ∨ g ≤ B ∨ ∃ d ∈ comps u a, g ≤ d) :
+    ∀ u, U u → ¬ lt a u = true → ∀ g ∈ comps u (app B (psi s y' z)),
+      g < app B (psi s y' z) ∨ (∃ d ∈ comps u a, g ≤ d) ∨
+        Persistent u g (H a (app B (psi s y' z))) (H a (H s y)) := by
+  apply shadow_hShL_on_levels hBc ht hnt hy'z hl hX'ot _ hVR
+  intro u hU hu
+  exact closed_at_of_shadow_kind ha hBot hc (le_of_trig ht.2) hK hhi hnp (hVR u hU hu)
+
+#print axioms shadow_hShL_from_kind
 
 /-- The actual shadow premise consumed by relR_frameUL follows pointwise
 from Inv3V2, provided U consists of its parent/rewrite-path levels. This
