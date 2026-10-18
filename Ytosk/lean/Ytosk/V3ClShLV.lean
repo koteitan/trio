@@ -1111,6 +1111,70 @@ theorem persistent_shf_frozen {V V' u g B A : T}
 
 #print axioms persistent_shf_frozen
 
+/-- Applying H preserves standardness even at its own parent index. -/
+theorem isOT_H_self {s y : T} (hc : isOT (psi s y z) = true) :
+    isOT (psi s (H s y) z) = true := by
+  have ey := split_app (psi (succ s) z z) y
+  have hhi : isOT (split y (psi (succ s) z z)).1 = true := by
+    have hy := isOT_arg hc
+    rw [← ey] at hy
+    exact isOT_app_left hy
+  have hHs : isOT (H s y) = true := by
+    rw [H_eq hc]
+    split
+    · simpa using hhi
+    · apply isOT_app_of hhi hc
+      intro q hq
+      exact le_of_lt (lt_of_lt_of_le
+        (psi_lt_psi_z_iff.mpr (Or.inl (lt_succ_self s)))
+        (not_lt.mp (split_fst_ge _ y q hq)))
+  rw [isOT_psi_iff]
+  refine ⟨isOT_sub hc, hHs, rfl, z_le _, ?_⟩
+  intro g hg
+  by_cases hlo : (split y (psi (succ s) z z)).2 = z
+  · rw [H_of_lo_z hc hlo] at hg ⊢
+    exact comps_lt hc g hg
+  · have hyl : y < H s y := y_lt_H hc hlo
+    rw [H_eq hc, if_neg hlo, comps_app] at hg
+    rcases List.mem_append.mp hg with hg | hg
+    · have hgy : g ∈ comps s y := by
+        rw [← ey, comps_app]
+        exact List.mem_append.mpr (Or.inl hg)
+      exact lt_trans (comps_lt hc g hgy) hyl
+    · rw [comps_psi_z_of_ge (lt_irrefl' s)] at hg
+      simp only [List.mem_cons, List.mem_append] at hg
+      rcases hg with rfl | hg | hg
+      · exact hyl
+      · exact lt_trans (comps_lt hc g hg) hyl
+      · rw [comps_self (isOT_sub hc)] at hg
+        simp at hg
+
+/-- A smaller parent index sees only the high part of H. -/
+theorem H_H_of_lt {a s y : T} (ha : isOT a = true)
+    (hc : isOT (psi s y z) = true) (has : a < s) : H a (H s y) = H s y := by
+  apply H_of_high ha
+  intro q hq
+  apply not_lt.mpr
+  apply le_trans _ (H_summands_ge hc q hq)
+  exact psi_mono_coords (succ_le_of_lt has) (z_le _) (le_refl _)
+
+/-- The nested endpoint in ClShL commutes with substitution, including a=V. -/
+theorem sh_H_H {V V' a s y : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a)
+    (hc : isOT (psi s y z) = true) (hVs : V < s) (has : a ≤ s) :
+    sh V V' (H a (H s y)) =
+      H (shf V V' a) (H (shf V V' s) (sh V V' y)) := by
+  rcases (le_iff _ _).mp has with has | rfl
+  · have hc' := isOT_shTop hV hV' hVV hc (le_of_lt hVs)
+    rw [H_H_of_lt ha hc has,
+      H_H_of_lt (isOT_shf hV hV' hVV ha) hc'
+        (shf_lt_shf hV hV' (le_of_lt hVV) ha (isOT_sub hc) hVa has)]
+    exact sh_H hV hV' hVV hc hVs
+  · rw [sh_H hV hV' hVV (isOT_H_self hc) hVs, sh_H hV hV' hVV hc hVs]
+
+#print axioms sh_H_H
+
 /-- The existing FrameOT premise eliminates moving root-interval obligations:
 at a = V every moving old component is already strictly below the state.
 This premise holds on all 67,304 measured actual copy frames, but fails in the
