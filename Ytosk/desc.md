@@ -3906,3 +3906,8 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - t2（V3RwClT2・V3RwClCopy）は、写しの枠で ClosedL が σ で保たれること（ClosedA の版 ClSh は項だけでは偽）と種の枠の条件が残りになる。よって HRwClL 1 つが t2 の残り 2〜3 個に替わるだけで、今は得にならない。
 - 追記（2026-10-18）: 部品を測った。H の y についての単調性は既存の `H_mono`（V3NodeLhd）、H a (H s ·) も小さい項 1 万組で単調。t2 の写しの部品 ClShL（書き換える枠で ClosedL a B (H a (H s y)) なら σ = σ_{V,V′} の像 ClosedL (f a) (σB) (H (f a) (H (f s) (σ y)))）は、大きさ 7 までの項の 386 組で例外 0（clshl.py）。ClosedA の版 ClSh は項だけでは偽だったが、ClosedL は区間の逃げ道があるので σ で保たれる見込み。
 - 計画: (1) V3RwClT0・V3RwClDrop・V3RwClT1 を RwClosedL に作り直す（子の引数が下がると区間の上の端も下がる、`H_mono`）。(2) t2 の写しは ClShL（項の補題、証明を試みる）。(3) 種の枠は残り。(4) hInvV2_all で RwClosedL を運び、HRwClL を外す。
+
+### ClShL は偽（2026-10-18、trio-codex、V3ClShL、Lean で反例を検証）
+
+- 写しの枠の部品 ClShL（書き換える枠の前提と ClosedL a B (H a (H s y)) から σ の像の ClosedL）は、項だけの補題としては偽。反例（V3ClShL.lean、`Ytosk.ClShLCounterexample.counterexample`、公理は propext・Quot.sound）: V = Ω_2、V′ = Ω_3 + ψ_1(ψ_1(ψ_0(Ω_{Ω_5})))、a = s = V + ψ_1(V)、b = a + 1、B = ψ_b(Ω_{V+1})、y = ψ_b(Ω_b)。元の枠は ClosedA も成り立つが、σ の像では段 0 の成分 Ω_{Ω_5}（V′ から来る）が σB・f(a) の成分・区間の上の端の成分を超える。
+- この反例は VDomF V V′ a を満たさない（V′ の成分 Ω_{Ω_5} が Ω_{f(a)} も f(a) の成分も超える）。写しの枠では VDomF が T2VAncStep から手に入るので、VDomF を前提に足した形を trio-codex が調べている。
