@@ -1220,6 +1220,47 @@ theorem cutsHG_closed {s u : T} : ∀ {h B : T}, B ∈ cutsHG s h →
 
 #print axioms cutsHG_closed
 
+/-- At a high source, state-level cuts are also G3 cuts inside the term. -/
+theorem cutsNSG_mem_cutsHG {s : T} : ∀ {h B : T},
+    (∀ q ∈ summands h, s ≤ lev q) → B ∈ cutsNSG s h → B ∈ cutsHG s h := by
+  intro h
+  induction h with
+  | z => intro B _ hB; simp [cutsNSG] at hB
+  | psi a x c _ _ ihc =>
+    intro B hge hB
+    have hsa : le s a = true := by
+      have h : s ≤ a := hge (psi a x z) (by simp [summands])
+      rcases (le_iff _ _).mp h with h | rfl
+      · simp [le, show lt s a = true from h]
+      · simp [le]
+    rcases mem_cutsNSG_psi.mp hB with ⟨v, hv, rfl⟩ | ⟨v, hv, rfl⟩ | ⟨v, hv, rfl⟩
+    · exact mem_cutsHG_psi.mpr (Or.inr (Or.inl ⟨v, hv, rfl⟩))
+    · exact mem_cutsHG_psi.mpr (Or.inr (Or.inr (Or.inl ⟨hsa, v, hv, rfl⟩)))
+    · exact mem_cutsHG_psi.mpr (Or.inr (Or.inr (Or.inr ⟨hsa, v,
+        ihc (fun q hq => hge q (by simp [summands, hq])) hv, rfl⟩)))
+
+/-- A seed-component bound is sufficient for ClosedL at a G3 cut. -/
+theorem closedL_of_cutsHG {a s h B R : T}
+    (hcut : B ∈ cutsHG s h) (hB : isOT B = true)
+    (hseed : ∀ u, ¬ lt a u = true → ∀ d ∈ comps u s,
+      d ≤ psi s z z ∨ d ≤ B ∨ ∃ e ∈ comps u a, d ≤ e) :
+    ClosedL a B (app h R) := by
+  have hOm : psi s z z ≤ B := by
+    have hl := cutsHG_lev_cut hcut
+    cases B with
+    | z => exact False.elim (by
+        have hgt := cutsHG_gt hcut
+        exact T.not_lt_z _ hgt)
+    | psi p x c => exact psi_le_psi_anyG hl
+  intro u hu g hg
+  rcases cutsHG_closed hcut hB R g hg with h | ⟨d, hd, hgd⟩ | hp
+  · exact Or.inl h
+  · rcases hseed u hu d hd with h | h | ⟨e, he, hde⟩
+    · exact Or.inl (le_trans hgd (le_trans h hOm))
+    · exact Or.inl (le_trans hgd h)
+    · exact Or.inr (Or.inl ⟨e, he, le_trans hgd hde⟩)
+  · exact Or.inr (Or.inr hp)
+
 /-- Applying H preserves standardness even at its own parent index. -/
 theorem isOT_H_self {s y : T} (hc : isOT (psi s y z) = true) :
     isOT (psi s (H s y) z) = true := by
@@ -1283,6 +1324,37 @@ theorem sh_H_H {V V' a s y : T}
   · rw [sh_H hV hV' hVV (isOT_H_self hc) hVs, sh_H hV hV' hVV hc hVs]
 
 #print axioms sh_H_H
+
+/-- The nested endpoint always retains the original high part as a prefix. -/
+theorem H_H_prefix {a s y : T} (ha : isOT a = true)
+    (hc : isOT (psi s y z) = true) (has : a ≤ s) :
+    ∃ R, H a (H s y) = app (split y (psi (succ s) z z)).1 R := by
+  rcases (le_iff _ _).mp has with has | rfl
+  · rw [H_H_of_lt ha hc has, H_eq hc]
+    exact ⟨_, rfl⟩
+  · rw [HH_form hc (isOT_H_self hc)]
+    split
+    · rw [H_eq hc]
+      exact ⟨_, rfl⟩
+    · exact ⟨_, rfl⟩
+
+/-- In the nonprefix shadow case the G3 shape plus a bound for the seed
+components proves ClosedL directly, without transporting arbitrary intervals. -/
+theorem closedL_of_shadow_cut {a B s y : T} (ha : isOT a = true)
+    (hB : isOT B = true) (hc : isOT (psi s y z) = true) (has : a ≤ s)
+    (hcut : B ∈ cutsNSG s (split y (psi (succ s) z z)).1)
+    (hseed : ∀ u, ¬ lt a u = true → ∀ d ∈ comps u s,
+      d ≤ psi s z z ∨ d ≤ B ∨ ∃ e ∈ comps u a, d ≤ e) :
+    ClosedL a B (H a (H s y)) := by
+  obtain ⟨R, hR⟩ := H_H_prefix ha hc has
+  rw [hR]
+  apply closedL_of_cutsHG _ hB hseed
+  apply cutsNSG_mem_cutsHG _ hcut
+  intro q hq
+  have hqge := not_lt.mp (split_fst_ge (psi (succ s) z z) y q hq)
+  exact le_trans (le_of_lt (lt_succ_self s)) (by simpa [lev] using lev_le_of_le hqge)
+
+#print axioms closedL_of_shadow_cut
 
 /-- The existing FrameOT premise eliminates moving root-interval obligations:
 at a = V every moving old component is already strictly below the state.
