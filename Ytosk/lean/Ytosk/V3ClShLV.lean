@@ -15,6 +15,7 @@ hypotheses do not force the two interval endpoints to share their index.
 -/
 import Ytosk.V3ShadowL
 import Ytosk.V3T2VRAK
+import Ytosk.V3PShG
 
 namespace Ytosk.ClShLGuarded
 
@@ -764,6 +765,280 @@ theorem persistent_iff_rightCorners {u g B A : T} :
     obtain ⟨d, hd, hgd⟩ := hp r hr (le_trans hrc hcA)
     obtain ⟨e, he, hde⟩ := hdom d hd
     exact ⟨e, he, le_trans hgd hde⟩
+
+/-- Right monotonicity of subtraction only needs the lower endpoint standard. -/
+theorem sub_lt_sub_right : ∀ {V s t : T}, isOT V = true → isOT s = true → V ≤ s → s < t →
+    sub s V < sub t V
+  | z, s, t, _, _, _, h => by simpa [sub_z_right] using h
+  | psi d e f, z, _, _, _, h, _ => absurd h (not_le_of_gt (T.z_lt_psi _ _ _))
+  | psi d e f, psi a b c, z, _, _, _, h => absurd h (T.not_lt_z _)
+  | psi d e f, psi a b c, psi a' b' c', hV, hs, hVs, hst => by
+    have hht : psi a b z ≤ psi a' b' z := by simpa [head] using head_le_of_lt hst
+    by_cases hh : psi d e z < psi a b z
+    · have hh' : psi d e z < psi a' b' z := lt_of_lt_of_le hh hht
+      rw [sub_psi_psi, sub_psi_psi, if_pos hh, if_pos hh']; exact hst
+    · obtain ⟨rfl, rfl, hfc⟩ := rest_le_of_le_head hVs hh
+      by_cases hh' : psi d e z < psi a' b' z
+      · rw [sub_psi_self, sub_psi_psi, if_pos hh']
+        apply lt_of_head_lt
+        exact lt_of_le_of_lt (le_trans (head_sub_le (isOT_rest hs) f) (isOT_psi_iff.mp hs).2.2.2.1) hh'
+      · have he : psi d e z = psi a' b' z := le_antisymm hht (le_of_not_gt hh')
+        cases he
+        rw [sub_psi_self, sub_psi_self]
+        have hcc : c < c' := by
+          rcases T.psi_lt_psi.mp hst with h | ⟨_, h⟩ | ⟨_, _, h⟩
+          · exact False.elim (lt_irrefl' _ h)
+          · exact False.elim (lt_irrefl' _ h)
+          · exact h
+        exact sub_lt_sub_right (isOT_rest hV) (isOT_rest hs) hfc hcc
+
+/-- A standard lower endpoint remains below every greater, arbitrary syntax term. -/
+theorem sh_lt_right_aux {V V' : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V') :
+    ∀ n (a b : T), size a + size b < n → isOT a = true → a < b →
+      sh V V' a < sh V V' b
+  | 0, _, _, h, _, _ => absurd h (Nat.not_lt_zero _)
+  | n + 1, a, b, hn, ha, hab => by
+    cases b with
+    | z => exact False.elim (T.not_lt_z _ hab)
+    | psi d e f =>
+      cases a with
+      | z => rw [sh_z]; exact lt_of_le_of_ne (z_le _) (Ne.symm (sh_ne_z (by simp)))
+      | psi s y c =>
+        have hsz : ∀ x, size x ≤ size s → size x + size (sub d V) < n := by
+          intro x hx; have := size_sub_le d V; simp [size] at hn; omega
+        have hf : V ≤ s → s < d → shf V V' s < shf V V' d := by
+          intro hVs hsd
+          unfold shf
+          apply add_lt_add_left
+          exact sh_lt_right_aux hV hV' hVV n _ _ (hsz _ (size_sub_le s V))
+            (isOT_sub_sfx (isOT_sub ha) V) (sub_lt_sub_right hV (isOT_sub ha) hVs hsd)
+        have hVf : ∀ {w : T}, V < w → V < shf V V' w := by
+          intro w hVw
+          refine lt_trans hVV ?_
+          unfold shf
+          have h1 := add_lt_add_left V' (show z < sh V V' (sub w V) from
+            lt_of_le_of_ne (z_le _) (Ne.symm (sh_ne_z (sub_ne_z_gen hVw))))
+          simpa using h1
+        have ihy : y < e → sh V V' y < sh V V' e := fun h =>
+          sh_lt_right_aux hV hV' hVV n y e (by simp [size] at hn; omega) (isOT_arg ha) h
+        have ihc : c < f → sh V V' c < sh V V' f := fun h =>
+          sh_lt_right_aux hV hV' hVV n c f (by simp [size] at hn; omega) (isOT_rest ha) h
+        rw [T.psi_lt_psi] at hab
+        by_cases hs : V < s <;> by_cases hd : V < d
+        · rw [sh_psi_gt hs, sh_psi_gt hd, T.psi_lt_psi]
+          rcases hab with h | ⟨rfl, h⟩ | ⟨rfl, rfl, h⟩
+          · exact Or.inl (hf (le_of_lt hs) h)
+          · exact Or.inr (Or.inl ⟨rfl, ihy h⟩)
+          · exact Or.inr (Or.inr ⟨rfl, rfl, ihc h⟩)
+        · exfalso
+          rcases hab with h | ⟨rfl, _⟩ | ⟨rfl, _, _⟩
+          · exact hd (lt_trans hs h)
+          · exact hd hs
+          · exact hd hs
+        · rw [sh_psi_le hs, sh_psi_gt hd, T.psi_lt_psi]
+          exact Or.inl (lt_of_le_of_lt (not_lt.mp hs) (hVf hd))
+        · rw [sh_psi_le hs, sh_psi_le hd, T.psi_lt_psi]
+          rcases hab with h | ⟨rfl, h⟩ | ⟨rfl, rfl, h⟩
+          · exact Or.inl h
+          · exact Or.inr (Or.inl ⟨rfl, h⟩)
+          · exact Or.inr (Or.inr ⟨rfl, rfl, ihc h⟩)
+
+theorem sh_lt_right {V V' a b : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hab : a < b) : sh V V' a < sh V V' b :=
+  sh_lt_right_aux hV hV' hVV _ a b (Nat.lt_succ_self _) ha hab
+
+theorem sh_le_right {V V' a b : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hab : a ≤ b) : sh V V' a ≤ sh V V' b := by
+  rcases (le_iff _ _).mp hab with h | rfl
+  · exact le_of_lt (sh_lt_right hV hV' hVV ha h)
+  · exact le_refl _
+
+theorem shf_le_right {V V' a b : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hab : a ≤ b) : shf V V' a ≤ shf V V' b := by
+  rcases (le_iff _ _).mp hab with h | rfl
+  · unfold shf
+    exact le_of_lt (add_lt_add_left V'
+      (sh_lt_right hV hV' hVV (isOT_sub_sfx ha V) (sub_lt_sub_right hV ha hVa h)))
+  · exact le_refl _
+
+/-- Domination after shifting source components, without requiring source terms standard. -/
+def ShiftDom (V V' w u r c : T) : Prop :=
+  ∀ d ∈ Gc w r, ∃ e ∈ Gc u c, sh V V' d ≤ e
+
+private theorem shiftDom_zero (V V' w u c : T) : ShiftDom V V' w u z c := by
+  intro d hd
+  have hd0 : d = z := by simpa [Gc, comps] using hd
+  subst d
+  exact ⟨z, List.mem_cons_self, by simp⟩
+
+private theorem shiftDom_of_nil {V V' w u r c : T} (hr : comps w r = []) :
+    ShiftDom V V' w u r c := by
+  intro d hd
+  have hd0 : d = z := by simpa [Gc, hr] using hd
+  subst d
+  exact ⟨z, List.mem_cons_self, by simp⟩
+
+private theorem comps_succ_high {w : T} (hw : z < w) (t : T) :
+    comps w (succ t) = comps w t := by
+  have hzw : lt z w = true := hw
+  simp [succ, comps_app, one, comps, hzw]
+
+private theorem comps_above_standard {w t : T} (ht : isOT t = true) (hw : lev t < w) :
+    comps w t = [] := by
+  apply comps_eq_nil_of_lev
+  intro q hq
+  have hqle := lev_le_of_le (summands_le_head ht q hq)
+  have hlev : lev (head t) = lev t := by cases t <;> rfl
+  rw [hlev] at hqle
+  exact lt_of_le_of_lt hqle hw
+
+private theorem shiftDom_psi {V V' w u p x r q y t : T}
+    (hseen : ¬ p < w → ¬ q < u) (hxy : sh V V' x ≤ y)
+    (hp : ShiftDom V V' w u p q) (hx : ShiftDom V V' w u x y)
+    (hr : ShiftDom V V' w u r t) :
+    ShiftDom V V' w u (psi p x r) (psi q y t) := by
+  intro d hd
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact ⟨z, List.mem_cons_self, by simp⟩
+  simp only [comps, List.mem_append] at hd
+  rcases hd with hd | hd
+  · by_cases hpw : lt p w = true
+    · rw [if_pos hpw] at hd
+      simp at hd
+    · rw [if_neg hpw] at hd
+      have hqu := hseen hpw
+      simp only [List.mem_cons, List.mem_append] at hd
+      rcases hd with rfl | hd | hd
+      · exact ⟨y, List.mem_cons_of_mem _ (comps_psi_mem_of hqu (Or.inl rfl)), hxy⟩
+      · obtain ⟨e, he, hde⟩ := hx d (List.mem_cons_of_mem _ hd)
+        exact ⟨e, gc_arg hqu he, hde⟩
+      · obtain ⟨e, he, hde⟩ := hp d (List.mem_cons_of_mem _ hd)
+        exact ⟨e, gc_index hqu he, hde⟩
+  · obtain ⟨e, he, hde⟩ := hr d (List.mem_cons_of_mem _ hd)
+    exact ⟨e, gc_tail he, hde⟩
+
+private theorem shiftDom_fixed {V V' w u t : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hw : isOT w = true) (hVw : V < w) (hu : u ≤ shf V V' w) (ht : isOT t = true) :
+    ShiftDom V V' w u t (sh V V' t) := by
+  intro d hd
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact ⟨z, List.mem_cons_self, by simp⟩
+  · exact ⟨sh V V' d, List.mem_cons_of_mem _ (high_component_sh hV hV' hVV hw hVw hu ht hd), le_refl _⟩
+
+private theorem shiftDom_index {V V' w u t : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hw : isOT w = true) (hVw : V < w) (hu : u ≤ shf V V' w) (ht : isOT t = true) :
+    ShiftDom V V' w u t (shf V V' t) := by
+  intro d hd
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact ⟨z, List.mem_cons_self, by simp⟩
+  · exact ⟨sh V V' d, List.mem_cons_of_mem _ (high_index_sh hV hV' hVV ht hw hVw hu hd), le_refl _⟩
+
+/-- A target interval term admits a smaller shifted source above B with
+sufficient source components. The source may be arbitrary syntax. -/
+theorem shift_interval_coinitial {V V' w u : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hw : isOT w = true) (hVw : V < w) (hu : u ≤ shf V V' w) :
+    ∀ {B : T}, isOT B = true → ∀ c, sh V V' B < c →
+      ∃ r, B < r ∧ sh V V' r ≤ c ∧ ShiftDom V V' w u r c := by
+  intro B
+  induction B with
+  | z =>
+    intro _ c hc
+    refine ⟨one, T.z_lt_psi _ _ _, ?_, ?_⟩
+    · simpa [succ, sh_one] using succ_le_of_lt hc
+    · apply shiftDom_of_nil
+      exact comps_above_standard isOT_one (lt_of_le_of_lt (z_le V) hVw)
+  | psi p x t ihp ihx iht =>
+    intro hB c hc
+    have hp := isOT_sub hB
+    have hx := isOT_arg hB
+    have ht := isOT_rest hB
+    have hzw : z < w := lt_of_le_of_lt (z_le V) hVw
+    by_cases hVp : V < p
+    · rw [sh_psi_gt hVp] at hc
+      cases c with
+      | z => exact False.elim (T.not_lt_z _ hc)
+      | psi q y s =>
+        have hseen : ¬ p < w → ¬ shf V V' p < u := by
+          intro hpw
+          exact not_lt.mpr (le_trans hu
+            (shf_le_right hV hV' hVV hw (le_of_lt hVw) (not_lt.mp hpw)))
+        rcases T.psi_lt_psi.mp hc with hpq | ⟨rfl, hxy⟩ | ⟨rfl, rfl, hts⟩
+        · by_cases hVl : V < lev p
+          · have hfp : shf V V' p = sh V V' p := shf_eq_sh hV hV' hVV hVl
+            rw [hfp] at hpq
+            obtain ⟨v, hpv, hvq, hvd⟩ := ihp hp q hpq
+            have hVlv : V < lev v := lt_of_lt_of_le hVl (lev_le_of_le (le_of_lt hpv))
+            have hVv : V < v := lt_trans hVp hpv
+            have hfv : shf V V' v = sh V V' v := shf_eq_sh hV hV' hVV hVlv
+            refine ⟨psi v z z, T.psi_lt_psi.mpr (Or.inl hpv), ?_, ?_⟩
+            · rw [sh_psi_gt hVv, hfv, sh_z]
+              exact psi_mono_coords hvq (z_le _) (z_le _)
+            · apply shiftDom_psi ?_ (by simp [z_le]) hvd
+                (shiftDom_zero V V' w u y) (shiftDom_zero V V' w u s)
+              intro hvw
+              exact not_lt.mpr (le_trans hu (le_trans
+                (by rw [← hfv]; exact shf_le_right hV hV' hVV hw (le_of_lt hVw) (not_lt.mp hvw)) hvq))
+          · have hp0 : comps w p = [] := comps_above_standard hp
+              (lt_of_le_of_lt (not_lt.mp hVl) hVw)
+            have hsv0 : comps w (succ p) = [] := by rw [comps_succ_high hzw, hp0]
+            have hVsp : V < succ p := lt_trans hVp (lt_succ_self p)
+            have hq : shf V V' (succ p) ≤ q := by
+              rw [shf_succ hV hV' hVV hp (le_of_lt hVp)]
+              exact succ_le_of_lt hpq
+            refine ⟨psi (succ p) z z, T.psi_lt_psi.mpr (Or.inl (lt_succ_self p)), ?_, ?_⟩
+            · rw [sh_psi_gt hVsp, sh_z]
+              exact psi_mono_coords hq (z_le _) (z_le _)
+            · apply shiftDom_psi ?_ (by simp [z_le]) (shiftDom_of_nil hsv0)
+                (shiftDom_zero V V' w u y) (shiftDom_zero V V' w u s)
+              intro hsvw
+              exact not_lt.mpr (le_trans hu (le_trans
+                (shf_le_right hV hV' hVV hw (le_of_lt hVw) (not_lt.mp hsvw)) hq))
+        · obtain ⟨e, hxe, hey, hed⟩ := ihx hx y hxy
+          refine ⟨psi p e z, T.psi_lt_psi.mpr (Or.inr (Or.inl ⟨rfl, hxe⟩)), ?_, ?_⟩
+          · rw [sh_psi_gt hVp, sh_z]
+            exact psi_mono_coords (le_refl _) hey (z_le _)
+          · exact shiftDom_psi hseen hey (shiftDom_index hV hV' hVV hw hVw hu hp)
+              hed (shiftDom_zero V V' w u s)
+        · obtain ⟨r, htr, hrs, hrd⟩ := iht ht s hts
+          refine ⟨psi p x r, T.psi_lt_psi.mpr (Or.inr (Or.inr ⟨rfl, rfl, htr⟩)), ?_, ?_⟩
+          · rw [sh_psi_gt hVp]
+            exact psi_mono_coords (le_refl _) (le_refl _) hrs
+          · exact shiftDom_psi hseen (le_refl _) (shiftDom_index hV hV' hVV hw hVw hu hp)
+              (shiftDom_fixed hV hV' hVV hw hVw hu hx) hrd
+    · have hB0 : comps w (psi p x t) = [] := comps_above_standard hB
+        (lt_of_le_of_lt (not_lt.mp hVp) hVw)
+      refine ⟨succ (psi p x t), lt_succ_self _, ?_, ?_⟩
+      · simpa only [succ, sh_app, sh_one] using succ_le_of_lt hc
+      · apply shiftDom_of_nil
+        rw [comps_succ_high hzw, hB0]
+
+/-- Interval persistence for moving components, without any frame hypotheses. -/
+theorem persistent_sh_high {V V' w u g B A : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hw : isOT w = true) (hVw : V < w) (hu : u ≤ shf V V' w)
+    (hg : isOT g = true) (hB : isOT B = true) (hA : isOT A = true)
+    (hp : Persistent w g B A) :
+    Persistent u (sh V V' g) (sh V V' B) (sh V V' A) := by
+  intro c hcB hcA
+  obtain ⟨r, hBr, hrc, hdom⟩ := shift_interval_coinitial hV hV' hVV hw hVw hu hB c hcB
+  have hrA : r ≤ A := by
+    by_contra hn
+    have hAr : A < r := lt_of_not_ge hn
+    exact not_lt_of_ge (le_trans hrc hcA) (sh_lt_right hV hV' hVV hA hAr)
+  obtain ⟨d, hd, hgd⟩ := hp r hBr hrA
+  obtain ⟨e, he, hde⟩ := hdom d hd
+  exact ⟨e, he, le_trans (sh_le_right hV hV' hVV hg hgd) hde⟩
+
+#print axioms persistent_sh_high
+
+#print axioms sh_lt_right
 
 #print axioms persistent_sh_index
 #print axioms persistent_sh_argument_bound
