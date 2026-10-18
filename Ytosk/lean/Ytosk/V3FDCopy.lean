@@ -215,6 +215,34 @@ theorem old_vAnc_base_of_pair_values {M : Mat} {ρ : Valn} {rk : Bool → Nat �
   rw [hN, ← hP]
   exact hg
 
+/-- A counted child in the shorter matrix rules out a v change in one drop.
+This uses chg_struct, rather than equality of full prefix valuations. -/
+theorem v_take_of_counted_child {M : Mat} {ρ τ : Valn} {rkT : Bool → Nat → Nat}
+    (S : SInv M) (hC : Cons M ρ) (hG : Good3 M ρ)
+    {x i c : Nat} (hx : x + 1 = M.length) (hi : i < x)
+    (hT : Cons (M.take x) τ) (hRT : Rk (M.take x) rkT)
+    (hc : c ∈ CL (M.take x) i) : τ.v i = ρ.v i := by
+  apply (chg_off hx hC hG hT hRT i hi).2
+  intro hchg
+  have hTop := (chg_struct hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hchg).1 rfl hi
+  have hcCh := cl_mem_children hc
+  have hcCnt : Counted (M.take x) i c := by
+    unfold CL at hc
+    exact of_decide_eq_true (List.mem_filter.mp hc).2
+  exact hTop.2.1 c hcCh hcCnt
+
+/-- A row-1 child remaining in the prefix also rules out a v change in one drop.
+This handles the ancestor r even when r's own counted list is empty. -/
+theorem v_take_of_par1_child {M : Mat} {ρ τ : Valn} {rkT : Bool → Nat → Nat}
+    (S : SInv M) (hC : Cons M ρ) (hG : Good3 M ρ)
+    {x i c : Nat} (hx : x + 1 = M.length) (hi : i < x) (hc : c < x)
+    (hT : Cons (M.take x) τ) (hRT : Rk (M.take x) rkT)
+    (hp : par M 1 c = some i) : τ.v i = ρ.v i := by
+  apply (chg_off hx hC hG hT hRT i hi).2
+  intro hchg
+  have hTop := (chg_struct hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hchg).1 rfl hi
+  exact hTop.2.2 c hc hp
+
 /-- The precise remaining pointwise FrameDom conclusion, not a new residual. -/
 def RetainedLowNeed (V V' a B s y u g : T) : Prop :=
   ∀ C, sh V V' B < C → psi (shf V V' s) z z < C →
@@ -254,4 +282,6 @@ def RetainedLowOutsidePath (P : Mat) (ρP : Valn) (r i : Nat)
 #print axioms le1_take_forward
 #print axioms vAnc_of_prefix_pair
 #print axioms old_vAnc_base_of_pair_values
+#print axioms v_take_of_counted_child
+#print axioms v_take_of_par1_child
 end Ytosk.FDCopy
