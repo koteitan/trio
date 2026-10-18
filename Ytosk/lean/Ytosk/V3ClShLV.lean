@@ -2,6 +2,8 @@
 ClShL with VDomF and the first conjunct of KAG is false.
 RootGuardCounterexample.counterexample verifies every proposed premise and
 refutes the conclusion at a = V = 1. KA even holds without its level restriction.
+FrameOTCounterexample.counterexample also satisfies parent FrameOT, at a>V,
+and refutes the strengthened statement at the unchanged low level u=0.
 
 Positive results remain useful independently: persistent_sh_high transports
 interval persistence from every old standard level w > V; above_cut_interval_only
@@ -1820,6 +1822,185 @@ theorem counterexample : Premises ∧
 #print axioms counterexample
 
 end RootGuardCounterexample
+
+/-! ## Counterexample even with the existing parent FrameOT guard -/
+namespace FrameOTCounterexample
+
+abbrev num := RootGuardCounterexample.num
+def om (t : T) : T := psi t z z
+def D : T := om (RootGuardCounterexample.D)
+def V : T := psi z D z
+def V' : T := om (num 2)
+def a : T := om one
+def s : T := a
+def p : T := om (succ V)
+def B : T := psi p V z
+def y : T := psi p a z
+
+def pf : T := om (app V' one)
+def Bf : T := psi pf V z
+def yf : T := psi pf a z
+
+private theorem D_components {u d : T} (h : d ∈ comps u D) : d = z := by
+  rcases RootGuardCounterexample.single_components h with h | h | h
+  · exact h
+  · simp [comps] at h
+  · exact RootGuardCounterexample.D_components h
+
+private theorem V_components {u d : T} (h : d ∈ comps u V) : d = D ∨ d = z := by
+  rcases RootGuardCounterexample.single_components h with h | h | h
+  · exact Or.inl h
+  · exact Or.inr (D_components h)
+  · simp [comps] at h
+
+private theorem V_to_p {u d : T} (h : d ∈ comps u V) : d ∈ comps u p := by
+  by_cases hzu : lt z u = true
+  · simp [V, comps, hzu] at h
+  · have hu : u = z := le_antisymm (not_lt.mp hzu) (z_le _)
+    subst u
+    rcases V_components h with rfl | rfl <;> decide
+
+theorem old_endpoint : H a (H s y) = y := by decide
+
+theorem old_closedL : ClosedL a B (H a (H s y)) := by
+  intro u hu d hd
+  have hup : u ≤ p := le_trans (not_lt.mp hu) (show a ≤ p by decide)
+  rcases RootGuardCounterexample.single_components hd with rfl | hd | hd
+  · exact Or.inl (by decide)
+  · right; right
+    rw [old_endpoint]
+    exact persistent_of_shared_level hup (V_to_p hd)
+  · right; right
+    rw [old_endpoint]
+    exact persistent_of_shared_level hup hd
+
+theorem parent_OT : isOT (psi a B z) = true := by decide
+
+theorem vdom : VDomF V V' a := by
+  intro u _ d hd
+  rcases RootGuardCounterexample.single_components hd with rfl | hd | hd
+  · exact Or.inl (z_le _)
+  · simp [comps] at hd
+  · have hd0 := RootGuardCounterexample.num_components u 2 d hd
+    subst d
+    exact Or.inl (z_le _)
+
+theorem ka : KA V V' a := by
+  intro u _ d hd
+  rcases RootGuardCounterexample.single_components hd with rfl | hd | hd
+  · exact Or.inl (z_le _)
+  · simp [comps] at hd
+  · have hd0 := RootGuardCounterexample.num_components u 1 d hd
+    subst d
+    exact Or.inl (z_le _)
+
+structure Premises : Prop where
+  hV : isOT V = true
+  hV' : isOT V' = true
+  hVV : V < V'
+  ha : isOT a = true
+  hVa : V ≤ a
+  hB : isOT B = true
+  hsy : isOT (psi s y z) = true
+  hVs : V < s
+  hBs : ∀ q ∈ summands B, psi s y z ≤ q
+  hBV : ∀ q ∈ summands B, V < lev q
+  ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true
+  hhi : B < (split y (psi (succ s) z z)).1
+  hnp : ¬ ∃ R, (split y (psi (succ s) z z)).1 = app B R
+  hVD : VDomF V V' a
+  hKA : KA V V' a
+  hFO : isOT (psi a B z) = true
+  hcl : ClosedL a B (H a (H s y))
+
+theorem premises : Premises := by
+  refine ⟨by decide, by decide, by decide, by decide, by decide,
+    by decide, by decide, by decide, ?_, ?_, by decide, by decide, ?_, vdom, ka, parent_OT, old_closedL⟩
+  · intro q hq
+    have hqB : q = B := by simpa [B, summands] using hq
+    subst q
+    decide
+  · intro q hq
+    have hqB : q = B := by simpa [B, summands] using hq
+    subst q
+    decide
+  · rintro ⟨R, hR⟩
+    change psi p a z = psi p V R at hR
+    exact (show a ≠ V by decide) (T.psi.inj hR).2.1
+
+theorem subst_a : shf V V' a = app V' a := by
+  simp [shf, a, V, V', om, sub, sh, add, lt, one, RootGuardCounterexample.num]
+
+theorem subst_p : shf V V' p = pf := by
+  have hV : isOT V = true := by decide
+  have hV' : isOT V' = true := by decide
+  have hVV : V < V' := by decide
+  rw [shf_eq_sh hV hV' hVV (show V < lev p by decide)]
+  change sh V V' (psi (succ V) z z) = pf
+  rw [sh_psi_gt (lt_succ_self V), sh_z,
+    shf_succ hV hV' hVV hV (le_refl V), shf_self]
+  rfl
+
+theorem subst_B : sh V V' B = Bf := by
+  have hfix : sh V V' V = V := sh_fix (by decide) (by decide)
+  change sh V V' (psi p V z) = Bf
+  rw [sh_psi_gt (show V < p by decide), subst_p, hfix, sh_z]
+  rfl
+
+theorem subst_y : sh V V' y = yf := by
+  have hfix : sh V V' a = a := sh_fix (by decide) (by decide)
+  change sh V V' (psi p a z) = yf
+  rw [sh_psi_gt (show V < p by decide), subst_p, hfix, sh_z]
+  rfl
+
+theorem new_component : D ∈ comps z (sh V V' B) := by rw [subst_B]; decide
+
+theorem witness_bounds : sh V V' B < yf ∧
+    yf ≤ H (shf V V' a) (H (shf V V' s) (sh V V' y)) := by
+  change sh V V' B < yf ∧ yf ≤ H (shf V V' a) (H (shf V V' a) (sh V V' y))
+  rw [subst_B, subst_y, subst_a]
+  decide
+
+theorem new_not_closedL : ¬ ClosedL (shf V V' a) (sh V V' B)
+    (H (shf V V' a) (H (shf V V' s) (sh V V' y))) := by
+  intro hc
+  have hu : ¬ lt (shf V V' a) z = true := T.not_lt_z _
+  rcases hc z hu D new_component with h | h | h
+  · exact (show ¬ D ≤ sh V V' B by rw [subst_B]; decide) h
+  · exact (show ¬ ∃ d ∈ comps z (shf V V' a), D ≤ d by rw [subst_a]; decide) h
+  · exact (show ¬ ∃ d ∈ Gc z yf, D ≤ d by decide)
+      (h yf witness_bounds.1 witness_bounds.2)
+
+/-- The real G3 nonprefix cut condition excludes this pure-term example. -/
+theorem not_cut : B ∉ cutsNSG s (split y (psi (succ s) z z)).1 := by decide
+
+/-- Even the stronger old seed bound holds: here s=a. -/
+theorem old_seed : SubSmallA a B s := by
+  intro u _ d hd
+  exact Or.inr (Or.inr ⟨d, hd, le_refl _⟩)
+
+/-- The second KAG conjunct is also empty on this example. -/
+theorem moving_guard : ∀ u, u ≤ V → ∀ n g, g ∈ compsAN V u n (sub s V) →
+    g ≤ psi s z z ∨ g ≤ B := by
+  intro u _ n g hg
+  have hsub : sub s V = s := by decide
+  rw [hsub] at hg
+  cases n with
+  | zero => simp [compsAN] at hg
+  | succ n =>
+    have hVone : ¬ lt V one = true := by decide
+    simp [s, a, om, compsAN, hVone] at hg
+    cases n <;> simp [compsAN] at hg
+
+/-- All original premises and VD, KA, FrameOT hold, but the copy conclusion fails. -/
+theorem counterexample : Premises ∧
+    ¬ ClosedL (shf V V' a) (sh V V' B)
+      (H (shf V V' a) (H (shf V V' s) (sh V V' y))) :=
+  ⟨premises, new_not_closedL⟩
+
+#print axioms counterexample
+
+end FrameOTCounterexample
 
 #print axioms moving_root_bound_of_frameOT
 #print axioms persistent_sh_high
