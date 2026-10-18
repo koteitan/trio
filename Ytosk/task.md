@@ -117,6 +117,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 全員の生産者を差し込んだ最上位（V3TopV2 の中間の形 `trio_terminates_main_V2_base`）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
+    - ⚠ 2026-10-19: 残りの FDsh は偽（`FDCut.not_FDsh`）。今の最上位は偽の仮定を含む。FDsh を FDshCopyKVRA（写しの枠の KVRA・FrameOT・PH3cKindG つき）に替えるのが最優先（desc）。
     - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残りは 17 個（2026-10-18 夜、HRwClL を外した）:
       - drop: HDropV2W（落とす補題の 5 欄）・T0UpgAbsV2（t = 0 の強い吸収、易しい形の外）・HSeedV2（SeedR）
       - 共通: HFrameV2・HLeafV2（枠の 10 欄・葉の条件）、HBumpExt（標準形の接頭辞で bump 項は増える）、HSibColV2（同じ列の兄弟 SibColU）
@@ -144,7 +145,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | T2SeedPResRCV2B | 11 集合と std_b で例外 0（qn の V < t₁ は qncl.py、C の X₁ < σX₁ は cstrict.py で 11 集合と ext3s で例外 0） | seedqr.py・seedsvc.py。C の un は StepCtxT2 で悪い形を外した |
         | T2CBadOut | — | 悪い形（ext2 に 6 個）の t = 2 の展開。全体の主張の帰結 |
         | T2SeedDomV2B | 11 集合と std_b で例外 0 | seeddom2.py（T2VRAQNDom は T2SeedQNDom と T2SeedQNBase から） |
-        | FDsh | 11 集合で例外 0 | probe_fdsh 全数 |
+        | FDsh | **偽**（`not_FDsh`）。実際の場面の 11 集合では例外 0 だった | probe_fdsh 全数。項だけの主張なので実測では確かめられない |
         | （証明済み）T2SVc0 | 11 集合と ext3s で例外 0 だった。証明した | svpre.py |
         | （証明済み）T2CFrRes | 11 集合と ext3s で例外 0 だった。証明した | cvra.py |
         | T2VRACopy・T2VAncStep | 11 集合と ext3s で例外 0 | probe_t2vra・vanc1 |

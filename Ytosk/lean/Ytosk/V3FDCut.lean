@@ -34,6 +34,45 @@ def FDshCopy : Prop := ∀ {V V' a B s y : T} {Lv : List T}
     FrameDom (shf V V' a) (sh V V' B) (shf V V' s)
       (H (shf V V' s) (sh V V' y))
 
+/-- Proposed repair with VDomF and old-parent retention at every low level.
+This is a statement, not a proved consequence of the path-restricted top guards. -/
+def FDshCopyVDKA : Prop := ∀ {V V' a B s y : T} {Lv : List T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a)
+    (hs : ∀ t ∈ Lv ++ [psi s y z], Single t)
+    (hp : (Lv ++ [psi s y z]).Pairwise (fun p q => q ≤ p))
+    (hlev : V < a ∨ ∀ t ∈ Lv ++ [psi s y z], V < lev t)
+    (hB : B = spArg a z (sumN Lv))
+    (hFO : isOT (psi a B z) = true)
+    (hKind : B ≠ z → PH3cKindG B (split y (psi (succ s) z z)).1
+      (split y (psi (succ s) z z)).2 s)
+    (hVs : V < s)
+    (ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true)
+    (hVD : VDomF V V' a)
+    (hKA : ClShLGuarded.KA V V' a)
+    (hFD : FrameDom a B s (H s y)),
+    FrameDom (shf V V' a) (sh V V' B) (shf V V' s)
+      (H (shf V V' s) (sh V V' y))
+
+/-- Stronger proposed repair, also retaining KG at every low level.
+T2VRAK supplies this only at LevAt levels, not automatically at every u<=V. -/
+def FDshCopyKVRA : Prop := ∀ {V V' a B s y : T} {Lv : List T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a)
+    (hs : ∀ t ∈ Lv ++ [psi s y z], Single t)
+    (hp : (Lv ++ [psi s y z]).Pairwise (fun p q => q ≤ p))
+    (hlev : V < a ∨ ∀ t ∈ Lv ++ [psi s y z], V < lev t)
+    (hB : B = spArg a z (sumN Lv))
+    (hFO : isOT (psi a B z) = true)
+    (hKind : B ≠ z → PH3cKindG B (split y (psi (succ s) z z)).1
+      (split y (psi (succ s) z z)).2 s)
+    (hVs : V < s)
+    (ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true)
+    (hK : ∀ u, u ≤ V → KVRA V V' a Lv (psi s y z) u)
+    (hFD : FrameDom a B s (H s y)),
+    FrameDom (shf V V' a) (sh V V' B) (shf V V' s)
+      (H (shf V V' s) (sh V V' y))
+
 /-- A zero state needs no transport when the upper endpoint has the child's
 own leading index. This handles the measured low-level interval exceptions. -/
 theorem zero_FrameDom_of_shared_level {a s Y : T} (has : a ≤ s) :
@@ -198,5 +237,27 @@ theorem counterexample : ¬ FDshCopy := by
 
 #print axioms counterexample
 end PrefixCounterexample
+
+/-- The pure residual currently assumed at top level is false. -/
+theorem not_FDsh : ¬ FDsh := by
+  intro h
+  apply ZeroStateCounterexample.new_not_FrameDom
+  apply h ZeroStateCounterexample.V ZeroStateCounterexample.V'
+    ZeroStateCounterexample.a ZeroStateCounterexample.B
+    ZeroStateCounterexample.s ZeroStateCounterexample.y
+  · decide
+  · decide
+  · decide
+  · decide
+  · decide
+  · decide
+  · decide
+  · decide
+  · simp [ZeroStateCounterexample.B, summands]
+  · decide
+  · decide
+  · exact ZeroStateCounterexample.old_FrameDom
+
+#print axioms not_FDsh
 
 end Ytosk.FDCut

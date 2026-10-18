@@ -3937,4 +3937,5 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 
 - FDsh を使うのは qFCo_sh（V3T2FC）の 1 か所だけ（σ で動き書き換える写しの枠、V < s）。実際の場面の情報（B = spArg a z (sumN Lv)、FrameOT、PH3cKindG、古い FrameDom）を足した FDshCopy も偽: `FDCut.ZeroStateCounterexample.counterexample`（B = 0）と `FDCut.PrefixCounterexample.counterexample`（本物の接頭辞の種類）。Om(t) = ψ_t(0)、D = Om(Om(5))、V = ψ_1(D)、V′ = Om(2)、a = V + 1、s = V + V。f(a) = Om(2) + 1 で D が消え、f(s) = Om(2) + V に D が残る。どちらも KA が偽。
 - 13 集合の実測（t2 の行列 1,038,963 個、実際の写しの枠 2,281,140 回）: 新しい FrameDom は破れ 0。成分の義務 5,977,466 個のうち直接の上限 5,977,442、切り口・接頭辞 3、残り 21（すべて状態 0、ext3s、u = 0）は f(s) と同じ先頭の添字で閉じる（`zero_FrameDom_of_shared_level`）。
-- 次: KVRA（VDomF ∧ KAG、最上位がすでに持つ写しの枠の条件）を足した形を試す。
+- **FDsh は偽**（`FDCut.not_FDsh`、公理は propext・Quot.sound。状態 0 の反例が FDsh の前提をすべて満たす）。よって今の最上位 `trio_terminates_main_V2_cur` は偽の仮定を含み、そのままでは中身がない。FDsh は 17 個の残りのうち唯一の項だけの主張で、「11 集合で例外 0」は実際の場面の測定にすぎなかった（項の主張は実測では確かめられない）。ほかの 16 個は標準形の行列についての主張。
+- 直す道: KVRA を足した FDshCopyKVRA（全段の VDomF、低い段すべての KA・KG、FrameOT、PH3cKindG）。実際の写しの枠 2,281,140 回で、全段の VDomF・低い段すべての KA・KG は破れ 0。VDomF は t2CopyK_vDom_of で全段が出るが、今の最上位の hAG（T2VRAK KAG）は KA・KG を道の段 LevAt でしか出さない。
