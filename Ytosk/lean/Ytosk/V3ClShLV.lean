@@ -183,10 +183,11 @@ theorem compsAN_level_eq {V u w : T} (hu : u ≤ succ V) (hw : w ≤ succ V) :
     simp only [compsAN, he, compsAN_level_eq hu hw n y,
       compsAN_level_eq hu hw n (sub s V), compsAN_level_eq hu hw n c]
 
-/-- An old component above V survives at any new level at most V. -/
-theorem high_component_sh_low {V V' u w : T}
+/-- Forward component transport at any new level seeing all old visible indices. -/
+theorem high_component_sh_at {V V' u w : T}
     (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
-    (hu : u ≤ V) (hw : V < w) :
+    (hw : V < w)
+    (hcover : ∀ s, isOT s = true → w ≤ s → u ≤ shf V V' s) :
     ∀ n {t g : T}, size t ≤ n → isOT t = true → g ∈ comps w t →
       sh V V' g ∈ comps u (sh V V' t)
   | 0, t, _, hn, _, hg => by
@@ -208,19 +209,18 @@ theorem high_component_sh_low {V V' u w : T}
       · rename_i hsw
         have hVs : V < s := lt_of_lt_of_le hw (not_lt.mp hsw)
         rw [sh_psi_gt hVs]
-        have hfu : ¬ shf V V' s < u := not_lt.mpr
-          (le_trans hu (le_trans (le_of_lt hVV)
-            (le_of_lt (lt_shf hV hV' (le_of_lt hVV) (isOT_sub ht) hVs))))
+        have hfu : ¬ shf V V' s < u :=
+          not_lt.mpr (hcover s (isOT_sub ht) (not_lt.mp hsw))
         simp only [List.mem_cons, List.mem_append] at hg
         rcases hg with rfl | hg | hg
         · exact comps_psi_mem_of hfu (Or.inl rfl)
         · exact comps_psi_mem_of hfu (Or.inr (Or.inl
-            (high_component_sh_low hV hV' hVV hu hw n hny (isOT_arg ht) hg)))
+            (high_component_sh_at hV hV' hVV hw hcover n hny (isOT_arg ht) hg)))
         · have hsub : g ∈ comps w (sub s V) := by
             rw [comps_sub_above s V (fun q hq =>
               lt_trans (lev_lt_of_summand hV hq) hw)]
             exact hg
-          have hd := high_component_sh_low hV hV' hVV hu hw n hns
+          have hd := high_component_sh_at hV hV' hVV hw hcover n hns
             (isOT_sub_sfx (isOT_sub ht) V) hsub
           obtain ⟨P, hP, _⟩ := add_eq_app_prefix V' (sh V V' (sub s V))
           have hidx : sh V V' g ∈ comps u (shf V V' s) := by
@@ -228,9 +228,33 @@ theorem high_component_sh_low {V V' u w : T}
             rw [hP, comps_app]
             exact List.mem_append.mpr (Or.inr hd)
           exact comps_psi_mem_of hfu (Or.inr (Or.inr (Or.inl hidx)))
-    · have hd := high_component_sh_low hV hV' hVV hu hw n hnc (isOT_rest ht) hg
+    · have hd := high_component_sh_at hV hV' hVV hw hcover n hnc (isOT_rest ht) hg
       rw [sh_psi_app, comps_app]
       exact List.mem_append.mpr (Or.inr hd)
+
+/-- An old component above V survives at any new level at most V. -/
+theorem high_component_sh_low {V V' u w : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hu : u ≤ V) (hw : V < w) :
+    ∀ n {t g : T}, size t ≤ n → isOT t = true → g ∈ comps w t →
+      sh V V' g ∈ comps u (sh V V' t) := by
+  apply high_component_sh_at hV hV' hVV hw
+  intro s hs hws
+  exact le_trans hu (le_trans (le_of_lt hVV)
+    (le_of_lt (lt_shf hV hV' (le_of_lt hVV) hs (lt_of_lt_of_le hw hws))))
+
+/-- Forward transport at any new level at most f(w), for an old level w > V. -/
+theorem high_component_sh {V V' u w t g : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hw : isOT w = true) (hVw : V < w) (hu : u ≤ shf V V' w)
+    (ht : isOT t = true) (hg : g ∈ comps w t) :
+    sh V V' g ∈ comps u (sh V V' t) := by
+  apply high_component_sh_at hV hV' hVV hVw ?_ (size t) (Nat.le_refl _) ht hg
+  intro s hs hws
+  rcases (le_iff _ _).mp hws with hws | rfl
+  · exact le_trans hu (le_of_lt
+      (shf_lt_shf hV hV' (le_of_lt hVV) hw hs (le_of_lt hVw) hws))
+  · exact hu
 
 /-- Components of a above V are retained in the new subscript f(a). -/
 theorem high_index_sh_low {V V' a u w g : T}
@@ -246,6 +270,39 @@ theorem high_index_sh_low {V V' a u w g : T}
   unfold shf
   rw [hP, comps_app]
   exact List.mem_append.mpr (Or.inr hd)
+
+/-- High old-index witnesses survive in f(a), up to the corresponding new level. -/
+theorem high_index_sh {V V' a u w g : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hw : isOT w = true) (hVw : V < w)
+    (hu : u ≤ shf V V' w) (hg : g ∈ comps w a) :
+    sh V V' g ∈ comps u (shf V V' a) := by
+  have hgsub : g ∈ comps w (sub a V) := by
+    rw [comps_sub_above a V (fun q hq => lt_trans (lev_lt_of_summand hV hq) hVw)]
+    exact hg
+  have hd := high_component_sh hV hV' hVV hw hVw hu (isOT_sub_sfx ha V) hgsub
+  obtain ⟨P, hP, _⟩ := add_eq_app_prefix V' (sh V V' (sub a V))
+  unfold shf
+  rw [hP, comps_app]
+  exact List.mem_append.mpr (Or.inr hd)
+
+/-- At a matched high level f(w), only the old interval alternative remains.
+No VDomF or KA is needed here: every new component has an old moving preimage. -/
+theorem high_components_interval_only {V V' a B A w g' : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hB : isOT B = true) (hw : isOT w = true)
+    (hVw : V < w) (hwa : w ≤ a) (hcl : ClosedL a B A)
+    (hg' : g' ∈ comps (shf V V' w) (sh V V' B)) :
+    g' ≤ sh V V' B ∨ (∃ d ∈ comps (shf V V' w) (shf V V' a), g' ≤ d) ∨
+      ∃ g ∈ comps w B, g' = sh V V' g ∧ Persistent w g B A := by
+  obtain ⟨g, hg, rfl⟩ := comps_sh hV hV' hVV hw (le_of_lt hVw) hB g' hg'
+  have hgo := isOT_of_mem_comps w hB hg
+  rcases hcl w (show ¬ lt a w = true from not_lt.mpr hwa) g hg with h | ⟨d, hd, hgd⟩ | h
+  · exact Or.inl (sh_le_sh hV hV' (le_of_lt hVV) hgo hB h)
+  · exact Or.inr (Or.inl ⟨sh V V' d,
+      high_index_sh hV hV' hVV ha hw hVw (le_refl _) hd,
+      sh_le_sh hV hV' (le_of_lt hVV) hgo (isOT_of_mem_comps w ha hd) hgd⟩)
+  · exact Or.inr (Or.inr ⟨g, hg, rfl, h⟩)
 
 /-- Moving components need no extra old-index guard: their unresolved case
 is precisely the old interval alternative at V or succ V. -/
@@ -432,6 +489,8 @@ theorem persistent_iff_rightCorners {u g B A : T} :
     obtain ⟨e, he, hde⟩ := hdom d hd
     exact ⟨e, he, le_trans hgd hde⟩
 
+#print axioms high_components_interval_only
+#print axioms high_component_sh
 #print axioms persistent_iff_rightCorners
 #print axioms rightCorners_coinitial
 
