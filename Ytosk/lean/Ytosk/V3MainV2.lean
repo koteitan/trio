@@ -506,9 +506,9 @@ theorem pre_V2 (hD : HDropV2) (hSd : HSeedV2) (hT : HTakeV2) {M : Mat} {ρ : Val
     (take_ne_nil_of hj (by omega)) Ij⟩
 
 theorem ctx_V2 (hD : HDropV2) (hSd : HSeedV2) (hT : HTakeV2) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hE : M ≠ []) (I : Inv3V2 M ρ rk)
-    (hRw : RwClosedL M ρ) : StepCtxV2 M ρ rk :=
-  ⟨hM, hS, sInv_std hM hS, I, res3AW_of_V2 hD hSd hM hS hE I, pre_V2 hD hSd hT hM hS I, hRw⟩
+    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hE : M ≠ []) (I : Inv3V2 M ρ rk) :
+    StepCtxV2 M ρ rk :=
+  ⟨hM, hS, sInv_std hM hS, I, res3AW_of_V2 hD hSd hM hS hE I, pre_V2 hD hSd hT hM hS I⟩
 
 /-- **`RwClosed` passes to the last drop** `M.take (|M| − 1)` with `drop1` (the drop lemma from `Res3AW.drop`). -/
 theorem rw_last_V2 (hD : HDropV2) (hSd : HSeedV2) {M : Mat} {ρ : Valn}
@@ -605,7 +605,7 @@ theorem expT1Out_of_step (h1 : ExpT1V2) : ExpT1OutV2 := by
 /-! ## 帰納法 -/
 
 /-- **Every nonempty standard matrix other than SRO has a valuation with `Inv3V2`.** -/
-theorem hInvV2_all (hD : HDropV2) (hSd : HSeedV2) (hT : HTakeV2) (hRL : HRwClL)
+theorem hInvV2_all (hD : HDropV2) (hSd : HSeedV2) (hT : HTakeV2)
     (h0 : ExpT0OutV2) (h1 : ExpT1OutV2) (h2 : ExpT2V2) (hCB : T2CBadOut) :
     ∀ M, Std M → M ≠ SRO → M ≠ [] → ∃ ρ rk, Inv3V2 M ρ rk := by
   intro M hM
@@ -620,7 +620,7 @@ theorem hInvV2_all (hD : HDropV2) (hSd : HSeedV2) (hT : HTakeV2) (hRL : HRwClL)
     by_cases hME : M = []
     · subst hME; exact absurd rfl hNE
     obtain ⟨ρ, rk, I⟩ := ih hMS hME
-    have C := ctx_V2 hD hSd hT hM hMS hME I (hRL M ρ rk hM hMS hME I)
+    have C := ctx_V2 hD hSd hT hM hMS hME I
     have hpre : ∀ j, j < M.length → M.take j ≠ [] → ∃ ρ' rk', Inv3V2 (M.take j) ρ' rk' := by
       intro j hj hjE
       have hj1 : 1 ≤ j := by
@@ -699,11 +699,11 @@ theorem hT2_V2 (h2 : ExpT2V2) (hR2 : R2V2) (hCB : T2CBadOut) {M : Mat} {ρ : Val
 
 /-- **Desc3 from the residuals**, with `t = 0` and `t = 1` in the conclusion forms `ExpT0OutV2`・`ExpT1OutV2`
 (2026-10-17: no strong absorption `HAbSV2`; the `t = 0` descent comes from t0's engine). -/
-theorem desc3_V2O (hD : HDropV2) (hSd : HSeedV2) (hT : HTakeV2) (hRL : HRwClL)
+theorem desc3_V2O (hD : HDropV2) (hSd : HSeedV2) (hT : HTakeV2)
     (h0 : ExpT0OutV2) (h1 : ExpT1OutV2) (h2 : ExpT2V2) (hR2 : R2V2) (hCB : T2CBadOut) : Desc3 := by
   intro M n hM hS hE
-  obtain ⟨ρ, rk, I⟩ := hInvV2_all hD hSd hT hRL h0 h1 h2 hCB M hM hS hE
-  have C := ctx_V2 hD hSd hT hM hS hE I (hRL M ρ rk hM hS hE I)
+  obtain ⟨ρ, rk, I⟩ := hInvV2_all hD hSd hT h0 h1 h2 hCB M hM hS hE
+  have C := ctx_V2 hD hSd hT hM hS hE I
   have R := res3D_of_V2 C
   obtain ⟨t', hv, _, hlt⟩ := desc_stepV2 hE (Inv3V2.toC C.S I) R (hT0_V2 h0 C) (hT1_V2 h1 C)
     (hT2_V2 h2 hR2 hCB C R) n

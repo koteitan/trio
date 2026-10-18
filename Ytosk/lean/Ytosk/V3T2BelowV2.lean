@@ -217,12 +217,12 @@ def T2SeedOTV2 : Prop :=
 
 /-- **`T2BelowXResV2` from the named residuals** (`T0RwRes` for `RwClosed M`, the seed residuals
 `T2SeedPResV2`, `T2BelowRV2` and `T2SeedOTV2`). -/
-theorem t2BelowXResV2_of (hRw : T0RwRes) (hR : T2BelowRV2) (hP : T2SeedPResV2) (hOT : T2SeedOTV2) :
+theorem t2BelowXResV2_of (hR : T2BelowRV2) (hP : T2SeedPResV2) (hOT : T2SeedOTV2) :
     T2BelowXResV2 := by
   intro M ρ rk C hM hS I R hz h2
   refine t2BelowXResAt_of_L (fun r L hlen hr n hn hG σ hCN hOTx hor hoq hdec => ?_) (hP M ρ rk C hz h2)
     (hOT M ρ rk C hz h2) hM hS I R hz h2
   obtain ⟨h1, h3⟩ := hR M ρ rk C hz h2 r L hlen hr n hn hG σ hCN hOTx hor hoq hdec
-  exact ⟨fun p hp => ⟨C.I.vra.toLast, C.I.ph, hRw M ρ rk C.toStepCtxV2, (h1 p hp).1, (h1 p hp).2⟩, h3⟩
+  exact ⟨fun p hp => ⟨C.I.vra.toLast, C.I.ph, (h1 p hp).1, (h1 p hp).2⟩, h3⟩
 
 end Ytosk

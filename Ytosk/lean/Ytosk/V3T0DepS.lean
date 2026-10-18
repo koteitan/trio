@@ -8,6 +8,7 @@ V3T0DepU の `t0_dep_otU`・`t0_otdU` の写し。書き換えの一致（hagree
 import Ytosk.V3T0Weak
 import Ytosk.V3T0ShB
 import Ytosk.V3ShadowL
+import Ytosk.V3CutClosed
 
 namespace Ytosk
 
@@ -63,7 +64,6 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
       Lhd z (σ.v p) (ρ.v p))
     (hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g))
     (hPH : PH3cG M ρ)
-    (hClB : RwClosedL M ρ)
     (hVchgR : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
@@ -642,26 +642,16 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
                           have e := split_app (psi (succ s) z z) y
                           rw [h0, hlo] at e; simp [app] at e; exact hyz e.symm
                         have hl' : Lhd z (psi s y' z) (psi s y z) := by have h := hlc'; rw [es] at h; exact h
-                        exact shadow_hShL hBc ht hnt hyz' hl' (by
-                    have h := hSi
-                    rw [es, step_eq_app_of_not (fun r hr => le_trans (le_of_lt hl'.1) (hBc r hr)) hnt] at h
-                    exact h) (hClB i hiM Lc c [] (by rw [hclM]) s y hsy ht (by
-                          have e := split_app (psi (succ s) z z) y
-                          rw [hlo, app_z_right] at e
-                          rw [e]; exact ht.1) (by
-                          rintro ⟨R1, hR1⟩
-                          have e := split_app (psi (succ s) z z) y
-                          rw [hlo, app_z_right] at e
-                          rw [e, e1] at hR1
-                          rw [← hB, hBk1, app_assoc] at hR1
-                          have h2 := app_left_cancel0 hR1
-                          have hκt : κ1 = psi a1 x1 z := by
-                            rcases mem_cutsNSG_psi.mp hκ1 with ⟨u, _, rfl⟩ | ⟨u, _, rfl⟩ | ⟨u, hu, _⟩
-                            · simp only [app, psi.injEq] at h2; rw [h2.1, h2.2.1]
-                            · simp only [app, psi.injEq] at h2; rw [h2.2.1]
-                            · simp [cutsNSG] at hu
-                          have hBy : B = y := by rw [hBk1, hκt, e1]
-                          have := ht.1; rw [hBy] at this; exact lt_irrefl' _ this))
+                        exact CutClosed.shadow_hShL_from_kind hvot hBot hc0
+                          (fun hBz => hPH i hiM Lc c [] (by rw [hclM]) s y hsy hBz ht)
+                          (by
+                            have e := split_app (psi (succ s) z z) y
+                            rw [hlo, app_z_right] at e
+                            rw [e]; exact ht.1) hnp
+                          hBc ht hnt hyz' hl' (by
+                            have h := hSi
+                            rw [es, step_eq_app_of_not (fun r hr => le_trans (le_of_lt hl'.1) (hBc r hr)) hnt] at h
+                            exact h)
                           (fun u hu hau g hg => hVR i c Lc s y hi hcr hclM hdi hdc hsy ht hhz u
                             (Or.inr (hU u hu)) hau g hg)
                     · have := ht.1; rw [(hchv hvc).1] at this; exact absurd this (T.not_lt_z _))
@@ -723,7 +713,6 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
     (hVR : VSmallRP M (r + L) r ρ)
     (hPH : PH3cG M ρ)
-    (hClB : RwClosedL M ρ)
     (hVchgRN : ∀ g, par M 0 r = some g → ∀ s' y', (drop1 M (r + L) rkM).o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
     (hG0N : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
@@ -1023,7 +1012,7 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     intro i hi
     have hdep := t0_dep_otS hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT hσB hσBv
       hoffD hσmid hσlast hF hVS hVR hFO hTD hKD (hAbsS n hn2 σ hCN) hlt hl2 hy' (hLast n hn2 g hg) hS3 hS2
-      hPH hClB (hVchgRN g hg) (hG0N n hn2 g hg)
+      hPH (hVchgRN g hg) (hG0N n hn2 g hg)
     refine ⟨fun hd => ?_, fun hd => ⟨(hdep false i hi).1, (hdep false i hi).2.1 hd⟩⟩
     obtain ⟨hot, hlt, hR, hRE⟩ := hdep true i hi
     refine ⟨hot, hlt hd, hR rfl hd, fun hne => ?_, hRE rfl hd⟩

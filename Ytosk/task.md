@@ -117,18 +117,17 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 全員の生産者を差し込んだ最上位（V3TopV2 の中間の形 `trio_terminates_main_V2_base`）
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
-    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残りは 18 個（2026-10-17 夜）:
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残りは 17 個（2026-10-18 夜、HRwClL を外した）:
       - drop: HDropV2W（落とす補題の 5 欄）・T0UpgAbsV2（t = 0 の強い吸収、易しい形の外）・HSeedV2（SeedR）
-      - 共通: HFrameV2・HLeafV2（枠の 10 欄・葉の条件）、HBumpExt（標準形の接頭辞で bump 項は増える）、HRwClL（すべての標準形で RwClosedL）、HSibColV2（同じ列の兄弟 SibColU）
+      - 共通: HFrameV2・HLeafV2（枠の 10 欄・葉の条件）、HBumpExt（標準形の接頭辞で bump 項は増える）、HSibColV2（同じ列の兄弟 SibColU）
       - t0: T0ArgBRes
       - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom と T2SeedCDom1）
       - t2 のそのほか: T2CBadOut（悪い形の展開、大づかみ）、T2UpgAbsW、FDsh、T2VRACopy、T2VAncStep・T2VRAK KAG（写しの枠の KVRA）
       - 次の大きな仕事の候補（2026-10-18）: 手早く減らせる残りは尽きた。どれも新しい値の不変条件を帰納法で運ぶ仕事。
-        - HRwClL: RwClosed を運んだ仕組み（V3RwClT0・V3RwClDrop・V3RwClT1・V3RwClT2・V3RwClSeed・V3RwClSh・V3RwClCopy）を弱い RwClosedL に作り直して運ぶ。FrameDom だけからは出ない（desc の反例）
         - T2VAncStep: VAncStep はすべての標準形で測って真。Inv3V2 の欄にして落とし・t0・t1・t2 で運ぶ。中身は「落ちる加数の成分 ≤ Ω_h」（desc）
         - T2CBadOut: C の種を K = M[2].take (x + 1) を基準に作り直す（desc の計画）
         - T2SeedPResRCV2B の qr の w1・dom、sv・C の lhd: σ が X₁ を動かさない構造（吸収）と、σ で保たれる逃げ道
-      - 消えたもの（このセッション）: T2SeedOTRestV2、T2SVc0・T2CFrRes（sv・C の種の枠: `no_chg_before_c0`・`t2SVc0'_of_drop`・`cl_C` で証明）、T2VRAQNDom（T2SeedQNDom と T2SeedQNBase から）、T2VRASeedSVC・T2SeedPreShapeSVC（T2SVc0・T2CFrRes に）、T2X1Cl・CopyLowK（偽、HRwClL に）
+      - 消えたもの（このセッション）: T2SeedOTRestV2、T2SVc0・T2CFrRes（sv・C の種の枠: `no_chg_before_c0`・`t2SVc0'_of_drop`・`cl_C` で証明）、T2VRAQNDom（T2SeedQNDom と T2SeedQNBase から）、T2VRASeedSVC・T2SeedPreShapeSVC（T2SVc0・T2CFrRes に）、T2X1Cl・CopyLowK（偽、HRwClL に）、HRwClL（2026-10-18: 使う側 2 か所を G3 の切り口の補題 `CutClosed.shadow_hShL_from_kind` に替え、StepCtxV2 の欄 rw ごと外した。RwClosedL 自体は証明していない）
       - 残りの測定の状態（2026-10-17、lead。どれも Lean と同じ形の probe）
 
         | 残り | 測定 | 備考 |
@@ -149,7 +148,6 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | （証明済み）T2SVc0 | 11 集合と ext3s で例外 0 だった。証明した | svpre.py |
         | （証明済み）T2CFrRes | 11 集合と ext3s で例外 0 だった。証明した | cvra.py |
         | T2VRACopy・T2VAncStep | 11 集合と ext3s で例外 0 | probe_t2vra・vanc1 |
-        | HRwClL | 12 集合（11 集合＋ext3s）で例外 0 | rwl2.py。偽の RwClosed・T2X1Cl・CopyLowK の代わり |
         | T2VRAK KAG | 11 集合で例外 0 | probe_t2vrak |
         | T2UpgAbsW | 11 集合と std_b で例外 0 | 強い形か悪い形 T2UABad |
         | HSibColV2 | 11 集合と std_b で例外 0 | sibcolall.py（SibColW） |

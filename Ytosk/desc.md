@@ -3924,3 +3924,11 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 追記 5（trio-codex、Lean で検証）: 進んだ部分（すべて V3ClShLV.lean、公理は propext・Quot.sound）。FrameOT で σ で動く根の成分は σB 未満（`moving_root_bound_of_frameOT`）。動かない添字の間の区間を f で運ぶ（`persistent_add`・`persistent_sub_or`・`persistent_shf_frozen`・`persistent_frozen_to_high_bound`）。区間の上の端の σ 像 σ(H(a, H(s, y))) = H(f(a), H(f(s), σy))（`sh_H_H`）。組み立て `closedL_sh_of_retained_transport`（残りは段 u ≤ V の動かない成分の区間だけ）。
 - 追記 6（trio-codex、Lean で検証）: VDomF・KA・FrameOT を足した ClShL も偽（`FrameOTCounterexample.counterexample`）。O(x) = ψ_x(0) として D = O(O(O(5)))、V = ψ_0(D)、V′ = O(2)、a = s = O(1)、p = O(V + 1)、B = ψ_p(V)、y = ψ_p(a)。段 0 の動かない成分 D は古い添字 p を通して区間の逃げ道を持つが、f(p) = O(O(2) + 1) で D が消え、σB には動かない引数 V を通して D が残る。KG と古い SubSmallA も成り立つ（`old_seed`・`moving_guard`）。欠けているのは実際の切り口の形（`not_cut`: B ∉ cutsNSG s hi(y)）。作った 72,659 組にはこの入れ子の形がなかった。仮定を足す ClShL の道はやめる。
 - 追記 7（trio-codex、Lean で検証）: 切り口の道。`cutsHG_closed`: 標準形の G3 の切り口 B の段 u の成分 g は、g ≤ B か s の成分以下か Persistent u g B (h ++ R)。`closedL_of_shadow_cut`: NSG の切り口の形＋全段の種の上限 SubSmallA a B s ⇒ ClosedL a B (H(a, H(s, y)))。`clShL_of_cut_KG`: 古い SubSmallA＋切り口＋VDomF・KA・KG ⇒ 写しの新しい ClosedL。実際の写し 23,466 組はすべてこの前提を満たす。残り: 影の枠での全段の SubSmallA（VSmallRSh）を Inv3V2 と一緒に運ぶこと（VSmallRAll は段 v と道の段だけ、全段の VSmallR は標準形で偽）。
+
+### HRwClL を外した（2026-10-18、lead・trio-codex）
+
+- 最上位 `trio_terminates_main_V2_cur` から残り HRwClL を外した。仮定は 18 個から 17 個。公理は propext・Classical.choice・Quot.sound。
+- RwClosedL を本当に使うのは 2 か所だけだった: t0 の `t0_dep_otS`（V3T0DepS）と t2 の `deps_lhd_otW_RU`（V3DepRWU）。どちらも relR_frameUL の hShL に渡すだけで、その段 U では段を限った種の上限 hVR がすでに引数にある。
+- 替えた補題 `CutClosed.shadow_hShL_from_kind`（新しい下のファイル V3CutClosed、公理は propext・Quot.sound）: 後ろに足すだけでない影の枠では PH3cKindG が G3 の切り口 B ∈ cutsNSG s hi(y) を与え、`cutsHG_closed`（切り口の成分は B 以下か s の成分以下か区間の逃げ道）と Ω_s ≤ B（`omega_le_of_shadow_cut`）で、段 U の hVR だけから hShL の結論が出る。全段の ClosedL は要らない。
+- その結果、StepCtxV2 の欄 rw、T2HardB の RwClosedL の欄、T0RwRes・`t0RwRes_ctx` の使用、ctx_V2・hInvV2_all・desc3_V2O の引数を外した。RwClosedL（すべての標準形での全段の閉じ方）自体は証明していない。要らなくなっただけ。
+- 13 集合の実測（trio-codex）: 影の枠 1,584,292 個で全段の種の上限は例外 0。段 v・道の段の外で区間の逃げ道が要る成分は 3 つ（ext3s の同じ行列、u = 0）で、どれも切り口の補題の区間の場合で閉じる。「成分を道の段へ持ち上げられる」は偽。

@@ -15,6 +15,7 @@ import Ytosk.V3T0DepU
 import Ytosk.V3T0TrigG
 import Ytosk.V3VSF
 import Ytosk.V3T0DepS
+import Ytosk.V3CutClosed
 
 namespace Ytosk
 
@@ -61,7 +62,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
     (hF : FrameClosed M ρ) (hFO : FrameOT M ρ) (hVS : VSmallF M ρ)
     (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hSv : ∀ c, S true c → σ.v c = ρ.v c)
-    (hVR : VSmallRS M S bnd ρ) (hPH : PH3cG M ρ) (hClB : RwClosedL M ρ)
+    (hVR : VSmallRS M S bnd ρ) (hPH : PH3cG M ρ)
     (hoff : ∀ i, i < bnd → (¬ DepS M S true i → σ.o i = ρ.o i) ∧ (¬ DepS M S false i → σ.v i = ρ.v i))
     (hOTout : ∀ b j, bnd ≤ j → j < N.length → isOT (valB σ b j) = true)
     (hWv : ∀ i, ¬ W false i)
@@ -360,7 +361,7 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
               have hvs : s = ρ.v c := hvM s y hsy
               have hne' : σ.v c ≠ ρ.v c := by rw [← hs'v, ← hvs]; exact hne
               have := ht.1; rw [hvchg hne'] at this; exact T.not_lt_z _ this)
-            (fun ht hnt _ => by
+            (fun ht hnt hnp => by
               by_cases hvc : σ.v c = ρ.v c
               · have es : s' = s := by rw [hs'v, hvc, ← hsvc]
                 rw [es] at hnt ⊢
@@ -375,26 +376,16 @@ theorem deps_lhd_otW_RU {M N : Mat} {S W : Bool → Nat → Prop} {bnd : Nat} {�
                     have e := split_app (psi (succ s) z z) y
                     rw [h0, hlo] at e; simp [app] at e; exact hyz e.symm
                   have hl' : Lhd z (psi s y' z) (psi s y z) := by have h := hlc; rw [es] at h; exact h
-                  exact shadow_hShL hBc ht hnt hyz' hl' (by
-                    have h := hSi
-                    rw [es, step_eq_app_of_not (fun r hr => le_trans (le_of_lt hl'.1) (hBc r hr)) hnt] at h
-                    exact h) (hClB i hiM Lc c [] (by rw [hclM]) s y hsy ht (by
-                    have e := split_app (psi (succ s) z z) y
-                    rw [hlo, app_z_right] at e
-                    rw [e]; exact ht.1) (by
-                    rintro ⟨R1, hR1⟩
-                    have e := split_app (psi (succ s) z z) y
-                    rw [hlo, app_z_right] at e
-                    rw [e, e1] at hR1
-                    rw [hBk1, app_assoc] at hR1
-                    have h2 := app_left_cancel0 hR1
-                    have hκt : κ1 = psi a1 x1 z := by
-                      rcases mem_cutsNSG_psi.mp hκ1 with ⟨u, _, rfl⟩ | ⟨u, _, rfl⟩ | ⟨u, hu, _⟩
-                      · simp only [app, psi.injEq] at h2; rw [h2.1, h2.2.1]
-                      · simp only [app, psi.injEq] at h2; rw [h2.2.1]
-                      · simp [cutsNSG] at hu
-                    have hBy : spArg (ρ.v i) z (sumN (Lc.map ρ.o)) = y := by rw [hBk1, hκt, e1]
-                    have := ht.1; rw [hBy] at this; exact lt_irrefl' _ this))
+                  exact CutClosed.shadow_hShL_from_kind (hG.ot_v i hiM) (isOT_arg hBot) hc0
+                    (fun hBz => hPH i hiM Lc c [] (by rw [hclM]) s y hsy hBz ht)
+                    (by
+                      have e := split_app (psi (succ s) z z) y
+                      rw [hlo, app_z_right] at e
+                      rw [e]; exact ht.1) hnp
+                    hBc ht hnt hyz' hl' (by
+                      have h := hSi
+                      rw [es, step_eq_app_of_not (fun r hr => le_trans (le_of_lt hl'.1) (hBc r hr)) hnt] at h
+                      exact h)
                     (fun u hu hau g hg => hVR i c Lc s y hi hcb hclM hD hdc hsy ht hhz u
                       (Or.inr (hU u hu)) hau g hg)
               · exfalso; have := ht.1; rw [hvchg hvc] at this; exact T.not_lt_z _ this)
@@ -621,7 +612,7 @@ the cut condition `T2CutA` (with `PH3cG` and the right-end change it gives the a
 and `RClaimU` and the right-end change at the seed. (`T2VSN` and `VSmallNewR` are not needed: off the seeds
 a changed `v(c)` has no counted child, and `v` of the seed does not change.) -/
 def T2HardB (M N : Mat) (bnd p : Nat) (ρ σ : Valn) : Prop :=
-  VSmallRA M ρ ∧ PH3cG M ρ ∧ RwClosedL M ρ ∧
+  VSmallRA M ρ ∧ PH3cG M ρ ∧
     (∀ U : T → Prop, (∀ u, U u → PathLvA M ρ p u) → RClaimU U ρ σ p) ∧
     (∀ X X', ρ.o p = psi (ρ.v p) X z → σ.o p = psi (ρ.v p) X' z → X' ≠ X → REr X X')
 
@@ -638,7 +629,7 @@ theorem T2HardA.seed {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N b
       ∀ U : T → Prop, (∀ u, U u → PathLvS M S bnd ρ i u) → RClaimU U ρ σ i := by
   intro i hs _ _ U hU
   have := hSp i hs; subst this
-  exact h.1.2.2.2.1 U (fun u hu => (hU u hu).toA)
+  exact h.1.2.2.1 U (fun u hu => (hU u hu).toA)
 
 theorem T2HardA.sv {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd p ρ σ) (S : Bool → Nat → Prop)
     (hSp : ∀ i, S true i → i = p) : ∀ c, S true c → σ.v c = ρ.v c := by
@@ -652,6 +643,6 @@ theorem T2HardA.re {M N : Mat} {bnd p : Nat} {ρ σ : Valn} (h : T2HardA M N bnd
       ∀ X X', ρ.o i = psi (ρ.v i) X z → σ.o i = psi (ρ.v i) X' z → X' ≠ X → REr X X' := by
   intro i hs _ _ _
   have := hSp i hs; subst this
-  exact h.1.2.2.2.2
+  exact h.1.2.2.2
 
 end Ytosk

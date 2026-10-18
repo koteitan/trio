@@ -101,8 +101,6 @@ structure StepCtxV2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop whe
   R : Res3AW M ρ rk
   pre : ∀ j, 1 ≤ j → j < M.length →
     Inv3V2 (M.take j) (drop1 M j rk) rk ∧ Res3AW (M.take j) (drop1 M j rk) rk
-  /-- The state of every rewriting frame is closed (2026-10-17: carried by the induction, `hInvV2_all`). -/
-  rw : RwClosedL M ρ
 
 /-- **The bad shape of the C case at `t = 2`** (2026-10-17): `q = P_0(x) ≠ r`, `q` is not the last counted child of `r`,
 and `x − 1` upgrades (to an ancestor of `r`). The seed residual `T2SeedCResR.un` is false here (ext2: 6 standard matrices);
