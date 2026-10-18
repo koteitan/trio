@@ -157,6 +157,72 @@ theorem state_component_of_kind {B s y u g C : T}
         rw [hc0, comps_app]
         exact List.mem_append_left _ hd
 
+/-- Row-1 ancestry of a prefix is also ancestry of the whole matrix. -/
+theorem le1_take_forward {N : Mat} {k : Nat} :
+    ∀ m r i, i < m → TRIO.le1 (N.take k) r i → TRIO.le1 N r i
+  | 0, _, _, hi, _ => False.elim (Nat.not_lt_zero _ hi)
+  | m + 1, r, i, hi, hg => by
+    have hiN : i < N.length := by
+      have hiT := hg.2.1
+      rw [List.length_take] at hiT
+      omega
+    by_cases hir : i = r
+    · subst hir
+      exact le1_self hiN
+    · obtain ⟨p, hp, hgp⟩ := le1_par1_down hg hir
+      have hpi : p < i := par_lt _ 1 _ _ hp
+      have hik : i < k := by
+        have hiT := hg.2.1
+        rw [List.length_take] at hiT
+        omega
+      have hpN : par N 1 i = some p := by
+        rw [← par_take N 1 i hik]
+        exact hp
+      exact le1_par1_up (le1_take_forward m r p (by omega) hgp) hpN hiN
+
+/-- Restrict the ancestor conclusion using ONLY equality of the two v values.
+Cons of the restricted valuation is not assumed or inferred. -/
+theorem vAnc_of_prefix_pair {N : Mat} {k r i : Nat} {σ ρP : Valn}
+    (hCN : Cons N σ) (hGN : Good3 N σ) (hVS : VAncStep N σ)
+    (hg : TRIO.le1 (N.take k) r i)
+    (hvr : σ.v r = ρP.v r) (hvi : σ.v i = ρP.v i) : VAnc ρP r i := by
+  have ha := vAnc_of_step hCN hGN hVS
+    (le1_take_forward (i + 1) r i (Nat.lt_succ_self _) hg)
+  intro u g hgv
+  rw [← hvr] at hgv
+  have h := ha u g hgv
+  rw [hvi] at h
+  exact h
+
+/-- The precise remaining pointwise FrameDom conclusion, not a new residual. -/
+def RetainedLowNeed (V V' a B s y u g : T) : Prop :=
+  ∀ C, sh V V' B < C → psi (shf V V' s) z z < C →
+    C ≤ H (shf V V' s) (sh V V' y) →
+    ∃ d ∈ C :: (comps u C ++ comps u (shf V V' a)), g ≤ d
+
+/-- The retained low branch left after state/Omega/parent bounds, the shared
+zero-state endpoint, and the state-only cut component certificate. This is a
+branch description, not an assertion that it is realizable in a Std matrix. -/
+def RetainedLowPending (V V' a B s y u g : T) : Prop :=
+  u ≤ V ∧ u ≤ shf V V' a ∧
+  (g ∈ comps u B ∨ g ∈ comps u s) ∧
+  g ∈ comps u (shf V V' s) ∧
+  ¬ g ≤ sh V V' B ∧ ¬ g ≤ psi (shf V V' s) z z ∧
+  (∀ d ∈ comps u (shf V V' a), ¬ g ≤ d) ∧
+  ¬ (sh V V' B = z ∧ ∃ Y,
+    H (shf V V' s) (sh V V' y) = psi (shf V V' s) Y z)
+
+/-- The exact out-of-path retained branch at one real source frame. This Prop
+is merely the outstanding goal; it is not added to any top theorem. The full
+matrix context and its invariants must discharge it. -/
+def RetainedLowOutsidePath (P : Mat) (ρP : Valn) (r i : Nat)
+    (V' : T) (Lc : List Nat) (s y : T) : Prop :=
+  ∀ u g, ¬ LevAt P ρP i u →
+    RetainedLowPending (ρP.v r) V' (ρP.v i)
+      (spArg (ρP.v i) z (sumN (Lc.map ρP.o))) s y u g →
+    RetainedLowNeed (ρP.v r) V' (ρP.v i)
+      (spArg (ρP.v i) z (sumN (Lc.map ρP.o))) s y u g
+
 #print axioms old_vAnc_of_t2VAncStep
 #print axioms old_vAnc_copy
 #print axioms old_vAnc_component
@@ -164,4 +230,6 @@ theorem state_component_of_kind {B s y u g C : T}
 #print axioms frameDom_sh_zero_of_shared_level
 #print axioms old_vAnc_component_of_KAG
 #print axioms state_component_of_kind
+#print axioms le1_take_forward
+#print axioms vAnc_of_prefix_pair
 end Ytosk.FDCopy
