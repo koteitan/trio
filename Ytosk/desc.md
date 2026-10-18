@@ -3910,4 +3910,5 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 ### ClShL は偽（2026-10-18、trio-codex、V3ClShL、Lean で反例を検証）
 
 - 写しの枠の部品 ClShL（書き換える枠の前提と ClosedL a B (H a (H s y)) から σ の像の ClosedL）は、項だけの補題としては偽。反例（V3ClShL.lean、`Ytosk.ClShLCounterexample.counterexample`、公理は propext・Quot.sound）: V = Ω_2、V′ = Ω_3 + ψ_1(ψ_1(ψ_0(Ω_{Ω_5})))、a = s = V + ψ_1(V)、b = a + 1、B = ψ_b(Ω_{V+1})、y = ψ_b(Ω_b)。元の枠は ClosedA も成り立つが、σ の像では段 0 の成分 Ω_{Ω_5}（V′ から来る）が σB・f(a) の成分・区間の上の端の成分を超える。
-- この反例は VDomF V V′ a を満たさない（V′ の成分 Ω_{Ω_5} が Ω_{f(a)} も f(a) の成分も超える）。写しの枠では VDomF が T2VAncStep から手に入るので、VDomF を前提に足した形を trio-codex が調べている。
+- この反例は VDomF V V′ a を満たさない（V′ の成分 Ω_{Ω_5} が Ω_{f(a)} も f(a) の成分も超える）。写しの枠では VDomF が T2VAncStep から手に入る。
+- VDomF を足しても偽（V3ClShL.lean の `Ytosk.ClShLVDomCounterexample.counterexample`）: V = Ω_2 + ψ_1(ψ_0(Ω_{Ω_5}))、V′ = Ω_3、a = s = V + 1、b = a + 1、B = ψ_b(ψ_1(ψ_0(Ω_{Ω_5})))、y = ψ_b(Ω_b)。原因は f(a) = Ω_3 + 1 で古い V の成分が消えること（KAG の第 1 欄が偽）。写しの枠では KVRA = VDomF ∧ KAG が手に入るので、両方を足した形を trio-codex が調べている。
