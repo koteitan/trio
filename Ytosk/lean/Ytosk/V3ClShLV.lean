@@ -1354,6 +1354,136 @@ theorem closedL_of_shadow_cut {a B s y : T} (ha : isOT a = true)
   have hqge := not_lt.mp (split_fst_ge (psi (succ s) z z) y q hq)
   exact le_trans (le_of_lt (lt_succ_self s)) (by simpa [lev] using lev_le_of_le hqge)
 
+/-- The seed bound needed by the cut proof is preserved by a copy.
+Its moving-position hypothesis is exactly the second KAG conjunct, at all
+low levels. Only the old shadow frame needs the all-level seed bound. -/
+theorem subSmallA_sh_of_KG {V V' a B s : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hB : isOT B = true)
+    (hs : isOT s = true) (hVs : V < s) (has : a ≤ s)
+    (hVD : VDomF V V' a) (hKA : KA V V' a)
+    (hKG : ∀ u, u ≤ V → ∀ n g, g ∈ compsAN V u n (sub s V) →
+      g ≤ psi s z z ∨ g ≤ B) (hseed : SubSmallA a B s) :
+    SubSmallA (shf V V' a) (sh V V' B) (shf V V' s) := by
+  have hsfx := isOT_sub_sfx hs V
+  have hOmA : psi (shf V V' a) z z ≤ psi (shf V V' s) z z :=
+    psi_le_psi_z (shf_mono_old hV hV' hVV ha hs hVa has)
+  have hOmS : psi s z z ≤ psi (shf V V' s) z z :=
+    psi_le_psi_z (le_shf_self hV hV' (le_of_lt hVV) hs (le_of_lt hVs))
+  have hshOm : sh V V' (psi s z z) = psi (shf V V' s) z z := by
+    rw [sh_psi_gt hVs, sh_z]
+  intro u hu g hg
+  have hvpart : g ∈ comps u V' →
+      g ≤ psi (shf V V' s) z z ∨ g ≤ sh V V' B ∨
+        ∃ d ∈ comps u (shf V V' a), g ≤ d := by
+    intro hg
+    rcases hVD u hu g hg with h | h
+    · exact Or.inl (le_trans h hOmA)
+    · exact Or.inr (Or.inr h)
+  have himage : ∀ w d, d ∈ comps w s →
+      (d ≤ psi s z z ∨ d ≤ B) →
+      sh V V' d ≤ psi (shf V V' s) z z ∨ sh V V' d ≤ sh V V' B := by
+    intro w d hd h
+    have hdo := isOT_of_mem_comps w hs hd
+    rcases h with h | h
+    · left
+      rw [← hshOm]
+      exact sh_le_sh hV hV' (le_of_lt hVV) hdo (isOT_psi_zz hs) h
+    · exact Or.inr (sh_le_sh hV hV' (le_of_lt hVV) hdo hB h)
+  unfold shf at hg
+  rcases comps_add u V' (sh V V' (sub s V)) g hg with hg | hg
+  · exact hvpart hg
+  · by_cases hVu : V < u
+    · rcases (le_iff _ _).mp hVa with hVa | hVa
+      · rcases component_raise_to_matched hV hV' hVV hVu (size (sub s V)) (Nat.le_refl _)
+            hsfx ha hVa (not_lt.mp hu) hg with ⟨w, hw, hVw, hwa, huw, hgw⟩ | hg
+        · obtain ⟨d, hd, he⟩ := comps_sh hV hV' hVV hw (le_of_lt hVw) hsfx g hgw
+          have hds := comps_sub_sub w s V hd
+          rcases hseed w (not_lt.mpr hwa) d hds with h | h | ⟨e, he', hde⟩
+          · rcases himage w d hds (Or.inl h) with h | h
+            · exact Or.inl (he ▸ h)
+            · exact Or.inr (Or.inl (he ▸ h))
+          · rcases himage w d hds (Or.inr h) with h | h
+            · exact Or.inl (he ▸ h)
+            · exact Or.inr (Or.inl (he ▸ h))
+          · right; right
+            refine ⟨sh V V' e, high_index_sh hV hV' hVV ha hw hVw huw he', ?_⟩
+            rw [he]
+            exact sh_le_sh hV hV' (le_of_lt hVV) (isOT_of_mem_comps w hs hds)
+              (isOT_of_mem_comps w ha he') hde
+        · exact hvpart hg
+      · subst a
+        rcases components_above_cut V V' hVu (size (sub s V)) (Nat.le_refl _) hg with
+            ⟨d, hd, he⟩ | hg
+        · have hds := comps_mono (le_of_lt (lt_succ_self V)) (comps_sub_sub (succ V) s V hd)
+          rcases hseed V (lt_irrefl' V) d hds with h | h | ⟨e, he', _⟩
+          · rcases himage V d hds (Or.inl h) with h | h
+            · exact Or.inl (he ▸ h)
+            · exact Or.inr (Or.inl (he ▸ h))
+          · rcases himage V d hds (Or.inr h) with h | h
+            · exact Or.inl (he ▸ h)
+            · exact Or.inr (Or.inl (he ▸ h))
+          · rw [comps_self hV] at he'
+            simp at he'
+        · exact hvpart hg
+    · have huV := not_lt.mp hVu
+      rcases comps_sh_levA V V' huV (size (sub s V)) (sub s V) g (Nat.le_refl _) hg with
+          ⟨d, hd, he⟩ | ⟨d, hd, he⟩ | ⟨q, hq, hgq⟩
+      · have hds := comps_sub_sub u s V (compsAN_sub V u _ hd)
+        rcases himage u d hds (hKG u huV _ d hd) with h | h
+        · exact Or.inl (he ▸ h)
+        · exact Or.inr (Or.inl (he ▸ h))
+      · have hds := comps_sub_sub u s V hd
+        rcases hseed u (not_lt.mpr (le_trans huV hVa)) d hds with h | h | ⟨e, he', hde⟩
+        · exact Or.inl (he ▸ le_trans h hOmS)
+        · exact Or.inr (Or.inl (he ▸ le_trans h (le_sh hV hV' (le_of_lt hVV) hB)))
+        · rcases hKA u hVu e he' with h | ⟨e', he'', hee⟩
+          · exact Or.inl (he ▸ le_trans hde (le_trans h hOmA))
+          · exact Or.inr (Or.inr ⟨e', he'', he ▸ le_trans hde hee⟩)
+      · exact hvpart (comps_of_mem_summands hq hgq)
+
+#print axioms subSmallA_sh_of_KG
+
+/-- A concrete copy-step proof using the real G3 cut shape. The remaining
+seed bound is explicit; the all-level version is not asserted for arbitrary Std
+frames. In particular, this is not the false VD+KA-only ClShL statement. -/
+theorem clShL_of_cut_seed {V V' a B s y : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hB : isOT B = true)
+    (hc : isOT (psi s y z) = true) (hVs : V < s) (has : a ≤ s)
+    (hcut : B ∈ cutsNSG s (split y (psi (succ s) z z)).1)
+    (hseed : SubSmallA (shf V V' a) (sh V V' B) (shf V V' s)) :
+    ClosedL (shf V V' a) (sh V V' B)
+      (H (shf V V' a) (H (shf V V' s) (sh V V' y))) := by
+  apply closedL_of_shadow_cut (isOT_shf hV hV' hVV ha)
+    (isOT_sh hV hV' hVV hB)
+    (isOT_shTop hV hV' hVV hc (le_of_lt hVs))
+    (shf_mono_old hV hV' hVV ha (isOT_sub hc) hVa has) _ hseed
+  rw [sh_split hV hV' hVV (sh_lt_om_succ hV hV' hVV (isOT_sub hc) hVs) (isOT_arg hc)]
+  apply cutsNSG_sh hV hV' hVV (isOT_sub hc) hVs _ (split_fst_ge _ y) hcut
+  have hy := isOT_arg hc
+  rw [← split_app (psi (succ s) z z) y] at hy
+  exact isOT_app_left hy
+
+/-- A complete cut-shaped copy step from an old seed bound and the
+existing VD/KA/KG copy guards. Both root and nonroot levels are included. -/
+theorem clShL_of_cut_KG {V V' a B s y : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hB : isOT B = true)
+    (hc : isOT (psi s y z) = true) (hVs : V < s) (has : a ≤ s)
+    (hcut : B ∈ cutsNSG s (split y (psi (succ s) z z)).1)
+    (hVD : VDomF V V' a) (hKA : KA V V' a)
+    (hKG : ∀ u, u ≤ V → ∀ n g, g ∈ compsAN V u n (sub s V) →
+      g ≤ psi s z z ∨ g ≤ B) (hseed : SubSmallA a B s) :
+    ClosedL (shf V V' a) (sh V V' B)
+      (H (shf V V' a) (H (shf V V' s) (sh V V' y))) :=
+  clShL_of_cut_seed hV hV' hVV ha hVa hB hc hVs has hcut
+    (subSmallA_sh_of_KG hV hV' hVV ha hVa hB (isOT_sub hc) hVs has hVD hKA hKG hseed)
+
+#print axioms clShL_of_cut_KG
+
+#print axioms clShL_of_cut_seed
+
 #print axioms closedL_of_shadow_cut
 
 /-- The existing FrameOT premise eliminates moving root-interval obligations:
