@@ -1034,6 +1034,83 @@ theorem persistent_sh_high {V V' w u g B A : T}
   obtain ⟨e, he, hde⟩ := hdom d hd
   exact ⟨e, he, le_trans (sh_le_right hV hV' hVV hg hgd) hde⟩
 
+/-- Left addition preserves interval persistence on standard endpoints.
+The left prefix itself need not be standard. -/
+theorem persistent_add {u g B A : T} (hB : isOT B = true) (hA : isOT A = true)
+    (hp : Persistent u g B A) : ∀ P, Persistent u g (add P B) (add P A) := by
+  intro P
+  induction P with
+  | z => simpa using hp
+  | psi p x t _ _ iht =>
+    by_cases hBA : B < A
+    · cases A with
+      | z => exact False.elim (T.not_lt_z _ hBA)
+      | psi q y s =>
+        by_cases hhead : psi p x z < psi q y z
+        · intro c hc1 hc2
+          rw [add_psi_psi, if_pos hhead] at hc2
+          exact hp c (lt_of_le_of_lt (le_add_left_self hB (psi p x t)) hc1) hc2
+        · have hAB : head B ≤ psi p x z := le_trans (by simpa [head] using head_le_of_lt hBA)
+            (not_lt.mp hhead)
+          have heq : add (psi p x t) B = app (psi p x z) (add t B) := by
+            cases B with
+            | z => simp
+            | psi b e r =>
+              rw [add_psi_psi, if_neg (show ¬ psi p x z < psi b e z from not_lt.mpr hAB)]
+              rfl
+          rw [heq, add_psi_psi, if_neg hhead]
+          exact persistent_app (psi p x z) iht
+    · intro c hc1 hc2
+      have hAB : A ≤ B := le_of_not_gt hBA
+      exact False.elim (not_lt_of_ge (add_le_add_left (psi p x t) hAB)
+        (lt_of_lt_of_le hc1 hc2))
+
+/-- The only bounds lost by removing a left prefix are its own components. -/
+theorem persistent_sub_or {u g V B A : T}
+    (hV : isOT V = true) (hB : isOT B = true) (hA : isOT A = true)
+    (hVB : V ≤ B) (hVA : V ≤ A) (hp : Persistent u g B A) :
+    (∃ d ∈ comps u V, g ≤ d) ∨ Persistent u g (sub B V) (sub A V) := by
+  by_cases hdom : ∃ d ∈ comps u V, g ≤ d
+  · exact Or.inl hdom
+  · right
+    intro c hc1 hc2
+    have hBc : B < add V c := by
+      rw [← add_sub_cancel' hV hB hVB]
+      exact add_lt_add_left V hc1
+    have hcA : add V c ≤ A := by
+      rw [← add_sub_cancel' hV hA hVA]
+      exact add_le_add_left V hc2
+    obtain ⟨d, hd, hgd⟩ := hp (add V c) hBc hcA
+    rcases List.mem_cons.mp hd with rfl | hd
+    · exact ⟨z, List.mem_cons_self, hgd⟩
+    · rcases comps_add u V c d hd with hd | hd
+      · exact False.elim (hdom ⟨d, hd, hgd⟩)
+      · exact ⟨d, List.mem_cons_of_mem _ hd, hgd⟩
+
+/-- The map f preserves persistence between frozen standard indices, apart
+from the old V components whose bounds are exactly what KA supplies at a=V. -/
+theorem persistent_shf_frozen {V V' u g B A : T}
+    (hV : isOT V = true)
+    (hB : isOT B = true) (hA : isOT A = true) (hVB : V ≤ B) (hVA : V ≤ A)
+    (hlB : ¬ V < lev B) (hlA : ¬ V < lev A) (hp : Persistent u g B A) :
+    (∃ d ∈ comps u V, g ≤ d) ∨ Persistent u g (shf V V' B) (shf V V' A) := by
+  have hfix : ∀ t, isOT t = true → ¬ V < lev t → sh V V' (sub t V) = sub t V := by
+    intro t ht hl
+    apply sh_fix (isOT_sub_sfx ht V)
+    have hle := lev_le_of_le (head_sub_le ht V)
+    have heq : lev (head t) = lev t := by cases t <;> rfl
+    have heq' : lev (head (sub t V)) = lev (sub t V) := by cases sub t V <;> rfl
+    rw [heq, heq'] at hle
+    exact not_lt.mpr (le_trans hle (not_lt.mp hl))
+  rcases persistent_sub_or hV hB hA hVB hVA hp with h | h
+  · exact Or.inl h
+  · right
+    unfold shf
+    rw [hfix B hB hlB, hfix A hA hlA]
+    exact persistent_add (isOT_sub_sfx hB V) (isOT_sub_sfx hA V) h V'
+
+#print axioms persistent_shf_frozen
+
 /-- The existing FrameOT premise eliminates moving root-interval obligations:
 at a = V every moving old component is already strictly below the state.
 This premise holds on all 67,304 measured actual copy frames, but fails in the
