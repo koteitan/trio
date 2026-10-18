@@ -83,6 +83,33 @@ theorem inv_closed_at_path_level {M : Mat} {ρ : Valn} {rk : Bool → Nat → Na
       exact T.not_lt_z _ (h ▸ hhi)
     exact I.vra i c L R s y hCL ho ht hhinz u hU hu
 
+/-- An interval witness at a higher level is still a witness below it. -/
+theorem persistent_lower_level {u w g B A : T} (huw : u ≤ w)
+    (hp : Persistent w g B A) : Persistent u g B A := by
+  intro c hBc hcA
+  obtain ⟨d, hd, hgd⟩ := hp c hBc hcA
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact ⟨z, List.mem_cons_self, hgd⟩
+  · exact ⟨d, List.mem_cons_of_mem _ (comps_mono huw hd), hgd⟩
+
+/-- It suffices to raise each nonsmall component to some checked level.
+The lower level itself need not be a rewrite-path level. -/
+theorem closedL_of_component_raise {a B A : T} {U : T → Prop}
+    (hchecked : ∀ w, U w → ¬ lt a w = true → ∀ g ∈ comps w B,
+      g ≤ B ∨ (∃ d ∈ comps w a, g ≤ d) ∨ Persistent w g B A)
+    (hraise : ∀ u, ¬ lt a u = true → ∀ g ∈ comps u B,
+      g ≤ B ∨ ∃ w, U w ∧ u ≤ w ∧ w ≤ a ∧ g ∈ comps w B) :
+    ClosedL a B A := by
+  intro u hu g hg
+  rcases hraise u hu g hg with h | ⟨w, hw, huw, hwa, hgw⟩
+  · exact Or.inl h
+  · rcases hchecked w hw (not_lt.mpr hwa) g hgw with h | ⟨d, hd, hgd⟩ | hp
+    · exact Or.inl h
+    · exact Or.inr (Or.inl ⟨d, comps_mono huw hd, hgd⟩)
+    · exact Or.inr (Or.inr (persistent_lower_level huw hp))
+
+#print axioms closedL_of_component_raise
+
 #print axioms omega_le_of_shadow_cut
 #print axioms inv_closed_at_path_level
 
