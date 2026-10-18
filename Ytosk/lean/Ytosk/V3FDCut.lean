@@ -13,6 +13,7 @@ import Ytosk.V3T2FC
 import Ytosk.V3ClShLV
 import Ytosk.V3RwClCut
 import Ytosk.V3CutClosed
+import Ytosk.V3T2VRA
 
 namespace Ytosk.FDCut
 open T
@@ -532,5 +533,88 @@ theorem not_FDsh : ¬ FDsh := by
   · exact ZeroStateCounterexample.old_FrameDom
 
 #print axioms not_FDsh
+
+end Ytosk.FDCut
+
+namespace Ytosk.FDCut
+open T
+
+/-- The sole FrameDom obligation in the moving, rewriting branch of qFCo_sh.
+This callback is not asserted for arbitrary terms: T2FDCopyRes provides it only
+at actual guarded source frames of consecutive t2 expansions. -/
+def FDCopyAt (V V' a : T) (Lv : List T) (cv : T) : Prop :=
+  ∀ s y, cv = psi s y z → V < s →
+    (lt (spArg a z (sumN Lv)) y = true ∧ lt (psi a z z) (psi s y z) = true) →
+    FrameDom a (spArg a z (sumN Lv)) s (H s y) →
+    FrameDom (shf V V' a) (sh V V' (spArg a z (sumN Lv))) (shf V V' s)
+      (H (shf V V' s) (sh V V' y))
+
+/-- Local, proved adapter for clField_copyK / clField_expand_t2SK with
+Q = QFCo and K = FDCopyAt. It makes no universal term-transport assumption. -/
+theorem qFCo_sh_of_copyAt (V V' a : T) (Lv : List T) (cv : T) (hV : isOT V = true)
+    (hV' : isOT V' = true) (hVV : V < V') (ha : isOT a = true) (hVa : V ≤ a)
+    (hs : ∀ t ∈ Lv ++ [cv], Single t) (hp : (Lv ++ [cv]).Pairwise (fun a b => b ≤ a))
+    (hlev : V < a ∨ ∀ t ∈ Lv ++ [cv], V < lev t) (hCopy : FDCopyAt V V' a Lv cv) (hQ : QFCo a Lv cv) :
+    QFCo (shf V V' a) (Lv.map (sh V V')) (sh V V' cv) := by
+  have hLs : ∀ t ∈ Lv, Single t := fun t ht => hs t (List.mem_append_left _ ht)
+  have hLp : Lv.Pairwise (fun a b => b ≤ a) := (List.pairwise_append.mp hp).1
+  obtain ⟨hSot, hSsum⟩ := sumN_dec Lv hLs hLp
+  have hlev' : V < a ∨ ∀ q ∈ summands (sumN Lv), lev q ≠ V := by
+    rcases hlev with h | h
+    · exact Or.inl h
+    · right; rw [hSsum]; intro q hq; exact ne_of_gt (h q (List.mem_append_left _ hq))
+  have hBot : isOT (spArg a z (sumN Lv)) = true := isOT_spArg a (sumN Lv) z rfl hSot
+  have hB : spArg (shf V V' a) z (sumN (Lv.map (sh V V'))) = sh V V' (spArg a z (sumN Lv)) := by
+    rw [← sh_sumN hV hV' hVV (fun t ht => (hLs t ht).1)]
+    have hsp := sh_spArg hV hV' hVV ha hVa (b := z) rfl hSot hlev'
+    rw [sh_z] at hsp
+    exact hsp
+  obtain ⟨hcvot, s, y, hcv⟩ := hs cv (by simp)
+  subst hcv
+  refine ⟨isOT_sh hV hV' hVV hcvot, ?_⟩
+  intro s' y' hcv' ht'
+  rw [hB] at ht' ⊢
+  have hVV' : V ≤ V' := le_of_lt hVV
+  have hsot : isOT s = true := isOT_sub hcvot
+  have hyot : isOT y = true := isOT_arg hcvot
+  by_cases hVs : V < s
+  · rw [sh_psi_gt hVs, sh_z] at hcv'
+    simp only [psi.injEq] at hcv'
+    obtain ⟨rfl, rfl, -⟩ := hcv'
+    -- the frame of `P` rewrites
+    have h1 : lt (spArg a z (sumN Lv)) y = true :=
+      (sh_lt_iff hV hV' hVV' hBot hyot).mp ht'.1
+    have hfa : shf V V' a ≤ shf V V' s := le_of_trig ht'.2
+    have has : a ≤ s := by
+      rcases (le_iff _ _).mp hfa with h | h
+      · exact le_of_lt ((shf_lt_iff hV hV' hVV' ha hsot hVa (le_of_lt hVs)).mp h)
+      · rcases lt_trichotomy' a s with h' | h' | h'
+        · exact le_of_lt h'
+        · rw [h']
+        · exact absurd h (ne_of_gt (shf_lt_shf hV hV' hVV' hsot ha (le_of_lt hVs) h'))
+    have hyz : y ≠ z := fun h => by rw [h] at h1; exact T.not_lt_z _ h1
+    have h2 : lt (psi a z z) (psi s y z) = true := by
+      show psi a z z < psi s y z
+      rcases (le_iff _ _).mp has with h | h
+      · exact psi_lt_psi_z_iff.mpr (Or.inl h)
+      · subst h
+        exact psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_of_le_of_ne (z_le _) (Ne.symm hyz)⟩)
+    have hBc : ∀ q ∈ summands (spArg a z (sumN Lv)), psi s y z ≤ q := by
+      apply spArg_summands_ge ⟨s, y, rfl⟩ (sumN Lv) z hSot
+      · rw [hSsum]; intro q hq
+        exact (List.pairwise_append.mp hp).2.2 q hq _ (by simp)
+      · simp [summands]
+    exact hCopy s y rfl hVs ⟨h1, h2⟩ (hQ.2 s y rfl ⟨h1, h2⟩)
+  · rw [sh_psi_le hVs, sh_z] at hcv'
+    simp only [psi.injEq] at hcv'
+    obtain ⟨rfl, rfl, -⟩ := hcv'
+    exfalso
+    have hlt : s < shf V V' a :=
+      lt_of_le_of_lt (le_of_not_gt hVs) (lt_of_lt_of_le hVV (le_shf hV hV' hVV' ha hVa))
+    have := le_of_trig ht'.2
+    exact lt_irrefl' _ (lt_of_lt_of_le hlt this)
+
+
+#print axioms qFCo_sh_of_copyAt
 
 end Ytosk.FDCut

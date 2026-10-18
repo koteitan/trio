@@ -120,9 +120,9 @@ theorem t2SeedFrV2_of (hPR : T2SeedPResV2) (hD : T2SeedDomV2) :
   intro r L hlen hr n hn hGlow σ hCN hGN i hi Lc c R hCL
   exact ((main M ρ rk C hz h2).2.2 r L hlen hr n hn hGlow σ hCN hGN i hi Lc c R hCL).2
 
-/-- **T2VSFCV2 with the seed frames filled**: from `T2BelowXRes`, `FDsh`, `T2SeedPResV2` and `T2SeedDomV2`. -/
-theorem t2VSFCV2_of2 (hB : T2BelowXResV2) (hFD : FDsh) (hPR : T2SeedPResV2) (hD : T2SeedDomV2) : T2VSFCV2 :=
-  t2VSFCV2_of hB hFD (t2SeedFrV2_of hPR hD).1 (t2SeedFrV2_of hPR hD).2.1
+/-- **T2VSFCV2 with the seed frames filled**: from `T2BelowXRes`, `T2FDCopyRes`, `T2SeedPResV2` and `T2SeedDomV2`. -/
+theorem t2VSFCV2_of2 (hB : T2BelowXResV2) (hFC : T2FDCopyRes) (hPR : T2SeedPResV2) (hD : T2SeedDomV2) : T2VSFCV2 :=
+  t2VSFCV2_of hB hFC (t2SeedFrV2_of hPR hD).1 (t2SeedFrV2_of hPR hD).2.1
 
 /-- **T2FOSeedV2** from `T2SeedPResV2` and `T2SeedDomV2`. -/
 theorem t2FOSeedV2_of (hPR : T2SeedPResV2) (hD : T2SeedDomV2) : T2FOSeedV2 :=

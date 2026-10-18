@@ -116,7 +116,7 @@ theorem expT0Out_of4 (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
 
 /-- **The top theorem before the split of `T2BelowXRes`** (the single current form is `trio_terminates_main_V2_cur`, V3TopT2B): everything committed so far plugged in. The hypotheses are the named
 residuals: drop `HDropV2`・`HSeedV2`; shared `HFrameV2`・`HLeafV2`; t0 `T0RwRes`・`T0AbWRes`;
-t2 `T2BelowXRes`・`T2SeedPResRCV2`・`T2SeedDomV2`・`FDsh`・the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`)・
+t2 `T2BelowXRes`・`T2SeedPResRCV2`・`T2SeedDomV2`・`T2FDCopyRes`・the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`)・
 the prefix shape `T2SeedPreShape`・the copy levels `T2VRACopy`・the `σ`-step at the guarded copy frames
 `T2VRAK KVRA` (t1, the frame condition of `qVRAshK_KVRA`); top `HSibHardV2`.
 None of them is the false strong absorption `HAbSV2`. (2026-10-17, drop: also `T2UpgAbsW`, the strong `UpgAbsX`
@@ -126,7 +126,7 @@ theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hAbW : T0AbWRes) (hArgB : T0ArgBRes) (hCB : T2CBadOut)
     (hB : T2BelowXResV2) (hU2 : T2UpgAbsW) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
-    (hFD : FDsh)
+    (hFD : T2FDCopyRes)
     (hQNG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
         par M 0 (r + L) = some q → q ≠ r → ∀ Lc, CL M r = Lc ++ [q] → T2VRAQNDom M ρ r L q Lc)
