@@ -73,6 +73,54 @@ def FDshCopyKVRA : Prop := ∀ {V V' a B s y : T} {Lv : List T}
     FrameDom (shf V V' a) (sh V V' B) (shf V V' s)
       (H (shf V V' s) (sh V V' y))
 
+/-- Every old component above V transports through FrameDom's interval.
+Unlike the low copy guards, this lemma needs no LevAt predicate or KA/KG. -/
+theorem frameDom_sh_high_component {V V' a B s X w u g C : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hB : isOT B = true) (hs : isOT s = true)
+    (hX : isOT X = true) (hVs : V < s)
+    (hw : isOT w = true) (hVw : V < w) (hwa : w ≤ a)
+    (hu : u ≤ shf V V' w) (hFD : FrameDom a B s X)
+    (hg : g ∈ comps w B ∨ g ∈ comps w s)
+    (hBC : sh V V' B < C) (hSC : psi (shf V V' s) z z < C)
+    (hCX : C ≤ sh V V' X) :
+    ∃ d ∈ C :: (comps u C ++ comps u (shf V V' a)), sh V V' g ≤ d := by
+  have hgo : isOT g = true := hg.elim
+    (isOT_of_mem_comps w hB) (isOT_of_mem_comps w hs)
+  have key : ∀ m, isOT m = true → B ≤ m → psi s z z ≤ m → sh V V' m < C →
+      ∃ d ∈ C :: (comps u C ++ comps u (shf V V' a)), sh V V' g ≤ d := by
+    intro m hm hBm hSm hmC
+    obtain ⟨r, hmr, hrc, hdom⟩ := ClShLGuarded.shift_interval_coinitial
+      hV hV' hVV hw hVw hu hm C hmC
+    have hrX : r ≤ X := by
+      by_contra hn
+      have hXr : X < r := lt_of_not_ge hn
+      exact not_lt_of_ge (le_trans hrc hCX)
+        (ClShLGuarded.sh_lt_right hV hV' hVV hX hXr)
+    obtain ⟨d, hd, hgd⟩ := hFD w (not_lt.mpr hwa) r
+      (lt_of_le_of_lt hBm hmr) (lt_of_le_of_lt hSm hmr) hrX g hg
+    rcases List.mem_cons.mp hd with hd | hd
+    · subst d
+      exact ⟨C, List.mem_cons_self ..,
+        le_trans (ClShLGuarded.sh_le_right hV hV' hVV hgo hgd) hrc⟩
+    · rcases List.mem_append.mp hd with hdr | hda
+      · obtain ⟨e, he, hde⟩ := hdom d (List.mem_cons_of_mem _ hdr)
+        have hge := le_trans (ClShLGuarded.sh_le_right hV hV' hVV hgo hgd) hde
+        change e ∈ z :: comps u C at he
+        rcases List.mem_cons.mp he with he | he
+        · subst e
+          exact ⟨C, List.mem_cons_self .., le_trans hge (z_le _)⟩
+        · exact ⟨e, List.mem_cons_of_mem _ (List.mem_append_left _ he), hge⟩
+      · exact ⟨sh V V' d, List.mem_cons_of_mem _ (List.mem_append_right _
+          (ClShLGuarded.high_index_sh hV hV' hVV ha hw hVw hu hda)),
+          ClShLGuarded.sh_le_right hV hV' hVV hgo hgd⟩
+  by_cases h : B < psi s z z
+  · apply key (psi s z z) (isOT_psi_zz hs) (le_of_lt h) (le_refl _)
+    simpa [sh_psi_gt hVs, sh_z] using hSC
+  · exact key B hB (le_refl _) (not_lt.mp h) hBC
+
+#print axioms frameDom_sh_high_component
+
 /-- A zero state needs no transport when the upper endpoint has the child's
 own leading index. This handles the measured low-level interval exceptions. -/
 theorem zero_FrameDom_of_shared_level {a s Y : T} (has : a ≤ s) :
