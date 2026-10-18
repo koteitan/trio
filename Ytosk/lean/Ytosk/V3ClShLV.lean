@@ -8,7 +8,8 @@ KA is exactly the requested condition at levels u <= V (unshifted old
 components of a); it is not replaced by the stronger SubstDom.1.
 low_components_interval_only discharges introduced components, unchanged
 component bounds, and moving state/index bounds. General interval persistence
-through sh and the levels above V remain unresolved. There is no full clShL
+through sh remains unresolved. All levels above V now reduce to old interval
+alternatives (above_cut_interval_only), including gaps of f. There is no full clShL
 theorem. The shared-leading-index helper is conditional: the original frame
 hypotheses do not force the two interval endpoints to share their index.
 -/
@@ -304,6 +305,231 @@ theorem high_components_interval_only {V V' a B A w g' : T}
       sh_le_sh hV hV' (le_of_lt hVV) hgo (isOT_of_mem_comps w ha hd) hgd⟩)
   · exact Or.inr (Or.inr ⟨g, hg, rfl, h⟩)
 
+/-- Above V, frozen nodes are invisible: every component is a moving old
+component at succ V, or is introduced from V'. -/
+theorem components_above_cut (V V' : T) {u : T} (hVu : V < u) :
+    ∀ n {t g' : T}, size t ≤ n → g' ∈ comps u (sh V V' t) →
+      (∃ g ∈ comps (succ V) t, g' = sh V V' g) ∨ g' ∈ comps u V'
+  | 0, t, _, hn, hg => by
+    cases t with
+    | z => simp [sh_z, comps] at hg
+    | psi => simp [size] at hn
+  | n + 1, z, _, _, hg => by simp [sh_z, comps] at hg
+  | n + 1, psi s y c, g', hn, hg => by
+    have hny : size y ≤ n := by simp [size] at hn; omega
+    have hnc : size c ≤ n := by simp [size] at hn; omega
+    have hns : size (sub s V) ≤ n := by
+      have := size_sub_le s V
+      simp [size] at hn
+      omega
+    have htail : g' ∈ comps u (sh V V' c) →
+        (∃ g ∈ comps (succ V) (psi s y c), g' = sh V V' g) ∨ g' ∈ comps u V' := by
+      intro hc
+      rcases components_above_cut V V' hVu n hnc hc with ⟨g, hg, he⟩ | hc
+      · exact Or.inl ⟨g, mem_comps_tail hg, he⟩
+      · exact Or.inr hc
+    by_cases hVs : V < s
+    · rw [sh_psi_gt hVs] at hg
+      simp only [comps, List.mem_append] at hg
+      rcases hg with hg | hg
+      · split at hg
+        · simp at hg
+        · have hsw : ¬ s < succ V := not_lt.mpr (succ_le_of_lt hVs)
+          simp only [List.mem_cons, List.mem_append] at hg
+          rcases hg with rfl | hg | hg
+          · exact Or.inl ⟨y, comps_psi_mem_of hsw (Or.inl rfl), rfl⟩
+          · rcases components_above_cut V V' hVu n hny hg with ⟨g, hg, he⟩ | hg
+            · exact Or.inl ⟨g, comps_psi_mem_of hsw (Or.inr (Or.inl hg)), he⟩
+            · exact Or.inr hg
+          · unfold shf at hg
+            obtain ⟨P, hP, hPs⟩ := add_eq_app_prefix V' (sh V V' (sub s V))
+            rw [hP, comps_app] at hg
+            rcases List.mem_append.mp hg with hg | hg
+            · obtain ⟨q, hq, hgq⟩ := comps_to_summand hg
+              exact Or.inr (comps_of_mem_summands (hPs q hq) hgq)
+            · rcases components_above_cut V V' hVu n hns hg with ⟨g, hg, he⟩ | hg
+              · exact Or.inl ⟨g, comps_psi_mem_of hsw
+                  (Or.inr (Or.inr (Or.inl (comps_sub_sub (succ V) s V hg)))), he⟩
+              · exact Or.inr hg
+      · exact htail hg
+    · rw [sh_psi_le hVs] at hg
+      have hsu : lt s u = true := lt_of_le_of_lt (not_lt.mp hVs) hVu
+      simp only [comps, hsu, ↓reduceIte, List.nil_append] at hg
+      exact htail hg
+
+/-- The new levels strictly between V and V' also reduce to old interval
+alternatives. Together with matched high levels, this covers the first gap of f. -/
+theorem middle_components_interval_only {V V' a B A u g' : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hB : isOT B = true)
+    (hVD : VDomF V V' a) (hOm : psi (shf V V' a) z z ≤ sh V V' B)
+    (hcl : ClosedL a B A) (hVu : V < u) (huV' : u ≤ V') :
+    g' ∈ comps u (sh V V' B) →
+    g' ≤ sh V V' B ∨ (∃ d ∈ comps u (shf V V' a), g' ≤ d) ∨
+      ∃ g w, g' = sh V V' g ∧ V ≤ w ∧ w ≤ succ V ∧ w ≤ a ∧ Persistent w g B A := by
+  intro hg'
+  rcases components_above_cut V V' hVu (size B) (Nat.le_refl _) hg' with
+      ⟨g, hg, rfl⟩ | hg
+  · have hgo := isOT_of_mem_comps (succ V) hB hg
+    rcases (le_iff _ _).mp hVa with hVa | hVa
+    · have hwa := succ_le_of_lt hVa
+      have huw : u ≤ shf V V' (succ V) := le_trans huV'
+        (le_shf hV hV' (le_of_lt hVV) (isOT_succ hV) (le_of_lt (lt_succ_self V)))
+      rcases hcl (succ V) (show ¬ lt a (succ V) = true from not_lt.mpr hwa) g hg with
+          h | ⟨d, hd, hgd⟩ | h
+      · exact Or.inl (sh_le_sh hV hV' (le_of_lt hVV) hgo hB h)
+      · exact Or.inr (Or.inl ⟨sh V V' d,
+          high_index_sh hV hV' hVV ha (isOT_succ hV) (lt_succ_self V) huw hd,
+          sh_le_sh hV hV' (le_of_lt hVV) hgo (isOT_of_mem_comps (succ V) ha hd) hgd⟩)
+      · exact Or.inr (Or.inr ⟨g, succ V, rfl, le_of_lt (lt_succ_self V), le_refl _, hwa, h⟩)
+    · subst a
+      have hgv := comps_mono (le_of_lt (lt_succ_self V)) hg
+      rcases hcl V (show ¬ lt V V = true from lt_irrefl' V) g hgv with h | ⟨d, hd, _⟩ | h
+      · exact Or.inl (sh_le_sh hV hV' (le_of_lt hVV) hgo hB h)
+      · rw [comps_self hV] at hd
+        simp at hd
+      · exact Or.inr (Or.inr ⟨g, V, rfl, le_refl _, le_of_lt (lt_succ_self V), le_refl _, h⟩)
+  · have hufa : ¬ lt (shf V V' a) u = true := not_lt.mpr
+      (le_trans huV' (le_shf hV hV' (le_of_lt hVV) ha hVa))
+    rcases introduced_bound hVD hOm hufa hg with h | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+
+private theorem shf_mono_old {V V' b s : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hb : isOT b = true) (hs : isOT s = true) (hVb : V ≤ b) (hbs : b ≤ s) :
+    shf V V' b ≤ shf V V' s := by
+  rcases (le_iff _ _).mp hbs with h | rfl
+  · exact le_of_lt (shf_lt_shf hV hV' (le_of_lt hVV) hb hs hVb h)
+  · exact le_refl _
+
+private theorem matched_cap {V V' a s u : T}
+    (ha : isOT a = true) (hs : isOT s = true) (hVa : V < a) (hVs : V < s)
+    (hua : u ≤ shf V V' a) (hus : u ≤ shf V V' s) :
+    ∃ b, isOT b = true ∧ V < b ∧ b ≤ a ∧ b ≤ s ∧ u ≤ shf V V' b := by
+  by_cases has : a ≤ s
+  · exact ⟨a, ha, hVa, le_refl _, has, hua⟩
+  · exact ⟨s, hs, hVs, le_of_lt (lt_of_not_ge has), le_refl _, hus⟩
+
+/-- Every component above V can be raised to a matched level f(w) without
+losing its occurrence, unless it was introduced from V'. This handles gaps of f. -/
+theorem component_raise_to_matched {V V' u : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V') (hVu : V < u) :
+    ∀ n {t a g' : T}, size t ≤ n → isOT t = true → isOT a = true → V < a →
+      u ≤ shf V V' a → g' ∈ comps u (sh V V' t) →
+      (∃ w, isOT w = true ∧ V < w ∧ w ≤ a ∧ u ≤ shf V V' w ∧
+        g' ∈ comps (shf V V' w) (sh V V' t)) ∨ g' ∈ comps u V'
+  | 0, t, _, _, hn, _, _, _, _, hg => by
+    cases t with
+    | z => simp [sh_z, comps] at hg
+    | psi => simp [size] at hn
+  | n + 1, z, _, _, _, _, _, _, _, hg => by simp [sh_z, comps] at hg
+  | n + 1, psi s y c, a, g', hn, ht, ha, hVa, hua, hg => by
+    have hny : size y ≤ n := by simp [size] at hn; omega
+    have hnc : size c ≤ n := by simp [size] at hn; omega
+    have hns : size (sub s V) ≤ n := by
+      have := size_sub_le s V
+      simp [size] at hn
+      omega
+    have htail : g' ∈ comps u (sh V V' c) →
+        (∃ w, isOT w = true ∧ V < w ∧ w ≤ a ∧ u ≤ shf V V' w ∧
+          g' ∈ comps (shf V V' w) (sh V V' (psi s y c))) ∨ g' ∈ comps u V' := by
+      intro hc
+      rcases component_raise_to_matched hV hV' hVV hVu n hnc (isOT_rest ht) ha hVa hua hc with
+          ⟨w, hw, hVw, hwa, huw, hgw⟩ | hc
+      · refine Or.inl ⟨w, hw, hVw, hwa, huw, ?_⟩
+        rw [sh_psi_app, comps_app]
+        exact List.mem_append.mpr (Or.inr hgw)
+      · exact Or.inr hc
+    by_cases hVs : V < s
+    · rw [sh_psi_gt hVs] at hg
+      simp only [comps, List.mem_append] at hg
+      rcases hg with hg | hg
+      · split at hg
+        · simp at hg
+        · rename_i hsu
+          obtain ⟨b, hb, hVb, hba, hbs, hub⟩ :=
+            matched_cap ha (isOT_sub ht) hVa hVs hua (not_lt.mp hsu)
+          have hparent : ∀ w, isOT w = true → V < w → w ≤ b →
+              ¬ shf V V' s < shf V V' w := by
+            intro w hw hVw hwb
+            exact not_lt.mpr (shf_mono_old hV hV' hVV hw (isOT_sub ht)
+              (le_of_lt hVw) (le_trans hwb hbs))
+          have hsb : ¬ shf V V' s < shf V V' b := hparent b hb hVb (le_refl _)
+          simp only [List.mem_cons, List.mem_append] at hg
+          rcases hg with rfl | hg | hg
+          · refine Or.inl ⟨b, hb, hVb, hba, hub, ?_⟩
+            rw [sh_psi_gt hVs]
+            exact comps_psi_mem_of hsb (Or.inl rfl)
+          · rcases component_raise_to_matched hV hV' hVV hVu n hny (isOT_arg ht) hb hVb hub hg with
+                ⟨w, hw, hVw, hwb, huw, hgw⟩ | hg
+            · refine Or.inl ⟨w, hw, hVw, le_trans hwb hba, huw, ?_⟩
+              rw [sh_psi_gt hVs]
+              exact comps_psi_mem_of (hparent w hw hVw hwb) (Or.inr (Or.inl hgw))
+            · exact Or.inr hg
+          · unfold shf at hg
+            obtain ⟨P, hP, hPs⟩ := add_eq_app_prefix V' (sh V V' (sub s V))
+            rw [hP, comps_app] at hg
+            rcases List.mem_append.mp hg with hg | hg
+            · obtain ⟨q, hq, hgq⟩ := comps_to_summand hg
+              exact Or.inr (comps_of_mem_summands (hPs q hq) hgq)
+            · rcases component_raise_to_matched hV hV' hVV hVu n hns
+                (isOT_sub_sfx (isOT_sub ht) V) hb hVb hub hg with
+                  ⟨w, hw, hVw, hwb, huw, hgw⟩ | hg
+              · have hidx : g' ∈ comps (shf V V' w) (shf V V' s) := by
+                  unfold shf
+                  rw [hP, comps_app]
+                  exact List.mem_append.mpr (Or.inr hgw)
+                refine Or.inl ⟨w, hw, hVw, le_trans hwb hba, huw, ?_⟩
+                rw [sh_psi_gt hVs]
+                exact comps_psi_mem_of (hparent w hw hVw hwb) (Or.inr (Or.inr (Or.inl hidx)))
+              · exact Or.inr hg
+      · exact htail hg
+    · rw [sh_psi_le hVs] at hg
+      have hsu : lt s u = true := lt_of_le_of_lt (not_lt.mp hVs) hVu
+      simp only [comps, hsu, ↓reduceIte, List.nil_append] at hg
+      exact htail hg
+
+/-- All new levels above V, including gaps of f, reduce to old interval
+alternatives. KA is needed only for the low levels, not for this reduction. -/
+theorem above_cut_interval_only {V V' a B A u g' : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hB : isOT B = true)
+    (hVD : VDomF V V' a) (hOm : psi (shf V V' a) z z ≤ sh V V' B)
+    (hcl : ClosedL a B A) (hVu : V < u) (hua : u ≤ shf V V' a)
+    (hg' : g' ∈ comps u (sh V V' B)) :
+    g' ≤ sh V V' B ∨ (∃ d ∈ comps u (shf V V' a), g' ≤ d) ∨
+      ∃ w g, isOT w = true ∧ V ≤ w ∧ w ≤ a ∧ u ≤ shf V V' w ∧
+        g ∈ comps w B ∧ g' = sh V V' g ∧ Persistent w g B A := by
+  have hintro : g' ∈ comps u V' →
+      g' ≤ sh V V' B ∨ (∃ d ∈ comps u (shf V V' a), g' ≤ d) ∨
+        ∃ w g, isOT w = true ∧ V ≤ w ∧ w ≤ a ∧ u ≤ shf V V' w ∧
+          g ∈ comps w B ∧ g' = sh V V' g ∧ Persistent w g B A := by
+    intro hg
+    rcases introduced_bound hVD hOm (show ¬ lt (shf V V' a) u = true from not_lt.mpr hua) hg with h | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+  rcases (le_iff _ _).mp hVa with hVa | hVa
+  · rcases component_raise_to_matched hV hV' hVV hVu (size B) (Nat.le_refl _)
+        hB ha hVa hua hg' with ⟨w, hw, hVw, hwa, huw, hgw⟩ | hg
+    · rcases high_components_interval_only hV hV' hVV ha hB hw hVw hwa hcl hgw with
+          h | ⟨d, hd, hgd⟩ | ⟨g, hg, he, hp⟩
+      · exact Or.inl h
+      · exact Or.inr (Or.inl ⟨d, comps_mono huw hd, hgd⟩)
+      · exact Or.inr (Or.inr ⟨w, g, hw, le_of_lt hVw, hwa, huw, hg, he, hp⟩)
+    · exact hintro hg
+  · subst a
+    rcases components_above_cut V V' hVu (size B) (Nat.le_refl _) hg' with
+        ⟨g, hg, he⟩ | hg
+    · have hgv := comps_mono (le_of_lt (lt_succ_self V)) hg
+      have hgo := isOT_of_mem_comps V hB hgv
+      rcases hcl V (show ¬ lt V V = true from lt_irrefl' V) g hgv with h | ⟨d, hd, _⟩ | h
+      · exact Or.inl (he ▸ sh_le_sh hV hV' (le_of_lt hVV) hgo hB h)
+      · rw [comps_self hV] at hd
+        simp at hd
+      · exact Or.inr (Or.inr ⟨V, g, hV, le_refl _, le_refl _, hua, hgv, he, h⟩)
+    · exact hintro hg
+
 /-- Moving components need no extra old-index guard: their unresolved case
 is precisely the old interval alternative at V or succ V. -/
 theorem moving_component {V V' a B A u g : T}
@@ -489,6 +715,10 @@ theorem persistent_iff_rightCorners {u g B A : T} :
     obtain ⟨e, he, hde⟩ := hdom d hd
     exact ⟨e, he, le_trans hgd hde⟩
 
+#print axioms above_cut_interval_only
+#print axioms component_raise_to_matched
+#print axioms middle_components_interval_only
+#print axioms components_above_cut
 #print axioms high_components_interval_only
 #print axioms high_component_sh
 #print axioms persistent_iff_rightCorners
