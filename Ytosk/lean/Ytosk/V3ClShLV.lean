@@ -10,6 +10,13 @@ is an exact finite endpoint characterization for arbitrary syntax intervals.
 The failure is at the root level w = V, where a frozen index can retain D while
 a moving argument introduces sh D > D. No full clShL theorem can have the
 proposed hypotheses; the counterexample contains no sorry or added axioms.
+
+For actual cut-shaped frames, clShL_of_cut_KG proves the full copy conclusion
+from the old SubSmallA bound, the NSG cut shape, and VD/KA/KG. The old seed
+bound and cut hold on all 23,466 distinct measured copy tuples. The all-level
+seed bound is explicit: Inv3V2.vra only covers LevAt, so this is not yet a
+proof removing HRwClL. closedL_sh_of_retained_transport separately isolates
+exactly the retained low interval obligation when starting from ClosedL alone.
 -/
 import Ytosk.V3ShadowL
 import Ytosk.V3T2VRAK
@@ -1108,6 +1115,42 @@ theorem persistent_shf_frozen {V V' u g B A : T}
     unfold shf
     rw [hfix B hB hlB, hfix A hA hlA]
     exact persistent_add (isOT_sub_sfx hB V) (isOT_sub_sfx hA V) h V'
+
+/-- An interval crossing from a frozen head to a head above V contains
+Omega_(V+1). Persistence there is already dominated by the old V components,
+or is the zero bound. This settles the mixed-index corner independently. -/
+theorem persistent_frozen_to_high_bound {V u g B A : T}
+    (hB : ¬ V < lev B) (hA : V < lev A) (hp : Persistent u g B A) :
+    g = z ∨ ∃ d ∈ comps u V, g ≤ d := by
+  have hBc : B < psi (succ V) z z := by
+    apply lt_om_iff.mpr
+    exact Or.inr (lt_of_le_of_lt (not_lt.mp hB) (lt_succ_self V))
+  have hcA : psi (succ V) z z ≤ A := by
+    cases A with
+    | z => exact False.elim (T.not_lt_z _ hA)
+    | psi a x c => exact psi_le_psi_anyG (succ_le_of_lt hA)
+  obtain ⟨d, hd, hgd⟩ := hp _ hBc hcA
+  have hdV : d = z ∨ d ∈ comps u V := by
+    rcases List.mem_cons.mp hd with rfl | hd
+    · exact Or.inl rfl
+    · by_cases hsu : succ V < u
+      · simp [comps, show lt (succ V) u = true from hsu] at hd
+      · rw [comps_psi_z_of_ge hsu] at hd
+        simp only [comps, List.mem_cons, List.mem_append, List.not_mem_nil, false_or] at hd
+        rcases hd with rfl | hd
+        · exact Or.inl rfl
+        · rw [succ, comps_app] at hd
+          rcases List.mem_append.mp hd with hd | hd
+          · exact Or.inr hd
+          · left
+            by_cases hzu : lt z u = true
+            · simp [one, comps, hzu] at hd
+            · simpa [one, comps, hzu] using hd
+  rcases hdV with rfl | hd
+  · exact Or.inl (le_antisymm hgd (z_le _))
+  · exact Or.inr ⟨d, hd, hgd⟩
+
+#print axioms persistent_frozen_to_high_bound
 
 #print axioms persistent_shf_frozen
 
