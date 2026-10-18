@@ -6,9 +6,11 @@ This file contains ONLY the guarded task's proved helper lemmas.
 
 KA is exactly the requested condition at levels u <= V (unshifted old
 components of a); it is not replaced by the stronger SubstDom.1.
-low_components discharges introduced components and the ordinary unchanged
-component bounds. Moving images, general interval persistence through sh,
-and the levels above V remain unresolved. There is no full clShL theorem.
+low_components_interval_only discharges introduced components, unchanged
+component bounds, and moving state/index bounds. General interval persistence
+through sh and the levels above V remain unresolved. There is no full clShL
+theorem. The shared-leading-index helper is conditional: the original frame
+hypotheses do not force the two interval endpoints to share their index.
 -/
 import Ytosk.V3ShadowL
 import Ytosk.V3T2VRAK
@@ -112,6 +114,206 @@ theorem persistent_of_shared_level {u g p x r y t : T}
     subst q
     refine ⟨g, List.mem_cons_of_mem _ ?_, le_refl _⟩
     exact comps_psi_mem_of (not_lt.mpr hup) (Or.inr (Or.inr (Or.inl hg)))
+
+/-- Components at moving positions survive the shift at every level at most V. -/
+theorem compsAN_sh_forward {V V' u : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (huV : u ≤ V) :
+    ∀ (n : Nat) {t g : T}, isOT t = true → g ∈ compsAN V u n t →
+      sh V V' g ∈ comps u (sh V V' t)
+  | 0, _, _, _, hg => by simp [compsAN] at hg
+  | n + 1, z, _, _, hg => by simp [compsAN] at hg
+  | n + 1, psi s y c, g, ht, hg => by
+    simp only [compsAN, List.mem_append] at hg
+    rcases hg with hg | hg
+    · by_cases hc : ¬ lt s u = true ∧ lt V s = true
+      · rw [if_pos hc] at hg
+        rw [sh_psi_gt hc.2]
+        have hfu : ¬ shf V V' s < u := not_lt.mpr
+          (le_trans huV (le_trans (le_of_lt hVV)
+            (le_of_lt (lt_shf hV hV' (le_of_lt hVV) (isOT_sub ht) hc.2))))
+        simp only [List.mem_cons, List.mem_append] at hg
+        rcases hg with rfl | hg | hg
+        · exact comps_psi_mem_of hfu (Or.inl rfl)
+        · exact comps_psi_mem_of hfu (Or.inr (Or.inl
+            (compsAN_sh_forward hV hV' hVV huV n (isOT_arg ht) hg)))
+        · have hd := compsAN_sh_forward hV hV' hVV huV n
+            (isOT_sub_sfx (isOT_sub ht) V) hg
+          obtain ⟨P, hP, _⟩ := add_eq_app_prefix V' (sh V V' (sub s V))
+          have hidx : sh V V' g ∈ comps u (shf V V' s) := by
+            unfold shf
+            rw [hP, comps_app]
+            exact List.mem_append.mpr (Or.inr hd)
+          exact comps_psi_mem_of hfu (Or.inr (Or.inr (Or.inl hidx)))
+      · rw [if_neg hc] at hg
+        simp at hg
+    · have hd := compsAN_sh_forward hV hV' hVV huV n (isOT_rest ht) hg
+      rw [sh_psi_app, comps_app]
+      exact List.mem_append.mpr (Or.inr hd)
+
+/-- Subtraction only removes summands below the level of the subtrahend. -/
+theorem comps_sub_above {u : T} : ∀ t W : T,
+    (∀ q ∈ summands W, lev q < u) → comps u (sub t W) = comps u t
+  | z, _, _ => by simp [sub, comps]
+  | psi s y c, z, _ => rfl
+  | psi s y c, psi d e f, hW => by
+    rw [sub_psi_psi]
+    split
+    · rfl
+    · rename_i hn
+      have hsd : s ≤ d := lev_le_of_le (le_of_not_gt hn)
+      have hdu : d < u := hW (psi d e z) (by simp [summands])
+      have hsu : lt s u = true := lt_of_le_of_lt hsd hdu
+      rw [comps_sub_above c f (fun q hq => hW q (by simp [summands, hq]))]
+      simp [comps, hsu]
+
+/-- Below the first moving level, the level parameter in compsAN is immaterial. -/
+theorem compsAN_level_eq {V u w : T} (hu : u ≤ succ V) (hw : w ≤ succ V) :
+    ∀ n t, compsAN V u n t = compsAN V w n t
+  | 0, _ => rfl
+  | _ + 1, z => rfl
+  | n + 1, psi s y c => by
+    have he : (¬ lt s u = true ∧ lt V s = true) ↔
+        (¬ lt s w = true ∧ lt V s = true) := by
+      constructor
+      · intro h
+        exact ⟨not_lt.mpr (le_trans hw (succ_le_of_lt h.2)), h.2⟩
+      · intro h
+        exact ⟨not_lt.mpr (le_trans hu (succ_le_of_lt h.2)), h.2⟩
+    simp only [compsAN, he, compsAN_level_eq hu hw n y,
+      compsAN_level_eq hu hw n (sub s V), compsAN_level_eq hu hw n c]
+
+/-- An old component above V survives at any new level at most V. -/
+theorem high_component_sh_low {V V' u w : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hu : u ≤ V) (hw : V < w) :
+    ∀ n {t g : T}, size t ≤ n → isOT t = true → g ∈ comps w t →
+      sh V V' g ∈ comps u (sh V V' t)
+  | 0, t, _, hn, _, hg => by
+    cases t with
+    | z => simp [comps] at hg
+    | psi => simp [size] at hn
+  | n + 1, z, _, _, _, hg => by simp [comps] at hg
+  | n + 1, psi s y c, g, hn, ht, hg => by
+    have hny : size y ≤ n := by simp [size] at hn; omega
+    have hnc : size c ≤ n := by simp [size] at hn; omega
+    have hns : size (sub s V) ≤ n := by
+      have := size_sub_le s V
+      simp [size] at hn
+      omega
+    simp only [comps, List.mem_append] at hg
+    rcases hg with hg | hg
+    · split at hg
+      · simp at hg
+      · rename_i hsw
+        have hVs : V < s := lt_of_lt_of_le hw (not_lt.mp hsw)
+        rw [sh_psi_gt hVs]
+        have hfu : ¬ shf V V' s < u := not_lt.mpr
+          (le_trans hu (le_trans (le_of_lt hVV)
+            (le_of_lt (lt_shf hV hV' (le_of_lt hVV) (isOT_sub ht) hVs))))
+        simp only [List.mem_cons, List.mem_append] at hg
+        rcases hg with rfl | hg | hg
+        · exact comps_psi_mem_of hfu (Or.inl rfl)
+        · exact comps_psi_mem_of hfu (Or.inr (Or.inl
+            (high_component_sh_low hV hV' hVV hu hw n hny (isOT_arg ht) hg)))
+        · have hsub : g ∈ comps w (sub s V) := by
+            rw [comps_sub_above s V (fun q hq =>
+              lt_trans (lev_lt_of_summand hV hq) hw)]
+            exact hg
+          have hd := high_component_sh_low hV hV' hVV hu hw n hns
+            (isOT_sub_sfx (isOT_sub ht) V) hsub
+          obtain ⟨P, hP, _⟩ := add_eq_app_prefix V' (sh V V' (sub s V))
+          have hidx : sh V V' g ∈ comps u (shf V V' s) := by
+            unfold shf
+            rw [hP, comps_app]
+            exact List.mem_append.mpr (Or.inr hd)
+          exact comps_psi_mem_of hfu (Or.inr (Or.inr (Or.inl hidx)))
+    · have hd := high_component_sh_low hV hV' hVV hu hw n hnc (isOT_rest ht) hg
+      rw [sh_psi_app, comps_app]
+      exact List.mem_append.mpr (Or.inr hd)
+
+/-- Components of a above V are retained in the new subscript f(a). -/
+theorem high_index_sh_low {V V' a u w g : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hu : u ≤ V) (hw : V < w) (hg : g ∈ comps w a) :
+    sh V V' g ∈ comps u (shf V V' a) := by
+  have hgsub : g ∈ comps w (sub a V) := by
+    rw [comps_sub_above a V (fun q hq => lt_trans (lev_lt_of_summand hV hq) hw)]
+    exact hg
+  have hd := high_component_sh_low hV hV' hVV hu hw (size (sub a V))
+    (Nat.le_refl _) (isOT_sub_sfx ha V) hgsub
+  obtain ⟨P, hP, _⟩ := add_eq_app_prefix V' (sh V V' (sub a V))
+  unfold shf
+  rw [hP, comps_app]
+  exact List.mem_append.mpr (Or.inr hd)
+
+/-- Moving components need no extra old-index guard: their unresolved case
+is precisely the old interval alternative at V or succ V. -/
+theorem moving_component {V V' a B A u g : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hB : isOT B = true)
+    (hcl : ClosedL a B A) (hu : u ≤ V) {n : Nat} (hg : g ∈ compsAN V u n B) :
+    sh V V' g ≤ sh V V' B ∨
+      (∃ d ∈ comps u (shf V V' a), sh V V' g ≤ d) ∨
+      ∃ w, V ≤ w ∧ w ≤ succ V ∧ w ≤ a ∧ Persistent w g B A := by
+  have hgo : isOT g = true := isOT_of_mem_comps u hB (compsAN_sub V u n hg)
+  rcases (le_iff _ _).mp hVa with hVa | hVa
+  · have hwa : succ V ≤ a := succ_le_of_lt hVa
+    have hgw : g ∈ comps (succ V) B := by
+      apply compsAN_sub V (succ V) n
+      rw [← compsAN_level_eq (le_trans hu (le_of_lt (lt_succ_self V))) (le_refl (succ V)) n B]
+      exact hg
+    rcases hcl (succ V) (not_lt.mpr hwa) g hgw with h | ⟨d, hd, hgd⟩ | h
+    · exact Or.inl (sh_le_sh hV hV' (le_of_lt hVV) hgo hB h)
+    · exact Or.inr (Or.inl ⟨sh V V' d,
+        high_index_sh_low hV hV' hVV ha hu (lt_succ_self V) hd,
+        sh_le_sh hV hV' (le_of_lt hVV) hgo (isOT_of_mem_comps (succ V) ha hd) hgd⟩)
+    · exact Or.inr (Or.inr ⟨succ V, le_of_lt (lt_succ_self V), le_refl _, hwa, h⟩)
+  · subst a
+    have hgv : g ∈ comps V B := by
+      apply compsAN_sub V V n
+      rw [← compsAN_level_eq (le_trans hu (le_of_lt (lt_succ_self V)))
+        (le_of_lt (lt_succ_self V)) n B]
+      exact hg
+    rcases hcl V (show ¬ lt V V = true from lt_irrefl' V) g hgv with h | ⟨d, hd, _⟩ | h
+    · exact Or.inl (sh_le_sh hV hV' (le_of_lt hVV) hgo hB h)
+    · rw [comps_self hV] at hd
+      simp at hd
+    · exact Or.inr (Or.inr ⟨V, le_refl _, le_of_lt (lt_succ_self V), le_refl _, h⟩)
+
+/-- At levels at most V, only transport of the interval alternatives remains.
+The moving alternative is evaluated at an old level between V and succ V. -/
+theorem low_components_interval_only {V V' a B A u g : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hB : isOT B = true)
+    (hVD : VDomF V V' a) (hKA : KA V V' a)
+    (hOm : psi (shf V V' a) z z ≤ sh V V' B)
+    (hcl : ClosedL a B A) (hu : ¬ lt V u = true) (hg : g ∈ comps u (sh V V' B)) :
+    g ≤ sh V V' B ∨ (∃ d ∈ comps u (shf V V' a), g ≤ d) ∨
+      Persistent u g B A ∨
+      ∃ d w, g = sh V V' d ∧ d ∈ compsAN V u (size B) B ∧
+        V ≤ w ∧ w ≤ succ V ∧ w ≤ a ∧ Persistent w d B A := by
+  rcases low_components hV hV' hVV ha hVa hB hVD hKA hOm hcl hu hg with
+      h | h | ⟨d, hd, he⟩ | h
+  · exact Or.inl h
+  · exact Or.inr (Or.inl h)
+  · rcases moving_component hV hV' hVV ha hVa hB hcl (not_lt.mp hu) hd with
+        h | h | ⟨w, hwV, hwS, hwa, hp⟩
+    · exact Or.inl (he ▸ h)
+    · exact Or.inr (Or.inl (he ▸ h))
+    · exact Or.inr (Or.inr (Or.inr ⟨d, w, he, hd, hwV, hwS, hwa, hp⟩))
+  · exact Or.inr (Or.inr (Or.inl h))
+
+#print axioms low_components_interval_only
+
+#print axioms high_index_sh_low
+#print axioms moving_component
+
+#print axioms comps_sub_above
+#print axioms compsAN_level_eq
+#print axioms high_component_sh_low
+
+#print axioms compsAN_sh_forward
 
 #print axioms low_components
 #print axioms persistent_of_shared_level
