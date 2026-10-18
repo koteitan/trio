@@ -1111,6 +1111,115 @@ theorem persistent_shf_frozen {V V' u g B A : T}
 
 #print axioms persistent_shf_frozen
 
+/-- Persistence in an index interval lifts through a principal term.
+The left index itself also supplies its components at the equality boundary. -/
+theorem persistent_psi_index {u g p q x r y t : T}
+    (hup : u ≤ p) (hg : g ∈ Gc u p) (hp : Persistent u g p q) :
+    Persistent u g (psi p x r) (psi q y t) := by
+  intro c hc1 hc2
+  cases c with
+  | z => exact False.elim (T.not_lt_z _ hc1)
+  | psi v e f =>
+    have hpv : p ≤ v := by simpa only [lev] using lev_le_of_le (le_of_lt hc1)
+    have hvq : v ≤ q := by simpa only [lev] using lev_le_of_le hc2
+    have huv : ¬ v < u := not_lt.mpr (le_trans hup hpv)
+    rcases (le_iff _ _).mp hpv with hpv | rfl
+    · obtain ⟨d, hd, hgd⟩ := hp v hpv hvq
+      exact ⟨d, gc_index huv hd, hgd⟩
+    · exact ⟨g, gc_index huv hg, le_refl _⟩
+
+/-- Persistence in an argument interval lifts through a fixed index. -/
+theorem persistent_psi_argument {u g p x r y t : T}
+    (hup : u ≤ p) (hg : g ∈ Gc u x) (hp : Persistent u g x y) :
+    Persistent u g (psi p x r) (psi p y t) := by
+  intro c hc1 hc2
+  cases c with
+  | z => exact False.elim (T.not_lt_z _ hc1)
+  | psi q e f =>
+    have hpq : p ≤ q := by simpa only [lev] using lev_le_of_le (le_of_lt hc1)
+    have hqp : q ≤ p := by simpa only [lev] using lev_le_of_le hc2
+    have heq : q = p := le_antisymm hqp hpq
+    subst q
+    have hxe : x ≤ e := by
+      rcases T.psi_lt_psi.mp hc1 with h | ⟨_, h⟩ | ⟨_, h, _⟩
+      · exact False.elim (lt_irrefl' p h)
+      · exact le_of_lt h
+      · exact le_of_eq h
+    have hey : e ≤ y := by
+      rcases (le_iff _ _).mp hc2 with h | h
+      · rcases T.psi_lt_psi.mp h with h | ⟨_, h⟩ | ⟨_, h, _⟩
+        · exact False.elim (lt_irrefl' p h)
+        · exact le_of_lt h
+        · exact le_of_eq h
+      · exact le_of_eq (T.psi.inj h).2.1
+    rcases (le_iff _ _).mp hxe with hxe | rfl
+    · obtain ⟨d, hd, hgd⟩ := hp e hxe hey
+      exact ⟨d, gc_arg (not_lt.mpr hup) hd, hgd⟩
+    · exact ⟨g, gc_arg (not_lt.mpr hup) hg, le_refl _⟩
+
+/-- A G3 cut is closed relative to any right extension of its source,
+apart from the components of the cut's seed index s. -/
+theorem cutsHG_closed {s u : T} : ∀ {h B : T}, B ∈ cutsHG s h →
+    isOT B = true → ∀ R g, g ∈ comps u B →
+      g ≤ B ∨ (∃ d ∈ comps u s, g ≤ d) ∨ Persistent u g B (app h R) := by
+  intro h
+  induction h with
+  | z => intro B hB; simp [cutsHG] at hB
+  | psi a x c iha ihx ihc =>
+    intro B hB hBot R g hg
+    rcases mem_cutsHG_psi.mp hB with ⟨hsa, rfl⟩ | ⟨v, hv, rfl⟩ |
+        ⟨hsa, v, hv, rfl⟩ | ⟨hsa, v, hv, rfl⟩
+    · by_cases hsu : s < u
+      · simp [comps, show lt s u = true from hsu] at hg
+      · rw [comps_psi_z_of_ge hsu] at hg
+        simp only [comps, List.mem_cons, List.mem_append, List.not_mem_nil, false_or] at hg
+        rcases hg with rfl | hg
+        · exact Or.inl (z_le _)
+        · exact Or.inr (Or.inl ⟨g, hg, le_refl _⟩)
+    · by_cases hvu : v < u
+      · simp [comps, show lt v u = true from hvu] at hg
+      · rw [comps_psi_z_of_ge hvu] at hg
+        simp only [comps, List.mem_cons, List.mem_append, List.not_mem_nil, false_or] at hg
+        rcases hg with rfl | hg
+        · exact Or.inl (z_le _)
+        · rcases iha hv (isOT_sub hBot) z g hg with h | h | hp
+          · exact Or.inl (le_trans h (le_of_lt (lt_Om_self v)))
+          · exact Or.inr (Or.inl h)
+          · right; right
+            apply persistent_psi_index (not_lt.mp hvu) (List.mem_cons_of_mem _ hg)
+            simpa using hp
+    · by_cases hau : a < u
+      · simp [comps, show lt a u = true from hau] at hg
+      · rw [comps_psi_z_of_ge hau] at hg
+        simp only [List.mem_cons, List.mem_append] at hg
+        rcases hg with rfl | hg | hg
+        · exact Or.inr (Or.inr (persistent_of_argument_bound (not_lt.mp hau) (le_refl _)))
+        · rcases ihx hv (isOT_arg hBot) z g hg with h | h | hp
+          · exact Or.inr (Or.inr (persistent_of_argument_bound (not_lt.mp hau) h))
+          · exact Or.inr (Or.inl h)
+          · right; right
+            apply persistent_psi_argument (not_lt.mp hau) (List.mem_cons_of_mem _ hg)
+            simpa using hp
+        · exact Or.inr (Or.inr (persistent_of_shared_level (not_lt.mp hau) hg))
+    · simp only [comps, List.mem_append] at hg
+      rcases hg with hg | hg
+      · by_cases hau : a < u
+        · simp [show lt a u = true from hau] at hg
+        · rw [if_neg (show ¬ lt a u = true from hau)] at hg
+          simp only [List.mem_cons, List.mem_append] at hg
+          rcases hg with rfl | hg | hg
+          · exact Or.inr (Or.inr (persistent_of_argument_bound (not_lt.mp hau) (le_refl _)))
+          · exact Or.inr (Or.inr (persistent_psi_argument (not_lt.mp hau)
+              (List.mem_cons_of_mem _ hg) (by intro e he1 he2; exact False.elim (not_lt_of_ge he2 he1))))
+          · exact Or.inr (Or.inr (persistent_of_shared_level (not_lt.mp hau) hg))
+      · rcases ihc hv (isOT_rest hBot) R g hg with h | h | hp
+        · left
+          exact le_trans h (le_of_lt (rest_lt hBot))
+        · exact Or.inr (Or.inl h)
+        · exact Or.inr (Or.inr (persistent_app (psi a x z) hp))
+
+#print axioms cutsHG_closed
+
 /-- Applying H preserves standardness even at its own parent index. -/
 theorem isOT_H_self {s y : T} (hc : isOT (psi s y z) = true) :
     isOT (psi s (H s y) z) = true := by
