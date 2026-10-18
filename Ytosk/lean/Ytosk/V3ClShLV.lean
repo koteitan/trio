@@ -1,17 +1,15 @@
 /-
-Partial results for ClShL with VDomF and the first conjunct of KAG.
+ClShL with VDomF and the first conjunct of KAG is false.
+RootGuardCounterexample.counterexample verifies every proposed premise and
+refutes the conclusion at a = V = 1. KA even holds without its level restriction.
 
-The two unguarded / VDomF-only counterexamples live in V3ClShL.lean.
-This file contains ONLY the guarded task's proved helper lemmas.
-
-KA is exactly the requested condition at levels u <= V (unshifted old
-components of a); it is not replaced by the stronger SubstDom.1.
-low_components_interval_only discharges introduced components, unchanged
-component bounds, and moving state/index bounds. General interval persistence
-through sh remains unresolved. All levels above V now reduce to old interval
-alternatives (above_cut_interval_only), including gaps of f. There is no full clShL
-theorem. The shared-leading-index helper is conditional: the original frame
-hypotheses do not force the two interval endpoints to share their index.
+Positive results remain useful independently: persistent_sh_high transports
+interval persistence from every old standard level w > V; above_cut_interval_only
+handles all new levels above V, including gaps of f; persistent_iff_rightCorners
+is an exact finite endpoint characterization for arbitrary syntax intervals.
+The failure is at the root level w = V, where a frozen index can retain D while
+a moving argument introduces sh D > D. No full clShL theorem can have the
+proposed hypotheses; the counterexample contains no sorry or added axioms.
 -/
 import Ytosk.V3ShadowL
 import Ytosk.V3T2VRAK
@@ -1035,6 +1033,174 @@ theorem persistent_sh_high {V V' w u g B A : T}
   obtain ⟨d, hd, hgd⟩ := hp r hBr hrA
   obtain ⟨e, he, hde⟩ := hdom d hd
   exact ⟨e, he, le_trans (sh_le_right hV hV' hVV hg hgd) hde⟩
+
+/-! ## Counterexample to ClShL with both proposed guards at the root a = V -/
+namespace RootGuardCounterexample
+
+def num : Nat → T
+  | 0 => z
+  | n + 1 => psi z z (num n)
+def om (t : T) : T := psi t z z
+def V : T := num 1
+def V' : T := num 2
+def a : T := V
+def s : T := num 2
+def D : T := om (om (num 5))
+def p : T := psi V D z
+def W : T := psi (num 2) D z
+def B : T := psi p W z
+def y : T := psi p (om (num 3)) z
+
+def Df : T := om (om (num 6))
+def Bf : T := psi p (psi (num 3) Df z) z
+def yf : T := psi p (om (num 4)) z
+
+private theorem single_components {u t x d : T} (h : d ∈ comps u (psi t x z)) :
+    d = x ∨ d ∈ comps u x ∨ d ∈ comps u t := by
+  by_cases htu : lt t u = true
+  · simp [comps, htu] at h
+  · simpa [comps, htu] using h
+
+private theorem num_components (u : T) : ∀ n d, d ∈ comps u (num n) → d = z
+  | 0, _, h => by simp [num, comps] at h
+  | n + 1, d, h => by
+    change d ∈ comps u (psi z z (num n)) at h
+    simp only [comps, List.mem_append] at h
+    rcases h with h | h
+    · by_cases hzu : lt z u = true
+      · simp [hzu] at h
+      · simpa [hzu, comps] using h
+    · exact num_components u n d h
+
+private theorem D_components {u d : T} (h : d ∈ comps u D) : d = z := by
+  rcases single_components h with h | h | h
+  · exact h
+  · simp [comps] at h
+  · rcases single_components h with h | h | h
+    · exact h
+    · simp [comps] at h
+    · exact num_components u 5 d h
+
+private theorem W_components {u d : T} (h : d ∈ comps u W) : d = D ∨ d = z := by
+  rcases single_components h with h | h | h
+  · exact Or.inl h
+  · exact Or.inr (D_components h)
+  · exact Or.inr (num_components u 2 d h)
+
+private theorem p_components {u d : T} (h : d ∈ comps u p) : d = D ∨ d = z := by
+  rcases single_components h with h | h | h
+  · exact Or.inl h
+  · exact Or.inr (D_components h)
+  · exact Or.inr (num_components u 1 d h)
+
+private theorem B_components {u d : T} (h : d ∈ comps u B) : d = W ∨ d = D ∨ d = z := by
+  rcases single_components h with h | h | h
+  · exact Or.inl h
+  · exact Or.inr (W_components h)
+  · exact Or.inr (p_components h)
+
+theorem old_endpoint : H a (H s y) = y := by decide
+
+/-- D is persistent through the frozen index p, at every admissible old level. -/
+theorem old_closedL : ClosedL a B (H a (H s y)) := by
+  intro u hu d hd
+  rcases B_components hd with rfl | rfl | rfl
+  · exact Or.inl (by decide)
+  · refine Or.inr (Or.inr ?_)
+    rw [old_endpoint]
+    have hup : u ≤ p := le_trans (not_lt.mp hu) (show a ≤ p by decide)
+    have hDp : D ∈ comps u p := comps_psi_mem_of hu (Or.inl rfl)
+    exact persistent_of_shared_level hup hDp
+  · exact Or.inl (z_le _)
+
+theorem vdom : VDomF V V' a := by
+  intro u _ d hd
+  have hd0 := num_components u 2 d hd
+  subst d
+  exact Or.inl (z_le _)
+
+/-- KA holds even with its level restriction removed: a has only zero components. -/
+theorem ka_all : ∀ u d, d ∈ comps u a →
+    d ≤ psi (shf V V' a) z z ∨ ∃ d' ∈ comps u (shf V V' a), d ≤ d' := by
+  intro u d hd
+  have hd0 := num_components u 1 d hd
+  subst d
+  exact Or.inl (z_le _)
+
+theorem ka : KA V V' a := fun u _ d hd => ka_all u d hd
+
+theorem subst_a : shf V V' a = num 2 := by
+  simp [shf, a, V, V', sub, lt, num]
+
+theorem subst_s : shf V V' s = num 3 := by
+  simp [shf, s, V, V', sub, sh, add, lt, num]
+
+theorem subst_B : sh V V' B = Bf := by
+  simp [B, p, W, D, om, V, V', Bf, Df, sh, sub, add, lt, num]
+
+theorem subst_y : sh V V' y = yf := by
+  simp [y, p, D, om, V, V', yf, sh, sub, add, lt, num]
+
+structure Premises : Prop where
+  hV : isOT V = true
+  hV' : isOT V' = true
+  hVV : V < V'
+  ha : isOT a = true
+  hVa : V ≤ a
+  hB : isOT B = true
+  hsy : isOT (psi s y z) = true
+  hVs : V < s
+  hBs : ∀ q ∈ summands B, psi s y z ≤ q
+  hBV : ∀ q ∈ summands B, V < lev q
+  ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true
+  hhi : B < (split y (psi (succ s) z z)).1
+  hnp : ¬ ∃ R, (split y (psi (succ s) z z)).1 = app B R
+  hVD : VDomF V V' a
+  hKA : KA V V' a
+  hcl : ClosedL a B (H a (H s y))
+
+theorem premises : Premises := by
+  refine ⟨by decide, by decide, by decide, by decide, by decide,
+    by decide, by decide, by decide, ?_, ?_, by decide, by decide, ?_, vdom, ka, old_closedL⟩
+  · intro q hq
+    have hqB : q = B := by simpa [B, summands] using hq
+    subst q
+    decide
+  · intro q hq
+    have hqB : q = B := by simpa [B, summands] using hq
+    subst q
+    decide
+  · rintro ⟨R, hR⟩
+    change psi p (om (num 3)) z = psi p W R at hR
+    have hne : om (num 3) ≠ W := by decide
+    exact hne (T.psi.inj hR).2.1
+
+theorem new_component : Df ∈ comps V (sh V V' B) := by rw [subst_B]; decide
+
+theorem witness_bounds : sh V V' B < yf ∧
+    yf ≤ H (shf V V' a) (H (shf V V' s) (sh V V' y)) := by
+  rw [subst_B, subst_a, subst_s, subst_y]
+  decide
+
+theorem new_not_closedL : ¬ ClosedL (shf V V' a) (sh V V' B)
+    (H (shf V V' a) (H (shf V V' s) (sh V V' y))) := by
+  intro hc
+  have hu : ¬ lt (shf V V' a) V = true := by rw [subst_a]; decide
+  rcases hc V hu Df new_component with h | h | h
+  · exact (show ¬ Df ≤ sh V V' B by rw [subst_B]; decide) h
+  · exact (show ¬ ∃ d ∈ comps V (shf V V' a), Df ≤ d by rw [subst_a]; decide) h
+  · exact (show ¬ ∃ d ∈ Gc V yf, Df ≤ d by decide)
+      (h yf witness_bounds.1 witness_bounds.2)
+
+/-- Every premise, including both guards, holds, but the requested conclusion fails. -/
+theorem counterexample : Premises ∧
+    ¬ ClosedL (shf V V' a) (sh V V' B)
+      (H (shf V V' a) (H (shf V V' s) (sh V V' y))) :=
+  ⟨premises, new_not_closedL⟩
+
+#print axioms counterexample
+
+end RootGuardCounterexample
 
 #print axioms persistent_sh_high
 
