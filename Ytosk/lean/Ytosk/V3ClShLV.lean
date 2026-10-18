@@ -304,6 +304,137 @@ theorem low_components_interval_only {V V' a B A u g : T}
     · exact Or.inr (Or.inr (Or.inr ⟨d, w, he, hd, hwV, hwS, hwa, hp⟩))
   · exact Or.inr (Or.inr (Or.inl h))
 
+/-- Finite right-hand corners: raise one coordinate and reset later coordinates.
+These terms need not be standard, just like the terms quantified by Persistent. -/
+def rightCorners : T → List T
+  | z => [one]
+  | psi p x r =>
+    (rightCorners p).map (fun v => psi v z z) ++
+    (rightCorners x).map (fun e => psi p e z) ++
+    (rightCorners r).map (fun t => psi p x t)
+
+private theorem psi_mono_coords {p x r q y t : T}
+    (hp : p ≤ q) (hx : x ≤ y) (hr : r ≤ t) : psi p x r ≤ psi q y t := by
+  rcases (le_iff _ _).mp hp with hp | rfl
+  · exact psi_le_psi_of (Or.inl hp)
+  · rcases (le_iff _ _).mp hx with hx | rfl
+    · exact psi_le_psi_of (Or.inr ⟨rfl, Or.inl hx⟩)
+    · exact psi_le_psi_of (Or.inr ⟨rfl, Or.inr ⟨rfl, hr⟩⟩)
+
+private theorem gc_tail {u p x c d : T} (hd : d ∈ Gc u c) :
+    d ∈ Gc u (psi p x c) := by
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact List.mem_cons_self
+  · exact List.mem_cons_of_mem _ (mem_comps_tail hd)
+
+private theorem gc_arg {u p x c d : T} (hp : ¬ p < u) (hd : d ∈ Gc u x) :
+    d ∈ Gc u (psi p x c) := by
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact List.mem_cons_self
+  · exact List.mem_cons_of_mem _ (comps_psi_mem_of hp (Or.inr (Or.inl hd)))
+
+private theorem gc_index {u p x c d : T} (hp : ¬ p < u) (hd : d ∈ Gc u p) :
+    d ∈ Gc u (psi p x c) := by
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact List.mem_cons_self
+  · exact List.mem_cons_of_mem _ (comps_psi_mem_of hp (Or.inr (Or.inr (Or.inl hd))))
+
+private theorem dom_gc_refl (u t : T) : Dom (Gc u t) (Gc u t) :=
+  fun d hd => ⟨d, hd, le_refl _⟩
+
+private theorem dom_gc_zero (u t : T) : Dom (Gc u z) (Gc u t) := by
+  intro d hd
+  have hd0 : d = z := by simpa [Gc, comps] using hd
+  subst d
+  exact ⟨z, List.mem_cons_self, le_refl _⟩
+
+/-- Coordinate domination, including direct argument bounds, respects components. -/
+theorem dom_gc_psi {u p x r q y t : T}
+    (hp : p ≤ q) (hx : x ≤ y)
+    (hpc : Dom (Gc u p) (Gc u q)) (hxc : Dom (Gc u x) (Gc u y))
+    (hrc : Dom (Gc u r) (Gc u t)) :
+    Dom (Gc u (psi p x r)) (Gc u (psi q y t)) := by
+  intro g hg
+  rcases List.mem_cons.mp hg with rfl | hg
+  · exact ⟨z, List.mem_cons_self, le_refl _⟩
+  simp only [comps, List.mem_append] at hg
+  rcases hg with hg | hg
+  · by_cases hpu : lt p u = true
+    · rw [if_pos hpu] at hg
+      simp at hg
+    · rw [if_neg hpu] at hg
+      have hqu : ¬ q < u := not_lt.mpr (le_trans (not_lt.mp hpu) hp)
+      simp only [List.mem_cons, List.mem_append] at hg
+      rcases hg with rfl | hg | hg
+      · exact ⟨y, List.mem_cons_of_mem _ (comps_psi_mem_of hqu (Or.inl rfl)), hx⟩
+      · obtain ⟨d, hd, hgd⟩ := hxc g (List.mem_cons_of_mem _ hg)
+        exact ⟨d, gc_arg hqu hd, hgd⟩
+      · obtain ⟨d, hd, hgd⟩ := hpc g (List.mem_cons_of_mem _ hg)
+        exact ⟨d, gc_index hqu hd, hgd⟩
+  · obtain ⟨d, hd, hgd⟩ := hrc g (List.mem_cons_of_mem _ hg)
+    exact ⟨d, gc_tail hd, hgd⟩
+
+/-- Every right-hand corner is strictly above its source. -/
+theorem rightCorners_gt : ∀ {B r : T}, r ∈ rightCorners B → B < r
+  | z, r, hr => by
+    have hr1 : r = one := by simpa [rightCorners] using hr
+    subst r
+    exact T.z_lt_psi _ _ _
+  | psi p x t, r, hr => by
+    simp only [rightCorners, List.mem_append, List.mem_map] at hr
+    rcases hr with (⟨v, hv, rfl⟩ | ⟨e, he, rfl⟩) | ⟨s, hs, rfl⟩
+    · exact T.psi_lt_psi.mpr (Or.inl (rightCorners_gt hv))
+    · exact T.psi_lt_psi.mpr (Or.inr (Or.inl ⟨rfl, rightCorners_gt he⟩))
+    · exact T.psi_lt_psi.mpr (Or.inr (Or.inr ⟨rfl, rfl, rightCorners_gt hs⟩))
+
+/-- Above B, some finite corner is below c and its components are dominated
+by those of c. No standardness hypothesis is needed for B or c. -/
+theorem rightCorners_coinitial (u : T) : ∀ {B c : T}, B < c →
+    ∃ r ∈ rightCorners B, r ≤ c ∧ Dom (Gc u r) (Gc u c)
+  | z, c, h => by
+    refine ⟨one, by simp [rightCorners], one_le_of_ne_z ?_, ?_⟩
+    · exact fun he => T.not_lt_z _ (he ▸ h)
+    · intro g hg
+      have hg0 : g = z := by
+        simp [Gc, one, comps] at hg
+        tauto
+      subst g
+      exact ⟨z, List.mem_cons_self, le_refl _⟩
+  | psi p x t, z, h => False.elim (T.not_lt_z _ h)
+  | psi p x t, psi q y s, h => by
+    rcases T.psi_lt_psi.mp h with hp | ⟨rfl, hx⟩ | ⟨rfl, rfl, ht⟩
+    · obtain ⟨v, hv, hvq, hvc⟩ := rightCorners_coinitial u hp
+      refine ⟨psi v z z, ?_, psi_mono_coords hvq (z_le _) (z_le _),
+        dom_gc_psi hvq (z_le _) hvc (dom_gc_zero u y) (dom_gc_zero u s)⟩
+      simp only [rightCorners, List.mem_append, List.mem_map]
+      exact Or.inl (Or.inl ⟨v, hv, rfl⟩)
+    · obtain ⟨e, he, hey, hec⟩ := rightCorners_coinitial u hx
+      refine ⟨psi p e z, ?_, psi_mono_coords (le_refl _) hey (z_le _),
+        dom_gc_psi (le_refl _) hey (dom_gc_refl u p) hec (dom_gc_zero u s)⟩
+      simp only [rightCorners, List.mem_append, List.mem_map]
+      exact Or.inl (Or.inr ⟨e, he, rfl⟩)
+    · obtain ⟨r, hr, hrs, hrc⟩ := rightCorners_coinitial u ht
+      refine ⟨psi p x r, ?_, psi_mono_coords (le_refl _) (le_refl _) hrs,
+        dom_gc_psi (le_refl _) (le_refl _) (dom_gc_refl u p) (dom_gc_refl u x) hrc⟩
+      simp only [rightCorners, List.mem_append, List.mem_map]
+      exact Or.inr ⟨r, hr, rfl⟩
+
+/-- Exact finite characterization of Persistent using the endpoints only. -/
+theorem persistent_iff_rightCorners {u g B A : T} :
+    Persistent u g B A ↔
+      ∀ r ∈ rightCorners B, r ≤ A → ∃ d ∈ Gc u r, g ≤ d := by
+  constructor
+  · intro hp r hr hra
+    exact hp r (rightCorners_gt hr) hra
+  · intro hp c hBc hcA
+    obtain ⟨r, hr, hrc, hdom⟩ := rightCorners_coinitial u hBc
+    obtain ⟨d, hd, hgd⟩ := hp r hr (le_trans hrc hcA)
+    obtain ⟨e, he, hde⟩ := hdom d hd
+    exact ⟨e, he, le_trans hgd hde⟩
+
+#print axioms persistent_iff_rightCorners
+#print axioms rightCorners_coinitial
+
 #print axioms low_components_interval_only
 
 #print axioms high_index_sh_low
