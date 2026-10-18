@@ -1192,6 +1192,109 @@ theorem moving_root_bound_of_frameOT {V V' B u g : T}
   exact sh_lt_sh hV hV' (le_of_lt hVV) (isOT_of_mem_comps V hB hgv) hB
     ((isOT_psi_iff.mp hFO).2.2.2.2 g hgv)
 
+/-- Every moving low-level component is fully handled by FrameOT and
+high-level interval transport. No root-persistence assumption remains. -/
+theorem moving_component_closed {V V' a B A u g : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hFO : isOT (psi a B z) = true)
+    (hA : isOT A = true) (hcl : ClosedL a B A) (hu : u ≤ V)
+    {n : Nat} (hg : g ∈ compsAN V u n B) :
+    sh V V' g ≤ sh V V' B ∨
+      (∃ d ∈ comps u (shf V V' a), sh V V' g ≤ d) ∨
+      Persistent u (sh V V' g) (sh V V' B) (sh V V' A) := by
+  have hB := isOT_arg hFO
+  have hgo := isOT_of_mem_comps u hB (compsAN_sub V u n hg)
+  rcases (le_iff _ _).mp hVa with hVa | hVa
+  · have hwa := succ_le_of_lt hVa
+    have hgw : g ∈ comps (succ V) B := by
+      apply compsAN_sub V (succ V) n
+      rw [← compsAN_level_eq (le_trans hu (le_of_lt (lt_succ_self V)))
+        (le_refl (succ V)) n B]
+      exact hg
+    rcases hcl (succ V) (not_lt.mpr hwa) g hgw with h | ⟨d, hd, hgd⟩ | hp
+    · exact Or.inl (sh_le_sh hV hV' (le_of_lt hVV) hgo hB h)
+    · exact Or.inr (Or.inl ⟨sh V V' d,
+        high_index_sh_low hV hV' hVV ha hu (lt_succ_self V) hd,
+        sh_le_sh hV hV' (le_of_lt hVV) hgo (isOT_of_mem_comps (succ V) ha hd) hgd⟩)
+    · right; right
+      apply persistent_sh_high hV hV' hVV (isOT_succ hV) (lt_succ_self V)
+        _ hgo hB hA hp
+      exact le_trans hu (le_trans (le_of_lt (lt_succ_self V))
+        (le_shf_self hV hV' (le_of_lt hVV) (isOT_succ hV) (le_of_lt (lt_succ_self V))))
+  · subst a
+    exact Or.inl (le_of_lt (moving_root_bound_of_frameOT hV hV' hVV hFO hu hg))
+
+/-- Every level above V is fully handled. At a=V, parent standardness
+makes every source component small; at a>V, persistent_sh_high applies. -/
+theorem above_cut_closed {V V' a B A u g : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hFO : isOT (psi a B z) = true)
+    (hA : isOT A = true) (hVD : VDomF V V' a)
+    (hOm : psi (shf V V' a) z z ≤ sh V V' B)
+    (hcl : ClosedL a B A) (hVu : V < u) (hua : u ≤ shf V V' a)
+    (hg : g ∈ comps u (sh V V' B)) :
+    g ≤ sh V V' B ∨ (∃ d ∈ comps u (shf V V' a), g ≤ d) ∨
+      Persistent u g (sh V V' B) (sh V V' A) := by
+  have hB := isOT_arg hFO
+  have hintro : g ∈ comps u V' →
+      g ≤ sh V V' B ∨ (∃ d ∈ comps u (shf V V' a), g ≤ d) ∨
+        Persistent u g (sh V V' B) (sh V V' A) := by
+    intro hg
+    rcases introduced_bound hVD hOm (not_lt.mpr hua) hg with h | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h)
+  rcases (le_iff _ _).mp hVa with hVa | hVa
+  · rcases component_raise_to_matched hV hV' hVV hVu (size B) (Nat.le_refl _)
+        hB ha hVa hua hg with ⟨w, hw, hVw, hwa, huw, hgw⟩ | hg
+    · rcases high_components_interval_only hV hV' hVV ha hB hw hVw hwa hcl hgw with
+          h | ⟨d, hd, hgd⟩ | ⟨g0, hg0, he, hp⟩
+      · exact Or.inl h
+      · exact Or.inr (Or.inl ⟨d, comps_mono huw hd, hgd⟩)
+      · right; right
+        rw [he]
+        exact persistent_sh_high hV hV' hVV hw hVw huw
+          (isOT_of_mem_comps w hB hg0) hB hA hp
+    · exact hintro hg
+  · subst a
+    rcases components_above_cut V V' hVu (size B) (Nat.le_refl _) hg with
+        ⟨g0, hg0, he⟩ | hg
+    · have hgv := comps_mono (le_of_lt (lt_succ_self V)) hg0
+      left
+      rw [he]
+      exact le_of_lt (sh_lt_sh hV hV' (le_of_lt hVV)
+        (isOT_of_mem_comps V hB hgv) hB (comps_lt hFO g0 hgv))
+    · exact hintro hg
+
+/-- Assembly reduces the guarded transport to unchanged old components at
+levels u<=V. All moving, introduced, and high-level cases are proved above. -/
+theorem closedL_sh_of_retained_transport {V V' a B A : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hFO : isOT (psi a B z) = true)
+    (hA : isOT A = true) (hVD : VDomF V V' a) (hKA : KA V V' a)
+    (hOm : psi (shf V V' a) z z ≤ sh V V' B) (hcl : ClosedL a B A)
+    (hret : ∀ u, u ≤ V → ∀ g ∈ comps u B, Persistent u g B A →
+      g ≤ sh V V' B ∨ (∃ d ∈ comps u (shf V V' a), g ≤ d) ∨
+        Persistent u g (sh V V' B) (sh V V' A)) :
+    ClosedL (shf V V' a) (sh V V' B) (sh V V' A) := by
+  intro u hu g hg
+  by_cases hVu : V < u
+  · exact above_cut_closed hV hV' hVV ha hVa hFO hA hVD hOm hcl hVu (not_lt.mp hu) hg
+  · rcases comps_sh_levA V V' (not_lt.mp hVu) (size B) B g (Nat.le_refl _) hg with
+        ⟨d, hd, he⟩ | ⟨d, hd, he⟩ | ⟨q, hq, hgq⟩
+    · rw [he]
+      exact moving_component_closed hV hV' hVV ha hVa hFO hA hcl (not_lt.mp hVu) hd
+    · subst g
+      rcases retained_component hV hV' hVV hVa (isOT_arg hFO) hKA hOm hcl hVu hd with
+          h | h | hp
+      · exact Or.inl h
+      · exact Or.inr (Or.inl h)
+      · exact hret u (not_lt.mp hVu) d hd hp
+    · rcases introduced_bound hVD hOm hu (comps_of_mem_summands hq hgq) with h | h
+      · exact Or.inl h
+      · exact Or.inr (Or.inl h)
+
+#print axioms closedL_sh_of_retained_transport
+
 /-! ## Counterexample to ClShL with both proposed guards at the root a = V -/
 namespace RootGuardCounterexample
 
