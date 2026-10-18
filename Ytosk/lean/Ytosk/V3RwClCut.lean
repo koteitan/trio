@@ -228,6 +228,38 @@ theorem shadow_hShL_from_cut {U : T → Prop} {a B s y y' : T}
   intro u hU hu
   exact closed_at_of_shadow_cut ha hBot hc (le_of_trig ht.2) hcut (hVR u hU hu)
 
+/-- The actual shadow premise consumed by relR_frameUL follows pointwise
+from Inv3V2, provided U consists of its parent/rewrite-path levels. This
+requires neither HRwClL nor a hypothesis about unused levels. -/
+theorem inv_shadow_hShL {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (I : Inv3V2 M ρ rk) {i : Nat} (hi : i < M.length)
+    {L : List Nat} {c : Nat} {R : List Nat} (hCL : CL M i = L ++ c :: R)
+    {s y y' : T} (ho : ρ.o c = psi s y z) {U : T → Prop}
+    (hU : ∀ u, U u → u = ρ.v i ∨ PathLvAll M ρ i u)
+    (hBc : ∀ q ∈ summands (stB ρ i L), psi s y z ≤ q)
+    (ht : lt (stB ρ i L) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true)
+    (hhi : stB ρ i L < (split y (psi (succ s) z z)).1)
+    (hnp : ¬ ∃ R', (split y (psi (succ s) z z)).1 = app (stB ρ i L) R')
+    (hnt : ¬ (lt (stB ρ i L) y' = true ∧ lt (psi (ρ.v i) z z) (psi s y' z) = true))
+    (hy'z : y' ≠ z) (hl : Lhd z (psi s y' z) (psi s y z))
+    (hX'ot : isOT (psi (ρ.v i) (app (stB ρ i L) (psi s y' z)) z) = true) :
+    ∀ u, U u → ¬ lt (ρ.v i) u = true →
+      ∀ g ∈ comps u (app (stB ρ i L) (psi s y' z)),
+        g < app (stB ρ i L) (psi s y' z) ∨
+          (∃ d ∈ comps u (ρ.v i), g ≤ d) ∨
+          Persistent u g (H (ρ.v i) (app (stB ρ i L) (psi s y' z)))
+            (H (ρ.v i) (H s y)) := by
+  apply shadow_hShL_on_levels hBc ht hnt hy'z hl hX'ot
+  · intro u hu hau
+    exact inv_closed_at_path_level I hi hCL ho ht hhi hnp (hU u hu) hau
+  · intro u hu hau
+    have hhinz : (split y (psi (succ s) z z)).1 ≠ z := by
+      intro h
+      exact T.not_lt_z _ (h ▸ hhi)
+    exact I.vra i c L R s y hCL ho ht hhinz u (hU u hu) hau
+
+#print axioms inv_shadow_hShL
+
 #print axioms shadow_hShL_from_cut
 
 #print axioms closedL_of_component_raise
