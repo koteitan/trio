@@ -194,6 +194,27 @@ theorem vAnc_of_prefix_pair {N : Mat} {k r i : Nat} {σ ρP : Valn}
   rw [hvi] at h
   exact h
 
+/-- n=2 uses hVS at the target index 2, with the structural prefix identity
+proved here. Only agreement of the two actually used v values remains explicit. -/
+theorem old_vAnc_base_of_pair_values {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
+    (h2 : TRIO.srow M (M.length - 1) = 2) (hVS : T2VAncStep M)
+    {r L i : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    {σ ρP : Valn} (hCN : Cons (G2 M r L 2) σ) (hGN : Good3 (G2 M r L 2) σ)
+    (hg : TRIO.le1 (G2 M r L 1) r i)
+    (hvr : σ.v r = ρP.v r) (hvi : σ.v i = ρP.v i) : VAnc ρP r i := by
+  have hP : G2 M r L 1 = M.take (r + L) := gexp_one_gen hlen
+  have hN : (G2 M r L 2).take (r + L) = M.take (r + L) :=
+    gexp_take_x hlen (by omega)
+  have he := expand_eq_G2_ctx C hz h2 hlen hr 2
+  have hstep : VAncStep (G2 M r L 2) σ := by
+    have h := hVS 2 (by omega) σ (by rw [he]; exact hCN)
+    rw [he] at h
+    exact h
+  apply vAnc_of_prefix_pair hCN hGN hstep (k := r + L) _ hvr hvi
+  rw [hN, ← hP]
+  exact hg
+
 /-- The precise remaining pointwise FrameDom conclusion, not a new residual. -/
 def RetainedLowNeed (V V' a B s y u g : T) : Prop :=
   ∀ C, sh V V' B < C → psi (shf V V' s) z z < C →
@@ -232,4 +253,5 @@ def RetainedLowOutsidePath (P : Mat) (ρP : Valn) (r i : Nat)
 #print axioms state_component_of_kind
 #print axioms le1_take_forward
 #print axioms vAnc_of_prefix_pair
+#print axioms old_vAnc_base_of_pair_values
 end Ytosk.FDCopy
