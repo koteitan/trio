@@ -1034,6 +1034,23 @@ theorem persistent_sh_high {V V' w u g B A : T}
   obtain ⟨e, he, hde⟩ := hdom d hd
   exact ⟨e, he, le_trans (sh_le_right hV hV' hVV hg hgd) hde⟩
 
+/-- The existing FrameOT premise eliminates moving root-interval obligations:
+at a = V every moving old component is already strictly below the state.
+This premise holds on all 67,304 measured actual copy frames, but fails in the
+root counterexample below. It is not asserted to settle retained low intervals. -/
+theorem moving_root_bound_of_frameOT {V V' B u g : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hFO : isOT (psi V B z) = true) (hu : u ≤ V) {n : Nat}
+    (hg : g ∈ compsAN V u n B) : sh V V' g < sh V V' B := by
+  have hB : isOT B = true := isOT_arg hFO
+  have hgv : g ∈ comps V B := by
+    apply compsAN_sub V V n
+    rw [← compsAN_level_eq (le_trans hu (le_of_lt (lt_succ_self V)))
+      (le_of_lt (lt_succ_self V)) n B]
+    exact hg
+  exact sh_lt_sh hV hV' (le_of_lt hVV) (isOT_of_mem_comps V hB hgv) hB
+    ((isOT_psi_iff.mp hFO).2.2.2.2 g hgv)
+
 /-! ## Counterexample to ClShL with both proposed guards at the root a = V -/
 namespace RootGuardCounterexample
 
@@ -1098,6 +1115,10 @@ private theorem B_components {u d : T} (h : d ∈ comps u B) : d = W ∨ d = D �
   · exact Or.inl h
   · exact Or.inr (W_components h)
   · exact Or.inr (p_components h)
+
+/-- The counterexample lacks the parent-state standardness already available
+as FrameOT in actual copy frames. -/
+theorem parent_not_OT : isOT (psi a B z) = false := by decide
 
 theorem old_endpoint : H a (H s y) = y := by decide
 
@@ -1202,6 +1223,7 @@ theorem counterexample : Premises ∧
 
 end RootGuardCounterexample
 
+#print axioms moving_root_bound_of_frameOT
 #print axioms persistent_sh_high
 
 #print axioms sh_lt_right
