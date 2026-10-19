@@ -542,6 +542,54 @@ theorem old_vAnc_copy_live {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     exact old_vAnc_base_live C hB hz h2 hVS hlen hr hCN hGN hCP hg hc
   · exact old_vAnc_copy_ctx C hz h2 hVS hlen hr (by omega) hCP hGP hg
 
+/-- All old-V components are discharged by old ancestry and the KA conjunct.
+The trigger itself supplies a <= s; no extra parent/child order guard is needed. -/
+theorem old_root_component_closed {V V' a s y u g C : T} {Lv : List T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hs : isOT s = true) (hVs : V < s)
+    (ht : psi a z z < psi s y z)
+    (hOld : ∀ u g, g ∈ comps u V →
+      g ≤ psi a z z ∨ ∃ d ∈ comps u a, g ≤ d)
+    (hK : KAG V V' a Lv (psi s y z) u)
+    (hg : ∃ e ∈ comps u V, g ≤ e)
+    (hSC : psi (shf V V' s) z z < C) :
+    ∃ d ∈ C :: (comps u C ++ comps u (shf V V' a)), g ≤ d := by
+  have has : a ≤ s := by
+    simpa only [lev] using lev_le_of_le (le_of_lt ht)
+  have hsf : s ≤ shf V V' s := le_shf_self hV hV' (le_of_lt hVV) hs (le_of_lt hVs)
+  have haf := ClShLGuarded.shf_le_right hV hV' hVV ha hVa has
+  have om_mono : ∀ {p q : T}, p ≤ q → psi p z z ≤ psi q z z := by
+    intro p q hpq
+    rcases (le_iff _ _).mp hpq with h | rfl
+    · exact psi_le_psi_of (Or.inl h)
+    · exact le_refl _
+  have hfinish : g ≤ psi (shf V V' s) z z →
+      ∃ d ∈ C :: (comps u C ++ comps u (shf V V' a)), g ≤ d :=
+    fun h => ⟨C, List.mem_cons_self .., le_trans h (le_of_lt hSC)⟩
+  obtain ⟨e, he, hge⟩ := hg
+  rcases hOld u e he with h | ⟨d, hd, hed⟩
+  · exact hfinish (le_trans hge (le_trans h (om_mono (le_trans has hsf))))
+  · rcases hK.1 d hd with h | ⟨d', hd', hdd'⟩
+    · exact hfinish (le_trans hge (le_trans hed (le_trans h (om_mono haf))))
+    · exact ⟨d', List.mem_cons_of_mem _ (List.mem_append_right _ hd'),
+        le_trans hge (le_trans hed hdd')⟩
+
+/-- The already proved high-component transport with the actual H endpoint.
+This supplies the high branch directly in the FDshCopyKV conclusion. -/
+theorem frameDom_copy_high_component {V V' a B s y w u g C : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hB : isOT B = true)
+    (hc : isOT (psi s y z) = true) (hVs : V < s)
+    (hw : isOT w = true) (hVw : V < w) (hwa : w ≤ a)
+    (hu : u ≤ shf V V' w) (hFD : FrameDom a B s (H s y))
+    (hg : g ∈ comps w B ∨ g ∈ comps w s)
+    (hBC : sh V V' B < C) (hSC : psi (shf V V' s) z z < C)
+    (hCX : C ≤ H (shf V V' s) (sh V V' y)) :
+    ∃ d ∈ C :: (comps u C ++ comps u (shf V V' a)), sh V V' g ≤ d := by
+  apply FDCut.frameDom_sh_high_component hV hV' hVV ha hB (isOT_sub hc)
+    (isOT_arg (ClShLGuarded.isOT_H_self hc)) hVs hw hVw hwa hu hFD hg hBC hSC
+  rwa [sh_H hV hV' hVV hc hVs]
+
 set_option linter.unusedVariables false in
 /-- Candidate COMBINED term statement, recorded for review before proof.
 It adds full old-V ancestor domination to FDshCopy with full VDomF and all-low
@@ -587,5 +635,7 @@ def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
 #print axioms source_v_base_live
 #print axioms source_v_base_pair
 #print axioms old_vAnc_base_live
+#print axioms old_root_component_closed
+#print axioms frameDom_copy_high_component
 #print axioms old_vAnc_copy_live
 end Ytosk.FDCopy
