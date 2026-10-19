@@ -590,6 +590,83 @@ theorem frameDom_copy_high_component {V V' a B s y w u g C : T}
     (isOT_arg (ClShLGuarded.isOT_H_self hc)) hVs hw hVw hwa hu hFD hg hBC hSC
   rwa [sh_H hV hV' hVV hc hVs]
 
+/-- At an unchanged level every old component has a dominating new component,
+unless it belongs to the removed V prefix. This holds at all levels. -/
+theorem component_forward_or_old_root {V V' u : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V') :
+    ∀ n (t : T), size t ≤ n → isOT t = true → ∀ g ∈ comps u t,
+      (∃ e ∈ comps u V, g ≤ e) ∨ ∃ d ∈ comps u (sh V V' t), g ≤ d := by
+  intro n
+  induction n with
+  | zero =>
+    intro t hn ht g hg
+    cases t with
+    | z => simp [comps] at hg
+    | psi => simp [size] at hn
+  | succ n ih =>
+    intro t hn ht g hg
+    cases t with
+    | z => simp [comps] at hg
+    | psi p x r =>
+      have hp := isOT_sub ht
+      have hx := isOT_arg ht
+      have hr := isOT_rest ht
+      have hsz : size p ≤ n ∧ size x ≤ n ∧ size r ≤ n := by simp [size] at hn; omega
+      have htail : g ∈ comps u r →
+          (∃ e ∈ comps u V, g ≤ e) ∨
+            ∃ d ∈ comps u (sh V V' (psi p x r)), g ≤ d := by
+        intro hg
+        rcases ih r hsz.2.2 hr g hg with h | ⟨d, hd, hgd⟩
+        · exact Or.inl h
+        · right
+          by_cases hVp : V < p
+          · rw [sh_psi_gt hVp]
+            exact ⟨d, mem_comps_tail hd, hgd⟩
+          · rw [sh_psi_le hVp]
+            exact ⟨d, mem_comps_tail hd, hgd⟩
+      simp only [comps, List.mem_append] at hg
+      rcases hg with hg | hg
+      · by_cases hpu : lt p u = true
+        · simp [hpu] at hg
+        · rw [if_neg hpu] at hg
+          by_cases hVp : V < p
+          · have hfu : ¬ shf V V' p < u := not_lt.mpr (le_trans (not_lt.mp hpu)
+              (le_shf_self hV hV' (le_of_lt hVV) hp (le_of_lt hVp)))
+            have hlift : ∀ d ∈ comps u (shf V V' p),
+                d ∈ comps u (sh V V' (psi p x r)) := by
+              intro d hd
+              rw [sh_psi_gt hVp]
+              exact comps_psi_mem_of hfu (Or.inr (Or.inr (Or.inl hd)))
+            simp only [List.mem_cons, List.mem_append] at hg
+            rcases hg with hgeq | hg | hg
+            · subst g
+              right
+              rw [sh_psi_gt hVp]
+              exact ⟨sh V V' x, comps_psi_mem_of hfu (Or.inl rfl),
+                le_sh hV hV' (le_of_lt hVV) hx⟩
+            · rcases ih x hsz.2.1 hx g hg with h | ⟨d, hd, hgd⟩
+              · exact Or.inl h
+              · right
+                rw [sh_psi_gt hVp]
+                exact ⟨d, comps_psi_mem_of hfu (Or.inr (Or.inl hd)), hgd⟩
+            · have hg' : g ∈ comps u (add V (sub p V)) := by
+                rwa [add_sub_cancel' hV hp (le_of_lt hVp)]
+              rcases comps_add u V (sub p V) g hg' with hgV | hgS
+              · exact Or.inl ⟨g, hgV, le_refl _⟩
+              · rcases ih (sub p V) (le_trans (size_sub_le p V) hsz.1)
+                    (isOT_sub_sfx hp V) g hgS with h | ⟨d, hd, hgd⟩
+                · exact Or.inl h
+                · right
+                  refine ⟨d, hlift d ?_, hgd⟩
+                  unfold shf
+                  obtain ⟨P, hP, _⟩ := add_eq_app_prefix V' (sh V V' (sub p V))
+                  rw [hP, comps_app]
+                  exact List.mem_append_right _ hd
+          · right
+            rw [sh_psi_le hVp]
+            exact ⟨g, by simp only [comps, List.mem_append]; exact Or.inl (by rw [if_neg hpu]; exact hg), le_refl _⟩
+      · exact htail hg
+
 /-- A component of a frozen index survives in f(p), except for components
 of the removed old V prefix. This is a forward statement at unchanged levels. -/
 theorem frozen_index_component_forward {V V' p u g : T}
@@ -691,6 +768,7 @@ def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
 #print axioms source_v_base_live
 #print axioms source_v_base_pair
 #print axioms old_vAnc_base_live
+#print axioms component_forward_or_old_root
 #print axioms frozen_index_interval_transport_any
 #print axioms frozen_index_component_forward
 #print axioms frozen_index_interval_transport
