@@ -17,6 +17,7 @@ import Ytosk.V3BumpExt
 import Ytosk.V3T2SeedSVCl
 import Ytosk.V3T2VRASV
 import Ytosk.V3T2SeedQNK
+import Ytosk.V3FDCopy
 
 namespace Ytosk
 
@@ -32,7 +33,7 @@ theorem hSibHard_of_col (h : HSibColV2) : HSibHardV2 := fun N σ rk hN hS hC hR 
 /-- **The current top theorem.** The hypotheses are the named residuals:
 drop `HDropV2W`・`HSeedV2`, the strong absorption at `t = 0` `T0UpgAbsV2` (t0); shared `HFrameV2`・`HLeafV2`; t0 `T0ArgBRes`; the bump monotonicity along prefixes `HBumpExt` (gives t0's `T0AbWRes` and t2's `T2BumpMonoV2`); `T2VAncStep` (with `T2VRAK KAG` the frame condition `KVRA`);
 t2 the closedness of the seed argument `T2SeedClV2B` (qn, and the `k`-free sv・C parts `T2SeedSVBase`・`T2SeedCBase`),
-the strong `UpgAbsX` at the last column `T2UpgAbsW` (drop-wkx2), (the seed standard forms come from `T2SeedClV2B`), the seed residual `T2SeedPResRCV2B` (qn and C reduced), `T2SeedDomV2B` (the level-`V` field of C from `T2SeedCBase`), `T2FDCopyRes` (`FDsh` at the real copy frames; the pure `FDsh` is false, `FDCut.not_FDsh`),
+the strong `UpgAbsX` at the last column `T2UpgAbsW` (drop-wkx2), (the seed standard forms come from `T2SeedClV2B`), the seed residual `T2SeedPResRCV2B` (qn and C reduced), `T2SeedDomV2B` (the level-`V` field of C from `T2SeedCBase`), `T2VRAKFD KAG` (all-low `KAG` at the moving rewriting copy frames; it gives `T2FDCopyRes` by `FDCopy.t2FDCopyRes_of_fd`, the `σ`-invariance of FrameDom being proved in V3FDCopy; the pure `FDsh` is false, `FDCut.not_FDsh`),
 the seed columns (qn from `T2SeedDomV2` and `T2SeedQNBase`; the last child `c₀` from the drop lemma, C: `cl_C`; no residual), the prefix shape of the seed frames (from `T2SVc0`・`T2CFrRes`), the copy levels `T2VRACopy`; t1 the `σ`-step at the guarded copy frames
 `T2VRAK KAG` (with `T2VAncStep` it gives the frame condition `KVRA` of `qVRAshK_KVRA`); top `HSibColV2` (adjacent siblings with the same column, not both counted, `SibColU`). -/
 theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : HSeedV2)
@@ -41,7 +42,9 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : H
     (hVS : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VAncStep M)
     (hCl : T2SeedClV2B) (hU2 : T2UpgAbsW) (hPRB : T2SeedPResRCV2B) (hSC : HSibColV2)
-    (hDomB : T2SeedDomV2B) (hFD : T2FDCopyRes)
+    (hDomB : T2SeedDomV2B)
+    (hAGfd : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → FDCopy.T2VRAKFD KAG M)
     (hVCp : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRACopy M)
     (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -96,7 +99,7 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hU0 : T0UpgAbsV2) (hSd : H
   trio_terminates_main_V2_base (hDropV2_of hDW hU0) hSd hF hLf
     (t0AbWRes_of_ext (hDropV2_of hDW hU0) hBE) hArgB
     hCB hBX hU2
-    hPR hSib hDom hFD hQNG hSVCG
+    hPR hSib hDom (FDCopy.t2FDCopyRes_of_fd hBX (t2FOSeedV2_of hP hDom) hVS hAGfd) hQNG hSVCG
     (fun M ρ rk C hz h2 => t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2))
     hVCp (fun M ρ rk C hz h2 => t2VRAK_KVRA_of
       (t2CopyK_vDom_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVS M ρ rk C hz h2))
