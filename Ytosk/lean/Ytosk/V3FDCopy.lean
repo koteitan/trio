@@ -1392,14 +1392,22 @@ def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
     FrameDom (shf V V' a) (sh V V' B) (shf V V' s)
       (H (shf V V' s) (sh V V' y))
 
-/-- Full guarded FrameDom transport, with all-low KAG and old ancestry. -/
-theorem fdshCopyKV : FDshCopyKV := by
-  intro V V' a B s y Lv hV hV' hVV ha hVa hsingle _hp _hlev hBeq hFO _hKind hVs ht hVD hK hOld hFD
-  have hc : isOT (psi s y z) = true := (hsingle _ (by simp)).1
+/-- The FrameDom core needs FrameOT but no PH-kind or list-order callback.
+Those hypotheses in FDshCopyKV were unused and are omitted from this interface. -/
+theorem frameDom_sh_KAG {V V' a B s y : T} {Lv : List T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hc : isOT (psi s y z) = true)
+    (hBeq : B = spArg a z (sumN Lv)) (hFO : isOT (psi a B z) = true)
+    (hVs : V < s) (ht : psi a z z < psi s y z)
+    (hVD : VDomF V V' a) (hK : ∀ u, u ≤ V → KAG V V' a Lv (psi s y z) u)
+    (hOld : ∀ u g, g ∈ comps u V → g ≤ psi a z z ∨ ∃ d ∈ comps u a, g ≤ d)
+    (hFD : FrameDom a B s (H s y)) :
+    FrameDom (shf V V' a) (sh V V' B) (shf V V' s)
+      (H (shf V V' s) (sh V V' y)) := by
   have hs := isOT_sub hc
   have hB := isOT_arg hFO
   have hsfx := isOT_sub_sfx hs V
-  have has : a ≤ s := by simpa only [lev] using lev_le_of_le (le_of_lt ht.2)
+  have has : a ≤ s := by simpa only [lev] using lev_le_of_le (le_of_lt ht)
   have hOm : psi (shf V V' a) z z ≤ psi (shf V V' s) z z :=
     psi_le_psi_z (ClShLGuarded.shf_le_right hV hV' hVV ha hVa has)
   have hshOm : sh V V' (psi s z z) = psi (shf V V' s) z z := by
@@ -1468,7 +1476,7 @@ theorem fdshCopyKV : FDshCopyKV := by
     have retained : ∀ d, (d ∈ comps u B ∨ d ∈ comps u s) →
         ∃ e ∈ C :: (comps u C ++ comps u (shf V V' a)), d ≤ e := by
       intro d hd
-      exact frameDom_copy_retained_low hV hV' hVV ha hVa hB hc hVs ht.2 huV
+      exact frameDom_copy_retained_low hV hV' hVV ha hVa hB hc hVs ht huV
         (hK u huV) hOld hFD hd hBC hSC hCX
     rcases hg with hg | hg
     · rcases comps_sh_levA V V' huV (size B) B g (le_refl _) hg with
@@ -1497,6 +1505,75 @@ theorem fdshCopyKV : FDshCopyKV := by
         · exact retained g (Or.inr (comps_sub_sub u s V hd))
         · exact introduced g (comps_of_mem_summands hq hgq)
 
+/-- Full accepted statement, derived from the smaller callback interface. -/
+theorem fdshCopyKV : FDshCopyKV := by
+  intro V V' a B s y Lv hV hV' hVV ha hVa hsingle _hp _hlev hBeq hFO _hKind hVs ht hVD hK hOld hFD
+  exact frameDom_sh_KAG hV hV' hVV ha hVa (hsingle _ (by simp)).1 hBeq hFO hVs ht.2 hVD hK hOld hFD
+
+/-- Matrix bridge at the actual copied source frames. Source FrameOT comes
+from frameOT_expand_t2 and prefix invariants; no PH-kind callback is needed. -/
+theorem t2CopyK_FDshAt_of_all {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hSeedFO : T2SeedFrames QFO M) (hVS : T2VAncStep M)
+    (hAGall : T2VRAKAll KAG M) : T2CopyK FDshAt M := by
+  have IW := Inv3W.ofV2 C.S C.I
+  have RW : Res3W M ρ rk := ⟨C.R.drop⟩
+  have hCR := t2CopyResAll_holds M ρ rk C.std C.ne IW RW hz h2
+  have hG := good3_expand_t2 C.std C.ne IW RW hz h2
+    (t2BelowXE_of hB C.std C.ne IW RW hz h2) hCR
+  have hVD := t2CopyK_vDom_of hB C.std C.ne IW RW hz h2 hVS
+  have hT : ∀ τ, Cons (M.take (M.length - 1)) τ → FrameOT (M.take (M.length - 1)) τ := by
+    intro τ hτ
+    have hl2 : 2 ≤ M.length := by
+      obtain ⟨hX, _⟩ := sInvXJ_std C.std C.ne
+      obtain ⟨r, hr⟩ := parLast_of hX.e00 hX.r01 hX.r12 hz
+      rw [h2] at hr
+      have := par_lt M 2 _ r hr
+      omega
+    obtain ⟨I1, _⟩ := C.pre (M.length - 1) (by omega) (by omega)
+    exact clField_congr (Q := QFO) I1.fo (agree_of_cons I1.cons hτ I1.rank)
+  have hF := frameOT_expand_t2 hB C.std C.ne IW RW hz h2 hT hSeedFO
+  intro r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL
+  change Cons (G2 M r L n) σ at hCN
+  change Cons (G2 M r L (n - 1)) ρP at hCP
+  have hc : c ∈ CL (G2 M r L (n - 1)) i := by rw [hCL]; simp
+  have hGN : Good3 (G2 M r L n) σ := by
+    rw [← expand_eq_G2_ctx C hz h2 hlen hr n] at hCN ⊢
+    exact hG n (by omega) σ hCN
+  have hFOP : FrameOT (G2 M r L (n - 1)) ρP := by
+    rw [← expand_eq_G2_ctx C hz h2 hlen hr (n - 1)] at hCP ⊢
+    exact hF (n - 1) (by omega) ρP hCP
+  obtain ⟨_hKV, _hBase, hV', hVV⟩ := hCR r L hlen hr n hn σ ρP hCN hCP hGP
+  have hrP : r < (G2 M r L (n - 1)).length := Nat.lt_of_le_of_lt hri hi
+  have hV := hGP.ot_v r hrP
+  have ha := hGP.ot_v i hi
+  have hVa := v_le_of_le1 (vMono1_of hCP hGP) (i + 1) r i (Nat.lt_succ_self i) hg
+  have hAnc := old_vAnc_copy_live C hB hz h2 hVS hlen hr hn hCN hGN hCP hGP hg hc
+  have hDom := hVD r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL
+  have hK := hAGall r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL
+  intro s y hcv hVs _htr1 htr2 hFD
+  have hcOT : isOT (psi s y z) = true := by
+    rw [← hcv]
+    exact hGP.ot_o c (mem_children (cl_mem_children hc)).2
+  rw [hcv] at hK
+  exact frameDom_sh_KAG hV hV' hVV ha hVa hcOT rfl
+    (hFOP i hi Lc c R hCL) hVs htr2 hDom hK hAnc hFD
+
+/-- Global residual bridge. The below-x and FrameOT-seed hypotheses are
+already produced independently by the existing top-level seed machinery. -/
+theorem t2FDCopyRes_of_all (hB : T2BelowXResV2) (hFO : T2FOSeedV2)
+    (hVS : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VAncStep M)
+    (hAGall : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VRAKAll KAG M) : T2FDCopyRes := by
+  intro M ρ rk C hz h2
+  exact t2CopyK_FDshAt_of_all C (hB M ρ rk C) hz h2
+    (hFO M ρ rk C hz h2) (hVS M ρ rk C hz h2) (hAGall M ρ rk C hz h2)
+
+#print axioms t2CopyK_FDshAt_of_all
+#print axioms t2FDCopyRes_of_all
+#print axioms frameDom_sh_KAG
 #print axioms fdshCopyKV
 #print axioms t2VRAK_of_all
 #print axioms t2VRAKAll_KVRA_of
