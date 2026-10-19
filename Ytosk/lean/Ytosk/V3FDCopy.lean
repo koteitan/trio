@@ -773,6 +773,53 @@ theorem frozen_index_interval_transport_any {V V' p q u g Y R : T}
     · exact Or.inl h
   · exact frozen_index_interval_transport hV hp hq hVp hVq hlp hlq hu hg hP
 
+/-- Persistence with the intermediate term itself also allowed as a witness.
+This is the exact argument-interval certificate extracted below. -/
+def PersistentArg (u g B A : T) : Prop :=
+  ∀ c, B < c → c ≤ A → ∃ d ∈ c :: Gc u c, g ≤ d
+
+/-- Argument intervals preserve all witnesses except those already dominated
+by the enclosing index. The argument itself is a valid component witness. -/
+theorem persistent_argument_of_psi_interval {u g p x r y t : T}
+    (hP : ClShLGuarded.Persistent u g (psi p x r) (psi p y t))
+    (hIndex : ∀ d ∈ comps u p, ¬ g ≤ d) : PersistentArg u g x y := by
+  intro e hxe hey
+  have hBC : psi p x r < psi p e z := T.psi_lt_psi.mpr (Or.inr (Or.inl ⟨rfl, hxe⟩))
+  have hCA : psi p e z ≤ psi p y t := by
+    rcases (le_iff _ _).mp hey with hey | rfl
+    · exact le_of_lt (T.psi_lt_psi.mpr (Or.inr (Or.inl ⟨rfl, hey⟩)))
+    · exact psi_le_psi_of (Or.inr ⟨rfl, Or.inr ⟨rfl, z_le _⟩⟩)
+  obtain ⟨d, hd, hgd⟩ := hP _ hBC hCA
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact ⟨z, List.mem_cons_of_mem _ List.mem_cons_self, hgd⟩
+  · by_cases hpu : lt p u = true
+    · simp [comps, hpu] at hd
+    · rw [comps_psi_z_of_ge hpu] at hd
+      simp only [List.mem_cons, List.mem_append] at hd
+      rcases hd with rfl | hd | hd
+      · exact ⟨d, List.mem_cons_self, hgd⟩
+      · exact ⟨d, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd), hgd⟩
+      · exact False.elim (hIndex d hd hgd)
+
+/-- Tail intervals need no direct-term witness once the fixed head's
+components have been excluded. -/
+theorem persistent_tail_of_psi_interval {u g p x r t : T}
+    (hP : ClShLGuarded.Persistent u g (psi p x r) (psi p x t))
+    (hHead : ∀ d ∈ comps u (psi p x z), ¬ g ≤ d) :
+    ClShLGuarded.Persistent u g r t := by
+  intro e hre het
+  have hBC : psi p x r < psi p x e := T.psi_lt_psi.mpr (Or.inr (Or.inr ⟨rfl, rfl, hre⟩))
+  have hCA : psi p x e ≤ psi p x t :=
+    psi_le_psi_of (Or.inr ⟨rfl, Or.inr ⟨rfl, het⟩⟩)
+  obtain ⟨d, hd, hgd⟩ := hP _ hBC hCA
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact ⟨z, List.mem_cons_self, hgd⟩
+  · have heq : psi p x e = app (psi p x z) e := rfl
+    rw [heq, comps_app] at hd
+    rcases List.mem_append.mp hd with hd | hd
+    · exact False.elim (hHead d hd hgd)
+    · exact ⟨d, List.mem_cons_of_mem _ hd, hgd⟩
+
 /-- Persistence across a change of leading index restricts to the index
 interval. Its witnesses are tested at the principal terms Omega_v. -/
 theorem persistent_index_of_psi_interval {u g p x r q y t : T}
@@ -901,6 +948,8 @@ def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
 #print axioms source_v_base_live
 #print axioms source_v_base_pair
 #print axioms old_vAnc_base_live
+#print axioms persistent_argument_of_psi_interval
+#print axioms persistent_tail_of_psi_interval
 #print axioms persistent_sh_frozen_index_change
 #print axioms persistent_index_of_psi_interval
 #print axioms persistent_index_left_bound
