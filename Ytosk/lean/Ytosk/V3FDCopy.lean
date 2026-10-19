@@ -379,6 +379,167 @@ theorem source_v_base_nonseed {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   · rw [hnil] at hci
     simp at hci
 
+/-- In a standard t2 source, r is always the seed: if q differs from r,
+par0_q_t2 identifies q's parent with r. -/
+theorem root_is_seed {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) {r L : Nat}
+    (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r) :
+    T2Seed M r L r := by
+  have hA := anc0_of_par M 2 r (r + L) hr
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by have := par_lt M 2 _ _ hr; omega)
+  by_cases hqr : q = r
+  · exact Or.inl ⟨hqr ▸ hq, rfl⟩
+  · exact Or.inr ⟨q, hq, hqr,
+      par0_q_t2 C.std C.ne (Inv3W.ofV2 C.S C.I) hlen hr hq hqr⟩
+
+/-- An active source column other than r cannot be either exceptional seed
+column. The q column has no counted children even in original M. -/
+theorem active_ne_root_not_seedcol {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) {r L i c : Nat}
+    (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hi : i < r + L) (hc : c ∈ CL (M.take (r + L)) i) (hir : i ≠ r) :
+    ¬ T2SeedCol M r L i := by
+  have hci := mem_cl_of_mem_cl_take C.S hlen hi hc
+  intro hsc
+  rcases hsc with hs | ⟨q, hq, hqr, hqi⟩
+  · rcases hs with ⟨_, hri⟩ | ⟨q, hq, hqr, hpi⟩
+    · exact hir hri
+    · have hpq := par0_q_t2 C.std C.ne (Inv3W.ofV2 C.S C.I) hlen hr hq hqr
+      rw [hpq] at hpi
+      exact hir (Option.some.inj hpi).symm
+  · subst i
+    have hpq := par0_q_t2 C.std C.ne (Inv3W.ofV2 C.S C.I) hlen hr hq hqr
+    have hrq : r < q := par_lt M 0 _ _ hpq
+    obtain ⟨qp, rfl⟩ : ∃ qp, q = r + qp := ⟨q - r, by omega⟩
+    obtain ⟨hX, hJ⟩ := sInvXJ_std C.std C.ne
+    obtain ⟨_, _, _, hnil, _⟩ := t2_qn_struct hX hJ hlen hr hq (by omega) hpq
+    rw [hnil] at hci
+    simp at hci
+
+/-- The old below-x residual already includes unchanged v of the seed r.
+This only projects that existing fact, not the target's FrameClosed. -/
+theorem root_v_base_original {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    {σ : Valn} (hCN : Cons (G2 M r L 2) σ) (hGN : Good3 (G2 M r L 2) σ) :
+    σ.v r = ρ.v r := by
+  have hrx : r < r + L := par_lt M 2 _ _ hr
+  have hl2 : 2 ≤ M.length := by omega
+  have hP : G2 M r L 1 = M.take (r + L) := gexp_one_gen hlen
+  have hGlow : ∀ m, 1 ≤ m → m < 2 → ∀ τ, Cons (G2 M r L m) τ → Good3 (G2 M r L m) τ := by
+    intro m hm hm2 τ hτ
+    obtain rfl : m = 1 := by omega
+    rw [hP] at hτ ⊢
+    have h := (take_fields_ctx C.toStepCtxV2 hl2
+      (show Cons (M.take (M.length - 1)) τ by simpa [show M.length - 1 = r + L by omega] using hτ)).1
+    simpa [show M.length - 1 = r + L by omega] using h
+  have hRaw := hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 r L hlen hr
+    2 (by omega) hGlow σ hCN (fun b j _ hj => by
+      cases b
+      · exact hGN.ot_v j hj
+      · exact hGN.ot_o j hj)
+  exact (hRaw.1 r (root_is_seed C hlen hr)).2
+
+/-- n=2: every active unshifted source column keeps v, including the seed.
+All assumptions here are already available in the real FC copy context. -/
+theorem source_v_base_live {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L i c : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    {σ ρP : Valn} (hCN : Cons (G2 M r L 2) σ) (hGN : Good3 (G2 M r L 2) σ)
+    (hCP : Cons (G2 M r L 1) ρP) (hi : i < r + L)
+    (hc : c ∈ CL (G2 M r L 1) i) : σ.v i = ρP.v i := by
+  have hP : G2 M r L 1 = M.take (r + L) := gexp_one_gen hlen
+  have hrx : r < r + L := par_lt M 2 _ _ hr
+  have hRT := (C.pre (r + L) (by omega) (by omega)).1.rank
+  by_cases hir : i = r
+  · subst i
+    have hcT : c ∈ CL (M.take (r + L)) r := hP ▸ hc
+    have hCT : Cons (M.take (r + L)) ρP := hP ▸ hCP
+    exact (root_v_base_original C hB hz h2 hlen hr hCN hGN).trans
+      (v_take_of_counted_child C.S C.I.cons C.I.good hlen hi hCT hRT hcT).symm
+  · exact source_v_base_nonseed C hB hz h2 hlen hr hCN hGN hCP hi hc
+      (active_ne_root_not_seedcol C hlen hr hi (hP ▸ hc) hir)
+
+/-- A nontrivial row-1 descendant supplies a row-1 child of the ancestor. -/
+theorem le1_has_first_child {G : Mat} {r i : Nat} (hri : r < i)
+    (hg : TRIO.le1 G r i) : ∃ j, j < G.length ∧ par G 1 j = some r := by
+  have key : ∀ m i, i < m → r < i → TRIO.le1 G r i →
+      ∃ j, j < G.length ∧ par G 1 j = some r := by
+    intro m
+    induction m with
+    | zero => intro i hi; omega
+    | succ m ih =>
+      intro i hi hri hg
+      obtain ⟨p, hp, hgp⟩ := le1_par1_down hg (by omega)
+      by_cases hpr : p = r
+      · exact ⟨i, hg.2.1, hpr ▸ hp⟩
+      · have hpi := par_lt G 1 i p hp
+        have hrp := le1_ge hgp
+        exact ih p (by omega) (by omega) hgp
+  exact key (i + 1) i (Nat.lt_succ_self _) hri hg
+
+/-- BOTH unshifted source values at every active guarded n=2 frame agree.
+The ancestor has either the active counted child itself, or a surviving row-1
+child; this supplies the one-drop bridge to original M. -/
+theorem source_v_base_pair {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L i c : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    {σ ρP : Valn} (hCN : Cons (G2 M r L 2) σ) (hGN : Good3 (G2 M r L 2) σ)
+    (hCP : Cons (G2 M r L 1) ρP) (hg : TRIO.le1 (G2 M r L 1) r i)
+    (hc : c ∈ CL (G2 M r L 1) i) : σ.v r = ρP.v r ∧ σ.v i = ρP.v i := by
+  have hP : G2 M r L 1 = M.take (r + L) := gexp_one_gen hlen
+  have hrx : r < r + L := par_lt M 2 _ _ hr
+  have hi : i < r + L := by
+    have h := hg.2.1
+    rw [hP, List.length_take] at h
+    omega
+  have hvi := source_v_base_live C hB hz h2 hlen hr hCN hGN hCP hi hc
+  refine ⟨?_, hvi⟩
+  by_cases hir : i = r
+  · simpa [hir] using hvi
+  · have hCT : Cons (M.take (r + L)) ρP := hP ▸ hCP
+    have hRT := (C.pre (r + L) (by omega) (by omega)).1.rank
+    have hgT : TRIO.le1 (M.take (r + L)) r i := hP ▸ hg
+    have hri : r < i := by have := le1_ge hg; omega
+    obtain ⟨j, hj, hpj⟩ := le1_has_first_child hri hgT
+    have hjx : j < r + L := by rw [List.length_take] at hj; omega
+    have hvT := v_take_of_par1_child C.S C.I.cons C.I.good hlen hrx hjx hCT hRT
+      (show par M 1 j = some r by rw [← par_take M 1 j hjx]; exact hpj)
+    exact (root_v_base_original C hB hz h2 hlen hr hCN hGN).trans hvT.symm
+
+/-- n=2 old VAnc at every active guarded source frame, with no source-value
+agreement hypothesis and no invariant on intermediate prefixes of the target. -/
+theorem old_vAnc_base_live {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hVS : T2VAncStep M)
+    {r L i c : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    {σ ρP : Valn} (hCN : Cons (G2 M r L 2) σ) (hGN : Good3 (G2 M r L 2) σ)
+    (hCP : Cons (G2 M r L 1) ρP) (hg : TRIO.le1 (G2 M r L 1) r i)
+    (hc : c ∈ CL (G2 M r L 1) i) : VAnc ρP r i := by
+  obtain ⟨hvr, hvi⟩ := source_v_base_pair C hB hz h2 hlen hr hCN hGN hCP hg hc
+  exact old_vAnc_base_of_pair_values C hz h2 hVS hlen hr hCN hGN hg hvr hvi
+
+/-- Old VAnc for every active guarded source frame at every n>=2, derived
+from the existing hVS and below-x residual. No new top assumption is added. -/
+theorem old_vAnc_copy_live {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hVS : T2VAncStep M)
+    {r L n i c : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hn : 2 ≤ n) {σ ρP : Valn} (hCN : Cons (G2 M r L n) σ)
+    (hGN : Good3 (G2 M r L n) σ) (hCP : Cons (G2 M r L (n - 1)) ρP)
+    (hGP : Good3 (G2 M r L (n - 1)) ρP)
+    (hg : TRIO.le1 (G2 M r L (n - 1)) r i)
+    (hc : c ∈ CL (G2 M r L (n - 1)) i) : VAnc ρP r i := by
+  by_cases hn2 : n = 2
+  · subst n
+    exact old_vAnc_base_live C hB hz h2 hVS hlen hr hCN hGN hCP hg hc
+  · exact old_vAnc_copy_ctx C hz h2 hVS hlen hr (by omega) hCP hGP hg
+
 #print axioms old_vAnc_of_t2VAncStep
 #print axioms old_vAnc_copy
 #print axioms old_vAnc_component
@@ -395,4 +556,8 @@ theorem source_v_base_nonseed {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 #print axioms zero_counterexample_pending
 #print axioms zero_counterexample_not_need
 #print axioms source_v_base_nonseed
+#print axioms source_v_base_live
+#print axioms source_v_base_pair
+#print axioms old_vAnc_base_live
+#print axioms old_vAnc_copy_live
 end Ytosk.FDCopy
