@@ -667,6 +667,38 @@ theorem component_forward_or_old_root {V V' u : T}
             exact ⟨g, by simp only [comps, List.mem_append]; exact Or.inl (by rw [if_neg hpu]; exact hg), le_refl _⟩
       · exact htail hg
 
+/-- The forward-component certificate for f(t), including high indices. -/
+theorem index_component_forward_or_old_root {V V' t u g : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ht : isOT t = true) (hVt : V ≤ t) (hg : g ∈ comps u t) :
+    (∃ e ∈ comps u V, g ≤ e) ∨ ∃ d ∈ comps u (shf V V' t), g ≤ d := by
+  have hg' : g ∈ comps u (add V (sub t V)) := by
+    rwa [add_sub_cancel' hV ht hVt]
+  rcases comps_add u V (sub t V) g hg' with hgV | hgS
+  · exact Or.inl ⟨g, hgV, le_refl _⟩
+  · rcases component_forward_or_old_root hV hV' hVV (size (sub t V)) (sub t V)
+        (le_refl _) (isOT_sub_sfx ht V) g hgS with h | ⟨d, hd, hgd⟩
+    · exact Or.inl h
+    · right
+      refine ⟨d, ?_, hgd⟩
+      unfold shf
+      obtain ⟨P, hP, _⟩ := add_eq_app_prefix V' (sh V V' (sub t V))
+      rw [hP, comps_app]
+      exact List.mem_append_right _ hd
+
+/-- The entire unchanged persistence claim is settled when B has frozen head.
+This includes the zero base case; no restriction on the level or g is needed. -/
+theorem persistent_sh_frozen_source {V V' B A u g : T}
+    (hB : isOT B = true) (hA : isOT A = true) (hlB : ¬ V < lev B)
+    (hP : ClShLGuarded.Persistent u g B A) :
+    (∃ d ∈ comps u V, g ≤ d) ∨
+      ClShLGuarded.Persistent u g (sh V V' B) (sh V V' A) := by
+  by_cases hlA : V < lev A
+  · rcases ClShLGuarded.persistent_frozen_to_high_bound hlB hlA hP with rfl | h
+    · exact Or.inr (fun c _ _ => ⟨z, List.mem_cons_self, le_refl _⟩)
+    · exact Or.inl h
+  · exact Or.inr (by rwa [sh_fix hB hlB, sh_fix hA hlA])
+
 /-- A component of a frozen index survives in f(p), except for components
 of the removed old V prefix. This is a forward statement at unchanged levels. -/
 theorem frozen_index_component_forward {V V' p u g : T}
@@ -723,6 +755,87 @@ theorem frozen_index_interval_transport_any {V V' p q u g Y R : T}
     · exact Or.inl h
   · exact frozen_index_interval_transport hV hp hq hVp hVq hlp hlq hu hg hP
 
+/-- Persistence across a change of leading index restricts to the index
+interval. Its witnesses are tested at the principal terms Omega_v. -/
+theorem persistent_index_of_psi_interval {u g p x r q y t : T}
+    (hP : ClShLGuarded.Persistent u g (psi p x r) (psi q y t)) :
+    ClShLGuarded.Persistent u g p q := by
+  intro v hpv hvq
+  have hBC : psi p x r < psi v z z := T.psi_lt_psi.mpr (Or.inl hpv)
+  have hCA : psi v z z ≤ psi q y t := by
+    rcases (le_iff _ _).mp hvq with hvq | rfl
+    · exact le_of_lt (T.psi_lt_psi.mpr (Or.inl hvq))
+    · exact psi_le_psi_anyG (le_refl _)
+  obtain ⟨d, hd, hgd⟩ := hP _ hBC hCA
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact ⟨z, List.mem_cons_self, hgd⟩
+  · by_cases hvu : lt v u = true
+    · simp [comps, hvu] at hd
+    · rw [comps_psi_z_of_ge hvu] at hd
+      simp only [comps, List.mem_cons, List.mem_append, List.not_mem_nil, false_or] at hd
+      rcases hd with rfl | hd
+      · exact ⟨z, List.mem_cons_self, hgd⟩
+      · exact ⟨d, List.mem_cons_of_mem _ hd, hgd⟩
+
+/-- A nonempty index interval already bounds g by its left index components. -/
+theorem persistent_index_left_bound {u g p q : T} (hpq : p < q)
+    (hP : ClShLGuarded.Persistent u g p q) :
+    g = z ∨ ∃ d ∈ comps u p, g ≤ d := by
+  obtain ⟨d, hd, hgd⟩ := hP (succ p) (lt_succ_self p) (succ_le_of_lt hpq)
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact Or.inl (le_antisymm hgd (z_le _))
+  · rcases comps_succ_sub u d hd with rfl | hd
+    · exact Or.inl (le_antisymm hgd (z_le _))
+    · exact Or.inr ⟨d, hd, hgd⟩
+
+/-- Lift an index interval when the left boundary only dominates g. -/
+theorem persistent_psi_index_of_left_bound {u g p q x r y t : T}
+    (hup : u ≤ p) (hg : ∃ d ∈ Gc u p, g ≤ d)
+    (hP : ClShLGuarded.Persistent u g p q) :
+    ClShLGuarded.Persistent u g (psi p x r) (psi q y t) := by
+  intro C hBC hCA
+  cases C with
+  | z => exact False.elim (T.not_lt_z _ hBC)
+  | psi v e f =>
+    have hpv : p ≤ v := by simpa only [lev] using lev_le_of_le (le_of_lt hBC)
+    have hvq : v ≤ q := by simpa only [lev] using lev_le_of_le hCA
+    have huv : ¬ v < u := not_lt.mpr (le_trans hup hpv)
+    have lift : ∀ d ∈ Gc u v, d ∈ Gc u (psi v e f) := by
+      intro d hd
+      rcases List.mem_cons.mp hd with rfl | hd
+      · exact List.mem_cons_self
+      · exact List.mem_cons_of_mem _ (comps_psi_mem_of huv (Or.inr (Or.inr (Or.inl hd))))
+    rcases (le_iff _ _).mp hpv with hpv | rfl
+    · obtain ⟨d, hd, hgd⟩ := hP v hpv hvq
+      exact ⟨d, lift d hd, hgd⟩
+    · obtain ⟨d, hd, hgd⟩ := hg
+      exact ⟨d, lift d hd, hgd⟩
+
+/-- The complete frozen-index change branch: no component witness is needed
+as an input; old persistence supplies it at Omega_(p+1). -/
+theorem persistent_sh_frozen_index_change {V V' u g p x r q y t Y R : T}
+    (hV : isOT V = true) (hp : isOT p = true) (hq : isOT q = true)
+    (hVp : V ≤ p) (hpq : p < q) (hlp : ¬ V < lev p)
+    (hu : u ≤ shf V V' p)
+    (hP : ClShLGuarded.Persistent u g (psi p x r) (psi q y t)) :
+    (∃ d ∈ comps u V, g ≤ d) ∨
+      ClShLGuarded.Persistent u g (psi (shf V V' p) z z)
+        (psi (shf V V' q) Y R) := by
+  have hIdx := persistent_index_of_psi_interval hP
+  by_cases hlq : V < lev q
+  · rcases ClShLGuarded.persistent_frozen_to_high_bound hlp hlq hIdx with rfl | h
+    · exact Or.inr (fun c _ _ => ⟨z, List.mem_cons_self, le_refl _⟩)
+    · exact Or.inl h
+  · have hVq := le_trans hVp (le_of_lt hpq)
+    rcases ClShLGuarded.persistent_shf_frozen hV hp hq hVp hVq hlp hlq hIdx with h | hP'
+    · exact Or.inl h
+    · rcases persistent_index_left_bound hpq hIdx with rfl | ⟨d, hd, hgd⟩
+      · exact Or.inr (fun c _ _ => ⟨z, List.mem_cons_self, le_refl _⟩)
+      · rcases frozen_index_component_forward hV hp hVp hlp hd with hdV | hd'
+        · exact Or.inl ⟨d, hdV, hgd⟩
+        · exact Or.inr (persistent_psi_index_of_left_bound hu
+            ⟨d, List.mem_cons_of_mem _ hd', hgd⟩ hP')
+
 set_option linter.unusedVariables false in
 /-- Candidate COMBINED term statement, recorded for review before proof.
 It adds full old-V ancestor domination to FDshCopy with full VDomF and all-low
@@ -768,6 +881,12 @@ def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
 #print axioms source_v_base_live
 #print axioms source_v_base_pair
 #print axioms old_vAnc_base_live
+#print axioms persistent_sh_frozen_index_change
+#print axioms persistent_index_of_psi_interval
+#print axioms persistent_index_left_bound
+#print axioms persistent_psi_index_of_left_bound
+#print axioms persistent_sh_frozen_source
+#print axioms index_component_forward_or_old_root
 #print axioms component_forward_or_old_root
 #print axioms frozen_index_interval_transport_any
 #print axioms frozen_index_component_forward
