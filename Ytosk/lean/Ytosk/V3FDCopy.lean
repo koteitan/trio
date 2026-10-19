@@ -773,6 +773,49 @@ theorem frozen_index_interval_transport_any {V V' p q u g Y R : T}
     · exact Or.inl h
   · exact frozen_index_interval_transport hV hp hq hVp hVq hlp hlq hu hg hP
 
+/-- A rightward corner all of whose components are zero, at every level. -/
+def quietCorner : T → T
+  | z => one
+  | psi p _ _ => psi (quietCorner p) z z
+
+theorem lt_quietCorner : ∀ t : T, t < quietCorner t
+  | z => T.z_lt_psi _ _ _
+  | psi p _x _r => T.psi_lt_psi.mpr (Or.inl (lt_quietCorner p))
+
+theorem quietCorner_components (u : T) : ∀ t d, d ∈ comps u (quietCorner t) → d = z
+  | z, d, hd => by
+    simp only [quietCorner, one, comps] at hd
+    split at hd <;> simp_all
+  | psi p _x _r, d, hd => by
+    simp only [quietCorner, comps] at hd
+    split at hd
+    · simp at hd
+    · simp only [List.mem_cons, List.mem_append, List.not_mem_nil, false_or, or_false] at hd
+      rcases hd with h | hd
+      · exact h
+      · exact quietCorner_components u p d hd
+
+/-- Crossing to a larger argument forces all persistent bounds into the
+fixed head. The tail is tested at a quiet corner, whose components are zero. -/
+theorem persistent_head_bound_of_argument_lt {u g p x r y t : T}
+    (hxy : x < y)
+    (hP : ClShLGuarded.Persistent u g (psi p x r) (psi p y t)) :
+    g = z ∨ ∃ d ∈ comps u (psi p x z), g ≤ d := by
+  have hBC : psi p x r < psi p x (quietCorner r) :=
+    T.psi_lt_psi.mpr (Or.inr (Or.inr ⟨rfl, rfl, lt_quietCorner r⟩))
+  have hCA : psi p x (quietCorner r) ≤ psi p y t :=
+    le_of_lt (T.psi_lt_psi.mpr (Or.inr (Or.inl ⟨rfl, hxy⟩)))
+  obtain ⟨d, hd, hgd⟩ := hP _ hBC hCA
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact Or.inl (le_antisymm hgd (z_le _))
+  · have heq : psi p x (quietCorner r) = app (psi p x z) (quietCorner r) := rfl
+    rw [heq, comps_app] at hd
+    rcases List.mem_append.mp hd with hd | hd
+    · exact Or.inr ⟨d, hd, hgd⟩
+    · have hd0 := quietCorner_components u r d hd
+      subst d
+      exact Or.inl (le_antisymm hgd (z_le _))
+
 /-- Persistence with the intermediate term itself also allowed as a witness.
 This is the exact argument-interval certificate extracted below. -/
 def PersistentArg (u g B A : T) : Prop :=
@@ -876,6 +919,44 @@ theorem persistent_psi_index_of_left_bound {u g p q x r y t : T}
     · obtain ⟨d, hd, hgd⟩ := hg
       exact ⟨d, lift d hd, hgd⟩
 
+/-- A common prefix is handled entirely by component-forward transport.
+Only the strictly smaller tail interval is passed to the recursive hypothesis. -/
+theorem persistent_sh_common_prefix {V V' u g P B A : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hP : isOT P = true)
+    (hOld : ClShLGuarded.Persistent u g (app P B) (app P A))
+    (hTail : ClShLGuarded.Persistent u g B A →
+      (∃ d ∈ comps u V, g ≤ d) ∨
+        ClShLGuarded.Persistent u g (sh V V' B) (sh V V' A)) :
+    (∃ d ∈ comps u V, g ≤ d) ∨
+      ClShLGuarded.Persistent u g (sh V V' (app P B)) (sh V V' (app P A)) := by
+  by_cases hHead : ∃ d ∈ comps u P, g ≤ d
+  · obtain ⟨d, hd, hgd⟩ := hHead
+    rcases component_forward_or_old_root hV hV' hVV (size P) P (le_refl _) hP d hd with
+        ⟨e, he, hde⟩ | ⟨e, he, hde⟩
+    · exact Or.inl ⟨e, he, le_trans hgd hde⟩
+    · right
+      rw [sh_app, sh_app]
+      intro c hBc hcA
+      obtain ⟨c0, rfl, _, _⟩ := between_app hBc hcA
+      refine ⟨e, List.mem_cons_of_mem _ ?_, le_trans hgd hde⟩
+      rw [comps_app]
+      exact List.mem_append_left _ he
+  · have hBA : ClShLGuarded.Persistent u g B A := by
+      intro c hBc hcA
+      obtain ⟨d, hd, hgd⟩ := hOld (app P c) (app_lt_app_left P hBc) (app_le_app_left P hcA)
+      rcases List.mem_cons.mp hd with rfl | hd
+      · exact ⟨z, List.mem_cons_self, hgd⟩
+      · rw [comps_app] at hd
+        rcases List.mem_append.mp hd with hd | hd
+        · exact False.elim (hHead ⟨d, hd, hgd⟩)
+        · exact ⟨d, List.mem_cons_of_mem _ hd, hgd⟩
+    rcases hTail hBA with h | h
+    · exact Or.inl h
+    · right
+      rw [sh_app, sh_app]
+      exact ClShLGuarded.persistent_app _ h
+
 /-- The complete frozen-index change branch: no component witness is needed
 as an input; old persistence supplies it at Omega_(p+1). -/
 theorem persistent_sh_frozen_index_change {V V' u g p x r q y t Y R : T}
@@ -948,6 +1029,9 @@ def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
 #print axioms source_v_base_live
 #print axioms source_v_base_pair
 #print axioms old_vAnc_base_live
+#print axioms quietCorner_components
+#print axioms persistent_head_bound_of_argument_lt
+#print axioms persistent_sh_common_prefix
 #print axioms persistent_argument_of_psi_interval
 #print axioms persistent_tail_of_psi_interval
 #print axioms persistent_sh_frozen_index_change
