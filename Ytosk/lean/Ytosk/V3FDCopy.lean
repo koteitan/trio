@@ -1,8 +1,10 @@
 /-
 Real-copy FrameDom: partial reductions after replacing the false pure FDsh.
-No additional residual or term guard is introduced. The n>=3 old-V ancestor
-bound uses the existing T2VAncStep hypothesis at n-1. The n=2 prefix case and
-retained low interval transport remain separate proof obligations.
+No additional residual or term guard is introduced. Old VAnc is proved for all
+n>=2 active guarded copy frames from the existing context and hVS. The n=2
+case compares both valuations through original M, without intermediate-prefix
+invariants. The combined term statement FDshCopyKV is recorded for review and
+remains unproved; the earlier path-only retained branch is refuted.
 -/
 import Ytosk.V3T2VSFC
 import Ytosk.V3FDCut
@@ -539,6 +541,32 @@ theorem old_vAnc_copy_live {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   · subst n
     exact old_vAnc_base_live C hB hz h2 hVS hlen hr hCN hGN hCP hg hc
   · exact old_vAnc_copy_ctx C hz h2 hVS hlen hr (by omega) hCP hGP hg
+
+set_option linter.unusedVariables false in
+/-- Candidate COMBINED term statement, recorded for review before proof.
+It adds full old-V ancestor domination to FDshCopy with full VDomF and all-low
+KAG. It is not asserted as a theorem here and is not a new top assumption.
+The path-only KAG version is already refuted by zero_counterexample_not_need.
+The matrix proof old_vAnc_copy_live supplies hOld at actual active copy frames. -/
+def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a)
+    (hs : ∀ t ∈ Lv ++ [psi s y z], Single t)
+    (hp : (Lv ++ [psi s y z]).Pairwise (fun p q => q ≤ p))
+    (hlev : V < a ∨ ∀ t ∈ Lv ++ [psi s y z], V < lev t)
+    (hB : B = spArg a z (sumN Lv))
+    (hFO : isOT (psi a B z) = true)
+    (hKind : B ≠ z → PH3cKindG B (split y (psi (succ s) z z)).1
+      (split y (psi (succ s) z z)).2 s)
+    (hVs : V < s)
+    (ht : lt B y = true ∧ lt (psi a z z) (psi s y z) = true)
+    (hVD : VDomF V V' a)
+    (hK : ∀ u, u ≤ V → KAG V V' a Lv (psi s y z) u)
+    (hOld : ∀ u g, g ∈ comps u V →
+      g ≤ psi a z z ∨ ∃ d ∈ comps u a, g ≤ d)
+    (hFD : FrameDom a B s (H s y)),
+    FrameDom (shf V V' a) (sh V V' B) (shf V V' s)
+      (H (shf V V' s) (sh V V' y))
 
 #print axioms old_vAnc_of_t2VAncStep
 #print axioms old_vAnc_copy
