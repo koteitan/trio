@@ -1,10 +1,11 @@
 /-
-Real-copy FrameDom: partial reductions after replacing the false pure FDsh.
-No additional residual or term guard is introduced. Old VAnc is proved for all
-n>=2 active guarded copy frames from the existing context and hVS. The n=2
-case compares both valuations through original M, without intermediate-prefix
-invariants. The combined term statement FDshCopyKV is recorded for review and
-remains unproved; the earlier path-only retained branch is refuted.
+Real-copy FrameDom with full VDomF, all-low KAG and old VAnc.
+The pure term statement FDshCopyKV is proved by fdshCopyKV. Its retained-low
+core is persistent_sh_low / persistentArg_sh_low; intermediate terms are arbitrary
+syntax. Old VAnc is proved for every n>=2 active guarded copy frame from the
+existing context and hVS. The n=2 proof compares valuations through original M.
+T2VRAKAll has the existing T2CopyK frame shape and projects to path-only T2VRAK.
+No top-level theorem is changed in this file.
 -/
 import Ytosk.V3T2VSFC
 import Ytosk.V3FDCut
@@ -1264,12 +1265,113 @@ theorem persistentArg_sh_low {V V' B A u g : T}
   persistentArg_sh_of_component_transport hV hV' hVV hB
     (persistent_sh_low hV hV' hVV hu hB hA) hOld
 
+/-- The formerly unresolved retained-low FrameDom branch. Old parent
+witnesses use KA; the remaining interval uses persistentArg_sh_low. -/
+theorem frameDom_copy_retained_low {V V' a B s y u g C : T} {Lv : List T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hB : isOT B = true)
+    (hc : isOT (psi s y z) = true) (hVs : V < s)
+    (ht : psi a z z < psi s y z) (hu : u ≤ V)
+    (hK : KAG V V' a Lv (psi s y z) u)
+    (hOld : ∀ u g, g ∈ comps u V → g ≤ psi a z z ∨ ∃ d ∈ comps u a, g ≤ d)
+    (hFD : FrameDom a B s (H s y))
+    (hg : g ∈ comps u B ∨ g ∈ comps u s)
+    (hBC : sh V V' B < C) (hSC : psi (shf V V' s) z z < C)
+    (hCX : C ≤ H (shf V V' s) (sh V V' y)) :
+    ∃ d ∈ C :: (comps u C ++ comps u (shf V V' a)), g ≤ d := by
+  have hs := isOT_sub hc
+  have has : a ≤ s := by simpa only [lev] using lev_le_of_le (le_of_lt ht)
+  have haf := ClShLGuarded.shf_le_right hV hV' hVV ha hVa has
+  have hOm : psi (shf V V' a) z z ≤ psi (shf V V' s) z z := psi_le_psi_z haf
+  by_cases hParent : ∃ d ∈ comps u a, g ≤ d
+  · obtain ⟨d, hd, hgd⟩ := hParent
+    rcases hK.1 d hd with h | ⟨d', hd', hdd'⟩
+    · exact ⟨C, List.mem_cons_self, le_trans hgd (le_trans h (le_trans hOm (le_of_lt hSC)))⟩
+    · exact ⟨d', List.mem_cons_of_mem _ (List.mem_append_right _ hd'), le_trans hgd hdd'⟩
+  · let M : T := if B < psi s z z then psi s z z else B
+    have hM : isOT M = true := by
+      dsimp [M]
+      split
+      · exact isOT_psi_zz hs
+      · exact hB
+    have hBM : B ≤ M := by
+      dsimp [M]
+      split
+      · exact le_of_lt ‹B < psi s z z›
+      · exact le_refl _
+    have hSM : psi s z z ≤ M := by
+      dsimp [M]
+      split
+      · exact le_refl _
+      · exact not_lt.mp ‹¬ B < psi s z z›
+    have hM' : sh V V' M < C := by
+      dsimp [M]
+      split
+      · simpa only [sh_psi_gt hVs, sh_z] using hSC
+      · exact hBC
+    have hP : PersistentArg u g M (H s y) := by
+      intro c hMc hcX
+      obtain ⟨d, hd, hgd⟩ := hFD u (not_lt.mpr (le_trans hu hVa)) c
+        (lt_of_le_of_lt hBM hMc) (lt_of_le_of_lt hSM hMc) hcX g hg
+      rcases List.mem_cons.mp hd with rfl | hd
+      · exact ⟨d, List.mem_cons_self, hgd⟩
+      · rcases List.mem_append.mp hd with hd | hd
+        · exact ⟨d, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd), hgd⟩
+        · exact False.elim (hParent ⟨d, hd, hgd⟩)
+    rcases persistentArg_sh_low hV hV' hVV hu hM
+        (isOT_arg (ClShLGuarded.isOT_H_self hc)) hP with h | hP'
+    · exact old_root_component_closed hV hV' hVV ha hVa hs hVs ht hOld hK h hSC
+    · have hCX' : C ≤ sh V V' (H s y) := by rwa [sh_H hV hV' hVV hc hVs]
+      obtain ⟨d, hd, hgd⟩ := hP' C hM' hCX'
+      rcases List.mem_cons.mp hd with rfl | hd
+      · exact ⟨d, List.mem_cons_self, hgd⟩
+      · rcases List.mem_cons.mp hd with rfl | hd
+        · exact ⟨C, List.mem_cons_self, le_trans hgd (z_le _)⟩
+        · exact ⟨d, List.mem_cons_of_mem _ (List.mem_append_left _ hd), hgd⟩
+
+/-- Above V all old visible components occur at moving positions. Removing
+V from a subscript loses no components at level V+1. -/
+theorem comps_above_mem_AN {V : T} (hV : isOT V = true) :
+    ∀ n t, size t ≤ n → ∀ g ∈ comps (succ V) t, g ∈ compsAN V V n t := by
+  intro n
+  induction n with
+  | zero =>
+    intro t hn g hg
+    cases t with
+    | z => simp [comps] at hg
+    | psi => simp [size] at hn
+  | succ n ih =>
+    intro t hn g hg
+    cases t with
+    | z => simp [comps] at hg
+    | psi p x r =>
+      have hsz : size p ≤ n ∧ size x ≤ n ∧ size r ≤ n := by simp [size] at hn; omega
+      simp only [comps, List.mem_append] at hg
+      rcases hg with hg | hg
+      · by_cases hpu : lt p (succ V) = true
+        · simp [hpu] at hg
+        · rw [if_neg hpu] at hg
+          have hVp : V < p := lt_of_lt_of_le (lt_succ_self V) (not_lt.mp hpu)
+          have hcond : ¬ lt p V = true ∧ lt V p = true :=
+            ⟨not_lt.mpr (le_of_lt hVp), hVp⟩
+          simp only [compsAN, if_pos hcond, List.mem_append, List.mem_cons]
+          left
+          simp only [List.mem_cons, List.mem_append] at hg
+          rcases hg with rfl | hg | hg
+          · exact Or.inl rfl
+          · exact Or.inr (Or.inl (ih x hsz.2.1 g hg))
+          · right; right
+            apply ih (sub p V) (le_trans (size_sub_le p V) hsz.1)
+            rwa [ClShLGuarded.comps_sub_above p V
+              (fun q hq => lt_trans (lev_lt_of_summand hV hq) (lt_succ_self V))]
+      · simp only [compsAN, List.mem_append]
+        exact Or.inr (ih r hsz.2.2 g hg)
+
 set_option linter.unusedVariables false in
-/-- Candidate COMBINED term statement, recorded for review before proof.
-It adds full old-V ancestor domination to FDshCopy with full VDomF and all-low
-KAG. It is not asserted as a theorem here and is not a new top assumption.
-The path-only KAG version is already refuted by zero_counterexample_not_need.
-The matrix proof old_vAnc_copy_live supplies hOld at actual active copy frames. -/
+/-- Combined term statement, proved by fdshCopyKV below. It adds full old-V
+ancestor domination to FDshCopy with full VDomF and all-low KAG. The path-only
+KAG version is refuted by zero_counterexample_not_need. The matrix theorem
+old_vAnc_copy_live supplies hOld at actual active copy frames. -/
 def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
     (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
     (ha : isOT a = true) (hVa : V ≤ a)
@@ -1290,6 +1392,112 @@ def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
     FrameDom (shf V V' a) (sh V V' B) (shf V V' s)
       (H (shf V V' s) (sh V V' y))
 
+/-- Full guarded FrameDom transport, with all-low KAG and old ancestry. -/
+theorem fdshCopyKV : FDshCopyKV := by
+  intro V V' a B s y Lv hV hV' hVV ha hVa hsingle _hp _hlev hBeq hFO _hKind hVs ht hVD hK hOld hFD
+  have hc : isOT (psi s y z) = true := (hsingle _ (by simp)).1
+  have hs := isOT_sub hc
+  have hB := isOT_arg hFO
+  have hsfx := isOT_sub_sfx hs V
+  have has : a ≤ s := by simpa only [lev] using lev_le_of_le (le_of_lt ht.2)
+  have hOm : psi (shf V V' a) z z ≤ psi (shf V V' s) z z :=
+    psi_le_psi_z (ClShLGuarded.shf_le_right hV hV' hVV ha hVa has)
+  have hshOm : sh V V' (psi s z z) = psi (shf V V' s) z z := by
+    rw [sh_psi_gt hVs, sh_z]
+  intro u hu C hBC hSC hCX g hg
+  have hua : u ≤ shf V V' a := not_lt.mp hu
+  have smallB : ∀ d, d ≤ sh V V' B →
+      ∃ e ∈ C :: (comps u C ++ comps u (shf V V' a)), d ≤ e :=
+    fun d hd => ⟨C, List.mem_cons_self, le_trans hd (le_of_lt hBC)⟩
+  have smallS : ∀ d, d ≤ psi (shf V V' s) z z →
+      ∃ e ∈ C :: (comps u C ++ comps u (shf V V' a)), d ≤ e :=
+    fun d hd => ⟨C, List.mem_cons_self, le_trans hd (le_of_lt hSC)⟩
+  have introduced : ∀ d ∈ comps u V',
+      ∃ e ∈ C :: (comps u C ++ comps u (shf V V' a)), d ≤ e := by
+    intro d hd
+    rcases hVD u hu d hd with h | ⟨e, he, hde⟩
+    · exact smallS d (le_trans h hOm)
+    · exact ⟨e, List.mem_cons_of_mem _ (List.mem_append_right _ he), hde⟩
+  have matched : ∀ w d, isOT w = true → V < w → w ≤ a → u ≤ shf V V' w →
+      (d ∈ comps w B ∨ d ∈ comps w s) →
+      ∃ e ∈ C :: (comps u C ++ comps u (shf V V' a)), sh V V' d ≤ e := by
+    intro w d hw hVw hwa huw hd
+    exact frameDom_copy_high_component hV hV' hVV ha hB hc hVs hw hVw hwa huw hFD hd hBC hSC hCX
+  have kgImage : ∀ w, w ≤ V → ∀ n d, d ∈ compsAN V w n (sub s V) →
+      ∃ e ∈ C :: (comps u C ++ comps u (shf V V' a)), sh V V' d ≤ e := by
+    intro w hw n d hd
+    have hdo := isOT_of_mem_comps w hsfx (compsAN_sub V w n hd)
+    have hkg := (hK w hw).2 s y rfl hVs n d hd
+    rw [← hBeq] at hkg
+    rcases hkg with h | h
+    · apply smallS
+      rw [← hshOm]
+      exact sh_le_sh hV hV' (le_of_lt hVV) hdo (isOT_psi_zz hs) h
+    · exact smallB _ (sh_le_sh hV hV' (le_of_lt hVV) hdo hB h)
+  by_cases hVu : V < u
+  · rcases hg with hg | hg
+    · rcases (le_iff _ _).mp hVa with hVa | hVa
+      · rcases ClShLGuarded.component_raise_to_matched hV hV' hVV hVu (size B)
+            (le_refl _) hB ha hVa hua hg with ⟨w, hw, hVw, hwa, huw, hgw⟩ | hg
+        · obtain ⟨d, hd, rfl⟩ := comps_sh hV hV' hVV hw (le_of_lt hVw) hB g hgw
+          exact matched w d hw hVw hwa huw (Or.inl hd)
+        · exact introduced g hg
+      · subst a
+        rcases ClShLGuarded.components_above_cut V V' hVu (size B) (le_refl _) hg with
+            ⟨d, hd, rfl⟩ | hg
+        · have hdV := comps_mono (le_of_lt (lt_succ_self V)) hd
+          exact smallB _ (le_of_lt (sh_lt_sh hV hV' (le_of_lt hVV)
+            (isOT_of_mem_comps V hB hdV) hB (comps_lt hFO d hdV)))
+        · exact introduced g hg
+    · unfold shf at hg
+      rcases comps_add u V' (sh V V' (sub s V)) g hg with hg | hg
+      · exact introduced g hg
+      · rcases (le_iff _ _).mp hVa with hVa | hVa
+        · rcases ClShLGuarded.component_raise_to_matched hV hV' hVV hVu (size (sub s V))
+              (le_refl _) hsfx ha hVa hua hg with ⟨w, hw, hVw, hwa, huw, hgw⟩ | hg
+          · obtain ⟨d, hd, rfl⟩ := comps_sh hV hV' hVV hw (le_of_lt hVw) hsfx g hgw
+            exact matched w d hw hVw hwa huw (Or.inr (comps_sub_sub w s V hd))
+          · exact introduced g hg
+        · subst a
+          rcases ClShLGuarded.components_above_cut V V' hVu (size (sub s V)) (le_refl _) hg with
+              ⟨d, hd, rfl⟩ | hg
+          · exact kgImage V (le_refl _) (size (sub s V)) d
+              (comps_above_mem_AN hV _ _ (le_refl _) d hd)
+          · exact introduced g hg
+  · have huV : u ≤ V := not_lt.mp hVu
+    have retained : ∀ d, (d ∈ comps u B ∨ d ∈ comps u s) →
+        ∃ e ∈ C :: (comps u C ++ comps u (shf V V' a)), d ≤ e := by
+      intro d hd
+      exact frameDom_copy_retained_low hV hV' hVV ha hVa hB hc hVs ht.2 huV
+        (hK u huV) hOld hFD hd hBC hSC hCX
+    rcases hg with hg | hg
+    · rcases comps_sh_levA V V' huV (size B) B g (le_refl _) hg with
+          ⟨d, hd, rfl⟩ | ⟨d, hd, rfl⟩ | ⟨q, hq, hgq⟩
+      · rcases (le_iff _ _).mp hVa with hVa | hVa
+        · have hd' : d ∈ comps (succ V) B := by
+            apply compsAN_sub V (succ V) (size B)
+            rw [← ClShLGuarded.compsAN_level_eq
+              (le_trans huV (le_of_lt (lt_succ_self V))) (le_refl (succ V)) (size B) B]
+            exact hd
+          exact matched (succ V) d (isOT_succ hV) (lt_succ_self V) (succ_le_of_lt hVa)
+            (le_trans huV (le_trans (le_of_lt (lt_succ_self V))
+              (le_shf_self hV hV' (le_of_lt hVV) (isOT_succ hV) (le_of_lt (lt_succ_self V)))))
+            (Or.inl hd')
+        · subst a
+          exact smallB _ (le_of_lt (ClShLGuarded.moving_root_bound_of_frameOT
+            hV hV' hVV hFO huV hd))
+      · exact retained g (Or.inl hd)
+      · exact introduced g (comps_of_mem_summands hq hgq)
+    · unfold shf at hg
+      rcases comps_add u V' (sh V V' (sub s V)) g hg with hg | hg
+      · exact introduced g hg
+      · rcases comps_sh_levA V V' huV (size (sub s V)) (sub s V) g (le_refl _) hg with
+            ⟨d, hd, rfl⟩ | ⟨d, hd, rfl⟩ | ⟨q, hq, hgq⟩
+        · exact kgImage u huV (size (sub s V)) d hd
+        · exact retained g (Or.inr (comps_sub_sub u s V hd))
+        · exact introduced g (comps_of_mem_summands hq hgq)
+
+#print axioms fdshCopyKV
 #print axioms t2VRAK_of_all
 #print axioms t2VRAKAll_KVRA_of
 #print axioms old_vAnc_of_t2VAncStep
@@ -1311,6 +1519,8 @@ def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
 #print axioms source_v_base_live
 #print axioms source_v_base_pair
 #print axioms old_vAnc_base_live
+#print axioms comps_above_mem_AN
+#print axioms frameDom_copy_retained_low
 #print axioms persistent_shf_index_of_transport
 #print axioms persistent_sh_low
 #print axioms persistentArg_sh_low
