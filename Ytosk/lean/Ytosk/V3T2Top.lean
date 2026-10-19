@@ -13,6 +13,7 @@ import Ytosk.V3InvPer
 import Ytosk.V3TopB
 import Ytosk.V3InvW
 import Ytosk.V3T2QUBad
+import Ytosk.V3T2UpgAbs
 
 namespace Ytosk
 
@@ -914,10 +915,6 @@ structure Res3T2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
     par M 0 (r + L) = some (r + qp) → 0 < qp → par M 0 (r + qp) = some pq → T2QN M ρ rk r L qp pq
   qr : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
     T2R M ρ rk r L
-  /-- The strong absorption at `x − 1` outside the shape `T2UABad` (2026-10-12, drop-fix: moved here from
-  `DropRes.ua`, which is now the weak `UpgAbsXW`; 2026-10-17: the strong form is false on T2Ext, but only in
-  the shape `T2UABad`, which the descent handles without it). -/
-  ua : UpgAbsX M (M.length - 1) ρ ∨ T2UABad M (M.length - 1)
 
 /-- **Step 1 for `t = 2`**: from the invariants, the remaining hypotheses (`Res3`, `Res3T2`) and a
 valuation of each `M[n]` (`n ≥ 2`), every expansion drops the root value. -/
@@ -991,7 +988,6 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     I.fc I.fo hdr.argT
     (bump_drop (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hdr.ab hdr.ws)
     hdr.ua
-  have hua' : UpgAbsX M (r + L) ρ ∨ T2UABad M (r + L) := by have := R2.ua; rw [hL] at this; exact this
   have hseed1 : UpgAbsX M (r + L) ρ → ∀ p, p < r + L → CL M p ≠ [] → (drop1 M (r + L) rk).o p ≠ ρ.o p →
       Lhd z ((drop1 M (r + L) rk).o p) (ρ.o p) :=
     fun hua p hp hcl hne => lhd_of_po I.cons I.good (by omega) hcl
@@ -1005,6 +1001,9 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     by_cases hqr : q = r
     · rw [hqr] at hq
       have T := R2.qr r L hlen hr hq
+      have hua' : UpgAbsX M (r + L) ρ ∨ T2UABad M (r + L) :=
+        (T2UpgAbs.strong_or_old_target hlen I.cons I.good hdr.ua).imp_right
+          (fun ⟨k, hk, hkx, hNB⟩ => ⟨⟨r, hq, hr⟩, ⟨k, hk, hkx⟩, hNB⟩)
       have hAbs := absWN_of_absC hdr.ab hC1 hq hrb
       cases hux : upg M (r + L - 1) with
       | none =>
@@ -1081,11 +1080,9 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       obtain ⟨Tp1, TqL, Tdv, Tos, Tvsh⟩ := qn_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
         I.uat I.uab I.r12 hpq' Tqb
       have hAbs := absWN_of_absC hdr.ab hC1 hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
-      have hua := hua'.resolve_right (fun hb => by
-        obtain ⟨⟨r', hb0, hb2⟩, _, _⟩ := hb
-        rw [hq'] at hb0; rw [hr] at hb2
-        have := Option.some.inj hb0; have := Option.some.inj hb2; omega)
-      have hs1 := hseed1 hua pq (by have := par_lt M 0 _ _ hpq; omega) Tclpq T.seed1
+      have hs1 := T2UpgAbs.strong_seed_of_drop hlen I.cons I.good
+        (by have := par_lt M 0 _ _ hpq; omega) (by have := par_lt M 0 _ _ hpq; omega) Tclpq
+        (hdrop pq (by have := par_lt M 0 _ _ hpq; omega)) T.seed1
       cases hux : upg M (r + L - 1) with
       | none =>
         exact t2_qn_take hlen hL0 hA hq' (by omega) Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 hpq' Tqb Te2pq
@@ -1094,9 +1091,10 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       | some k =>
         obtain ⟨Up1, Up1a, Uqsh, Udv, Uos, Uvsh⟩ := qnu_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd
           I.z1 I.uat I.uab I.r12 hpq' Tqb hux
-        exact t2_qnu_take hlen hL0 hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1 I.uat I.r12 I.r01 I.e00
-          hpq' Tqb Te2pq Tclq Tclpq hux Up1 Up1a Uqsh Udv Uos Uvsh I.cons I.good I.rank hC1 hG1
-          hRk1 I.fc I.vs I.td I.kd hua hAbs hs1
+        exact T2UpgAbs.qnu_take_of_drop hlen hL0 hA hq' (by omega) Txb I.be
+          I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.r01 I.e00
+          hpq' Tqb Te2pq Tclq Tclpq hux Up1 Up1a Uqsh Udv Uos Uvsh
+          I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hdr.ua hdrop hAbs hs1
   -- `n ≥ 2`
   have hbig : ∀ n, 2 ≤ n → ∀ σ rkN,
       Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →

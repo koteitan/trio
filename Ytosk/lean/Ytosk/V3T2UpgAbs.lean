@@ -1,7 +1,8 @@
 /-
-Local reductions for T2UpgAbsW. The complete failure-shape theorem is the
-target; the lemmas below isolate the old-target and NBPar parts without
-assuming the residual being investigated.
+Weak-consumer route around T2UpgAbsW. Failure of strong absorption supplies
+an old target and NBPar; qnu_take_of_drop uses the existing weak drop field
+and PO/PV instead of strong absorption. No parent-coincidence theorem or
+replacement residual is assumed. Only new lemmas are added in this file.
 -/
 import Ytosk.V3GroupA
 import Ytosk.V3T2QNU
@@ -69,6 +70,65 @@ theorem old_target_of_failure {M : Mat} {ρ : Valn} {x : Nat}
     · exact hw.2.2.1
   have hie : i = x - 1 := by omega
   exact ⟨k, by simpa [hie] using hu, hkx, by simpa [hie] using hnb⟩
+
+/-- Case split supplied by the existing weak drop field, without any t=2
+parent-coincidence assumption. -/
+theorem strong_or_old_target {M : Mat} {ρ : Valn} {x : Nat}
+    (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hUA : UpgAbsXW M x ρ) :
+    UpgAbsX M x ρ ∨ ∃ k, upg M (x - 1) = some k ∧ k < x ∧ NBPar M (x - 1) := by
+  classical
+  by_cases hs : UpgAbsX M x ρ
+  · exact Or.inl hs
+  · exact Or.inr (old_target_of_failure hx hC hG hUA hs)
+
+theorem strong_of_no_upgrade {M : Mat} {ρ : Valn} {x : Nat}
+    (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hUA : UpgAbsXW M x ρ) (hn : upg M (x - 1) = none) : UpgAbsX M x ρ := by
+  rcases strong_or_old_target hx hC hG hUA with hs | ⟨k, hk, _⟩
+  · exact hs
+  · rw [hn] at hk
+    cases hk
+
+theorem strong_of_next_target {M : Mat} {ρ : Valn} {x : Nat}
+    (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hUA : UpgAbsXW M x ρ) (hn : upg M (x - 1) = some x) : UpgAbsX M x ρ := by
+  rcases strong_or_old_target hx hC hG hUA with hs | ⟨k, hk, hkx, _⟩
+  · exact hs
+  · rw [hn] at hk
+    cases hk
+    exact False.elim ((Nat.lt_irrefl _) hkx)
+
+/-- At the already-common-parent frames, the weak drop field supplies the
+exact body of T2UABad. The body is written out to keep this file below its
+definition in V3T2Top and avoid an import cycle. -/
+theorem strong_or_bad_of_common_parent {M : Mat} {ρ : Valn} {x r : Nat}
+    (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hUA : UpgAbsXW M x ρ) (h0 : par M 0 x = some r) (h2 : par M 2 x = some r) :
+    UpgAbsX M x ρ ∨
+      ((∃ r, par M 0 x = some r ∧ par M 2 x = some r) ∧
+        (∃ k, upg M (x - 1) = some k ∧ k < x) ∧ NBPar M (x - 1)) := by
+  rcases strong_or_old_target hx hC hG hUA with hs | ⟨k,hk,hkx,hnb⟩
+  · exact Or.inl hs
+  · exact Or.inr ⟨⟨r,h0,h2⟩,⟨k,hk,hkx⟩,hnb⟩
+
+/-- Strong o-seeds before x-1 need no global upgrade absorption. -/
+theorem strong_seed_of_drop {M : Mat} {ρ σ : Valn} {x p : Nat}
+    (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hp : p < x) (hne : p ≠ x - 1) (hCL : CL M p ≠ [])
+    (hdrop : PO ρ σ p ∧ PV M ρ σ p) (ho : σ.o p ≠ ρ.o p) :
+    Lhd z (σ.o p) (ρ.o p) := by
+  rcases PO.zero_of_ne (show p + 2 ≠ M.length by omega) hC hG (by omega)
+      hdrop.1 hdrop.2 with hE | ⟨_,w,hw⟩
+  · rcases hE with heq | hl
+    · exact False.elim (ho heq)
+    · exact hl
+  · have hor := o_cl_eq hC hG (show p < M.length by omega)
+    have harg := arg_lt_of_cl hC hG (show p < M.length by omega) hCL
+    rw [hw] at hor
+    simp only [psi.injEq] at hor
+    rw [← hor.2.1] at harg
+    exact False.elim ((lt_irrefl _) harg)
 
 section
 variable {M : Mat} {r L qp : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
@@ -457,8 +517,55 @@ theorem qnu_take_weak (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) 
           rw [hw.2.1] at harg
           exact False.elim ((lt_irrefl _) harg))
 
+/-- Direct integration wrapper using only the weak drop absorption field. -/
+theorem qnu_take_of_drop (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M)
+    (hUAB : UAB M)
+    (hR12 : R12 M) (hR01 : R01 M)
+    (h00 : entry M 0 0 = 0) {pq : Nat} (hpq : par M 0 (r + qp) = some pq)
+    (hqb : col M (r + qp) ≠ bump M pq) (he2pq : entry M 2 pq = 0) (hCLq : CL M (r + qp) = [])
+    (hpqCL : CL M pq ≠ []) {k : Nat} (hu : upg M (r + L - 1) = some k)
+    -- the shape of `D` in `M`
+    (hP1q : ∀ m, par M 1 (r + qp) = some m → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) false m)
+    (hP1a : ∀ m, par M 1 (r + L - 1) = some m → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) false m)
+    (hqsh : ∃ Lb d Kb e, children M (r + qp) = Lb ++ [d, r + L] ∧ children M d = Kb ++ [e] ∧
+      (∀ f ∈ Kb, ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true f) ∧
+      (∀ d' ∈ Lb, ∀ e' ∈ children M d', ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true e'))
+    (hDvNil : ∀ c, c < r + L → DepS M (SQU (r + qp) pq (r + L - 1)) false c → CL M c = [])
+    (hOS : ∀ i, i < r + L → ¬ (SQU (r + qp) pq (r + L - 1)) true i →
+      DepS M (SQU (r + qp) pq (r + L - 1)) true i → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) false i →
+      ∃ Lp c R, children M i = Lp ++ c :: R ∧ Counted M i c ∧ DepS M (SQU (r + qp) pq (r + L - 1)) true c ∧
+        (∀ d ∈ R, ¬ Counted M i d) ∧ (∀ d ∈ Lp, Counted M i d → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true d))
+    (hVSh : ∀ i, i < r + L → ¬ (SQU (r + qp) pq (r + L - 1)) false i → DepS M (SQU (r + qp) pq (r + L - 1)) false i →
+      (∀ m, par M 1 i = some m → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) false m) ∧
+      (entry M 2 i ≠ 0 → ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ col M j = bump M i ∧
+        children M j = Kb ++ [k] ∧ (∀ d ∈ Kb, ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true d) ∧
+        (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true e)))
+    -- values
+    {ρ σ : Valn} {rkM rkN : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hCN : Cons (M.take (r + L)) σ) (hGN : Good3 (M.take (r + L)) σ) (hRN : Rk (M.take (r + L)) rkN)
+    (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
+    (hUA : UpgAbsXW M (r + L) ρ)
+    (hdrop : ∀ i, i < r + L → PO ρ σ i ∧ PV M ρ σ i)
+    (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
+    (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
+    isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ := by
+  rcases strong_or_old_target hlen hC hG hUA with hs | ⟨k', hk', hkx', hnb⟩
+  · exact t2_qnu_take hlen hL hA hp hqp hxb hBE hR0 hZ2 hSD hZ1 hUAT hR12 hR01
+      h00 hpq hqb he2pq hCLq hpqCL hu hP1q hP1a hqsh hDvNil hOS hVSh hC hG hRM
+      hCN hGN hRN hF hVS hTD hKD hs hAbs hseed
+  · exact qnu_take_weak hlen hL hA hp hqp hxb hBE hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hR01
+      h00 hpq hqb he2pq hCLq hpqCL hu hP1q hP1a hqsh hDvNil hOS hVSh hC hG hRM
+      hCN hGN hRN hF hVS hTD hKD hnb hdrop hAbs hseed
+
 end
 
+#print axioms qnu_take_of_drop
+#print axioms strong_or_bad_of_common_parent
+#print axioms strong_or_old_target
+#print axioms strong_of_no_upgrade
+#print axioms strong_of_next_target
+#print axioms strong_seed_of_drop
 #print axioms qnu_take_weak
 #print axioms absorption_at_leaf
 #print axioms old_target_of_failure

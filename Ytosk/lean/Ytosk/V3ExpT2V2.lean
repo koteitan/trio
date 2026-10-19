@@ -1,7 +1,7 @@
 /-
 **最上位の t = 2 の枠 `ExpT2V2`・`R2V2` を埋める（2026-10-16、t2）。**
 
-- `r2V2_of`: `R2V2`（t = 2 の下降の残り Res3T2）は `T2BelowXRes` と x − 1 の強い吸収 `T2UpgAbsW`（drop の UpgAbsXW から外した部分）から（`hR2_t2_ofW`）。
+- `r2V2_of`: `R2V2`（t = 2 の下降の残り Res3T2）は `T2BelowXRes` から（`hR2_t2_ofW`。x − 1 の強い吸収 `T2UpgAbsW` は 2026-10-20 に外した: 使う側は drop の弱い UpgAbsXW で足りる、V3T2UpgAbs）。
 - `expT2V2_of`: `ExpT2V2` は `hExp_t2_inv3V2`（V3ExpT2Inv2）から。残りは名前つきの
   `T2BelowXRes`・`T2FOSeedV2`・`T2SeedPResV2`・`T2VSFCV2`・`T2VRAV2` と、top の共通の残り
   `HFrameV2`・`HLeafV2`（M[n] は標準形なので、その枠の欄と葉の条件はこの 2 つから出る）。
@@ -67,12 +67,12 @@ theorem expand_ne_nil_t2 {M : Mat} (hX : SInvX M) (hz : col M (M.length - 1) ≠
   rw [h]; exact hne
 
 /-- **R2V2 from `T2BelowXRes`.** -/
-theorem r2V2_of (hB : T2BelowXResV2) (hU2 : T2UpgAbsW) : R2V2 := by
+theorem r2V2_of (hB : T2BelowXResV2) : R2V2 := by
   intro M ρ rk C hz h2
-  exact hR2_t2_ofW (hB M ρ rk C) hU2 C.std (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2
+  exact hR2_t2_ofW (hB M ρ rk C) C.std (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2
 
 /-- **ExpT2V2 from the named residuals.** -/
-theorem expT2V2_of (hB : T2BelowXResV2) (hU2 : T2UpgAbsW) (hFO : T2FOSeedV2) (hPR : T2SeedPResV2) (hVF : T2VSFCV2)
+theorem expT2V2_of (hB : T2BelowXResV2) (hFO : T2FOSeedV2) (hPR : T2SeedPResV2) (hVF : T2VSFCV2)
     (hVA : T2VRAV2) (hF : HFrameV2) (hL : HLeafV2) : ExpT2V2 := by
   intro M ρ rk C hz h2 n hn
   obtain ⟨hX, _⟩ := sInvXJ_std C.std C.ne
@@ -83,7 +83,7 @@ theorem expT2V2_of (hB : T2BelowXResV2) (hU2 : T2UpgAbsW) (hFO : T2FOSeedV2) (hP
   obtain ⟨I1, _⟩ := C.pre (M.length - 1) (by omega) (by omega)
   have hE := expand_ne_nil_t2 hX hz h2 (n := n) (by omega)
   have hStd : Std (expand M n) := Std.exp n C.std
-  obtain ⟨ρN, rkN, IN, _⟩ := hExp_t2_inv3V2 (hB M ρ rk C) hU2 C.std C.ne C.I C.R.drop I1 hz h2
+  obtain ⟨ρN, rkN, IN, _⟩ := hExp_t2_inv3V2 (hB M ρ rk C) C.std C.ne C.I C.R.drop I1 hz h2
     (hFO M ρ rk C hz h2) (hPR M ρ rk C hz h2)
     (fun m hm σ rkN hCN hRN hGN hPN => by
       have hEm := expand_ne_nil_t2 hX hz h2 (n := m) (by omega)

@@ -55,7 +55,7 @@ theorem t2_val_expand {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2
 
 /-- **The `t = 2` expansion with `Inv3V2`**: from `Inv3V2` of `M` and of `M.take x`, the drop residual, and
 the named residuals, every `M[n]` (`n ≥ 2`) has `Inv3V2`, a standard value, and a smaller value. -/
-theorem hExp_t2_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk) (hU2 : T2UpgAbsW)
+theorem hExp_t2_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3V2 M ρ rk)
     (R : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
     (I1 : Inv3V2 (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) rk)
@@ -97,7 +97,7 @@ theorem hExp_t2_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T
     tp1WC_of_ph3cG hCN hGN.toOT hph NR.tp1w, NR.frame.tplow, NR.frame.auwl, NR.frame.auw0,
     NR.frame.adw, NR.frame.trigs, NR.frame.tplon, NR.frame.adn, rootS_of_good hCN hGN, hrp⟩, ?_⟩
   -- the drop of the value
-  have R2 := hR2_t2_ofW hB hU2 hM IW RW hz h2
+  have R2 := hR2_t2_ofW hB hM IW RW hz h2
   obtain ⟨_, hge⟩ := t2_drops_ge IW RW R2 hX hJ hz h2
     (fun m hm _ _ => t2_val_expand hB hM hS IW RW hz h2 m hm)
   obtain ⟨t', ⟨ρ', rk', hC', hR', hroot⟩, hot, hlt⟩ := hge n hn

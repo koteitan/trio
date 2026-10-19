@@ -3950,3 +3950,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - `fdshCopyKV` を証明（使わない前提を外した `fdshCopyKV'`）。橋 `t2FDCopyRes_of_all`（T2BelowXResV2・T2FOSeedV2・hVS・低い段すべての KAG `T2VRAKAll` ⇒ T2FDCopyRes）。
 - ただし `T2VRAKAll KAG`（すべての写しの枠で低い段すべての KAG）は**偽**: 絞らない実測で写しの枠 5,926,017 個のうち KG が 24 枠で破れる（どれも書き換えの条件の外、最初の例は悪い形 T2CBad でない、子の引数 y = 0）。KA は破れ 0。書き換える枠 2,281,152 個はすべて真。
 - **最上位の差し替え（lead）**: T2FDCopyRes を、書き換える枠だけで低い段すべての KAG を求める残り `FDCopy.T2VRAKFD KAG` に替えた（`t2FDCopyRes_of_fd` で T2FDCopyRes を作る）。道の段だけの hAG（T2VRAK KAG）はそのまま。残りは 17 個のままだが、FrameDom の σ 不変性は証明済みになり、残りは成分の上限だけになった。2 つの仮定を「かつ」でまとめて数を減らすことはしない（隠すだけ）。
+
+### T2UpgAbsW を外した（2026-10-20、trio-codex・lead、V3T2UpgAbs）
+
+- 最上位から T2UpgAbsW（x − 1 の強い吸収か悪い形 T2UABad）を外した。残りは 16 個。新しい残りはない。
+- 実測（13 集合、t = 2 の行列 1,038,963 個）: x − 1 で上げが 262,425 回、強い吸収が偽は 178 回で、すべて弱い吸収と T2UABad（P0(x) = P2(x) = x − 1、k < x）。ただし「弱い吸収の条件 ⇒ P0(x) = P2(x)」は偽（実際の 194 行列）なので、形の補題は示さず、使う側を直した。
+- 証明（V3T2UpgAbs）: `old_target_of_failure`（強い吸収が偽 ⇒ 古い的 k < x と NBPar）、`strong_of_no_upgrade`・`strong_of_next_target`（qr の上げなし・sv の場合は強い吸収が成り立つ）、`strong_seed_of_drop`（x − 1 でない種の ◁ は落とす補題の PO から）、`qnu_take_weak`・`qnu_take_of_drop`（qn の写しを強い吸収なしで: x − 1 の値を弱い種、その行 0 の親 o(pr) を強い種にし、NBPar で弱い子が bump の孫にならない）。
+- 組み込み（lead）: t2_drops_ge（V3T2Top）と t2_dropsC（V3MainV2）で、q = r の枝は `strong_or_old_target` から強い吸収か T2UABad を作り、q ≠ r の枝は `strong_seed_of_drop` と `qnu_take_of_drop`。Res3T2 の欄 ua と、hR2_t2・hR2_t2_ofW・hR2_t2_of・hExp_t2_inv3V2・r2V2_of・expT2V2_of・最上位の hU2 を外した。

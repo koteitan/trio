@@ -125,7 +125,7 @@ t1 handles the weak seed with `SmallSelf` in `qr_final3`.) -/
 theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hAbW : T0AbWRes) (hArgB : T0ArgBRes) (hCB : T2CBadOut)
-    (hB : T2BelowXResV2) (hU2 : T2UpgAbsW) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
+    (hB : T2BelowXResV2) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
     (hFD : T2FDCopyRes)
     (hQNG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
@@ -145,8 +145,8 @@ theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
   terminates_of_desc3 (desc3_V2O hD hSd (hTake_of_glob hF hLf)
     (expT0Out_of4 hAbW hArgB (t0Leaf_of_glob hLf) (t0Frame_of_glob hF))
     (expT1Out_V2_glob hF hLf)
-    (expT2V2_of hB hU2 (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
+    (expT2V2_of hB (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
       (t2VRAV2_of qVRAshK_KVRA hB (t2VRASeedG_of hB hP hPreG hQNG hSVCG) hPreG hVCp hVK) hF hLf)
-    (r2V2_of hB hU2) hCB)
+    (r2V2_of hB) hCB)
 
 end Ytosk
