@@ -1505,6 +1505,19 @@ theorem frameDom_sh_KAG {V V' a B s y : T} {Lv : List T}
         · exact retained g (Or.inr (comps_sub_sub u s V hd))
         · exact introduced g (comps_of_mem_summands hq hgq)
 
+/-- Weaker-premise variant: no PH kind, list order, level guard, or B<y trigger. -/
+theorem fdshCopyKV' {V V' a B s y : T} {Lv : List T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a) (hc : isOT (psi s y z) = true)
+    (hBeq : B = spArg a z (sumN Lv)) (hFO : isOT (psi a B z) = true)
+    (hVs : V < s) (ht : psi a z z < psi s y z)
+    (hVD : VDomF V V' a) (hK : ∀ u, u ≤ V → KAG V V' a Lv (psi s y z) u)
+    (hOld : ∀ u g, g ∈ comps u V → g ≤ psi a z z ∨ ∃ d ∈ comps u a, g ≤ d)
+    (hFD : FrameDom a B s (H s y)) :
+    FrameDom (shf V V' a) (sh V V' B) (shf V V' s)
+      (H (shf V V' s) (sh V V' y)) :=
+  frameDom_sh_KAG hV hV' hVV ha hVa hc hBeq hFO hVs ht hVD hK hOld hFD
+
 /-- Full accepted statement, derived from the smaller callback interface. -/
 theorem fdshCopyKV : FDshCopyKV := by
   intro V V' a B s y Lv hV hV' hVV ha hVa hsingle _hp _hlev hBeq hFO _hKind hVs ht hVD hK hOld hFD
@@ -1571,6 +1584,16 @@ theorem t2FDCopyRes_of_all (hB : T2BelowXResV2) (hFO : T2FOSeedV2)
   exact t2CopyK_FDshAt_of_all C (hB M ρ rk C) hz h2
     (hFO M ρ rk C hz h2) (hVS M ρ rk C hz h2) (hAGall M ρ rk C hz h2)
 
+/-- Integration name for the global all-low residual bridge. -/
+theorem t2FDCopyRes_of (hB : T2BelowXResV2) (hFO : T2FOSeedV2)
+    (hVS : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VAncStep M)
+    (hAGall : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VRAKAll KAG M) : T2FDCopyRes :=
+  t2FDCopyRes_of_all hB hFO hVS hAGall
+
+#print axioms fdshCopyKV'
+#print axioms t2FDCopyRes_of
 #print axioms t2CopyK_FDshAt_of_all
 #print axioms t2FDCopyRes_of_all
 #print axioms frameDom_sh_KAG
