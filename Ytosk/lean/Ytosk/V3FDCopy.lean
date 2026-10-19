@@ -590,6 +590,62 @@ theorem frameDom_copy_high_component {V V' a B s y w u g C : T}
     (isOT_arg (ClShLGuarded.isOT_H_self hc)) hVs hw hVw hwa hu hFD hg hBC hSC
   rwa [sh_H hV hV' hVV hc hVs]
 
+/-- A component of a frozen index survives in f(p), except for components
+of the removed old V prefix. This is a forward statement at unchanged levels. -/
+theorem frozen_index_component_forward {V V' p u g : T}
+    (hV : isOT V = true) (hp : isOT p = true) (hVp : V ≤ p)
+    (hlev : ¬ V < lev p) (hg : g ∈ comps u p) :
+    g ∈ comps u V ∨ g ∈ comps u (shf V V' p) := by
+  have hfix : sh V V' (sub p V) = sub p V := by
+    apply sh_fix (isOT_sub_sfx hp V)
+    have hh := lev_le_of_le (head_sub_le hp V)
+    have hhead : ∀ t : T, lev (head t) = lev t := by intro t; cases t <;> rfl
+    rw [hhead, hhead] at hh
+    exact not_lt.mpr (le_trans hh (not_lt.mp hlev))
+  have hmem : g ∈ comps u (add V (sub p V)) := by
+    rwa [add_sub_cancel' hV hp hVp]
+  rcases comps_add u V (sub p V) g hmem with hgV | hgS
+  · exact Or.inl hgV
+  · right
+    unfold shf
+    rw [hfix]
+    obtain ⟨P, hP, _⟩ := add_eq_app_prefix V' (sub p V)
+    rw [hP, comps_app]
+    exact List.mem_append_right _ hgS
+
+/-- Frozen leading-index intervals transport unchanged low components.
+The sole exception is old-V domination, closed by old_root_component_closed. -/
+theorem frozen_index_interval_transport {V V' p q u g Y R : T}
+    (hV : isOT V = true) (hp : isOT p = true) (hq : isOT q = true)
+    (hVp : V ≤ p) (hVq : V ≤ q)
+    (hlp : ¬ V < lev p) (hlq : ¬ V < lev q)
+    (hu : u ≤ shf V V' p) (hg : g ∈ comps u p)
+    (hP : ClShLGuarded.Persistent u g p q) :
+    (∃ d ∈ comps u V, g ≤ d) ∨
+      ClShLGuarded.Persistent u g (psi (shf V V' p) z z) (psi (shf V V' q) Y R) := by
+  rcases ClShLGuarded.persistent_shf_frozen hV hp hq hVp hVq hlp hlq hP with hVg | hP'
+  · exact Or.inl hVg
+  rcases frozen_index_component_forward hV hp hVp hlp hg with hgV | hgp
+  · exact Or.inl ⟨g, hgV, le_refl _⟩
+  · exact Or.inr (ClShLGuarded.persistent_psi_index hu
+      (List.mem_cons_of_mem _ hgp) hP')
+
+/-- The frozen-to-high corner needs only the old-V bound; the frozen-to-frozen
+corner is handled by frozen_index_interval_transport. -/
+theorem frozen_index_interval_transport_any {V V' p q u g Y R : T}
+    (hV : isOT V = true) (hp : isOT p = true) (hq : isOT q = true)
+    (hVp : V ≤ p) (hVq : V ≤ q) (hlp : ¬ V < lev p)
+    (hu : u ≤ shf V V' p) (hg : g ∈ comps u p)
+    (hP : ClShLGuarded.Persistent u g p q) :
+    (∃ d ∈ comps u V, g ≤ d) ∨
+      ClShLGuarded.Persistent u g (psi (shf V V' p) z z)
+        (psi (shf V V' q) Y R) := by
+  by_cases hlq : V < lev q
+  · rcases ClShLGuarded.persistent_frozen_to_high_bound hlp hlq hP with rfl | h
+    · exact Or.inr (fun c _ _ => ⟨z, List.mem_cons_self, le_refl _⟩)
+    · exact Or.inl h
+  · exact frozen_index_interval_transport hV hp hq hVp hVq hlp hlq hu hg hP
+
 set_option linter.unusedVariables false in
 /-- Candidate COMBINED term statement, recorded for review before proof.
 It adds full old-V ancestor domination to FDshCopy with full VDomF and all-low
@@ -635,6 +691,9 @@ def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
 #print axioms source_v_base_live
 #print axioms source_v_base_pair
 #print axioms old_vAnc_base_live
+#print axioms frozen_index_interval_transport_any
+#print axioms frozen_index_component_forward
+#print axioms frozen_index_interval_transport
 #print axioms old_root_component_closed
 #print axioms frameDom_copy_high_component
 #print axioms old_vAnc_copy_live
