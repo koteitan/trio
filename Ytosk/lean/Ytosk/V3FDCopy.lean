@@ -324,6 +324,61 @@ theorem zero_counterexample_not_need : ¬ RetainedLowNeed
       (comps z FDCut.ZeroStateCounterexample.y ++
         comps z FDCut.ZeroStateCounterexample.af), FDCut.ZeroStateCounterexample.D ≤ d by decide) hd
 
+/-- A counted child of the one-column prefix is counted in the original
+matrix too (the standard structural drop fact, exposed for CL membership). -/
+theorem mem_cl_of_mem_cl_take {M : Mat} (S : SInv M) {x i c : Nat}
+    (hx : x + 1 = M.length) (hi : i < x) (hc : c ∈ CL (M.take x) i) :
+    c ∈ CL M i := by
+  have hch := cl_mem_children hc
+  have hcnt : Counted (M.take x) i c := by
+    unfold CL at hc
+    exact of_decide_eq_true (List.mem_filter.mp hc).2
+  have hcnt' := counted_take_last (M := M) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat
+    i c (by omega) (by simpa [show M.length - 1 = x by omega] using hch)
+    (by simpa [show M.length - 1 = x by omega] using hcnt)
+  have hch' : c ∈ children M i := by
+    rw [children_take, List.mem_filter] at hch
+    exact hch.1
+  unfold CL
+  exact List.mem_filter.mpr ⟨hch', decide_eq_true hcnt'⟩
+
+/-- n=2 unshifted source v equality at an active NONSEED frame, via original
+M. Uses only the existing below-x residual and source context, not target FC. -/
+theorem source_v_base_nonseed {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L i c : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    {σ ρP : Valn} (hCN : Cons (G2 M r L 2) σ) (hGN : Good3 (G2 M r L 2) σ)
+    (hCP : Cons (G2 M r L 1) ρP) (hi : i < r + L)
+    (hc : c ∈ CL (G2 M r L 1) i) (hsc : ¬ T2SeedCol M r L i) :
+    σ.v i = ρP.v i := by
+  have hrx : r < r + L := par_lt M 2 _ _ hr
+  have hl2 : 2 ≤ M.length := by omega
+  have hx : r + L + 1 = M.length := hlen
+  have hP : G2 M r L 1 = M.take (r + L) := gexp_one_gen hlen
+  rw [hP] at hCP hc
+  have hcnt := counted_take_last (M := M) (by omega) C.S.r0p C.S.z2 C.S.sibDec C.S.z1c C.S.uat
+  have hRT : Rk (M.take (r + L)) rk := by
+    have h := rk_take (by omega) C.I.rank hcnt
+    simpa [show M.length - 1 = r + L by omega] using h
+  have hvi : ρP.v i = ρ.v i := v_take_of_counted_child C.S C.I.cons C.I.good hx hi hCP hRT hc
+  have hGlow : ∀ m, 1 ≤ m → m < 2 → ∀ τ, Cons (G2 M r L m) τ → Good3 (G2 M r L m) τ := by
+    intro m hm hm2 τ hτ
+    obtain rfl : m = 1 := by omega
+    rw [hP] at hτ ⊢
+    have h := (take_fields_ctx C.toStepCtxV2 hl2
+      (show Cons (M.take (M.length - 1)) τ by simpa [show M.length - 1 = r + L by omega] using hτ)).1
+    simpa [show M.length - 1 = r + L by omega] using h
+  have hBS := t2BelowXS_of hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 hlen hr
+  have hsh := (hBS 2 (by omega) hGlow σ hCN
+    (fun j _ hj => ⟨hGN.ot_o j hj, hGN.ot_v j hj⟩) i hi).2.2.2.1 hsc
+  have hci : c ∈ CL M i := mem_cl_of_mem_cl_take C.S hx hi hc
+  rcases hsh with ⟨hv, _, _⟩ | ⟨hv, _⟩ | ⟨_, hnil⟩
+  · exact hv.trans hvi.symm
+  · exact hv.trans hvi.symm
+  · rw [hnil] at hci
+    simp at hci
+
 #print axioms old_vAnc_of_t2VAncStep
 #print axioms old_vAnc_copy
 #print axioms old_vAnc_component
@@ -339,4 +394,5 @@ theorem zero_counterexample_not_need : ¬ RetainedLowNeed
 #print axioms zero_counterexample_old_ancestor
 #print axioms zero_counterexample_pending
 #print axioms zero_counterexample_not_need
+#print axioms source_v_base_nonseed
 end Ytosk.FDCopy
