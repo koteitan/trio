@@ -13,6 +13,24 @@ import Ytosk.V3T2CutDom
 namespace Ytosk.FDCopy
 open T
 
+/-- All-low version of T2VRAK in exactly the existing T2CopyK frame shape.
+It removes only the LevAt premise; the level bound u <= V remains. -/
+def T2VRAKAll (K : T → T → T → List T → T → T → Prop) (M : Mat) : Prop :=
+  T2CopyK (fun V V' a Lv cv => ∀ u, u ≤ V → K V V' a Lv cv u) M
+
+/-- The all-low residual supplies every current path-level K consumer. -/
+theorem t2VRAK_of_all {K : T → T → T → List T → T → T → Prop} {M : Mat}
+    (h : T2VRAKAll K M) : T2VRAK K M := by
+  intro r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL u _hu huV
+  exact h r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL u huV
+
+/-- Shared full VDomF combines with all-low KAG at the very same copy frames. -/
+theorem t2VRAKAll_KVRA_of {M : Mat} (hVD : T2CopyK CopyVDomK M)
+    (hAG : T2VRAKAll KAG M) : T2VRAKAll KVRA M := by
+  intro r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL u huV
+  exact ⟨hVD r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL,
+    hAG r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL u huV⟩
+
 /-- The old source matrix has VAnc at every guarded copy pair once its
 expansion index is at least two. No invariant of the target N is extracted. -/
 theorem old_vAnc_of_t2VAncStep {M : Mat} (hVS : T2VAncStep M)
@@ -862,6 +880,8 @@ def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
     FrameDom (shf V V' a) (sh V V' B) (shf V V' s)
       (H (shf V V' s) (sh V V' y))
 
+#print axioms t2VRAK_of_all
+#print axioms t2VRAKAll_KVRA_of
 #print axioms old_vAnc_of_t2VAncStep
 #print axioms old_vAnc_copy
 #print axioms old_vAnc_component
