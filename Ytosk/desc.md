@@ -3941,3 +3941,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 直す道: KVRA を足した FDshCopyKVRA（全段の VDomF、低い段すべての KA・KG、FrameOT、PH3cKindG）。実際の写しの枠 2,281,140 回で、全段の VDomF・低い段すべての KA・KG は破れ 0。VDomF は t2CopyK_vDom_of で全段が出るが、今の最上位の hAG（T2VRAK KAG）は KA・KG を道の段 LevAt でしか出さない。
 - KVRA を全段で足した FDshCopyKVRA も偽（`FDCut.AllLowKVRACounterexample`、`not_FDshCopyVDKA`）。D = Om⁵(5)、V = ψ_0(D)、V′ = Om(2)、a = Om(1)、p = Om(V + 1)、s = ψ_p(V)、B = 0。動かない V が D を保ち、新しい添字では D が消える。欠けているのは古い V の成分が古い a で押さえられること（古い VAnc）らしい。項の主張に仮定を足す道はここでやめた（ClShL 3 回、FDshCopy 3 回）。
 - **修正（lead）**: 最上位の FDsh を行列の残り `T2FDCopyRes`（V3T2VSFC）に替えた: StepCtxT2 の t = 2 の展開の写しの枠ごとに `FDshAt`（その枠での FDsh）を `T2CopyK` で求める。`frameClosed_expand_t2K` は `clField_expand_t2SK`（K = FDshAt）と `qFCo_shK` で FrameClosed を出す。最上位は偽の仮定を含まなくなった（残りは 17 個のまま）。実測: 写しの枠 2,281,140 回（n = 2, 3）で新しい FrameDom は破れ 0。次は T2FDCopyRes を実際の不変条件（古い VAnc、P の FrameOT・PH3cG、`frameDom_sh_high_component`）から証明する。
+
+### T2FDCopyRes の証明の途中（2026-10-19、trio-codex、V3FDCopy）
+
+- 古い VAnc（V の成分は a で押さえられる）を写しの枠のすべての n ≥ 2 で証明した（`old_vAnc_copy_live`）。n ≥ 3 は hVS を n − 1 に、n = 2 は元の M を通して（`source_v_base_pair`: 1 列落としで数える子・行 1 の子がある列の v は変わらない `v_take_of_counted_child`・`v_take_of_par1_child`、N と M は FrameShape と T2HardA）。
+- 証明する項の主張 `FDshCopyKV`（FDshCopy の前提＋全段の VDomF＋低い段すべての KAG＋古い VAnc）。作った項 82,187 組と状態の 3 種類 29,700 組で例外 0。以前の反例はどれも新しい前提のどれかで外れる。証明できれば、最上位の T2FDCopyRes と道の段だけの hAG を、低い段すべての KAG（`T2VRAKAll`、実際の写しの枠 2,281,140 回で例外 0）1 つにまとめられる（17 → 16）。
+- 核心の補題 `persistent_sh_low`（公理は propext・Classical.choice・Quot.sound）: u ≤ V、V・V′・B・A が OT、V < V′ のとき、Persistent u g B A ⇒ g は古い V の成分で押さえられるか Persistent u g (σB) (σA)。g・u の標準形や枠の条件は要らない。ClShL の場面で偽だった「動かない低い段の区間を運ぶ」主張に、古い V の成分の例外をつけた形（以前の反例はどれもこの例外に入るか、古い Persistent が偽）。C 自身を押さえる成分に許す版 `persistentArg_sh_low` も。

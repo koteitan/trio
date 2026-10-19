@@ -919,6 +919,122 @@ theorem persistent_psi_index_of_left_bound {u g p q x r y t : T}
     · obtain ⟨d, hd, hgd⟩ := hg
       exact ⟨d, lift d hd, hgd⟩
 
+/-- Direct argument witnesses require no open-endpoint transport. If g<=A,
+the old certificate extends above A; if A<g, the direct witnesses are impossible.
+Thus same-source component transport supplies argument transport afterwards. -/
+theorem persistentArg_sh_of_component_transport {V V' u g B A : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hB : isOT B = true)
+    (hComp : ClShLGuarded.Persistent u g B A →
+      (∃ d ∈ comps u V, g ≤ d) ∨
+        ClShLGuarded.Persistent u g (sh V V' B) (sh V V' A))
+    (hArg : PersistentArg u g B A) :
+    (∃ d ∈ comps u V, g ≤ d) ∨
+      PersistentArg u g (sh V V' B) (sh V V' A) := by
+  by_cases hgA : g ≤ A
+  · right
+    intro c hBc _hcA
+    have hBcOld := lt_of_le_of_lt (le_sh hV hV' (le_of_lt hVV) hB) hBc
+    by_cases hcA : c ≤ A
+    · exact hArg c hBcOld hcA
+    · exact ⟨c, List.mem_cons_self, le_trans hgA (le_of_lt (lt_of_not_ge hcA))⟩
+  · have hGc : ClShLGuarded.Persistent u g B A := by
+      intro c hBc hcA
+      obtain ⟨d, hd, hgd⟩ := hArg c hBc hcA
+      rcases List.mem_cons.mp hd with rfl | hd
+      · exact False.elim (hgA (le_trans hgd hcA))
+      · exact ⟨d, hd, hgd⟩
+    rcases hComp hGc with h | h
+    · exact Or.inl h
+    · exact Or.inr (fun c hBc hcA => by
+        obtain ⟨d, hd, hgd⟩ := h c hBc hcA
+        exact ⟨d, List.mem_cons_of_mem _ hd, hgd⟩)
+
+/-- An argument certificate lifts to ordinary persistence inside a fixed
+index. Its left boundary may be any dominating argument/component witness. -/
+theorem persistent_psi_argument_of_left_bound {u g p x r y t : T}
+    (hup : u ≤ p) (hLeft : ∃ d ∈ x :: Gc u x, g ≤ d)
+    (hArg : PersistentArg u g x y) :
+    ClShLGuarded.Persistent u g (psi p x r) (psi p y t) := by
+  intro C hBC hCA
+  cases C with
+  | z => exact False.elim (T.not_lt_z _ hBC)
+  | psi q e f =>
+    have hpq : p ≤ q := by simpa only [lev] using lev_le_of_le (le_of_lt hBC)
+    have hqp : q ≤ p := by simpa only [lev] using lev_le_of_le hCA
+    have hqp' : q = p := le_antisymm hqp hpq
+    subst q
+    have hxe : x ≤ e := by
+      rcases T.psi_lt_psi.mp hBC with h | ⟨_, h⟩ | ⟨_, h, _⟩
+      · exact False.elim (lt_irrefl' p h)
+      · exact le_of_lt h
+      · exact le_of_eq h
+    have hey : e ≤ y := by
+      rcases (le_iff _ _).mp hCA with h | h
+      · rcases T.psi_lt_psi.mp h with h | ⟨_, h⟩ | ⟨_, h, _⟩
+        · exact False.elim (lt_irrefl' p h)
+        · exact le_of_lt h
+        · exact le_of_eq h
+      · exact le_of_eq (T.psi.inj h).2.1
+    have lift : ∀ d ∈ e :: Gc u e, d ∈ Gc u (psi p e f) := by
+      intro d hd
+      rcases List.mem_cons.mp hd with rfl | hd
+      · exact List.mem_cons_of_mem _ (comps_psi_mem_of (not_lt.mpr hup) (Or.inl rfl))
+      · rcases List.mem_cons.mp hd with rfl | hd
+        · exact List.mem_cons_self
+        · exact List.mem_cons_of_mem _ (comps_psi_mem_of (not_lt.mpr hup) (Or.inr (Or.inl hd)))
+    rcases (le_iff _ _).mp hxe with hxe | rfl
+    · obtain ⟨d, hd, hgd⟩ := hArg e hxe hey
+      exact ⟨d, lift d hd, hgd⟩
+    · obtain ⟨d, hd, hgd⟩ := hLeft
+      exact ⟨d, lift d hd, hgd⟩
+
+/-- The complete same-index argument branch reduces to the strictly smaller
+PersistentArg transport. All index and boundary alternatives are discharged. -/
+theorem persistent_sh_argument_step {V V' u g p x r y t : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hp : isOT p = true) (hx : isOT x = true) (hVp : V < p)
+    (hu : u ≤ shf V V' p) (hxy : x < y)
+    (hOld : ClShLGuarded.Persistent u g (psi p x r) (psi p y t))
+    (hArg : PersistentArg u g x y →
+      (∃ d ∈ comps u V, g ≤ d) ∨
+        PersistentArg u g (sh V V' x) (sh V V' y)) :
+    (∃ d ∈ comps u V, g ≤ d) ∨
+      ClShLGuarded.Persistent u g (sh V V' (psi p x r)) (sh V V' (psi p y t)) := by
+  by_cases hIndex : ∃ d ∈ comps u p, g ≤ d
+  · obtain ⟨d, hd, hgd⟩ := hIndex
+    rcases index_component_forward_or_old_root hV hV' hVV hp (le_of_lt hVp) hd with
+        ⟨e, he, hde⟩ | ⟨e, he, hde⟩
+    · exact Or.inl ⟨e, he, le_trans hgd hde⟩
+    · right
+      rw [sh_psi_gt hVp, sh_psi_gt hVp]
+      intro c hBc hcA
+      obtain ⟨f, hf, hef⟩ := ClShLGuarded.persistent_of_shared_level hu he c hBc hcA
+      exact ⟨f, hf, le_trans (le_trans hgd hde) hef⟩
+  · have hArgOld := persistent_argument_of_psi_interval hOld
+        (fun d hd hgd => hIndex ⟨d, hd, hgd⟩)
+    rcases hArg hArgOld with h | hNew
+    · exact Or.inl h
+    · rcases persistent_head_bound_of_argument_lt hxy hOld with rfl | ⟨d, hd, hgd⟩
+      · exact Or.inr (fun c _ _ => ⟨z, List.mem_cons_self, le_refl _⟩)
+      · by_cases hpu : lt p u = true
+        · simp [comps, hpu] at hd
+        · rw [comps_psi_z_of_ge hpu] at hd
+          simp only [List.mem_cons, List.mem_append] at hd
+          rcases hd with rfl | hd | hd
+          · right
+            rw [sh_psi_gt hVp, sh_psi_gt hVp]
+            exact ClShLGuarded.persistent_of_argument_bound hu
+              (le_trans hgd (le_sh hV hV' (le_of_lt hVV) hx))
+          · rcases component_forward_or_old_root hV hV' hVV (size x) x (le_refl _) hx d hd with
+                ⟨e, he, hde⟩ | ⟨e, he, hde⟩
+            · exact Or.inl ⟨e, he, le_trans hgd hde⟩
+            · right
+              rw [sh_psi_gt hVp, sh_psi_gt hVp]
+              exact persistent_psi_argument_of_left_bound hu
+                ⟨e, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ he), le_trans hgd hde⟩ hNew
+          · exact False.elim (hIndex ⟨d, hd, hgd⟩)
+
 /-- A common prefix is handled entirely by component-forward transport.
 Only the strictly smaller tail interval is passed to the recursive hypothesis. -/
 theorem persistent_sh_common_prefix {V V' u g P B A : T}
@@ -957,6 +1073,100 @@ theorem persistent_sh_common_prefix {V V' u g P B A : T}
       rw [sh_app, sh_app]
       exact ClShLGuarded.persistent_app _ h
 
+/-- Raising the leading index leaves the old argument certificate unbounded. -/
+theorem persistent_argument_global_of_index_lt {u g p x r q y t : T}
+    (hpq : p < q)
+    (hOld : ClShLGuarded.Persistent u g (psi p x r) (psi q y t))
+    (hIndex : ∀ d ∈ comps u p, ¬ g ≤ d) : ∀ A, PersistentArg u g x A := by
+  intro A e hxe _heA
+  have hBC : psi p x r < psi p e z :=
+    T.psi_lt_psi.mpr (Or.inr (Or.inl ⟨rfl, hxe⟩))
+  have hCA : psi p e z ≤ psi q y t := le_of_lt (T.psi_lt_psi.mpr (Or.inl hpq))
+  obtain ⟨d, hd, hgd⟩ := hOld _ hBC hCA
+  rcases List.mem_cons.mp hd with rfl | hd
+  · exact ⟨z, List.mem_cons_of_mem _ List.mem_cons_self, hgd⟩
+  · by_cases hpu : lt p u = true
+    · simp [comps, hpu] at hd
+    · rw [comps_psi_z_of_ge hpu] at hd
+      simp only [List.mem_cons, List.mem_append] at hd
+      rcases hd with rfl | hd | hd
+      · exact ⟨d, List.mem_cons_self, hgd⟩
+      · exact ⟨d, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd), hgd⟩
+      · exact False.elim (hIndex d hd hgd)
+
+/-- For a strict source-index change, only transport of the smaller index
+interval is recursive. Equal target indices use the unbounded old argument. -/
+theorem persistent_sh_index_step {V V' u g p x r q y t : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hB : isOT (psi p x r) = true) (hVp : V < p) (hpq : p < q)
+    (hu : u ≤ shf V V' p)
+    (hOld : ClShLGuarded.Persistent u g (psi p x r) (psi q y t))
+    (hIdx : ClShLGuarded.Persistent u g (shf V V' p) (shf V V' q)) :
+    (∃ d ∈ comps u V, g ≤ d) ∨
+      ClShLGuarded.Persistent u g (sh V V' (psi p x r)) (sh V V' (psi q y t)) := by
+  have hp := isOT_sub hB
+  have hx := isOT_arg hB
+  have hVq := lt_trans hVp hpq
+  by_cases hRoot : ∃ d ∈ comps u V, g ≤ d
+  · exact Or.inl hRoot
+  · right
+    rw [sh_psi_gt hVp, sh_psi_gt hVq]
+    intro C hBC hCA
+    cases C with
+    | z => exact False.elim (T.not_lt_z _ hBC)
+    | psi v e f =>
+      have hfv : shf V V' p ≤ v := by simpa only [lev] using lev_le_of_le (le_of_lt hBC)
+      have hvf : v ≤ shf V V' q := by simpa only [lev] using lev_le_of_le hCA
+      have huv : ¬ v < u := not_lt.mpr (le_trans hu hfv)
+      rcases (le_iff _ _).mp hfv with hfv | rfl
+      · obtain ⟨d, hd, hgd⟩ := hIdx v hfv hvf
+        rcases List.mem_cons.mp hd with rfl | hd
+        · exact ⟨z, List.mem_cons_self, hgd⟩
+        · exact ⟨d, List.mem_cons_of_mem _ (comps_psi_mem_of huv
+            (Or.inr (Or.inr (Or.inl hd)))), hgd⟩
+      · have hxe : sh V V' x ≤ e := by
+          rcases T.psi_lt_psi.mp hBC with h | ⟨_, h⟩ | ⟨_, h, _⟩
+          · exact False.elim (lt_irrefl' _ h)
+          · exact le_of_lt h
+          · exact le_of_eq h
+        have hOldxe := le_trans (le_sh hV hV' (le_of_lt hVV) hx) hxe
+        have lift : ∀ d ∈ e :: Gc u e, d ∈ Gc u (psi (shf V V' p) e f) := by
+          intro d hd
+          rcases List.mem_cons.mp hd with rfl | hd
+          · exact List.mem_cons_of_mem _ (comps_psi_mem_of huv (Or.inl rfl))
+          · rcases List.mem_cons.mp hd with rfl | hd
+            · exact List.mem_cons_self
+            · exact List.mem_cons_of_mem _ (comps_psi_mem_of huv (Or.inr (Or.inl hd)))
+        by_cases hIndex : ∃ d ∈ comps u p, g ≤ d
+        · obtain ⟨d, hd, hgd⟩ := hIndex
+          rcases index_component_forward_or_old_root hV hV' hVV hp (le_of_lt hVp) hd with
+              ⟨d', hd', hdd'⟩ | ⟨d', hd', hdd'⟩
+          · exact False.elim (hRoot ⟨d', hd', le_trans hgd hdd'⟩)
+          · exact ⟨d', List.mem_cons_of_mem _ (comps_psi_mem_of huv
+              (Or.inr (Or.inr (Or.inl hd')))), le_trans hgd hdd'⟩
+        · rcases (le_iff _ _).mp hOldxe with hOldxe | rfl
+          · obtain ⟨d, hd, hgd⟩ := persistent_argument_global_of_index_lt hpq hOld
+              (fun d hd hgd => hIndex ⟨d, hd, hgd⟩) e e hOldxe (le_refl _)
+            exact ⟨d, lift d hd, hgd⟩
+          · have hxs : sh V V' x = x := le_antisymm hxe
+              (le_sh hV hV' (le_of_lt hVV) hx)
+            have hOldArg : ClShLGuarded.Persistent u g (psi p x r) (psi p (succ x) z) :=
+              fun c hBc hcA => hOld c hBc (le_trans hcA
+                (le_of_lt (T.psi_lt_psi.mpr (Or.inl hpq))))
+            rcases persistent_head_bound_of_argument_lt (lt_succ_self x) hOldArg with
+                rfl | ⟨d, hd, hgd⟩
+            · exact ⟨z, List.mem_cons_self, le_refl _⟩
+            · have hHead : isOT (psi p x z) = true := isOT_head hB
+              rcases component_forward_or_old_root hV hV' hVV (size (psi p x z))
+                  (psi p x z) (le_refl _) hHead d hd with
+                    ⟨d', hd', hdd'⟩ | ⟨d', hd', hdd'⟩
+              · exact False.elim (hRoot ⟨d', hd', le_trans hgd hdd'⟩)
+              · rw [sh_psi_gt hVp, sh_z, hxs] at hd'
+                have heq : psi (shf V V' p) x f = app (psi (shf V V' p) x z) f := rfl
+                refine ⟨d', List.mem_cons_of_mem _ ?_, le_trans hgd hdd'⟩
+                rw [heq, comps_app]
+                exact List.mem_append_left _ hd'
+
 /-- The complete frozen-index change branch: no component witness is needed
 as an input; old persistence supplies it at Omega_(p+1). -/
 theorem persistent_sh_frozen_index_change {V V' u g p x r q y t Y R : T}
@@ -981,6 +1191,78 @@ theorem persistent_sh_frozen_index_change {V V' u g p x r q y t Y R : T}
         · exact Or.inl ⟨d, hdV, hgd⟩
         · exact Or.inr (persistent_psi_index_of_left_bound hu
             ⟨d, List.mem_cons_of_mem _ hd', hgd⟩ hP')
+
+/-- Index transport: high leading indices use ordinary transport recursively;
+frozen indices use the proved subtraction/addition interval lemmas. -/
+theorem persistent_shf_index_of_transport {V V' u g p q : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (hp : isOT p = true) (hq : isOT q = true) (hVp : V < p) (hpq : p < q)
+    (hOld : ClShLGuarded.Persistent u g p q)
+    (hComp : ClShLGuarded.Persistent u g p q →
+      (∃ d ∈ comps u V, g ≤ d) ∨
+        ClShLGuarded.Persistent u g (sh V V' p) (sh V V' q)) :
+    (∃ d ∈ comps u V, g ≤ d) ∨
+      ClShLGuarded.Persistent u g (shf V V' p) (shf V V' q) := by
+  by_cases hlp : V < lev p
+  · have hlq := lt_of_lt_of_le hlp (lev_le_of_le (le_of_lt hpq))
+    simpa only [shf_eq_sh hV hV' hVV hlp, shf_eq_sh hV hV' hVV hlq] using hComp hOld
+  · by_cases hlq : V < lev q
+    · rcases ClShLGuarded.persistent_frozen_to_high_bound hlp hlq hOld with rfl | h
+      · exact Or.inr (fun c _ _ => ⟨z, List.mem_cons_self, le_refl _⟩)
+      · exact Or.inl h
+    · exact ClShLGuarded.persistent_shf_frozen hV hp hq (le_of_lt hVp)
+        (le_of_lt (lt_trans hVp hpq)) hlp hlq hOld
+
+/-- Unchanged low interval persistence transports modulo domination by old V.
+No standardness assumption on the intermediate terms, the level or g is used. -/
+theorem persistent_sh_low {V V' u g : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V') (hu : u ≤ V) :
+    ∀ {B A : T}, isOT B = true → isOT A = true →
+      ClShLGuarded.Persistent u g B A →
+      (∃ d ∈ comps u V, g ≤ d) ∨
+        ClShLGuarded.Persistent u g (sh V V' B) (sh V V' A) := by
+  intro B
+  induction B with
+  | z =>
+    intro A hB hA hOld
+    exact persistent_sh_frozen_source hB hA (by exact T.not_lt_z _) hOld
+  | psi p x r ihp ihx ihr =>
+    intro A hB hA hOld
+    by_cases hVp : V < p
+    · have hp := isOT_sub hB
+      have hx := isOT_arg hB
+      have hr := isOT_rest hB
+      have huFP : u ≤ shf V V' p := le_trans hu
+        (le_trans (le_of_lt hVp) (le_shf_self hV hV' (le_of_lt hVV) hp (le_of_lt hVp)))
+      by_cases hBA : psi p x r < A
+      · cases A with
+        | z => exact False.elim (T.not_lt_z _ hBA)
+        | psi q y t =>
+          have hq := isOT_sub hA
+          have hy := isOT_arg hA
+          have ht := isOT_rest hA
+          rcases T.psi_lt_psi.mp hBA with hpq | ⟨rfl, hxy⟩ | ⟨rfl, rfl, hrt⟩
+          · have hIdxOld := persistent_index_of_psi_interval hOld
+            rcases persistent_shf_index_of_transport hV hV' hVV hp hq hVp hpq hIdxOld
+                (ihp hp hq) with h | hIdx
+            · exact Or.inl h
+            · exact persistent_sh_index_step hV hV' hVV hB hVp hpq huFP hOld hIdx
+          · exact persistent_sh_argument_step hV hV' hVV hp hx hVp huFP hxy hOld
+              (persistentArg_sh_of_component_transport hV hV' hVV hx (ihx hx hy))
+          · exact persistent_sh_common_prefix hV hV' hVV (isOT_head hB) hOld (ihr hr ht)
+      · right
+        intro c hBc hcA
+        have hAB := ClShLGuarded.sh_le_right hV hV' hVV hA (not_lt.mp hBA)
+        exact False.elim (not_lt_of_ge (le_trans hcA hAB) hBc)
+    · exact persistent_sh_frozen_source hB hA (by simpa only [lev] using hVp) hOld
+
+/-- The argument-witness form follows after ordinary transport at the same B. -/
+theorem persistentArg_sh_low {V V' B A u g : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V') (hu : u ≤ V)
+    (hB : isOT B = true) (hA : isOT A = true) (hOld : PersistentArg u g B A) :
+    (∃ d ∈ comps u V, g ≤ d) ∨ PersistentArg u g (sh V V' B) (sh V V' A) :=
+  persistentArg_sh_of_component_transport hV hV' hVV hB
+    (persistent_sh_low hV hV' hVV hu hB hA) hOld
 
 set_option linter.unusedVariables false in
 /-- Candidate COMBINED term statement, recorded for review before proof.
@@ -1029,6 +1311,14 @@ def FDshCopyKV : Prop := ∀ {V V' a B s y : T} {Lv : List T}
 #print axioms source_v_base_live
 #print axioms source_v_base_pair
 #print axioms old_vAnc_base_live
+#print axioms persistent_shf_index_of_transport
+#print axioms persistent_sh_low
+#print axioms persistentArg_sh_low
+#print axioms persistent_argument_global_of_index_lt
+#print axioms persistent_sh_index_step
+#print axioms persistentArg_sh_of_component_transport
+#print axioms persistent_psi_argument_of_left_bound
+#print axioms persistent_sh_argument_step
 #print axioms quietCorner_components
 #print axioms persistent_head_bound_of_argument_lt
 #print axioms persistent_sh_common_prefix
