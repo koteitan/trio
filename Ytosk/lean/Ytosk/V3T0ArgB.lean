@@ -106,5 +106,55 @@ theorem weak_seed {a B v Y0 w' : T} {m : Nat} (hm : 1 ≤ m)
       exact False.elim (hlow hz)
   exact ⟨hot,s1_core_weak hm hOld hX hO hBX hW hWC hc',hhi,hlow⟩
 
+/-- A lost t=0 upgrade is to an ancestor, so its old value is at most
+that of its row0 parent. All inputs are existing structural/value fields. -/
+theorem index_le_of_upg {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r g k : Nat}
+    (hR0 : R0P M) (hZ2 : Z2 M) (hUAB : UAB M) (hBE : BumpE2 M) (hJ : RowJ M)
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hR : Rk M rk)
+    (hrM : r < M.length) (hg : par M 0 r = some g)
+    (hz : entry M 1 (r+1) = 0) (hu : upg M r = some k) : ρ.v r ≤ ρ.v g := by
+  obtain ⟨m,hm1,_,hcol,hcase⟩ := upg_spec hu
+  have h12 := upg_e12 hu
+  have h20 : entry M 2 r = 0 := by have := hZ2 r; omega
+  rcases hcase with hk | ⟨hA,hkr⟩
+  · have he1 := e1_of_col hcol
+    rw [hk,hz] at he1
+    exact False.elim (h12.1 he1.symm)
+  · have hkg : Anc0 M k g := anc0_par hA (by omega) hg
+    have hgr : Anc0 M g r := Anc0.step hg (Anc0.refl g)
+    have hsp := (upg_anc_spine hR0 hZ2 hUAB hBE hJ hC hG hR hrM hu hA hkr
+      g hkg hgr (by have := par_lt M 0 r g hg; omega)).2
+    have hv := v_upg_eq hC hrM h12.1 h20 hu
+      (by rw [hm1]; exact hG.ot_v m (by have := par_lt M 1 r m hm1; omega))
+      (fun j _ _ k' hk' => hG.ot_o k' (mem_children hk').2)
+    rw [hv]
+    exact hsp
+
+/-- The same-high class only needs node Lhd to give RClaimU. -/
+theorem rclaim_of_same_high {U : T → Prop} {ρ σ : Valn} {i : Nat} {a X X' : T}
+    (hX : ρ.o i = psi a X z) (hX' : σ.o i = psi a X' z)
+    (hot : isOT (psi a X z) = true) (hot' : isOT (psi a X' z) = true)
+    (hl : Lhd z (psi a X' z) (psi a X z))
+    (hhi : (split X' (psi (succ a) z z)).1 = (split X (psi (succ a) z z)).1) :
+    RClaimU U ρ σ i := by
+  intro p y y' q hy hy' _ _
+  rw [hX] at hy
+  rw [hX'] at hy'
+  simp only [psi.injEq] at hy hy'
+  obtain ⟨rfl,rfl,-⟩ := hy
+  obtain ⟨-,rfl,-⟩ := hy'
+  have hlt : X' < X := by
+    rcases psi_lt_psi_z_iff.mp hl.1 with h | ⟨_,h⟩
+    · exact False.elim (lt_irrefl' _ h)
+    · exact h
+  have e := split_app (psi (succ a) z z) X
+  have e' := split_app (psi (succ a) z z) X'
+  have hlo : (split X' (psi (succ a) z z)).2 < (split X (psi (succ a) z z)).2 := by
+    rw [← e,← e',hhi] at hlt
+    exact (app_lt_app_left_iff _).mp hlt
+  exact relR_H_samehiU hot' hot (Or.inr hl) hhi hlo
+
+#print axioms index_le_of_upg
+#print axioms rclaim_of_same_high
 #print axioms weak_seed
 end Ytosk.T0ArgB
