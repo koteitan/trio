@@ -3999,3 +3999,14 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 直した（2026-10-20、trio-codex）: 残りを `T2VRACopyEsc` に替えた。結論の「元の LevAt ∧ u ≤ V」を、安く片づかない成分 g（Ω_s < g かつ B < g、B は枠の spArg）があるときだけ求める。使う側 vsmallRAll_expand_t2 は先に g を取り、g ≤ Ω_s・g ≤ B はその場で閉じ、残りの g だけ copyFrame_VRA・hKM を呼ぶ。親の成分の上限は含まないので QVRAt の言い換えではない。古い T2VRACopy は偽の文として定義だけ残す。
 - 「元の LevAt だけ」の形も偽（1 列足しで 12 件、高い道の段、同じ M の u = 1、f(1) = 2）。元の T2VRACopy の失敗 24 件の成分はすべて 0（≤ Ω_s）。T2VRACopyEsc は 13 集合と std_a の 1 列足し（標準形 81,867 個）で例外 0。
 - 補助（証明済み、今は使わない）: f(u) = u の高い段は元の QVRAt を同じ段で運べる（`VRACopyPath.high_fixed_bound`）。
+
+### 最上位の残りを見落としの族で測り直した（2026-10-20、trio-codex・lead）
+
+- T2VRACopy の反例は std_a の行列に 1 列足した形だった。同じ見落としがないか、ほかの残りを 2 つの族で測り直した。
+  - std_a の 1 列足しのすべて（bms -s で標準形のもの 575,968 個: t = 0 が 295,980、t = 1 が 198,121、t = 2 が 81,867）
+  - ext1（1,082,667 個）
+- 今の残りの失敗はすべて 0。
+  - 落とす補題の欄（HardArg・VSmallNew・UpgAbsXW0・BumpWeakSrc・WeakCS・BumpAbsC・SeedR・AbsD*・TPLo*・AbsUW*）、TrigS0、HFrameV2・HLeafV2、HBumpExt（すべての接頭辞、5,700 万件）、SibColU。
+  - t = 2: T2VAncStep（n = 2, 3 の行 1 のすべての辺）、道の段の T2VRAK KAG（KA・KG）、種の残り（qr の w1・dom、sv の strict・lhd、qn の dom1・dom2・形・反復 k = 1..3、C の decP・lhd・dom1・strict）、T2SeedClV2B の測れる欄。
+- 失敗したのは今の残りより強い古い形だけ（TrigS・AbsSR・BumpAbsS・qn の vraAllU）。今の残りの反例ではない。
+- 測っていないもの: T2CBadOut（直接の probe がない）、n ≥ 4 と k ≥ 4（有限の場合だけ）。
