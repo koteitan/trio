@@ -3970,3 +3970,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 使う側（V3T0DepS の種 g、t0_S1AW）が引数の ◁ を使うのは、新しい節の OT・節の ◁・RClaimU を出すためだけだった。RE は別（t0_S1A_RE）。
 - 実測（13 集合、行 1 が 0 の行列 1,607,939 個）: T0ArgBRes の前提 309,952 個のうち弱い元の列は 13 個、展開 26 個は種類がすべて Cls A。作った標準形の項では v ≤ a のもとでも引数の ◁ が 300 組中 4 組で偽（T0ArgBRes は弱い場面で強すぎる）。
 - 証明（V3T0ArgB）: `index_le_of_upg`・`index_le_of_cntx`（失われた祖先への上げから v(r) ≤ v(g)）、`weak_seed`（新しい節の OT・節の ◁・同じ高い部分・0 でない新しい低い部分）、`rclaim_of_same_high`（節の ◁ と共通の高い部分から RClaimU）、`t0_S1AW_node`（引数の ◁ なしの t0_S1AW）。組み込み（trio-codex が V3T0DepS・V3T0Inv2S・V3TopV2・V3TopT2B を書き換え、lead がビルド）で hArgB を外した。重複になった見本 V3T0UpgConsumer はライブラリから外した。
+
+### HSibColV2 は保留（2026-10-20、trio-codex、V3SibConsumer）
+
+- 使う側は qnUncRes_of_sibV（M）と G.t2SeedCBig_of_sibV（T = M.take x）の 2 か所だけ。要るのは t = 2 の行 2 の根 r の隣り合う子 a < b（行 1 の親が r、行 1 = r の行 1 + 1、行 2 = 1、upg(a − 1) = a、a は詰まって数えない、b は数える、upg(b − 1) ≠ b）での v(b) ≤ v(a) だけ（`CanonicalNeed`）。両方の使う側を CanonicalNeed で証明し直した（`qnUncRes_of_canonical`・`t2SeedCBig_of_canonical`）。評価の一致で 2 つの値だけ移す `canonicalNeed_congr`、指数（1 と bump の項の和）の比較に帰着する `canonical_v_le_of_exponents`、右の bump の子の子は行 1 が小さい `right_bump_grandchild_low`。
+- 実測（13 集合）: qn で比較が要る 245 回はすべて真。C では比較が要らなかった（空であることの証明ではない）。bump の子の数だけでは比べられない（6 例）。
+- 局所の構造（SInvX・RowJ・S1・S4・Good3）だけでは偽: 標準形でない (0,0,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(3,2,1)(4,2,1)(5,1,0)(6,2,0)(7,3,1)(6,1,0)（p = 2、a = 6、b = 10、v(a) < v(b)）は FC3 だけで外れる。よって証明には FC3 を含む Inv3V2 の値の情報が要る。
+- 残りの目標: `canonicalNeed_of_inv`（Std N、N ≠ SRO、Inv3V2 N σ rk ⇒ CanonicalNeed N σ）。中身は形の違う 2 つの兄弟の bump の孫の和の値の比較で、kd・td（同じ親の下の並び）では閉じない。見積もりは数日。作った本物の兄弟の枠の変形 5,829 個（共通の親が 0 でない）で例外 0。
