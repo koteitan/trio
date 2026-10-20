@@ -50,5 +50,40 @@ theorem unguarded_own_frame {N P : Mat} {σ ρ : Valn} {r L i : Nat}
   exact (vsmallRAll_iff.mp hVP) i Lc c R hCL u
     (unguarded_own_level hF hri hi hng hu)
 
+/-- At a high level fixed by f, source bounds transport at that same level.
+The forward parent witness uses high_index_sh; no low KAG is read. -/
+theorem high_fixed_bound {V V' a B s u : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hB : isOT B = true) (hs : isOT s = true)
+    (hVa : V ≤ a) (hVs : V < s) (has : a ≤ s)
+    (hu : isOT u = true) (hVu : V < u) (hua : u ≤ shf V V' a)
+    (hfix : shf V V' u = u) (hVD : VDomF V V' a)
+    (hQ : ∀ d ∈ comps u s, d ≤ psi s z z ∨ d ≤ B ∨ ∃ e ∈ comps u a, d ≤ e) :
+    ∀ d ∈ comps u (shf V V' s),
+      d ≤ psi (shf V V' s) z z ∨ d ≤ sh V V' B ∨
+      ∃ e ∈ comps u (shf V V' a), d ≤ e := by
+  have hOm : psi (shf V V' a) z z ≤ psi (shf V V' s) z z :=
+    psi_le_psi_z (ClShLGuarded.shf_le_right hV hV' hVV ha hVa has)
+  intro d hd
+  change d ∈ comps u (add V' (sh V V' (sub s V))) at hd
+  rcases comps_add u V' (sh V V' (sub s V)) d hd with hd | hd
+  · rcases hVD u (not_lt.mpr hua) d hd with h | h
+    · exact Or.inl (le_trans h hOm)
+    · exact Or.inr (Or.inr h)
+  · have hd' : d ∈ comps (shf V V' u) (sh V V' (sub s V)) := by rwa [hfix]
+    obtain ⟨e, he, rfl⟩ := comps_sh hV hV' hVV hu (le_of_lt hVu)
+      (isOT_sub_sfx hs V) d hd'
+    have hes := comps_sub_sub u s V he
+    have heOT := isOT_of_mem_comps u hs hes
+    rcases hQ e hes with h | h | ⟨f, hf, hef⟩
+    · left
+      have h' := sh_le_sh hV hV' (le_of_lt hVV) heOT (isOT_psi_zz hs) h
+      simpa only [sh_psi_gt hVs, sh_z] using h'
+    · exact Or.inr (Or.inl (sh_le_sh hV hV' (le_of_lt hVV) heOT hB h))
+    · exact Or.inr (Or.inr ⟨sh V V' f,
+        ClShLGuarded.high_index_sh hV hV' hVV ha hu hVu (by rw [hfix]) hf,
+        sh_le_sh hV hV' (le_of_lt hVV) heOT (isOT_of_mem_comps u ha hf) hef⟩)
+
+#print axioms high_fixed_bound
 #print axioms unguarded_own_frame
 end Ytosk.VRACopyPath
