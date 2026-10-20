@@ -67,7 +67,7 @@ theorem old_target_of_failure {M : Mat} {ρ : Valn} {x : Nat}
   have hnb : NBPar M i := by
     rcases hUA i k W hix hu hv hW with hs | hw
     · exact False.elim (hnl (hs r hr hrW))
-    · exact hw.2.2.1
+    · exact hw.2.2
   have hie : i = x - 1 := by omega
   exact ⟨k, by simpa [hie] using hu, hkx, by simpa [hie] using hnb⟩
 

@@ -339,7 +339,7 @@ theorem pv_of_hard {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
       (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
         (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
           (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i ∧ (entry M 1 (i + 1) ≠ 0 ∨ T0Easy M (i + 1))))
+          NBPar M i))
     (hup : ∀ k, upg (M.take x) i = some k → PV M ρ ρ' k ∧
       ∀ j ∈ children (M.take x) k, col (M.take x) j = bump (M.take x) k →
         ∀ k' ∈ children (M.take x) j, Single (ρ'.o k')) :
@@ -453,7 +453,7 @@ theorem pv_of_hard {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
         rw [sf_ot hot1] at this
         exact Or.inl this
       · -- the weak alternative: `v′ = V + 1 < V + W`, `x` is the only possible counted child
-        obtain ⟨hwc, -, hnb, -⟩ := (hX1 k _ hixe hu hvk (by simp)).resolve_left hR
+        obtain ⟨hwc, -, hnb⟩ := (hX1 k _ hixe hu hvk (by simp)).resolve_left hR
         rcases (le_iff _ _).mp (add_le_add_single (vOpt ρ (par M 1 i)) ⟨z, z, rfl⟩ ⟨sW, yW, rfl⟩ hW1)
           with hlt | heq
         · refine Or.inr ⟨⟨hlt, le_add_single _ ⟨z, z, rfl⟩, hot1⟩, hwc,
@@ -471,7 +471,7 @@ theorem drop_all_hard
       (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
         (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
           (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i ∧ (entry M 1 (i + 1) ≠ 0 ∨ T0Easy M (i + 1)))) :
+          NBPar M i)) :
     ∀ i, i < x → PO ρ ρ' i ∧ PV M ρ ρ' i := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have key : ∀ N, ∀ i, i < x → (rk true i ≤ N → PO ρ ρ' i) ∧ (rk false i ≤ N → PV M ρ ρ' i) := by

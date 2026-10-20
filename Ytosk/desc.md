@@ -3957,3 +3957,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 実測（13 集合、t = 2 の行列 1,038,963 個）: x − 1 で上げが 262,425 回、強い吸収が偽は 178 回で、すべて弱い吸収と T2UABad（P0(x) = P2(x) = x − 1、k < x）。ただし「弱い吸収の条件 ⇒ P0(x) = P2(x)」は偽（実際の 194 行列）なので、形の補題は示さず、使う側を直した。
 - 証明（V3T2UpgAbs）: `old_target_of_failure`（強い吸収が偽 ⇒ 古い的 k < x と NBPar）、`strong_of_no_upgrade`・`strong_of_next_target`（qr の上げなし・sv の場合は強い吸収が成り立つ）、`strong_seed_of_drop`（x − 1 でない種の ◁ は落とす補題の PO から）、`qnu_take_weak`・`qnu_take_of_drop`（qn の写しを強い吸収なしで: x − 1 の値を弱い種、その行 0 の親 o(pr) を強い種にし、NBPar で弱い子が bump の孫にならない）。
 - 組み込み（lead）: t2_drops_ge（V3T2Top）と t2_dropsC（V3MainV2）で、q = r の枝は `strong_or_old_target` から強い吸収か T2UABad を作り、q ≠ r の枝は `strong_seed_of_drop` と `qnu_take_of_drop`。Res3T2 の欄 ua と、hR2_t2・hR2_t2_ofW・hR2_t2_of・hExp_t2_inv3V2・r2V2_of・expT2V2_of・最上位の hU2 を外した。
+
+### T0UpgAbsV2 を外した（2026-10-20、trio-codex・lead、V3T0UpgAbs・V3T0UpgConsumer・V3DropWeak0）
+
+- 最上位から T0UpgAbsV2（t = 0 で易しい形 T0Easy の外の強い吸収）を外した。残りは 15 個。新しい残りはない。
+- 実測（13 集合、行 1 が 0 の行列 1,607,939 個）: x − 1 で上げ 153,199 回、強い吸収が偽は 26 回ですべて T0Easy の中。T0Easy の外では破れない。ただし直接の証明は残り `T0UpgDirect.remaining_case`（bump の親・変わらない古い的・W ≥ ε_0）で止まった。W < ε_0 は局所の構造の欄と Good3 だけでは出ない（標準形でない 26 個の例がそれらを満たし、どれも FC3 で外れる）。
+- 使う側を直した: 弱い吸収 `UpgAbsXW` の定義から 4 つ目の欄（行 1 ≠ 0 か T0Easy）を外して `UpgAbsXW0` と同じにした。この欄を使っていたのは t = 0 の強い吸収の取り出し（`UpgAbsXW.toX`・`toX_bump`）だけで、`toX_xm1` は NBPar だけで出る。t = 0 で今使う `t0_core`・`t0_otdS` の bump の親の古い子の比較は `T0UpgAbs.v_lhd_bump_children`（弱い吸収＋RowJ・BumpLeaf）に替えた（RowJ・BumpLeaf は標準形から `sInvXJ_std`）。古い写し（t0_otd・R・T・U・H・H0）はもともと持つ hU0 : OldUpgAbs を使う。`hDropV2_of'` で HDropV2W だけから HDropV2。

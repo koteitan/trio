@@ -89,7 +89,7 @@ theorem t0_final_inv3V2D {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L 
   rw [show M.length - 1 = r + L by omega] at hDr
   have hx2 : entry M 2 (r + L) = 0 := S.r12 _ he1
   obtain ⟨σ, rkN, hCN, hRN, hGN, hFON, hFCN, hKDN, hTDN, _, hpN, hot, hlt⟩ :=
-    t0_core hlen hL S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00 hp he1 I.cons I.good
+    t0_core hlen hL S.r0p S.z2 S.sibDec S.z1c S.uat S.uab (sInvXJ_std hM hS).2 (sInvXJ_std hM hS).1.loc.2.2.2 S.r12 S.bumpE2 S.r01 S.e00 hp he1 I.cons I.good
       I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hAbW hDr.ws hDr.vst hDr.ua I.rootS I.rootP
       (fun n hn g hg hc => counted_last0 hlen hL hp he1 S.r0p S.z2 S.sibDec S.z1c S.uab S.r12 hn hg hc)
       (fun n hn σ hCN => ⟨fun i hi hd => ((hDF r L hlen hL hp he1 n hn σ hCN i hi).1 hd).1,

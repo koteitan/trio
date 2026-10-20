@@ -37,6 +37,10 @@ theorem DropResH0.toH {N : Mat} {x : Nat} {σ σ' : Valn} (h : DropResH0 N x σ 
     (h0 : entry N 1 x = 0 → ¬ T0Easy N x → UpgAbsX N x σ) : DropResH N x σ σ' :=
   ⟨h.hard, h.vst, h.ws, UpgAbsXW.of0 h.ua h0, h.ab⟩
 
+/-- `DropResH0` is `DropResH` (2026-10-20: `UpgAbsXW` no longer needs the strong form at `t = 0`). -/
+theorem DropResH0.toH' {N : Mat} {x : Nat} {σ σ' : Valn} (h : DropResH0 N x σ σ') : DropResH N x σ σ' :=
+  ⟨h.hard, h.vst, h.ws, UpgAbsXW.ofW0 h.ua, h.ab⟩
+
 /-- **The drop lemma from `DropResH`.** -/
 theorem drop_all_H {N : Mat} {x : Nat} (hx : x + 1 = N.length)
     (hR0 : R0P N) (hZ2 : Z2 N) (hSD : SibDec N) (hZ1 : Z1C N) (hUAT : UAT N) (hUAB : UAB N)

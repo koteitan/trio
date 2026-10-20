@@ -6,6 +6,7 @@ V3T0DepU の `t0_dep_otU`・`t0_otdU` の写し。書き換えの一致（hagree
 - RE: 影の枠では `re_shadow`。
 -/
 import Ytosk.V3T0Weak
+import Ytosk.V3T0UpgAbs
 import Ytosk.V3T0ShB
 import Ytosk.V3ShadowL
 import Ytosk.V3CutClosed
@@ -696,6 +697,7 @@ by `◁`, and carry `RClaim`; a changed `v` gives `ψ_{v}(0)`. Residuals: PH3cG 
 last summand), with which the right-end change RE is carried and a rewriting frame keeps rewriting. -/
 theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hJ : RowJ M) (hBL : BumpLeaf M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
     (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
@@ -859,8 +861,8 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       exact (brelS_lhdE (g0_drop_rel (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG
         hC1 hRk1 hKD hWS h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG)
         (fun k _ hk => hdrop k hk)
-        (fun k hk hkx _ => v_lhd_B (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
-          hC hG hC1 hRk1 hKD hTD hAbs hWS (hUA.toX_bump he1 hp hg hjb) hdrop k (mem_children hk).1 hkx)).2).le
+        (fun k hk hkx _ => T0UpgAbs.v_lhd_bump_children hlen hR0 hZ2 hSD hZ1 hUAT hUAB hJ hBL hp hg hjb
+          hC hG hC1 hRk1 hUA hdrop k hk hkx)).2).le
     -- seed S2
     have hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g) := by
       intro hjb h1 h2
@@ -880,8 +882,8 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           g0_drop_rel (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hWS
             h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG)
             (fun k _ hk => hdrop k hk)
-            (fun k hk hkx _ => v_lhd_B (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
-              hC hG hC1 hRk1 hKD hTD hAbs hWS (hUA.toX_bump he1 hp hg hjb) hdrop k (mem_children hk).1 hkx)
+            (fun k hk hkx _ => T0UpgAbs.v_lhd_bump_children hlen hR0 hZ2 hSD hZ1 hUAT hUAB hJ hBL hp hg hjb
+              hC hG hC1 hRk1 hUA hdrop k hk hkx)
         have hG0ot : isOT (sumN ((children (M.take (j' + L)) j').map ρ.o)) = true := isOT_sumN _ (fun t ht => by
           obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
           rw [children_take, List.mem_filter] at hc

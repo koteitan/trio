@@ -1003,7 +1003,7 @@ theorem t0_otdR (hU0 : OldUpgAbs) {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.le
         hC1 hRk1 hKD hWS h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG)
         (fun k _ hk => hdrop k hk)
         (fun k hk hkx _ => v_lhd_B (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
-          hC hG hC1 hRk1 hKD hTD hAbs hWS (hUA.toX_bump he1 hp hg hjb) hdrop k (mem_children hk).1 hkx)).2).le
+          hC hG hC1 hRk1 hKD hTD hAbs hWS (hU0 _ _ _) hdrop k (mem_children hk).1 hkx)).2).le
     -- seed S2
     have hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g) := by
       intro hjb h1 h2
@@ -1024,7 +1024,7 @@ theorem t0_otdR (hU0 : OldUpgAbs) {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.le
             h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG)
             (fun k _ hk => hdrop k hk)
             (fun k hk hkx _ => v_lhd_B (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
-              hC hG hC1 hRk1 hKD hTD hAbs hWS (hUA.toX_bump he1 hp hg hjb) hdrop k (mem_children hk).1 hkx)
+              hC hG hC1 hRk1 hKD hTD hAbs hWS (hU0 _ _ _) hdrop k (mem_children hk).1 hkx)
         have hG0ot : isOT (sumN ((children (M.take (j' + L)) j').map ρ.o)) = true := isOT_sumN _ (fun t ht => by
           obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
           rw [children_take, List.mem_filter] at hc

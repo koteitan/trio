@@ -118,8 +118,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
     - ✅ 2026-10-19: 残りの FDsh は偽だった（`FDCut.not_FDsh`）。行列の残り `T2FDCopyRes`（写しの枠ごとの `FDshAt`）に替え、最上位は偽の仮定を含まなくなった。
-    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残りは 16 個（2026-10-20、T2UpgAbsW を外した）:
-      - drop: HDropV2W（落とす補題の 5 欄）・T0UpgAbsV2（t = 0 の強い吸収、易しい形の外）・HSeedV2（SeedR）
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残りは 15 個（2026-10-20、T2UpgAbsW と T0UpgAbsV2 を外した）:
+      - drop: HDropV2W（落とす補題の 5 欄）・HSeedV2（SeedR）
       - 共通: HFrameV2・HLeafV2（枠の 10 欄・葉の条件）、HBumpExt（標準形の接頭辞で bump 項は増える）、HSibColV2（同じ列の兄弟 SibColU）
       - t0: T0ArgBRes
       - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom と T2SeedCDom1）
@@ -136,7 +136,6 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | HDropV2W | 11 集合で例外 0 | DropResH0 の 5 欄（probe_dropres・probe_uaw1・bumpabsc.py） |
         | HSeedV2 | 11 集合で例外 0 | SeedR（probe_dropres） |
         | HFrameV2・HLeafV2 | 11 集合と落とした行列で例外 0 | probe_hframe |
-        | T0UpgAbsV2 | 11 集合と std_b で例外 0 | ¬T0Easy の場合だけ |
         | T0ArgBRes | 11 集合と std_b で例外 0 | t0argB.py |
         | HBumpExt | 1 列の場合が 11 集合で例外 0 | bumpdrop1.py（3950 万件） |
         | T2SeedQNBase | 11 集合と ext3s で例外 0（PathLvAll の段、Lc = [] で t₁ ≤ s′ も。qn 23 万件） | qncl.py |

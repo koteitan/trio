@@ -327,7 +327,7 @@ theorem frameMapT1_take {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {r
           rw [hx2] at this; simp [bump] at this
         · rw [not_isUpg_e2z hx2] at h; cases h.1
       · -- `r = x − 1` lost its upgrade: `v′(r) = v(P_1 r) + 1`, whose components are below `Ω_{v′(r)}`
-        rcases hUA r k W (by omega) hu hvk hWz with h | ⟨_, hSm, _, _⟩
+        rcases hUA r k W (by omega) hu hvk hWz with h | ⟨_, hSm, _⟩
         · exact absurd h hbad
         · have h12 := upg_e12 hu
           have h2r : entry M 2 r = 0 := by have := S.z2 r; omega

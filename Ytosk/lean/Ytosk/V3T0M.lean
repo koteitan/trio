@@ -7,6 +7,7 @@
   ψ_v(Y0) × (n − 1) と M.take x での r の値に替わる（`root_N_B`）。
 -/
 import Ytosk.V3T0Weak
+import Ytosk.V3T0UpgAbs
 import Ytosk.V3T0Bump
 import Ytosk.V3T0RW
 
@@ -201,6 +202,7 @@ strictness of the drop is `dep_strict0`), and for `N = M[n]`: its valuation sati
 last copy's sum drops in the strong relation (`g0_drop_rel`, with `v_lhd_B`) and seed S2 is `t0_S2G`. -/
 theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hJ : RowJ M) (hBL : BumpLeaf M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
     (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
@@ -393,8 +395,8 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       exact (brelS_lhdE (g0_drop_rel (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG
         hC1 hRk1 hKD hWS h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG)
         (fun k _ hk => hdrop k hk)
-        (fun k hk hkx _ => v_lhd_B (show r + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
-          hC hG hC1 hRk1 hKD hTD hAbs hWS (hUA.toX_bump he1 hp hg hjb) hdrop k (mem_children hk).1 hkx)).2).le
+        (fun k hk hkx _ => T0UpgAbs.v_lhd_bump_children hlen hR0 hZ2 hSD hZ1 hUAT hUAB hJ hBL hp hg hjb
+          hC hG hC1 hRk1 hUA hdrop k hk hkx)).2).le
     -- seed S2
     have hS2 : col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g) := by
       intro hjb h1 h2
@@ -414,8 +416,8 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           g0_drop_rel (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hWS
             h1 h2 hrc hjb hxr (o_x_one hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG)
             (fun k _ hk => hdrop k hk)
-            (fun k hk hkx _ => v_lhd_B (show j' + L + 1 = M.length from hlen) hR0 hZ2 hSD hZ1 hUAT hUAB hp
-              hC hG hC1 hRk1 hKD hTD hAbs hWS (hUA.toX_bump he1 hp hg hjb) hdrop k (mem_children hk).1 hkx)
+            (fun k hk hkx _ => T0UpgAbs.v_lhd_bump_children hlen hR0 hZ2 hSD hZ1 hUAT hUAB hJ hBL hp hg hjb
+              hC hG hC1 hRk1 hUA hdrop k hk hkx)
         have hG0ot : isOT (sumN ((children (M.take (j' + L)) j').map ρ.o)) = true := isOT_sumN _ (fun t ht => by
           obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
           rw [children_take, List.mem_filter] at hc
@@ -624,6 +626,7 @@ strictness of the drop is `dep_strict0`), and for `N = M[n]`: its valuation sati
 last copy's sum drops in the strong relation (`g0_drop_rel`, with `v_lhd_B`) and seed S2 is `t0_S2G`. -/
 theorem t0_main' (hU0 : OldUpgAbs) {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hJ : RowJ M) (hBL : BumpLeaf M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
     (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
@@ -646,7 +649,7 @@ theorem t0_main' (hU0 : OldUpgAbs) {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.l
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ := by
   intro n hn2
-  obtain ⟨ρN, rkN, hCN, hRN, _, _, _, _, _, _, _, h⟩ := t0_core hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM
+  obtain ⟨ρN, rkN, hCN, hRN, _, _, _, _, _, _, _, h⟩ := t0_core hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hJ hBL hR12 hBE hR01 h00 hp he1 hC hG hRM
     hVS hF hFO hArgT hKD hTD hAbs (T0AbsW.of_strong hAbsS) hWS hVSt hUA hsM hpM hLast
     (fun n hn σ hCN => let h := hN n hn σ hCN;
       ⟨fun i hi _ => h.1.ot_o i (by rw [lenN0 hlen (by omega)]; omega), h.2.1⟩) n hn2
@@ -655,6 +658,7 @@ theorem t0_main' (hU0 : OldUpgAbs) {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.l
 /-- `t0_main′` with the unused hypothesis `hVL` (kept for the existing callers). -/
 theorem t0_main (hU0 : OldUpgAbs) {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hJ : RowJ M) (hBL : BumpLeaf M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
     (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
@@ -677,7 +681,7 @@ theorem t0_main (hU0 : OldUpgAbs) {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.le
       ((roots (TRIO.gexp M r L 0 0 n)).map σ.o).Pairwise (fun a b => b ≤ a)) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L 0 0 n) ρN ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
       isOT (root (TRIO.gexp M r L 0 0 n) ρN) = true ∧ root (TRIO.gexp M r L 0 0 n) ρN < root M ρ :=
-  (t0_main' hU0) hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 hp he1 hC hG hRM hVS hF hFO hArgT hKD hTD
+  (t0_main' hU0) hlen hL hR0 hZ2 hSD hZ1 hUAT hUAB hJ hBL hR12 hBE hR01 h00 hp he1 hC hG hRM hVS hF hFO hArgT hKD hTD
     hAbs hAbsS hWS hVSt hUA hsM hpM hLast hN
 
 end Ytosk

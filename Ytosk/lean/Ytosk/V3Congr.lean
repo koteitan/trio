@@ -129,10 +129,10 @@ theorem dropRes_congr {N : Mat} {x : Nat} {σ σ' τ τ' : Valn} (hx : x < N.len
     have hiN : i < N.length := by omega
     rw [← vOpt_par_congr h hiN] at hv
     rw [← (h k (upg_lt hiN hu)).2] at hv
-    rcases hD.ua i k W hix hu hv hW with h1 | ⟨hwc, hss, hnb, he⟩
+    rcases hD.ua i k W hix hu hv hW with h1 | ⟨hwc, hss, hnb⟩
     · left; rw [← vOpt_par_congr h hiN]; exact h1
     · right
-      refine ⟨?_, ?_, hnb, he⟩
+      refine ⟨?_, ?_, hnb⟩
       · simp only [WCSP, WCS] at hwc ⊢
         rw [← vOpt_par_congr (r := 1) h hiN, ← vOpt_par_congr (r := 0) h hiN]
         exact hwc

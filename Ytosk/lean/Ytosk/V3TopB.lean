@@ -126,7 +126,7 @@ theorem trio_terminates' (hU0 : OldUpgAbs)
   apply terminates_of_desc3
   intro M n hM hne hne'
   obtain ⟨ρ, rk, I, R⟩ := hInv M hM hne hne'
-  obtain ⟨t', hv, _, hlt⟩ := (desc_step hU0) hne' I R (hT2 M ρ rk hM I R) n
+  obtain ⟨t', hv, _, hlt⟩ := (desc_step hU0) hne' I R (sInvXJ_std hM hne).2 (sInvXJ_std hM hne).1.loc.2.2.2 (hT2 M ρ rk hM I R) n
   exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
 
 /-- **Termination of the 3-row BMS from SRO**, with the top hypothesis stated for every valuation and

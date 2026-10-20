@@ -67,7 +67,7 @@ def UpgAbsXW (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
     (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
       (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
           (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i ∧ (entry M 1 (i + 1) ≠ 0 ∨ T0Easy M (i + 1)))
+          NBPar M i)
 
 /-- **`UpgAbsXW` without the row-1 condition** (2026-10-17): the weak alternative for every type of `x`.
 On the 11 sets the strong form fails at `t = 0` only on 2 standard matrices of std_a
@@ -79,6 +79,9 @@ def UpgAbsXW0 (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
           (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
           NBPar M i)
 
+/-- `UpgAbsXW` is the form without the row-1 condition (2026-10-20: the row-1 / `T0Easy` conjunct was dropped). -/
+theorem UpgAbsXW.ofW0 {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW0 M x ρ) : UpgAbsXW M x ρ := h
+
 /-- `UpgAbsXW` from the form without the row-1 condition and the strong form at `t = 0` outside the easy shape. -/
 theorem UpgAbsXW.of0 {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW0 M x ρ)
     (h0 : entry M 1 x = 0 → ¬ T0Easy M x → UpgAbsX M x ρ) : UpgAbsXW M x ρ := by
@@ -87,34 +90,17 @@ theorem UpgAbsXW.of0 {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW0 M x ρ)
   · exact Or.inl (h0 hx.1 hx.2 i k W hi hu hv hW)
   · rcases h i k W hi hu hv hW with h1 | ⟨h2, h3, h4⟩
     · exact Or.inl h1
-    · refine Or.inr ⟨h2, h3, h4, ?_⟩
-      rw [hi]
-      by_cases hx1 : entry M 1 x = 0
-      · exact Or.inr (by by_contra hn; exact hx ⟨hx1, hn⟩)
-      · exact Or.inl hx1
+    · exact Or.inr ⟨h2, h3, h4⟩
 
 theorem UpgAbsX.toW {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsX M x ρ) : UpgAbsXW M x ρ :=
   fun i k W hi hu hv hW => Or.inl (h i k W hi hu hv hW)
 
-/-- **At `t = 0` outside the easy shape the weak alternative is void**: it needs `entry M 1 x ≠ 0` or
-`T0Easy M x`. -/
-theorem UpgAbsXW.toX {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0)
-    (hh : ¬ T0Easy M x) : UpgAbsX M x ρ := fun i k W hi hu hv hW =>
-  (h i k W hi hu hv hW).resolve_right (fun h' => by
-    rcases h'.2.2.2 with h1 | h1
-    · exact h1 (by rw [hi]; exact hx1)
-    · exact hh (by rw [hi] at h1; exact h1))
-
-/-- The strong form when the parent of `x` is `x − 1` and its parent is a bump child. -/
-theorem UpgAbsXW.toX_xm1 {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0)
-    (hp : par M 0 x = some (x - 1)) (hnb : ¬ NBPar M (x - 1)) : UpgAbsX M x ρ :=
-  h.toX hx1 (fun he => hnb (he.2 hp))
-
-/-- The strong form when the parent `r` of `x` is a bump child. -/
-theorem UpgAbsXW.toX_bump {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0)
-    {r g : Nat} (hp : par M 0 x = some r) (hg : par M 0 r = some g) (hb : col M r = bump M g) :
-    UpgAbsX M x ρ :=
-  h.toX hx1 (fun he => he.1 r g hp hg hb)
+/-- The strong form when the parent of `x` is `x − 1` and its parent is a bump child: the weak alternative
+needs `NBPar M (x − 1)`. (2026-10-20: `UpgAbsXW` no longer carries the row-1 / `T0Easy` condition, so the
+earlier `UpgAbsXW.toX` and `toX_bump` are gone; the `t = 0` engines use `T0UpgAbs`, V3T0UpgAbs.) -/
+theorem UpgAbsXW.toX_xm1 {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW M x ρ) (_hx1 : entry M 1 x = 0)
+    (_hp : par M 0 x = some (x - 1)) (hnb : ¬ NBPar M (x - 1)) : UpgAbsX M x ρ := fun i k W hi hu hv hW =>
+  (h i k W hi hu hv hW).resolve_right (fun h' => hnb (by rw [show x - 1 = i by omega]; exact h'.2.2))
 
 /-- **Under the strong `UpgAbsX` a weak `o` has the argument `0`** (the shape of `PO` before 2026-10-12): the
 other weak case needs `UpgBad`, which `UpgAbsX` excludes. -/

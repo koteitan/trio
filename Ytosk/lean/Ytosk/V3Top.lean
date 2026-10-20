@@ -432,7 +432,7 @@ theorem dropsAt_of {M N : Mat} {ρ : Valn} {n : Nat} (he : expand M n = N)
 /-- **Step 1 for one matrix**, by the type of the last column and `n`. The cases `t = 0`, `n ≥ 2` and
 `t = 2` are hypotheses. -/
 theorem desc_step (hU0 : OldUpgAbs) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠ [])
-    (I : Inv3 M ρ rk) (R : Res3 M ρ rk)
+    (I : Inv3 M ρ rk) (R : Res3 M ρ rk) (hJ : RowJ M) (hBL : BumpLeaf M)
     (hT2 : col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n)
     (n : Nat) : DropsAt M ρ n := by
   have hpos : 0 < M.length := List.length_pos_of_ne_nil hne
@@ -496,7 +496,7 @@ theorem desc_step (hU0 : OldUpgAbs) {M : Mat} {ρ : Valn} {rk : Bool → Nat →
       have hN := ht0 r L hlen hr he1
       have hLast := fun n (hn : 2 ≤ n) g (hg : par M 0 r = some g) (hc : Counted M g r) =>
         counted_last0 hlen hL0 hr he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc
-      exact (t0_main' hU0) hlen hL0 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr he1 I.cons I.good
+      exact (t0_main' hU0) hlen hL0 I.r0p I.z2 I.sd I.z1 I.uat I.uab hJ hBL I.r12 I.be I.r01 I.e00 hr he1 I.cons I.good
         I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hab0 hdr.ws hdr.vst hdr.ua I.rootS I.rootP hLast
         hN (n + 2) (by omega)
   · -- `t = 1`
@@ -667,7 +667,7 @@ theorem trio_terminates (hU0 : OldUpgAbs)
   apply terminates_of_desc3
   intro M n hM hne hne'
   obtain ⟨ρ, rk, I, R⟩ := hInv M hM hne hne'
-  obtain ⟨t', hv, _, hlt⟩ := (desc_step hU0) hne' I R (hT2 M ρ rk I R) n
+  obtain ⟨t', hv, _, hlt⟩ := (desc_step hU0) hne' I R (sInvXJ_std hM hne).2 (sInvXJ_std hM hne).1.loc.2.2.2 (hT2 M ρ rk I R) n
   exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
 
 /-! ## 元の Step は整礎でない -/

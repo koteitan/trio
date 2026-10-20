@@ -54,6 +54,10 @@ def T0UpgAbsV2 : Prop :=
 theorem hDropV2_of (hD : HDropV2W) (h0 : T0UpgAbsV2) : HDropV2 := fun M ρ rk hM hS hE I =>
   (hD M ρ rk hM hS hE I).toH (h0 M ρ rk hM hS hE I)
 
+/-- **`HDropV2` from `HDropV2W` alone** (2026-10-20): the strong absorption at `t = 0` (`T0UpgAbsV2`) is no
+longer needed; the `t = 0` engines use the weak form (`T0UpgAbs`, `t0_otdS` with `RowJ`・`BumpLeaf`). -/
+theorem hDropV2_of' (hD : HDropV2W) : HDropV2 := fun M ρ rk hM hS hE I => (hD M ρ rk hM hS hE I).toH'
+
 /-- **R-seed**: the seed condition (`hcs` of `t = 1`, `q = r`) of every standard matrix. -/
 def HSeedV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk → SeedR M ρ rk
