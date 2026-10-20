@@ -19,6 +19,19 @@ It removes only the LevAt premise; the level bound u <= V remains. -/
 def T2VRAKAll (K : T → T → T → List T → T → T → Prop) (M : Mat) : Prop :=
   T2CopyK (fun V V' a Lv cv => ∀ u, u ≤ V → K V V' a Lv cv u) M
 
+/-- All-low K only at moving, rewriting FD frames. This deliberately does not
+replace the existing path-level T2VRAK at other frames. -/
+def T2VRAKFD (K : T → T → T → List T → T → T → Prop) (M : Mat) : Prop :=
+  T2CopyK (fun V V' a Lv cv => ∀ s y, cv = psi s y z → V < s →
+    lt (spArg a z (sumN Lv)) y = true → lt (psi a z z) (psi s y z) = true →
+    ∀ u, u ≤ V → K V V' a Lv cv u) M
+
+/-- The stronger all-frame condition implies the triggered condition. -/
+theorem t2VRAKFD_of_all {K : T → T → T → List T → T → T → Prop} {M : Mat}
+    (h : T2VRAKAll K M) : T2VRAKFD K M := by
+  intro r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL s y _ _ _ _ u hu
+  exact h r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL u hu
+
 /-- The all-low residual supplies every current path-level K consumer. -/
 theorem t2VRAK_of_all {K : T → T → T → List T → T → T → Prop} {M : Mat}
     (h : T2VRAKAll K M) : T2VRAK K M := by
@@ -1525,11 +1538,11 @@ theorem fdshCopyKV : FDshCopyKV := by
 
 /-- Matrix bridge at the actual copied source frames. Source FrameOT comes
 from frameOT_expand_t2 and prefix invariants; no PH-kind callback is needed. -/
-theorem t2CopyK_FDshAt_of_all {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+theorem t2CopyK_FDshAt_of_fd {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hSeedFO : T2SeedFrames QFO M) (hVS : T2VAncStep M)
-    (hAGall : T2VRAKAll KAG M) : T2CopyK FDshAt M := by
+    (hAGfd : T2VRAKFD KAG M) : T2CopyK FDshAt M := by
   have IW := Inv3W.ofV2 C.S C.I
   have RW : Res3W M ρ rk := ⟨C.R.drop⟩
   have hCR := t2CopyResAll_holds M ρ rk C.std C.ne IW RW hz h2
@@ -1564,14 +1577,34 @@ theorem t2CopyK_FDshAt_of_all {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hVa := v_le_of_le1 (vMono1_of hCP hGP) (i + 1) r i (Nat.lt_succ_self i) hg
   have hAnc := old_vAnc_copy_live C hB hz h2 hVS hlen hr hn hCN hGN hCP hGP hg hc
   have hDom := hVD r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL
-  have hK := hAGall r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL
-  intro s y hcv hVs _htr1 htr2 hFD
+  have hKfd := hAGfd r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL
+  intro s y hcv hVs htr1 htr2 hFD
+  have hK := hKfd s y hcv hVs htr1 htr2
   have hcOT : isOT (psi s y z) = true := by
     rw [← hcv]
     exact hGP.ot_o c (mem_children (cl_mem_children hc)).2
   rw [hcv] at hK
   exact frameDom_sh_KAG hV hV' hVV ha hVa hcOT rfl
     (hFOP i hi Lc c R hCL) hVs htr2 hDom hK hAnc hFD
+
+/-- The all-frame version remains a valid stronger sufficient condition. -/
+theorem t2CopyK_FDshAt_of_all {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hSeedFO : T2SeedFrames QFO M) (hVS : T2VAncStep M)
+    (hAGall : T2VRAKAll KAG M) : T2CopyK FDshAt M :=
+  t2CopyK_FDshAt_of_fd C hB hz h2 hSeedFO hVS (t2VRAKFD_of_all hAGall)
+
+/-- Triggered all-low KAG suffices for the FD residual. The existing path-level
+KAG hypothesis must be retained separately for its other consumers. -/
+theorem t2FDCopyRes_of_fd (hB : T2BelowXResV2) (hFO : T2FOSeedV2)
+    (hVS : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VAncStep M)
+    (hAGfd : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VRAKFD KAG M) : T2FDCopyRes := by
+  intro M ρ rk C hz h2
+  exact t2CopyK_FDshAt_of_fd C (hB M ρ rk C) hz h2
+    (hFO M ρ rk C hz h2) (hVS M ρ rk C hz h2) (hAGfd M ρ rk C hz h2)
 
 /-- Global residual bridge. The below-x and FrameOT-seed hypotheses are
 already produced independently by the existing top-level seed machinery. -/
@@ -1592,6 +1625,9 @@ theorem t2FDCopyRes_of (hB : T2BelowXResV2) (hFO : T2FOSeedV2)
       TRIO.srow M (M.length - 1) = 2 → T2VRAKAll KAG M) : T2FDCopyRes :=
   t2FDCopyRes_of_all hB hFO hVS hAGall
 
+#print axioms t2VRAKFD_of_all
+#print axioms t2CopyK_FDshAt_of_fd
+#print axioms t2FDCopyRes_of_fd
 #print axioms fdshCopyKV'
 #print axioms t2FDCopyRes_of
 #print axioms t2CopyK_FDshAt_of_all
