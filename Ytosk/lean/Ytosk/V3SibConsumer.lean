@@ -18,6 +18,13 @@ def CanonicalNeed (N : Mat) (τ : Valn) : Prop :=
     upg N (a - 1) = some a → topped N a = true →
     upg N (b - 1) ≠ some b → Counted N p b → τ.v b ≤ τ.v a
 
+/-- For the prefix consumer, one canonical valuation suffices; Cons valuations agree there. -/
+theorem canonicalNeed_congr {N : Mat} {σ τ : Valn} (h : Agree N σ τ)
+    (hN : CanonicalNeed N σ) : CanonicalNeed N τ := by
+  intro p a b ha hb hab hnext ha1 ha2 hpa hb1 hb2 hpb hup htop hno hcnt
+  rw [← (h b (mem_children hb).2).2, ← (h a (mem_children ha).2).2]
+  exact hN p a b ha hb hab hnext ha1 ha2 hpa hb1 hb2 hpb hup htop hno hcnt
+
 /-- The old sibling residual implies the exact consumer interface. -/
 theorem canonicalNeed_of_sibColU {N : Mat} {τ : Valn} (hX : SInvX N)
     (hC : Cons N τ) (hG : Good3 N τ) (h : SibColU N τ) : CanonicalNeed N τ := by
