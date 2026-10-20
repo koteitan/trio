@@ -122,8 +122,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
       - drop: HDropV2W（落とす補題の 5 欄）・HSeedV2（SeedR）
       - 共通: HFrameV2・HLeafV2（枠の 10 欄・葉の条件）、HBumpExt（標準形の接頭辞で bump 項は増える）、HSibColV2（同じ列の兄弟 SibColU）
       - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom と T2SeedCDom1）
-      - t2 のそのほか: T2CBadOut（悪い形の展開、大づかみ）、T2VRACopy、T2VAncStep・T2VRAK KAG（写しの枠の KVRA）
-      - ⚠ 2026-10-20: 残りの T2VRACopy（hVCp）は偽（下の表）。最上位は偽の仮定を含むので、使う側を直して弱い残りに替えるまで空の定理。
+      - t2 のそのほか: T2CBadOut（悪い形の展開、大づかみ）、T2VRACopyEsc（安く片づかない成分 g（Ω_s < g かつ B < g）があるときだけ、元の行列で u が LevAt かつ u ≤ V）、T2VAncStep・T2VRAK KAG（写しの枠の KVRA）
+      - 2026-10-20: 残りの T2VRACopy（hVCp）は偽だった（下の表）。使う側を直し、弱い残り T2VRACopyEsc に替えた。最上位は偽と分かっている仮定を含まない。
       - 次の大きな仕事の候補（2026-10-18）: 手早く減らせる残りは尽きた。どれも新しい値の不変条件を帰納法で運ぶ仕事。
         - T2VAncStep: VAncStep はすべての標準形で測って真。Inv3V2 の欄にして落とし・t0・t1・t2 で運ぶ。中身は「落ちる加数の成分 ≤ Ω_h」（desc）
         - T2CBadOut: C の種を K = M[2].take (x + 1) を基準に作り直す（desc の計画）
@@ -146,7 +146,8 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | （証明済み）T2VRAKFD KAG | 13 集合の書き換える写しの枠で例外 0 だった。2026-10-20 に不要にした: T2FDCopyRes は `FDCopyRoot.t2FDCopyRes_of_path` で T2VAncStep と道の段の T2VRAK KAG から出る | fdcopy_all_frames・fdcopy_offpath_audit（trio-codex）。項だけの FDsh は偽（`not_FDsh`） |
         | （証明済み）T2SVc0 | 11 集合と ext3s で例外 0 だった。証明した | svpre.py |
         | （証明済み）T2CFrRes | 11 集合と ext3s で例外 0 だった。証明した | cvra.py |
-        | T2VRACopy | **偽**（2026-10-20、trio-codex）: 標準形 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,0)(1,1,1)（std_a の行列に 1 列足した形、13 集合の外）で u ≤ V が偽。今の最上位はこの偽の仮定を含む。直す | vracopy_real_own_counterexample（trio-codex） |
+        | T2VRACopy | **偽**（2026-10-20、trio-codex）: 標準形 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,0)(1,1,1)（std_a の行列に 1 列足した形、13 集合の外）で u ≤ V が偽。使う側を直し T2VRACopyEsc に替えた | vracopy_real_own_counterexample（trio-codex） |
+| T2VRACopyEsc | 13 集合と std_a の 1 列足し（標準形 81,867 個）で例外 0。安く片づかない成分は 13 集合で 1,191、1 列足しで 9 | vracopy-soundness-fix（trio-codex） |
 | T2VAncStep | 11 集合と ext3s で例外 0 | vanc1 |
         | T2VRAK KAG | 11 集合で例外 0 | probe_t2vrak |
         | HSibColV2 | 11 集合と std_b で例外 0 | sibcolall.py（SibColW） |

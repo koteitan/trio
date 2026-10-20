@@ -117,7 +117,7 @@ theorem expT0Out_of4 (hAbW : T0AbWRes)
 /-- **The top theorem before the split of `T2BelowXRes`** (the single current form is `trio_terminates_main_V2_cur`, V3TopT2B): everything committed so far plugged in. The hypotheses are the named
 residuals: drop `HDropV2`・`HSeedV2`; shared `HFrameV2`・`HLeafV2`; t0 `T0RwRes`・`T0AbWRes`;
 t2 `T2BelowXRes`・`T2SeedPResRCV2`・`T2SeedDomV2`・`T2FDCopyRes`・the seed columns (`T2VRAQNDom`・`T2VRASeedSVC`)・
-the prefix shape `T2SeedPreShape`・the copy levels `T2VRACopy`・the `σ`-step at the guarded copy frames
+the prefix shape `T2SeedPreShape`・the copy levels `T2VRACopyEsc` (level provenance only for components above the child Omega and target state; the former `T2VRACopy` is false)・the `σ`-step at the guarded copy frames
 `T2VRAK KVRA` (t1, the frame condition of `qVRAshK_KVRA`); top `HSibHardV2`.
 None of them is the false strong absorption `HAbSV2`. (2026-10-17, drop: also `T2UpgAbsW`, the strong `UpgAbsX`
 at the last column for `t = 2`, which the drop lemma no longer gives. The `t = 1` analogue `T1UpgQRV2` is removed:
@@ -135,7 +135,7 @@ theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
     (hVPr : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2SeedPreShape M ρ)
     (hVCp : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
-      TRIO.srow M (M.length - 1) = 2 → T2VRACopy M)
+      TRIO.srow M (M.length - 1) = 2 → T2VRACopyEsc M)
     (hVK : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KVRA M) : WellFounded Step' :=
   have hP : T2SeedPResV2 := t2SeedPResV2_of (t2SeedPResR_of_sib (hSib_of_hard hSib) hPR)

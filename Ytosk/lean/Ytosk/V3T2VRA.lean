@@ -177,6 +177,23 @@ def T2VRACopy (M : Mat) : Prop :=
     ∀ u, LevAt (G2 M r L n) σ (i + L) u → ¬ lt (σ.v (i + L)) u = true → comps u s ≠ [] →
       LevAt (G2 M r L (n - 1)) ρP i u ∧ u ≤ ρP.v r
 
+/-- Copy-level provenance is needed only for components exceeding both the
+child's Omega and the target state. The original T2VRACopy is false even on
+standard matrices: a high own/path level can see the harmless component 0. -/
+def T2VRACopyEsc (M : Mat) : Prop :=
+  ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ n, 2 ≤ n →
+    ∀ σ ρP, Cons (G2 M r L n) σ → Good3 (G2 M r L n) σ →
+    Cons (G2 M r L (n - 1)) ρP → Good3 (G2 M r L (n - 1)) ρP →
+    ∀ i, r ≤ i → i < (G2 M r L (n - 1)).length →
+    ∀ (Lc : List Nat) (c : Nat) (R : List Nat), CL (G2 M r L n) (i + L) = Lc ++ c :: R →
+    ∀ s y, σ.o c = psi s y z →
+    (lt (spArg (σ.v (i + L)) z (sumN (Lc.map σ.o))) y = true ∧ lt (psi (σ.v (i + L)) z z) (psi s y z) = true) →
+    (split y (psi (succ s) z z)).1 ≠ z →
+    ∀ u, LevAt (G2 M r L n) σ (i + L) u → ¬ lt (σ.v (i + L)) u = true →
+    ∀ g ∈ comps u s, psi s z z < g →
+      spArg (σ.v (i + L)) z (sumN (Lc.map σ.o)) < g →
+      LevAt (G2 M r L (n - 1)) ρP i u ∧ u ≤ ρP.v r
+
 /-- **R-copy-K (VSmallRAll)**: the frame condition `K` at the guarded copy frames of `M[n − 1]`, at its levels
 `u ≤ V` (`V = v_P(r)`, `V′ = v_N(r + L)`). -/
 def T2VRAK (K : T → T → T → List T → T → T → Prop) (M : Mat) : Prop :=
@@ -194,7 +211,7 @@ theorem vsmallRAll_expand_t2 {K : T → T → T → List T → T → T → Prop}
     (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hz : col M (M.length - 1) ≠ (0, 0, 0))
     (h2 : TRIO.srow M (M.length - 1) = 2) (hVM : VSmallRAll M ρ)
     (hVT : ∀ τ, Cons (M.take (M.length - 1)) τ → VSmallRAll (M.take (M.length - 1)) τ)
-    (hSeed : T2VRASeed M) (hPre : T2VRAPre M ρ) (hCopy : T2VRACopy M) (hKM : T2VRAK K M) :
+    (hSeed : T2VRASeed M) (hPre : T2VRAPre M ρ) (hCopy : T2VRACopyEsc M) (hKM : T2VRAK K M) :
     ∀ n, 1 ≤ n → ∀ σ, Cons (expand M n) σ → VSmallRAll (expand M n) σ := by
   have hGall := good3_expand_t2 hM hS I R hz h2 (t2BelowXE_of hB hM hS I R hz h2)
     (t2CopyResAll_holds M ρ rk hM hS I R hz h2)
@@ -293,16 +310,18 @@ theorem vsmallRAll_expand_t2 {K : T → T → T → List T → T → T → Prop}
               (mem_children (cl_mem_children (show c ∈ CL _ (r + a + L) by rw [hCL]; simp))).1.trans
                 (mem_children (cl_mem_children (show c ∈ CL _ (r + a + L) by rw [hCL]; simp))).2
             omega
-          intro s y hsy ht hhi hku
-          by_cases hcs : comps u s = []
-          · intro g hg; rw [hcs] at hg; simp at hg
+          intro s y hsy ht hhi hku g hg
+          by_cases hOmega : g ≤ psi s z z
+          · exact Or.inl hOmega
+          by_cases hState : g ≤ spArg (σ.v (r + a + L)) z (sumN (Lc.map σ.o))
+          · exact Or.inr (Or.inl hState)
           obtain ⟨hu1, huV⟩ := hCopy r L hlen hr (m + 1) hn2 σ _ hCN hGN hCP hGP (r + a) (by omega) hia
-            Lc c Rr hCL s y hsy ht hhi u hu hku hcs
+            Lc c Rr hCL s y hsy ht hhi u hu hku g hg (lt_of_not_ge hOmega) (lt_of_not_ge hState)
           exact copyFrame_VRA hsh hF hCP hGP hrP hV' hVV (i := r + a) (by omega) hia (fun _ => huV)
             (fun hg Lc0 c0 R0 h => hKM r L hlen hr (m + 1) hn2 σ _ hCN hCP hGP (r + a) (by omega) hia hg
               Lc0 c0 R0 h u hu1 huV)
             (fun Lc0 c0 R0 h => (vsmallRAll_iff.mp hQP) (r + a) Lc0 c0 R0 h u hu1) Lc c Rr hCL
-            s y hsy ht hhi hku
+            s y hsy ht hhi hku g hg
   intro n hn σ hσ
   rw [hexp n] at hσ ⊢
   exact key n hn σ hσ
@@ -350,7 +369,7 @@ theorem t2VRAV2_of {K : T → T → T → List T → T → T → Prop} (hsh : QV
     (hPreG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ)
     (hCopyG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
-      TRIO.srow M (M.length - 1) = 2 → T2VRACopy M)
+      TRIO.srow M (M.length - 1) = 2 → T2VRACopyEsc M)
     (hKG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK K M) : T2VRAV2 := by
   intro M ρ rk C hz h2 n hn σ rkN hCN _ _ _

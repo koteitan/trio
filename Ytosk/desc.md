@@ -3996,3 +3996,6 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - T2VRACopy は M を固定すると Cons と Good3 しか仮定しないので、この M で偽。よって最上位の仮定 hVCp は偽で、最上位は空の定理になっていた。13 集合（ext2 を含む）は std_a の行列に 1 列足したこの形を欠いていた。
 - 成分 0 は安い（≤ Ω_s）ので QVRAt 自体は成り立つ。「成分が空でなければ u ≤ V」という形が強すぎる。直し方: 使う側（V3T2VRA の copyFrame_VRA の呼び出し）で u > V の場合を高い段の移送で扱い、残りの結論から u ≤ V を外す（FDCopyRoot の a > V と同じ手）。
 - 証明済みの部分: ガードのない自分の段（`VRACopyPath.unguarded_own_frame`）。
+- 直した（2026-10-20、trio-codex）: 残りを `T2VRACopyEsc` に替えた。結論の「元の LevAt ∧ u ≤ V」を、安く片づかない成分 g（Ω_s < g かつ B < g、B は枠の spArg）があるときだけ求める。使う側 vsmallRAll_expand_t2 は先に g を取り、g ≤ Ω_s・g ≤ B はその場で閉じ、残りの g だけ copyFrame_VRA・hKM を呼ぶ。親の成分の上限は含まないので QVRAt の言い換えではない。古い T2VRACopy は偽の文として定義だけ残す。
+- 「元の LevAt だけ」の形も偽（1 列足しで 12 件、高い道の段、同じ M の u = 1、f(1) = 2）。元の T2VRACopy の失敗 24 件の成分はすべて 0（≤ Ω_s）。T2VRACopyEsc は 13 集合と std_a の 1 列足し（標準形 81,867 個）で例外 0。
+- 補助（証明済み、今は使わない）: f(u) = u の高い段は元の QVRAt を同じ段で運べる（`VRACopyPath.high_fixed_bound`）。
