@@ -3977,3 +3977,14 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 実測（13 集合）: qn で比較が要る 245 回はすべて真。C では比較が要らなかった（空であることの証明ではない）。bump の子の数だけでは比べられない（6 例）。
 - 局所の構造（SInvX・RowJ・S1・S4・Good3）だけでは偽: 標準形でない (0,0,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(3,2,1)(4,2,1)(5,1,0)(6,2,0)(7,3,1)(6,1,0)（p = 2、a = 6、b = 10、v(a) < v(b)）は FC3 だけで外れる。よって証明には FC3 を含む Inv3V2 の値の情報が要る。
 - 残りの目標: `canonicalNeed_of_inv`（Std N、N ≠ SRO、Inv3V2 N σ rk ⇒ CanonicalNeed N σ）。中身は形の違う 2 つの兄弟の bump の孫の和の値の比較で、kd・td（同じ親の下の並び）では閉じない。見積もりは数日。作った本物の兄弟の枠の変形 5,829 個（共通の親が 0 でない）で例外 0。
+
+### T2VRAKFD を外した（2026-10-20、trio-codex・lead、V3FDCopyRoot）
+
+- 低い段すべての KAG を求める残り `T2VRAKFD KAG` は要らなかった。T2FDCopyRes は `FDCopyRoot.t2FDCopyRes_of_path` で既存の T2BelowXResV2・T2FOSeedV2・T2VAncStep と、道の段だけの `T2VRAK KAG` から出る。最上位の残りは 14 → 13。
+- 項の核 `frameDom_sh_root`: FrameDom の σ 移送は、VDomF V V′ a の全部、u ≤ V での RootDom（V の成分は Ω_{f a} 以下か f(a) の成分以下）、a = V のときだけ段 V での KG、で出る。古い VAnc も低い段すべての KAG も使わない。
+  - u, w ≤ succ V なら compsAN V u = compsAN V w（`compsAN_level_eq`）。KG は段 u を compsAN でしか使わないので、1 つの段で出ればすべての低い段で出る。
+  - a > V: 動く位置の低い成分は comps (succ V) s に入り、succ V ≤ a なので高い成分の移送 `frameDom_copy_high_component` で運べる。KG は要らない。
+  - a = V: V = a は必ず LevAt の段なので、道の段の hAG から KG が出る。
+  - 古い根の例外は RootDom で閉じる（`frameDom_retained_root`）。
+- 行列の側: 写した先の辺 P1_N(r+L) = r（`par1_copy_root`）、根の値が元の ρ.v r と同じ（`root_v_original`、n = 2 は `source_v_base_pair`）、写した先の hVS と VDomF から RootDom（`rootDom_of_seed`）。
+- 実測（13 集合、FD の枠 2,281,140 個）: RootDom・道の段でない段の KA（2,103,458 成分）・KG（道の段 247、道の段でない段 179 成分）すべて例外 0。KG の σ の像の一部は写した先の親の上限だけでは閉じず子の Ω で閉じる（親の上限だけで KG は出ない）。作った項 45,514 個で frameDom_sh_root の形に例外 0、条件を外した対照（Prefix・AllLowKVRA）は RootDom で失敗する。

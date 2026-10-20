@@ -207,5 +207,140 @@ theorem frameDom_sh_root {V V' a B s y : T} {Lv : List T}
         · exact retained g (Or.inr (comps_sub_sub u s V hd))
         · exact introduced g (comps_of_mem_summands hq hgq)
 
+/-- Seed-edge domination followed by VDomF controls every old-root component. -/
+theorem rootDom_of_seed {V V' a : T}
+    (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+    (ha : isOT a = true) (hVa : V ≤ a)
+    (hEdge : ∀ u d, d ∈ comps u V →
+      d ≤ psi V' z z ∨ ∃ e ∈ comps u V', d ≤ e)
+    (hVD : VDomF V V' a) :
+    ∀ u, u ≤ shf V V' a → ∀ d ∈ comps u V,
+      d ≤ psi (shf V V' a) z z ∨ ∃ e ∈ comps u (shf V V' a), d ≤ e := by
+  intro u hu d hd
+  rcases hEdge u d hd with h | ⟨e, he, hde⟩
+  · exact Or.inl (le_trans h (psi_le_psi_z (le_shf hV hV' (le_of_lt hVV) ha hVa)))
+  · rcases hVD u (not_lt.mpr hu) e he with h | ⟨f, hf, hef⟩
+    · exact Or.inl (le_trans hde h)
+    · exact Or.inr ⟨f, hf, le_trans hde hef⟩
+
+/-- Every expansion keeps the original root value once its index is at least 2. -/
+theorem root_v_original {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L n : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hn : 2 ≤ n)
+    (hG : ∀ m, 1 ≤ m → ∀ τ, Cons (G2 M r L m) τ → Good3 (G2 M r L m) τ)
+    {σ : Valn} (hCN : Cons (G2 M r L n) σ) : σ.v r = ρ.v r := by
+  have hGN := hG n (by omega) σ hCN
+  have hRaw := hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 r L hlen hr
+    n hn (fun m hm _ τ hτ => hG m hm τ hτ) σ hCN (fun b j _ hj => by
+      cases b
+      · exact hGN.ot_v j hj
+      · exact hGN.ot_o j hj)
+  exact (hRaw.1 r (root_is_seed C hlen hr)).2
+
+/-- The first appended root has row-1 parent r. -/
+theorem par1_copy_root {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) {r L n : Nat}
+    (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hn : 2 ≤ n) : par (G2 M r L n) 1 (r + L) = some r := by
+  have hrx : r < r + L := par_lt M 2 _ _ hr
+  have hA := anc0_of_par M 2 r (r + L) hr
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
+  have hd0 := anc0_e0_lt hA (by omega)
+  have h1 := (par2_facts C.S.z2 (by omega) hr).2
+  change par (TRIO.gexp M r L _ _ n) 1 (r + L) = some r
+  rw [par1_xN hlen (by omega) hA hq (by omega) hn (by omega)]
+  exact par1_x_r (by omega) C.S.z2 C.S.z1c hr
+
+theorem t2CopyK_FDshAt_of_path {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hSeedFO : T2SeedFrames QFO M) (hVS : T2VAncStep M)
+    (hAG : T2VRAK KAG M) : T2CopyK FDshAt M := by
+  have IW := Inv3W.ofV2 C.S C.I
+  have RW : Res3W M ρ rk := ⟨C.R.drop⟩
+  have hCR := t2CopyResAll_holds M ρ rk C.std C.ne IW RW hz h2
+  have hG := good3_expand_t2 C.std C.ne IW RW hz h2
+    (t2BelowXE_of hB C.std C.ne IW RW hz h2) hCR
+  have hVD := t2CopyK_vDom_of hB C.std C.ne IW RW hz h2 hVS
+  have hT : ∀ τ, Cons (M.take (M.length - 1)) τ → FrameOT (M.take (M.length - 1)) τ := by
+    intro τ hτ
+    have hl2 : 2 ≤ M.length := by
+      obtain ⟨hX, _⟩ := sInvXJ_std C.std C.ne
+      obtain ⟨r, hr⟩ := parLast_of hX.e00 hX.r01 hX.r12 hz
+      rw [h2] at hr
+      have := par_lt M 2 _ r hr
+      omega
+    obtain ⟨I1, _⟩ := C.pre (M.length - 1) (by omega) (by omega)
+    exact clField_congr (Q := QFO) I1.fo (agree_of_cons I1.cons hτ I1.rank)
+  have hF := frameOT_expand_t2 hB C.std C.ne IW RW hz h2 hT hSeedFO
+  intro r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL
+  change Cons (G2 M r L n) σ at hCN
+  change Cons (G2 M r L (n - 1)) ρP at hCP
+  have hc : c ∈ CL (G2 M r L (n - 1)) i := by rw [hCL]; simp
+  have hGN : Good3 (G2 M r L n) σ := by
+    rw [← expand_eq_G2_ctx C hz h2 hlen hr n] at hCN ⊢
+    exact hG n (by omega) σ hCN
+  have hFOP : FrameOT (G2 M r L (n - 1)) ρP := by
+    rw [← expand_eq_G2_ctx C hz h2 hlen hr (n - 1)] at hCP ⊢
+    exact hF (n - 1) (by omega) ρP hCP
+  obtain ⟨_hKV, _hBase, hV', hVV⟩ := hCR r L hlen hr n hn σ ρP hCN hCP hGP
+  have hrP : r < (G2 M r L (n - 1)).length := Nat.lt_of_le_of_lt hri hi
+  have hV := hGP.ot_v r hrP
+  have ha := hGP.ot_v i hi
+  have hVa := v_le_of_le1 (vMono1_of hCP hGP) (i + 1) r i (Nat.lt_succ_self i) hg
+  have hDom := hVD r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL
+  have hGK : ∀ m, 1 ≤ m → ∀ τ, Cons (G2 M r L m) τ → Good3 (G2 M r L m) τ := by
+    intro m hm τ hτ
+    rw [← expand_eq_G2_ctx C hz h2 hlen hr m] at hτ ⊢
+    exact hG m hm τ hτ
+  have hvr : σ.v r = ρP.v r := by
+    by_cases hn2 : n = 2
+    · subst n
+      exact (source_v_base_pair C hB hz h2 hlen hr hCN hGN hCP hg hc).1
+    · exact (root_v_original C hB hz h2 hlen hr hn hGK hCN).trans
+        (root_v_original C hB hz h2 hlen hr (by omega) hGK hCP).symm
+  have hStep : VAncStep (G2 M r L n) σ := by
+    rw [← expand_eq_G2_ctx C hz h2 hlen hr n] at hCN ⊢
+    exact hVS n hn σ hCN
+  have hxN : r + L < (G2 M r L n).length := by
+    rw [TRIO.gexp_length hlen]
+    have hrx : r < r + L := par_lt M 2 _ _ hr
+    have := Nat.mul_le_mul_right L hn
+    omega
+  have hEdge := hStep (r + L) r hxN (par1_copy_root C hlen hr hn)
+  unfold VAnc at hEdge
+  rw [hvr] at hEdge
+  have hRoot := rootDom_of_seed hV hV' hVV ha hVa hEdge hDom
+  intro s y hcv hVs htr1 htr2 hFD
+  have hcOT : isOT (psi s y z) = true := by
+    rw [← hcv]
+    exact hGP.ot_o c (mem_children (cl_mem_children hc)).2
+  have hKG : ρP.v i = ρP.v r → ∀ fuel d,
+      d ∈ compsAN (ρP.v r) (ρP.v r) fuel (sub s (ρP.v r)) →
+      d ≤ psi s z z ∨ d ≤ spArg (ρP.v i) z (sumN (Lc.map ρP.o)) := by
+    intro haV fuel d hd
+    have hK := hAG r L hlen hr n hn σ ρP hCN hCP hGP i hri hi hg Lc c R hCL
+      (ρP.v r) (Or.inl haV.symm) (le_refl _)
+    exact hK.2 s y hcv hVs fuel d hd
+  exact frameDom_sh_root hV hV' hVV ha hVa hcOT rfl
+    (hFOP i hi Lc c R hCL) hVs htr2 hDom
+    (fun u hu => hRoot u (le_trans hu (le_trans hVa
+      (le_shf_self hV hV' (le_of_lt hVV) ha hVa)))) hKG hFD
+
+theorem t2FDCopyRes_of_path (hB : T2BelowXResV2) (hFO : T2FOSeedV2)
+    (hVS : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VAncStep M)
+    (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : T2FDCopyRes := by
+  intro M ρ rk C hz h2
+  exact t2CopyK_FDshAt_of_path C (hB M ρ rk C) hz h2
+    (hFO M ρ rk C hz h2) (hVS M ρ rk C hz h2) (hAG M ρ rk C hz h2)
+
+#print axioms t2FDCopyRes_of_path
 #print axioms frameDom_sh_root
+#print axioms rootDom_of_seed
+#print axioms root_v_original
+#print axioms par1_copy_root
 end Ytosk.FDCopyRoot

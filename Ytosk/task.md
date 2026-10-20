@@ -118,11 +118,11 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - ✅ 最上位から偽の強い吸収 HAbSV2 を外した（文脈は Res3AW、t = 0 の下降は ExpT0OutV2 から。`expT0Out_of4`）
     - ✅ 最上位を 1 本 `trio_terminates_main_V2_cur`（V3TopT2B）にまとめた（2026-10-17。旧 `_t2B`・`_t2C` は消し、旧 `_cur` は中間の形 `_base` に）
     - ✅ 2026-10-19: 残りの FDsh は偽だった（`FDCut.not_FDsh`）。行列の残り `T2FDCopyRes`（写しの枠ごとの `FDshAt`）に替え、最上位は偽の仮定を含まなくなった。
-    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残りは 14 個（2026-10-20、T2UpgAbsW・T0UpgAbsV2・T0ArgBRes を外した）:
+    - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残りは 13 個（2026-10-20、T2UpgAbsW・T0UpgAbsV2・T0ArgBRes・T2VRAKFD を外した）:
       - drop: HDropV2W（落とす補題の 5 欄）・HSeedV2（SeedR）
       - 共通: HFrameV2・HLeafV2（枠の 10 欄・葉の条件）、HBumpExt（標準形の接頭辞で bump 項は増える）、HSibColV2（同じ列の兄弟 SibColU）
       - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom と T2SeedCDom1）
-      - t2 のそのほか: T2CBadOut（悪い形の展開、大づかみ）、T2VRAKFD KAG（書き換える写しの枠で低い段すべての KAG。FrameDom の σ 不変性は V3FDCopy で証明済み）、T2VRACopy、T2VAncStep・T2VRAK KAG（写しの枠の KVRA）
+      - t2 のそのほか: T2CBadOut（悪い形の展開、大づかみ）、T2VRACopy、T2VAncStep・T2VRAK KAG（写しの枠の KVRA）
       - 次の大きな仕事の候補（2026-10-18）: 手早く減らせる残りは尽きた。どれも新しい値の不変条件を帰納法で運ぶ仕事。
         - T2VAncStep: VAncStep はすべての標準形で測って真。Inv3V2 の欄にして落とし・t0・t1・t2 で運ぶ。中身は「落ちる加数の成分 ≤ Ω_h」（desc）
         - T2CBadOut: C の種を K = M[2].take (x + 1) を基準に作り直す（desc の計画）
@@ -142,7 +142,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
         | T2SeedPResRCV2B | 11 集合と std_b で例外 0（qn の V < t₁ は qncl.py、C の X₁ < σX₁ は cstrict.py で 11 集合と ext3s で例外 0） | seedqr.py・seedsvc.py。C の un は StepCtxT2 で悪い形を外した |
         | T2CBadOut | — | 悪い形（ext2 に 6 個）の t = 2 の展開。全体の主張の帰結 |
         | T2SeedDomV2B | 11 集合と std_b で例外 0 | seeddom2.py（T2VRAQNDom は T2SeedQNDom と T2SeedQNBase から） |
-        | T2VRAKFD KAG | 13 集合の書き換える写しの枠 2,281,152 回（n = 2, 3）で例外 0 | fdcopy_all_frames_trio_codex.py。すべての枠の版 T2VRAKAll は KG が 24 枠で偽。前の T2FDCopyRes は証明した橋で出る。項だけの FDsh は偽（`not_FDsh`） |
+        | （証明済み）T2VRAKFD KAG | 13 集合の書き換える写しの枠で例外 0 だった。2026-10-20 に不要にした: T2FDCopyRes は `FDCopyRoot.t2FDCopyRes_of_path` で T2VAncStep と道の段の T2VRAK KAG から出る | fdcopy_all_frames・fdcopy_offpath_audit（trio-codex）。項だけの FDsh は偽（`not_FDsh`） |
         | （証明済み）T2SVc0 | 11 集合と ext3s で例外 0 だった。証明した | svpre.py |
         | （証明済み）T2CFrRes | 11 集合と ext3s で例外 0 だった。証明した | cvra.py |
         | T2VRACopy・T2VAncStep | 11 集合と ext3s で例外 0 | probe_t2vra・vanc1 |
