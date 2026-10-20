@@ -3963,3 +3963,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 最上位から T0UpgAbsV2（t = 0 で易しい形 T0Easy の外の強い吸収）を外した。残りは 15 個。新しい残りはない。
 - 実測（13 集合、行 1 が 0 の行列 1,607,939 個）: x − 1 で上げ 153,199 回、強い吸収が偽は 26 回ですべて T0Easy の中。T0Easy の外では破れない。ただし直接の証明は残り `T0UpgDirect.remaining_case`（bump の親・変わらない古い的・W ≥ ε_0）で止まった。W < ε_0 は局所の構造の欄と Good3 だけでは出ない（標準形でない 26 個の例がそれらを満たし、どれも FC3 で外れる）。
 - 使う側を直した: 弱い吸収 `UpgAbsXW` の定義から 4 つ目の欄（行 1 ≠ 0 か T0Easy）を外して `UpgAbsXW0` と同じにした。この欄を使っていたのは t = 0 の強い吸収の取り出し（`UpgAbsXW.toX`・`toX_bump`）だけで、`toX_xm1` は NBPar だけで出る。t = 0 で今使う `t0_core`・`t0_otdS` の bump の親の古い子の比較は `T0UpgAbs.v_lhd_bump_children`（弱い吸収＋RowJ・BumpLeaf）に替えた（RowJ・BumpLeaf は標準形から `sInvXJ_std`）。古い写し（t0_otd・R・T・U・H・H0）はもともと持つ hU0 : OldUpgAbs を使う。`hDropV2_of'` で HDropV2W だけから HDropV2。
+
+### T0ArgBRes を外した（2026-10-20、trio-codex、V3T0ArgB）
+
+- 最上位から T0ArgBRes（t = 0 の弱い親の枝で種 g の引数の ◁）を外した。残りは 14 個。新しい残りはない。
+- 使う側（V3T0DepS の種 g、t0_S1AW）が引数の ◁ を使うのは、新しい節の OT・節の ◁・RClaimU を出すためだけだった。RE は別（t0_S1A_RE）。
+- 実測（13 集合、行 1 が 0 の行列 1,607,939 個）: T0ArgBRes の前提 309,952 個のうち弱い元の列は 13 個、展開 26 個は種類がすべて Cls A。作った標準形の項では v ≤ a のもとでも引数の ◁ が 300 組中 4 組で偽（T0ArgBRes は弱い場面で強すぎる）。
+- 証明（V3T0ArgB）: `index_le_of_upg`・`index_le_of_cntx`（失われた祖先への上げから v(r) ≤ v(g)）、`weak_seed`（新しい節の OT・節の ◁・同じ高い部分・0 でない新しい低い部分）、`rclaim_of_same_high`（節の ◁ と共通の高い部分から RClaimU）、`t0_S1AW_node`（引数の ◁ なしの t0_S1AW）。組み込み（trio-codex が V3T0DepS・V3T0Inv2S・V3TopV2・V3TopT2B を書き換え、lead がビルド）で hArgB を外した。重複になった見本 V3T0UpgConsumer はライブラリから外した。

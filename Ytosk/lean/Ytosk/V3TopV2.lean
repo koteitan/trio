@@ -100,7 +100,7 @@ theorem t2SeedPResR_of_sib (hSib : HSibV2) (h : T2SeedPResRCV2) : T2SeedPResRV2 
       (fun τ hτ hG => hSib _ τ rk (std_take C.std (r + L) (by omega)) (ne_SRO_of_rk I1.rank) hτ I1.rank hG)
 
 /-- **`ExpT0OutV2` from t0's residuals** (`expT0V2_of4` with the descent of `t0_final_inv3V2D` kept). -/
-theorem expT0Out_of4 (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
+theorem expT0Out_of4 (hAbW : T0AbWRes)
     (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
     ExpT0OutV2 := by
   intro M ρ rk C hz hs0 n hn2
@@ -110,7 +110,7 @@ theorem expT0Out_of4 (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
   exact t0_final_inv3V2D C.std C.ne C.S C.I hlen hL hp he1 C.R.drop
     (hAbW M ρ rk C r L hlen hp he1) hpre
     (t0DF_ofS C.std C.ne (C.I.toC C.S) ⟨C.R.drop⟩ C.I.ph C.I.vra.toLast
-      (fun r' L' hl' hp' he' => hAbW M ρ rk C r' L' hl' hp' he') (hArgB M ρ rk C))
+      (fun r' L' hl' hp' he' => hAbW M ρ rk C r' L' hl' hp' he'))
     (hLeaf M ρ rk r L C hlen hL hp he1) (hFrm M ρ rk r L C hlen hL hp he1)
     n hn2
 
@@ -124,7 +124,7 @@ at the last column for `t = 2`, which the drop lemma no longer gives. The `t = 1
 t1 handles the weak seed with `SmallSelf` in `qr_final3`.) -/
 theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
     (hF : HFrameV2) (hLf : HLeafV2)
-    (hAbW : T0AbWRes) (hArgB : T0ArgBRes) (hCB : T2CBadOut)
+    (hAbW : T0AbWRes) (hCB : T2CBadOut)
     (hB : T2BelowXResV2) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
     (hFD : T2FDCopyRes)
     (hQNG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -143,7 +143,7 @@ theorem trio_terminates_main_V2_base (hD : HDropV2) (hSd : HSeedV2)
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ := fun M ρ rk C hz h2 =>
     t2VRAPre_of (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)
   terminates_of_desc3 (desc3_V2O hD hSd (hTake_of_glob hF hLf)
-    (expT0Out_of4 hAbW hArgB (t0Leaf_of_glob hLf) (t0Frame_of_glob hF))
+    (expT0Out_of4 hAbW (t0Leaf_of_glob hLf) (t0Frame_of_glob hF))
     (expT1Out_V2_glob hF hLf)
     (expT2V2_of hB (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
       (t2VRAV2_of qVRAshK_KVRA hB (t2VRASeedG_of hB hP hPreG hQNG hSVCG) hPreG hVCp hVK) hF hLf)

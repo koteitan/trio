@@ -22,7 +22,7 @@ def T0ArgBAt (M : Mat) (ρ : Valn) (r L : Nat) : Prop :=
     ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → Lhd z X' X
 
-/-- **Residual: `T0ArgBAt`** for the standard forms in top's step context. -/
+/-- Legacy stronger argument comparison; the current top uses node Lhd and RClaimU instead. -/
 def T0ArgBRes : Prop :=
   ∀ M ρ rk, StepCtxV2 M ρ rk → ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r →
     entry M 1 (r + L) = 0 → T0ArgBAt M ρ r L
@@ -30,8 +30,7 @@ def T0ArgBRes : Prop :=
 /-- **`T0DF` from the core bundles**, `PH3cG`, `VSmallRA` and `RwClosed` of `M` (no cut residual). -/
 theorem t0DF_ofS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
     (hS : M ≠ SRO) (I : Inv3C M ρ rk) (R : Res3C M ρ rk) (hPH : PH3cG M ρ) (hVA : VSmallRA M ρ)
-    (hAbW : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 → T0AbsW M r L ρ)
-    (hArgB : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 → T0ArgBAt M ρ r L) :
+    (hAbW : ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 → T0AbsW M r L ρ) :
     T0DF M ρ := by
   intro r L hlen hL hp he1 n hn σ hCN
   have hDr := R.drop
@@ -42,7 +41,7 @@ theorem t0DF_ofS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
     (hVA.toP (r + L) r) hPH
     (t0_shape3C hM hS I R hlen hL hp he1) (t0IVResC_holds M ρ rk r L hM hS I R hlen hL hp he1)
-    (hArgB r L hlen hp he1) n hn σ hCN
+    n hn σ hCN
   intro i hi
   refine ⟨fun hd => ?_, (h i hi).2⟩
   obtain ⟨h1, h2, _, h4, h5⟩ := (h i hi).1 hd
@@ -56,9 +55,9 @@ on standard forms under the exact `◁`; drop, 2026-10-17). -/
 def T0AbWRes : Prop := ∀ M ρ rk, StepCtxV2 M ρ rk → ∀ r L, r + L + 1 = M.length → par M 0 (r + L) = some r →
   entry M 1 (r + L) = 0 → T0AbsW M r L ρ
 
-/-- **top's `ExpT0V2`** from `T0RwRes`, `T0AbWRes` and the two residual fields of `N` (no cut residual and no
-strong absorption). -/
-theorem expT0V2_of4 (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
+/-- **top's `ExpT0V2`** from `T0AbWRes` and the two residual fields of `N` (no argument-Lhd, cut, or
+strong absorption residual). -/
+theorem expT0V2_of4 (hAbW : T0AbWRes)
     (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
     ExpT0V2 := by
   intro M ρ rk C hz hs0 n hn2
@@ -68,16 +67,16 @@ theorem expT0V2_of4 (hAbW : T0AbWRes) (hArgB : T0ArgBRes)
   obtain ⟨ρN, rkN, IN, _, _⟩ := t0_final_inv3V2D C.std C.ne C.S C.I hlen hL hp he1 C.R.drop
     (hAbW M ρ rk C r L hlen hp he1) hpre
     (t0DF_ofS C.std C.ne (C.I.toC C.S) ⟨C.R.drop⟩ C.I.ph C.I.vra.toLast
-      (fun r' L' hl' hp' he' => hAbW M ρ rk C r' L' hl' hp' he') (hArgB M ρ rk C))
+      (fun r' L' hl' hp' he' => hAbW M ρ rk C r' L' hl' hp' he'))
     (hLeaf M ρ rk r L C hlen hL hp he1) (hFrm M ρ rk r L C hlen hL hp he1)
     n hn2
   exact ⟨ρN, rkN, IN⟩
 
 /-- `expT0V2_of4` with the strong absorption `AbsSR` of the step context (the earlier interface). -/
-theorem expT0V2_of3 (hA : HAbSV2) (hArgB : T0ArgBRes)
+theorem expT0V2_of3 (hA : HAbSV2)
     (hLeaf : T0NRes (fun N σ _ => TP1LeafG N σ ∧ TP1WLeafG N σ)) (hFrm : T0NRes TakeFrameV2) :
     ExpT0V2 :=
-  expT0V2_of4 (hArgB := hArgB) (fun M ρ rk C r L hlen hp he1 => T0AbsW.of_strong ((hA M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.I).lo r
+  expT0V2_of4 (fun M ρ rk C r L hlen hp he1 => T0AbsW.of_strong ((hA M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.I).lo r
     (by rw [show M.length - 1 = r + L by omega]; exact hp) (by rw [show M.length - 1 = r + L by omega]; exact he1)))
     hLeaf hFrm
 

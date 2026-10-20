@@ -6,6 +6,7 @@ V3T0DepU の `t0_dep_otU`・`t0_otdU` の写し。書き換えの一致（hagree
 - RE: 影の枠では `re_shadow`。
 -/
 import Ytosk.V3T0Weak
+import Ytosk.V3T0ArgB
 import Ytosk.V3T0UpgAbs
 import Ytosk.V3T0ShB
 import Ytosk.V3ShadowL
@@ -56,9 +57,9 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
     (hFO : FrameOT M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ) (hAbs : AbsWN M (TRIO.gexp M r L 0 0 n) r ρ σ)
     (hlt : ρ'.o r < ρ.o r)
     (hl : Lhd z (ρ'.o r) (ρ.o r) ∨
-      (∃ w', ρ'.o r = psi w' z z ∧ WkVA w' (ρ.v r) ∧ isOT (psi w' z z) = true) ∧
+      (∃ w', ρ'.o r = psi w' z z ∧ WkVA w' (ρ.v r) ∧ WCS (ρ.v g) w' ∧ isOT (psi w' z z) = true) ∧
         (Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r) ∧
-        (Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → Lhd z X' X))
+        (Counted M g r → ρ.v r ≤ ρ.v g))
     (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
     (hLastC : Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
     (hS3 : ∀ p, par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 → col M g = bump M p →
@@ -401,20 +402,26 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
               by_cases h : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
               · exact Or.inl h
               · exact Or.inr (hG0 hcnt (fun k hk hk' => h ⟨k, hk, hk'⟩))
-            obtain ⟨X, X', hX, hX', hlX, hXo, hcls⟩ : ∃ X X', ρ.o g = psi (ρ.v g) X z ∧
-                σ.o g = psi (ρ.v g) X' z ∧ Lhd z X' X ∧ isOT X' = true ∧ ClsNode (ρ.v g) X' X := by
-              rcases hl with hl | ⟨hw, hrN, hArg⟩
-              · exact t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
-                  hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hl hy' hC1 hGT hm1
-                  hVchgR
-              · exact t0_S1AW hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
-                  hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hw hy' hC1 hGT
-                  (hrN hcnt) (hArg hcnt) hVchgR
-            have hot := hG.ot_o g (by omega)
-            rw [hX] at hot
-            have hot' : isOT (psi (ρ.v g) X' z) = true := ot_parent_lhd hot hXo (Or.inr hlX)
-            refine ⟨by rw [hX']; exact hot', by rw [hX, hX']; exact lhd_psi _ hlX,
-              fun _ _ => rclaim_of_clsU hX hX' hot hot' hlX hcls, ?_⟩
+            obtain ⟨X, X', hX, hX', hot', hlNode, hRC⟩ : ∃ X X',
+                ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧
+                isOT (psi (ρ.v g) X' z) = true ∧
+                Lhd z (psi (ρ.v g) X' z) (psi (ρ.v g) X z) ∧
+                ∀ U : T → Prop, RClaimU U ρ σ g := by
+              rcases hl with hl | ⟨hw, hrN, hva⟩
+              · obtain ⟨X, X', hX, hX', hlX, hXo, hcls⟩ :=
+                  t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
+                    hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast
+                    (hLastC hcnt) hl hy' hC1 hGT hm1 hVchgR
+                have hot := hG.ot_o g (by omega)
+                rw [hX] at hot
+                have hot' := ot_parent_lhd hot hXo (Or.inr hlX)
+                exact ⟨X, X', hX, hX', hot', lhd_psi _ hlX,
+                  fun _ => rclaim_of_clsU hX hX' hot hot' hlX hcls⟩
+              · exact T0ArgB.t0_S1AW_node hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
+                  hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast
+                  (hLastC hcnt) hw hy' hC1 hGT (hrN hcnt) (hva hcnt)
+            refine ⟨by rw [hX']; exact hot', by rw [hX, hX']; exact hlNode,
+              fun U _ => hRC U, ?_⟩
             intro _ X1 X1' h1 h1' _
             obtain ⟨X2, X2', h2, h2', hre⟩ := t0_S1A_RE hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
               hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast (hLastC hcnt) hlt hy' hC1 hGT hm1
@@ -720,10 +727,7 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hG0N : ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
       ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
-        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true))
-    (hArgB : ∀ g, par M 0 r = some g → Counted M g r → r = r + L - 1 → NBPar M (r + L - 1) → ∀ n, 2 ≤ n →
-      ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
-        ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → Lhd z X' X) :
+        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true)) :
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ →
       ∀ i, i < r → (DepX M (r + L) true i → isOT (σ.o i) = true ∧ Lhd z (σ.o i) (ρ.o i) ∧ (∀ U : T → Prop, (∀ u, U u → PathLv M (r + L) r ρ i u) → RClaimU U ρ σ i) ∧
         (σ.v i ≠ ρ.v i → σ.o i = psi (σ.v i) z z) ∧
@@ -819,13 +823,12 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       · exact Or.inr (fun hnb => hnb g i (by rw [← hr]; exact hg) hi hb)
       · exact Or.inl hr
     have hl2 : Lhd z (ρ'.o r) (ρ.o r) ∨
-        (∃ w', ρ'.o r = psi w' z z ∧ WkVA w' (ρ.v r) ∧ isOT (psi w' z z) = true) ∧
+        (∃ w', ρ'.o r = psi w' z z ∧ WkVA w' (ρ.v r) ∧ WCS (ρ.v g) w' ∧ isOT (psi w' z z) = true) ∧
           (Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r) ∧
-          (Counted M g r → ∀ X X', ρ.o g = psi (ρ.v g) X z → σ.o g = psi (ρ.v g) X' z → Lhd z X' X) := by
-      rcases hl' with hl | ⟨hrx, hnb, hCX, w', hw', hWk, _, hwot⟩
+          (Counted M g r → ρ.v r ≤ ρ.v g) := by
+      rcases hl' with hl | ⟨hrx, hnb, hCX, w', hw', hWk, hWC, hwot⟩
       · exact Or.inl hl
       · right
-        refine ⟨⟨w', hw', hWk, hwot⟩, fun hc => ?_, fun hc => hArgB g hg hc hrx hnb n hn2 σ hCN⟩
         have hxcnt : Counted M r (r + L) := by
           refine ⟨fun h => ?_, fun h => ?_⟩
           · have h2 : entry M 2 (r + L) = (bump M r).2.2 := by
@@ -836,6 +839,12 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
             obtain ⟨k, _, hk⟩ := List.any_eq_true.mp hu
             have := upg_target_e2 (of_decide_eq_true hk)
             omega
+        have hva : ρ.v r ≤ ρ.v g :=
+          T0ArgB.index_le_of_cntx hR0 hZ2 hUAB hBE hJ hC hG hRM (by omega) hg
+            (by simpa only [show r + 1 = r + L by omega] using he1) hCX
+            (by simpa only [show r + 1 = r + L by omega] using hxr)
+            (by simpa only [show r + 1 = r + L by omega] using hxcnt)
+        refine ⟨⟨w', hw', hWk, hWC, hwot⟩, fun hc => ?_, fun _ => hva⟩
         have he2r : entry M 2 r = 0 := by
           rcases hCX with hno | ⟨_, _, k, W, _, hu, _⟩
           · exact absurd hxcnt (hno _ hxr)
