@@ -3988,3 +3988,11 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 古い根の例外は RootDom で閉じる（`frameDom_retained_root`）。
 - 行列の側: 写した先の辺 P1_N(r+L) = r（`par1_copy_root`）、根の値が元の ρ.v r と同じ（`root_v_original`、n = 2 は `source_v_base_pair`）、写した先の hVS と VDomF から RootDom（`rootDom_of_seed`）。
 - 実測（13 集合、FD の枠 2,281,140 個）: RootDom・道の段でない段の KA（2,103,458 成分）・KG（道の段 247、道の段でない段 179 成分）すべて例外 0。KG の σ の像の一部は写した先の親の上限だけでは閉じず子の Ω で閉じる（親の上限だけで KG は出ない）。作った項 45,514 個で frameDom_sh_root の形に例外 0、条件を外した対照（Prefix・AllLowKVRA）は RootDom で失敗する。
+
+### T2VRACopy は偽（2026-10-20、trio-codex、反例は標準形）
+
+- 標準形 M = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,0)(1,1,1)（bms -s = 1、最後の列を除いた接頭辞も標準形）。q = r = 0、L = 11、n = 2（n = 3 でも）、元の i = 5、写した先の k = 16、CL = [17]。
+- ガードのある自分の段: V = 0、V′ = 1、a = f(a) = w、B = 0、s = W_w、y = W_(W_w + 1)、u = w。comps u s = [0] で空でないのに u ≤ V が偽。元の行列での LevAt は真。
+- T2VRACopy は M を固定すると Cons と Good3 しか仮定しないので、この M で偽。よって最上位の仮定 hVCp は偽で、最上位は空の定理になっていた。13 集合（ext2 を含む）は std_a の行列に 1 列足したこの形を欠いていた。
+- 成分 0 は安い（≤ Ω_s）ので QVRAt 自体は成り立つ。「成分が空でなければ u ≤ V」という形が強すぎる。直し方: 使う側（V3T2VRA の copyFrame_VRA の呼び出し）で u > V の場合を高い段の移送で扱い、残りの結論から u ≤ V を外す（FDCopyRoot の a > V と同じ手）。
+- 証明済みの部分: ガードのない自分の段（`VRACopyPath.unguarded_own_frame`）。
