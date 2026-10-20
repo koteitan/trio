@@ -27,6 +27,38 @@ theorem canonicalNeed_of_sibColU {N : Mat} {τ : Valn} (hX : SInvX N)
     hX.r0p a p (mem_children_iff.mp ha).2, hX.r0p b p (mem_children_iff.mp hb).2,
     ha1, hb1, ha2, hb2]
 
+/-- A later counted sibling cannot return to the old row-1 level below a bump child.
+This is the structural restriction on the right-hand grandchildren in the remaining comparison. -/
+theorem right_bump_grandchild_low {N : Mat} (hX : SInvX N) (hS1 : S1 N)
+    {p a b j k : Nat} (ha : a ∈ children N p) (hb : b ∈ children N p) (hab : a < b)
+    (hpb : par N 1 b = some p) (hcnt : Counted N p b)
+    (hj : j ∈ children N b) (hjb : col N j = bump N b) (hk : k ∈ children N j) :
+    entry N 1 k < entry N 1 b := by
+  have hj1 : entry N 1 j = entry N 1 b := e1_of_col hjb
+  have hj2 : entry N 2 j = 1 := e2_of_col hjb
+  have hle : entry N 1 k ≤ entry N 1 b := by
+    have := hX.loc.2.1 j k hj2 hk
+    omega
+  by_contra hn
+  have hke : entry N 1 k = entry N 1 b := by omega
+  have hpk := (mem_children_iff.mp hk).2
+  have hpj := t_bump_par1 hj hjb hpb
+  have hpk1 : par N 1 k = some p := by
+    rw [par1_find, ancL_eq hpk, List.find?_cons, decide_eq_false (by omega), hke]
+    rw [par1_find, hj1] at hpj
+    exact hpj
+  have hjk := par_lt N 0 k j hpk
+  have hup : isUpg N b = true :=
+    eqSibUpg_of_S1 hX.r0p hX.r1s hX.z2 hX.loc.1 hX.loc.2.1 hX.loc.2.2.1
+      hX.loc.2.2.2 hS1 p a b j k ha hb hab hj hjb
+      (anc0_of_par N 0 j k hpk) (by omega) hpk1
+  have hlast := (hX.loc.2.2.2 b j k hj hjb hk (by omega)).2.2.2
+  have htop : topped N b = true := by
+    unfold topped
+    rw [hlast]
+    exact decide_eq_true hjb
+  exact hcnt.2 ⟨hup, htop⟩
+
 /-- With a common row-1 parent, the remaining semantic need is exponent order. -/
 theorem canonical_v_le_of_exponents {N : Mat} {τ : Valn} (hC : Cons N τ) (hG : Good3 N τ)
     {p a b : Nat} (ha : a < N.length) (hb : b < N.length)
