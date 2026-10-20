@@ -4010,3 +4010,15 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - t = 2: T2VAncStep（n = 2, 3 の行 1 のすべての辺）、道の段の T2VRAK KAG（KA・KG）、種の残り（qr の w1・dom、sv の strict・lhd、qn の dom1・dom2・形・反復 k = 1..3、C の decP・lhd・dom1・strict）、T2SeedClV2B の測れる欄。
 - 失敗したのは今の残りより強い古い形だけ（TrigS・AbsSR・BumpAbsS・qn の vraAllU）。今の残りの反例ではない。
 - 測っていないもの: T2CBadOut（直接の probe がない）、n ≥ 4 と k ≥ 4（有限の場合だけ）。
+
+### HSeedV2 の中身を測った（2026-10-21、lead）
+
+- 使う側は t = 1、q = r の種の 2 か所だけ（seedOK_of_lhd_below・seedOK_of_small_below）。要るのは a′ ≤ μ = v(r) での「comps a′ 種 の成分 g は g < b + 種」（b = qrB）。
+- 実測（13 集合と std_a の 1 列足し、SeedR の場面 約 100 万、例外なし）:
+  - b = 0（r の数える子は x だけ。M.take x では r に数える子がない）。
+  - 種 = Ω_{V+1}（V = r の行 1 の親の値。引数は 0）。
+  - g < 種（b は要らない）。v′(r) = V + 1 は SmallSelf。
+- 種が Ω_{w′} の弱い場合は、使う側に SmallSelf w′ があるので HSeedV2 なしで出る（comps_mono で comps a′ ⊆ comps 0）。HSeedV2 が本当に要るのは種 ◁ o(r) の場合だけ。
+- SmallSelf(V + 1) は一般の列では偽（V = ψ_0(Ω_{Ω_1}) が 85 列）。そのような V の下で 1〜2 列足して作った SeedR の場面 695 行列（V が小さくないもの 6）でも反例はない。前件の isOT(ψ_{a′}(Ω_{μ+1})) が、V の大きい成分が見える段 a′ を外している（V = ψ_0(Ω_{Ω_1}) なら a′ = 0 は外れ、a′ > 0 では comps a′ V = []）。
+- 証明の見通し: 「V の段 a′ の成分 g で g < Ω_{μ+1}（μ = V + W）なら g < Ω_{V+1}」が要る。可算な添字 t ∈ (V, V + W] が V の成分に出ないこと（Buchholz の C 集合の性質）に当たり、項の補題としては重い。
+- 測定: tmp/claude/seedsplit*.py・seedr_hunt*.py。
