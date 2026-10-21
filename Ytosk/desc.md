@@ -4033,3 +4033,16 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 弱い始点 Ω_{w′} の場合は、使う側にある SmallSelf w′ から直接出す。
 - 組み込み: qr_final3 の仮定 hcs を外し、V3QRFinal4・V3Inv2・V3ExpInv2 と t1 の呼び出しから受け渡しを消した。Res3AW の欄 seed と最上位の仮定 HSeedV2 を外した。最上位の残りは 13 → 12。
 - 実測の裏づけ: 作った項（大きさ 5 まで）で 176 万件、危ない添字（SubSmall が偽になる添字 62 個）で 2.3 万件、例外 0。
+
+### T2SeedQNDom の段 V の欄を外した（2026-10-21、lead、V3T2SeedQNK）
+
+- T2SeedQNDom の第 2 欄（段 V で s′ の成分は Ω_{s′} 以下か B 以下）は、ほかの残りから出る（`t2SeedQNDom_of1`）。
+  - Lc ≠ [] のとき: 第 1 欄を u = V で使う。V は自分の段に成分を持たない（`comps_self`）ので、成分は 0 か B 以下。
+  - Lc = [] のとき: T2SeedQNBase の欄から、段 V の成分は X₁ = Ω_{t₁} より小さく、t₁ ≤ s′。よって Ω_{s′} 以下。
+- 最上位の残り T2SeedDomV2B の qn の欄は、第 1 欄だけの `T2SeedQNDom1` になった。`t2SeedDomV2_of_B` は T2SeedPResRCV2B（t₁ があること）も受ける。全体ビルド緑（1066 jobs）。
+- 測定（tmp/claude/qndom_split.py、Cprime・d3s）: 段 V の成分は、Lc ≠ [] ではいつも 0 か B 以下、Lc = [] ではいつも Ω_{s′} 以下。
+- 第 1 欄（すべての段 u ≤ V）について分かったこと（tmp/claude/qndom_vq.py・ntsub2.py）:
+  - M の枠 (r, Lc, q) は Lc ≠ [] のとき、測った範囲ではいつも書き換えない（B ≥ y_q）。なので M の FrameClosed・VSmallRAll はこの枠には使えない。
+  - s′ = V + ω^S と v(q) = V + ω^{S+1} の成分: s′ の成分は V の成分か、v(q) の成分以下（例外 0。項の補題になるはず）。
+  - すべての標準形のすべての枠で、最初でない数える子 c の添字 v(c) の成分は、すべての段 u ≤ v(k) で 0・前の状態 B 以下・v(k) の成分以下（std_a・d3s・Cprime・ext1 で例外 0）。最初の子では偽（ext1 に 1 件など）。この性質を値の不変条件として運べば第 1 欄は出る見込み。
+  - 並んだ兄弟 c′, c で「v(c) の成分は v(c′) の成分以下」は偽（std_a 5 件、ext1 2 件）。

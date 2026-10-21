@@ -181,19 +181,59 @@ theorem t2SeedCDom_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
   obtain ⟨_, _, _, _, -, -, -, -, -, -, -, -, hcl⟩ := hB τ hτ X hX
   exact le_of_lt (hcl _ (Or.inl rfl) (lt_irrefl' _) g (List.mem_append_right _ hg))
 
-/-- **Residual (t2): `T2SeedDomV2` with the C part reduced to `T2SeedCDom1`.** -/
+/-! ## T2SeedQNDom の段 V の欄は第 1 欄と T2SeedQNBase から -/
+
+/-- **The residual `T2SeedQNDom` without its level-`V` field**: with `Lc ≠ []`, at every level `u ≤ V` the
+components of `s′` are `0`, below `B` or below a component of `V`. -/
+def T2SeedQNDom1 (M : Mat) (ρ : Valn) (r L q : Nat) (Lc : List Nat) : Prop :=
+  Lc ≠ [] → ∀ u, ¬ lt (ρ.v r) u = true → ∀ g ∈ comps u (qnS M ρ r L q),
+    g = z ∨ g ≤ t2B (ρ.v r) ρ Lc ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d
+
+/-- **`T2SeedQNDom` from its first field and `T2SeedQNBase`.** The level-`V` field: with `Lc ≠ []` it is the
+first field at `u = V` (`V` has no components at its own level); with `Lc = []` the components of `s′` at the level
+`V` are below `X₁ = Ω_{t₁}` and `t₁ ≤ s′`. -/
+theorem t2SeedQNDom_of1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {r L q : Nat}
+    {Lc : List Nat} (hlen : r + L + 1 = M.length) (h1 : T2SeedQNDom1 M ρ r L q Lc)
+    (hB : T2SeedQNBase M ρ r L q Lc)
+    (hP : ∀ τ, Cons (M.take (r + L)) τ → ∃ t1,
+      spArg (τ.v r) z (sumN ((CL (M.take (r + L)) r).map τ.o)) = app (t2B (ρ.v r) ρ Lc) (psi t1 z z)) :
+    T2SeedQNDom M ρ r L q Lc := by
+  refine ⟨h1, fun g hg => ?_⟩
+  by_cases hL : Lc = []
+  · subst hL
+    have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+    rw [show M.length - 1 = r + L by omega] at hcnt
+    have hC0 := cons_of_rk (rk_take (by omega) I.rank hcnt)
+    obtain ⟨t1, ht1⟩ := hP _ hC0
+    obtain ⟨-, hcV, hts, -⟩ := hB _ hC0 t1 ht1
+    have hBz : app (t2B (ρ.v r) ρ []) (psi t1 z z) = psi t1 z z := rfl
+    have hle : psi t1 z z ≤ psi (qnS M ρ r L q) z z := by
+      rcases (le_iff _ _).mp (hts rfl) with h5 | h5
+      · exact psi_le_psi_of (Or.inl h5)
+      · rw [h5]
+    left
+    have := hcV g hg; rw [hBz] at this; exact le_trans (le_of_lt this) hle
+  · rcases h1 hL (ρ.v r) (lt_irrefl' _) g hg with h | h | ⟨d, hd, _⟩
+    · left; rw [h]; exact z_le _
+    · exact Or.inr h
+    · rw [comps_self (I.good.ot_v r (by omega))] at hd; simp at hd
+
+/-- **Residual (t2): `T2SeedDomV2` with the qn part reduced to `T2SeedQNDom1` and the C part to `T2SeedCDom1`.** -/
 def T2SeedDomV2B : Prop :=
   ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     (∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
-      ∀ Lc, CL M r = Lc ++ [q] → T2SeedQNDom M ρ r L q Lc) ∧
+      ∀ Lc, CL M r = Lc ++ [q] → T2SeedQNDom1 M ρ r L q Lc) ∧
     (∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
       (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCDom1 M ρ r L q)
 
-theorem t2SeedDomV2_of_B (hCl : T2SeedClV2B) (h : T2SeedDomV2B) : T2SeedDomV2 := by
+theorem t2SeedDomV2_of_B (hCl : T2SeedClV2B) (hPB : T2SeedPResRCV2B) (h : T2SeedDomV2B) : T2SeedDomV2 := by
   intro M ρ rk C hz h2
   obtain ⟨hQ, hC1⟩ := h M ρ rk C hz h2
-  refine ⟨hQ, fun r L q hlen hr hq hqr hncl => ?_⟩
-  exact t2SeedCDom_of (Inv3W.ofV2 C.S C.I) (by omega) (hC1 r L q hlen hr hq hqr hncl)
-    ((hCl M ρ rk C hz h2 r L hlen hr).2.2 q hq hqr hncl)
+  refine ⟨fun r L q hlen hr hq hqr Lc hCL => ?_, fun r L q hlen hr hq hqr hncl => ?_⟩
+  · exact t2SeedQNDom_of1 (Inv3W.ofV2 C.S C.I) hlen (hQ r L q hlen hr hq hqr Lc hCL)
+      ((hCl M ρ rk C hz h2 r L hlen hr).1 q Lc hq hqr hCL)
+      (fun τ hτ => let ⟨t1, he, _⟩ := (hPB M ρ rk C hz h2).qn r L q hlen hr hq hqr Lc hCL τ hτ; ⟨t1, he⟩)
+  · exact t2SeedCDom_of (Inv3W.ofV2 C.S C.I) (by omega) (hC1 r L q hlen hr hq hqr hncl)
+      ((hCl M ρ rk C hz h2 r L hlen hr).2.2 q hq hqr hncl)
 
 end Ytosk
