@@ -91,11 +91,6 @@ theorem qr_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L d
     (hq : par M 0 (r + L) = some r)
     (R : DropRes M (r + L) ρ (drop1 M (r + L) rk))
     (I1 : Inv3V2 (M.take (r + L)) (drop1 M (r + L) rk) rk)
-    (hcs : lt (sf ((drop1 M (r + L) rk).v r)) (ρ.v r) = true →
-      ∀ a', ¬ lt (ρ.v r) a' = true →
-      isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
-      ∀ g ∈ comps a' ((drop1 M (r + L) rk).o r),
-        g < app (qrB M ρ r (r + L)) ((drop1 M (r + L) rk).o r))
     (hPs : ExpStepT1 (fun N σ => ∃ rkN, Inv3V2 N σ rkN) M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (TRIO.gexp M r L d0 0 n) ρN rkN ∧
       isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧
@@ -104,7 +99,7 @@ theorem qr_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L d
   obtain ⟨ρN, _, _, _, _, ⟨rkN, IN⟩, hot, hlt⟩ :=
     qr_final4S hlen hL hd0e S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00
       h1 hx2 hq I.cons I.good I.rank I.vs I.fc I.fo R.argT I.kd I.td R.ab R.ws R.vst R.ua
-      I.tp1w I.tplow I.auwl I.auw0 I.adw I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP hcs
+      I.tp1w I.tplow I.auwl I.auw0 I.adw I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
       (fun N σ => ∃ rkN, Inv3V2 N σ rkN) ⟨rk, I1⟩ hPs n hn
   exact ⟨ρN, rkN, IN, hot, hlt⟩
 

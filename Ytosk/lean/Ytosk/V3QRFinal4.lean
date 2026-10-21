@@ -10,7 +10,7 @@
 - hLs0: 引き上げのない列は A の対角化の点の下（`qr_diag0`）で、a ≠ A（`qr_lastNA`）。よって a は自分自身の
   点でなく、TPLoN と 1 ≤ seed から。
 - hADs0: 同じく W ≠ A（`qr_lastNA` の v の最後の項）で W は自分自身の点でなく、AbsDN と 1 ≤ seed から。
-残る q = r に固有の仮定は hcs（添字が μ より小さい始点の成分は始点より小さい）だけ。
+始点の成分の条件 hcs は ◁ から出る（`SeedComps.seed_comps_lt`、2026-10-21）ので、q = r に固有の仮定は残らない。
 -/
 import Ytosk.V3QRSmall
 
@@ -81,7 +81,7 @@ theorem notNode_of_diag {μ br t : T} (hD : DiagAt μ br μ t) (hne : t ≠ psi 
   | arg _ _ hDb => rw [DiagAt.cof_omega hDb] at hcb; cases hcb
   | sub _ _ _ => simp [cof] at hcb
 
-/-- **`t = 1`, `q = r`, all `n ≥ 2`**, with only `hcs` left among the seed conditions. -/
+/-- **`t = 1`, `q = r`, all `n ≥ 2`**, with no seed condition left (`hcs` follows from `◁`). -/
 theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
@@ -102,11 +102,6 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     (hTP1 : TP1C M ρ) (hTO : TrigOmC M ρ) (hTPN : TPLoN M ρ) (hADN : AbsDN M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- the seed
-    (hcs : lt (sf ((drop1 M (r + L) rkM).v r)) (ρ.v r) = true →
-      ∀ a', ¬ lt (ρ.v r) a' = true →
-      isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
-      ∀ g ∈ comps a' ((drop1 M (r + L) rkM).o r),
-        g < app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
     (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
       Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
@@ -280,7 +275,7 @@ theorem qr_final4 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) → q < fsD (last (ρ.v k)) seed :=
     fun i k _ _ hu _ hO hc q hq hlt => lt_of_lt_of_le (hAU' i k hu hO hc q hq hlt) (fsD_mono_eta hO h1s)
   exact qr_final3 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hVS hF hFO
-    hArgT hKD hTD hAbs hWS hVSt hUA hTP hTPL hAUL hAD' hsM hpM hTP1 hYBs hcs hADs0 hAUs0 hLs0 Pn hP1 hPs
+    hArgT hKD hTD hAbs hWS hVSt hUA hTP hTPL hAUL hAD' hsM hpM hTP1 hYBs hADs0 hAUs0 hLs0 Pn hP1 hPs
 
 
 /-- **AbsUW at the seed** (the index `0` of `AbsUWL`; t1-exp の auws.py で測る): in the last-column frame
@@ -324,11 +319,6 @@ theorem qr_final4_seed {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h
       lt (preState M ρ i L') (app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r)) = true) (hTPN : TPLoN M ρ) (hADN : AbsDN M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- the seed
-    (hcs : lt (sf ((drop1 M (r + L) rkM).v r)) (ρ.v r) = true →
-      ∀ a', ¬ lt (ρ.v r) a' = true →
-      isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
-      ∀ g ∈ comps a' ((drop1 M (r + L) rkM).o r),
-        g < app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
     (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
       Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
@@ -472,7 +462,7 @@ theorem qr_final4_seed {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (h
       rw [show M.length - 1 = r + L by omega] at h
       exact h r μ b h1 hq hx2 hro i k hi hv hu hd hO hc qq hqq hlt
   exact qr_final3 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hVS hF hFO
-    hArgT hKD hTD hAbs hWS hVSt hUA hTP hTPL hAUL hAD' hsM hpM hTP1 hYBs hcs hADs0 hAUs0 hLs0 Pn hP1 hPs
+    hArgT hKD hTD hAbs hWS hVSt hUA hTP hTPL hAUL hAD' hsM hpM hTP1 hYBs hADs0 hAUs0 hLs0 Pn hP1 hPs
 
 /-- **`qr_final4` with `AbsUWL`・`AbsUW0`** in place of `AbsUW` (false on T2Ext), for the Inv3V redesign. -/
 theorem qr_final4L {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
@@ -495,11 +485,6 @@ theorem qr_final4L {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 
     (hTP1 : TP1C M ρ) (hTO : TrigOmC M ρ) (hTPN : TPLoN M ρ) (hADN : AbsDN M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- the seed
-    (hcs : lt (sf ((drop1 M (r + L) rkM).v r)) (ρ.v r) = true →
-      ∀ a', ¬ lt (ρ.v r) a' = true →
-      isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
-      ∀ g ∈ comps a' ((drop1 M (r + L) rkM).o r),
-        g < app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
     (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
       Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
@@ -552,7 +537,7 @@ theorem qr_final4L {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 
     | psi a c d => exact T.z_lt_psi a c d
   exact qr_final4_seed hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00
     h1 hx2 hq hC hG hRM hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA
-    hTP hTPL hAU' hAU0 hAD' hTP1 hYBs hTPN hADN hsM hpM hcs Pn hP1 hPs
+    hTP hTPL hAU' hAU0 hAD' hTP1 hYBs hTPN hADN hsM hpM Pn hP1 hPs
 
 /-- The seed trigger of Inv3V2, without the false global TrigOmC. -/
 theorem qr_final4S {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
@@ -575,11 +560,6 @@ theorem qr_final4S {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 
     (hTP1 : TP1C M ρ) (hTS : TrigS0 M ρ rkM) (hTPN : TPLoN M ρ) (hADN : AbsDN M ρ)
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- the seed
-    (hcs : lt (sf ((drop1 M (r + L) rkM).v r)) (ρ.v r) = true →
-      ∀ a', ¬ lt (ρ.v r) a' = true →
-      isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
-      ∀ g ∈ comps a' ((drop1 M (r + L) rkM).o r),
-        g < app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
     (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
       Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
@@ -606,6 +586,6 @@ theorem qr_final4S {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 
     simpa only [hlast] using h
   exact qr_final4_seed hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00
     h1 hx2 hq hC hG hRM hVS hF hFO hArgT hKD hTD hAbs hWS hVSt hUA
-    hTP hTPL hAU' hAU0 hAD' hTP1 hYBs hTPN hADN hsM hpM hcs Pn hP1 hPs
+    hTP hTPL hAU' hAU0 hAD' hTP1 hYBs hTPN hADN hsM hpM Pn hP1 hPs
 
 end Ytosk

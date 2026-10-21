@@ -4,12 +4,13 @@
 落とす補題（`drop_all`、仮定は t1 の `t1_main_final` と同じ）から:
 - seed = o_{M[1]}(r) < A（D の狭義の降下 `dep_strict0`）、seed ◁ A（PO の 2 つ目の場合は A = Ω_w の形なので起きない）。
 - spArg(μ, b, seed) = b + seed（`spArg_seed`）。
-- SeedOK: seed の添字が μ なら `seedOK_of_lhd_top`、μ より小さいなら ◁ と段 a′ の成分の条件 hcs（comps_a の形）から `seedOK_of_lhd_below`。
+- SeedOK: seed の添字が μ なら `seedOK_of_lhd_top`、μ より小さいなら ◁ と段 a′ の成分の条件から `seedOK_of_lhd_below`。
+  成分の条件は ◁ から出る（`SeedComps.seed_comps_lt`、2026-10-21）。弱い始点 Ω_{w′} では SmallSelf w′ から。
   （2026-10-02: 以前の hcs「始点の成分はすべて始点より小さい」は標準形で偽。弱めた。）
 - 始点の (L)(ii): 仮定 hLs0（V3QRFinal4 で TPLoN から）。
 - y = b_r の書き換えの枠の (W)（B < b + ζ）: 鎖の 2 項目以降は TP1（t1 の不変条件、η = ψ_μ(1)）から。
 残る仮定（q = r に固有、どれも始点が ψ_μ(1) より小さい場合（b = 0）か添字が μ より小さい場合だけ）:
-hYBs（始点で B < b + seed）、hcs（始点の成分は始点より小さい）、hLs0（始点での (L)(ii)）、
+hYBs（始点で B < b + seed）、hLs0（始点での (L)(ii)）、
 hADs0（添字 0 ののりしろの枠の吸収を始点で）。
 -/
 import Ytosk.V3QRSeed
@@ -18,6 +19,7 @@ import Ytosk.V3MainT1F
 import Ytosk.V3DropPres
 import Ytosk.V3TrigSeed
 import Ytosk.V3QRWeak
+import Ytosk.V3SeedComps
 
 namespace Ytosk
 
@@ -60,11 +62,6 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       lt (preState M ρ i L') (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) = true →
       lt (psi (ρ.v i) z z) (psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
       lt (preState M ρ i L') (app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r)) = true)
-    (hcs : lt (sf ((drop1 M (r + L) rkM).v r)) (ρ.v r) = true →
-      ∀ a', ¬ lt (ρ.v r) a' = true →
-      isOT (psi a' (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
-      ∀ g ∈ comps a' ((drop1 M (r + L) rkM).o r),
-        g < app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
     (hADs0 : ∀ i, i < r + L →
       DepX M (r + L) false i → entry M 2 i ≠ 0 →
       dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
@@ -169,8 +166,9 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       · -- the subscript is below `μ`
         apply seedOK_of_lhd_below ha' hsot hsμ
         · rw [← hro, ← hs1']; exact hlhd
-        · have h := hcs hsμ a' ha' hot'
-          rw [hs1'] at h; exact h
+        · have hl2 : Lhd z (psi s1 σ1 z) (psi μ (app b (psi (succ μ) z z)) z) := by
+            rw [← hro, ← hs1']; exact hlhd
+          exact SeedComps.seed_comps_lt hl2 hsμ ha' hot'
       · -- the subscript is `μ`
         rw [hsμ] at hsot ⊢
         have hl' : Lhd z (psi μ σ1 z) (psi μ (app b (psi (succ μ) z z)) z) := by
@@ -180,9 +178,19 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
       have hs1w : s1 = w' := by
         have h := hs1'.symm.trans hw'
         simp only [psi.injEq] at h; exact h.1
-      have hsμ : lt s1 (ρ.v r) = true := by rw [hs1w]; exact hwμ
-      have hca := hcs hsμ a' ha' hot'
-      rw [hw'] at hca ⊢
+      have hca : ∀ g ∈ comps a' (psi w' z z), g < app b (psi w' z z) := by
+        intro g hg
+        have hOm : psi w' z z < psi (succ μ) z z :=
+          psi_lt_psi_z_iff.mpr (Or.inl (lt_trans hwμ (lt_succ_self μ)))
+        have hle := le_app_of_allGe hOm hb
+        by_cases hwa : w' < a'
+        · simp [comps, (lt_iff_lt _ _).mp hwa] at hg
+        · rw [comps_psi_z_of_ge hwa] at hg
+          rcases List.mem_cons.mp hg with rfl | hg
+          · exact lt_of_lt_of_le (T.z_lt_psi _ _ _) hle
+          · have hg' : g ∈ comps a' w' := by simpa [comps] using hg
+            exact lt_of_lt_of_le (hsm g (comps_mono (z_le a') hg')) hle
+      rw [hw']
       have hsotw : isOT (psi w' z z) = true := by rw [← hw']; exact hsing.1
       exact seedOK_of_small_below hb hsotw hwμ hsm hca
   -- the (L)(ii) at the seed

@@ -66,18 +66,13 @@ def HSeedV2 : Prop :=
 def HAbSV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk → AbsSR M ρ
 
-/-- **`Res3A` without the strong absorption** (`drop`, `seed`): the context of the steps (2026-10-17). -/
+/-- **`Res3A` without the strong absorption** (`drop`; the seed condition follows from `◁`, `SeedComps.seed_comps_lt`,
+2026-10-21): the context of the steps (2026-10-17). -/
 structure Res3AW (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   drop : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
-  seed : ∀ r, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
-    lt (sf ((drop1 M (M.length - 1) rk).v r)) (ρ.v r) = true →
-    ∀ a', ¬ lt (ρ.v r) a' = true →
-    isOT (psi a' (app (qrB M ρ r (M.length - 1)) (psi (succ (ρ.v r)) z z)) z) = true →
-    ∀ g ∈ comps a' ((drop1 M (M.length - 1) rk).o r),
-      g < app (qrB M ρ r (M.length - 1)) ((drop1 M (M.length - 1) rk).o r)
 
 theorem Res3A.toAW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (R : Res3A M ρ rk) : Res3AW M ρ rk :=
-  ⟨R.drop, R.seed⟩
+  ⟨R.drop⟩
 
 /-! ## 1 列落とし -/
 

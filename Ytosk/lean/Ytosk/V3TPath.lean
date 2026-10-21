@@ -174,8 +174,7 @@ theorem inv3V_N_t1Pa {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
     have := anc0_e0_lt hA (by omega); omega
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
   have hdr := R.drop
-  have hsd := R.seed
-  rw [show M.length - 1 = r + L by omega] at hdr hsd
+  rw [show M.length - 1 = r + L by omega] at hdr
   have hVI : ValInv M ρ := ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩
   have V1 := valInv_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank hVI hdr
   have hx0 : entry M 0 (r + L) ≠ 0 := by
@@ -212,7 +211,7 @@ theorem inv3V_N_t1Pa {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
     obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=
       qr_final4 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2 hq
         I.cons I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.ad I.tp1w
-        I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (hsd q hr hq) (fun N σ => PT1C M q ρ N σ)
+        I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (fun N σ => PT1C M q ρ N σ)
         hP1 hPs n hn
     exact ⟨ρN, rkN, inv3V_of_PT1C hCN hRN hGN hPN (hFr n ρN rkN hn hRN hCN hGN hPN.2.2.1.1 hPN.2.2.1.2
       hPN.2.2.2.2.2.2.2.2.1.2 hPN.2.2.2.2.2.2.2.1),

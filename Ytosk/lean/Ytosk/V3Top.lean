@@ -512,7 +512,7 @@ theorem desc_step (hU0 : OldUpgAbs) {M : Mat} {ρ : Valn} {rk : Bool → Nat →
     have hsd := R.seed
     have hrx : r < M.length - 1 := par_lt M 1 _ r hr
     obtain ⟨L, hL⟩ : ∃ L, M.length - 1 = r + L := ⟨M.length - 1 - r, by omega⟩
-    rw [hL] at hexp hr hx2 hdr hsd
+    rw [hL] at hexp hr hx2 hdr
     simp only [Nat.add_sub_cancel_left] at hexp
     have hlen : r + L + 1 = M.length := by omega
     have hL0 : 0 < L := by omega
@@ -550,7 +550,7 @@ theorem desc_step (hU0 : OldUpgAbs) {M : Mat} {ρ : Valn} {rk : Bool → Nat →
           qr_final4 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2 hq
           I.cons I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua
           I.ad I.tp1w
-          I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (hsd q hr hq) (fun N σ => FrameOT N σ ∧ RootP N σ ∧ BumpDec N σ)
+          I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (fun N σ => FrameOT N σ ∧ RootP N σ ∧ BumpDec N σ)
           ⟨(valInv_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
             ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr).fo, rootP_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r01 I.r12 I.e00
             (by have := anc0_interval hA (q + L) (by omega) (Nat.le_refl _); omega) I.cons I.rank

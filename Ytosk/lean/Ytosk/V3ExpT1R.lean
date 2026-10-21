@@ -316,8 +316,7 @@ theorem vsmallR_gexp_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
     have := anc0_e0_lt hA (by omega); omega
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
   have hdr := R.drop
-  have hsd := R.seed
-  rw [show M.length - 1 = r + L by omega] at hdr hsd
+  rw [show M.length - 1 = r + L by omega] at hdr
   have hVI : ValInv M ρ := ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩
   have V1 := valInv_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank hVI hdr
   have hcnt := hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat
@@ -336,7 +335,7 @@ theorem vsmallR_gexp_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
     obtain ⟨ρN, rkN, hCN, hRN, _, hPN, _, _⟩ :=
       qr_final4 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2 hq
         I.cons I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.ad I.tp1w
-        I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (hsd q hr hq)
+        I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP
         (fun N σ => VrLe q ρ N σ ∧ VSmallR N σ) hP1 hPs n hn
     exact ⟨ρN, rkN, hCN, hRN, hPN.2⟩
   · obtain ⟨s0, y0, h0⟩ := o_psi_form I.cons (show r < M.length by omega)
