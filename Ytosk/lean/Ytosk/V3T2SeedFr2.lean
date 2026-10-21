@@ -20,8 +20,8 @@ they are `0`, below `X₁` or components of `V`; at the level `V` they are below
 （実測: 9 集合で例外 0）. -/
 def T2SeedCDom (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
   ∀ τ, Cons (M.take (r + L)) τ →
-    (t2X1 M r L τ ≠ z → ∀ u, ¬ lt (ρ.v r) u = true → ∀ g ∈ comps u (qnS M ρ r L q),
-      g = z ∨ g ≤ t2X1 M r L τ ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d) ∧
+    (t2X1 M r L τ ≠ z → ∀ k, t2X1 M r L τ ∈ cutsPNSG (qnS M ρ r L q)
+      (sh (ρ.v r) (qnS M ρ r L q) (shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ) k))) ∧
     ∀ g ∈ comps (ρ.v r) (qnS M ρ r L q), g ≤ psi (qnS M ρ r L q) z z ∨ g ≤ t2X1 M r L τ
 
 /-! ## sv -/
@@ -474,13 +474,12 @@ theorem seed_frames_C3 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     · obtain ⟨hin, hEn⟩ := hX1n hX0
       rw [hin] at hot ⊢
       rw [hin] at ht
-      refine frameDom_of_kind hot
-        (seed_kind hVot hs'ot hVs' hX1ot (isOT_shIt hVot hs'ot hVs' hX1ot (n - 2)) hBhi hFx hEn ht.1) ?_
-      intro u hu g hg
-      rcases (hDom τ0 hC0).1 hX0 u hu g hg with h | h | h
-      · exact Or.inl h
-      · exact Or.inr (Or.inl h)
-      · exact Or.inr (Or.inr (Or.inr h))
+      have hshall := allGe_sh hVot hs'ot hVs' (isOT_shIt hVot hs'ot hVs' hX1ot (n - 2))
+        (seedExt_allGe hVot hs'ot hVs' hBhi hEn)
+      have hsp := (split_all_hi hshall).1
+      refine frameDom_of_cutP hot (fun u hu h' => hu (T.lt_trans' hVs' h')) ?_ ?_
+      · rw [hsp]; exact (hDom τ0 hC0).1 hX0 (n - 2)
+      · rw [hsp]; exact allGe_mono (om_le_succ hVot hs'ot hVs' s') hshall
   · -- FrameClosed, the frame of `q`
     refine hfrq ⟨hGN.ot_o _ hxN, ?_⟩
     rw [hy0, hvq]

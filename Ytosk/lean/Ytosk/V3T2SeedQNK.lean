@@ -165,11 +165,13 @@ theorem t2VRAQNDom0_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : In
 
 /-! ## T2SeedCDom の段 V の欄は T2SeedCBase から -/
 
-/-- **The residual `T2SeedCDom` without its level-`V` field** (that field comes from `T2SeedCBase`). -/
+/-- **The residual `T2SeedCDom` without its level-`V` field** (2026-10-21): `X₁` is a cut of every `σ^{k+1} X₁` at a
+position whose subscript starts with `s′` (`cutsPNSG`). FrameDom at the C seed frame then needs no condition on the
+components of `s′` (`frameDom_of_cutP`). The earlier form (all levels `u ≤ V`: the components of `s′` are `0`, below `X₁`
+or below a component of `V`) is false on standard matrices (expP's t = 2 one-column extensions, 28). -/
 def T2SeedCDom1 (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
-  ∀ τ, Cons (M.take (r + L)) τ →
-    t2X1 M r L τ ≠ z → ∀ u, ¬ lt (ρ.v r) u = true → ∀ g ∈ comps u (qnS M ρ r L q),
-      g = z ∨ g ≤ t2X1 M r L τ ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d
+  ∀ τ, Cons (M.take (r + L)) τ → t2X1 M r L τ ≠ z → ∀ k, t2X1 M r L τ ∈ cutsPNSG (qnS M ρ r L q)
+    (sh (ρ.v r) (qnS M ρ r L q) (shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ) k))
 
 theorem t2SeedCDom_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {r L q : Nat}
     (hrM : r < M.length) (h1 : T2SeedCDom1 M ρ r L q) (hB : T2SeedCBase M ρ r L q) : G.T2SeedCDom M ρ r L q := by
