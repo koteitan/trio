@@ -36,6 +36,26 @@ theorem frameDom_prefix {a B s R : T}
     · exact ⟨C, List.mem_cons_self .., le_trans h (le_of_lt hOC)⟩
     · exact ⟨d, List.mem_cons_of_mem _ (List.mem_append_right _ hd), hgd⟩
 
+/-- **`frameDom_prefix` with the components of `B` as a further bound**: every `C ∈ (B, B + R]` starts with
+`B`, so the components of `B` are components of `C`. -/
+theorem frameDom_prefixB {a B s R : T}
+    (hsa : ∀ u, ¬ lt a u = true → ∀ g ∈ comps u s, g = z ∨ g ≤ B ∨ g ≤ psi s z z ∨
+      (∃ d ∈ comps u B, g ≤ d) ∨ ∃ d ∈ comps u a, g ≤ d) :
+    FrameDom a B s (app B R) := by
+  intro u hu C hBC hOC hCX g hg
+  obtain ⟨c0, hc0, _, _⟩ := between_app (A := B) (x := z) (y := R) (c := C)
+    (by rw [app_z_right]; exact hBC) hCX
+  have hBC' : ∀ d ∈ comps u B, d ∈ comps u C := by
+    intro d hd; rw [hc0, comps_app]; exact List.mem_append_left _ hd
+  rcases hg with hg | hg
+  · exact ⟨g, List.mem_cons_of_mem _ (List.mem_append_left _ (hBC' g hg)), le_refl _⟩
+  · rcases hsa u hu g hg with h | h | h | ⟨d, hd, hgd⟩ | ⟨d, hd, hgd⟩
+    · subst h; exact ⟨C, List.mem_cons_self .., z_le _⟩
+    · exact ⟨C, List.mem_cons_self .., le_trans h (le_of_lt hBC)⟩
+    · exact ⟨C, List.mem_cons_self .., le_trans h (le_of_lt hOC)⟩
+    · exact ⟨d, List.mem_cons_of_mem _ (List.mem_append_left _ (hBC' d hd)), hgd⟩
+    · exact ⟨d, List.mem_cons_of_mem _ (List.mem_append_right _ hd), hgd⟩
+
 /-- **FrameDom of a first frame** (`B = 0`) when the head subscript of `H` starts with `s`: every
 `C ∈ (Ω_s, H]` has a head subscript `s + w₀`, so the components of `s` are components of `C`. -/
 theorem frameDom_first {a s Hx X : T} (has : a ≤ s) (hX : lev Hx = app s X) :
@@ -223,11 +243,13 @@ theorem frameDom_self {a B X : T} (hB : ∀ u, ¬ lt a u = true → comps u B = 
 /-! ## qn -/
 
 /-- **The residual of the qn seed frames**: the components of `s′ = v_N(q)` at the levels `u ≤ V`. With a
-state before `q` (`Lc ≠ []`) they are `0`, below `B` or components of `V`; at the level `V` they are below `Ω_{s′}` or `B`
+state before `q` (`Lc ≠ []`) they are `0`, below `B`, below `Ω_{s′}`, below a component of `B` or below a component of `V`
+(2026-10-21: the form without the components of `B` is false on a standard matrix; FrameDom only needs this one); at the level `V` they are below `Ω_{s′}` or `B`
 （実測: 9 集合で例外 0）. -/
 def T2SeedQNDom (M : Mat) (ρ : Valn) (r L q : Nat) (Lc : List Nat) : Prop :=
   (Lc ≠ [] → ∀ u, ¬ lt (ρ.v r) u = true → ∀ g ∈ comps u (qnS M ρ r L q),
-    g = z ∨ g ≤ t2B (ρ.v r) ρ Lc ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d) ∧
+    g = z ∨ g ≤ t2B (ρ.v r) ρ Lc ∨ g ≤ psi (qnS M ρ r L q) z z ∨
+      (∃ d ∈ comps u (t2B (ρ.v r) ρ Lc), g ≤ d) ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d) ∧
   ∀ g ∈ comps (ρ.v r) (qnS M ρ r L q), g ≤ psi (qnS M ρ r L q) z z ∨ g ≤ t2B (ρ.v r) ρ Lc
 
 open Classical in
@@ -441,12 +463,7 @@ theorem seed_frames_qn3 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       show FrameDom (ρ.v r) (t2B (ρ.v r) ρ Lc) _ _
       rw [hB, app_z]
       exact frameDom_first (le_of_lt hVs') (by rw [lev_psi, hX])
-    · apply frameDom_prefix
-      intro u hu g hg
-      rcases hDom.1 hL0 u hu g hg with h | h | h
-      · exact Or.inl h
-      · exact Or.inr (Or.inl h)
-      · exact Or.inr (Or.inr (Or.inr h))
+    · exact frameDom_prefixB (hDom.1 hL0)
   · -- FrameClosed, the frame of `q`: the child's subscript is `v(q)`
     refine hfrq ⟨hGN.ot_o _ hxN, ?_⟩
     rw [hy0, hvq]

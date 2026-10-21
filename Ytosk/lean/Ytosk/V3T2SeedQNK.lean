@@ -129,18 +129,16 @@ def T2VRAQNDom0 (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
   ∀ u, LevAt M ρ r u → ¬ lt (ρ.v r) u = true → ∀ g ∈ comps u (qnS M ρ r L q),
     g ≤ psi (qnS M ρ r L q) z z ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d
 
-/-- **`T2VRAQNDom` from `T2SeedQNDom` (`Lc ≠ []`, every level) and `T2VRAQNDom0` (`Lc = []`).** -/
-theorem t2VRAQNDom_of {M : Mat} {ρ : Valn} {r L q : Nat} {Lc : List Nat} (hD : T2SeedQNDom M ρ r L q Lc)
+/-- **`T2VRAQNDom` from its `Lc ≠ []` part and `T2VRAQNDom0` (`Lc = []`).** -/
+theorem t2VRAQNDom_of {M : Mat} {ρ : Valn} {r L q : Nat} {Lc : List Nat}
+    (hD : Lc ≠ [] → T2VRAQNDom M ρ r L q Lc)
     (h0 : Lc = [] → T2VRAQNDom0 M ρ r L q) : T2VRAQNDom M ρ r L q Lc := by
   intro u hu hVu g hg
   by_cases hL : Lc = []
   · rcases h0 hL u hu hVu g hg with h | h
     · exact Or.inl h
     · exact Or.inr (Or.inr h)
-  · rcases hD.1 hL u hVu g hg with h | h | h
-    · left; rw [h]; exact z_le _
-    · exact Or.inr (Or.inl h)
-    · exact Or.inr (Or.inr h)
+  · exact hD hL u hu hVu g hg
 
 /-- **`T2VRAQNDom0` from `T2SeedQNBase` with `Lc = []`**: `X₁ = Ω_{t₁}` with `t₁ ≤ s′`, and the components of `s′` at the
 level `V` and the path levels are below `X₁`. -/
@@ -183,14 +181,19 @@ theorem t2SeedCDom_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv
 
 /-! ## T2SeedQNDom の段 V の欄は第 1 欄と T2SeedQNBase から -/
 
-/-- **The residual `T2SeedQNDom` without its level-`V` field**: with `Lc ≠ []`, at every level `u ≤ V` the
-components of `s′` are `0`, below `B` or below a component of `V`. -/
+/-- **The residual `T2SeedQNDom` without its level-`V` field**, with `Lc ≠ []`: at every level `u ≤ V` the
+components of `s′` are `0`, below `B`, below `Ω_{s′}`, below a component of `B` or below a component of `V` (what FrameDom
+needs), and at the levels of `r` (`LevAt`) below `Ω_{s′}`, below `B` or below a component of `V` (`T2VRAQNDom`).
+The earlier form (all levels, only `0`・`B`・`V`) is false on a standard matrix (2026-10-21). -/
 def T2SeedQNDom1 (M : Mat) (ρ : Valn) (r L q : Nat) (Lc : List Nat) : Prop :=
-  Lc ≠ [] → ∀ u, ¬ lt (ρ.v r) u = true → ∀ g ∈ comps u (qnS M ρ r L q),
-    g = z ∨ g ≤ t2B (ρ.v r) ρ Lc ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d
+  Lc ≠ [] →
+    (∀ u, ¬ lt (ρ.v r) u = true → ∀ g ∈ comps u (qnS M ρ r L q),
+      g = z ∨ g ≤ t2B (ρ.v r) ρ Lc ∨ g ≤ psi (qnS M ρ r L q) z z ∨
+        (∃ d ∈ comps u (t2B (ρ.v r) ρ Lc), g ≤ d) ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d) ∧
+    T2VRAQNDom M ρ r L q Lc
 
-/-- **`T2SeedQNDom` from its first field and `T2SeedQNBase`.** The level-`V` field: with `Lc ≠ []` it is the
-first field at `u = V` (`V` has no components at its own level); with `Lc = []` the components of `s′` at the level
+/-- **`T2SeedQNDom` from `T2SeedQNDom1` and `T2SeedQNBase`.** The level-`V` field: with `Lc ≠ []` it is the
+`LevAt` part at `u = V` (`V` has no components at its own level); with `Lc = []` the components of `s′` at the level
 `V` are below `X₁ = Ω_{t₁}` and `t₁ ≤ s′`. -/
 theorem t2SeedQNDom_of1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {r L q : Nat}
     {Lc : List Nat} (hlen : r + L + 1 = M.length) (h1 : T2SeedQNDom1 M ρ r L q Lc)
@@ -198,7 +201,7 @@ theorem t2SeedQNDom_of1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
     (hP : ∀ τ, Cons (M.take (r + L)) τ → ∃ t1,
       spArg (τ.v r) z (sumN ((CL (M.take (r + L)) r).map τ.o)) = app (t2B (ρ.v r) ρ Lc) (psi t1 z z)) :
     T2SeedQNDom M ρ r L q Lc := by
-  refine ⟨h1, fun g hg => ?_⟩
+  refine ⟨fun hL => (h1 hL).1, fun g hg => ?_⟩
   by_cases hL : Lc = []
   · subst hL
     have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
@@ -213,8 +216,8 @@ theorem t2SeedQNDom_of1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
       · rw [h5]
     left
     have := hcV g hg; rw [hBz] at this; exact le_trans (le_of_lt this) hle
-  · rcases h1 hL (ρ.v r) (lt_irrefl' _) g hg with h | h | ⟨d, hd, _⟩
-    · left; rw [h]; exact z_le _
+  · rcases (h1 hL).2 (ρ.v r) (Or.inl rfl) (lt_irrefl' _) g hg with h | h | ⟨d, hd, _⟩
+    · exact Or.inl h
     · exact Or.inr h
     · rw [comps_self (I.good.ot_v r (by omega))] at hd; simp at hd
 

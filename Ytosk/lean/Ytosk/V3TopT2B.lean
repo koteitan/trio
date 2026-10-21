@@ -66,7 +66,7 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W)
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
         par M 0 (r + L) = some q → q ≠ r → ∀ Lc, CL M r = Lc ++ [q] → T2VRAQNDom M ρ r L q Lc :=
     fun M ρ rk C hz h2 r L q hlen hr hq hqr Lc hCL =>
-      t2VRAQNDom_of ((hDom M ρ rk C hz h2).1 r L q hlen hr hq hqr Lc hCL)
+      t2VRAQNDom_of (fun hL => ((hDomB M ρ rk C hz h2).1 r L q hlen hr hq hqr Lc hCL hL).2)
         (fun hL => by
           subst hL
           exact t2VRAQNDom0_of (Inv3W.ofV2 C.S C.I) hlen
