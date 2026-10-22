@@ -166,21 +166,31 @@ theorem t2VRAQNDom0_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : In
 
 /-! ## T2SeedCDom の段 V の欄は T2SeedCBase から -/
 
-/-- **The residual `T2SeedCDom` without its level-`V` field** (2026-10-22): `s′` starts `f(s′) = s′ + σ(s′ − V)`, the subscript image
-of `s′` (`prefB s′ (shf V s′ s′)`). With the cut `X₁ ∈ cutsNSG s′ (σ X₁)` of `T2SeedCFix` (`X₁` moves under `σ`, else the trigger
-fails) the cut is at a position whose subscript starts with `s′` (`cutsPNS_of_fix`), every `σ^{k+1} X₁` has it
+/-- **The residual `T2SeedCDom` without its level-`V` field** (2026-10-22): with `s′ = V + ω^{W₀}`
+(`W₀ = 1 + Σ` bump terms of `q` before `x`), the subscript of `ω^{W₀}` is at most `V`. Then `σ` fixes `ω^{W₀}` and `s′` starts
+`f(s′) = s′ + ω^{W₀}` (`prefB_shf_of_lev`). With the cut `X₁ ∈ cutsNSG s′ (σ X₁)` of `T2SeedCFix` (`X₁` moves under `σ`, else
+the trigger fails) the cut is at a position whose subscript starts with `s′` (`cutsPNS_of_fix`), every `σ^{k+1} X₁` has it
 (`cutP_all`), and FrameDom at the C seed frame needs no condition on the components of `s′` (`frameDom_of_cutP`).
 The earlier form (all levels `u ≤ V`: the components of `s′` are `0`, below `X₁` or below a component of `V`) is false on
 standard matrices (expP's t = 2 one-column extensions, 28). -/
 def T2SeedCDom1 (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
-  prefB (qnS M ρ r L q) (shf (ρ.v r) (qnS M ρ r L q) (qnS M ρ r L q)) = true
+  ¬ ρ.v r < lev (omega (sumN (one :: ((children M q).filter (fun d => decide (d < r + L))).map (bumpTerm M ρ q))))
+
+theorem t2SeedCDom1_pref {M : Mat} {ρ : Valn} {r L q : Nat} (h : T2SeedCDom1 M ρ r L q) :
+    prefB (qnS M ρ r L q) (shf (ρ.v r) (qnS M ρ r L q) (qnS M ρ r L q)) = true := by
+  unfold T2SeedCDom1 at h
+  unfold qnS
+  obtain ⟨d, e, hw⟩ := omega_psi_form (sumN (one :: ((children M q).filter (fun d => decide (d < r + L))).map
+    (bumpTerm M ρ q)))
+  rw [hw] at h ⊢
+  exact G.prefB_shf_of_lev (by simpa [lev] using h)
 
 theorem t2SeedCDom_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {r L q : Nat}
     (hrM : r < M.length) (h1 : T2SeedCDom1 M ρ r L q) (hB : T2SeedCBase M ρ r L q) : G.T2SeedCDom M ρ r L q := by
   intro τ hτ
   obtain ⟨X, hX⟩ := o_arg_form I hrM
   obtain ⟨_, _, _, _, -, -, -, -, -, -, -, -, hcl⟩ := hB τ hτ X hX
-  refine ⟨fun _ => h1, fun g hg => Or.inr ?_⟩
+  refine ⟨fun _ => t2SeedCDom1_pref h1, fun g hg => Or.inr ?_⟩
   exact le_of_lt (hcl _ (Or.inl rfl) (lt_irrefl' _) g (List.mem_append_right _ hg))
 
 /-! ## T2SeedQNDom の段 V の欄は第 1 欄と T2SeedQNBase から -/

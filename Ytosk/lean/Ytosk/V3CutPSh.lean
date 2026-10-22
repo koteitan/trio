@@ -280,4 +280,34 @@ theorem cutP_all {V s X : T} (hV : isOT V = true) (hs : isOT s = true) (hVs : V 
     exact ⟨cutsPNS_same_sh hV hs hVs hs hVs hot ha h0 h,
       allGe_sh hV hs hVs hot (allGe_mono (om_le_succ hV hs hVs s) ha)⟩
 
+
+/-- `(V + w) − V = w` for a single summand `w`. -/
+theorem sub_add_single : ∀ (V : T) {d e : T}, sub (add V (psi d e z)) V = psi d e z
+  | z, d, e => by show sub (psi d e z) z = psi d e z; simp [sub]
+  | psi a b c, d, e => by
+    rw [add_psi_psi]
+    split
+    · rename_i h; rw [sub_psi_psi, if_pos h]
+    · rw [sub_psi_psi, if_neg (lt_irrefl' _)]; exact sub_add_single c
+
+theorem add_single_self (d e : T) : add (psi d e z) (psi d e z) = app (psi d e z) (psi d e z) := by
+  rw [add_psi_psi, if_neg (lt_irrefl' _)]; rfl
+
+/-- `(V + w) + w = (V + w) ++ w` for a single summand `w`. -/
+theorem add_add_single : ∀ (V : T) {d e : T}, add (add V (psi d e z)) (psi d e z) = app (add V (psi d e z)) (psi d e z)
+  | z, d, e => add_single_self d e
+  | psi a b c, d, e => by
+    rw [add_psi_psi]
+    split
+    · exact add_single_self d e
+    · rename_i h
+      rw [add_psi_psi, if_neg h, add_add_single c, app_psi]
+
+/-- **`s′ = V + w` starts `f(s′)`** when the single summand `w` has its subscript at most `V` (`σ` fixes `w`). -/
+theorem prefB_shf_of_lev {V d e : T} (hl : ¬ V < d) :
+    prefB (add V (psi d e z)) (shf V (add V (psi d e z)) (add V (psi d e z))) = true := by
+  unfold shf
+  rw [sub_add_single, sh_psi_le hl, sh_z, add_add_single]
+  exact prefB_self_app _ _
+
 end Ytosk.G
