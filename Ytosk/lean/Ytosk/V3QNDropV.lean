@@ -3,10 +3,13 @@
 
 `t2_qn_take`（V3T2T）の中の種 v(q) の部分だけを取り出した（`t2_qn_take_vq`）: q の最後の子 x は bump 子で子を持たず、
 M.take x ではその bump 項 1 が消える。q の bump 子の子は DepS に入らない（`qn_shapes`）ので o は変わらず、
-`v_bump_drop` で v_T(q) ◁ v_M(q)。これで `T2SeedPResRC3` の qn の欄は x − 1 が上げる場合だけになる。
+`v_bump_drop` で v_T(q) ◁ v_M(q)。
+x − 1 が上げる場合は n ≤ 1 の展開の `T2UpgAbs.qnu_take_of_drop_full`（列ごとの ◁ を返す形にした）から出す（`qn_drop_v_upg`）。
+これで T2SeedPResRC2 の qn の欄はすべて証明でき、残りは qr・sv・C の `T2SeedPResRC5` になる。
 -/
 import Ytosk.V3QNTakeL
 import Ytosk.V3T2Top
+import Ytosk.V3T2UpgAbs
 
 namespace Ytosk
 
@@ -150,6 +153,75 @@ theorem qn_drop_v_noupg {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   rw [(hag q hqT).2]
   exact Or.inr h
 
+/-- **The qn drop at `q`** when `x − 1` upgrades: `v_T(q) ◁ v_M(q)` from the `n ≤ 1` engine
+(`T2UpgAbs.qnu_take_of_drop_full`). Its seed `o(r)` changes because `t₁ < v(q)` (`qn_take_t1L`, `leaf_M_side`). -/
+theorem qn_drop_v_upg {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+    {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) {Lc : List Nat} (hCL : CL M r = Lc ++ [q])
+    {k : Nat} (hux : upg M (r + L - 1) = some k) :
+    ∀ τ, Cons (M.take (r + L)) τ → LhdE (τ.v q) (ρ.v q) := by
+  intro τ hτ
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  have hpq := par0_q_t2 hM hS I hlen hr hq hqr
+  have hrq : r < q := par_lt M 0 _ _ hpq
+  have hqx : q < r + L := par_lt M 0 _ _ hq
+  have hA : Anc0 M r (r + L) := anc0_of_par M 2 r (r + L) hr
+  have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
+  have hpq' : par M 0 (r + (q - r)) = some r := by rw [show r + (q - r) = q by omega]; exact hpq
+  obtain ⟨Txb, Tqb, Te2pq, Tclq, Tclpq⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+  obtain ⟨Up1, Up1a, Uqsh, Udv, Uos, Uvsh⟩ := qnu_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd
+    I.z1 I.uat I.uab I.r12 hpq' Tqb hux
+  -- the drop
+  have hx1 : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 := cons_of_rk hRk1
+  have hdrop := drop_all hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs R.drop.vst
+    I.fc I.fo R.drop.argT
+    (bump_drop hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td R.drop.ab R.drop.ws)
+    R.drop.ua
+  have hG1 := good3_take hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 hdrop
+  have hab := R.drop.ab
+  have hua := R.drop.ua
+  rw [show M.length - 1 = r + L by omega] at hRk1 hC1 hdrop hG1 hab hua
+  have hAbs := absWN_of_absC hab hC1 hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
+  -- the seed `o(r)` changes
+  obtain ⟨ωT, hsp, -, -, -, hωT, hvqM⟩ := qn_take_t1L hM hS I R hlen hr hq hqr hCL hC1
+  have hSot : isOT (sumN (one :: ((children M q).filter (fun d => decide (d < r + L))).map
+      (bumpTerm M ρ q))) = true := by
+    apply isOT_sumN
+    intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · exact isOT_one
+    · obtain ⟨j, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm I.good q j
+  have ht1lt : add (ρ.v r) ωT < ρ.v q := by
+    rw [hvqM]
+    exact add_lt_add_left _ (lt_of_le_of_lt hωT (omega_lt_omega hSot (isOT_succ hSot) (lt_succ_self _)))
+  have hTclq : CL M q = [] := by rw [show q = r + (q - r) by omega]; exact Tclq
+  have hoqM : ρ.o q = psi (ρ.v q) z z := by
+    rw [o_cl_eq I.cons I.good (show q < M.length by omega), hTclq]; rfl
+  have hrM := (leaf_M_side I (show r < M.length by omega) hCL hoqM).2.2
+  have hne : (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rk)).o r ≠ ρ.o r := by
+    intro h
+    rw [o_cl_eq hC1 hG1 (by rw [List.length_take]; omega), hsp, hrM] at h
+    simp only [psi.injEq] at h
+    have h2 := app_left_cancel h.2.1
+    simp only [psi.injEq] at h2
+    rw [h2.1] at ht1lt
+    exact lt_irrefl' _ ht1lt
+  have hs1 := T2UpgAbs.strong_seed_of_drop hlen I.cons I.good (p := r) (by omega) (by omega) Tclpq
+    (hdrop r (by omega)) hne
+  have H := T2UpgAbs.qnu_take_of_drop_full hlen (by omega) hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
+    I.uat I.uab I.r12 I.r01 I.e00 hpq' Tqb Te2pq Tclq Tclpq hux Up1 Up1a Uqsh Udv Uos Uvsh
+    I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hua hdrop hAbs hs1
+  have h := H.2
+  rw [show r + (q - r) = q by omega] at h
+  have hag := agree_of_cons hτ hC1 hRk1
+  have hqT : q < (M.take (r + L)).length := by rw [List.length_take]; omega
+  rw [(hag q hqT).2]
+  exact Or.inr h
+
 /-- **The seed residuals with the qn field only when `x − 1` upgrades** (`v_T(q) ⊴ v_M(q)`). -/
 structure T2SeedPResRC4 (M : Mat) (ρ : Valn) : Prop where
   qr : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
@@ -175,5 +247,29 @@ theorem t2SeedPResRCV2C_of_D (h : T2SeedPResRCV2D) : T2SeedPResRCV2C := fun M ρ
     cases hu : upg M (r + L - 1) with
     | none => exact qn_drop_v_noupg C.std C.ne (Inv3W.ofV2 C.S C.I) hlen hr hq hqr hu τ hτ
     | some k => exact H.qn r L q hlen hr hq hqr Lc hCL (by rw [hu]; simp) τ hτ, H.C⟩
+
+/-- **The seed residuals without the qn field** (qn is proved: `qn_drop_v_noupg`・`qn_drop_v_upg`). -/
+structure T2SeedPResRC5 (M : Mat) (ρ : Valn) : Prop where
+  qr : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
+    (∀ i, upg M i ≠ some (r + L)) → ∀ Lc, CL M r = Lc ++ [r + L] → T2SeedQRResR M ρ r L Lc
+  sv : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
+    upg M (r + L - 1) = some (r + L) → T2SVStrict M ρ r L ∧
+      ∀ τ, Cons (M.take (r + L)) τ → ∀ k, 1 ≤ k →
+        Lhd z (psi (ρ.v r) (shIt (ρ.v r) (succ (ρ.v r)) (t2X1 M r L τ) k) z) (ρ.o r)
+  C : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+    (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2SeedCResR2 M ρ r L q
+
+/-- **Residual (t2): the seed residuals of qr, sv and C** (the qn field is proved). -/
+def T2SeedPResRCV2E : Prop :=
+  ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+    T2SeedPResRC5 M ρ
+
+theorem t2SeedPResRCV2D_of_E (h : T2SeedPResRCV2E) : T2SeedPResRCV2D := fun M ρ rk C hz h2 =>
+  have H := h M ρ rk C hz h2
+  ⟨H.qr, H.sv, fun r L q hlen hr hq hqr Lc hCL hu τ hτ => by
+    cases hk : upg M (r + L - 1) with
+    | none => exact absurd hk hu
+    | some k => exact qn_drop_v_upg C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hlen hr hq hqr hCL hk τ hτ,
+    H.C⟩
 
 end Ytosk

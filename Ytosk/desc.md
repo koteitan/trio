@@ -4104,3 +4104,6 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 追記（同じ日、V3QNDropV）: x − 1 が上げない場合の v_T(q) ◁ v_M(q) を証明した（`qn_drop_v_noupg`）。`t2_qn_take`（n ≤ 1 の展開）の中の種 v(q) の部分を `t2_qn_take_vq` として取り出し、`qn_shapes` の DepS の形（q の bump 子の子は種に依存しない）と `v_bump_drop` で出す。最上位は `T2SeedPResRCV2D`（qn の欄は x − 1 が上げる場合の v_T(q) ⊴ v_M(q) だけ）を受ける。全体ビルド緑（1070 jobs）。
   - x − 1 が上げる場合は `qnu_take_weak`（V3T2UpgAbs）の中で、DepS の鎖のランクの帰納法の途中で `v_bump_drop_upg` を使っている。取り出すには帰納法ごと要るので今回は残りにした。
   - 測定（qnlhd.py、v_T(q) ⊴ v(q) と t_k ◁ v(q)、k = 1..3）: std_a・ext2・d3s・deep2・deep3・Cprime・ext1・ext3s・e3exp・t2ext・expP の伸ばし（qn 39 万件）で例外 0（t0ext には qn の場面がない）。
+- 追記 2（2026-10-23、V3QNDropV・V3T2G・V3T2QNU・V3T2UpgAbs）: x − 1 が上げる場合も証明した（`qn_drop_v_upg`）。これで T2SeedPResRC2 の qn の欄はすべて証明済み。最上位は qr・sv・C だけの `T2SeedPResRCV2E` を受ける。仮定の数は 12 のまま。
+  - n ≤ 1 の展開の組み立て `t2_assemble2`（V3T2G）は、DepS の列ごとの ◁（`deps_lhd_genW2`）を中で出しながら、根の比較だけを返していた。列ごとの ◁ も返す `t2_assemble2_full`・`t2_assemble_full` を作り、元の定理はその `.1` にした。同じく `t2_qnu_take_full`・`qnu_take_weak_full`・`qnu_take_of_drop_full` は v_T(q) ◁ v_M(q) も返す。
+  - 前提はどれも StepCtxT2 から出る: DepS の形は `qnu_shapes`、hAbs は `absWN_of_absC`（落とす残りの ab）、hUA は落とす残りの ua。種 o(r) の ◁ は `strong_seed_of_drop` で、o_T(r) ≠ o_M(r) は t₁ < v(q)（`qn_take_t1L`）と `leaf_M_side` から。

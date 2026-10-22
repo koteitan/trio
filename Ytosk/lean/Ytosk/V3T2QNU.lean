@@ -152,7 +152,7 @@ variable {M : Mat} {r L qp : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
 include hlen hL hA hp hqp hxb hBE
 
 /-- **`t = 2`, `q ≠ r`, `x − 1` upgrades to `k`, `n ≤ 1`** (`M[n] = M.take x`). -/
-theorem t2_qnu_take (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M)
+theorem t2_qnu_take_full (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M)
     (hR12 : R12 M) (hR01 : R01 M)
     (h00 : entry M 0 0 = 0) {pq : Nat} (hpq : par M 0 (r + qp) = some pq)
     (hqb : col M (r + qp) ≠ bump M pq) (he2pq : entry M 2 pq = 0) (hCLq : CL M (r + qp) = [])
@@ -181,7 +181,8 @@ theorem t2_qnu_take (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (hUA : UpgAbsX M (r + L) ρ)
     (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
     (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
-    isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ := by
+    (isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ) ∧
+      Lhd z (σ.v (r + qp)) (ρ.v (r + qp)) := by
   have hlT : (M.take (r + L)).length = r + L := by rw [List.length_take]; omega
   have hqx : r + qp < r + L := by omega
   have hqM : r + qp < M.length := by omega
@@ -384,7 +385,7 @@ theorem t2_qnu_take (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
       | some m =>
         show σ.v m = ρ.v m
         exact (hoff m (by have := par_lt M 1 _ m hm; omega)).2 (hP1a m hm)
-  exact t2_assemble (S := SQU (r + qp) pq (r + L - 1)) (W := fun _ _ => False) (bnd := r + L) (p := r + qp)
+  have H := t2_assemble_full (S := SQU (r + qp) pq (r + L - 1)) (W := fun _ _ => False) (bnd := r + L) (p := r + qp)
     hC hG hRM hCN hGN hRN hF hVS hTD hKD hR01 hR12 h00 hlen (by rw [hlT]) (fun i hi hiq => hchN i hi hiq)
     (Or.inl (Or.inl rfl)) (Or.inr (Or.inl rfl))
     (fun i hq hb => by have h' := (mem_children_iff.mp hq).2; rw [hpq] at h'; cases h'; exact hqb hb)
@@ -405,6 +406,39 @@ theorem t2_qnu_take (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (h
     (fun c hc _ _ hd => hDvNil c hc hd) (fun c hc _ _ hd => hCLnil c hc (hDvNil c hc hd))
     (fun c hc _ hcl => hCLnil c hc hcl) (fun i hi hns _ hD hv => hOS i hi hns hD hv) hVSh hRD
     (fun i _ h => h.elim) hAbs hSeed
+  exact ⟨H.1, H.2 false (r + qp) (DepS.seed (Or.inl rfl)) hqx (fun h => h)⟩
+
+theorem t2_qnu_take (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M)
+    (hR12 : R12 M) (hR01 : R01 M)
+    (h00 : entry M 0 0 = 0) {pq : Nat} (hpq : par M 0 (r + qp) = some pq)
+    (hqb : col M (r + qp) ≠ bump M pq) (he2pq : entry M 2 pq = 0) (hCLq : CL M (r + qp) = [])
+    (hpqCL : CL M pq ≠ []) {k : Nat} (hu : upg M (r + L - 1) = some k)
+    -- the shape of `D` in `M`
+    (hP1q : ∀ m, par M 1 (r + qp) = some m → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) false m)
+    (hP1a : ∀ m, par M 1 (r + L - 1) = some m → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) false m)
+    (hqsh : ∃ Lb d Kb e, children M (r + qp) = Lb ++ [d, r + L] ∧ children M d = Kb ++ [e] ∧
+      (∀ f ∈ Kb, ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true f) ∧
+      (∀ d' ∈ Lb, ∀ e' ∈ children M d', ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true e'))
+    (hDvNil : ∀ c, c < r + L → DepS M (SQU (r + qp) pq (r + L - 1)) false c → CL M c = [])
+    (hOS : ∀ i, i < r + L → ¬ (SQU (r + qp) pq (r + L - 1)) true i →
+      DepS M (SQU (r + qp) pq (r + L - 1)) true i → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) false i →
+      ∃ Lp c R, children M i = Lp ++ c :: R ∧ Counted M i c ∧ DepS M (SQU (r + qp) pq (r + L - 1)) true c ∧
+        (∀ d ∈ R, ¬ Counted M i d) ∧ (∀ d ∈ Lp, Counted M i d → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true d))
+    (hVSh : ∀ i, i < r + L → ¬ (SQU (r + qp) pq (r + L - 1)) false i → DepS M (SQU (r + qp) pq (r + L - 1)) false i →
+      (∀ m, par M 1 i = some m → ¬ DepS M (SQU (r + qp) pq (r + L - 1)) false m) ∧
+      (entry M 2 i ≠ 0 → ∃ Lb Kb j k, children M i = Lb ++ [j] ∧ col M j = bump M i ∧
+        children M j = Kb ++ [k] ∧ (∀ d ∈ Kb, ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true d) ∧
+        (∀ d ∈ Lb, ∀ e ∈ children M d, ¬ DepS M (SQU (r + qp) pq (r + L - 1)) true e)))
+    -- values
+    {ρ σ : Valn} {rkM rkN : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hCN : Cons (M.take (r + L)) σ) (hGN : Good3 (M.take (r + L)) σ) (hRN : Rk (M.take (r + L)) rkN)
+    (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
+    (hUA : UpgAbsX M (r + L) ρ)
+    (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
+    (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
+    isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ :=
+  (t2_qnu_take_full hlen hL hA hp hqp hxb hBE hR0 hZ2 hSD hZ1 hUAT hR12 hR01 h00 hpq hqb he2pq hCLq hpqCL hu hP1q hP1a hqsh hDvNil hOS hVSh hC hG hRM hCN hGN hRN hF hVS hTD hKD hUA hAbs hseed).1
 
 end
 
