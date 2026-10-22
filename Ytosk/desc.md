@@ -4078,3 +4078,14 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 切った形なら、切る位置では X₁ が Ω_{s′}、σX₁ が Ω_{f(s′)} を持つ。だから s′ が f(s′) の頭なら、s′ から始まる位置で切る形になる（`cutsPNS_of_fix`、`cutsPH_of_fix`。σ が動かさない引数の中の切る形は `cutsPHG_of_self`）。
   - 測定（tmp/claude/cshf2.py）: 13 集合と expP の伸ばし（C 92388 件）で例外 0。このとき ω^S（s′ = V + ω^S）の頭の添字はいつも V 以下。
 - 追記 2: さらに「ω^{W₀} の頭の添字は V 以下」（s′ = V + ω^{W₀}、W₀ = 1 + q の x より前の bump 項の和）に替えた。項の補題: (V + w) − V = w（`sub_add_single`）、σ は頭の添字が V 以下の w を動かさない、(V + w) + w = (V + w) ++ w（`add_add_single`）。よって f(s′) = s′ ++ w で s′ は f(s′) の頭（`prefB_shf_of_lev`）。この条件は 13 集合と expP の伸ばしで例外 0（cshf2.py の levW<=V）。ただし「どの列 c でも v(c) で足す ω 項の頭の添字は v(P₁ c) 以下」は一般には偽（std_a で 8 万件）なので、C の場面に固有の理由が要る。
+
+### C の欄 T2SeedCDom1 を証明した（2026-10-22、lead、V3CDomH）
+
+- 測定（tmp/claude/ckid.py・ckid2.py・cpq.py）: C の場面では、ext2・std_a・expP の伸ばしのどの例でも P₀(q) = r、P₁(q) = r、x = bump(q) だった。x−1 が上げる例（ext2 に 6 件）を含めてもそうだった。q の bump 子 d（d < x）の子 k は、どの例でも e1 k ≤ e1 r、v(k) ≤ V を満たした。
+- これは qn の場合にすでに証明していた `qn_omega_lev`（V3QNFC）と同じ形だった。`qn_omega_lev` は P₀(q) = r と x = bump(q) だけを使い、CL M r の形は使わない。中身は `qn_kid_v` で、次の順に v(k) ≤ v(r) を出す。
+  - BumpLeaf で e1 k < e1 q。
+  - RowJ で e2 k = 0。
+  - 守られない子孫には `v_le_unguarded` を使う。
+- C の場面でも P₀(q) = r は `par0_q_t2`（t = 2・q ≠ r）から、x = bump(q) は `t2_qn_struct` から出る。だから `t2SeedCDom1_holds` は仮定なしで成り立つ。
+- 最上位は T2SeedDomV2B の代わりに、qn の欄だけの `T2SeedDomV2Q` を受ける（`t2SeedDomV2B_of_Q`）。最上位の仮定の数は 12 のまま。全体ビルド緑（1068 jobs）。axioms は propext・Classical.choice・Quot.sound。
+- 教訓: 残りが既存の補題と同じ式なら、その補題の前提が今の場面で出るかを先に見る。今回は qn 用に証明済みの補題を見落としていた。
