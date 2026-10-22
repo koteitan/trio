@@ -4103,4 +4103,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - W_T < W₀ の例がある（x−1 が M では祖先へ上げ、M.take x では最後の列なので上げない。std_a 4 件、ext2 163 件、いずれも Lc = []）。このため t₁ ⊴ v(q) は自明ではない。
 - 追記（同じ日、V3QNDropV）: x − 1 が上げない場合の v_T(q) ◁ v_M(q) を証明した（`qn_drop_v_noupg`）。`t2_qn_take`（n ≤ 1 の展開）の中の種 v(q) の部分を `t2_qn_take_vq` として取り出し、`qn_shapes` の DepS の形（q の bump 子の子は種に依存しない）と `v_bump_drop` で出す。最上位は `T2SeedPResRCV2D`（qn の欄は x − 1 が上げる場合の v_T(q) ⊴ v_M(q) だけ）を受ける。全体ビルド緑（1070 jobs）。
   - x − 1 が上げる場合は `qnu_take_weak`（V3T2UpgAbs）の中で、DepS の鎖のランクの帰納法の途中で `v_bump_drop_upg` を使っている。取り出すには帰納法ごと要るので今回は残りにした。
-  - 測定（qnlhd.py、v_T(q) ⊴ v(q) と t_k ◁ v(q)、k = 1..3）: std_a・ext2・d3s・deep2・deep3・Cprime・ext1・ext3s・e3exp・t2ext で例外 0（t0ext には qn の場面がない）。
+  - 測定（qnlhd.py、v_T(q) ⊴ v(q) と t_k ◁ v(q)、k = 1..3）: std_a・ext2・d3s・deep2・deep3・Cprime・ext1・ext3s・e3exp・t2ext・expP の伸ばし（qn 39 万件）で例外 0（t0ext には qn の場面がない）。
