@@ -121,7 +121,7 @@ Ytosk 氏の翻訳（3 行 BMS の行列 → 拡張 Buchholz の項）が、SRO 
     - 今の最上位 `trio_terminates_main_V2_cur` の残りを証明して閉じる。残りは 12 個（2026-10-21、T2UpgAbsW・T0UpgAbsV2・T0ArgBRes・T2VRAKFD・HSeedV2 を外した）:
       - drop: HDropV2W（落とす補題の 5 欄）。HSeedV2（SeedR）は 2026-10-21 に外した（◁ から出る、`SeedComps.seed_comps_lt`）
       - 共通: HFrameV2・HLeafV2（枠の 10 欄・葉の条件）、HBumpExt（標準形の接頭辞で bump 項は増える）、HSibColV2（同じ列の兄弟 SibColU）
-      - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom1 と T2SeedCDom1。qn の段 V の欄は 2026-10-21 に第 1 欄と T2SeedQNBase から出した。2026-10-21: 前の第 1 欄と T2SeedCDom1 は偽（expP の 1 列伸ばし）。qn は使う側で足りる弱い形と道の段の形に、C は「X₁ は σX₁ を s′ から始まる位置で切った形」（`frameDom_of_cutP`、すべての k は `cutP_all`）に直した）
+      - t2 の種: T2SeedClV2B（k を含まない基 T2SeedQNBase・T2SeedSVBase・T2SeedCBase。閉じた条件・標準形・C の s′ の段 V の成分はここから）、T2SeedPResRCV2B（qr の w1・dom、sv の T2SVStrict・lhd、qn の V < t₁ と k ≥ 1 の欄、C の decP・X₁ < σX₁・lhd）、T2SeedDomV2B（T2SeedQNDom1 と T2SeedCDom1。qn の段 V の欄は 2026-10-21 に第 1 欄と T2SeedQNBase から出した。2026-10-21: 前の第 1 欄と T2SeedCDom1 は偽（expP の 1 列伸ばし）。qn は使う側で足りる弱い形と道の段の形に、C は「s′ は f(s′) = s′ + σ(s′ − V) の頭」（V と s′ だけの条件。`frameDom_of_cutP`・`cutsPNS_of_fix`・`cutP_all`）に直した）
       - t2 のそのほか: T2CBadOut（悪い形の展開、大づかみ）、T2VRACopyEsc（安く片づかない成分 g（Ω_s < g かつ B < g）があるときだけ、元の行列で u が LevAt かつ u ≤ V）、T2VAncStep・T2VRAK KAG（写しの枠の KVRA）
       - 2026-10-20: 残りの T2VRACopy（hVCp）は偽だった（下の表）。使う側を直し、弱い残り T2VRACopyEsc に替えた。最上位は偽と分かっている仮定を含まない。
       - 2026-10-20: 残りを std_a の 1 列足し（標準形 575,968 個）と ext1（108 万個）で測り直した。T2CBadOut 以外の今の残りはすべて例外 0（desc「最上位の残りを見落としの族で測り直した」）。

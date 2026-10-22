@@ -188,4 +188,96 @@ theorem cutsPNS_same_sh : ∀ {h B : T}, isOT h = true → AllGeT (psi (succ s) 
 
 end
 
+
+theorem prefB_refl : ∀ (s : T), prefB s s = true
+  | z => rfl
+  | psi a b c => by simp only [prefB, decide_true, Bool.true_and]; exact prefB_refl c
+
+/-- A cut of itself is a prefix cut (the chains `Ω_s`, `Ω_{Ω_s}`, …). -/
+theorem cutsPHG_of_self {s : T} : ∀ {t : T}, t ∈ cutsHG s t → t ∈ cutsPHG s t
+  | z, ht => by simp [cutsHG] at ht
+  | psi a x c, ht => by
+    rcases mem_cutsHG_psi.mp ht with ⟨hsa, h⟩ | ⟨u, hu, h⟩ | ⟨hsa, u, hu, h⟩ | ⟨hsa, u, hu, h⟩
+    · obtain ⟨rfl, rfl, rfl⟩ := T.psi.inj h
+      exact mem_cutsPHG_psi.mpr (Or.inl ⟨hsa, prefB_refl _, rfl⟩)
+    · obtain ⟨rfl, rfl, rfl⟩ := T.psi.inj h
+      exact mem_cutsPHG_psi.mpr (Or.inr (Or.inl ⟨a, cutsPHG_of_self hu, rfl⟩))
+    · obtain ⟨-, rfl, rfl⟩ := T.psi.inj h
+      exact mem_cutsPHG_psi.mpr (Or.inr (Or.inr (Or.inl ⟨hsa, x, cutsPHG_of_self hu, rfl⟩)))
+    · obtain ⟨-, -, rfl⟩ := T.psi.inj h
+      exact mem_cutsPHG_psi.mpr (Or.inr (Or.inr (Or.inr ⟨hsa, c, cutsPHG_of_self hu, rfl⟩)))
+
+section
+variable {V V' : T} (hV : isOT V = true) (hV' : isOT V' = true) (hVV : V < V')
+  {s : T} (hs : isOT s = true) (hVs : V < s) (hps : prefB s (shf V V' s) = true)
+include hV hV' hVV hs hVs hps
+
+/-- **A cut of its own `σ` image is a prefix cut** when `s` starts `f(s)`: at the cut the term has `Ω_s`, and the
+image has `Ω_{f(s)}` there. -/
+theorem cutsPH_of_fix : ∀ {t : T}, t ∈ cutsHG s (sh V V' t) → t ∈ cutsPHG s (sh V V' t)
+  | z, ht => by simp [cutsHG] at ht
+  | psi a x c, ht => by
+    by_cases hVa : V < a
+    · rw [sh_psi_gt hVa] at ht ⊢
+      rcases mem_cutsHG_psi.mp ht with ⟨hsa, h⟩ | ⟨u, hu, h⟩ | ⟨hsa, u, hu, h⟩ | ⟨hsa, u, hu, h⟩
+      · obtain ⟨rfl, rfl, rfl⟩ := T.psi.inj h
+        exact mem_cutsPHG_psi.mpr (Or.inl ⟨hsa, hps, rfl⟩)
+      · obtain ⟨rfl, rfl, rfl⟩ := T.psi.inj h
+        have hsu : s < a := cutsHG_gt hu
+        have hlu : V < lev a := lt_of_lt_of_le hVs (cutsHG_lev_cut hu)
+        rw [shf_eq_sh hV hV' hVV hlu] at hu ⊢
+        exact mem_cutsPHG_psi.mpr (Or.inr (Or.inl ⟨a, cutsPH_of_fix hu, rfl⟩))
+      · obtain ⟨hfa, rfl, rfl⟩ := T.psi.inj h
+        refine mem_cutsPHG_psi.mpr (Or.inr (Or.inr (Or.inl ⟨hsa, x, cutsPH_of_fix hu, ?_⟩)))
+        rw [← hfa]
+      · obtain ⟨hfa, hb, rfl⟩ := T.psi.inj h
+        refine mem_cutsPHG_psi.mpr (Or.inr (Or.inr (Or.inr ⟨hsa, c, cutsPH_of_fix hu, ?_⟩)))
+        rw [← hfa, ← hb]
+    · rw [sh_psi_le hVa] at ht ⊢
+      exfalso
+      rcases mem_cutsHG_psi.mp ht with ⟨hsa, _⟩ | ⟨u, hu, h⟩ | ⟨hsa, _⟩ | ⟨hsa, _⟩
+      · exact hVa (lt_of_lt_of_le hVs (le_of_le_bool hsa))
+      · obtain ⟨rfl, -, -⟩ := T.psi.inj h
+        exact hVa (lt_trans hVs (cutsHG_gt hu))
+      · exact hVa (lt_of_lt_of_le hVs (le_of_le_bool hsa))
+      · exact hVa (lt_of_lt_of_le hVs (le_of_le_bool hsa))
+
+theorem cutsPNS_of_fix : ∀ {B : T}, B ∈ cutsNSG s (sh V V' B) → B ∈ cutsPNSG s (sh V V' B)
+  | z, ht => by simp [cutsNSG] at ht
+  | psi a x c, ht => by
+    by_cases hVa : V < a
+    · rw [sh_psi_gt hVa] at ht ⊢
+      rcases mem_cutsNSG_psi.mp ht with ⟨u, hu, h⟩ | ⟨u, hu, h⟩ | ⟨u, hu, h⟩
+      · obtain ⟨rfl, rfl, rfl⟩ := T.psi.inj h
+        have hlu : V < lev a := lt_of_lt_of_le hVs (cutsHG_lev_cut hu)
+        rw [shf_eq_sh hV hV' hVV hlu] at hu ⊢
+        exact mem_cutsPNSG_psi.mpr (Or.inl ⟨a, cutsPH_of_fix hV hV' hVV hs hVs hps hu, rfl⟩)
+      · obtain ⟨hfa, rfl, rfl⟩ := T.psi.inj h
+        refine mem_cutsPNSG_psi.mpr (Or.inr (Or.inl ⟨x, cutsPH_of_fix hV hV' hVV hs hVs hps hu, ?_⟩))
+        rw [← hfa]
+      · obtain ⟨hfa, hb, rfl⟩ := T.psi.inj h
+        refine mem_cutsPNSG_psi.mpr (Or.inr (Or.inr ⟨c, cutsPNS_of_fix hu, ?_⟩))
+        rw [← hfa, ← hb]
+    · rw [sh_psi_le hVa] at ht ⊢
+      rcases mem_cutsNSG_psi.mp ht with ⟨u, hu, h⟩ | ⟨u, hu, h⟩ | ⟨u, hu, h⟩
+      · obtain ⟨rfl, -, -⟩ := T.psi.inj h
+        exact absurd (lt_trans hVs (cutsHG_gt hu)) hVa
+      · obtain ⟨-, rfl, rfl⟩ := T.psi.inj h
+        exact mem_cutsPNSG_psi.mpr (Or.inr (Or.inl ⟨x, cutsPHG_of_self hu, rfl⟩))
+      · obtain ⟨-, -, rfl⟩ := T.psi.inj h
+        exact mem_cutsPNSG_psi.mpr (Or.inr (Or.inr ⟨c, cutsPNS_of_fix hu, rfl⟩))
+
+end
+
+/-- **The prefix cut of `σ X` carries to every `σ^{k+1} X`** (with the summands of `σ^{k+1} X` at least `Ω_{s+1}`). -/
+theorem cutP_all {V s X : T} (hV : isOT V = true) (hs : isOT s = true) (hVs : V < s) (hX : isOT X = true)
+    (hhi : AllGeT (psi (succ s) z z) (sh V s X)) (h0 : X ∈ cutsPNSG s (sh V s X)) :
+    ∀ k, X ∈ cutsPNSG s (sh V s (shIt V s X k)) ∧ AllGeT (psi (succ s) z z) (sh V s (shIt V s X k))
+  | 0 => ⟨h0, hhi⟩
+  | k + 1 => by
+    obtain ⟨h, ha⟩ := cutP_all hV hs hVs hX hhi h0 k
+    have hot : isOT (sh V s (shIt V s X k)) = true := isOT_sh hV hs hVs (isOT_shIt hV hs hVs hX k)
+    exact ⟨cutsPNS_same_sh hV hs hVs hs hVs hot ha h0 h,
+      allGe_sh hV hs hVs hot (allGe_mono (om_le_succ hV hs hVs s) ha)⟩
+
 end Ytosk.G

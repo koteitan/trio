@@ -4073,3 +4073,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - `cutsPNS_same_sh`（`cutsNS_same_sh` の写し）: X₁ ∈ cutsPNSG s (σX₁) なら、X₁ ∈ cutsPNSG s h から X₁ ∈ cutsPNSG s (σh)（h は標準形で項は Ω_{s+1} 以上）。新しいのは切る位置 Ω_s の場合だけ: a = s ++ δ で s が σ(s) の頭なら σ(a) = σ(s) ++ σδ も s から始まる（`prefB_shf`。`sub_app_of_ne`・`add_app_right`・`sub_eq_z_le` を足した）。σ(s) の頭が s であることは、X₁ が σX₁ を切った形であることの中の Ω_s の位置から出る。
 - `cutP_all`: k = 0 の形と T2SeedCBase の欄（σX₁ の項は Ω_{s′+1} 以上、X₁ は標準形）から、すべての k で X₁ ∈ cutsPNSG s′ (σ^{k+1} X₁)。
 - 残り T2SeedCDom1 は「X₁ ≠ 0 なら X₁ ∈ cutsPNSG s′ (σX₁)」だけ（k を含まない）。この形は前の測定の k = 1 にあたり、13 集合と expP の伸ばしで例外 0。全体ビルド緑（1067 jobs）。
+- 追記（同じ日）: C の残りをさらに「s′ は f(s′) = s′ + σ(s′ − V) の頭」（`prefB s′ (shf V s′ s′)`、V と s′ だけの条件）に減らした。
+  - X₁ が σ で動かないと、FrameClosed の場面の引き金 X₁ < σ^{n−1}X₁ が成り立たない。なので T2SeedCFix の「X₁ = σX₁ か X₁ は σX₁ を切った形」の後者になる。
+  - 切った形なら、切る位置では X₁ が Ω_{s′}、σX₁ が Ω_{f(s′)} を持つ。だから s′ が f(s′) の頭なら、s′ から始まる位置で切る形になる（`cutsPNS_of_fix`、`cutsPH_of_fix`。σ が動かさない引数の中の切る形は `cutsPHG_of_self`）。
+  - 測定（tmp/claude/cshf2.py）: 13 集合と expP の伸ばし（C 92388 件）で例外 0。このとき ω^S（s′ = V + ω^S）の頭の添字はいつも V 以下。

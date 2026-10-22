@@ -8,6 +8,7 @@ closure の `seed_frames_sv`・`seed_frames_C` と同じ枠のデータを使う
 - C の q の枠は qn と同じ（子の添字 = v_N(q)）。
 -/
 import Ytosk.V3T2CutDom
+import Ytosk.V3CutPSh
 
 namespace Ytosk.G
 
@@ -20,8 +21,7 @@ they are `0`, below `X₁` or components of `V`; at the level `V` they are below
 （実測: 9 集合で例外 0）. -/
 def T2SeedCDom (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
   ∀ τ, Cons (M.take (r + L)) τ →
-    (t2X1 M r L τ ≠ z → ∀ k, t2X1 M r L τ ∈ cutsPNSG (qnS M ρ r L q)
-      (sh (ρ.v r) (qnS M ρ r L q) (shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ) k))) ∧
+    (t2X1 M r L τ ≠ z → prefB (qnS M ρ r L q) (shf (ρ.v r) (qnS M ρ r L q) (qnS M ρ r L q)) = true) ∧
     ∀ g ∈ comps (ρ.v r) (qnS M ρ r L q), g ≤ psi (qnS M ρ r L q) z z ∨ g ≤ t2X1 M r L τ
 
 /-! ## sv -/
@@ -477,8 +477,23 @@ theorem seed_frames_C3 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       have hshall := allGe_sh hVot hs'ot hVs' (isOT_shIt hVot hs'ot hVs' hX1ot (n - 2))
         (seedExt_allGe hVot hs'ot hVs' hBhi hEn)
       have hsp := (split_all_hi hshall).1
+      -- `X₁` moves under `σ` (else the trigger `X₁ < σ^{n−1} X₁` fails), so it is a cut of `σ X₁`
+      have hcut : X1 ∈ cutsNSG s' (sh V s' X1) := by
+        rcases hFx with hfx | hc
+        · exfalso
+          have hit : ∀ k, shIt V s' X1 k = X1 := by
+            intro k; induction k with
+            | zero => rfl
+            | succ k ih => show sh V s' (shIt V s' X1 k) = X1; rw [ih, hfx]
+          have h1 := ht.1
+          rw [hit, hfx] at h1
+          exact lt_irrefl' _ h1
+        · exact hc
+      have hhi1 : AllGeT (psi (succ s') z z) (sh V s' X1) :=
+        allGe_sh hVot hs'ot hVs' hX1ot (allGe_mono (om_le_succ hVot hs'ot hVs' s') hBhi)
+      have hcutP := G.cutsPNS_of_fix hVot hs'ot hVs' hs'ot hVs' ((hDom τ0 hC0).1 hX0) hcut
       refine frameDom_of_cutP hot (fun u hu h' => hu (T.lt_trans' hVs' h')) ?_ ?_
-      · rw [hsp]; exact (hDom τ0 hC0).1 hX0 (n - 2)
+      · rw [hsp]; exact (G.cutP_all hVot hs'ot hVs' hX1ot hhi1 hcutP (n - 2)).1
       · rw [hsp]; exact allGe_mono (om_le_succ hVot hs'ot hVs' s') hshall
   · -- FrameClosed, the frame of `q`
     refine hfrq ⟨hGN.ot_o _ hxN, ?_⟩
