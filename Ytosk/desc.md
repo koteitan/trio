@@ -4089,3 +4089,15 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - C の場面でも P₀(q) = r は `par0_q_t2`（t = 2・q ≠ r）から、x = bump(q) は `t2_qn_struct` から出る。だから `t2SeedCDom1_holds` は仮定なしで成り立つ。
 - 最上位は T2SeedDomV2B の代わりに、qn の欄だけの `T2SeedDomV2Q` を受ける（`t2SeedDomV2B_of_Q`）。最上位の仮定の数は 12 のまま。全体ビルド緑（1068 jobs）。axioms は propext・Classical.choice・Quot.sound。
 - 教訓: 残りが既存の補題と同じ式なら、その補題の前提が今の場面で出るかを先に見る。今回は qn 用に証明済みの補題を見落としていた。
+
+### qn の種の残りを「落とした後の v_T(q) ⊴ v(q)」に減らした（2026-10-22、lead、V3QNTakeL）
+
+- T2SeedPResRC2 の qn の欄（M.take x での r の引数は B ++ Ω_{t₁}、V < t₁、t₁ は標準形、k ≥ 1 で t_k < v(q) かつ t_k ⊴ v(q)）を、`v_T(q) ⊴ v_M(q)`（T = M.take x）だけから出した（`t2SeedPResQN_of`）。最上位は T2SeedPResRCV2B の代わりに `T2SeedPResRCV2C`（qn の欄がこの形）を受ける。仮定の数は 12 のまま。
+- `qn_take_t1L`: `qn_take_t1`（CL_M(r) = [q] の場合）を CL_M(r) = Lc ++ [q] に広げた。
+  - M で q は topped（最後の子 x が bump 子）で、r の数える子だから上げの的でない。`isUpg_take_eq` で M.take x でも上げの的でなく、q は M.take x でも数える子。よって CL_T(r) = Lc ++ [q]。
+  - `frame_take` で Lc の o と v(r) は変わらない。o_T(q) = Ω_{v_T(q)}。
+  - o_T(q) ≤ o_M(q)（落とす補題）と `leaf_M_side`（B の加数は Ω_{v_M(q)} 以上）から、r の引数は B ++ Ω_{t₁}（t₁ = v_T(q) = V + ω^{W_T}、ω^{W_T} ≤ ω^{W₀}）。
+  - あわせて v_M(q) = V + ω^{W₀+1}（x の bump 項は 1）も返す。
+- `qn_tqN_lhd`（項の補題）: t_{k+1} = s′ ++ X（X の加数は ω^{W₀} か ω^{W_T}）。t_k の成分は s′ の成分か t₁ の成分なので、s′ ◁ v(q)（`add_omega_succ_lhd`）と t₁ ⊴ v(q) から t_k ◁ v(q)。大小は V + (ω^{W₀} ++ X) < V + ω^{W₀+1}（`add_app_single`）。
+- 残りの欄 v_T(q) ⊴ v(q) は M.take x（n ≤ 1）の展開の中ですでに使っている形（`t2_qn_take` の `v_bump_drop`、x−1 が上げる場合は `t2_qnu_take` の `v_bump_drop_upg`）。測定（tmp/claude/qnlhd.py）: std_a 960 件・ext2 35870 件で例外 0。k = 1..3 の t_k ◁ v(q) も例外 0。
+- W_T < W₀ の例がある（x−1 が M では祖先へ上げ、M.take x では最後の列なので上げない。std_a 4 件、ext2 163 件、いずれも Lc = []）。このため t₁ ⊴ v(q) は自明ではない。
