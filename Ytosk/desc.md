@@ -4067,3 +4067,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 残り T2SeedCDom1 は「X₁ ≠ 0 なら、すべての k で X₁ ∈ cutsPNSG s′ (σ^{k+1} X₁)」。expP の伸ばし（C 92388 件、k = 1..4）と 13 集合で例外 0。最上位の T2SeedDomV2B は qn の弱い形・道の段の形と、この C の形。全体ビルド緑（1066 jobs）。
 - 監査（tmp/claude/audit_t2_on.py、trio-codex の t = 2 の残りの監査を expP の伸ばし 246 万個で）: 破れたのは古い qn の第 1 欄と古い T2SeedCDom1 だけ。ほかの t = 2 の残りはすべて例外 0。
 - 測定の追記（2026-10-22、tmp/claude/domweak.py・cpf2.py）: qn の新しい 2 欄（弱い形・道の段の形）と C の新しい形（k = 1..4）は、13 集合すべて（std_a・d3s・deep2・deep3・Cprime・ext1・ext1x・t0ext・expP・ext3s・e3exp・t2ext・ext2）と expP の t = 2 の伸ばしで例外 0。
+
+### C の欄を k によらない形にした（2026-10-22、lead、V3CutPSh・V3T2SeedQNK）
+
+- `cutsPNS_same_sh`（`cutsNS_same_sh` の写し）: X₁ ∈ cutsPNSG s (σX₁) なら、X₁ ∈ cutsPNSG s h から X₁ ∈ cutsPNSG s (σh)（h は標準形で項は Ω_{s+1} 以上）。新しいのは切る位置 Ω_s の場合だけ: a = s ++ δ で s が σ(s) の頭なら σ(a) = σ(s) ++ σδ も s から始まる（`prefB_shf`。`sub_app_of_ne`・`add_app_right`・`sub_eq_z_le` を足した）。σ(s) の頭が s であることは、X₁ が σX₁ を切った形であることの中の Ω_s の位置から出る。
+- `cutP_all`: k = 0 の形と T2SeedCBase の欄（σX₁ の項は Ω_{s′+1} 以上、X₁ は標準形）から、すべての k で X₁ ∈ cutsPNSG s′ (σ^{k+1} X₁)。
+- 残り T2SeedCDom1 は「X₁ ≠ 0 なら X₁ ∈ cutsPNSG s′ (σX₁)」だけ（k を含まない）。この形は前の測定の k = 1 にあたり、13 集合と expP の伸ばしで例外 0。全体ビルド緑（1067 jobs）。

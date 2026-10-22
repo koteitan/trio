@@ -11,6 +11,7 @@ import Ytosk.V3TopV2
 import Ytosk.V3T2SeedSVCl
 import Ytosk.V3T2SeedFrV2
 import Ytosk.V3T2VRASeed
+import Ytosk.V3CutPSh
 
 namespace Ytosk
 
@@ -165,20 +166,33 @@ theorem t2VRAQNDom0_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : In
 
 /-! ## T2SeedCDom の段 V の欄は T2SeedCBase から -/
 
-/-- **The residual `T2SeedCDom` without its level-`V` field** (2026-10-21): `X₁` is a cut of every `σ^{k+1} X₁` at a
-position whose subscript starts with `s′` (`cutsPNSG`). FrameDom at the C seed frame then needs no condition on the
-components of `s′` (`frameDom_of_cutP`). The earlier form (all levels `u ≤ V`: the components of `s′` are `0`, below `X₁`
-or below a component of `V`) is false on standard matrices (expP's t = 2 one-column extensions, 28). -/
+/-- **The residual `T2SeedCDom` without its level-`V` field** (2026-10-22): `X₁` is a cut of `σ X₁` at a position whose
+subscript starts with `s′` (`cutsPNSG`). Every `σ^{k+1} X₁` then has the same cut (`cutP_all`), and FrameDom at the
+C seed frame needs no condition on the components of `s′` (`frameDom_of_cutP`). The earlier form (all levels `u ≤ V`:
+the components of `s′` are `0`, below `X₁` or below a component of `V`) is false on standard matrices (expP's t = 2
+one-column extensions, 28). -/
 def T2SeedCDom1 (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
-  ∀ τ, Cons (M.take (r + L)) τ → t2X1 M r L τ ≠ z → ∀ k, t2X1 M r L τ ∈ cutsPNSG (qnS M ρ r L q)
-    (sh (ρ.v r) (qnS M ρ r L q) (shIt (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ) k))
+  ∀ τ, Cons (M.take (r + L)) τ → t2X1 M r L τ ≠ z →
+    t2X1 M r L τ ∈ cutsPNSG (qnS M ρ r L q) (sh (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ))
+
+/-- **The prefix cut of `σ X` carries to every `σ^{k+1} X`** (with the summands of `σ^{k+1} X` at least `Ω_{s+1}`). -/
+theorem cutP_all {V s X : T} (hV : isOT V = true) (hs : isOT s = true) (hVs : V < s) (hX : isOT X = true)
+    (hhi : AllGeT (psi (succ s) z z) (sh V s X)) (h0 : X ∈ cutsPNSG s (sh V s X)) :
+    ∀ k, X ∈ cutsPNSG s (sh V s (shIt V s X k)) ∧ AllGeT (psi (succ s) z z) (sh V s (shIt V s X k))
+  | 0 => ⟨h0, hhi⟩
+  | k + 1 => by
+    obtain ⟨h, ha⟩ := cutP_all hV hs hVs hX hhi h0 k
+    have hot : isOT (sh V s (shIt V s X k)) = true := isOT_sh hV hs hVs (G.isOT_shIt hV hs hVs hX k)
+    exact ⟨G.cutsPNS_same_sh hV hs hVs hs hVs hot ha h0 h,
+      G.allGe_sh hV hs hVs hot (G.allGe_mono (G.om_le_succ hV hs hVs s) ha)⟩
 
 theorem t2SeedCDom_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) {r L q : Nat}
     (hrM : r < M.length) (h1 : T2SeedCDom1 M ρ r L q) (hB : T2SeedCBase M ρ r L q) : G.T2SeedCDom M ρ r L q := by
   intro τ hτ
-  refine ⟨h1 τ hτ, fun g hg => Or.inr ?_⟩
   obtain ⟨X, hX⟩ := o_arg_form I hrM
-  obtain ⟨_, _, _, _, -, -, -, -, -, -, -, -, hcl⟩ := hB τ hτ X hX
+  obtain ⟨_, _, _, _, -, -, -, -, -, -, hhi, hot, hcl⟩ := hB τ hτ X hX
+  refine ⟨fun hX0 k => (cutP_all (I.good.ot_v r hrM) (qnS_ot I hrM L q) (qnS_gt M ρ r L q) hot hhi
+    (h1 τ hτ hX0) k).1, fun g hg => Or.inr ?_⟩
   exact le_of_lt (hcl _ (Or.inl rfl) (lt_irrefl' _) g (List.mem_append_right _ hg))
 
 /-! ## T2SeedQNDom の段 V の欄は第 1 欄と T2SeedQNBase から -/
