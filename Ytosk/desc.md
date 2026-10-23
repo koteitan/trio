@@ -4107,3 +4107,11 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 追記 2（2026-10-23、V3QNDropV・V3T2G・V3T2QNU・V3T2UpgAbs）: x − 1 が上げる場合も証明した（`qn_drop_v_upg`）。これで T2SeedPResRC2 の qn の欄はすべて証明済み。最上位は qr・sv・C だけの `T2SeedPResRCV2E` を受ける。仮定の数は 12 のまま。
   - n ≤ 1 の展開の組み立て `t2_assemble2`（V3T2G）は、DepS の列ごとの ◁（`deps_lhd_genW2`）を中で出しながら、根の比較だけを返していた。列ごとの ◁ も返す `t2_assemble2_full`・`t2_assemble_full` を作り、元の定理はその `.1` にした。同じく `t2_qnu_take_full`・`qnu_take_weak_full`・`qnu_take_of_drop_full` は v_T(q) ◁ v_M(q) も返す。
   - 前提はどれも StepCtxT2 から出る: DepS の形は `qnu_shapes`、hAbs は `absWN_of_absC`（落とす残りの ab）、hUA は落とす残りの ua。種 o(r) の ◁ は `strong_seed_of_drop` で、o_T(r) ≠ o_M(r) は t₁ < v(q)（`qn_take_t1L`）と `leaf_M_side` から。
+
+### C の decP の調べ（2026-10-23、lead）
+
+- T2SeedPResRCV2E の C の decP（M.take x で r の最後の数える子 c0 の添字は s′ より大きい）を、既存の補題で出せないか調べた。結論はまだ出せない。
+- 分かったこと:
+  - C の場面では c0 から q までの r の子はすべて q と同じ列（tmp/claude/csib.py: std_a 153・ext2 2227 件で例外 0）。Lean でも `t_child_col`（V3Tame、x := q）で q 以前の r の子はすべて同じ列。q 以降は数えない子なので、最上位の残り HSibColV2（SibColU）の鎖で M では v(q) ≤ v(c0)、よって s′ < v_M(q) ≤ v_M(c0)。
+  - しかし decP は M.take x の v_T(c0) についての主張で、v_T(c0) は M より小さくなりうる。例 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,2,0)(2,2,1)(3,2,1)(4,1,0)(3,2,1) では c0 = 8 の子孫 10 が q = 11 へ上げ、v_T(10) は v_T(q) の最後の加数を読む。x を落とすと v(q) が減り、v(10)・o(10)・8 の bump 項・v(8) の順に減る。
+  - だから M 側の比較だけでは足りない。decP の使う側は V3CFix・V3SibConsumer・V3CBigV・V3CBig・V3T2SeedWire・V3T2BelowV2 にあり、すぐには M 側の形に替えられない。
