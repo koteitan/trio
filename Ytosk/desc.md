@@ -4251,3 +4251,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | T2VRAK KAG | 道の段の KA・KG | 接ぎ木で例外 0 |
 
 - 新しい残りを立てるときは、11 集合・std_b・expP_t2 に加えて、接ぎ木 graftA・graftB（Bad2 側は graftBb2）でも測る。
+- 追記（同じ日）: 最上位の HSibColV2（すべての標準形で SibColU）を `HCanonV2`（すべての標準形で `CanonicalNeed`）に狭めた（V3SibCanonTop の `t2SeedPResR_of_canon`、2026-10-20 に作ってあった `qnUncRes_of_canonical`・`t2SeedCBig_of_canonical` をつないだ）。CanonicalNeed は SibColU の特別な場合（隣り合う子 a < b は同じ列で、a は x − 1 から上げられ topped、b は数える子）。基の定理 `trio_terminates_main_V2_base` は (T2SeedPResRCV2, HSibHardV2) の代わりに T2SeedPResRV2 を取る。仮定は 14 個のまま、全体ビルド緑 1074 jobs、公理は標準の 3 つ。SibColW（SibColU を含む）は 11 集合・std_b・接ぎ木で例外 0。

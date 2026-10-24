@@ -125,7 +125,7 @@ t1 handles the weak seed with `SmallSelf` in `qr_final3`.) -/
 theorem trio_terminates_main_V2_base (hD : HDropV2) (hTB : TakeBadV2) (hBO : BadOutV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hAbW : T0AbWRes) (hCB : T2CBadOut)
-    (hB : T2BelowXResV2) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
+    (hB : T2BelowXResV2) (hPRV : T2SeedPResRV2) (hDom : T2SeedDomV2)
     (hFD : T2FDCopyRes)
     (hQNG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
@@ -138,7 +138,7 @@ theorem trio_terminates_main_V2_base (hD : HDropV2) (hTB : TakeBadV2) (hBO : Bad
       TRIO.srow M (M.length - 1) = 2 → T2VRACopyEsc M)
     (hVK : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KVRA M) : WellFounded Step' :=
-  have hP : T2SeedPResV2 := t2SeedPResV2_of (t2SeedPResR_of_sib (hSib_of_hard hSib) hPR)
+  have hP : T2SeedPResV2 := t2SeedPResV2_of hPRV
   have hPreG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ := fun M ρ rk C hz h2 =>
     t2VRAPre_of (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)
