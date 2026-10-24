@@ -212,7 +212,7 @@ theorem qr_core_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {
   obtain ⟨ρN, _, _, _, _, IN, hot, hlt⟩ :=
     qr_final4S hlen hL hd0e S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00
       h1 hx2 hq I.cons I.good I.rank I.vs I.fc I.fo R.argT I.kd I.td R.ab R.ws R.vst R.ua
-      I.tp1w (I.tplow hNB) I.auwl I.auw0 (I.adw hNB) I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
+      I.tp1w (I.tplowAt hlen h1) I.auwl I.auw0 (I.adwAt hlen h1) I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
       CopyCoreV2 I1.copyCore (expStep_core_inv3V2 S I hlen hL hd0e h1 hx2) n hn
   exact ⟨ρN, IN, hot, hlt⟩
 
@@ -268,7 +268,7 @@ theorem qr_vsmallF_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat
   obtain ⟨ρN, _, _, _, _, IN, hot, hlt⟩ :=
     qr_final4S hlen hL hd0e S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00
       h1 hx2 hq I.cons I.good I.rank I.vs I.fc I.fo R.argT I.kd I.td R.ab R.ws R.vst R.ua
-      I.tp1w (I.tplow hNB) I.auwl I.auw0 (I.adw hNB) I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
+      I.tp1w (I.tplowAt hlen h1) I.auwl I.auw0 (I.adwAt hlen h1) I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
       (fun N σ => CopyCoreV2 N σ ∧ VrLe r ρ N σ ∧ VSmallF N σ)
         ⟨I1.copyCore, vrle_prefix_inv3V2 S I hlen h1 R I1, I1.vs⟩
         (expStep_core_vsmallF_pass_inv3V2 S I hlen hL hd0e h1 hx2 hPR) n hn

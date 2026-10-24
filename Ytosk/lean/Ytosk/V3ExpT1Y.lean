@@ -231,7 +231,7 @@ theorem inv3V_N_t1Y {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
     obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=
       qr_final4 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2 hq
         I.cons I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.ad I.tp1w
-        I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (fun N σ => (PT1C M q ρ N σ ∧ (AgrT1 M q ρ N σ ∧ NoGapP N σ)) ∧ (AgrT1 M q ρ N σ ∧ VP (InVKv M ρ) N σ))
+        (I.tplow.toAt _) I.auw (I.adw.toAt _) I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (fun N σ => (PT1C M q ρ N σ ∧ (AgrT1 M q ρ N σ ∧ NoGapP N σ)) ∧ (AgrT1 M q ρ N σ ∧ VP (InVKv M ρ) N σ))
         hP1 hPs n hn
     exact ⟨ρN, rkN, inv3V_of_PT1C hCN hRN hGN hPN.1.1 (hFr n ρN rkN hn hRN hCN hGN hPN.1.1.2.2.1.1 hPN.1.1.2.2.1.2
       hPN.1.1.2.2.2.2.2.2.2.2.1.2 hPN.1.1.2.2.2.2.2.2.2.1), hPN.1.2.2,

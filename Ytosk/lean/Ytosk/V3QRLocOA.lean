@@ -53,7 +53,7 @@ variable {M : Mat} {x r : Nat} {ρ : Valn} {μ b seed : T} (hx : x + 1 = M.lengt
     SeedOK a' (app b (psi (succ μ) z z)) μ seed)
   (hseedS : ∃ a X, seed = psi a X z)
   (hsp0 : spArg μ b seed = app b seed)
-  (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ)
+  (hTP : TP1WC M ρ) (hTPL : TPLoWAt M ρ (fun _ => seed))
   (hYB : ∀ i L c R, i < x → DepX M x true i → children M i = L ++ c :: R → Counted M i c →
     DepX M x true c →
     ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →
@@ -203,13 +203,15 @@ theorem qr_oloc (m : Nat) : ∀ i, i < x → DepX M x true i →
             exact hLs c hcx hdc hdc0 s y hcv hyb hl0
           · obtain ⟨k', hk'⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
             rw [hk']
-            refine lo_keep_Q hDc' hyz hyb ?_ (gamS_lb (one_le_of_ne_z hseedz)
-              (max 1 (dOf M x lo lb c)) (k' + 1) (le_max_left _ _) (max_le (by omega) (by omega))) hl0
+            refine lo_keep_Q hDc' hyz hyb ?_ (le_refl (gamS μ (app b (psi (succ μ) z z)) seed (k' + 1))) hl0
             intro hl a hla hns hOa hca
             have hT := hTPL
-            unfold TPLoW at hT
+            unfold TPLoWAt at hT
             rw [show M.length - 1 = x by omega] at hT
-            exact hT r μ b h1 hq hx2 hro c hcx hdc s y hcv hyb hl a hla hns hOa hca
+            have hkd : dOf M x lo lb c ≤ k' + 1 := by omega
+            rw [hlodef, hlbdef] at hkd
+            exact hT r μ b h1 hq hx2 hro (one_le_of_ne_z hseedz) c hcx hdc s y hcv hyb hl a hla hns hOa hca
+              (k' + 1) (max_le (by omega) hkd)
   · -- `c = x`: `i = r`, the frame at `r`
     have hcx' : c = x := by omega
     subst hcx'

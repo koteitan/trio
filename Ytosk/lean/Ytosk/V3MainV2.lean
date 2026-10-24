@@ -620,7 +620,7 @@ theorem hBaseR (n : Nat) : ∃ ρ rk, Inv3V2 (expand SRO n) ρ rk ∧ RwClosed (
       base_vsmallF hF, base_frameClosed hF, base_frameOT hF, base_kd hF, base_td hF,
       G.base_ph3c hF, G.base_fc3 hF, base_vsmallRAll hF,
       base_absDS, base_absUS, base_tp1 hF, base_tplos, base_tp1w hF,
-      fun _ => base_tplow hF, base_absUWL, base_absUW0, fun _ => base_adw hF, base_trigS0 hF,
+      (base_tplow hF).toAt _, base_absUWL, base_absUW0, (base_adw hF).toAt _, base_trigS0 hF,
       base_tplon hF, base_adn hF, base_rootS hF (by omega), base_rootP hF (by omega)⟩
 
 /-! ## t = 1: 1 コピーの保存から展開の Inv3V2 と下降 -/

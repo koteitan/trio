@@ -988,7 +988,7 @@ theorem inv3V_N_t1A {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 
     obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=
       qr_final4 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2 hq
         I.cons I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.ad I.tp1w
-        I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (PT1A M q ρ) hP1 hPs n hn
+        (I.tplow.toAt _) I.auw (I.adw.toAt _) I.tp1 I.trig I.tplon I.adn I.rootS I.rootP (PT1A M q ρ) hP1 hPs n hn
     exact ⟨ρN, rkN, inv3V_of_PT1A hCN hRN hGN hPN, hot, hlt⟩
   · obtain ⟨s0, y0, h0⟩ := o_psi_form I.cons (show r < M.length by omega)
     obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩ :=

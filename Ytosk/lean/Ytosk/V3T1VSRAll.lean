@@ -392,7 +392,7 @@ theorem expT1Out_V2 (hF : HFrameV2) (hLf : HLeafV2) (hS1 : S1Std) : ExpT1OutV2 :
     by_cases hq : par M 0 (r + L) = some r
     · exact qr_final4S hlen hL0 hd0e S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00
         hr hx2 hq I.cons I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua
-        I.tp1w (I.tplow C.nb2) I.auwl I.auw0 (I.adw C.nb2) I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
+        I.tp1w (I.tplowAt hlen hr) I.auwl I.auw0 (I.adwAt hlen hr) I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
         _ hbase hstep n hn
     · have hrM : r < M.length := by omega
       obtain ⟨br, hro⟩ := o_psi_sub I.cons hrM

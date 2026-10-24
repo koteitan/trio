@@ -4238,7 +4238,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | HDropV2W | 1 列落としの欄 hard・vst・ws・ua・ab（¬Bad2） | 接ぎ木の非 Bad2 で例外 0 |
 | TakeBadV2 | Bad2 の 1 列落とし: Inv3V2 と根の真の減少 | Bad2 は「強い吸収が破れる ∧（x が g の部分木 ∨ t = 2）」と「P₀(x) = x − 1 ∧ t ≥ 1」に狭めた（graftB の Bad2 80228 個 → 約 8950 個）。Bad2 用の落とす補題が要る（drop-redesign の広げた形は例外 0） |
 | BadOutV2 | Bad2 の n ≥ 2 の段: M[n] の Inv3V2 と根の下降 | 同上＋エンジンの弱い場合（t0 で o′(r) ⋪ o(r) の 72 件） |
-| HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は ¬Bad2 の前提つき） | 接ぎ木で例外 0 |
+| HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
 | HBumpExt | 接頭辞に沿った bump の単調性 | 1 列の場合は 11 集合で例外 0 |
 | T2CBadOut | t = 2 の悪い C の段 | — |
@@ -4277,3 +4277,12 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - この形なら結論は項だけで出る: fsD(s + t, η) = s + fsD(t, η)、fsD(t, η) ≠ 0（OHole t）。
 - 枠の文脈（状態 B が y と葉まで同じ形で、葉に Ω_s を持つ）を外すと、結論は破れる（tmp の leafsub.py: 数える子 c、s = v(c)、y = o(c) の引数に出る Ω_k、k > s・極限・OHole。expP 10 万個で 2053 件、ext2 で 1027 件。例 s = ω、k = Ω_1、fsD(Ω_1, η) = η = ω）。頭の部分和でない形も多い（v は v(P₁ c) + X と足すので、add が加数を落とす）。
 - よって HLeafV2 を示すには、前件の立つ枠で「s は k の頭の部分和」になる組合せの理由が要る。例では、i の数える子 e・c（e が先）で v(e) = Ω_{v(c)}（B = o(e) = Ω_{Ω_s}）、c の数える子 d で v(d) = Ω_k、k = s + s + …。
+
+### TPLoW・AbsDW を実際の種の鎖の項で（TPLoWs・AbsDWs、2026-10-24、lead）
+
+- Bad2 に残っていた「P₀(x) = x − 1 ∧ t = 1」の TPLoW・AbsDW の破れ（graftB の 1 族、10・5 件）でも、使う側が要る性質（M[n] で枠の低い部分が 0 のまま、tmp の lowpart.py）は成り立っていた。TPLoW・AbsDW は鎖の項の下限 gamS μ b_r 1 (max 1 d) で述べていて、強すぎた。
+- 使う側（`qr_lkeep`・`qr_oloc` の (L)(ii)、`qr_vloc` の吸収）が使うのは実際の鎖の項 gamS μ b_r seed k（k = m + d ≥ max 1 d、seed = o_{M.take x}(r)）だけ。
+- 新しい形 `TPLoWAt M ρ sd`（V3QRKeep）・`AbsDWAt M ρ sd`（V3QRLocV）: 1 ≤ sd r のとき、すべての k ≥ max 1 d で gamS μ b_r (sd r) k の比較。`TPLoWs`・`AbsDWs`（V3Inv2）は sd r = (drop1 M x rk).o r。`TPLoW.toAt`・`AbsDW.toAt`（gamS_lb と fsD の単調性）で古い形から出る。`TPLoWAt.const`・`Inv3V2.tplowAt` で x の行 1 の親 r の種を定数にする。
+- 測定（tmp の tplows.py、k = max 1 d から +3 まで）: graftB 全数（Bad2 を含む、TPLoW 46867・AbsDW 10790 件）、graftA、std_a、ext2・ext1 各 20 万個で例外 0。11 集合では古い形が例外 0 だったので、新しい形も成り立つ（古い形から出る）。
+- Lean: Inv3V2・TakeFrameV2 の欄 tplow・adw を「¬ Bad2 M → TPLoW / AbsDW」から TPLoWs・AbsDWs（前提なし）に替えた。使う側 V3QRLocOA・V3QRLocV と qr_final 系（V3QRFinal〜4）は TPLoWAt・AbsDWAt を取る。古い Inv3 の道（V3Top・V3ExpT1*）は toAt で渡す。全体ビルド緑、公理は標準の 3 つ。
+- Bad2 の「P₀(x) = x − 1 ∧ t ≥ 1」の選言は、BumpAbsC の破れ（t = 1 で 6、t = 2 で 3 件、同じ族）のために残る。

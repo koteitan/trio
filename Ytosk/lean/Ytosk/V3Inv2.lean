@@ -67,6 +67,15 @@ def Bad2 (M : Mat) : Prop :=
           ∃ ρ, Cons M ρ ∧ ¬ UpgAbsX M (M.length - 1) ρ) ∨
         (par M 0 (M.length - 1) = some (M.length - 2) ∧ entry M 1 (M.length - 1) ≠ 0))
 
+/-- **`TPLoW` at the chain terms of the seed `o_{M.take x}(r)`** (2026-10-24). Unlike `TPLoW` (at the lower
+bound `gamS μ b_r 1 (max 1 d)`), it holds on every grafted standard matrix (graftA・graftB, including `Bad2`). -/
+def TPLoWs (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop :=
+  TPLoWAt M ρ (fun r => (drop1 M (M.length - 1) rk).o r)
+
+/-- **`AbsDW` at the chain terms of the seed `o_{M.take x}(r)`** (2026-10-24), as `TPLoWs`. -/
+def AbsDWs (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop :=
+  AbsDWAt M ρ (fun r => (drop1 M (M.length - 1) rk).o r)
+
 /-- **The redesigned value part**. -/
 structure Inv3V2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   cons : Cons M ρ
@@ -85,15 +94,29 @@ structure Inv3V2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   tp1 : TP1C M ρ
   tplos : TPLoS M ρ rk
   tp1w : TP1WC M ρ
-  tplow : ¬ Bad2 M → TPLoW M ρ
+  tplow : TPLoWs M ρ rk
   auwl : AbsUWL M ρ
   auw0 : AbsUW0 M ρ rk
-  adw : ¬ Bad2 M → AbsDW M ρ
+  adw : AbsDWs M ρ rk
   trigs : TrigS0 M ρ rk
   tplon : TPLoN M ρ
   adn : AbsDN M ρ
   rootS : ∀ i ∈ roots M, Single (ρ.o i)
   rootP : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a)
+
+/-- `TPLoWs` at the frame of `x = r + L` with its row-1 parent `r`, the seed as a constant. -/
+theorem Inv3V2.tplowAt {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat} (I : Inv3V2 M ρ rk)
+    (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) :
+    TPLoWAt M ρ (fun _ => (drop1 M (r + L) rk).o r) := by
+  have h := I.tplow.const (r := r) (by rw [show M.length - 1 = r + L by omega]; exact h1)
+  rwa [show M.length - 1 = r + L by omega] at h
+
+/-- `AbsDWs` at the frame of `x = r + L`, the seed as a constant. -/
+theorem Inv3V2.adwAt {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat} (I : Inv3V2 M ρ rk)
+    (hlen : r + L + 1 = M.length) (h1 : par M 1 (r + L) = some r) :
+    AbsDWAt M ρ (fun _ => (drop1 M (r + L) rk).o r) := by
+  have h := I.adw.const (r := r) (by rw [show M.length - 1 = r + L by omega]; exact h1)
+  rwa [show M.length - 1 = r + L by omega] at h
 
 /-- The `t = 1`, `q = r` expansion engine with Inv3V2 as its input.
 The drop residual, the smaller matrix, the seed components, and preservation
@@ -114,7 +137,7 @@ theorem qr_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L d
   obtain ⟨ρN, _, _, _, _, ⟨rkN, IN⟩, hot, hlt⟩ :=
     qr_final4S hlen hL hd0e S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00
       h1 hx2 hq I.cons I.good I.rank I.vs I.fc I.fo R.argT I.kd I.td R.ab R.ws R.vst R.ua
-      I.tp1w (I.tplow hNB) I.auwl I.auw0 (I.adw hNB) I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
+      I.tp1w (I.tplowAt hlen h1) I.auwl I.auw0 (I.adwAt hlen h1) I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
       (fun N σ => ∃ rkN, Inv3V2 N σ rkN) ⟨rk, I1⟩ hPs n hn
   exact ⟨ρN, rkN, IN, hot, hlt⟩
 

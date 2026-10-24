@@ -166,4 +166,30 @@ theorem gamS_lb {μ b seed : T} (hs : one ≤ seed) :
   obtain ⟨d, rfl⟩ : ∃ d, k = j + d := ⟨k - j, by omega⟩
   exact le_trans (hidx j d) (hseed (j + d))
 
+/-- **TPLoW at the actual chain terms** (2026-10-24): the comparison of `TPLoW` at every chain term
+`gamS μ b_r (sd r) k`, `k ≥ max 1 d_c`, of the seed `sd r` (`sd r = o_{M.take x}(r)` in `Inv3V2`). `TPLoW` asks it at
+the lower bound `gamS μ b_r 1 (max 1 d_c)` and is false on grafted standard matrices (desc); the consumers use only
+the actual chain terms. -/
+def TPLoWAt (M : Mat) (ρ : Valn) (sd : Nat → T) : Prop :=
+  ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
+    entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ (app b (psi (succ μ) z z)) z → one ≤ sd r →
+    ∀ c, c < M.length - 1 → DepX M (M.length - 1) true c → ∀ s y, ρ.o c = psi s y z →
+    y ≠ app b (psi (succ μ) z z) → (split y (psi (succ s) z z)).2 = z →
+    ∀ a, last y = psi a z z → isSucc a = false → OHole a → cof a = .omega →
+    ∀ k, max 1 (dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) c) ≤ k →
+      ¬ psi (fsD a (gamS μ (app b (psi (succ μ) z z)) (sd r) k)) z z < psi (succ s) z z
+
+/-- `TPLoW` gives `TPLoWAt` (`gamS_lb`, `fsD` is monotone in the index). -/
+theorem TPLoW.toAt {M : Mat} {ρ : Valn} (h : TPLoW M ρ) (sd : Nat → T) : TPLoWAt M ρ sd := by
+  intro r μ b h1 h0 h2 hro hs c hc hd s y hcv hyb hl a hla hns hOa hca k hk hlt
+  exact h r μ b h1 h0 h2 hro c hc hd s y hcv hyb hl a hla hns hOa hca
+    (lt_of_le_of_lt (le_psi_sub (fsD_mono_eta hOa (gamS_lb hs _ k (le_max_left _ _) hk))) hlt)
+
+/-- `TPLoWAt` with the seed of the row-1 parent of `x` as a constant. -/
+theorem TPLoWAt.const {M : Mat} {ρ : Valn} {sd : Nat → T} {r : Nat} (h : TPLoWAt M ρ sd)
+    (hr : par M 1 (M.length - 1) = some r) : TPLoWAt M ρ (fun _ => sd r) := by
+  intro r' μ b h1 h0 h2 hro hs
+  rw [hr] at h1; cases h1
+  exact h r μ b hr h0 h2 hro hs
+
 end Ytosk

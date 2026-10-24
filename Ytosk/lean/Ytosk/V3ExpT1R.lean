@@ -335,7 +335,7 @@ theorem vsmallR_gexp_t1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : I
     obtain ⟨ρN, rkN, hCN, hRN, _, hPN, _, _⟩ :=
       qr_final4 hlen hL0 hd0e I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hr hx2 hq
         I.cons I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua I.ad I.tp1w
-        I.tplow I.auw I.adw I.tp1 I.trig I.tplon I.adn I.rootS I.rootP
+        (I.tplow.toAt _) I.auw (I.adw.toAt _) I.tp1 I.trig I.tplon I.adn I.rootS I.rootP
         (fun N σ => VrLe q ρ N σ ∧ VSmallR N σ) hP1 hPs n hn
     exact ⟨ρN, rkN, hCN, hRN, hPN.2⟩
   · obtain ⟨s0, y0, h0⟩ := o_psi_form I.cons (show r < M.length by omega)

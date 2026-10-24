@@ -47,6 +47,31 @@ def AbsDW (M : Mat) (ρ : Valn) : Prop :=
       q < fsD (bumpW M ρ i) (gamS μ (app b (psi (succ μ) z z)) one
         (max 1 (dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) i)))
 
+/-- **AbsDW at the actual chain terms** (2026-10-24): as `AbsDW` at every chain term `gamS μ b_r (sd r) k`,
+`k ≥ max 1 d_i` (`sd r = o_{M.take x}(r)` in `Inv3V2`); `AbsDW` at the lower bound is false on grafted standard
+matrices (desc). -/
+def AbsDWAt (M : Mat) (ρ : Valn) (sd : Nat → T) : Prop :=
+  ∀ r μ b, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) = some r →
+    entry M 2 (M.length - 1) = 0 → ρ.o r = psi μ (app b (psi (succ μ) z z)) z → one ≤ sd r →
+    ∀ i, i < M.length - 1 → DepX M (M.length - 1) false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+    OHole (bumpW M ρ i) → cof (bumpW M ρ i) = .omega →
+    ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+    ∀ k, max 1 (dOf M (M.length - 1) (loQ M ρ μ b) (lbQ M ρ μ b) i) ≤ k →
+      q < fsD (bumpW M ρ i) (gamS μ (app b (psi (succ μ) z z)) (sd r) k)
+
+/-- `AbsDW` gives `AbsDWAt`. -/
+theorem AbsDW.toAt {M : Mat} {ρ : Valn} (h : AbsDW M ρ) (sd : Nat → T) : AbsDWAt M ρ sd := by
+  intro r μ b h1 h0 h2 hro hs i hi hd he1 he2 hO hc q hq hlt k hk
+  exact lt_of_lt_of_le (h r μ b h1 h0 h2 hro i hi hd he1 he2 hO hc q hq hlt)
+    (fsD_mono_eta hO (gamS_lb hs _ k (le_max_left _ _) hk))
+
+/-- `AbsDWAt` with the seed of the row-1 parent of `x` as a constant. -/
+theorem AbsDWAt.const {M : Mat} {ρ : Valn} {sd : Nat → T} {r : Nat} (h : AbsDWAt M ρ sd)
+    (hr : par M 1 (M.length - 1) = some r) : AbsDWAt M ρ (fun _ => sd r) := by
+  intro r' μ b h1 h0 h2 hro hs
+  rw [hr] at h1; cases h1
+  exact h r μ b hr h0 h2 hro hs
+
 /-- In a standard `P ++ X`, every summand of `P` is at least the head of `X`. -/
 theorem summands_ge_of_app : ∀ {P X : T}, isOT (app P X) = true → ∀ q ∈ summands P, head X ≤ q
   | z, _, _, q, hq => by simp [summands] at hq
@@ -136,7 +161,7 @@ variable (hb : AllGeT (psi (succ μ) z z) b)
     k ∈ children M j → DepX M x true k → k < x)
   (hxv : ¬ DepX M x false x)
   (hseedS : ∃ a X, seed = psi a X z)
-  (hTPL : TPLoW M ρ)
+  (hTPL : TPLoWAt M ρ (fun _ => seed))
   (hLs : ∀ c, c < x → DepX M x true c → dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
     ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) →
     (split y (psi (succ s) z z)).2 = z → (split (fsD y seed) (psi (succ s) z z)).2 = z)
@@ -173,22 +198,21 @@ theorem qr_lkeep (m : Nat) {c : Nat} (hc : c < x) (hdc : DepX M x true c) {s y :
     · obtain ⟨k', hk'⟩ : ∃ k', m + dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c = k' + 1 :=
       ⟨m + dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c - 1, by omega⟩
       rw [hk']
-      refine lo_keep_Q hDc hyz hyb ?_ (gamS_lb (one_le_of_ne_z hseedz)
-        (max 1 (dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) c)) (k' + 1) (le_max_left _ _)
-        (max_le (by omega) (by omega))) hl
+      refine lo_keep_Q hDc hyz hyb ?_ (le_refl (gamS μ (app b (psi (succ μ) z z)) seed (k' + 1))) hl
       intro hl' a hla hns hOa hca
       have hxl : M.length - 1 = x := by omega
       have hT := hTPL
-      unfold TPLoW at hT
+      unfold TPLoWAt at hT
       rw [hxl] at hT
-      exact hT r μ b h1 hq hx2 hro c hc hdc s y hcv hyb hl' a hla hns hOa hca
+      exact hT r μ b h1 hq hx2 hro (one_le_of_ne_z hseedz) c hc hdc s y hcv hyb hl' a hla hns hOa hca
+        (k' + 1) (max_le (by omega) (by omega))
 
 variable (hS : ∀ a', ¬ lt μ a' = true → isOT (psi a' (app b (psi (succ μ) z z)) z) = true →
     SeedOK a' (app b (psi (succ μ) z z)) μ seed)
   (hAU' : AbsUWL M ρ)
   (hAUs0 : ∀ i k, i < x → DepX M x false i → upg M i = some k → dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) i = 0 →
     OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega → ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) → q < fsD (last (ρ.v k)) seed)
-  (hAD' : AbsDW M ρ)
+  (hAD' : AbsDWAt M ρ (fun _ => seed))
   (hADs0 : ∀ i, i < x → DepX M x false i → entry M 2 i ≠ 0 →
     dOf M x (loQ M ρ μ b) (lbQ M ρ μ b) i = 0 →
     ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i → q < fsD (bumpW M ρ i) seed)
@@ -405,13 +429,15 @@ theorem qr_vloc (m : Nat) : ∀ i, i < x → DepX M x false i →
         exact h2'
       · have hxl : M.length - 1 = x := by omega
         have hT := hAD'
-        unfold AbsDW at hT
+        unfold AbsDWAt at hT
         rw [hxl] at hT
-        have h0 := hT r μ b h1 hqx0 hx2 hro i hi hv h1' h2 hOW hcW q hq (by rw [hBD.W]; exact hlt)
+        have hkd : dOf M x lo lb i ≤ m + dOf M x lo lb i := by omega
+        have hk1 : 1 ≤ m + dOf M x lo lb i := by omega
+        rw [hlodef, hlbdef] at hkd
+        have h0 := hT r μ b h1 hqx0 hx2 hro (one_le_of_ne_z hseedz) i hi hv h1' h2 hOW hcW q hq
+          (by rw [hBD.W]; exact hlt) (m + dOf M x lo lb i) (max_le hk1 hkd)
         rw [hBD.W] at h0
-        exact lt_of_lt_of_le h0 (fsD_mono_eta (ohole_of_diag hDW)
-          (gamS_lb (one_le_of_ne_z hseedz) (max 1 (dOf M x lo lb i)) (m + dOf M x lo lb i)
-            (le_max_left _ _) (max_le (by omega) (by omega))))
+        exact h0
 
 end
 

@@ -49,7 +49,7 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
     (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsXW M (r + L) ρ)
     -- value invariants
-    (hTP : TP1WC M ρ) (hTPL : TPLoW M ρ) (hAU' : AbsUWL M ρ) (hAD' : AbsDW M ρ)
+    (hTP : TP1WC M ρ) (hTPL : TPLoWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r)) (hAU' : AbsUWL M ρ) (hAD' : AbsDWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r))
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
     -- `q = r`
     (hTP1 : TP1C M ρ)
