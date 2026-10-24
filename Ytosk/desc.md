@@ -4236,7 +4236,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | 残り | 中身 | 状態・手がかり |
 |---|---|---|
 | HDropV2W | 1 列落としの欄 hard・vst・ws・ua・ab（¬Bad2） | 接ぎ木の非 Bad2 で例外 0 |
-| TakeBadV2 | Bad2 の 1 列落とし: Inv3V2 と根の真の減少 | Bad2 は x が g の部分木にある形（graftB で 31137 個）と、t = 2 で強い吸収が破れる形（側 G で 36 個）に狭めた。Bad2 用の落とす補題が要る（drop-redesign の広げた形は例外 0） |
+| TakeBadV2 | Bad2 の 1 列落とし: Inv3V2 と根の真の減少 | Bad2 は「強い吸収が破れる ∧（x が g の部分木 ∨ t = 2）」と「P₀(x) = x − 1 ∧ t ≥ 1」に狭めた（graftB の Bad2 80228 個 → 約 8950 個）。Bad2 用の落とす補題が要る（drop-redesign の広げた形は例外 0） |
 | BadOutV2 | Bad2 の n ≥ 2 の段: M[n] の Inv3V2 と根の下降 | 同上＋エンジンの弱い場合（t0 で o′(r) ⋪ o(r) の 72 件） |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は ¬Bad2 の前提つき） | 接ぎ木で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
@@ -4268,3 +4268,5 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 前提が弱くなった仮定は HDropV2W・HFrameV2 だけ（t = 2 の文脈では Bad2 は前と同じ）。どちらの欄も側 G（t ≠ 2 を含む）で例外 0 で、新しい UpgAbsXW0 は側 G の 288 件で WCSP・SmallSelf が成り立ち、NBParX は側 G の定義から成り立つ。TakeBadV2・BadOutV2 は前提が狭くなった。仮定は 14 個のまま、全体ビルド緑 1074 jobs、公理は標準の 3 つ。
   - Bad2 が受け持つ行列: graftB の Bad2 80228 個のうち側 S 31137 個と側 G の t = 2（標本で約 2 割）。
 - 追記（同じ日）: Bad2 の t = 2 の選言を「x の行 2 ≠ 0 ∧ x − 1 での強い吸収 UpgAbsX が破れる（Cons を満たす評価で）」に狭めた。t = 2 で NBPar(x − 1) を使うのは強い吸収が破れる場合だけ（`old_target_of_failure`・T2UABad の枝 `t2_qu_take_bad`）。側 G の t = 2 で強い吸収が破れるのは graftBb2G の 36 個（uaw0c の t2bad）。前提が弱くなる仮定: HDropV2W・HFrameV2 の欄は側 G 全体で例外 0（ua は強い選択肢が成り立つ）、t = 2 の文脈の仮定（T2VAncUse・KAG・種の欄など）は graftB 全体（Bad2 を含む）で測ってあり例外 0。全体ビルド緑、公理は標準の 3 つ。
+- 追記（同じ日）: 側 S（x が g の部分木）を x − 1 での強い吸収で分けた（graftBb2S: 成り立つ 30669・破れる 468 個、ext2b2S: 2133・0 個）。強い吸収が成り立つ側では PV・PO・UpgAbsXW0・t = 0 の o′(r) ◁ o(r) は例外 0。破れは TPLoW 10・AbsDW 5・BumpAbsC 9 件で、(P₀(x) の位置, t) で分けると P₀(x) = x − 1 ∧ t = 1（TPLoW・AbsDW・BumpAbsC 6）と t = 2（BumpAbsC 3）だけ。ほかの 6 組（P₀(x) ∈ {g, p} の t = 0・1・2 と P₀(x) = x − 1 の t = 0）は例外 0。
+  - Bad2 を「x − 1 に上がり先 ∧ p は g の bump 子 ∧ [（g が x の祖先 ∨ x の行 2 ≠ 0）∧ 強い吸収が破れる ∨ P₀(x) = x − 1 ∧ x の行 1 ≠ 0]」に狭めた。強い吸収が成り立つ側 S では UpgAbsXW0 の弱い選択肢（NBParX）が偽なので強い選択肢が使われ、使う側の証明と合う。graftB の Bad2 は 80228 個から約 8950 個（破れる側 S 468・側 G の t = 2 で破れる 36・P₀(x) = x − 1 ∧ t ≥ 1 の 8445）に減った。全体ビルド緑、公理は標準の 3 つ。
