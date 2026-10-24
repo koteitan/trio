@@ -8,7 +8,8 @@ rk false c についての帰納法で示す。v(c) = v(m) + X で、add が落�
 - 行 2 = 1・X = ψ_0(Y)（添字 0）: 落ちる加数 q < X は ψ_0(y)（y < Y）で、段 0 の成分は y 以下（標準形）、
   段 > 0 の成分はない。よって X の成分 Y で押さえられる（`comps_below_psi0`）。
 - 行 2 = 1・X の添字が正: 残り `VAncPos`（帰納法の仮定つき）。
-測定: X の添字が 0 の場合は std_a・d3s・ext2 で X の成分だけで押さえられる（tmp/claude/vcase.py）。
+測定: X の添字が 0 の場合は std_a・d3s・ext2 で X の成分だけで押さえられる（tmp/claude/vcase.py）。注意（同じ日）: HVAncStd（したがって VAncPos・VAncJ）は標準形で偽（desc「T2VAncStep は偽」）。ここの定理は含意として
+正しいが、最上位では使わない。最上位の残りは使う側の形 `FDCopyRoot.T2VAncUse`。
 -/
 import Ytosk.V3VAncStd
 import Ytosk.V3DropRel

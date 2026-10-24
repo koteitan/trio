@@ -253,17 +253,43 @@ theorem par1_copy_root {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   rw [par1_xN hlen (by omega) hA hq (by omega) hn (by omega)]
   exact par1_x_r (by omega) C.S.z2 C.S.z1c hr
 
+/-- **What the copy frames use of `VAnc`** (`t = 2`): `VDomF` at the guarded copy frames with a counted child,
+and `VAnc` on the root edge `r → r + L` of `N = M[n]`. (`VAncStep` of every `M[n]` is false in general:
+desc「T2VAncStep は偽」.) -/
+structure T2VAncUse (M : Mat) : Prop where
+  vdom : T2CopyK CopyVDomK M
+  edge : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ n, 2 ≤ n → ∀ σ,
+    Cons (G2 M r L n) σ → Good3 (G2 M r L n) σ → VAnc σ r (r + L)
+
+/-- The former route: `T2VAncUse` from `VAncStep` of every `M[n]`. -/
+theorem t2VAncUse_of_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hVS : T2VAncStep M) : T2VAncUse M := by
+  refine ⟨t2CopyK_vDom_of hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 hVS, ?_⟩
+  intro r L hlen hr n hn σ hCN hGN
+  have hStep : VAncStep (G2 M r L n) σ := by
+    have hGN' := hGN
+    rw [← expand_eq_G2_ctx C hz h2 hlen hr n] at hCN hGN' ⊢
+    exact hVS n hn σ hCN hGN'
+  have hxN : r + L < (G2 M r L n).length := by
+    rw [TRIO.gexp_length hlen]
+    have hrx : r < r + L := par_lt M 2 _ _ hr
+    have := Nat.mul_le_mul_right L hn
+    omega
+  exact hStep (r + L) r hxN (par1_copy_root C hlen hr hn)
+
 theorem t2CopyK_FDshAt_of_path {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
-    (hSeedFO : T2SeedFrames QFO M) (hVS : T2VAncStep M)
+    (hSeedFO : T2SeedFrames QFO M) (hU : T2VAncUse M)
     (hAG : T2VRAK KAG M) : T2CopyK FDshAt M := by
   have IW := Inv3W.ofV2 C.S C.I
   have RW : Res3W M ρ rk := ⟨C.R.drop⟩
   have hCR := t2CopyResAll_holds M ρ rk C.std C.ne IW RW hz h2
   have hG := good3_expand_t2 C.std C.ne IW RW hz h2
     (t2BelowXE_of hB C.std C.ne IW RW hz h2) hCR
-  have hVD := t2CopyK_vDom_of hB C.std C.ne IW RW hz h2 hVS
+  have hVD := hU.vdom
   have hT : ∀ τ, Cons (M.take (M.length - 1)) τ → FrameOT (M.take (M.length - 1)) τ := by
     intro τ hτ
     have hl2 : 2 ≤ M.length := by
@@ -301,16 +327,7 @@ theorem t2CopyK_FDshAt_of_path {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       exact (source_v_base_pair C hB hz h2 hlen hr hCN hGN hCP hg hc).1
     · exact (root_v_original C hB hz h2 hlen hr hn hGK hCN).trans
         (root_v_original C hB hz h2 hlen hr (by omega) hGK hCP).symm
-  have hStep : VAncStep (G2 M r L n) σ := by
-    have hGN' := hGN
-    rw [← expand_eq_G2_ctx C hz h2 hlen hr n] at hCN hGN' ⊢
-    exact hVS n hn σ hCN hGN'
-  have hxN : r + L < (G2 M r L n).length := by
-    rw [TRIO.gexp_length hlen]
-    have hrx : r < r + L := par_lt M 2 _ _ hr
-    have := Nat.mul_le_mul_right L hn
-    omega
-  have hEdge := hStep (r + L) r hxN (par1_copy_root C hlen hr hn)
+  have hEdge := hU.edge r L hlen hr n hn σ hCN hGN
   unfold VAnc at hEdge
   rw [hvr] at hEdge
   have hRoot := rootDom_of_seed hV hV' hVV ha hVa hEdge hDom
@@ -332,7 +349,7 @@ theorem t2CopyK_FDshAt_of_path {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 theorem t2FDCopyRes_of_path (hB : T2BelowXResV2) (hFO : T2FOSeedV2)
     (hVS : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
-      TRIO.srow M (M.length - 1) = 2 → T2VAncStep M)
+      TRIO.srow M (M.length - 1) = 2 → T2VAncUse M)
     (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : T2FDCopyRes := by
   intro M ρ rk C hz h2
