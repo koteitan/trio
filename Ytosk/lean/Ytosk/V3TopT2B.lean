@@ -42,10 +42,10 @@ the seed columns (qn from `T2SeedDomV2` and `T2SeedQNBase`; the last child `c₀
 `T2VRAK KAG` (with `T2VAncUse.vdom` it gives the frame condition `KVRA` of `qVRAshK_KVRA`); top `HSibColV2` (adjacent siblings with the same column, not both counted, `SibColU`). 
 2026-10-24 (the grafted bad shape `Bad2`: `x − 1` has an upgrade target and its parent is a bump child): the drop
 residual `HDropV2W` and the engines' step context assume `¬ Bad2 M`, the frame fields `TPLoW`・`AbsDW` of `Inv3V2`
-and `HFrameV2` are guarded by `¬ Bad2`; the `Bad2` matrices are the new residuals `TakeBadV2` (the one-column drop),
-`BadOutV2` (the step: `Inv3V2` of `M[n]` and the descent) and `Drop0BadV2` (the descent to `M[0]` when a prefix is
-`Bad2`). Measured on the grafted standard sets graftA・graftB (desc). -/
-theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hTB : TakeBadV2) (hBO : BadOutV2) (hD0 : Drop0BadV2)
+and `HFrameV2` are guarded by `¬ Bad2`; the `Bad2` matrices are the new residuals `TakeBadV2` (the one-column drop:
+`Inv3V2` and the root does not increase) and `BadOutV2` (the step: `Inv3V2` of `M[n]` and the descent); the descent
+to `M[0]` through a `Bad2` prefix is proved from the prefix invariants of the context (`root_chain_pre`). Measured on the grafted standard sets graftA・graftB (desc). -/
+theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hTB : TakeBadV2) (hBO : BadOutV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -105,7 +105,7 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hTB : TakeBadV2) (hBO : Ba
           (t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)))
         (hP M ρ rk C hz h2) (hCF M ρ rk C hz h2)
         (fun r L q hlen hr hq hqr hncl => (hCl M ρ rk C hz h2 r L hlen hr).2.2 q hq hqr hncl))
-  trio_terminates_main_V2_base (hDropV2_of' hDW) hTB hBO hD0 hF hLf
+  trio_terminates_main_V2_base (hDropV2_of' hDW) hTB hBO hF hLf
     (t0AbWRes_of_ext (hDropV2_of' hDW) hBE)
     hCB hBX
     hPR hSib hDom (FDCopyRoot.t2FDCopyRes_of_path hBX (t2FOSeedV2_of hP hDom) hVU hAG) hQNG hSVCG

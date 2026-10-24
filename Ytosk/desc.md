@@ -4228,3 +4228,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - 未測定: FC3・TP1C・TP1WC（Lean の形）と HLeafV2（前件が接ぎ木で立たない）。
 - drop-redesign（CntX を広げる案）は使わない。
 - 追記（同じ日）: 残っていた Inv3V2 の欄も接ぎ木で測った。FC3（P = S1 ∧ S3 ∧ S4 ∧ PH3c ∧ FC3、tools/probe_close_nt.py std、NARROW=G）は graftB・graftA で例外 0。TP1C・TP1WC は inv_fields の TP1・TP1W（すべての子の強い形）に含まれ例外 0。HLeafV2（TP1LeafG・TP1WLeafG）は接ぎ木で前件が立たない。よって Inv3V2 の欄で接ぎ木で破れるのは、前提つきにした TPLoW・AbsDW だけ。
+- 追記（同じ日）: 残り Drop0BadV2 を証明した（12 → 15 → 14）。TakeBadV2 に「root(M.take) ≤ root(M)」を足し（Bad2 の行列 graftB 80228・ext2 4073・std_a 67 個で例外 0、tmp/claude/takebad.py）、M[0] への下降を、文脈 StepCtxV2 が持つ接頭辞の Inv3V2 から作る鎖 `root_chain_pre`（Bad2 でない段は drop_root_le、Bad2 の段は TakeBadV2）と最後の段の真の減少（t2 は hlast、t0・t1 は drop_n1）で示す。desc_stepV2・t2_dropsC は Drop0BadV2 の代わりに鎖と接頭辞の事実 `prefix_facts_pre` を取る。全体ビルド緑、公理は標準の 3 つ。

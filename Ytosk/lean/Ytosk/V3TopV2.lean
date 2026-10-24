@@ -122,7 +122,7 @@ the prefix shape `T2SeedPreShape`・the copy levels `T2VRACopyEsc` (level proven
 None of them is the false strong absorption `HAbSV2`. (2026-10-17, drop: also `T2UpgAbsW`, the strong `UpgAbsX`
 at the last column for `t = 2`, which the drop lemma no longer gives. The `t = 1` analogue `T1UpgQRV2` is removed:
 t1 handles the weak seed with `SmallSelf` in `qr_final3`.) -/
-theorem trio_terminates_main_V2_base (hD : HDropV2) (hTB : TakeBadV2) (hBO : BadOutV2) (hD0 : Drop0BadV2)
+theorem trio_terminates_main_V2_base (hD : HDropV2) (hTB : TakeBadV2) (hBO : BadOutV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hAbW : T0AbWRes) (hCB : T2CBadOut)
     (hB : T2BelowXResV2) (hPR : T2SeedPResRCV2) (hSib : HSibHardV2) (hDom : T2SeedDomV2)
@@ -142,7 +142,7 @@ theorem trio_terminates_main_V2_base (hD : HDropV2) (hTB : TakeBadV2) (hBO : Bad
   have hPreG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ := fun M ρ rk C hz h2 =>
     t2VRAPre_of (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)
-  terminates_of_desc3 (desc3_V2O hD (hTake_of_glob hF hLf) hTB hBO hD0
+  terminates_of_desc3 (desc3_V2O hD (hTake_of_glob hF hLf) hTB hBO
     (expT0Out_of4 hAbW (t0Leaf_of_glob hLf) (t0Frame_of_glob hF))
     (expT1Out_V2_glob hF hLf)
     (expT2V2_of hB (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hB hFD hP hDom)
