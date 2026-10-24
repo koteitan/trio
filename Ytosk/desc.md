@@ -4245,7 +4245,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | T2VAncUse | 写しの枠の VDomF と根の辺の VAnc | 接ぎ木で例外 0。辺は k = upg(r+L) での VAncStep（一般には偽） |
 | T2SeedClV2B | 種の標準形の欄 | — |
 | T2SeedPResRCV2E | 種の qr（w1・dom）・sv（strict・lhd）・C（decP・strict・lhd） | C の decP は W₀ < W_T(c0) が要る（前の節） |
-| HSibColV2 | 隣の兄弟の列（SibColU） | 11 集合と std_b で例外 0 |
+| HCanonV2 | 隣の兄弟の値（CanonicalNeed、SibColU の特別な場合） | 11 集合・std_b・接ぎ木で例外 0（SibColW で） |
 | T2SeedDomV2Q | qn の種の dom1 | 段 V より下で B の成分が要る（前の節） |
 | T2VRACopyEsc | 写しの段の出どころ | — |
 | T2VRAK KAG | 道の段の KA・KG | 接ぎ木で例外 0 |
