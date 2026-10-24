@@ -4238,7 +4238,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | HDropU | すべての標準形で落とす補題の仮定 DropResHB（HardArg・VSmallNew・BumpWeakSrcB・条件のない UpgAbsXW・BumpAbsCB）∧（¬Bad2 ∨ x の行 1 = 0 → BumpAbsC） | 11 集合・接ぎ木で例外 0。HDropV2W は定理（hDropV2W_of_U） |
 | RootBadV2T2 | Bad2 の 1 列落としで根の真の減少（x の行 2 ≠ 0 で、x が親の bump 子か上げ先の場合だけ） | Bad2 の集合で例外 0。ほかは root_drop_e2z・root_drop_X で定理 |
 | BadOutRest | Bad2 の n ≥ 2 の段のうち t = 0 以外（t = 1・t = 2）: M[n] の Inv3V2 と根の下降 | t = 0 の部分は定理（badOutT0_of） |
-| T0BadSeeds | Bad2・t = 0 の M[n] の種 S1（◁ と RClaim つきの節）・S2・S3 | graftB の 108 個（r = g・p・x − 1 が 36 個ずつ）で n = 2, 3 とも成り立つ |
+| T0BadSeedsH | Bad2・t = 0 の M[n] の種のうち難しいもの: r ≠ x − 1 の S1 の節・S2・S3 と、r = x − 1 の S3 | graftB の 108 個と新しい接ぎ木 135 個（45 個の接頭辞）で成り立つ。r = x − 1 の S1 の節・S2 は定理（t0BadSeeds_of） |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
 | HBumpExt | 接頭辞に沿った bump の単調性 | 1 列の場合は 11 集合で例外 0 |
@@ -4374,4 +4374,31 @@ T0BadSeeds の測定（t0seed.py・t0cls.py・t0dr.py、graftBb2Sf の t = 0 の
   - r = p の S1・S1 の節は前件が偽（bump 子は数えない）。
   - 残りは、弱い最後の項を吸収する項の補題: r = g の節（B0 型で X′ ◁ X）、r = x − 1 の S3、r = p の S2。
   - 測定で前件が立たない組み合わせ（r = p の S3、r = g の S2・S3）は、一般の形で扱いが要る。
+
+### Bad2・t = 0 の易しい種と、難しい種の調べ（2026-10-25、lead）
+
+- V3T0BadSeed:
+  - `T0NCtx`・`t0NCtx_of`: N の任意の評価 σ の文脈（写しの値、o′(r) < o(r)、o′(r) ≤ omid など）を T0DropF から出す。
+  - `bad2_t0_cases`: r = P₀(x) は Bad2 の g・p・x − 1 のどれか（x は g の下にあり、P₀(x) は x − 1 の祖先）。
+  - `t0_S1N_x1`: r = x − 1 の S1 の節。旧の補題（po_lhd_or_weak・counted_first0・index_le_of_cntx・t0_S1N_of）で出る。
+  - r = x − 1 の S2 は前件が偽（x − 1 は上げを持つので行 2 = 0、bump 子は行 2 = 1）。
+  - 残り `T0BadSeedsH`（r ≠ x − 1 の種全部と、r = x − 1 の S3）、`t0BadSeeds_of : HDropU → T0BadSeedsH → T0BadSeeds`。
+  - T0SeedsN から S1 の ◁ の欄を外した（節の欄から出る）。仮定は 15 個のまま、全体ビルド緑 1078 jobs、公理は標準の 3 つ。
+- 例を増やした: 接ぎ木（gen_graft と同じ形）＋ t = 0 の 1 列で、Bad2 の第 1 の選言の形を集めた（scratchpad の genb2t0.py、d3s の 300 個から 135 個、接頭辞 45 個）。
+  - 種はすべて成り立った。測定の型は graftB と同じだった。接ぎ木の形が局所の形を決めている（g は (k0+2, k1+1, 1)、p は (k0+3, k1+1, 1)、x − 1 は (k0+4, r, x)）。
+  - そのため、測定で前件が立たない組み合わせ（r = p の S3、r = g の S2・S3）は接ぎ木からは出ない。
+- r = g の S1 の節の見通し:
+  - g′ = P₀(g)、a = v(g′)、v = v(r) > a。
+  - X = spArg a B (ψ_v(Y0 + 1))、X′ = spArg a (spArg a B (ψ_v(Y0)·m)) (ψ_{w′}(0))。
+  - w′ ≥ succ a（t0_shape3C）、WCS a w′（PV の弱い選択肢）。
+  - ψ の段の ◁ は s1_core_weak（v ≤ a を仮定しない）で出る。ClsNode は s1_core_cls で出る（B0 型）。
+  - 足りないのは RClaimU。rclaim_of_clsU は引数の段の X′ ◁ X を要求する。
+    - X′ ◁ X は一般には怪しい。w′ の成分で 1 以上の可算のものは、c の成分で上から押さえられるとは限らない。
+  - 代わりに relR_of_closedU（X′ が段 a 以下で閉じている: 成分は X′ 未満か a の成分以下）の道が使える見込み。
+    - w′ の成分は、WCS により Ω₁ 未満（したがって X′ 未満、X′ は Ω_{a+1} 以上）か、a の成分以下。
+    - 残りは B′ の成分（Y0 など）が X′ 未満であること。
+- r = x − 1 の S3、r = p の S2 の見通し:
+  - G の段（bump 子の子の o の和）の ◁（t0g3.py、t = 0 で成り立つ）が、v の段の ◁ に v_bump_lhdW で渡る。
+  - G′ = K + ψ_v(B0)·m + ψ_{w′}(0)、G = K + ψ_v(B0 + 1) の ◁ には、w′ の成分が c ∈ (G′, G] の成分で押さえられることが要る。
+  - 例では v の成分に 1 があって成り立つが、一般の条件はまだ分からない。
 
