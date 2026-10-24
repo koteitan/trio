@@ -4227,3 +4227,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - Inv3V2 の欄: Lean の形の VSmallF は graftB・graftA・ext2 で例外 0（tmp/claude/vsf.py、probe_inv3_prefix の VSmallF は逃げ道 B のない強い形で ext2 でも偽）。Good3・FrameOT・FrameClosed・BumpKidsDec・BumpTermDec・TP1・TP1W（inv_fields）、AbsUS・TPLoS・TrigS・VSmallRAll（probe_inv2）、P = S1〜S4・PH3s（probe_close_ph3）も graftB で例外 0。偽は古い形 AbsD・TPLo と、前提つきにした TPLoW・AbsDW だけ。
   - 未測定: FC3・TP1C・TP1WC（Lean の形）と HLeafV2（前件が接ぎ木で立たない）。
 - drop-redesign（CntX を広げる案）は使わない。
+- 追記（同じ日）: 残っていた Inv3V2 の欄も接ぎ木で測った。FC3（P = S1 ∧ S3 ∧ S4 ∧ PH3c ∧ FC3、tools/probe_close_nt.py std、NARROW=G）は graftB・graftA で例外 0。TP1C・TP1WC は inv_fields の TP1・TP1W（すべての子の強い形）に含まれ例外 0。HLeafV2（TP1LeafG・TP1WLeafG）は接ぎ木で前件が立たない。よって Inv3V2 の欄で接ぎ木で破れるのは、前提つきにした TPLoW・AbsDW だけ。
