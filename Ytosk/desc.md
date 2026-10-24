@@ -4287,3 +4287,12 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - Lean: Inv3V2・TakeFrameV2 の欄 tplow・adw を「¬ Bad2 M → TPLoW / AbsDW」から TPLoWs・AbsDWs（前提なし）に替えた。使う側 V3QRLocOA・V3QRLocV と qr_final 系（V3QRFinal〜4）は TPLoWAt・AbsDWAt を取る。古い Inv3 の道（V3Top・V3ExpT1*）は toAt で渡す。全体ビルド緑、公理は標準の 3 つ。
 - Bad2 の「P₀(x) = x − 1 ∧ t ≥ 1」の選言は、BumpAbsC の破れ（t = 1 で 6、t = 2 で 3 件、同じ族）のために残る。
 - 追記（同じ日）: Bad2 の第 2 の選言を「P₀(x) = x − 1 ∧ x の行 1 ≠ 0 ∧ BumpAbsC が破れる（Cons を満たす評価で）」に狭めた。TPLoWs・AbsDWs にしたので、この形で破れるのは BumpAbsC だけ（graftB の 9 個、同じ族）。前提が弱くなる HDropV2W の他の欄（ws・ua・hard・vst）は側 S の強い吸収の側で例外 0。graftB の Bad2 は約 513 個（強い吸収が破れる側 S 468・側 G の t = 2 の 36・BumpAbsC が破れる 9）。全体ビルド緑、公理は標準の 3 つ。
+
+### CntX の第 3 の選言（Bad2 の中心のための下準備、2026-10-24、lead、ブランチ cntx3 → main）
+
+- 強い吸収が破れる側 S（graftB の 468 個）で弱く変わる列は、どの例でも x − 1 と g の 2 つだけ（tmp の weakpos.py）。P₀(x) = g（t = 0・1）なら g が、P₀(x) = x − 1 なら x − 1 が、数える子 x を持つ。弱い列の WkVA・WCSP・標準形は 936 件すべて成り立ち、古い PV の破れは CntX だけ（pvparts.py）。
+- `BadPos M`（V3DropMain）: x − 1 の親 p が g の bump 子で、g が x の行 0 の祖先。
+- `CntX` に第 3 の選言「数える子は x だけ ∧ UpgBad(x − 1) ∧ BadPos」を足した。`NoBad3 M ρ := ¬ (UpgBad(x − 1) ∧ BadPos)`。`noBad3_of_nb2`（V3Inv2）: ¬Bad2 と Cons から NoBad3（失敗した上げは UpgAbsX の破れ）。
+- 第 3 の選言を扱えない古い補題は NoBad3 を仮定に取る: `CntX.nocnt_of_bump`・`nocnt_of_ne`・`PO.zero_of_ne`、t = 0 の `PO.zero_t0`・`lhd_t0_of`・`lhd_or_weak_t0`、t = 2 の `strong_seed_of_drop`・`qnu_take_*`・`t2_qu_take_bad`、t = 1 の `frameMapT1_take`。強い吸収を仮定に持つ `PO.zero_of_strong`・`nocnt_of_strong` は第 3 の選言と矛盾させて閉じる。`index_le_of_cntx` は数える子が x なので r = x − 1 になり、そのまま閉じる。
+- NoBad3 は `BumpWeakSrc` の第 3 の欄にした（呼び出し元は hWS.2.2・hdr.ws.2.2 で取る）。最上位の HDropV2W の ws は ¬Bad2 の前提つきなので、この欄は noBad3_of_nb2 で成り立つ。仮定の数は 14 のまま、全体ビルド緑 1074 jobs、公理は標準の 3 つ。
+- 次: 落とす補題（bump_drop の弱い場合）が Bad2 の行列で第 3 の選言を出すようにする（BumpWeakShapeSrc の「i の子は [j]」を「[j] か [j, x]」に、UpgAbsXW0 の弱い選択肢を BadPos でも許す）。

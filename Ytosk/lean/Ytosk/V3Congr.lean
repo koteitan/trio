@@ -105,7 +105,7 @@ theorem dropRes_congr {N : Mat} {x : Nat} {σ σ' τ τ' : Valn} (hx : x < N.len
     rw [← hvc', ← hvc] at hne
     have h1 := hD.vst i hi Lc cs hcl hne
     rw [← hv, ← hvc', ← map_o_congr h hL]; exact h1
-  · refine ⟨fun i h1 h2 j hj hjb k hk hw hcase => ?_, fun i hi hl => ?_⟩
+  · refine ⟨fun i h1 h2 j hj hjb k hk hw hcase => ?_, fun i hi hl => ?_, ?_⟩
     · have hkN := (mem_children hk).2
       have hiN := lt_of_entry_ne h1
       have hok := (h k hkN).1
@@ -121,10 +121,16 @@ theorem dropRes_congr {N : Mat} {x : Nat} {σ σ' τ τ' : Valn} (hx : x < N.len
         · rw [(h' k (by omega)).2, (h k hkN).2]; exact hl
     · have hiN : i < N.length := by omega
       have hl' : ¬ LhdE (σ'.v i) (σ.v i) := by rw [(h' i (by omega)).2, (h i hiN).2]; exact hl
-      have hw := hD.ws.2 i hi hl'
+      have hw := hD.ws.2.1 i hi hl'
       unfold WCSP at hw ⊢
       rw [← vOpt_par_congr h hiN (r := 0), ← (h' i (by omega)).2]
       exact hw
+    · rintro ⟨⟨k, W, hi2, hu, hvk, hWz, hn⟩, hb⟩
+      apply hD.ws.2.2
+      have hiN : N.length - 2 < N.length := by omega
+      rw [← vOpt_par_congr (r := 1) h hiN] at hvk hn
+      rw [← (h k (upg_lt hiN hu)).2] at hvk
+      exact ⟨⟨k, W, hi2, hu, hvk, hWz, hn⟩, hb⟩
   · intro i k W hix hu hv hW
     have hiN : i < N.length := by omega
     rw [← vOpt_par_congr h hiN] at hv

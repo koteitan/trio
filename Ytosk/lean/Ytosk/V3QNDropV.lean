@@ -211,10 +211,10 @@ theorem qn_drop_v_upg {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     rw [h2.1] at ht1lt
     exact lt_irrefl' _ ht1lt
   have hs1 := T2UpgAbs.strong_seed_of_drop hlen I.cons I.good (p := r) (by omega) (by omega) Tclpq
-    (hdrop r (by omega)) hne
+    (hdrop r (by omega)) hne R.drop.ws.2.2
   have H := T2UpgAbs.qnu_take_of_drop_full hlen (by omega) hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
     I.uat I.uab I.r12 I.r01 I.e00 hpq' Tqb Te2pq Tclq Tclpq hux Up1 Up1a Uqsh Udv Uos Uvsh
-    I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hua hdrop hAbs hs1
+    I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hua R.drop.ws.2.2 hdrop hAbs hs1
   have h := H.2
   rw [show r + (q - r) = q by omega] at h
   have hag := agree_of_cons hτ hC1 hRk1

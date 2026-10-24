@@ -1056,7 +1056,7 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
               (fun hrx => (sv_shapes hlen hL0 hq hux hrx hrb he2r I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be).2.1)
               hos hvsh I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hAbs
               (fun h => lhd_of_po I.cons I.good (by omega) (hrcl_of hq (by rw [hux]; intro h'; cases h'; omega))
-                (PO.zero_of_ne (by omega) I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2)
+                (PO.zero_of_ne (by omega) I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 hdr.ws.2.2)
                 (T'.seed1 h))
               hpr (fun g hg => hbp pr g (by rw [show r + L - 1 = r + L - 1 from rfl]; exact hpr) hg)
               (fun hrx => by
@@ -1064,7 +1064,7 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
                   ⟨hxbr, by rw [isUpg_x_false (hXu_of (by rw [hux]; intro h; cases h; omega))]; simp⟩
                 unfold CL; rw [List.mem_filter]
                 exact ⟨mem_children_iff.mpr ⟨by omega, hq⟩, by simpa using hcnt⟩)
-              I.r0p I.sd I.z1 I.uab hdrop
+              I.r0p I.sd I.z1 I.uab hdrop hdr.ws.2.2
           have hua := hua'.resolve_right hbad
           exact t2_qu_take hlen hL0 hq hxbr I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (hrcl_of hq (by rw [hux]; intro h; cases h; omega)) hrU hux hk
             (I.uat _ k hux (by omega)) hp1 hdv
@@ -1082,7 +1082,7 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       have hAbs := absWN_of_absC hdr.ab hC1 hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
       have hs1 := T2UpgAbs.strong_seed_of_drop hlen I.cons I.good
         (by have := par_lt M 0 _ _ hpq; omega) (by have := par_lt M 0 _ _ hpq; omega) Tclpq
-        (hdrop pq (by have := par_lt M 0 _ _ hpq; omega)) T.seed1
+        (hdrop pq (by have := par_lt M 0 _ _ hpq; omega)) T.seed1 hdr.ws.2.2
       cases hux : upg M (r + L - 1) with
       | none =>
         exact t2_qn_take hlen hL0 hA hq' (by omega) Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 hpq' Tqb Te2pq
@@ -1094,7 +1094,7 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         exact T2UpgAbs.qnu_take_of_drop hlen hL0 hA hq' (by omega) Txb I.be
           I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.r01 I.e00
           hpq' Tqb Te2pq Tclq Tclpq hux Up1 Up1a Uqsh Udv Uos Uvsh
-          I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hdr.ua hdrop hAbs hs1
+          I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hdr.ua hdr.ws.2.2 hdrop hAbs hs1
   -- `n ≥ 2`
   have hbig : ∀ n, 2 ≤ n → ∀ σ rkN,
       Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →

@@ -113,7 +113,7 @@ theorem t0_vsmallR (hU0 : OldUpgAbs) (hSh : T0Shape) : ∀ M ρ rk r L n σ rkN,
   -- the drop at `r`: `o′(r) ≤ o(r)`, and a new subscript comes with the argument `0`
   have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
   have hO'le : ρ'.o r ≤ ρ.o r := by
-    rcases PO.zero_t0 hx hDr.ua he1 hp (fun _ _ => hU0 _ _ _) I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
+    rcases PO.zero_t0 hx hDr.ua he1 hp (fun _ _ => hU0 _ _ _) I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 hDr.ws.2.2 with hE | ⟨_, w, hw⟩
     · exact hE.le
     · exfalso
       rw [hor] at hw; simp only [psi.injEq] at hw

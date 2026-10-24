@@ -551,7 +551,7 @@ def BumpWeakShapeSrc (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
 (`WeakCS`). The earlier component conjunct `WCSP M ρ i (vOpt ρ (par M 1 i))` with the old `WCSP` is false on
 standard matrices (expP: …(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,2,0), `i` is an upgrade target). -/
 def BumpWeakSrc (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
-  BumpWeakShapeSrc M x ρ ρ' ∧ WeakCS M x ρ ρ'
+  BumpWeakShapeSrc M x ρ ρ' ∧ WeakCS M x ρ ρ' ∧ NoBad3 M ρ
 
 /-- The parent of `x` is not a bump child. -/
 def XParNB (M : Mat) (x : Nat) : Prop :=
@@ -622,8 +622,8 @@ theorem brelS_z_psi {w : T} (h : BRelS z (psi w z z)) : w = z := by
   · cases he
 
 theorem BumpWeakShape.src {M : Mat} {ρ : Valn} (h : BumpWeakShape M ρ) (x : Nat) (ρ' : Valn)
-    (hWC : WeakCS M x ρ ρ') : BumpWeakSrc M x ρ ρ' := ⟨fun i h1 h2 j hj hjb k hk hw _ =>
-  let ⟨a, b, _⟩ := h i h1 h2 j hj hjb k hk hw; ⟨a, b⟩, hWC⟩
+    (hWC : WeakCS M x ρ ρ') (h3 : NoBad3 M ρ) : BumpWeakSrc M x ρ ρ' := ⟨fun i h1 h2 j hj hjb k hk hw _ =>
+  let ⟨a, b, _⟩ := h i h1 h2 j hj hjb k hk hw; ⟨a, b⟩, hWC, h3⟩
 
 @[simp] theorem sumN_nil : sumN [] = z := rfl
 
@@ -786,7 +786,7 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         · by_cases hlv : LhdE (ρ'.v kl) (ρ.v kl)
           · left; exact brelS_fix hlv (one_le_of_ne_z hv'z)
           right
-          have hnc := hnc.nocnt_of_bump (mem_children_iff.mp hklM).2 (mem_children_iff.mp hjlM).2 hjlb
+          have hnc := hnc.nocnt_of_bump (mem_children_iff.mp hklM).2 (mem_children_iff.mp hjlM).2 hjlb hWS.2.2
           refine ⟨bwk_fix (le_trans (psi_le_psi_z (le_of_lt hWk.1)) (psi_le_psi_rest (z_le _)))
             hWk.2.1, kl, by simp, ρ.v kl, ?_, o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc,
             Or.inr ⟨hklx, by
@@ -813,7 +813,7 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         have hnc : ∀ c ∈ children M kl, ¬ Counted M kl c := by
           rcases hPV.1 with hl' | ⟨_, _, hnc'⟩
           · exact absurd hl' hlv
-          · exact hnc'.nocnt_of_bump (mem_children_iff.mp hklM).2 (mem_children_iff.mp hjlM).2 hjlb
+          · exact hnc'.nocnt_of_bump (mem_children_iff.mp hklM).2 (mem_children_iff.mp hjlM).2 hjlb hWS.2.2
         set w := ρ.v kl
         have hw : ρ.o kl = psi w z z := o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc
         have hne : ρ'.o kl ≠ ρ.o kl := fun h => by
@@ -1155,7 +1155,7 @@ theorem bump_rel {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       have hW := bwk_omega hp'ot1 hpot1 hp
       have e' : ρ'.v i = add V (omega (sumN [one, omega G'])) := by rw [ev']; simp [hPldef]
       have e : ρ.v i = add V (omega (sumN [one, omega G])) := by rw [ev, hmapM]; simp [hPldef]
-      have hwc := hWS.2 i hi hli
+      have hwc := hWS.2.1 i hi hli
       rw [e'] at hwc
       rw [e', e]
       rcases v_weak hVot (single_omega hp'ot1) (single_omega hpot1) hW with heq | hwk
@@ -1185,7 +1185,7 @@ theorem bump_drop {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     (∀ i, i < x → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
         PO ρ ρ' k ∧ PV M ρ ρ' k) → ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
       PV M ρ ρ' i) ∧ WeakCS M x ρ ρ' := by
-  refine ⟨fun i hi hIH hCv h1 h2 => ?_, hWS.2⟩
+  refine ⟨fun i hi hIH hCv h1 h2 => ?_, hWS.2.1⟩
   obtain ⟨hot, hrel⟩ := bump_rel hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hKD hTD hAbs hWS hi hIH
     hCv h1 h2
   exact ⟨hrel.imp id (fun h => ⟨h.1, h.2.1, Or.inl h.2.2⟩), hot⟩

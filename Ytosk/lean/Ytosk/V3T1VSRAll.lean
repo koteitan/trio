@@ -296,7 +296,7 @@ end
 theorem frameMapT1_take {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {r L : Nat} (S : SInv M)
     (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take (r + L)) ρ') (hRk' : Rk (M.take (r + L)) rk)
     (hlen : r + L + 1 = M.length) (hx2 : entry M 2 (r + L) = 0)
-    (hdrop : ∀ i, i < r + L → PO ρ ρ' i ∧ PV M ρ ρ' i) (hUA : UpgAbsXW M (r + L) ρ) :
+    (hdrop : ∀ i, i < r + L → PO ρ ρ' i ∧ PV M ρ ρ' i) (hUA : UpgAbsXW M (r + L) ρ) (h3 : NoBad3 M ρ) :
     FrameMapT1 M ρ r L (M.take (r + L)) ρ' ∧ VrDomQ M ρ r L (M.take (r + L)) ρ' := by
   constructor
   · intro k c Lc R s y hcl hsy ht
@@ -318,7 +318,9 @@ theorem frameMapT1_take {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {r
         rcases List.mem_append.mp hd with hd | hd
         · exact Or.inr ⟨d, hd, hgd⟩
         · simp [Gc, comps] at hd; subst hd; exact Or.inl (le_trans hgd (z_le _))
-    · rcases hnc with hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩
+    · rcases hnc with hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩ | ⟨_, hu3, hb3⟩
+      rotate_left 2
+      · exact absurd ⟨hu3, hb3⟩ h3
       · exfalso
         have hxch : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hq⟩
         apply hn (r + L) hxch
@@ -379,7 +381,7 @@ theorem expT1Out_V2 (hF : HFrameV2) (hLf : HLeafV2) (hS1 : S1Std) : ExpT1OutV2 :
       (FrameMapT1 M ρ r L (M.take (r + L)) (drop1 M (r + L) rk) ∧
         VrDomQ M ρ r L (M.take (r + L)) (drop1 M (r + L) rk)) :=
     ⟨(t1_base S I hlen hr hdr hI1).1,
-      frameMapT1_take S I.cons I.good hI1.cons hI1.rank hlen hx2 hdrop hdr.ua⟩
+      frameMapT1_take S I.cons I.good hI1.cons hI1.rank hlen hx2 hdrop hdr.ua hdr.ws.2.2⟩
   rw [hexp] at hStdN ⊢
   have hfin : ∃ ρN rkN, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN ∧
       Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) rkN ∧

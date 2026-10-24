@@ -139,7 +139,7 @@ theorem t2_qu_take_bad (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 
     {pr : Nat} (hpr : par M 0 (r + L - 1) = some pr)
     (hpb : ∀ g, par M 0 pr = some g → col M pr ≠ bump M g) (hxCL : r = r + L - 1 → r + L ∈ CL M r)
     (hR0 : R0P M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAB : UAB M)
-    (hdrop : ∀ i, i < r + L → PO ρ σ i ∧ PV M ρ σ i) :
+    (hdrop : ∀ i, i < r + L → PO ρ σ i ∧ PV M ρ σ i) (h3 : NoBad3 M ρ) :
     isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ := by
   have hlT : (M.take (r + L)).length = r + L := by rw [List.length_take]; omega
   have hA : Anc0 M r (r + L) := anc0_of_par M 0 r (r + L) hp
@@ -338,7 +338,7 @@ theorem t2_qu_take_bad (hBE : BumpE2 M) (hZ2 : Z2 M) (hUAT : UAT M) (hR12 : R12 
               rw [hdx, hp] at h1; cases h1; exact hpr' rfl)
             (fun _ => hojlt)
         rcases PO.zero_of_ne (show i + 2 ≠ M.length by omega) hC hG hiM (hdrop i (by omega)).1
-            (hdrop i (by omega)).2 with h | ⟨_, w, hw'⟩
+            (hdrop i (by omega)).2 h3 with h | ⟨_, w, hw'⟩
         · rcases h with h | h
           · rw [h] at hlt; exact absurd hlt (lt_irrefl _)
           · exact h

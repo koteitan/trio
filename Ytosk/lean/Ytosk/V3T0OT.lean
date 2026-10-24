@@ -2010,7 +2010,7 @@ theorem t0_otd (hU0 : OldUpgAbs) {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.len
     have hDr : DepX M (r + L) true r := depLike_r hlen hL hp hx2 (depLike_depX M (r + L))
     have hlt : ρ'.o r < ρ.o r := hD true r hDr (by omega)
     have hl : Lhd z (ρ'.o r) (ρ.o r) := by
-      rcases PO.zero_t0 (by omega) hUA he1 hp (fun _ _ => hU0 _ _ _) hC hG (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
+      rcases PO.zero_t0 (by omega) hUA he1 hp (fun _ _ => hU0 _ _ _) hC hG (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 hWS.2.2 with hE | ⟨_, w, hw⟩
       · exact lhd_of_lhdE_lt hE hlt
       · exfalso
         rw [hor] at hw; simp only [psi.injEq] at hw

@@ -160,7 +160,7 @@ theorem t0_vsmallR_DF (hU0 : OldUpgAbs) : ∀ M ρ rk r L n σ rkN, T0Ctx M ρ r
   -- the drop at `r`: `o′(r) ≤ o(r)`, and a new subscript comes with the argument `0`
   have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
   have hO'le : ρ'.o r ≤ ρ.o r := by
-    rcases PO.zero_t0 hx hDr.ua he1 hp (fun _ _ => hU0 _ _ _) I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 with hE | ⟨_, w, hw⟩
+    rcases PO.zero_t0 hx hDr.ua he1 hp (fun _ _ => hU0 _ _ _) I.cons I.good (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 hDr.ws.2.2 with hE | ⟨_, w, hw⟩
     · exact hE.le
     · exfalso
       rw [hor] at hw; simp only [psi.injEq] at hw
@@ -587,9 +587,10 @@ theorem t0_vsmallF_at (hU0 : OldUpgAbs) {M : Mat} {ρ : Valn} {rk : Bool → Nat
         · rcases h with h | h
           · exact absurd h hv
           · exact h
-        · rcases hno with hno | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩
+        · rcases hno with hno | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩ | ⟨_, ⟨k, W, hi2, hu, hvk, hWz, hbad⟩, _⟩
           · exact absurd hxcnt (hno _ hxr)
           · exact absurd ((hU0 M (r + L) ρ) r k W (by omega) hu hvk hWz) hbad
+          · exact absurd ((hU0 M (r + L) ρ) _ k W (by omega) hu hvk hWz) hbad
       -- a changed `v(r)`: `o′(r) = ψ_{v′(r)}(0)`
       have hyz : y = z := by
         have hCv : ChgX M (r + L) false r := by
@@ -623,7 +624,7 @@ theorem t0_vsmallF_at (hU0 : OldUpgAbs) {M : Mat} {ρ : Valn} {rk : Bool → Nat
         have hot2 : isOT (psi (ρ.v g) (psi (ρ.v r) (app Y0 one) z) z) := hot
         rw [← hY0] at hot2
         have hl0 : LhdE (ρ'.o r) (ρ.o r) := by
-          rcases PO.zero_t0 hx hDr.ua he1 hp (fun _ _ => hU0 _ _ _) I.cons I.good (by omega) hPO hPV with h | ⟨_, w, hw⟩
+          rcases PO.zero_t0 hx hDr.ua he1 hp (fun _ _ => hU0 _ _ _) I.cons I.good (by omega) hPO hPV hDr.ws.2.2 with h | ⟨_, w, hw⟩
           · exact h
           · rw [hY0] at hw; simp only [psi.injEq] at hw
             exact absurd hw.2.1 (fun h => by cases Y0 <;> simp [app, one] at h)

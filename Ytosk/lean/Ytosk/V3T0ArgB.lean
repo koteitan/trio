@@ -139,9 +139,12 @@ theorem index_le_of_cntx {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r g 
     (hrM : r < M.length) (hg : par M 0 r = some g)
     (hz : entry M 1 (r+1) = 0) (hCX : CntX M ρ r)
     (hc : r+1 ∈ children M r) (hcnt : Counted M r (r+1)) : ρ.v r ≤ ρ.v g := by
-  rcases hCX with hn | ⟨_,_,k,W,_,hu,_,_,_⟩
+  rcases hCX with hn | ⟨_,_,k,W,_,hu,_,_,_⟩ | ⟨hcx, ⟨k, W, _, hu, _⟩, _⟩
   · exact False.elim (hn (r+1) hc hcnt)
   · exact index_le_of_upg hR0 hZ2 hUAB hBE hJ hC hG hR hrM hg hz hu
+  · have := hcx (r+1) hc hcnt
+    rw [show M.length - 2 = r by omega] at hu
+    exact index_le_of_upg hR0 hZ2 hUAB hBE hJ hC hG hR hrM hg hz hu
 
 /-- The same-high class only needs node Lhd to give RClaimU. -/
 theorem rclaim_of_same_high {U : T → Prop} {ρ σ : Valn} {i : Nat} {a X X' : T}

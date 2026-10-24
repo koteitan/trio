@@ -352,12 +352,12 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       rw [hw.2.1] at this; exact T.not_lt_z _ this
     -- `◁`, or a weak leaf when `r = x − 1` lost its upgrade in `M.take x`
     have hl' := lhd_or_weak_t0 (show r + L + 1 = M.length from hlen) hUA he1 hp hg hC hG hC1 (by omega)
-      (hdrop r (by omega)).1 (hdrop r (by omega)).2 hnzr hlt
+      (hdrop r (by omega)).1 (hdrop r (by omega)).2 hnzr hlt hWS.2.2
     -- `◁` when the parent `g` is a bump child
     have hlB : ∀ i, par M 0 g = some i → col M g = bump M i → Lhd z (ρ'.o r) (ρ.o r) := by
       intro i hi hb
-      apply lhd_t0_of (show r + L + 1 = M.length from hlen) hUA he1 hp hC hG (by omega)
-        (hdrop r (by omega)).1 (hdrop r (by omega)).2 hnzr hlt
+      refine lhd_t0_of (show r + L + 1 = M.length from hlen) hUA he1 hp hC hG (by omega)
+        (hdrop r (by omega)).1 (hdrop r (by omega)).2 hnzr hlt ?_ hWS.2.2
       by_cases hr : r = r + L - 1
       · exact Or.inr (fun hnb => hnb g i (by rw [← hr]; exact hg) hi hb)
       · exact Or.inl hr
@@ -381,9 +381,10 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
             have := upg_target_e2 (of_decide_eq_true hk)
             omega
         have he2r : entry M 2 r = 0 := by
-          rcases hCX with hno | ⟨_, _, k, W, _, hu, _⟩
+          rcases hCX with hno | ⟨_, _, k, W, _, hu, _⟩ | ⟨_, hu3, hb3⟩
           · exact absurd hxcnt (hno _ hxr)
           · have := hZ2 r; have := (upg_e12 hu).2; omega
+          · exact absurd ⟨hu3, hb3⟩ hWS.2.2
         exact t0_S1W hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hg hcnt' hF
           (fun c hc hd => (hoffD c hc).1 hd) hσvg hσmid hσlast (hLast n hn2 g hg hcnt') hw
           (counted_first0 hlen hL hp hn hR0 hZ2 hx2 hn2 hg hcnt' he2r)

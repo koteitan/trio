@@ -815,10 +815,11 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
         (sumN (((children M r).filter (fun c => decide (c < r + L))).map (cnt M ρ r))))
       rw [hw.2.1] at this; exact T.not_lt_z _ this
     have hl' := lhd_or_weak_t0 hx hUA he1 hp hg hC hG hC1 (by omega)
-      (hdrop r (by omega)).1 (hdrop r (by omega)).2 hnzr hlt
+      (hdrop r (by omega)).1 (hdrop r (by omega)).2 hnzr hlt hWS.2.2
     have hlB : ∀ i, par M 0 g = some i → col M g = bump M i → Lhd z (ρ'.o r) (ρ.o r) := by
       intro i hi hb
-      apply lhd_t0_of hx hUA he1 hp hC hG (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 hnzr hlt
+      refine lhd_t0_of hx hUA he1 hp hC hG (by omega) (hdrop r (by omega)).1 (hdrop r (by omega)).2 hnzr hlt ?_
+        hWS.2.2
       by_cases hr : r = r + L - 1
       · exact Or.inr (fun hnb => hnb g i (by rw [← hr]; exact hg) hi hb)
       · exact Or.inl hr
@@ -846,9 +847,11 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
             (by simpa only [show r + 1 = r + L by omega] using hxcnt)
         refine ⟨⟨w', hw', hWk, hWC, hwot⟩, fun hc => ?_, fun _ => hva⟩
         have he2r : entry M 2 r = 0 := by
-          rcases hCX with hno | ⟨_, _, k, W, _, hu, _⟩
+          rcases hCX with hno | ⟨_, _, k, W, _, hu, _⟩ | ⟨_, ⟨k, W, _, hu, _⟩, _⟩
           · exact absurd hxcnt (hno _ hxr)
           · have := hZ2 r; have := (upg_e12 hu).2; omega
+          · rw [show M.length - 2 = r by omega] at hu
+            have := hZ2 r; have := (upg_e12 hu).2; omega
         exact counted_first0 hlen hL hp (by omega) hR0 hZ2 hx2 hn2 hg hc he2r
     have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
     have hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z := by

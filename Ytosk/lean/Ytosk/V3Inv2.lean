@@ -69,6 +69,13 @@ def Bad2 (M : Mat) : Prop :=
         (par M 0 (M.length - 1) = some (M.length - 2) ∧ entry M 1 (M.length - 1) ≠ 0 ∧
           ∃ ρ, Cons M ρ ∧ ¬ BumpAbsC M (M.length - 1) ρ))
 
+/-- **Outside `Bad2` the third case of `CntX` does not occur**: a failed upgrade of `x − 1` at the bad position is
+`Bad2`. -/
+theorem noBad3_of_nb2 {M : Mat} {ρ : Valn} (hNB : ¬ Bad2 M) (hC : Cons M ρ) : NoBad3 M ρ := by
+  rintro ⟨⟨k, W, hi2, hu, hvk, hWz, hn⟩, ⟨p, g, hp, hg, hb, hA⟩⟩
+  exact hNB ⟨⟨k, hu⟩, p, g, hp, hg, hb,
+    Or.inl ⟨Or.inl hA, ρ, hC, fun hS => hn (hS _ k W (by omega) hu hvk hWz)⟩⟩
+
 /-- **`TPLoW` at the chain terms of the seed `o_{M.take x}(r)`** (2026-10-24). Unlike `TPLoW` (at the lower
 bound `gamS μ b_r 1 (max 1 d)`), it holds on every grafted standard matrix (graftA・graftB, including `Bad2`). -/
 def TPLoWs (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop :=

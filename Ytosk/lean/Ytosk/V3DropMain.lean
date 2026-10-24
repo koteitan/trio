@@ -108,11 +108,21 @@ def UpgBad (M : Mat) (ρ : Valn) (i : Nat) : Prop :=
   ∃ k W, i + 2 = M.length ∧ upg M i = some k ∧ ρ.v k = add (vOpt ρ (par M 1 i)) W ∧ W ≠ z ∧
     ¬ ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W
 
+/-- **The bad position** (2026-10-24): the parent `p` of `x − 1` is the bump child of `g`, and `x` lies under `g`. -/
+def BadPos (M : Mat) : Prop :=
+  ∃ p g, par M 0 (M.length - 2) = some p ∧ par M 0 p = some g ∧ col M p = bump M g ∧ Anc0 M g (M.length - 1)
+
+/-- **No bad position with a failed upgrade** (2026-10-24): outside `Bad2` the third case of `CntX` does not occur. -/
+def NoBad3 (M : Mat) (ρ : Valn) : Prop := ¬ (UpgBad M ρ (M.length - 2) ∧ BadPos M)
+
 /-- **The counted children of a weak column** (2026-10-12): none, or only the last column `x` when the parent
-is not a bump child (T2Ext: `x − 1` loses its upgrade to an ancestor and has `x` as its counted child). -/
+is not a bump child (T2Ext: `x − 1` loses its upgrade to an ancestor and has `x` as its counted child), or
+(2026-10-24, the grafted shape) only `x` when the upgrade of `x − 1` fails the absorption at the bad position: then
+the weak columns are `x − 1` and `g`, and `x` is a counted child of its parent among them (graftB, desc). -/
 def CntX (M : Mat) (ρ : Valn) (i : Nat) : Prop :=
   (∀ c ∈ children M i, ¬ Counted M i c) ∨
-    ((∀ c ∈ children M i, Counted M i c → c + 1 = M.length) ∧ NBPar M i ∧ UpgBad M ρ i)
+    ((∀ c ∈ children M i, Counted M i c → c + 1 = M.length) ∧ NBPar M i ∧ UpgBad M ρ i) ∨
+    ((∀ c ∈ children M i, Counted M i c → c + 1 = M.length) ∧ UpgBad M ρ (M.length - 2) ∧ BadPos M)
 
 /-- The claim at a `v` call. -/
 def PV (M : Mat) (ρ ρ' : Valn) (i : Nat) : Prop :=
@@ -127,11 +137,13 @@ def WeakCS (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
 
 /-- Under a bump child a weak column has no counted child. -/
 theorem CntX.nocnt_of_bump {M : Mat} {ρ : Valn} {k j i : Nat} (h : CntX M ρ k)
-    (hk : par M 0 k = some j) (hj : par M 0 j = some i) (hb : col M j = bump M i) :
+    (hk : par M 0 k = some j) (hj : par M 0 j = some i) (hb : col M j = bump M i)
+    (h3 : NoBad3 M ρ) :
     ∀ c ∈ children M k, ¬ Counted M k c := by
-  rcases h with h | ⟨_, hn, _⟩
+  rcases h with h | ⟨_, hn, _⟩ | ⟨_, hu, hb3⟩
   · exact h
   · exact absurd hb (hn j i hk hj)
+  · exact absurd ⟨hu, hb3⟩ h3
 
 /-- **The relation of a child for `o_frame_eval`** from its `PO` and `PV`: a weak `o` with a `⊴` subscript is
 `⊴`, a weak subscript carries the component condition at the parent. -/
@@ -506,8 +518,8 @@ theorem pv_of {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
           with hlt | heq
         · refine Or.inr ⟨⟨hlt, le_add_single _ ⟨z, z, rfl⟩, hot1⟩, hwc, ?_⟩
           by_cases hxc : par M 0 x = some i
-          · exact Or.inr ⟨fun c hc _ => by have := mem_children hc; omega, hnb.nb_of_child hxc,
-              k, _, by omega, hu, hvk, by simp, hR⟩
+          · exact Or.inr (Or.inl ⟨fun c hc _ => by have := mem_children hc; omega, hnb.nb_of_child hxc,
+              k, _, by omega, hu, hvk, by simp, hR⟩)
           · refine Or.inl fun c hc _ => hxc ?_
             have := mem_children hc
             obtain rfl : c = x := by omega

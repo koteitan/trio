@@ -540,7 +540,7 @@ theorem t0_vsmallF_atC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         rcases hPV.1 with h | ⟨_, _, hno⟩
         · exact absurd h hE
         · exact absurd hxcnt (CntX.nocnt_t0 hx hDr.ua he1 hp (fun hp' hnb => absurd
-            ⟨by rw [hp] at hp'; exact Option.some.inj hp', hnb, hE⟩ hweak) hno _ hxr)
+            ⟨by rw [hp] at hp'; exact Option.some.inj hp', hnb, hE⟩ hweak) hno hDr.ws.2.2 _ hxr)
       -- a changed `v(r)`: `o′(r) = ψ_{v′(r)}(0)`
       have hyz : y = z := by
         have hCv : ChgX M (r + L) false r := by

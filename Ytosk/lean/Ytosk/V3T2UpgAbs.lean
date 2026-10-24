@@ -123,10 +123,10 @@ theorem strong_or_bad_of_common_parent {M : Mat} {ρ : Valn} {x r : Nat}
 theorem strong_seed_of_drop {M : Mat} {ρ σ : Valn} {x p : Nat}
     (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ)
     (hp : p < x) (hne : p ≠ x - 1) (hCL : CL M p ≠ [])
-    (hdrop : PO ρ σ p ∧ PV M ρ σ p) (ho : σ.o p ≠ ρ.o p) :
+    (hdrop : PO ρ σ p ∧ PV M ρ σ p) (ho : σ.o p ≠ ρ.o p) (h3 : NoBad3 M ρ) :
     Lhd z (σ.o p) (ρ.o p) := by
   rcases PO.zero_of_ne (show p + 2 ≠ M.length by omega) hC hG (by omega)
-      hdrop.1 hdrop.2 with hE | ⟨_,w,hw⟩
+      hdrop.1 hdrop.2 h3 with hE | ⟨_,w,hw⟩
   · rcases hE with heq | hl
     · exact False.elim (ho heq)
     · exact hl
@@ -172,6 +172,7 @@ theorem qnu_take_weak_full (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1
     (hCN : Cons (M.take (r + L)) σ) (hGN : Good3 (M.take (r + L)) σ) (hRN : Rk (M.take (r + L)) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hNB : NBPar M (r + L - 1))
+    (h3 : NoBad3 M ρ)
     (hdrop : ∀ i, i < r + L → PO ρ σ i ∧ PV M ρ σ i)
     (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
     (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
@@ -514,7 +515,7 @@ theorem qnu_take_weak_full (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1
               simp at hmem)
             (fun _ => hjlt)
         rcases PO.zero_of_ne (show pr + 2 ≠ M.length by omega) hC hG (by omega)
-            (hdrop pr (by omega)).1 (hdrop pr (by omega)).2 with h | ⟨_,w,hw⟩
+            (hdrop pr (by omega)).1 (hdrop pr (by omega)).2 h3 with h | ⟨_,w,hw⟩
         · rcases h with heq | h
           · exact False.elim (by rw [heq] at hlt; exact (lt_irrefl _) hlt)
           · exact h
@@ -555,11 +556,12 @@ theorem qnu_take_weak (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) 
     (hCN : Cons (M.take (r + L)) σ) (hGN : Good3 (M.take (r + L)) σ) (hRN : Rk (M.take (r + L)) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hNB : NBPar M (r + L - 1))
+    (h3 : NoBad3 M ρ)
     (hdrop : ∀ i, i < r + L → PO ρ σ i ∧ PV M ρ σ i)
     (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
     (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
     isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ :=
-  (qnu_take_weak_full hlen hL hA hp hqp hxb hBE hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hR01 h00 hpq hqb he2pq hCLq hpqCL hu hP1q hP1a hqsh hDvNil hOS hVSh hC hG hRM hCN hGN hRN hF hVS hTD hKD hNB hdrop hAbs hseed).1
+  (qnu_take_weak_full hlen hL hA hp hqp hxb hBE hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hR01 h00 hpq hqb he2pq hCLq hpqCL hu hP1q hP1a hqsh hDvNil hOS hVSh hC hG hRM hCN hGN hRN hF hVS hTD hKD hNB h3 hdrop hAbs hseed).1
 
 /-- Direct integration wrapper using only the weak drop absorption field. -/
 theorem qnu_take_of_drop_full (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M)
@@ -590,6 +592,7 @@ theorem qnu_take_of_drop_full (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 :
     (hCN : Cons (M.take (r + L)) σ) (hGN : Good3 (M.take (r + L)) σ) (hRN : Rk (M.take (r + L)) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hUA : UpgAbsXW M (r + L) ρ)
+    (h3 : NoBad3 M ρ)
     (hdrop : ∀ i, i < r + L → PO ρ σ i ∧ PV M ρ σ i)
     (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
     (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
@@ -603,7 +606,7 @@ theorem qnu_take_of_drop_full (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 :
       hCN hGN hRN hF hVS hTD hKD hs hAbs hseed
   · exact qnu_take_weak_full hlen hL hA hp hqp hxb hBE hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hR01
       h00 hpq hqb he2pq hCLq hpqCL hu hP1q hP1a hqsh hDvNil hOS hVSh hC hG hRM
-      hCN hGN hRN hF hVS hTD hKD hnb hdrop hAbs hseed
+      hCN hGN hRN hF hVS hTD hKD hnb h3 hdrop hAbs hseed
 
 
 theorem qnu_take_of_drop (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M)
@@ -634,11 +637,12 @@ theorem qnu_take_of_drop (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C 
     (hCN : Cons (M.take (r + L)) σ) (hGN : Good3 (M.take (r + L)) σ) (hRN : Rk (M.take (r + L)) rkN)
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ)
     (hUA : UpgAbsXW M (r + L) ρ)
+    (h3 : NoBad3 M ρ)
     (hdrop : ∀ i, i < r + L → PO ρ σ i ∧ PV M ρ σ i)
     (hAbs : AbsWN M (M.take (r + L)) (r + L) ρ σ)
     (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
     isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ :=
-  (qnu_take_of_drop_full hlen hL hA hp hqp hxb hBE hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hR01 h00 hpq hqb he2pq hCLq hpqCL hu hP1q hP1a hqsh hDvNil hOS hVSh hC hG hRM hCN hGN hRN hF hVS hTD hKD hUA hdrop hAbs hseed).1
+  (qnu_take_of_drop_full hlen hL hA hp hqp hxb hBE hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hR01 h00 hpq hqb he2pq hCLq hpqCL hu hP1q hP1a hqsh hDvNil hOS hVSh hC hG hRM hCN hGN hRN hF hVS hTD hKD hUA h3 hdrop hAbs hseed).1
 
 end
 

@@ -137,8 +137,8 @@ theorem pv_of_hard {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
           with hlt | heq
         · refine Or.inr ⟨⟨hlt, le_add_single _ ⟨z, z, rfl⟩, hot1⟩, hwc, ?_⟩
           by_cases hxc : par M 0 x = some i
-          · exact Or.inr ⟨fun c hc _ => by have := mem_children hc; omega, hnb.nb_of_child hxc,
-              k, _, by omega, hu, hvk, by simp, hR⟩
+          · exact Or.inr (Or.inl ⟨fun c hc _ => by have := mem_children hc; omega, hnb.nb_of_child hxc,
+              k, _, by omega, hu, hvk, by simp, hR⟩)
           · refine Or.inl fun c hc _ => hxc ?_
             have := mem_children hc
             obtain rfl : c = x := by omega

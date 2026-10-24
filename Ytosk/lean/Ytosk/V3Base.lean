@@ -72,7 +72,11 @@ theorem base_dropRes : DropRes (Mlen (1 + 3 * n)) ((Mlen (1 + 3 * n)).length - 1
     · left; show two < psi (tw w2 (Kd (3 * n) cs)) z z
       unfold two; rw [psi_lt_psi]; left; exact z_lt_tw hβ2 _
   · -- BumpWeakSrc: the shape, and `WeakCS` (every `v′` is countable here)
-    refine ⟨fun i h1 _ j hj hb k hk _ _ => ?_, fun i hi _ => Or.inl ?_⟩
+    refine ⟨fun i h1 _ j hj hb k hk _ _ => ?_, fun i hi _ => Or.inl ?_, ?_⟩
+    rotate_left 2
+    · rintro ⟨⟨k, _, _, hu, _⟩, _⟩
+      rw [Mlen_upg_none (by simp only [Mlen_length]; omega)] at hu
+      cases hu
     swap
     · rw [(drop_eq n i hi).2]
       intro g hg

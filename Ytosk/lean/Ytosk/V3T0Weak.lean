@@ -107,13 +107,14 @@ needed) or the parent of `x − 1` is a bump child (the strong absorption from `
 theorem lhd_t0_of {M : Mat} {x : Nat} {ρ ρ' : Valn} {r : Nat} (hx : x + 1 = M.length)
     (hUA : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0) (hp : par M 0 x = some r)
     (hC : Cons M ρ) (hG : Good3 M ρ) (hrM : r < M.length) (hPO : PO ρ ρ' r) (hPV : PV M ρ ρ' r)
-    (hnz : ∀ w, ρ.o r ≠ psi w z z) (hlt : ρ'.o r < ρ.o r) (h : r ≠ x - 1 ∨ ¬ NBPar M (x - 1)) :
+    (hnz : ∀ w, ρ.o r ≠ psi w z z) (hlt : ρ'.o r < ρ.o r) (h : r ≠ x - 1 ∨ ¬ NBPar M (x - 1))
+    (h3 : NoBad3 M ρ) :
     Lhd z (ρ'.o r) (ρ.o r) := by
   have hE : LhdE (ρ'.o r) (ρ.o r) ∨ (WkOA (ρ'.o r) (ρ.o r) ∧ ∃ w, ρ.o r = psi w z z) := by
     by_cases hr : r = x - 1
     · have hnb := h.resolve_left (fun h' => h' hr)
       exact PO.zero_of_strong hx (hUA.toX_xm1 hx1 (by rw [← hr]; exact hp) hnb) hC hG hrM hPO hPV
-    · exact PO.zero_of_ne (by omega) hC hG hrM hPO hPV
+    · exact PO.zero_of_ne (by omega) hC hG hrM hPO hPV h3
   rcases hE with hE | ⟨_, w, hw⟩
   · exact lhd_of_lhdE_lt hE hlt
   · exact absurd hw (hnz w)
@@ -123,12 +124,13 @@ not a bump child) a weak leaf whose components are dominated by `v(g)`. -/
 theorem lhd_or_weak_t0 {M : Mat} {x : Nat} {ρ ρ' : Valn} {r g : Nat} (hx : x + 1 = M.length)
     (hUA : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0) (hp : par M 0 x = some r) (hg : par M 0 r = some g)
     (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hrM : r < M.length)
-    (hPO : PO ρ ρ' r) (hPV : PV M ρ ρ' r) (hnz : ∀ w, ρ.o r ≠ psi w z z) (hlt : ρ'.o r < ρ.o r) :
+    (hPO : PO ρ ρ' r) (hPV : PV M ρ ρ' r) (hnz : ∀ w, ρ.o r ≠ psi w z z) (hlt : ρ'.o r < ρ.o r)
+    (h3 : NoBad3 M ρ) :
     Lhd z (ρ'.o r) (ρ.o r) ∨
       r = x - 1 ∧ NBPar M (x - 1) ∧ CntX M ρ r ∧
         ∃ w', ρ'.o r = psi w' z z ∧ WkVA w' (ρ.v r) ∧ WCS (ρ.v g) w' ∧ isOT (psi w' z z) = true := by
   by_cases h : r ≠ x - 1 ∨ ¬ NBPar M (x - 1)
-  · exact Or.inl (lhd_t0_of hx hUA hx1 hp hC hG hrM hPO hPV hnz hlt h)
+  · exact Or.inl (lhd_t0_of hx hUA hx1 hp hC hG hrM hPO hPV hnz hlt h h3)
   · have hr : r = x - 1 := by by_contra h'; exact h (Or.inl h')
     have hnb : NBPar M (x - 1) := by by_contra h'; exact h (Or.inr h')
     rcases po_lhd_or_weak hC hG hC' hrM (by have := par_lt M 0 x r hp; omega) hPO hPV hg hnz hlt with

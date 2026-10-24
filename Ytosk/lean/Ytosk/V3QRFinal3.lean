@@ -125,9 +125,11 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
     rcases hPO with hl | ⟨hW, hw | hnl⟩
     · exact Or.inl (hold (Or.inl hl))
     · exact Or.inl (hold (Or.inr ⟨hW, hw⟩))
-    rcases (hdrop r hr).2.1 with hl | ⟨hWV, _, hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩⟩
+    rcases (hdrop r hr).2.1 with hl | ⟨hWV, _, hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩ | ⟨_, hu3, hb3⟩⟩
     · exact absurd hl hnl
     · exact Or.inl (hold (Or.inr ⟨hW, _, o_of_no_counted hC hrM (hG.ot_v r hrM) hn⟩))
+    rotate_left
+    · exact absurd ⟨hu3, hb3⟩ hWS.2.2
     rcases hUA r k W (by omega) hu hvk hWz with h | ⟨_, hSm, _⟩
     · exact absurd h hbad
     have h12 := upg_e12 hu

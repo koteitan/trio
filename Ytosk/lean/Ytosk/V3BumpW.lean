@@ -282,7 +282,7 @@ theorem bump_relW {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       have hW := bwk_omega hp'ot1 hpot1 hp
       have e' : ρ'.v i = add V (omega (sumN [one, omega G'])) := by rw [ev']; simp [hPldef]
       have e : ρ.v i = add V (omega (sumN [one, omega G])) := by rw [ev, hmapM]; simp [hPldef]
-      have hwc := hWS.2 i hi hli
+      have hwc := hWS.2.1 i hi hli
       rw [e'] at hwc
       rw [e', e]
       rcases v_weak hVot (single_omega hp'ot1) (single_omega hpot1) hW with heq | hwk
@@ -302,7 +302,7 @@ theorem bump_dropW {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     (∀ i, i < x → (∀ j ∈ children M i, col M j = bump M i → ∀ k ∈ children M j, k < x →
         PO ρ ρ' k ∧ PV M ρ ρ' k) → ChgX M x false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
       PV M ρ ρ' i) ∧ WeakCS M x ρ ρ' := by
-  refine ⟨fun i hi hIH hCv h1 h2 => ?_, hWS.2⟩
+  refine ⟨fun i hi hIH hCv h1 h2 => ?_, hWS.2.1⟩
   obtain ⟨hot, hrel⟩ := bump_relW hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hKD hTD hAbs hWS hi hIH
     hCv h1 h2
   exact ⟨hrel.imp id (fun h => ⟨h.1, h.2.1, Or.inl h.2.2⟩), hot⟩
