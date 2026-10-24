@@ -48,7 +48,7 @@ residual `HDropV2W` and the engines' step context assume `¬ Bad2 M`, the frame 
 and `HFrameV2` are guarded by `¬ Bad2`; the `Bad2` matrices are the new residuals `TakeBadV2` (the one-column drop:
 `Inv3V2` and the root strictly drops) and `BadOutV2` (the step for `n ≥ 2`: `Inv3V2` of `M[n]` and the descent); the
 descents to `M[0]`, `M[1]` (also through a `Bad2` prefix) are proved from the prefix chain (`root_chain_of_pre`). Measured on the grafted standard sets graftA・graftB (desc). -/
-theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hDB : DropBadV2) (hBO : BadOutV2)
+theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hDB : DropBadV2B) (hBO : BadOutV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -108,7 +108,7 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hDB : DropBadV2) (hBO : Ba
           (t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)))
         (hP M ρ rk C hz h2) (hCF M ρ rk C hz h2)
         (fun r L q hlen hr hq hqr hncl => (hCl M ρ rk C hz h2 r L hlen hr).2.2 q hq hqr hncl))
-  trio_terminates_main_V2_base (hDropV2_of' hDW) (takeBad_of_drop hDB hF hLf) hBO hF hLf
+  trio_terminates_main_V2_base (hDropV2_of' hDW) (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hBO hF hLf
     (t0AbWRes_of_ext (hDropV2_of' hDW) hBE)
     hCB hBX
     hPRV hDom (FDCopyRoot.t2FDCopyRes_of_path hBX (t2FOSeedV2_of hP hDom) hVU hAG) hQNG hSVCG

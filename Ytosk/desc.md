@@ -4236,7 +4236,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | 残り | 中身 | 状態・手がかり |
 |---|---|---|
 | HDropV2W | 1 列落としの欄 hard・vst・ws・ua・ab（¬Bad2） | 接ぎ木の非 Bad2 で例外 0 |
-| DropBadV2 | Bad2 の 1 列落としの結論: すべての列で PO ∧ PV（CntX の第 3 の選言つき）・VSmallNew・根の真の減少 | Bad2 の集合で例外 0（PO・PV は graftBb2・ext2b2・std_ab2 の 254 万件）。TakeBadV2 はこれと HFrameV2・HLeafV2 から定理 |
+| DropBadV2B | Bad2 の 1 列落としの仮定 DropResB（HardArg・VSmallNew・BumpWeakSrcB・弱い選択肢に条件のない UpgAbsXW・BumpAbsCB）と根の真の減少 | Bad2 の集合で例外 0。TakeBadV2 はこれと HFrameV2・HLeafV2 から定理（drop_allB・bump_dropB・inv3V2_takeD） |
 | BadOutV2 | Bad2 の n ≥ 2 の段: M[n] の Inv3V2 と根の下降 | 同上＋エンジンの弱い場合（t0 で o′(r) ⋪ o(r) の 72 件） |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
@@ -4303,3 +4303,15 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 新しい残り `DropBadV2`（V3GlobV2）: Bad2 の M で、すべての列の PO ∧ PV、VSmallNew、root(M.take x) < root(M)。`takeBad_of_drop : DropBadV2 → HFrameV2 → HLeafV2 → TakeBadV2`。最上位 `trio_terminates_main_V2_cur` は TakeBadV2 の代わりに DropBadV2 を取る。仮定は 14 個のまま、全体ビルド緑、公理は標準の 3 つ。
 - 測定（tmp の popv3.py、CntX の第 3 の選言つきの PV）: graftBb2・ext2b2・std_ab2（古い Bad2 で、今の Bad2 を含む）の PO・PV 254 万件で例外 0。VSmallNew は dropres で例外 0、根の真の減少は takebad.py・baddesc.py で例外 0。
 - 次: DropBadV2 の PO ∧ PV を、Bad2 用の落とす補題（広げた仮定から）で示す。根の真の減少は t = 0・1 なら dep_strict0 から出る。
+
+### 落とす補題を Bad2 でも通した（drop_allB・bump_dropB、2026-10-25、lead）
+
+- V3BumpDropB（新しいファイル）: `g_levelB`・`bump_relB`・`bump_dropB`（V3BumpDrop の写し）。
+  - `BumpWeakShapeSrcB`: 弱い源 k の o は ψ_w(y)（y は任意。Bad2 で x − 1 が数える子 x を持つ）、i の子は [j] か [j, x] ∧ UpgBad(x − 1) ∧ BadPos。`BumpWeakSrcB` は NoBad3 なし。
+  - g_level の弱い場合は nocnt_of_bump の代わりに o(kl) = ψ_v(y0)（o_psi_sub）と WkOA の相手の形を使う。
+  - bump_rel の弱い場合: i の子が [jl, x] なら、x が bump 子かで bump の項 1 か 0、BWk は右辺を大きくしても保たれ v_weak がそのまま使える。CntX は第 3 の選言。
+  - `BumpAbsCB`: BumpAbsC ∨ i での PV の弱い道（WkVA ∧ WCSP ∧ CntX）。強い場合で吸収が破れたら弱い道を返す。BumpAbsC が破れる 9 個（graftBb2St）では破れる列 i で弱い道が成り立つ（tmp の abcb.py）。
+- V3DropMain: `pv_ofB`・`drop_allB`（pv_of・drop_all の写し）。x − 1 での弱い選択肢は WCSP ∧ SmallSelf だけ。x が x − 1 の子のとき、NBPar(x − 1) なら CntX の第 2 の選言、そうでなければ x − 1 の親は bump 子で x はその親の部分木なので BadPos、第 3 の選言。
+- V3GlobV2: 構造 `DropResB`、残り `DropBadV2B`（Bad2 の M で DropResB と根の真の減少）、`dropBad_of_B : DropBadV2B → DropBadV2`。最上位は DropBadV2B を取る。仮定は 14 個のまま、全体ビルド緑 1075 jobs、公理は標準の 3 つ。
+- 測定（tmp の formB.py）: BumpWeakShapeSrcB は graftB・graftA・graftBb2Sf で例外 0。弱い選択肢に条件のない UpgAbsXW は graftB・ext2b2・std_ab2・graftBb2Sf で例外 0（WCSP・SmallSelf は Bad2 で常に成り立つ）。
+- 次: DropResB の欄を 11 集合でも測り、成り立てば HDropV2W と DropBadV2B を前提なしの 1 つの残り（すべての標準形で DropResB）にまとめる。根の真の減少は dep_strict0（t = 0・1）と t = 2 の道から。

@@ -12,6 +12,7 @@ drop（M.take x）・t0（M[n]）・t1（各コピー）・t2（M[n]）が同じ
 担当ごとの形（TakeResV2・T0NRes TakeFrameV2 など）で示してもよい。
 -/
 import Ytosk.V3MainV2
+import Ytosk.V3BumpDropB
 
 namespace Ytosk
 
@@ -50,6 +51,40 @@ def DropBadV2 : Prop :=
     (∀ i, i < M.length - 1 → PO ρ (drop1 M (M.length - 1) rk) i ∧ PV M ρ (drop1 M (M.length - 1) rk) i) ∧
     VSmallNew M (M.length - 1) ρ (drop1 M (M.length - 1) rk) ∧
     root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ
+
+/-- **The hypotheses of the drop lemma in the `Bad2` form** (2026-10-25): `HardArg`, `VSmallNew`, the weak sources
+`BumpWeakSrcB`, the absorption at `x − 1` with the weak alternative `WCSP ∧ SmallSelf` (no parent condition), and the
+bump absorption `BumpAbsCB`. -/
+structure DropResB (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
+  argT : ∀ i, i < x → ∀ (Lc : List Nat) (cs : Nat), CL (N.take x) i = Lc ++ [cs] →
+    ∀ s y, σ'.o cs = psi s y z → ¬ lt s (σ.v i) = true →
+    ∀ g ∈ comps (σ.v i) y, g ≤ step (σ.v i) (spArg (σ.v i) z (sumN (Lc.map σ.o))) s y z
+  vst : VSmallNew N x σ σ'
+  ws : BumpWeakSrcB N x σ σ'
+  ua : ∀ i k W, i + 1 = x → upg N i = some k → σ.v k = add (vOpt σ (par N 1 i)) W → W ≠ z →
+    (∀ r ∈ summands (vOpt σ (par N 1 i)), r < W → Lhd z r W) ∨
+      (WCSP N σ i (add (vOpt σ (par N 1 i)) one) ∧
+        (∀ g ∈ comps z (add (vOpt σ (par N 1 i)) one), g < psi (add (vOpt σ (par N 1 i)) one) z z))
+  ab : BumpAbsCB N x σ
+
+/-- **Residual: the drop hypotheses at a `Bad2` matrix** (2026-10-25), with the strict descent of the root. -/
+def DropBadV2B : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Bad2 M → Inv3V2 M ρ rk →
+    DropResB M (M.length - 1) ρ (drop1 M (M.length - 1) rk) ∧
+    root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ
+
+/-- **`DropBadV2` from the drop lemma in the `Bad2` form** (`drop_allB`, `bump_dropB`). -/
+theorem dropBad_of_B (h : DropBadV2B) : DropBadV2 := by
+  intro M ρ rk hM hS hl hB I
+  obtain ⟨R, hlt⟩ := h M ρ rk hM hS hl hB I
+  have S := sInv_std hM hS
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last (M := M) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 := cons_of_rk hRk1
+  refine ⟨drop_allB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.vs R.vst I.fc I.fo R.argT
+    (bump_dropB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.kd I.td R.ab R.ws) R.ua,
+    R.vst, hlt⟩
 
 /-- **`TakeBadV2` from the drop conclusion and the two shared residuals.** -/
 theorem takeBad_of_drop (hDB : DropBadV2) (hF : HFrameV2) (hL : HLeafV2) : TakeBadV2 := by
