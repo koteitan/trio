@@ -4238,7 +4238,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | HDropU | すべての標準形で落とす補題の仮定 DropResHB（HardArg・VSmallNew・BumpWeakSrcB・条件のない UpgAbsXW・BumpAbsCB）∧（¬Bad2 ∨ x の行 1 = 0 → BumpAbsC） | 11 集合・接ぎ木で例外 0。HDropV2W は定理（hDropV2W_of_U） |
 | RootBadV2T2 | Bad2 の 1 列落としで根の真の減少（x の行 2 ≠ 0 で、x が親の bump 子か上げ先の場合だけ） | Bad2 の集合で例外 0。ほかは root_drop_e2z・root_drop_X で定理 |
 | BadOutRest | Bad2 の n ≥ 2 の段のうち t = 0 以外（t = 1・t = 2）: M[n] の Inv3V2 と根の下降 | t = 0 の部分は定理（badOutT0_of） |
-| T0BadSeedsH | Bad2・t = 0 の M[n] の種のうち難しいもの: r ≠ x − 1 の S1 の節・S2・S3 と、r = x − 1 の S3 | graftB の 108 個と新しい接ぎ木 135 個（45 個の接頭辞）で成り立つ。r = x − 1 の S1 の節・S2 は定理（t0BadSeeds_of） |
+| T0BadSeedsH2 | Bad2・t = 0: r ≠ x − 1 なら r は M[n] でも g で数える子（構造）と S2、すべての r で S3 | graftB の 108 個と新しい接ぎ木 135 個で成り立つ。S1 の節はすべて定理（t0BadSeeds_of・t0BadSeedsH_of） |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
 | HBumpExt | 接頭辞に沿った bump の単調性 | 1 列の場合は 11 集合で例外 0 |
@@ -4401,4 +4401,28 @@ T0BadSeeds の測定（t0seed.py・t0cls.py・t0dr.py、graftBb2Sf の t = 0 の
   - G の段（bump 子の子の o の和）の ◁（t0g3.py、t = 0 で成り立つ）が、v の段の ◁ に v_bump_lhdW で渡る。
   - G′ = K + ψ_v(B0)·m + ψ_{w′}(0)、G = K + ψ_v(B0 + 1) の ◁ には、w′ の成分が c ∈ (G′, G] の成分で押さえられることが要る。
   - 例では v の成分に 1 があって成り立つが、一般の条件はまだ分からない。
+
+### v(r) > v(g) の弱い葉の節（weak_seed_hi）と、S1 の節を構造の事実に下げた（2026-10-25、lead）
+
+- V3T0BadNode:
+  - `copies_lhd_arg`: 写しだけの状態 B′ = spArg a B (ψ_v(Y0)·m) は引数の段で B′ ◁ X（m ≥ 1、基本列の項）。
+  - `weak_seed_hi`: succ a ≤ w′ のとき、ψ_a(X′) は標準形、ψ_a(X′) ◁ ψ_a(X)、RClaim。
+    - RClaim は `relR_of_subU`（下の端を B′ から X′ = B′ + ψ_{w′}(0) に上げる）で出す。
+    - w′ の成分は WCS により Ω₁ 未満（X′ 未満）か a の成分以下（RClaim の前提で片づく）。
+    - X′・X は低い部分がない（B0 型）ので H a X′ = X′、H a X = X。引数の段の X′ ◁ X は使わない。
+  - `t0_S1AW_nodeHi`: t0_S1AW_node の写しで、weak_seed の代わりに weak_seed_hi。succ v(g) ≤ w′ は t0_shape3C から。
+  - `t0_S1N_cnt`: r ≠ x − 1 の S1 の節。「r は N でも g で数える」を仮定する。
+    - r での落とし方が ◁ なら旧の道。
+    - 弱い葉で v(r) ≤ v(g) なら旧の道。
+    - 弱い葉で v(r) > v(g) なら t0_S1AW_nodeHi。
+  - 残り `T0BadSeedsH2`: r ≠ x − 1 なら Counted M g r → Counted M[n] g r、r ≠ x − 1 の S2、すべての r の S3。`t0BadSeedsH_of : HDropU → T0BadSeedsH2 → T0BadSeedsH`。
+- 全体ビルド緑 1079 jobs、公理は標準の 3 つ。仮定は 15 個のまま。
+- 「r は N でも数える」の調べ（未証明）: N で r を上げ先にできるのは、M で x − 1 より前の列 j が upg M j = r の場合だけ。
+  - 後ろの写しの列の祖先には r が入らない。
+  - N の x − 1 の次の列は写しの根 r + L で、r はその祖先でない。
+  - r = g では N で r は topped（最後の子 p は bump 子）なので、「M で x − 1 より前に r への上げがない」ことが要る。
+- S3（r = x − 1）の見通し:
+  - 上げを失った x − 1 では w′ = v′(x − 1) は V + 1 の形（V = v(P₁(x − 1))）、v = v(x − 1) は V + W の形。
+  - G の段の ◁ には、w′ の成分が c = K + ψ_v(C) + R の成分で押さえられることが要る。
+  - V が W に吸収される場合（例: V = ψ₀(1)、W = Ψ_{ψ₀(1)}(0)）でも、W の成分に V の成分が現れれば成り立つ。一般の条件はまだ。
 
