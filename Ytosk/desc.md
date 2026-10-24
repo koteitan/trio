@@ -4315,3 +4315,5 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - V3GlobV2: 構造 `DropResB`、残り `DropBadV2B`（Bad2 の M で DropResB と根の真の減少）、`dropBad_of_B : DropBadV2B → DropBadV2`。最上位は DropBadV2B を取る。仮定は 14 個のまま、全体ビルド緑 1075 jobs、公理は標準の 3 つ。
 - 測定（tmp の formB.py）: BumpWeakShapeSrcB は graftB・graftA・graftBb2Sf で例外 0。弱い選択肢に条件のない UpgAbsXW は graftB・ext2b2・std_ab2・graftBb2Sf で例外 0（WCSP・SmallSelf は Bad2 で常に成り立つ）。
 - 次: DropResB の欄を 11 集合でも測り、成り立てば HDropV2W と DropBadV2B を前提なしの 1 つの残り（すべての標準形で DropResB）にまとめる。根の真の減少は dep_strict0（t = 0・1）と t = 2 の道から。
+- 追記（同じ日）: 形 B の BumpWeakShapeSrcB と、弱い選択肢に条件のない UpgAbsXW を 11 集合（各 20 万個まで、Cprime・t0ext・d3s・deep2・deep3・ext1x・t2ext・ext2・expP・std_a・ext1・expPt2）で測り、例外 0（tmp の formB11.out）。接ぎ木と合わせ、DropResB の欄はすべての測った標準形で成り立つ（argT・VSmallNew は前から、BumpAbsCB は BumpAbsC から）。
+  - まとめる見通し: ¬Bad2 の文脈では、ws は noBad3_of_nb2 で古い形に戻り、ua は「強い吸収が破れて p が bump 子なら x は g の部分木になく行 2 = 0」（Bad2 の第 1 の選言の否定）で NBParX が出る。ab（BumpAbsC）は BumpAbsCB から論理では戻らないので、まとめた残りは「すべての標準形で DropResB（HardArg の形）∧（¬Bad2 → BumpAbsC）」になる。そのためには HardArg を使う drop_all_hard の形 B 版が要る（argT は M.take の標準形から出るので、Bad2 でも HardArg から始める）。
