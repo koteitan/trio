@@ -4178,3 +4178,15 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 使う側が実際に要るのは 2 つだけ: (1) 写しの枠（i が P の行 1 で r の子孫で、数える子を持つ）の VDomF（段 u ≤ v_N(i+L) で v_N(r+L) の成分は Ω_{v_N(i+L)} 以下か v_N(i+L) の成分以下）、(2) N = M[n] の根の辺 r → r+L での VAnc。どちらも接ぎ木（ext2 由来 VDomF 23764・辺 5320 件、d3s 由来 34037・8240 件、tmp/claude/graft5.py）と t2ext・std_b 各 4 万（tmp/claude/usefld.py）で例外 0。
 - Lean: `FDCopyRoot.T2VAncUse M`（vdom : T2CopyK CopyVDomK M、edge : 根の辺の VAnc）。`t2CopyK_FDshAt_of_path`・`t2FDCopyRes_of_path` は T2VAncUse を取る。前の道は `t2VAncUse_of_step`（T2VAncStep から）として残した。最上位は hVU : T2VAncUse（StepCtxT2・t = 2 の M ごと）。仮定の数は 12 のまま、全体ビルド緑 1073 jobs、公理は標準の 3 つ。
 - V3VAncInd・V3VAncPos の定理（順位の帰納法、X の添字 0 の場合、j* が m の下の場合）は含意として正しいので残した。最上位では使わない。
+
+### 接ぎ木の標準形で最上位の残りを測り直した（2026-10-24、lead）
+
+- 集合: graftA（接ぎ木 N 3960 個とその接頭辞、13876 個）、graftB（N に 1 列足した標準形、155926 個）。tmp/ytosk-handoff/sets/graftA.pkl・graftB.pkl、作り方 tmp/claude/gen_graft.py（d3s・ext2・std_b 各 250 個から、行 2 = 1 の列 k と bump 子 β の部分木の途中までの接頭辞に (k₀+1,k₁,0)(k₀+2,k₁+1,1)(k₀+3,k₁+1,1)(k₀+4,r,x) を接ぎ、bms -s = 1・SRO 未満のものだけ）。結果は tmp/claude/graftres/。
+- 例外 0（graftA・graftB とも）: T2VAncUse（vdomf 32.8 万・辺 6 万件、usefld.py）、T2VRAK KAG（KA・KG、probe_t2vrak）、HSibColV2（sibcolall）、HBumpExt の 1 列の場合（bumpdrop1 の該当欄）、T2SeedDomV2（seeddom2 の qn.dom1・dom2・vraPath、C.dom1・dom2）、種の qr・qn（seedqr）、sv・C の decP・lhd・strict（seedsvc）、seedrr3 の clPath・otR・REr・B0、preshape、svcbase、TrigS0（probe_trigs0）。
+- 既知の偽で使っていない形の破れ: AbsSR・BumpAbsS（dropres・bumpdrop1）、qn.vraAllU（42）、qn の clAll（84）、悪い C の un（seedsvc の C.un 27、T2CBad の側）、UA.strong。
+- **新しい破れ（最上位の残りの欄）**:
+  - HDropV2W（DropResH0）: ws = BumpWeakSrc 180 件、ua = UpgAbsXW0 756 件（probe_uaw1 の weakCore・UAW1、uaw0b の UAW0）、ab = BumpAbsC 9 件（graftB）。例 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,1)(6,3,1)(7,2,0)(4,0,0)（ua）。uaw0b の T2UABad も 108 件。
+  - HFrameV2（TakeFrameV2）: TPLoW 10 件・AbsDW 5 件（probe_hframe、graftB）。例 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,1)(7,2,1)(8,1,0)(9,2,1)(10,2,1)(11,2,0)(9,2,1)(10,2,1)(11,1,0)(12,0,0)(10,2,0)(11,3,1)(12,3,1)(13,1,0)(14,2,0)（t = 1、q = r の枠、TPLoW は c = 24、AbsDW は i = 29）。
+  - qncl の s2・allLv（870 件）: 最上位の欄かどうか未確認（seedqr の qn.base は例外 0）。
+- 未測定: probe_inv2 の欄（AbsUS・TPLoS・VSmallRAll。包みで集合名を通せず走らなかった）、HLeafV2（probe_hframe の TP1LeafG は前件 0）、T2VRACopyEsc、T2CBadOut、T2SeedClV2B の残りの欄。
+- 次: 破れた欄ごとに、使う側が実際に要る形を測る（T2VAncStep → T2VAncUse と同じ手順）。HDropV2W の使う側は落とす補題 drop_all_H の結論 PO ∧ PV（すべての i < x）、HFrameV2 の使う側は M.take の Inv3V2 の欄（hTake_of_glob）。
