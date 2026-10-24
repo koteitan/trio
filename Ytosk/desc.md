@@ -4236,7 +4236,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | 残り | 中身 | 状態・手がかり |
 |---|---|---|
 | HDropV2W | 1 列落としの欄 hard・vst・ws・ua・ab（¬Bad2） | 接ぎ木の非 Bad2 で例外 0 |
-| TakeBadV2 | Bad2 の 1 列落とし: Inv3V2 と根の真の減少 | Bad2 は「強い吸収が破れる ∧（x が g の部分木 ∨ t = 2）」と「P₀(x) = x − 1 ∧ t ≥ 1 ∧ BumpAbsC が破れる」に狭めた（graftB の Bad2 80228 個 → 約 513 個、どれも欄が実際に破れる行列）。Bad2 用の落とす補題が要る（drop-redesign の広げた形は例外 0） |
+| DropBadV2 | Bad2 の 1 列落としの結論: すべての列で PO ∧ PV（CntX の第 3 の選言つき）・VSmallNew・根の真の減少 | Bad2 の集合で例外 0（PO・PV は graftBb2・ext2b2・std_ab2 の 254 万件）。TakeBadV2 はこれと HFrameV2・HLeafV2 から定理 |
 | BadOutV2 | Bad2 の n ≥ 2 の段: M[n] の Inv3V2 と根の下降 | 同上＋エンジンの弱い場合（t0 で o′(r) ⋪ o(r) の 72 件） |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
@@ -4296,3 +4296,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 第 3 の選言を扱えない古い補題は NoBad3 を仮定に取る: `CntX.nocnt_of_bump`・`nocnt_of_ne`・`PO.zero_of_ne`、t = 0 の `PO.zero_t0`・`lhd_t0_of`・`lhd_or_weak_t0`、t = 2 の `strong_seed_of_drop`・`qnu_take_*`・`t2_qu_take_bad`、t = 1 の `frameMapT1_take`。強い吸収を仮定に持つ `PO.zero_of_strong`・`nocnt_of_strong` は第 3 の選言と矛盾させて閉じる。`index_le_of_cntx` は数える子が x なので r = x − 1 になり、そのまま閉じる。
 - NoBad3 は `BumpWeakSrc` の第 3 の欄にした（呼び出し元は hWS.2.2・hdr.ws.2.2 で取る）。最上位の HDropV2W の ws は ¬Bad2 の前提つきなので、この欄は noBad3_of_nb2 で成り立つ。仮定の数は 14 のまま、全体ビルド緑 1074 jobs、公理は標準の 3 つ。
 - 次: 落とす補題（bump_drop の弱い場合）が Bad2 の行列で第 3 の選言を出すようにする（BumpWeakShapeSrc の「i の子は [j]」を「[j] か [j, x]」に、UpgAbsXW0 の弱い選択肢を BadPos でも許す）。
+
+### TakeBadV2 を落とす補題の結論 DropBadV2 に下げた（2026-10-25、lead）
+
+- `drop_presD`（V3DropPres）・`inv3V2_takeD`（V3TakeInv2）: 1 列落としの値の不変条件と Inv3V2 は、落とす補題の結論（すべての列で PO ∧ PV）と VSmallNew だけから出る（古い形は DropRes から落とす補題を中で呼んでいた）。中で使う good3_take・vsmallF_take・ph3c_drop1・fc3_drop1・vsmallRAll_take・rootP_take は CntX の第 3 の選言があっても通る。
+- 新しい残り `DropBadV2`（V3GlobV2）: Bad2 の M で、すべての列の PO ∧ PV、VSmallNew、root(M.take x) < root(M)。`takeBad_of_drop : DropBadV2 → HFrameV2 → HLeafV2 → TakeBadV2`。最上位 `trio_terminates_main_V2_cur` は TakeBadV2 の代わりに DropBadV2 を取る。仮定は 14 個のまま、全体ビルド緑、公理は標準の 3 つ。
+- 測定（tmp の popv3.py、CntX の第 3 の選言つきの PV）: graftBb2・ext2b2・std_ab2（古い Bad2 で、今の Bad2 を含む）の PO・PV 254 万件で例外 0。VSmallNew は dropres で例外 0、根の真の減少は takebad.py・baddesc.py で例外 0。
+- 次: DropBadV2 の PO ∧ PV を、Bad2 用の落とす補題（広げた仮定から）で示す。根の真の減少は t = 0・1 なら dep_strict0 から出る。

@@ -42,6 +42,33 @@ theorem hTake_of_glob (hF : HFrameV2) (hL : HLeafV2) : HTakeV2 := by
   obtain ⟨h1, h2⟩ := hL _ _ rk hM1 hS1 hE1 hC1 hRk1 V.g
   exact ⟨hF _ _ rk hM1 hS1 hE1 hC1 hRk1 V.g, h1, h2⟩
 
+/-- **Residual: the conclusion of the drop lemma at a `Bad2` matrix** (2026-10-25): `PO ∧ PV` at every column (with
+the third case of `CntX`), `VSmallNew`, and the strict descent of the root. On `Bad2` the hypotheses of the drop
+lemma fail, but its conclusion holds (graftB, desc). -/
+def DropBadV2 : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Bad2 M → Inv3V2 M ρ rk →
+    (∀ i, i < M.length - 1 → PO ρ (drop1 M (M.length - 1) rk) i ∧ PV M ρ (drop1 M (M.length - 1) rk) i) ∧
+    VSmallNew M (M.length - 1) ρ (drop1 M (M.length - 1) rk) ∧
+    root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ
+
+/-- **`TakeBadV2` from the drop conclusion and the two shared residuals.** -/
+theorem takeBad_of_drop (hDB : DropBadV2) (hF : HFrameV2) (hL : HLeafV2) : TakeBadV2 := by
+  intro M ρ rk hM hS hl hB I
+  obtain ⟨hdrop, hvst, hlt⟩ := hDB M ρ rk hM hS hl hB I
+  have S := sInv_std hM hS
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last (M := M) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 := cons_of_rk hRk1
+  have V := drop_presD hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons
+    ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdrop hvst hC1 hRk1
+  have hM1 := std_take hM (M.length - 1) (by omega)
+  have hS1 := ne_SRO_of_rk hRk1
+  have hE1 := take_ne_nil_of (M := M) (j := M.length - 1) (by omega) (by omega)
+  obtain ⟨h1, h2⟩ := hL _ _ rk hM1 hS1 hE1 hC1 hRk1 V.g
+  exact ⟨inv3V2_takeD S I hl hdrop hvst (hF _ _ rk hM1 hS1 hE1 hC1 hRk1 V.g) h1 h2
+    (fun h0 => rootP0_take S I hl h0), hlt⟩
+
 theorem gexp_t0_facts {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat}
     (C : StepCtxV2 M ρ rk) (hlen : r + L + 1 = M.length) (hL : 0 < L) (hp : par M 0 (r + L) = some r)
     (he1 : entry M 1 (r + L) = 0) (n : Nat) (hn : 2 ≤ n) :

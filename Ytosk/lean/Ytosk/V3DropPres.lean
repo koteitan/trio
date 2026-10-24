@@ -549,6 +549,21 @@ theorem drop_pres {N : Mat} {x : Nat} (hx : x + 1 = N.length)
     bumpKidsDec_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.kd,
     bumpTermDec_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.td⟩
 
+/-- **`drop_pres` from the conclusion of the drop lemma** (2026-10-25): the value invariants of `N.take x` need only
+`PO ∧ PV` at every column and `VSmallNew` (used for the grafted bad shape `Bad2`, where the hypotheses of the drop
+lemma fail but its conclusion holds). -/
+theorem drop_presD {N : Mat} {x : Nat} (hx : x + 1 = N.length)
+    (hR0 : R0P N) (hZ2 : Z2 N) (hSD : SibDec N) (hZ1 : Z1C N) (hUAT : UAT N) (hUAB : UAB N)
+    {σ σ' : Valn} {rk : Bool → Nat → Nat} (hC : Cons N σ) (hI : ValInv N σ)
+    (hdrop : ∀ i, i < x → PO σ σ' i ∧ PV N σ σ' i) (hvst : VSmallNew N x σ σ')
+    (hC' : Cons (N.take x) σ') (hRk' : Rk (N.take x) rk) : ValInv (N.take x) σ' :=
+  ⟨good3_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop,
+    vsmallF_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.vs hvst,
+    frameClosed_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.fc,
+    frameOT_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hI.fo,
+    bumpKidsDec_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.kd,
+    bumpTermDec_take hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hI.g hC' hRk' hdrop hI.td⟩
+
 /-- **`t = 1`, `q ≠ r`, `n = 0`**, with only the remaining hypotheses `DropRes` of the drops
 `M.take (j + 1) → M.take j` (`r ≤ j < x`) and the new weak sources of the first drop `M → M.take x`;
 the value invariants of the prefixes come from those of `M`. -/
