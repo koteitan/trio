@@ -137,11 +137,38 @@ def RootBadV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Bad2 M → Inv3V2 M ρ rk →
     root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ
 
-/-- **Residual: `RootBadV2` when `x` has row 2 ≠ 0** (`t = 2`; the other types follow from the drop lemma,
-`root_drop_e2z`). -/
+/-- **Residual: `RootBadV2` when `x` has row 2 ≠ 0 and is a bump child or an upgrade target** (the other cases follow
+from the drop lemma: `root_drop_e2z` for row 2 = 0, `root_drop_X` otherwise). -/
 def RootBadV2T2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Bad2 M → Inv3V2 M ρ rk → entry M 2 (M.length - 1) ≠ 0 →
+    ((∃ i, upg M i = some (M.length - 1)) ∨
+      ∃ p, par M 0 (M.length - 1) = some p ∧ col M (M.length - 1) = bump M p) →
     root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ
+
+/-- **The strict descent of the root at the one-column drop when no column upgrades to `x` and `x` is not a bump
+child** (any type), from the conclusion of the drop lemma (`dep_strict0X`, `dep_anc_xG`, `root_take_lt`). -/
+theorem root_drop_X {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
+    (hl : 2 ≤ M.length) (I : Inv3V2 M ρ rk)
+    (hdrop : ∀ i, i < M.length - 1 → PO ρ (drop1 M (M.length - 1) rk) i ∧ PV M ρ (drop1 M (M.length - 1) rk) i)
+    (hXu : ∀ i, upg M i ≠ some (M.length - 1))
+    (hXb : ∀ p, par M 0 (M.length - 1) = some p → col M (M.length - 1) ≠ bump M p) :
+    root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ := by
+  have S := sInv_std hM hS
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last (M := M) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 := cons_of_rk hRk1
+  refine (root_take_lt hx S.r01 S.r12 S.e00 I.cons I.good (fun i hi => (hdrop i hi).1.2.1)
+    (fun i hi => (hdrop i hi).1.le) ?_).2
+  intro R hR hRA _
+  obtain ⟨q, hq⟩ := par0_of_anc hRA (by omega)
+  have hD := dep_strict0X hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hXu hXb I.cons I.good hC1 hRk1 hdrop hq
+  refine hD true R (dep_anc_xG S.uat S.z2 S.r12 S.bumpE2 hx ?_ hRA) hR
+  rintro p (⟨t, ht, hb⟩ | hu) rfl
+  · exact hXb t ht hb
+  · unfold isUpg at hu
+    obtain ⟨k, _, hk⟩ := List.any_eq_true.mp hu
+    exact hXu k (of_decide_eq_true hk)
 
 /-- **The conclusion of the drop lemma from `HDropU`** (`drop_all_hardB`, `bump_dropB`), for every standard matrix. -/
 theorem hdrop_of_U (h : HDropU) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
@@ -206,7 +233,11 @@ theorem rootBad_of_T2 (h : HDropU) (h2 : RootBadV2T2) : RootBadV2 := by
   intro M ρ rk hM hS hl hB I
   by_cases hx2 : entry M 2 (M.length - 1) = 0
   · exact root_drop_e2z hM hS hl I (hdrop_of_U h hM hS hl I) hx2
-  · exact h2 M ρ rk hM hS hl hB I hx2
+  by_cases hub : (∃ i, upg M i = some (M.length - 1)) ∨
+      ∃ p, par M 0 (M.length - 1) = some p ∧ col M (M.length - 1) = bump M p
+  · exact h2 M ρ rk hM hS hl hB I hx2 hub
+  push Not at hub
+  exact root_drop_X hM hS hl I (hdrop_of_U h hM hS hl I) hub.1 hub.2
 
 /-- **`DropBadV2B` from `HDropU` and `RootBadV2`**: `argT` from the standardness of `M.take x` (`drop_all_hardB`,
 `good3_take`, `argT_std`). -/

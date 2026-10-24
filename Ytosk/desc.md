@@ -4236,7 +4236,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | 残り | 中身 | 状態・手がかり |
 |---|---|---|
 | HDropU | すべての標準形で落とす補題の仮定 DropResHB（HardArg・VSmallNew・BumpWeakSrcB・条件のない UpgAbsXW・BumpAbsCB）∧（¬Bad2 → BumpAbsC） | 11 集合・接ぎ木で例外 0。HDropV2W は定理（hDropV2W_of_U） |
-| RootBadV2T2 | Bad2 の 1 列落としで根の真の減少（x の行 2 ≠ 0 の場合だけ） | Bad2 の集合で例外 0。行 2 = 0 は root_drop_e2z で定理 |
+| RootBadV2T2 | Bad2 の 1 列落としで根の真の減少（x の行 2 ≠ 0 で、x が親の bump 子か上げ先の場合だけ） | Bad2 の集合で例外 0。ほかは root_drop_e2z・root_drop_X で定理 |
 | BadOutV2 | Bad2 の n ≥ 2 の段: M[n] の Inv3V2 と根の下降 | 同上＋エンジンの弱い場合（t0 で o′(r) ⋪ o(r) の 72 件） |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
@@ -4327,3 +4327,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 最上位 `trio_terminates_main_V2_cur` は (HDropV2W, DropBadV2B) の代わりに (HDropU, RootBadV2) を取る。仮定は 14 個のまま、全体ビルド緑 1075 jobs、公理は標準の 3 つ。
 - 測定: DropResHB の欄は 11 集合と接ぎ木で例外 0（formB・dropres・uaw0c・abcb）。BumpAbsC が破れるのは Bad2 の 9 個だけ。
 - 追記（同じ日）: `root_drop_e2z`（V3GlobV2）: x の行 2 = 0（t = 0・1）なら、どの標準形でも落とす補題の結論から root(M.take x) < root(M)（dep_strict0・dep_anc_x・root_take_lt、hnx は V3MainV2 と同じ場合分け）。`hdrop_of_U`: HDropU から落とす補題の結論。残りを `RootBadV2T2`（行 2 ≠ 0 の Bad2 だけ）に狭めた（`rootBad_of_T2`）。仮定は 14 個のまま、全体ビルド緑、公理は標準の 3 つ。
+- 追記（同じ日）: `dep_strict0X`（V3T2D）: dep_strict0 の写しで、x の行 2 = 0 の代わりに「x へ上げる列がない（hXu）∧ x は親の bump 子でない（hXb）」（V3T2D の hOS_t1X・dv_shapeX を使う。hnx は x へ上げる列がないので要らない）。`root_drop_X`（V3GlobV2）: hXu・hXb なら、どの標準形でも落とす補題の結論から根の真の減少（dep_anc_xG）。RootBadV2T2 を「行 2 ≠ 0 ∧（x が上げ先 ∨ x が親の bump 子）」に狭めた。x が親の bump 子のときは v(q) の bump の項 1 が消える変化で、D の仕組み（x の値への依存）に乗らないので別の議論が要る。仮定は 14 個のまま、全体ビルド緑、公理は標準の 3 つ。

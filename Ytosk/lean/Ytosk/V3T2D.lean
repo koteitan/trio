@@ -430,4 +430,128 @@ theorem dep_anc_xG (hx : x + 1 = M.length)
 
 end
 
+/-! ## `dep_strict0` without `x`'s row 2 = 0 (2026-10-25) -/
+
+section
+variable {M : Mat} {x : Nat} (hx : x + 1 = M.length)
+  (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+  (hXu : ∀ i, upg M i ≠ some x) (hXb : ∀ p, par M 0 x = some p → col M x ≠ bump M p)
+  {ρ ρ' : Valn} {rk : Bool → Nat → Nat}
+  (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take x) ρ') (hRk' : Rk (M.take x) rk)
+  (hdrop : ∀ i, i < x → PO ρ ρ' i ∧ PV M ρ ρ' i)
+include hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXb hC hG hC' hRk' hdrop
+
+/-- **`D` drops strictly** when no column upgrades to `x` and `x` is not a bump child (`dep_strict0` with the shape
+lemmas `hOS_t1X`・`dv_shapeX`). -/
+theorem dep_strict0X {q : Nat} (hq : par M 0 x = some q) :
+    ∀ b i, DepX M x b i → i < x → valB ρ' b i < valB ρ b i := by
+  have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
+  intro b i hD
+  induction hD with
+  | leaf => intro h; exact absurd h (lt_irrefl _)
+  | @ochild i c hc hcb hcu hdc ih =>
+    intro hi
+    show ρ'.o i < ρ.o i
+    rcases hOS_t1X hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXb hq i hi (DepX.ochild hc hcb hcu hdc) with
+      ⟨_, hnc⟩ | ⟨_, L, c0, R, hch, _, _, hR, hLnd⟩
+    · exfalso
+      rcases hnc c hc with h | h
+      · exact hcb h
+      · exact hcu h
+    · have hcnt : Counted M i c := ⟨hcb, hcu⟩
+      have hcR : ∀ d ∈ R, ¬ Counted M i d := fun d h hd => by
+        rcases hR d h with h' | h'
+        · exact hd.1 h'
+        · exact hd.2 h'
+      have hcCL : c ∈ CL M i := by
+        unfold CL; exact List.mem_filter.mpr ⟨hc, by simpa using hcnt⟩
+      obtain ⟨hL, hRo⟩ := sib_order (children_sorted M i) hch
+      have hcc0 : c = c0 := by
+        rw [hch] at hc
+        rcases List.mem_append.mp hc with h | h
+        · exact absurd hdc (hLnd c h hcnt)
+        · rcases List.mem_cons.mp h with h | h
+          · exact h
+          · exact absurd hcnt (hcR c h)
+      subst hcc0
+      apply o_strict_frame hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hi hcCL
+      · intro d hd
+        have hdc : d ∈ children M i := (List.mem_filter.mp hd).1
+        have hdcnt : Counted M i d := by simpa using (List.mem_filter.mp hd).2
+        rw [hch] at hdc
+        rcases List.mem_append.mp hdc with h | h
+        · exact le_of_lt (hL d h)
+        · rcases List.mem_cons.mp h with h | h
+          · rw [h]
+          · exact absurd hdcnt (hcR d h)
+      · exact ih
+  | @ov i hv ih =>
+    intro hi
+    show ρ'.o i < ρ.o i
+    have hiT : i < (M.take x).length := by omega
+    have hiM : i < M.length := by omega
+    have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depX_chgX hv)).1 rfl hi
+    have hvlt : ρ'.v i < ρ.v i := ih hi
+    rw [o_of_no_counted hC' hiT (hdrop i hi).2.2 hT.2.1, o_cl_eq hC hG hiM]
+    exact psi_lt_psi_z_iff.mpr (Or.inl hvlt)
+  | @vpar i m h1 hp hdm _ =>
+    intro hi
+    exfalso
+    have hm := par_lt M 1 i m hp
+    exact (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depX_chgX hdm)).1 rfl (by omega) |>.2.2 i hi hp
+  | @vupg i k h1 h2 hu hdk ih =>
+    intro hi
+    show ρ'.v i < ρ.v i
+    have hiM : i < M.length := by omega
+    have hiT : i < (M.take x).length := by omega
+    have hkl := upg_lt hiM hu
+    have hkx : k < x := by
+      rcases Nat.lt_or_ge k x with h | h
+      · exact h
+      · exfalso
+        have : k = x := by omega
+        subst this; exact hXu i hu
+    have hT := (chg_struct hx hR0 hZ2 hSD hZ1 hUAT hUAB (depX_chgX hdk)).1 rfl hkx
+    obtain ⟨m, hm1, _, _, hcase⟩ := upg_spec hu
+    have hik : k = i + 1 := by
+      rcases hcase with h | ⟨hA, hki⟩
+      · exact h
+      · exact (no_anc_upg hx hR0 hZ2 hSD hZ1 hUAT hUAB hT hkx hu hA hki).elim
+    have hi1 : i + 1 < x := by omega
+    have hmi := par_lt M 1 i m hm1
+    have huT : upg (M.take x) i = some k := by rw [upg_take M hi1]; exact hu
+    have hVot : isOT (vOpt ρ (par M 1 i)) = true := by
+      rw [hm1]; exact hG.ot_v m (by omega)
+    have ek : ρ.v i = ρ.v k :=
+      v_upg_eq hC hiM h1 h2 hu hVot (fun _ _ _ k' hk' => hG.ot_o k' (mem_children hk').2)
+    have ek' : ρ'.v i = ρ'.v k := v_upg_eq hC' hiT (by rw [entry_take M 1 hi]; exact h1)
+      (by rw [entry_take M 2 hi]; exact h2) huT
+      (by rw [par_take M 1 i hi, hm1]; exact (hdrop m (by omega)).2.2)
+      (fun _ _ _ k' hk' => (hdrop k' (by have := (mem_children hk').2; omega)).1.2.1)
+    rw [ek, ek']
+    exact ih hkx
+  | @vbump i j k h1 h2 hj hjb hk hdk ih =>
+    intro hi
+    show ρ'.v i < ρ.v i
+    obtain ⟨_, _, hcase⟩ := dv_shapeX hx hR0 hZ2 hSD hZ1 hUAT hUAB hXu hXb hq hi (DepX.vbump h1 h2 hj hjb hk hdk)
+    rcases hcase with ⟨h2', _⟩ | ⟨_, L, K, j', k', hch, _, hchj, _, hKnd, hLnd⟩
+    · exact absurd h2' h2
+    · have hjj : j = j' := by
+        rw [hch] at hj
+        rcases List.mem_append.mp hj with h | h
+        · exact absurd hdk (hLnd j h k hk).2
+        · exact List.mem_singleton.mp h
+      subst hjj
+      have hkk : k = k' := by
+        rw [hchj] at hk
+        rcases List.mem_append.mp hk with h | h
+        · exact absurd hdk (hKnd k h)
+        · exact List.mem_singleton.mp h
+      subst hkk
+      exact v_strict_bump hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk' hdrop hi h1 h2 hch hjb hchj
+        (fun d hd e he => (hLnd d hd e he).1) ih
+
+
+end
+
 end Ytosk
