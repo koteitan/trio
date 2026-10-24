@@ -48,10 +48,17 @@ theorem absorption_at_leaf {M : Mat} {ρ : Valn} {i k : Nat} {W : T}
     rw [omega_small one_lt_E0]
     exact lt_E0_iff.mpr ⟨rfl, by decide⟩) hlt
 
-/-- Failure of strong absorption supplies an old upgrade target and NBPar.
+/-- A column with a row-2 parent has row 2 ≠ 0. -/
+theorem e2_ne_of_par2 {M : Mat} {x r : Nat} (hx : x < M.length) (h2 : par M 2 x = some r) :
+    entry M 2 x ≠ 0 := by
+  obtain ⟨_, _, _, he2, _, _⟩ := (par2_iff M hx).mp h2
+  have he2' : entry M 2 r < entry M 2 x := he2
+  omega
+
+/-- Failure of strong absorption supplies an old upgrade target and NBPar (at `t = 2`, from `NBParX`).
 The remaining parent-coincidence claim is not assumed in this reduction. -/
 theorem old_target_of_failure {M : Mat} {ρ : Valn} {x : Nat}
-    (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ) (he2 : entry M 2 x ≠ 0)
     (hUA : UpgAbsXW M x ρ) (hFail : ¬ UpgAbsX M x ρ) :
     ∃ k, upg M (x - 1) = some k ∧ k < x ∧ NBPar M (x - 1) := by
   classical
@@ -67,33 +74,33 @@ theorem old_target_of_failure {M : Mat} {ρ : Valn} {x : Nat}
   have hnb : NBPar M i := by
     rcases hUA i k W hix hu hv hW with hs | hw
     · exact False.elim (hnl (hs r hr hrW))
-    · exact hw.2.2
+    · exact hw.2.2.nb_of_e2 he2
   have hie : i = x - 1 := by omega
   exact ⟨k, by simpa [hie] using hu, hkx, by simpa [hie] using hnb⟩
 
 /-- Case split supplied by the existing weak drop field, without any t=2
 parent-coincidence assumption. -/
 theorem strong_or_old_target {M : Mat} {ρ : Valn} {x : Nat}
-    (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ)
+    (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ) (he2 : entry M 2 x ≠ 0)
     (hUA : UpgAbsXW M x ρ) :
     UpgAbsX M x ρ ∨ ∃ k, upg M (x - 1) = some k ∧ k < x ∧ NBPar M (x - 1) := by
   classical
   by_cases hs : UpgAbsX M x ρ
   · exact Or.inl hs
-  · exact Or.inr (old_target_of_failure hx hC hG hUA hs)
+  · exact Or.inr (old_target_of_failure hx hC hG he2 hUA hs)
 
 theorem strong_of_no_upgrade {M : Mat} {ρ : Valn} {x : Nat}
     (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ)
-    (hUA : UpgAbsXW M x ρ) (hn : upg M (x - 1) = none) : UpgAbsX M x ρ := by
-  rcases strong_or_old_target hx hC hG hUA with hs | ⟨k, hk, _⟩
+    (he2 : entry M 2 x ≠ 0) (hUA : UpgAbsXW M x ρ) (hn : upg M (x - 1) = none) : UpgAbsX M x ρ := by
+  rcases strong_or_old_target hx hC hG he2 hUA with hs | ⟨k, hk, _⟩
   · exact hs
   · rw [hn] at hk
     cases hk
 
 theorem strong_of_next_target {M : Mat} {ρ : Valn} {x : Nat}
     (hx : x + 1 = M.length) (hC : Cons M ρ) (hG : Good3 M ρ)
-    (hUA : UpgAbsXW M x ρ) (hn : upg M (x - 1) = some x) : UpgAbsX M x ρ := by
-  rcases strong_or_old_target hx hC hG hUA with hs | ⟨k, hk, hkx, _⟩
+    (he2 : entry M 2 x ≠ 0) (hUA : UpgAbsXW M x ρ) (hn : upg M (x - 1) = some x) : UpgAbsX M x ρ := by
+  rcases strong_or_old_target hx hC hG he2 hUA with hs | ⟨k, hk, hkx, _⟩
   · exact hs
   · rw [hn] at hk
     cases hk
@@ -108,7 +115,7 @@ theorem strong_or_bad_of_common_parent {M : Mat} {ρ : Valn} {x r : Nat}
     UpgAbsX M x ρ ∨
       ((∃ r, par M 0 x = some r ∧ par M 2 x = some r) ∧
         (∃ k, upg M (x - 1) = some k ∧ k < x) ∧ NBPar M (x - 1)) := by
-  rcases strong_or_old_target hx hC hG hUA with hs | ⟨k,hk,hkx,hnb⟩
+  rcases strong_or_old_target hx hC hG (e2_ne_of_par2 (by omega) h2) hUA with hs | ⟨k,hk,hkx,hnb⟩
   · exact Or.inl hs
   · exact Or.inr ⟨⟨r,h0,h2⟩,⟨k,hk,hkx⟩,hnb⟩
 
@@ -588,7 +595,9 @@ theorem qnu_take_of_drop_full (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 :
     (hseed : Lhd z (σ.o pq) (ρ.o pq)) :
     (isOT (root (M.take (r + L)) σ) = true ∧ root (M.take (r + L)) σ < root M ρ) ∧
       Lhd z (σ.v (r + qp)) (ρ.v (r + qp)) := by
-  rcases strong_or_old_target hlen hC hG hUA with hs | ⟨k', hk', hkx', hnb⟩
+  rcases strong_or_old_target hlen hC hG (by
+      have : entry M 2 (r + L) = (col M (r + L)).2.2 := rfl
+      rw [this, hxb]; simp [bump]) hUA with hs | ⟨k', hk', hkx', hnb⟩
   · exact t2_qnu_take_full hlen hL hA hp hqp hxb hBE hR0 hZ2 hSD hZ1 hUAT hR12 hR01
       h00 hpq hqb he2pq hCLq hpqCL hu hP1q hP1a hqsh hDvNil hOS hVSh hC hG hRM
       hCN hGN hRN hF hVS hTD hKD hs hAbs hseed

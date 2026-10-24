@@ -12,12 +12,14 @@ open T
 /-- The weak alternative itself excludes a bump parent of the upgrade source.
 The row-1/Easy conjunct is unnecessary for this local strong consumer. -/
 theorem strong_of_not_nb {M : Mat} {ρ : Valn} {x : Nat}
-    (hUA : UpgAbsXW0 M x ρ) (hNB : ¬ NBPar M (x - 1)) : UpgAbsX M x ρ := by
+    (hUA : UpgAbsXW0 M x ρ) (hp : par M 0 x = some (x - 1)) (hNB : ¬ NBPar M (x - 1)) :
+    UpgAbsX M x ρ := by
   intro i k W hix hu hv hW
   rcases hUA i k W hix hu hv hW with hs | hw
   · exact hs
   · have hie : i = x - 1 := by omega
-    exact False.elim (hNB (by simpa [hie] using hw.2.2))
+    subst hie
+    exact False.elim (hNB (hw.2.2.nb_of_child hp))
 
 /-- A child of a row-2-one ancestor of the final column cannot upgrade to
 the next column: the upgrade target would have row0 at most that ancestor's. -/
@@ -149,7 +151,8 @@ theorem v_lhd_bump_children {M : Mat} {x r g : Nat} (hx : x + 1 = M.length)
       rw [hVk] at hvk
       rw [ek,hvk]
       have hs := (hUA d k _ hixe hu hvk (by simp)).resolve_right
-        (fun hw => hw.2.2 r g (mem_children_iff.mp hd).2 hg hrb)
+        (fun hw => (hw.2.2 r g (mem_children_iff.mp hd).2 hg hrb).1
+          (Anc0.step hp (Anc0.step hg (Anc0.refl g))))
       have hFrame := v_frame_xm1 hVot hWot hW1 (fun t ht _ hlt => hs t ht hlt)
       rw [sf_ot hot1] at hFrame
       exact hFrame
@@ -162,7 +165,7 @@ theorem lhd_t0_of {M : Mat} {x : Nat} {ρ ρ' : Valn} {r : Nat} (hx : x + 1 = M.
   have hE : LhdE (ρ'.o r) (ρ.o r) ∨ (WkOA (ρ'.o r) (ρ.o r) ∧ ∃ w, ρ.o r = psi w z z) := by
     by_cases hr : r = x - 1
     · have hnb := h.resolve_left (fun h' => h' hr)
-      exact PO.zero_of_strong hx (strong_of_not_nb hUA hnb) hC hG hrM hPO hPV
+      exact PO.zero_of_strong hx (strong_of_not_nb hUA (by rw [← hr]; exact hp) hnb) hC hG hrM hPO hPV
     · exact PO.zero_of_ne (by omega) hC hG hrM hPO hPV
   rcases hE with hE | ⟨_, w, hw⟩
   · exact lhd_of_lhdE_lt hE hlt
@@ -194,7 +197,7 @@ theorem po_zero_t0 {M : Mat} {x : Nat} {ρ ρ' : Valn} {r : Nat} (hx : x + 1 = M
   · have hp' : par M 0 x = some (x - 1) := by rw [← hr]; exact hp
     by_cases hnb : NBPar M (x - 1)
     · exact PO.zero_of_strong hx (hS hp' hnb) hC hG hrM hPO hPV
-    · exact PO.zero_of_strong hx (strong_of_not_nb hUA hnb) hC hG hrM hPO hPV
+    · exact PO.zero_of_strong hx (strong_of_not_nb hUA hp' hnb) hC hG hrM hPO hPV
   · exact PO.zero_of_ne (by omega) hC hG hrM hPO hPV
 
 /-- **No counted child of a weak parent `r` of a `t = 0` column `x`** in the easy shape. -/
@@ -206,7 +209,7 @@ theorem cntx_nocnt_t0 {M : Mat} {x : Nat} {ρ : Valn} {r : Nat} (hx : x + 1 = M.
   · have hp' : par M 0 x = some (x - 1) := by rw [← hr]; exact hp
     by_cases hnb : NBPar M (x - 1)
     · exact CntX.nocnt_of_strong hx (hS hp' hnb) h
-    · exact CntX.nocnt_of_strong hx (strong_of_not_nb hUA hnb) h
+    · exact CntX.nocnt_of_strong hx (strong_of_not_nb hUA hp' hnb) h
   · have hrx : r < x := par_lt M 0 x r hp
     exact CntX.nocnt_of_ne (by omega) h
 

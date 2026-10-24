@@ -1002,7 +1002,7 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     · rw [hqr] at hq
       have T := R2.qr r L hlen hr hq
       have hua' : UpgAbsX M (r + L) ρ ∨ T2UABad M (r + L) :=
-        (T2UpgAbs.strong_or_old_target hlen I.cons I.good hdr.ua).imp_right
+        (T2UpgAbs.strong_or_old_target hlen I.cons I.good (T2UpgAbs.e2_ne_of_par2 (by omega) hr) hdr.ua).imp_right
           (fun ⟨k, hk, hkx, hNB⟩ => ⟨⟨r, hq, hr⟩, ⟨k, hk, hkx⟩, hNB⟩)
       have hAbs := absWN_of_absC hdr.ab hC1 hq hrb
       cases hux : upg M (r + L - 1) with

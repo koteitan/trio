@@ -67,7 +67,7 @@ def UpgAbsXW (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
     (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
       (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
           (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i)
+          NBParX M x i)
 
 /-- **`UpgAbsXW` without the row-1 condition** (2026-10-17): the weak alternative for every type of `x`.
 On the 11 sets the strong form fails at `t = 0` only on 2 standard matrices of std_a
@@ -77,7 +77,7 @@ def UpgAbsXW0 (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
     (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
       (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
           (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i)
+          NBParX M x i)
 
 /-- `UpgAbsXW` is the form without the row-1 condition (2026-10-20: the row-1 / `T0Easy` conjunct was dropped). -/
 theorem UpgAbsXW.ofW0 {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW0 M x ρ) : UpgAbsXW M x ρ := h
@@ -99,8 +99,9 @@ theorem UpgAbsX.toW {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsX M x ρ) : UpgAb
 needs `NBPar M (x − 1)`. (2026-10-20: `UpgAbsXW` no longer carries the row-1 / `T0Easy` condition, so the
 earlier `UpgAbsXW.toX` and `toX_bump` are gone; the `t = 0` engines use `T0UpgAbs`, V3T0UpgAbs.) -/
 theorem UpgAbsXW.toX_xm1 {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW M x ρ) (_hx1 : entry M 1 x = 0)
-    (_hp : par M 0 x = some (x - 1)) (hnb : ¬ NBPar M (x - 1)) : UpgAbsX M x ρ := fun i k W hi hu hv hW =>
-  (h i k W hi hu hv hW).resolve_right (fun h' => hnb (by rw [show x - 1 = i by omega]; exact h'.2.2))
+    (hp : par M 0 x = some (x - 1)) (hnb : ¬ NBPar M (x - 1)) : UpgAbsX M x ρ := fun i k W hi hu hv hW =>
+  (h i k W hi hu hv hW).resolve_right (fun h' => hnb (by
+    rw [show x - 1 = i by omega] at hp ⊢; exact h'.2.2.nb_of_child hp))
 
 /-- **Under the strong `UpgAbsX` a weak `o` has the argument `0`** (the shape of `PO` before 2026-10-12): the
 other weak case needs `UpgBad`, which `UpgAbsX` excludes. -/

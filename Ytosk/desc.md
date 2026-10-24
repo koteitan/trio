@@ -4236,7 +4236,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | 残り | 中身 | 状態・手がかり |
 |---|---|---|
 | HDropV2W | 1 列落としの欄 hard・vst・ws・ua・ab（¬Bad2） | 接ぎ木の非 Bad2 で例外 0 |
-| TakeBadV2 | Bad2 の 1 列落とし: Inv3V2 と根の真の減少 | Bad2 用の落とす補題が要る（drop-redesign の広げた形は例外 0） |
+| TakeBadV2 | Bad2 の 1 列落とし: Inv3V2 と根の真の減少 | Bad2 は x が g の部分木にある形と t = 2 に狭めた。Bad2 用の落とす補題が要る（drop-redesign の広げた形は例外 0） |
 | BadOutV2 | Bad2 の n ≥ 2 の段: M[n] の Inv3V2 と根の下降 | 同上＋エンジンの弱い場合（t0 で o′(r) ⋪ o(r) の 72 件） |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は ¬Bad2 の前提つき） | 接ぎ木で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
@@ -4261,3 +4261,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - T2VRACopyEsc（tmp の esc.py）は graftB の t = 2 の 23892 個（写しの枠の件数 9634）で例外 0、graftA は前件 0。
 - 使う側の NBPar(x − 1) は、t = 0（V3T0UpgAbs・V3T0Weak・V3MainT1D の toX_xm1）では P₀(x) ∈ {x − 1, p} の位置でだけ使う。そこでは x は g の部分木にあるので、「p が bump 子なら x は g の部分木にない」という弱い条件からも NBPar が出る。t = 2 の old_target_of_failure は位置を限らずに NBPar を出すので、t = 2 は狭めない。
 - 方針: Bad2 を Bad2S :=「Bad2 ∧（g が x の行 0 の祖先 ∨ x の行 2 ≠ 0）」に狭め、UpgAbsXW0 の弱い選択肢の NBPar を上の弱い条件に替える。
+- 追記（同じ日）: Bad2 を狭めた（ブランチ bad2-narrow → main）。
+  - `Bad2 M`（V3Inv2）に第 3 の条件「g が x の行 0 の祖先 ∨ x の行 2 ≠ 0」を足した。
+  - `NBParX M x i`（V3DropMain）:「i の親 p が g の bump 子なら、x は g の部分木になく行 2 = 0」。UpgAbsXW・UpgAbsXW0 と落とす補題の仮定の形（V3DropMain・V3DropStrong・V3DropR・V3DropWeak0）の弱い選択肢の NBPar を NBParX に替えた。
+  - 使う側の直し: x が x − 1 の子か兄弟のときは `NBParX.nb_of_child`・`nb_of_sib` で NBPar が出る（落とす補題の CntX、toX_xm1、V3T0UpgAbs、V3T0UpgDirect）。落とす補題の CntX は、x − 1 が子 x を持たなければ数える子がないので第 1 の選言で足りる。t = 2 の `old_target_of_failure` は行 2 ≠ 0 から `nb_of_e2`（新しい補題 `T2UpgAbs.e2_ne_of_par2`）。
+  - 前提が弱くなった仮定は HDropV2W・HFrameV2 だけ（t = 2 の文脈では Bad2 は前と同じ）。どちらの欄も側 G（t ≠ 2 を含む）で例外 0 で、新しい UpgAbsXW0 は側 G の 288 件で WCSP・SmallSelf が成り立ち、NBParX は側 G の定義から成り立つ。TakeBadV2・BadOutV2 は前提が狭くなった。仮定は 14 個のまま、全体ビルド緑 1074 jobs、公理は標準の 3 つ。
+  - Bad2 が受け持つ行列: graftB の Bad2 80228 個のうち側 S 31137 個と側 G の t = 2（標本で約 2 割）。

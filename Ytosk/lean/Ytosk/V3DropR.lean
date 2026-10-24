@@ -489,7 +489,7 @@ theorem pv_of_R {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
       (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
         (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
           (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i))
+          NBParX M x i))
     (hup : ∀ k, upg (M.take x) i = some k → PV M ρ ρ' k ∧
       ∀ j ∈ children (M.take x) k, col (M.take x) j = bump (M.take x) k →
         ∀ k' ∈ children (M.take x) j, Single (ρ'.o k')) :
@@ -606,9 +606,14 @@ theorem pv_of_R {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
         obtain ⟨hwc, -, hnb⟩ := (hX1 k _ hixe hu hvk (by simp)).resolve_left hR
         rcases (le_iff _ _).mp (add_le_add_single (vOpt ρ (par M 1 i)) ⟨z, z, rfl⟩ ⟨sW, yW, rfl⟩ hW1)
           with hlt | heq
-        · refine Or.inr ⟨⟨hlt, le_add_single _ ⟨z, z, rfl⟩, hot1⟩, hwc,
-            Or.inr ⟨fun c hc _ => ?_, hnb, k, _, by omega, hu, hvk, by simp, hR⟩⟩
-          have := mem_children hc; omega
+        · refine Or.inr ⟨⟨hlt, le_add_single _ ⟨z, z, rfl⟩, hot1⟩, hwc, ?_⟩
+          by_cases hxc : par M 0 x = some i
+          · exact Or.inr ⟨fun c hc _ => by have := mem_children hc; omega, hnb.nb_of_child hxc,
+              k, _, by omega, hu, hvk, by simp, hR⟩
+          · refine Or.inl fun c hc _ => hxc ?_
+            have := mem_children hc
+            obtain rfl : c = x := by omega
+            exact (mem_children_iff.mp hc).2
         · exact Or.inl (Or.inl heq)
 
 /-- **The drop lemma** (modulo the bump-type frames and the absorption at `x − 1`): at every column of
@@ -621,7 +626,7 @@ theorem drop_all_R
       (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
         (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
           (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i)) :
+          NBParX M x i)) :
     ∀ i, i < x → (PO ρ ρ' i ∧ RClaim ρ ρ' i) ∧ PV M ρ ρ' i := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have key : ∀ N, ∀ i, i < x → (rk true i ≤ N → PO ρ ρ' i ∧ RClaim ρ ρ' i) ∧

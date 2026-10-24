@@ -43,13 +43,15 @@ theorem remaining_case {M : Mat} {ρ : Valn} {x : Nat}
   obtain ⟨i,k,W,hix,hu,hv,hW,q,hq,hlt,hnl⟩ := hfail
   have hi : i < M.length := by omega
   have hie : i = x-1 := by omega
-  have hnb : NBPar M i := by
+  have hnb : NBParX M x i := by
     rcases hUA i k W hix hu hv hW with hs | hw
     · exact False.elim (hnl (hs q hq hlt))
     · exact hw.2.2
   have hnbx : ¬ NBPar M x := by
     intro hn
-    exact hne ⟨hn,fun _ => by simpa [hie] using hnb⟩
+    refine hne ⟨hn, fun hpx => ?_⟩
+    subst hie
+    exact hnb.nb_of_child hpx
   unfold NBPar at hnbx
   push Not at hnbx
   obtain ⟨r,g,hp,hg,hb⟩ := hnbx

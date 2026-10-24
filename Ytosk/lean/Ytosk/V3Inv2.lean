@@ -52,12 +52,15 @@ theorem trigS0_of_trigS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   fun r μ b h1 h0 h2 hro hs i L' c R hi hd hch hcnt hdc _ =>
     h r μ b h1 h0 h2 hro hs i L' c R hi hd hch hcnt hdc
 
-/-- **The grafted bad shape** (2026-10-24): the column `x − 1` (`x` the last column) has an upgrade target and its
-parent is a bump child. On standard matrices of this shape the frame fields `TPLoW`・`AbsDW` and the drop fields
-`BumpWeakSrc`・`UpgAbsXW0`・`BumpAbsC` can fail (grafted sets graftA・graftB, desc); outside it they hold. -/
+/-- **The grafted bad shape** (2026-10-24): the column `x − 1` (`x` the last column) has an upgrade target, its
+parent `p` is the bump child of `g`, and `x` lies under `g` or has row 2 ≠ 0. On standard matrices of this shape the
+frame fields `TPLoW`・`AbsDW` and the drop fields `BumpWeakSrc`・`UpgAbsXW0`・`BumpAbsC` can fail (grafted sets
+graftA・graftB, desc); outside it they hold. (The same day: narrowed by the last disjunction; when `x` lies above `g`
+and has row 2 = 0 all these fields hold, with `NBParX` in place of `NBPar` in `UpgAbsXW0`.) -/
 def Bad2 (M : Mat) : Prop :=
   (∃ k, upg M (M.length - 2) = some k) ∧
-    ∃ p g, par M 0 (M.length - 2) = some p ∧ par M 0 p = some g ∧ col M p = bump M g
+    ∃ p g, par M 0 (M.length - 2) = some p ∧ par M 0 p = some g ∧ col M p = bump M g ∧
+      (Anc0 M g (M.length - 1) ∨ entry M 2 (M.length - 1) ≠ 0)
 
 /-- **The redesigned value part**. -/
 structure Inv3V2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where

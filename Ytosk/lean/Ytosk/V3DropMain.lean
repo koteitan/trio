@@ -50,6 +50,36 @@ def PO (ρ ρ' : Valn) (i : Nat) : Prop :=
 def NBPar (M : Mat) (i : Nat) : Prop :=
   ∀ p g, par M 0 i = some p → par M 0 p = some g → col M p ≠ bump M g
 
+/-- **The parent of `i` is not a bump child, unless `x` lies outside its grandparent's subtree** (2026-10-24): when
+the parent `p` of `i` is the bump child of `g`, the column `x` is not a row-0 descendant of `g` and has row 2 = 0.
+The weak alternative of the absorption at `x − 1` carries this instead of `NBPar` (on the grafted sets the weak
+alternative is used with a bump parent exactly when `x` lies above `g`, desc). -/
+def NBParX (M : Mat) (x i : Nat) : Prop :=
+  ∀ p g, par M 0 i = some p → par M 0 p = some g → col M p = bump M g → ¬ Anc0 M g x ∧ entry M 2 x = 0
+
+theorem NBParX.of_nb {M : Mat} {x i : Nat} (h : NBPar M i) : NBParX M x i :=
+  fun p g hp hg hb => absurd hb (h p g hp hg)
+
+/-- `NBPar` from `NBParX` when `x` lies under the grandparent of `i`. -/
+theorem NBParX.nb_of_anc {M : Mat} {x i : Nat} (h : NBParX M x i)
+    (hA : ∀ p g, par M 0 i = some p → par M 0 p = some g → Anc0 M g x) : NBPar M i :=
+  fun p g hp hg hb => (h p g hp hg hb).1 (hA p g hp hg)
+
+/-- `NBPar` from `NBParX` when `x` has row 2 ≠ 0. -/
+theorem NBParX.nb_of_e2 {M : Mat} {x i : Nat} (h : NBParX M x i) (he : entry M 2 x ≠ 0) : NBPar M i :=
+  fun p g hp hg hb => he (h p g hp hg hb).2
+
+/-- `NBPar` from `NBParX` when `x` is the child of `i`. -/
+theorem NBParX.nb_of_child {M : Mat} {x i : Nat} (h : NBParX M x i) (hx : par M 0 x = some i) : NBPar M i :=
+  h.nb_of_anc fun _ _ hp hg => Anc0.step hx (Anc0.step hp (Anc0.step hg (Anc0.refl _)))
+
+/-- `NBPar` from `NBParX` when `x` is a sibling of `i`. -/
+theorem NBParX.nb_of_sib {M : Mat} {x i p : Nat} (h : NBParX M x i) (hip : par M 0 i = some p)
+    (hx : par M 0 x = some p) : NBPar M i :=
+  h.nb_of_anc fun p' _ hp hg => by
+    rw [hip] at hp; cases hp
+    exact Anc0.step hx (Anc0.step hg (Anc0.refl _))
+
 /-- **The easy `t = 0` shape** (2026-10-17): the parent `r` of `x` is not a bump child, and when `r = x − 1`
 its parent is not a bump child either. Outside it the `t = 0` engines use the strong absorption at `x − 1`
 (`UpgAbsXW.toX`); inside, `r ≠ x − 1` needs no absorption (`PO.zero_of_ne`) and `r = x − 1` is the weak leaf
@@ -357,7 +387,7 @@ theorem pv_of {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
       (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
         (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
           (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i))
+          NBParX M x i))
     (hup : ∀ k, upg (M.take x) i = some k → PV M ρ ρ' k ∧
       ∀ j ∈ children (M.take x) k, col (M.take x) j = bump (M.take x) k →
         ∀ k' ∈ children (M.take x) j, Single (ρ'.o k')) :
@@ -474,9 +504,14 @@ theorem pv_of {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
         obtain ⟨hwc, -, hnb⟩ := (hX1 k _ hixe hu hvk (by simp)).resolve_left hR
         rcases (le_iff _ _).mp (add_le_add_single (vOpt ρ (par M 1 i)) ⟨z, z, rfl⟩ ⟨sW, yW, rfl⟩ hW1)
           with hlt | heq
-        · refine Or.inr ⟨⟨hlt, le_add_single _ ⟨z, z, rfl⟩, hot1⟩, hwc,
-            Or.inr ⟨fun c hc _ => ?_, hnb, k, _, by omega, hu, hvk, by simp, hR⟩⟩
-          have := mem_children hc; omega
+        · refine Or.inr ⟨⟨hlt, le_add_single _ ⟨z, z, rfl⟩, hot1⟩, hwc, ?_⟩
+          by_cases hxc : par M 0 x = some i
+          · exact Or.inr ⟨fun c hc _ => by have := mem_children hc; omega, hnb.nb_of_child hxc,
+              k, _, by omega, hu, hvk, by simp, hR⟩
+          · refine Or.inl fun c hc _ => hxc ?_
+            have := mem_children hc
+            obtain rfl : c = x := by omega
+            exact (mem_children_iff.mp hc).2
         · exact Or.inl (Or.inl heq)
 
 /-- **The drop lemma** (modulo the bump-type frames and the absorption at `x − 1`): at every column of
@@ -489,7 +524,7 @@ theorem drop_all
       (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
         (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
           (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i)) :
+          NBParX M x i)) :
     ∀ i, i < x → PO ρ ρ' i ∧ PV M ρ ρ' i := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have key : ∀ N, ∀ i, i < x → (rk true i ≤ N → PO ρ ρ' i) ∧ (rk false i ≤ N → PV M ρ ρ' i) := by
