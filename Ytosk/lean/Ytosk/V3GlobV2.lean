@@ -132,10 +132,81 @@ theorem hDropV2W_of_U (h : HDropU) : HDropV2W := by
     · intro hS'
       exact hs (hS' i k W (by omega) hu hvk hW)
 
-/-- **Residual: the strict descent of the root at the one-column drop of a `Bad2` matrix** (2026-10-25). -/
+/-- **The strict descent of the root at the one-column drop of a `Bad2` matrix** (2026-10-25). -/
 def RootBadV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Bad2 M → Inv3V2 M ρ rk →
     root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ
+
+/-- **Residual: `RootBadV2` when `x` has row 2 ≠ 0** (`t = 2`; the other types follow from the drop lemma,
+`root_drop_e2z`). -/
+def RootBadV2T2 : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Bad2 M → Inv3V2 M ρ rk → entry M 2 (M.length - 1) ≠ 0 →
+    root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ
+
+/-- **The conclusion of the drop lemma from `HDropU`** (`drop_all_hardB`, `bump_dropB`), for every standard matrix. -/
+theorem hdrop_of_U (h : HDropU) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
+    (hl : 2 ≤ M.length) (I : Inv3V2 M ρ rk) :
+    ∀ i, i < M.length - 1 → PO ρ (drop1 M (M.length - 1) rk) i ∧ PV M ρ (drop1 M (M.length - 1) rk) i := by
+  have hE : M ≠ [] := by intro he; rw [he] at hl; simp at hl
+  obtain ⟨R, _⟩ := h M ρ rk hM hS hE I
+  have S := sInv_std hM hS
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last (M := M) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 := cons_of_rk hRk1
+  exact drop_all_hardB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.vs R.vst I.fc I.fo
+    R.hard (bump_dropB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.kd I.td R.ab R.ws) R.ua
+
+/-- **The strict descent of the root at the one-column drop when `x` has row 2 = 0** (`t = 0, 1`), from the
+conclusion of the drop lemma alone (`dep_strict0`, `root_take_lt`), for any standard matrix. -/
+theorem root_drop_e2z {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
+    (hl : 2 ≤ M.length) (I : Inv3V2 M ρ rk)
+    (hdrop : ∀ i, i < M.length - 1 → PO ρ (drop1 M (M.length - 1) rk) i ∧ PV M ρ (drop1 M (M.length - 1) rk) i)
+    (hx2 : entry M 2 (M.length - 1) = 0) :
+    root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ := by
+  have S := sInv_std hM hS
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last (M := M) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 := cons_of_rk hRk1
+  refine (root_take_lt hx S.r01 S.r12 S.e00 I.cons I.good (fun i hi => (hdrop i hi).1.2.1)
+    (fun i hi => (hdrop i hi).1.le) ?_).2
+  intro R hR hRA _
+  obtain ⟨q, hq⟩ := par0_of_anc hRA (by omega)
+  have hnx : ¬ DepX M (M.length - 1) false (M.length - 1) := by
+    by_cases he1 : entry M 1 (M.length - 1) = 0
+    · intro h
+      cases h with
+      | vpar h1 _ _ => exact h1 he1
+      | vupg h1 _ _ _ => exact h1 he1
+      | vbump h1 _ _ _ _ _ => exact h1 he1
+    · obtain ⟨r, hr⟩ := par1_exists S.e00 S.r01 (by omega : 0 < entry M 1 (M.length - 1))
+      have hrx : r < M.length - 1 := par_lt M 1 _ r hr
+      obtain ⟨L, hL⟩ : ∃ L, M.length - 1 = r + L := ⟨M.length - 1 - r, by omega⟩
+      have hlen : r + L + 1 = M.length := by omega
+      have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) (by rw [← hL]; exact hr)
+      rw [hL] at hr hq hx2 ⊢
+      intro h
+      cases h with
+      | vpar _ hp hdm =>
+        rw [hr] at hp; cases hp
+        by_cases hqr : q = r
+        · subst hqr
+          exact (qr_dep hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hr hx2 hq).2.1 hdm
+        · exact v_r_not_chg hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hA (by omega)
+            (fun h' => hqr (Option.some.inj (hq.symm.trans h')))
+            (hpath_of_par1 hr hA (by omega)) (depX_chgX hdm)
+      | vupg _ _ hu _ => have := upg_succ_lt hu; omega
+      | vbump _ h2 _ _ _ _ => exact h2 hx2
+  have hD := dep_strict0 hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 hdrop hx2 hq hnx
+  exact hD true R (dep_anc_x S.uat S.z2 S.r12 S.bumpE2 hx hx2 hRA) hR
+
+/-- **`RootBadV2` from `HDropU` and the `t = 2` part.** -/
+theorem rootBad_of_T2 (h : HDropU) (h2 : RootBadV2T2) : RootBadV2 := by
+  intro M ρ rk hM hS hl hB I
+  by_cases hx2 : entry M 2 (M.length - 1) = 0
+  · exact root_drop_e2z hM hS hl I (hdrop_of_U h hM hS hl I) hx2
+  · exact h2 M ρ rk hM hS hl hB I hx2
 
 /-- **`DropBadV2B` from `HDropU` and `RootBadV2`**: `argT` from the standardness of `M.take x` (`drop_all_hardB`,
 `good3_take`, `argT_std`). -/

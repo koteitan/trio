@@ -4236,7 +4236,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | 残り | 中身 | 状態・手がかり |
 |---|---|---|
 | HDropU | すべての標準形で落とす補題の仮定 DropResHB（HardArg・VSmallNew・BumpWeakSrcB・条件のない UpgAbsXW・BumpAbsCB）∧（¬Bad2 → BumpAbsC） | 11 集合・接ぎ木で例外 0。HDropV2W は定理（hDropV2W_of_U） |
-| RootBadV2 | Bad2 の 1 列落としで根の真の減少 | Bad2 の集合で例外 0（takebad.py）。DropBadV2B は HDropU とこれから定理（dropBadB_of_U） |
+| RootBadV2T2 | Bad2 の 1 列落としで根の真の減少（x の行 2 ≠ 0 の場合だけ） | Bad2 の集合で例外 0。行 2 = 0 は root_drop_e2z で定理 |
 | BadOutV2 | Bad2 の n ≥ 2 の段: M[n] の Inv3V2 と根の下降 | 同上＋エンジンの弱い場合（t0 で o′(r) ⋪ o(r) の 72 件） |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
@@ -4326,3 +4326,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - `RootBadV2`（Bad2 の 1 列落としで根の真の減少）、`dropBadB_of_U : HDropU → RootBadV2 → DropBadV2B`（argT は M.take の標準形から argT_std で）。
 - 最上位 `trio_terminates_main_V2_cur` は (HDropV2W, DropBadV2B) の代わりに (HDropU, RootBadV2) を取る。仮定は 14 個のまま、全体ビルド緑 1075 jobs、公理は標準の 3 つ。
 - 測定: DropResHB の欄は 11 集合と接ぎ木で例外 0（formB・dropres・uaw0c・abcb）。BumpAbsC が破れるのは Bad2 の 9 個だけ。
+- 追記（同じ日）: `root_drop_e2z`（V3GlobV2）: x の行 2 = 0（t = 0・1）なら、どの標準形でも落とす補題の結論から root(M.take x) < root(M)（dep_strict0・dep_anc_x・root_take_lt、hnx は V3MainV2 と同じ場合分け）。`hdrop_of_U`: HDropU から落とす補題の結論。残りを `RootBadV2T2`（行 2 ≠ 0 の Bad2 だけ）に狭めた（`rootBad_of_T2`）。仮定は 14 個のまま、全体ビルド緑、公理は標準の 3 つ。
