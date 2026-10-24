@@ -57,7 +57,7 @@ theorem t0DF_ofC (hU0 : OldUpgAbs) (hCut : T0CutResGGC) {M : Mat} {ρ : Valn} {r
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
     (hVA.toP (r + L) r) hPH (hCut M ρ rk r L hM hS I R hlen hL hp he1)
-    (t0_shape3C hM hS I R hlen hL hp he1) (t0IVResC_holds M ρ rk r L hM hS I R hlen hL hp he1) n hn σ hCN
+    (t0_shape3C hM hS I (T0DropF.of_res I R (by omega)) hlen hL hp he1) (t0IVResC_holds M ρ rk r L hM hS I hlen hL hp he1) n hn σ hCN
   intro i hi
   refine ⟨fun hd => ?_, (h i hi).2⟩
   obtain ⟨h1, h2, _, h4, h5⟩ := (h i hi).1 hd
@@ -96,7 +96,7 @@ theorem t0_final_inv3V2D {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L 
         t0_vsmallNewN hlen hL hp he1 S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 I.cons I.good I.rank hn hCN⟩)
       n hn2
   have hctx : T0CtxC M ρ rk r L n σ rkN :=
-    ⟨hM, hS, IC, RC, hlen, hL, hp, he1, trivial, hn2, hCN, hRN, hGN, hFON, hFCN, hKDN, hTDN⟩
+    ⟨hM, hS, IC, T0DropF.of_res IC RC (by omega), hlen, hL, hp, he1, trivial, hn2, hCN, hRN, hGN, hFON, hFCN, hKDN, hTDN⟩
   have hvs := t0_vsmallF_atC (t0VSD_atC hDF.toH) t0IVResC_holds r L n σ rkN hctx
   -- the side facts of the frames of `N` (as in `t0_core`)
   have hcnt := hcnt_t1 hlen S.r0p S.z2 S.sibDec S.z1c S.uat

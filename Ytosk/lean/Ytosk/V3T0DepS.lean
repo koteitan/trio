@@ -41,6 +41,56 @@ variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hCN : Cons (TRIO.gexp M r L 0 0 n) σ)
 include hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC hG hCN
 
+/-- **The node of seed S1 in the `RClaim` scheme** (`t = 0`): from the drop at `r` (`◁`, or a weak leaf with
+`v(r) ≤ v(g)` whose first copy root counts at `g` in `N`), `o_N(g) = ψ_{v(g)}(X′) ◁ ψ_{v(g)}(X) = o(g)` with
+`RClaim`. -/
+theorem t0_S1N_of {g : Nat} (hg : par M 0 r = some g)
+    {ρ' : Valn} (hC1 : Cons (M.take (r + L)) ρ') (hGT : Good3 (M.take (r + L)) ρ')
+    (hoffD : ∀ i, i < r → (¬ DepX M (r + L) true i → σ.o i = ρ.o i) ∧
+      (¬ DepX M (r + L) false i → σ.v i = ρ.v i))
+    (hσmid : ∀ k, k + 1 < n → σ.o (r + k * L) = omid M r L ρ)
+    (hσlast : σ.o (r + (n - 1) * L) = ρ'.o r)
+    (hl : Lhd z (ρ'.o r) (ρ.o r) ∨
+      (∃ w', ρ'.o r = psi w' z z ∧ WkVA w' (ρ.v r) ∧ WCS (ρ.v g) w' ∧ isOT (psi w' z z) = true) ∧
+        (Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r) ∧
+        (Counted M g r → ρ.v r ≤ ρ.v g))
+    (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
+    (hLastC : Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
+    (hVchgR : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
+      ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z)
+    (hG0 : Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
+      ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
+        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true))
+    (hcnt : Counted M g r) :
+    ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧
+      isOT (psi (ρ.v g) X' z) = true ∧ Lhd z (psi (ρ.v g) X' z) (psi (ρ.v g) X z) ∧
+      ∀ U : T → Prop, RClaimU U ρ σ g := by
+  have hx : r + L + 1 = M.length := hlen
+  have hgr : g < r := par_lt M 0 r g hg
+  have hrg : r ∈ children M g := mem_children_iff.mpr ⟨by omega, hg⟩
+  have hv' : σ.v g = ρ.v g := (hoffD g hgr).2 (fun hd =>
+    uncnt_of_depv hx hR0 hZ2 hSD hZ1 hUAT hUAB he2 hp (by omega) hd hrg hcnt)
+  have hm1 : (∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) ∨
+      ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
+        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧
+          lt (psi (ρ.v g) z z) (psi s y z) = true) := by
+    by_cases h : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
+    · exact Or.inl h
+    · exact Or.inr (hG0 hcnt (fun k hk hk' => h ⟨k, hk, hk'⟩))
+  rcases hl with hl | ⟨hw, hrN, hva⟩
+  · obtain ⟨X, X', hX, hX', hlX, hXo, hcls⟩ :=
+      t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
+        hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast
+        (hLastC hcnt) hl hy' hC1 hGT hm1 hVchgR
+    have hot := hG.ot_o g (by omega)
+    rw [hX] at hot
+    have hot' := ot_parent_lhd hot hXo (Or.inr hlX)
+    exact ⟨X, X', hX, hX', hot', lhd_psi _ hlX,
+      fun _ => rclaim_of_clsU hX hX' hot hot' hlX hcls⟩
+  · exact T0ArgB.t0_S1AW_node hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
+      hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast
+      (hLastC hcnt) hw hy' hC1 hGT (hrN hcnt) (hva hcnt)
+
 /-- **The `D` columns before `r` in the `RClaim` scheme** (`t = 0`, `n ≥ 2`, `r` has a parent `g`): standard,
 `◁`, and `RClaim` at the `o` calls. No class is carried. -/
 theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Nat} (hRM : Rk M rk)
@@ -56,10 +106,9 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
     (hF : FrameClosed M ρ) (hVS : VSmallF M ρ) (hVR : VSmallRP M (r + L) r ρ)
     (hFO : FrameOT M ρ) (hTD : BumpTermDec M ρ) (hKD : BumpKidsDec M ρ) (hAbs : AbsWN M (TRIO.gexp M r L 0 0 n) r ρ σ)
     (hlt : ρ'.o r < ρ.o r)
-    (hl : Lhd z (ρ'.o r) (ρ.o r) ∨
-      (∃ w', ρ'.o r = psi w' z z ∧ WkVA w' (ρ.v r) ∧ WCS (ρ.v g) w' ∧ isOT (psi w' z z) = true) ∧
-        (Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r) ∧
-        (Counted M g r → ρ.v r ≤ ρ.v g))
+    (hS1N : Counted M g r → ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧
+      isOT (psi (ρ.v g) X' z) = true ∧ Lhd z (psi (ρ.v g) X' z) (psi (ρ.v g) X z) ∧
+      ∀ U : T → Prop, RClaimU U ρ σ g)
     (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
     (hLastC : Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g (r + (n - 1) * L))
     (hS3 : ∀ p, par M 0 g = some p → entry M 1 p ≠ 0 → entry M 2 p ≠ 0 → col M g = bump M p →
@@ -402,24 +451,7 @@ theorem t0_dep_otS {g : Nat} (hg : par M 0 r = some g) {rk : Bool → Nat → Na
               by_cases h : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
               · exact Or.inl h
               · exact Or.inr (hG0 hcnt (fun k hk hk' => h ⟨k, hk, hk'⟩))
-            obtain ⟨X, X', hX, hX', hot', hlNode, hRC⟩ : ∃ X X',
-                ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧
-                isOT (psi (ρ.v g) X' z) = true ∧
-                Lhd z (psi (ρ.v g) X' z) (psi (ρ.v g) X z) ∧
-                ∀ U : T → Prop, RClaimU U ρ σ g := by
-              rcases hl with hl | ⟨hw, hrN, hva⟩
-              · obtain ⟨X, X', hX, hX', hlX, hXo, hcls⟩ :=
-                  t0_S1A hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
-                    hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast
-                    (hLastC hcnt) hl hy' hC1 hGT hm1 hVchgR
-                have hot := hG.ot_o g (by omega)
-                rw [hX] at hot
-                have hot' := ot_parent_lhd hot hXo (Or.inr hlX)
-                exact ⟨X, X', hX, hX', hot', lhd_psi _ hlX,
-                  fun _ => rclaim_of_clsU hX hX' hot hot' hlX hcls⟩
-              · exact T0ArgB.t0_S1AW_node hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 he2 hn2 hC
-                  hG hCN hg hcnt (fun c hc hd => (hoffD c hc).1 hd) hv' hσmid hσlast
-                  (hLastC hcnt) hw hy' hC1 hGT (hrN hcnt) (hva hcnt)
+            obtain ⟨X, X', hX, hX', hot', hlNode, hRC⟩ := hS1N hcnt
             refine ⟨by rw [hX']; exact hot', by rw [hX, hX']; exact hlNode,
               fun U _ => hRC U, ?_⟩
             intro _ X1 X1' h1 h1' _
@@ -1025,7 +1057,9 @@ theorem t0_otdS {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
           · rw [show k = n - 1 by omega, hσlast]; exact hGT.ot_o r (by rw [List.length_take]; omega)
     intro i hi
     have hdep := t0_dep_otS hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hRM hC1 hGT hσB hσBv
-      hoffD hσmid hσlast hF hVS hVR hFO hTD hKD (hAbsS n hn2 σ hCN) hlt hl2 hy' (hLast n hn2 g hg) hS3 hS2
+      hoffD hσmid hσlast hF hVS hVR hFO hTD hKD (hAbsS n hn2 σ hCN) hlt
+      (t0_S1N_of hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hg hC1 hGT hoffD hσmid hσlast
+        hl2 hy' (hLast n hn2 g hg) (hVchgRN g hg) (hG0N n hn2 g hg)) hy' (hLast n hn2 g hg) hS3 hS2
       hPH (hVchgRN g hg) (hG0N n hn2 g hg)
     refine ⟨fun hd => ?_, fun hd => ⟨(hdep false i hi).1, (hdep false i hi).2.1 hd⟩⟩
     obtain ⟨hot, hlt, hR, hRE⟩ := hdep true i hi

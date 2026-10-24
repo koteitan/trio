@@ -569,8 +569,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
         hOXle hO'le,
       bumpTermDec_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hKD hTD hVT.td hσB
         (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => le_of_lt (hdl true d hD hd).1) hσmid hσlast
-        (fun g' i hg' hi hb => by
-          obtain rfl : g' = g := Option.some.inj (hg'.symm.trans hg); exact hlB i hi hb) hG0le, hRW,
+        hO'le hG0le, hRW,
       rootP_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hR01 hR12 h00 hpM
         (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => le_of_lt (hdl true d hD hd).1)
         (fun h => absurd h (by rw [hg]; simp)) hσmid hσlast hOXle hO'le, ?_⟩
@@ -607,7 +606,7 @@ theorem t0_core {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
       bumpTermDec_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hx2 hn2 hC hG hCN hGN hKD hTD hVT.td hσB
         (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => absurd hd (by
           have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true d hD; omega))
-        hσmid hσlast (fun g _ hg => absurd hg (by rw [hrn]; simp)) (fun g hg => absurd hg (by rw [hrn]; simp)), hRW, ?_, ?_⟩
+        hσmid hσlast hO'le (fun g hg => absurd hg (by rw [hrn]; simp)), hRW, ?_, ?_⟩
     · exact rootP_N_t0 hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB hR01 hR12 h00 hpM
         (fun i hi hd => (hoffD i hi).1 hd) (fun d hd hD => absurd hd (by
           have := nodep_G_root hlen hL hp hn hR0 hZ2 hSD hZ1 hUAT hUAB he1 hrn true d hD; omega))

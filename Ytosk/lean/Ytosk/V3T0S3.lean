@@ -99,6 +99,56 @@ theorem g3_brel {Kv : List T} {B0 v o' : T} {n : Nat} (hn : 2 ≤ n)
     have := brelS_app_same hS (Or.inr hT) z
     simpa using this
 
+/-- **The `G` level of the seed S3, the order only**: `K + ψ_v(Y0)·(n − 1) + o′ < K + ψ_v(Y0 + 1)` when
+`o′ ≤ ψ_v(Y0)` (no `◁` of `o′` needed). -/
+theorem g3_lt {Kv : List T} {B0 v o' : T} {n : Nat} (hn : 2 ≤ n)
+    (hsK : ∀ u ∈ Kv, Single u) (hpK : (Kv ++ [psi v (app B0 one) z]).Pairwise (fun a b => b ≤ a))
+    (hX : Single (psi v (app B0 one) z)) (hO : Single (psi v B0 z)) (ho' : Single o')
+    (ho'O : o' ≤ psi v B0 z) :
+    sumN (Kv ++ (List.replicate (n - 1) (psi v B0 z) ++ [o'])) < sumN (Kv ++ [psi v (app B0 one) z]) ∧
+      isOT (sumN (Kv ++ (List.replicate (n - 1) (psi v B0 z) ++ [o']))) = true := by
+  set O := psi v B0 z with hOdef
+  set X := psi v (app B0 one) z with hXdef
+  have hOX : O < X := psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_app_one B0⟩)
+  have hRs : ∀ t ∈ List.replicate (n - 1) O ++ [o'], Single t := fun t ht => by
+    rcases List.mem_append.mp ht with h | h
+    · rw [(List.mem_replicate.mp h).2]; exact hO
+    · simp at h; rw [h]; exact ho'
+  have hRp : (List.replicate (n - 1) O ++ [o']).Pairwise (fun a b => b ≤ a) :=
+    List.pairwise_append.mpr ⟨List.pairwise_replicate.mpr (Or.inr (le_refl _)), by simp,
+      fun a ha b hb => by
+        simp at hb; rw [hb, (List.mem_replicate.mp ha).2]; exact ho'O⟩
+  have hsumR : sumN (List.replicate (n - 1) O ++ [o']) = app (mulT O (n - 1)) o' := by
+    rw [sumN_snoc_dec hRs hRp, sumN_replicate hO]
+  have hT : app (mulT O (n - 1)) o' < X := by
+    have h1 : app (mulT O (n - 1)) o' ≤ mulT O n := by
+      obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+      rw [mulT_succ', show m + 1 - 1 = m by omega]
+      exact app_le_app_left _ ho'O
+    have h2 : Lhd z (mulT O n) X := by rw [hOdef, hXdef]; exact lhd_mulT n
+    exact lt_of_le_of_lt h1 h2.1
+  have hpK1 := List.pairwise_append.mp hpK
+  have hKX : ∀ u ∈ Kv, X ≤ u := fun u hu => hpK1.2.2 u hu X (by simp)
+  have hall : ∀ t ∈ Kv ++ (List.replicate (n - 1) O ++ [o']), Single t := fun t ht => by
+    rcases List.mem_append.mp ht with h | h
+    · exact hsK t h
+    · exact hRs t h
+  have hpall : (Kv ++ (List.replicate (n - 1) O ++ [o'])).Pairwise (fun a b => b ≤ a) :=
+    List.pairwise_append.mpr ⟨hpK1.1, hRp, fun a ha b hb => by
+      have hb' : b ≤ O := by
+        rcases List.mem_append.mp hb with h | h
+        · rw [(List.mem_replicate.mp h).2]
+        · simp at h; rw [h]; exact ho'O
+      exact le_trans hb' (le_trans (le_of_lt hOX) (hKX a ha))⟩
+  have hallX : ∀ t ∈ Kv ++ [X], Single t := fun t ht => by
+    rcases List.mem_append.mp ht with h | h
+    · exact hsK t h
+    · simp at h; rw [h]; exact hX
+  have hot : isOT (sumN (Kv ++ (List.replicate (n - 1) O ++ [o']))) = true :=
+    isOT_sumN _ (fun t ht => (hall t ht).1)
+  rw [sumN_append_dec hall hpall, sumN_append_dec hallX hpK, hsumR, sumN_singleton hX] at *
+  exact ⟨app_lt_app_left _ hT, hot⟩
+
 section
 variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)

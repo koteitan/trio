@@ -45,6 +45,12 @@ is passed as the weak `T0AbsW`). -/
 structure Res3C (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   drop : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
 
+/-- **The drop facts the `t = 0` engine reads** (2026-10-25): the conclusion of the drop lemma (`PO`・`PV` at every
+column of `M.take x`) and the invariant `ValInv` of `M.take x`. Both hold also on `Bad2` (from `HDropU`). -/
+structure T0DropF (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
+  po : ∀ k, k < M.length - 1 → PO ρ (drop1 M (M.length - 1) rk) k ∧ PV M ρ (drop1 M (M.length - 1) rk) k
+  vt : ValInv (M.take (M.length - 1)) (drop1 M (M.length - 1) rk)
+
 theorem Inv3.toC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) : Inv3C M ρ rk :=
   ⟨I.r0p, I.z2, I.sd, I.z1, I.uat, I.uab, I.r12, I.be, I.r01, I.e00, I.cons, I.good, I.rank, I.vs, I.fc,
     I.fo, I.kd, I.td, I.rootS, I.rootP⟩
@@ -52,10 +58,22 @@ theorem Inv3.toC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M �
 theorem Res3A.toC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (R : Res3A M ρ rk) : Res3C M ρ rk :=
   ⟨R.drop⟩
 
+/-- **`T0DropF` from the drop residual** (the drop lemma `drop_all` and `drop_pres`). -/
+theorem T0DropF.of_res {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3C M ρ rk) (R : Res3C M ρ rk)
+    (hK : 1 ≤ M.length) : T0DropF M ρ rk := by
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last hK I.r0p I.z2 I.sd I.z1 I.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 := cons_of_rk hRk1
+  have hDr := R.drop
+  exact ⟨drop_all hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs hDr.vst I.fc I.fo hDr.argT
+      (bump_drop hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hDr.ab hDr.ws) hDr.ua,
+    drop_pres hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hDr hC1 hRk1⟩
+
 /-- `T0Ctx` with the core bundles (the prefix slot is not used by the engine and is left `True`). -/
 def T0CtxC (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat) (σ : Valn)
     (rkN : Bool → Nat → Nat) : Prop :=
-  Std M ∧ M ≠ SRO ∧ Inv3C M ρ rk ∧ Res3C M ρ rk ∧ r + L + 1 = M.length ∧ 0 < L ∧
+  Std M ∧ M ≠ SRO ∧ Inv3C M ρ rk ∧ T0DropF M ρ rk ∧ r + L + 1 = M.length ∧ 0 < L ∧
     par M 0 (r + L) = some r ∧ entry M 1 (r + L) = 0 ∧ True ∧
     2 ≤ n ∧ Cons (TRIO.gexp M r L 0 0 n) σ ∧ Rk (TRIO.gexp M r L 0 0 n) rkN ∧
     Good3 (TRIO.gexp M r L 0 0 n) σ ∧ FrameOT (TRIO.gexp M r L 0 0 n) σ ∧
@@ -65,7 +83,7 @@ def T0CtxC (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L n : Nat) (σ :
 /-- **(iv)** with the core bundles. -/
 def T0IVResC : Prop :=
   ∀ (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) (r L : Nat), Std M → M ≠ SRO → Inv3C M ρ rk →
-    Res3C M ρ rk → r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     ∀ n, 2 ≤ n → ∀ g, par M 0 r = some g →
       Counted M g r → (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
       ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
@@ -91,7 +109,7 @@ theorem std_gexp_t0C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Na
 
 /-- **`T0Shape` (iii)**: a changed subscript of `o′(r)` in `M.take x` stays at least `Ω_{v(g)+1}`. -/
 theorem t0_shape3C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat} (hM : Std M) (hS : M ≠ SRO)
-    (I : Inv3C M ρ rk) (R : Res3C M ρ rk) (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (I : Inv3C M ρ rk) (D : T0DropF M ρ rk) (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0) :
     ∀ g, par M 0 r = some g → ∀ s' y', (drop1 M (r + L) rk).o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z := by
@@ -99,14 +117,13 @@ theorem t0_shape3C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat}
   obtain ⟨hSX, hJ⟩ := sInvXJ_std hM hS
   have hBL : BumpLeaf M := hSX.loc.2.2.2
   have hx : r + L + 1 = M.length := hlen
-  have hDr := R.drop
-  rw [show M.length - 1 = r + L by omega] at hDr
+  have hVT0 := D.vt
+  rw [show M.length - 1 = r + L by omega] at hVT0
   have hcnt := hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat
   have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
   set ρ' := drop1 M (r + L) rk with hρ'
   have hC1 : Cons (M.take (r + L)) ρ' := cons_of_rk hRk1
-  have hVT : ValInv (M.take (r + L)) ρ' :=
-    drop_pres hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hDr hC1 hRk1
+  have hVT : ValInv (M.take (r + L)) ρ' := hVT0
   have hoff := chg_off hx I.cons I.good hC1 hRk1
   have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
   have hgr : g < r := par_lt M 0 r g hg
@@ -187,7 +204,7 @@ theorem t0_shape3C {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat}
 
 /-- **`T0IVResC` holds.** -/
 theorem t0IVResC_holds : T0IVResC := by
-  intro M ρ rk r L hM hS I R hlen hL hp he1 n hn2 g hg hcnt hno Lc0 hCL s y hy
+  intro M ρ rk r L hM hS I hlen hL hp he1 n hn2 g hg hcnt hno Lc0 hCL s y hy
   have hn : 1 ≤ n := by omega
   have hx2 : entry M 2 (r + L) = 0 := I.r12 _ he1
   have hgr : g < r := par_lt M 0 r g hg
@@ -397,23 +414,20 @@ theorem t0_vsmallF_atC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hIV : T0IVResC) :
     ∀ r L n σ rkN, T0CtxC M ρ rk r L n σ rkN → VSmallF (TRIO.gexp M r L 0 0 n) σ := by
   intro r L n σ rkN hctx
-  obtain ⟨hM, hS, I, R, hlen, hL, hp, he1, _, hn2, hCN, hRN, hGN, _⟩ := id hctx
+  obtain ⟨hM, hS, I, D, hlen, hL, hp, he1, _, hn2, hCN, hRN, hGN, _⟩ := id hctx
   have hn : 1 ≤ n := by omega
   have hx : r + L + 1 = M.length := hlen
   have hx2 : entry M 2 (r + L) = 0 := I.r12 _ he1
-  have hDr := R.drop
-  rw [show M.length - 1 = r + L by omega] at hDr
+  have hDV := D.vt
+  have hDP := D.po
+  rw [show M.length - 1 = r + L by omega] at hDV hDP
   have hcnt := hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat
   have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
   set ρ' := drop1 M (r + L) rk with hρ'
   have hC1 : Cons (M.take (r + L)) ρ' := cons_of_rk hRk1
   have hoff := chg_off hx I.cons I.good hC1 hRk1
-  have hVT : ValInv (M.take (r + L)) ρ' :=
-    drop_pres hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hDr hC1 hRk1
-  have hdrop := drop_all hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs hDr.vst
-    I.fc I.fo hDr.argT
-    (bump_drop hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hDr.ab hDr.ws)
-    hDr.ua
+  have hVT : ValInv (M.take (r + L)) ρ' := hDV
+  have hdrop : ∀ k, k < r + L → PO ρ ρ' k ∧ PV M ρ ρ' k := hDP
   set N := TRIO.gexp M r L 0 0 n with hNdef
   have hlN : N.length = r + n * L := lenN0 hlen hn
   have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L hn
@@ -509,38 +523,19 @@ theorem t0_vsmallF_atC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       · rw [hv] at hg' ⊢; exact hold g' hg'
       -- the drop at `r`: `x` is a counted child of `r`, so `v′(r) ◁ v(r)`
       obtain ⟨hPO, hPV⟩ := hdrop r (by omega)
-      have hxr : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hp⟩
-      have hxcnt : Counted M r (r + L) := by
-        refine ⟨fun h => ?_, fun h => ?_⟩
-        · have h2 : entry M 2 (r + L) = (bump M r).2.2 := by
-            show (col M (r + L)).2.2 = _; rw [h]
-          rw [hx2] at h2; simp [bump] at h2
-        · obtain ⟨hu, _⟩ := h
-          unfold isUpg at hu
-          obtain ⟨k, _, hk⟩ := List.any_eq_true.mp hu
-          have hk' : upg M k = some (r + L) := by simpa using hk
-          obtain ⟨m, _, _, hcol, _⟩ := upg_spec hk'
-          have := e2_of_col hcol
-          rw [hx2] at this; omega
-      -- the weak case: `r = x − 1` lost its upgrade; the components of `v′(r)` at the level `v(g)` are
-      -- countable (those dominated by `v(g)` at its own level do not exist)
-      by_cases hweak : r = r + L - 1 ∧ NBPar M (r + L - 1) ∧ ¬ LhdE (ρ'.v r) (ρ.v r)
+      -- the weak case: the components of `v′(r)` at the level `v(g)` are countable (those dominated by
+      -- `v(g)` at its own level do not exist)
+      rcases hPV.1 with hvE | ⟨hWk, hWC, _⟩
+      swap
       · left
-        rcases hPV.1 with hvE | ⟨hWk, hWC, _⟩
-        · exact absurd hvE hweak.2.2
         rcases (hWC.wcs hg) (ρ.v g) (fun h => lt_irrefl' _ (show ρ.v g < ρ.v g from h)) g' hg' with
           h1 | ⟨d, hd, _⟩
         · exact le_of_lt (lt_of_lt_of_le h1 (Om_one_le_psi hWk.2.1))
         · rw [comps_self_nil (I.good.ot_v g hgM)] at hd; simp at hd
       have hlv : Lhd z (ρ'.v r) (ρ.v r) := by
-        by_cases hE : LhdE (ρ'.v r) (ρ.v r)
-        · rcases hE with h | h
-          · exact absurd h hv
-          · exact h
-        rcases hPV.1 with h | ⟨_, _, hno⟩
-        · exact absurd h hE
-        · exact absurd hxcnt (CntX.nocnt_t0 hx hDr.ua he1 hp (fun hp' hnb => absurd
-            ⟨by rw [hp] at hp'; exact Option.some.inj hp', hnb, hE⟩ hweak) hno hDr.ws.2.2 _ hxr)
+        rcases hvE with h | h
+        · exact absurd h hv
+        · exact h
       -- a changed `v(r)`: `o′(r) = ψ_{v′(r)}(0)`
       have hyz : y = z := by
         have hCv : ChgX M (r + L) false r := by
@@ -561,7 +556,7 @@ theorem t0_vsmallF_atC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
       by_cases hB0 : Bg = z ∧ j = 0
       · -- no middle copy root counts: the old frame does not rewrite at `r` (`T0IVResC`), and `o′(r) ◁ o(r)`
         obtain ⟨Y0, hY0⟩ : ∃ Y0, ρ.o r = psi (ρ.v r) (app Y0 one) z := ⟨_, hor⟩
-        have hnt := hIV M ρ rk r L hM hS I R hlen hL hp he1 n hn2 g hg hgc (hj0 hB0.2) Lc hCL _ _ hY0
+        have hnt := hIV M ρ rk r L hM hS I hlen hL hp he1 n hn2 g hg hgc (hj0 hB0.2) Lc hCL _ _ hY0
         have hsMc : ∀ d ∈ CL M g, Single (ρ.o d) := fun d hd => single_o I.cons I.good
           (mem_children (cl_mem_children hd)).2
         have hformM := o_last_form I.cons hgM (I.good.ot_v g hgM) hCL hsMc

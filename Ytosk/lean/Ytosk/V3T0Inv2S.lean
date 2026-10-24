@@ -40,7 +40,7 @@ theorem t0DF_ofS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
     I.rank I.vs I.fc I.fo hDr.argT I.kd I.td hDr.ab hab0 hDr.ws hDr.vst hDr.ua I.rootS I.rootP
     (fun n hn g hg hc => counted_last0 hlen hL hp he1 I.r0p I.z2 I.sd I.z1 I.uab I.r12 hn hg hc)
     (hVA.toP (r + L) r) hPH
-    (t0_shape3C hM hS I R hlen hL hp he1) (t0IVResC_holds M ρ rk r L hM hS I R hlen hL hp he1)
+    (t0_shape3C hM hS I (T0DropF.of_res I R (by omega)) hlen hL hp he1) (t0IVResC_holds M ρ rk r L hM hS I hlen hL hp he1)
     n hn σ hCN
   intro i hi
   refine ⟨fun hd => ?_, (h i hi).2⟩
