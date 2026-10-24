@@ -4328,3 +4328,16 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 測定: DropResHB の欄は 11 集合と接ぎ木で例外 0（formB・dropres・uaw0c・abcb）。BumpAbsC が破れるのは Bad2 の 9 個だけ。
 - 追記（同じ日）: `root_drop_e2z`（V3GlobV2）: x の行 2 = 0（t = 0・1）なら、どの標準形でも落とす補題の結論から root(M.take x) < root(M)（dep_strict0・dep_anc_x・root_take_lt、hnx は V3MainV2 と同じ場合分け）。`hdrop_of_U`: HDropU から落とす補題の結論。残りを `RootBadV2T2`（行 2 ≠ 0 の Bad2 だけ）に狭めた（`rootBad_of_T2`）。仮定は 14 個のまま、全体ビルド緑、公理は標準の 3 つ。
 - 追記（同じ日）: `dep_strict0X`（V3T2D）: dep_strict0 の写しで、x の行 2 = 0 の代わりに「x へ上げる列がない（hXu）∧ x は親の bump 子でない（hXb）」（V3T2D の hOS_t1X・dv_shapeX を使う。hnx は x へ上げる列がないので要らない）。`root_drop_X`（V3GlobV2）: hXu・hXb なら、どの標準形でも落とす補題の結論から根の真の減少（dep_anc_xG）。RootBadV2T2 を「行 2 ≠ 0 ∧（x が上げ先 ∨ x が親の bump 子）」に狭めた。x が親の bump 子のときは v(q) の bump の項 1 が消える変化で、D の仕組み（x の値への依存）に乗らないので別の議論が要る。仮定は 14 個のまま、全体ビルド緑、公理は標準の 3 つ。
+
+### BadOutV2（t = 0）の調べ: M[n] の値は ◁ のまま（2026-10-25、lead）
+
+- 側 S・強い吸収が破れる・t = 0 の 108 個（graftBb2Sf）で、M[n]（n = 2, 3）の値 σ と M の値 ρ を r = P₀(x) から根までの 4 列で比べた（tmp の t0chain.py）: o はすべて ◁、v は = か ◁。弱く変わるのは M.take x の値だけで、M[n] では写しの omid（1 個以上）が弱い最後の項を吸収する（`s1_core_weak` と同じ仕組み）。
+  - P₀(x) = g: 列 r・g′・…すべて o◁ v=。
+  - P₀(x) = p: g（p の親）で v◁。
+  - P₀(x) = x − 1: g（p の親）で v◁。
+- よって BadOutV2（t = 0）に要るのは、エンジン t0_core の種の段での「弱い最後の項の吸収」の補題:
+  - (A) P₀(x) = g: S1 の弱い葉 `t0_S1W` は L によらず使える。ただし `counted_first0`（r は M[n] でも g で数える子）は r の行 2 = 0 から出しているので、r の行 2 = 1（r は bump の親）の場合の別の理由が要る。
+  - (B) P₀(x) = p: S2 の `t0_S2G` は最後の bump の項に ⊴（hO'O）を要る。最後の項が弱い場合の版（s1_core_weak の bump の段の版）が要る。
+  - (C) P₀(x) = x − 1: S3 の `t0_S3` は最後の写しに ◁（hσlast、エンジンでは hlB）を要る。弱い場合の版が要る。
+  - (D) bumpTermDec_N_t0 の hlB、bumpKidsDec・bumpTermDec の hG0le（g0_drop_rel・v_lhd_bump_children）も弱い場合の手当てが要る。
+  - 落とす補題の部分（drop_all・drop_pres）は hdrop_of_U・drop_presD で置き換えられる。T0AbsW は BumpAbsC から出るが、HDropU は Bad2 で BumpAbsC を言わないので、t = 0 の Bad2（BumpAbsC は成り立つ）では HDropU の前提を広げる必要がある。
