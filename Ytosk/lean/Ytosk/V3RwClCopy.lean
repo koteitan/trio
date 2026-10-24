@@ -481,7 +481,8 @@ theorem rwClosed_expand_t2SL {M : Mat} {ρ : Valn}
     (t2CopyK_and hLow hVD)
 
 /-- **Residual on `N = M[n]` alone**: the one-step row-1 domination `VAncStep` of every `M[n]`. -/
-def T2VAncStep (M : Mat) : Prop := ∀ n, 2 ≤ n → ∀ σ, Cons (expand M n) σ → VAncStep (expand M n) σ
+def T2VAncStep (M : Mat) : Prop :=
+  ∀ n, 2 ≤ n → ∀ σ, Cons (expand M n) σ → Good3 (expand M n) σ → VAncStep (expand M n) σ
 
 /-- **`VDomF` at the guarded copy frames** from `VAncStep` of `N = M[n]`: `V′ = v_N(r + L)`, `f(v_P i) = v_N(i + L)`
 (CopyFacts), and `i + L` is a row-1 descendant of `r + L` in `N` (`le1_copy2`). -/
@@ -537,7 +538,7 @@ theorem t2CopyK_vDom_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : 
   have hle := le1_copy2 hlen hL0 hA hd0e hn hd0 hd1 hgx (i + 1) i (Nat.lt_succ_self i) hri
     (by rw [hlP] at hi; exact hi) hg
   have hstep : VAncStep (TRIO.gexp M r L d0 d1 n) σ := by
-    have := hVS n hn σ (by rw [hexp n]; exact hCN)
+    have := hVS n hn σ (by rw [hexp n]; exact hCN) (by rw [hexp n]; exact hGN)
     rw [hexp n] at this; exact this
   exact vDomF_of_vAnc rfl hv (vAnc_of_step hCN hGN hstep hle)
 

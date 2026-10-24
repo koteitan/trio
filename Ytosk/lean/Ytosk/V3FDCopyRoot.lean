@@ -302,8 +302,9 @@ theorem t2CopyK_FDshAt_of_path {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     · exact (root_v_original C hB hz h2 hlen hr hn hGK hCN).trans
         (root_v_original C hB hz h2 hlen hr (by omega) hGK hCP).symm
   have hStep : VAncStep (G2 M r L n) σ := by
-    rw [← expand_eq_G2_ctx C hz h2 hlen hr n] at hCN ⊢
-    exact hVS n hn σ hCN
+    have hGN' := hGN
+    rw [← expand_eq_G2_ctx C hz h2 hlen hr n] at hCN hGN' ⊢
+    exact hVS n hn σ hCN hGN'
   have hxN : r + L < (G2 M r L n).length := by
     rw [TRIO.gexp_length hlen]
     have hrx : r < r + L := par_lt M 2 _ _ hr

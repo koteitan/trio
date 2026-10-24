@@ -51,7 +51,7 @@ theorem old_vAnc_of_t2VAncStep {M : Mat} (hVS : T2VAncStep M)
     {n r i : Nat} (hn : 3 ≤ n) {ρP : Valn}
     (hCP : Cons (expand M (n - 1)) ρP) (hGP : Good3 (expand M (n - 1)) ρP)
     (hg : TRIO.le1 (expand M (n - 1)) r i) : VAnc ρP r i :=
-  vAnc_of_step hCP hGP (hVS (n - 1) (by omega) ρP hCP) hg
+  vAnc_of_step hCP hGP (hVS (n - 1) (by omega) ρP hCP hGP) hg
 
 /-- Same application interface at the actual source matrix G2. The equality
 is available from expand_eq_gexp in the standard t2 context. -/
@@ -242,7 +242,7 @@ theorem old_vAnc_base_of_pair_values {M : Mat} {ρ : Valn} {rk : Bool → Nat �
     gexp_take_x hlen (by omega)
   have he := expand_eq_G2_ctx C hz h2 hlen hr 2
   have hstep : VAncStep (G2 M r L 2) σ := by
-    have h := hVS 2 (by omega) σ (by rw [he]; exact hCN)
+    have h := hVS 2 (by omega) σ (by rw [he]; exact hCN) (by rw [he]; exact hGN)
     rw [he] at h
     exact h
   apply vAnc_of_prefix_pair hCN hGN hstep (k := r + L) _ hvr hvi

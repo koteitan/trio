@@ -15,14 +15,14 @@ namespace Ytosk
 
 /-- **Residual (standard matrices): `VAncStep`** at every standard matrix with a ranking. -/
 def HVAncStd : Prop :=
-  ∀ N σ rk, Std N → N ≠ SRO → Cons N σ → Rk N rk → VAncStep N σ
+  ∀ N σ rk, Std N → N ≠ SRO → Cons N σ → Good3 N σ → Rk N rk → VAncStep N σ
 
 theorem t2VAncStep_of_std (h : HVAncStd) :
     ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
       T2VAncStep M := by
-  intro M ρ rk C hz h2 n hn σ hσ
+  intro M ρ rk C hz h2 n hn σ hσ hG
   obtain ⟨hX, hJ⟩ := sInvXJ_std C.std C.ne
   obtain ⟨rk', hR⟩ := rk_expand_t2 hX hJ hz h2 C.I.rank n (by omega)
-  exact h _ σ rk' (Std.exp n C.std) (ne_SRO_of_rk hR) hσ hR
+  exact h _ σ rk' (Std.exp n C.std) (ne_SRO_of_rk hR) hσ hG hR
 
 end Ytosk
