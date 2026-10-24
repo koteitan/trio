@@ -4247,8 +4247,17 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | T2SeedPResRCV2E | 種の qr（w1・dom）・sv（strict・lhd）・C（decP・strict・lhd） | C の decP は W₀ < W_T(c0) が要る（前の節） |
 | HCanonV2 | 隣の兄弟の値（CanonicalNeed、SibColU の特別な場合） | 11 集合・std_b・接ぎ木で例外 0（SibColW で） |
 | T2SeedDomV2Q | qn の種の dom1 | 段 V より下で B の成分が要る（前の節） |
-| T2VRACopyEsc | 写しの段の出どころ | — |
+| T2VRACopyEsc | 写しの段の出どころ | 接ぎ木で例外 0（graftB 9634 件。graftA は前件 0） |
 | T2VRAK KAG | 道の段の KA・KG | 接ぎ木で例外 0 |
 
 - 新しい残りを立てるときは、11 集合・std_b・expP_t2 に加えて、接ぎ木 graftA・graftB（Bad2 側は graftBb2）でも測る。
 - 追記（同じ日）: 最上位の HSibColV2（すべての標準形で SibColU）を `HCanonV2`（すべての標準形で `CanonicalNeed`）に狭めた（V3SibCanonTop の `t2SeedPResR_of_canon`、2026-10-20 に作ってあった `qnUncRes_of_canonical`・`t2SeedCBig_of_canonical` をつないだ）。CanonicalNeed は SibColU の特別な場合（隣り合う子 a < b は同じ列で、a は x − 1 から上げられ topped、b は数える子）。基の定理 `trio_terminates_main_V2_base` は (T2SeedPResRCV2, HSibHardV2) の代わりに T2SeedPResRV2 を取る。仮定は 14 個のまま、全体ビルド緑 1074 jobs、公理は標準の 3 つ。SibColW（SibColU を含む）は 11 集合・std_b・接ぎ木で例外 0。
+
+### Bad2 を x の位置で分けた測定（2026-10-24、lead）
+
+- Bad2 の行列を、x の親 P₀(x) が g（x − 1 の親 p の親、p = bump(g)）の真の祖先か（側 G）、g の部分木の中（P₀(x) ∈ {g, p, x − 1}、側 S）かで分けた。graftBb2: G 49091・S 31137 個、ext2b2: G 1940・S 2133 個、std_ab2: G 41・S 26 個（tmp/ytosk-handoff/sets/*G.pkl・*S.pkl）。
+- 古い PV（CntX を広げない形）の破れは側 S だけ（graftBb2 の 2 万個の標本で、P₀(x) = g が 39 件、P₀(x) ∈ {p, x − 1} が 50 件。上がり先 k = x の Bad2 は 0 件）。
+- 側 G（graftBb2G・ext2b2G 全数）: TPLoW・AbsDW（probe_hframe）、BumpWeakSrc・BumpAbsC（dropres2）、PO・PV（popvg、150 万件）、t = 0 の o′(r) ◁ o(r)（t0or）はすべて例外 0。偽は UpgAbsXW0 の 288 件（uaw0c）だけで、どれも弱い選択肢の NBPar(x − 1) だけが偽（WCSP・SmallSelf は成り立つ）。t = 2 の形 T2UABad（NBPar を含む）は側 G で 36 件偽。
+- T2VRACopyEsc（tmp の esc.py）は graftB の t = 2 の 23892 個（写しの枠の件数 9634）で例外 0、graftA は前件 0。
+- 使う側の NBPar(x − 1) は、t = 0（V3T0UpgAbs・V3T0Weak・V3MainT1D の toX_xm1）では P₀(x) ∈ {x − 1, p} の位置でだけ使う。そこでは x は g の部分木にあるので、「p が bump 子なら x は g の部分木にない」という弱い条件からも NBPar が出る。t = 2 の old_target_of_failure は位置を限らずに NBPar を出すので、t = 2 は狭めない。
+- 方針: Bad2 を Bad2S :=「Bad2 ∧（g が x の行 0 の祖先 ∨ x の行 2 ≠ 0）」に狭め、UpgAbsXW0 の弱い選択肢の NBPar を上の弱い条件に替える。
