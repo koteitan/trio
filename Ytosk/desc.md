@@ -4190,3 +4190,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - qncl の s2・allLv（870 件）: 最上位の欄かどうか未確認（seedqr の qn.base は例外 0）。
 - 未測定: probe_inv2 の欄（AbsUS・TPLoS・VSmallRAll。包みで集合名を通せず走らなかった）、HLeafV2（probe_hframe の TP1LeafG は前件 0）、T2VRACopyEsc、T2CBadOut、T2SeedClV2B の残りの欄。
 - 次: 破れた欄ごとに、使う側が実際に要る形を測る（T2VAncStep → T2VAncUse と同じ手順）。HDropV2W の使う側は落とす補題 drop_all_H の結論 PO ∧ PV（すべての i < x）、HFrameV2 の使う側は M.take の Inv3V2 の欄（hTake_of_glob）。
+- 追記（同じ日）: 破れた例は Lean の意味でも標準形。
+  - bms の展開と trio.expand（Lean の gexp と同じ一様上昇）は graftB・std_b 各 2 万個で一致（bms の [n] = trio.expand の n+1、tmp/claude/cmpexp.py）。
+  - SRO からの展開の道（各段で X ≤ Y[n] の最小の n を選ぶ、tmp/claude/reach.py）: VAncStep の反例は 45 段、TPLoW・AbsDW の例は 92 段、UpgAbsXW0 の例は 228 段で届く。
+  - よって HVAncStd・HFrameV2・HDropV2W は偽。TPLoW・AbsDW は Inv3V2 の欄でもあるので、不変条件 Inv3V2 自体が届く標準形で偽（t = 1・q = r の展開で M[n] の値が基本列の項になることを示す道の条件）。
+  - 停止性そのものには反例はない: 上の 2 例で root(M[n]) < root(M)（n = 1..4）。
+  - 使う側の広さ: .tplow・.adw は各 25 ファイル、DropRes の .ua・.ws・.ab は 49〜53 ファイルで使われる。直すには Inv3V2 と落とす補題の欄を、接ぎ木でも成り立つ形に作り直す必要がある。
