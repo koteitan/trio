@@ -4230,3 +4230,24 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 追記（同じ日）: 残っていた Inv3V2 の欄も接ぎ木で測った。FC3（P = S1 ∧ S3 ∧ S4 ∧ PH3c ∧ FC3、tools/probe_close_nt.py std、NARROW=G）は graftB・graftA で例外 0。TP1C・TP1WC は inv_fields の TP1・TP1W（すべての子の強い形）に含まれ例外 0。HLeafV2（TP1LeafG・TP1WLeafG）は接ぎ木で前件が立たない。よって Inv3V2 の欄で接ぎ木で破れるのは、前提つきにした TPLoW・AbsDW だけ。
 - 追記（同じ日）: 残り Drop0BadV2 を証明した（12 → 15 → 14）。TakeBadV2 に「root(M.take) ≤ root(M)」を足し（Bad2 の行列 graftB 80228・ext2 4073・std_a 67 個で例外 0、tmp/claude/takebad.py）、M[0] への下降を、文脈 StepCtxV2 が持つ接頭辞の Inv3V2 から作る鎖 `root_chain_pre`（Bad2 でない段は drop_root_le、Bad2 の段は TakeBadV2）と最後の段の真の減少（t2 は hlast、t0・t1 は drop_n1）で示す。desc_stepV2・t2_dropsC は Drop0BadV2 の代わりに鎖と接頭辞の事実 `prefix_facts_pre` を取る。全体ビルド緑、公理は標準の 3 つ。
 - 追記（同じ日）: BadOutV2 を n ≥ 2 の部分だけに狭めた。TakeBadV2 の根の不等式を真の不等号に（M[1] = M.take(|M| − 1) の下降、Bad2 の行列すべてで例外 0）。Bad2 の M の n = 0・1 の下降は、pre_V2 の接頭辞の不変条件から作る鎖 `root_chain_of_pre` と TakeBadV2 で示す（desc3_V2O）。仮定は 14 個のまま、全体ビルド緑、公理は標準の 3 つ。
+
+### 最上位の残り 14 個の一覧（2026-10-24 時点、`trio_terminates_main_V2_cur`）
+
+| 残り | 中身 | 状態・手がかり |
+|---|---|---|
+| HDropV2W | 1 列落としの欄 hard・vst・ws・ua・ab（¬Bad2） | 接ぎ木の非 Bad2 で例外 0 |
+| TakeBadV2 | Bad2 の 1 列落とし: Inv3V2 と根の真の減少 | Bad2 用の落とす補題が要る（drop-redesign の広げた形は例外 0） |
+| BadOutV2 | Bad2 の n ≥ 2 の段: M[n] の Inv3V2 と根の下降 | 同上＋エンジンの弱い場合（t0 で o′(r) ⋪ o(r) の 72 件） |
+| HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は ¬Bad2 の前提つき） | 接ぎ木で例外 0 |
+| HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
+| HBumpExt | 接頭辞に沿った bump の単調性 | 1 列の場合は 11 集合で例外 0 |
+| T2CBadOut | t = 2 の悪い C の段 | — |
+| T2VAncUse | 写しの枠の VDomF と根の辺の VAnc | 接ぎ木で例外 0。辺は k = upg(r+L) での VAncStep（一般には偽） |
+| T2SeedClV2B | 種の標準形の欄 | — |
+| T2SeedPResRCV2E | 種の qr（w1・dom）・sv（strict・lhd）・C（decP・strict・lhd） | C の decP は W₀ < W_T(c0) が要る（前の節） |
+| HSibColV2 | 隣の兄弟の列（SibColU） | 11 集合と std_b で例外 0 |
+| T2SeedDomV2Q | qn の種の dom1 | 段 V より下で B の成分が要る（前の節） |
+| T2VRACopyEsc | 写しの段の出どころ | — |
+| T2VRAK KAG | 道の段の KA・KG | 接ぎ木で例外 0 |
+
+- 新しい残りを立てるときは、11 集合・std_b・expP_t2 に加えて、接ぎ木 graftA・graftB（Bad2 側は graftBb2）でも測る。
