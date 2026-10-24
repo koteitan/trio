@@ -78,11 +78,13 @@ def UpgBad (M : Mat) (ρ : Valn) (i : Nat) : Prop :=
   ∃ k W, i + 2 = M.length ∧ upg M i = some k ∧ ρ.v k = add (vOpt ρ (par M 1 i)) W ∧ W ≠ z ∧
     ¬ ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W
 
-/-- **The counted children of a weak column** (2026-10-12): none, or only the last column `x` when the parent
-is not a bump child (T2Ext: `x − 1` loses its upgrade to an ancestor and has `x` as its counted child). -/
+/-- **The counted children of a weak column** (2026-10-12; 2026-10-24 widened): none, or only the last column `x`
+when `x − 1` loses its upgrade badly (`UpgBad` at `x − 1`). The column need not be `x − 1` and its parent may be a
+bump child: in the grafted standard matrix …(4,2,0)(5,3,1)(6,3,1)(7,2,0)(6,0,0) the column 16 has the bump child 17
+and the counted child `x`, and `v′(16) = Ω_{ω+1}` is only weakly below `v(16) = Ω_{Ω_ω}`. -/
 def CntX (M : Mat) (ρ : Valn) (i : Nat) : Prop :=
   (∀ c ∈ children M i, ¬ Counted M i c) ∨
-    ((∀ c ∈ children M i, Counted M i c → c + 1 = M.length) ∧ NBPar M i ∧ UpgBad M ρ i)
+    ((∀ c ∈ children M i, Counted M i c → c + 1 = M.length) ∧ UpgBad M ρ (M.length - 2))
 
 /-- The claim at a `v` call. -/
 def PV (M : Mat) (ρ ρ' : Valn) (i : Nat) : Prop :=
@@ -94,14 +96,6 @@ def PV (M : Mat) (ρ ρ' : Valn) (i : Nat) : Prop :=
 `WCSP`. (The drop lemma derived it before from the side conditions of the old `WCSP`, which are false.) -/
 def WeakCS (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
   ∀ i, i < x → ¬ LhdE (ρ'.v i) (ρ.v i) → WCSP M ρ i (ρ'.v i)
-
-/-- Under a bump child a weak column has no counted child. -/
-theorem CntX.nocnt_of_bump {M : Mat} {ρ : Valn} {k j i : Nat} (h : CntX M ρ k)
-    (hk : par M 0 k = some j) (hj : par M 0 j = some i) (hb : col M j = bump M i) :
-    ∀ c ∈ children M k, ¬ Counted M k c := by
-  rcases h with h | ⟨_, hn, _⟩
-  · exact h
-  · exact absurd hb (hn j i hk hj)
 
 /-- **The relation of a child for `o_frame_eval`** from its `PO` and `PV`: a weak `o` with a `⊴` subscript is
 `⊴`, a weak subscript carries the component condition at the parent. -/
@@ -356,8 +350,7 @@ theorem pv_of {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
     (hX1 : ∀ k W, i + 1 = x → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
       (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
         (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
-          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i))
+          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z)))
     (hup : ∀ k, upg (M.take x) i = some k → PV M ρ ρ' k ∧
       ∀ j ∈ children (M.take x) k, col (M.take x) j = bump (M.take x) k →
         ∀ k' ∈ children (M.take x) j, Single (ρ'.o k')) :
@@ -471,11 +464,11 @@ theorem pv_of {i : Nat} (hi : i < x) (hWC : WeakCS M x ρ ρ')
         rw [sf_ot hot1] at this
         exact Or.inl this
       · -- the weak alternative: `v′ = V + 1 < V + W`, `x` is the only possible counted child
-        obtain ⟨hwc, -, hnb⟩ := (hX1 k _ hixe hu hvk (by simp)).resolve_left hR
+        obtain ⟨hwc, -⟩ := (hX1 k _ hixe hu hvk (by simp)).resolve_left hR
         rcases (le_iff _ _).mp (add_le_add_single (vOpt ρ (par M 1 i)) ⟨z, z, rfl⟩ ⟨sW, yW, rfl⟩ hW1)
           with hlt | heq
         · refine Or.inr ⟨⟨hlt, le_add_single _ ⟨z, z, rfl⟩, hot1⟩, hwc,
-            Or.inr ⟨fun c hc _ => ?_, hnb, k, _, by omega, hu, hvk, by simp, hR⟩⟩
+            Or.inr ⟨fun c hc _ => ?_, by rw [show M.length - 2 = i by omega]; exact ⟨k, _, by omega, hu, hvk, by simp, hR⟩⟩⟩
           have := mem_children hc; omega
         · exact Or.inl (Or.inl heq)
 
@@ -488,8 +481,7 @@ theorem drop_all
     (hX1 : ∀ i k W, i + 1 = x → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
       (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
         (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
-          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i)) :
+          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z))) :
     ∀ i, i < x → PO ρ ρ' i ∧ PV M ρ ρ' i := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have key : ∀ N, ∀ i, i < x → (rk true i ≤ N → PO ρ ρ' i) ∧ (rk false i ≤ N → PV M ρ ρ' i) := by

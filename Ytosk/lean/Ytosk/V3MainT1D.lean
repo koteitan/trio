@@ -66,8 +66,7 @@ def UpgAbsXW (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
   ∀ i k W, i + 1 = x → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
     (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
       (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
-          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i)
+          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z))
 
 /-- **`UpgAbsXW` without the row-1 condition** (2026-10-17): the weak alternative for every type of `x`.
 On the 11 sets the strong form fails at `t = 0` only on 2 standard matrices of std_a
@@ -76,8 +75,7 @@ def UpgAbsXW0 (M : Mat) (x : Nat) (ρ : Valn) : Prop :=
   ∀ i k W, i + 1 = x → upg M i = some k → ρ.v k = add (vOpt ρ (par M 1 i)) W → W ≠ z →
     (∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W) ∨
       (WCSP M ρ i (add (vOpt ρ (par M 1 i)) one) ∧
-          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z) ∧
-          NBPar M i)
+          (∀ g ∈ comps z (add (vOpt ρ (par M 1 i)) one), g < psi (add (vOpt ρ (par M 1 i)) one) z z))
 
 /-- `UpgAbsXW` is the form without the row-1 condition (2026-10-20: the row-1 / `T0Easy` conjunct was dropped). -/
 theorem UpgAbsXW.ofW0 {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW0 M x ρ) : UpgAbsXW M x ρ := h
@@ -95,13 +93,6 @@ theorem UpgAbsXW.of0 {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW0 M x ρ)
 theorem UpgAbsX.toW {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsX M x ρ) : UpgAbsXW M x ρ :=
   fun i k W hi hu hv hW => Or.inl (h i k W hi hu hv hW)
 
-/-- The strong form when the parent of `x` is `x − 1` and its parent is a bump child: the weak alternative
-needs `NBPar M (x − 1)`. (2026-10-20: `UpgAbsXW` no longer carries the row-1 / `T0Easy` condition, so the
-earlier `UpgAbsXW.toX` and `toX_bump` are gone; the `t = 0` engines use `T0UpgAbs`, V3T0UpgAbs.) -/
-theorem UpgAbsXW.toX_xm1 {M : Mat} {x : Nat} {ρ : Valn} (h : UpgAbsXW M x ρ) (_hx1 : entry M 1 x = 0)
-    (_hp : par M 0 x = some (x - 1)) (hnb : ¬ NBPar M (x - 1)) : UpgAbsX M x ρ := fun i k W hi hu hv hW =>
-  (h i k W hi hu hv hW).resolve_right (fun h' => hnb (by rw [show x - 1 = i by omega]; exact h'.2.2))
-
 /-- **Under the strong `UpgAbsX` a weak `o` has the argument `0`** (the shape of `PO` before 2026-10-12): the
 other weak case needs `UpgBad`, which `UpgAbsX` excludes. -/
 theorem PO.zero_of_strong {M : Mat} {x : Nat} {ρ ρ' : Valn} {i : Nat} (hx : x + 1 = M.length)
@@ -111,66 +102,18 @@ theorem PO.zero_of_strong {M : Mat} {x : Nat} {ρ ρ' : Valn} {i : Nat} (hx : x 
   rcases hPO.1 with h | ⟨hW, hw | hnl⟩
   · exact Or.inl h
   · exact Or.inr ⟨hW, hw⟩
-  rcases hPV.1 with hl | ⟨_, _, hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩⟩
+  rcases hPV.1 with hl | ⟨_, _, hn | ⟨_, k, W, hi2, hu, hvk, hWz, hbad⟩⟩
   · exact absurd hl hnl
   · exact Or.inr ⟨hW, _, o_of_no_counted hC hiM (hG.ot_v i hiM) hn⟩
-  · exact absurd (hUA i k W (by omega) hu hvk hWz) hbad
+  · exact absurd (hUA _ k W (by omega) hu hvk hWz) hbad
 
 /-- **Under the strong `UpgAbsX` a weak column has no counted child** (the other case of `CntX` needs
 `UpgBad`, which `UpgAbsX` excludes). -/
 theorem CntX.nocnt_of_strong {M : Mat} {x : Nat} {ρ : Valn} {i : Nat} (hx : x + 1 = M.length)
     (hUA : UpgAbsX M x ρ) (h : CntX M ρ i) : ∀ c ∈ children M i, ¬ Counted M i c := by
-  rcases h with hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩
+  rcases h with hn | ⟨_, k, W, hi2, hu, hvk, hWz, hbad⟩
   · exact hn
-  · exact absurd (hUA i k W (by omega) hu hvk hWz) hbad
-
-/-- **Away from `x − 1` a weak `o` has the argument `0`** without any absorption hypothesis: the other weak
-case needs `UpgBad`, which lives only at `x − 1`. -/
-theorem PO.zero_of_ne {M : Mat} {ρ ρ' : Valn} {i : Nat} (hi : i + 2 ≠ M.length)
-    (hC : Cons M ρ) (hG : Good3 M ρ) (hiM : i < M.length)
-    (hPO : PO ρ ρ' i) (hPV : PV M ρ ρ' i) :
-    LhdE (ρ'.o i) (ρ.o i) ∨ (WkOA (ρ'.o i) (ρ.o i) ∧ ∃ w, ρ.o i = psi w z z) := by
-  rcases hPO.1 with h | ⟨hW, hw | hnl⟩
-  · exact Or.inl h
-  · exact Or.inr ⟨hW, hw⟩
-  rcases hPV.1 with hl | ⟨_, _, hn | ⟨_, _, k, W, hi2, _⟩⟩
-  · exact absurd hl hnl
-  · exact Or.inr ⟨hW, _, o_of_no_counted hC hiM (hG.ot_v i hiM) hn⟩
-  · exact absurd hi2 hi
-
-/-- **Away from `x − 1` a weak column has no counted child** without any absorption hypothesis. -/
-theorem CntX.nocnt_of_ne {M : Mat} {ρ : Valn} {i : Nat} (hi : i + 2 ≠ M.length) (h : CntX M ρ i) :
-    ∀ c ∈ children M i, ¬ Counted M i c := by
-  rcases h with hn | ⟨_, _, k, W, hi2, _⟩
-  · exact hn
-  · exact absurd hi2 hi
-
-/-- **The `PO` at the parent `r` of a `t = 0` column `x`** without the strong absorption when `r ≠ x − 1`
-(`PO.zero_of_ne`); when `r = x − 1` the strong form, from `hS` in the easy shape. -/
-theorem PO.zero_t0 {M : Mat} {x : Nat} {ρ ρ' : Valn} {r : Nat} (hx : x + 1 = M.length)
-    (hUA : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0) (hp : par M 0 x = some r)
-    (hS : par M 0 x = some (x - 1) → NBPar M (x - 1) → UpgAbsX M x ρ)
-    (hC : Cons M ρ) (hG : Good3 M ρ) (hrM : r < M.length) (hPO : PO ρ ρ' r) (hPV : PV M ρ ρ' r) :
-    LhdE (ρ'.o r) (ρ.o r) ∨ (WkOA (ρ'.o r) (ρ.o r) ∧ ∃ w, ρ.o r = psi w z z) := by
-  by_cases hr : r = x - 1
-  · have hp' : par M 0 x = some (x - 1) := by rw [← hr]; exact hp
-    by_cases hnb : NBPar M (x - 1)
-    · exact PO.zero_of_strong hx (hS hp' hnb) hC hG hrM hPO hPV
-    · exact PO.zero_of_strong hx (hUA.toX_xm1 hx1 hp' hnb) hC hG hrM hPO hPV
-  · exact PO.zero_of_ne (by omega) hC hG hrM hPO hPV
-
-/-- **No counted child of a weak parent `r` of a `t = 0` column `x`** in the easy shape. -/
-theorem CntX.nocnt_t0 {M : Mat} {x : Nat} {ρ : Valn} {r : Nat} (hx : x + 1 = M.length)
-    (hUA : UpgAbsXW M x ρ) (hx1 : entry M 1 x = 0) (hp : par M 0 x = some r)
-    (hS : par M 0 x = some (x - 1) → NBPar M (x - 1) → UpgAbsX M x ρ) (h : CntX M ρ r) :
-    ∀ c ∈ children M r, ¬ Counted M r c := by
-  by_cases hr : r = x - 1
-  · have hp' : par M 0 x = some (x - 1) := by rw [← hr]; exact hp
-    by_cases hnb : NBPar M (x - 1)
-    · exact CntX.nocnt_of_strong hx (hS hp' hnb) h
-    · exact CntX.nocnt_of_strong hx (hUA.toX_xm1 hx1 hp' hnb) h
-  · have hrx : r < x := par_lt M 0 x r hp
-    exact CntX.nocnt_of_ne (by omega) h
+  · exact absurd (hUA _ k W (by omega) hu hvk hWz) hbad
 
 /-- **`t = 1`, `q ≠ r`, all `n ≥ 2`**, with the base from the drop lemma. -/
 theorem t1_main_drop {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
