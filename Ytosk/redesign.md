@@ -15,10 +15,18 @@
 - M[n] の写しのうち最後以外は o = omid = ψ_{v(r)}(0)（x − 1 は M[n] で上げを保つ）、最後の写しだけ o′(r) = ψ_{w′}(0)（w′ = v′(r) < v(r)）。
 - これは t = 0 のエンジンの弱い葉と同じ形で、項の補題 `s1_core_weak` と枠の補題 `t0_S1W`（V3T0Weak、L によらない）がそのまま当てはまる。弱い葉を r = x − 1 に限っているのは `lhd_or_weak_t0`（V3T0UpgAbs）だけで、その理由は古い CntX。
 
-### 計画
-1. CntX に第 3 の選言を足す:「数える子は x だけ ∧ UpgBad(x − 1) ∧ BadPos」（BadPos: p が g の bump 子で g が x の祖先）。¬Bad2 の文脈では、UpgBad(x − 1) は UpgAbsX の破れなので BadPos と合わせて Bad2 になり、第 3 の選言は起きない（古いエンジンはそのまま古い CntX を取り出せる）。graftB で測った広げた CntX（drop-redesign の形）で PV は例外 0。
-2. UpgAbsXW0 の弱い選択肢を NBParX ∨ BadPos に、BumpWeakSrc の形を「i の子は j と x だけ」（BadPos のとき）に広げる。¬Bad2 の文脈では強い吸収が成り立つので、使う側は強い選択肢を使う。
-3. 落とす補題（drop_all_hard・bump_drop）を広げた仮定で PV（新しい CntX）まで示す。
-4. TakeBadV2: inv3V2_take を新しい DropRes で通す。
-5. BadOutV2（t = 0）: lhd_or_weak_t0 に r ≠ x − 1 の弱い葉（CntX の第 3 の選言）を足し、V3T0M の道を Bad2 でも通す。t = 1・t = 2 は同様に調べる。
-6. 新しい残りを立てるときは接ぎ木の集合（graftA・graftB、Bad2 側 graftBb2・graftBb2Sf）でも測る。
+### 済んだ手順（2026-10-25）
+1. CntX の第 3 の選言（BadPos での失敗した上げ）、古い補題は NoBad3（¬Bad2 から noBad3_of_nb2）。
+2. 落とす補題の形 B（bump_dropB・drop_allB・drop_all_hardB、BumpWeakSrcB・BumpAbsCB・条件のない UpgAbsXW）。
+3. 落とす補題の残りを前提なしの HDropU にまとめ（HDropV2W は定理）、TakeBadV2 は HDropU・HFrameV2・HLeafV2・根の残りから定理。
+4. Bad2 の根の減少: 行 2 = 0 は root_drop_e2z、x が上げ先でも bump 子でもなければ root_drop_X。残り RootBadV2T2（行 2 ≠ 0 ∧ x が上げ先か親の bump 子）。
+
+### 次: BadOutV2（Bad2 の M[n]、n ≥ 2）
+エンジンが ¬Bad2 に頼るのは、文脈の Res3AW（古い形の DropRes: NoBad3 つきの bump の形、NBParX つきの吸収、BumpAbsC）だけ。Bad2 版のエンジンは形 B の DropResHB と落とす補題の結論 hdrop から動く必要がある。
+
+t = 0（側 S、P₀(x) = r ∈ {g, p, x − 1}）のエンジン t0_final_inv3V2D → t0_core で崩れる所:
+- r = g（数える子 x を持って弱く変わる）: `lhd_or_weak_t0` が弱い葉を r = x − 1 に限る（NoBad3）。項の段階では t0_S1W が使えるが、`counted_first0`（r は N でも g で数える子）は r の行 2 = 0 から出しているので、r の行 2 = 1 の場合の別の理由が要る。
+- r = x − 1（親 p は bump 子）: `hlB`（r の親が bump 子なら o′(r) ◁ o(r)）は側 S で偽（t0or: v(r) が弱く変わる）。hlB の使い道（bump の祖父母の枠、g0_drop_rel・v_lhd_bump_children）を作り直す。
+- r = p: 弱く変わらない。NoBad3 は形式上だけ要る（PV(p) は ⊴）。
+- T0AbsW（HBumpExt と BumpAbsC から）も Bad2 で確かめる。
+t = 1・t = 2 は同様に、NoBad3・NBParX・BumpAbsC を使う箇所ごとに調べる。
