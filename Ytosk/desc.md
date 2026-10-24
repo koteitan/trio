@@ -4236,7 +4236,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | 残り | 中身 | 状態・手がかり |
 |---|---|---|
 | HDropV2W | 1 列落としの欄 hard・vst・ws・ua・ab（¬Bad2） | 接ぎ木の非 Bad2 で例外 0 |
-| TakeBadV2 | Bad2 の 1 列落とし: Inv3V2 と根の真の減少 | Bad2 は「強い吸収が破れる ∧（x が g の部分木 ∨ t = 2）」と「P₀(x) = x − 1 ∧ t ≥ 1」に狭めた（graftB の Bad2 80228 個 → 約 8950 個）。Bad2 用の落とす補題が要る（drop-redesign の広げた形は例外 0） |
+| TakeBadV2 | Bad2 の 1 列落とし: Inv3V2 と根の真の減少 | Bad2 は「強い吸収が破れる ∧（x が g の部分木 ∨ t = 2）」と「P₀(x) = x − 1 ∧ t ≥ 1 ∧ BumpAbsC が破れる」に狭めた（graftB の Bad2 80228 個 → 約 513 個、どれも欄が実際に破れる行列）。Bad2 用の落とす補題が要る（drop-redesign の広げた形は例外 0） |
 | BadOutV2 | Bad2 の n ≥ 2 の段: M[n] の Inv3V2 と根の下降 | 同上＋エンジンの弱い場合（t0 で o′(r) ⋪ o(r) の 72 件） |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
@@ -4286,3 +4286,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 測定（tmp の tplows.py、k = max 1 d から +3 まで）: graftB 全数（Bad2 を含む、TPLoW 46867・AbsDW 10790 件）、graftA、std_a、ext2・ext1 各 20 万個で例外 0。11 集合では古い形が例外 0 だったので、新しい形も成り立つ（古い形から出る）。
 - Lean: Inv3V2・TakeFrameV2 の欄 tplow・adw を「¬ Bad2 M → TPLoW / AbsDW」から TPLoWs・AbsDWs（前提なし）に替えた。使う側 V3QRLocOA・V3QRLocV と qr_final 系（V3QRFinal〜4）は TPLoWAt・AbsDWAt を取る。古い Inv3 の道（V3Top・V3ExpT1*）は toAt で渡す。全体ビルド緑、公理は標準の 3 つ。
 - Bad2 の「P₀(x) = x − 1 ∧ t ≥ 1」の選言は、BumpAbsC の破れ（t = 1 で 6、t = 2 で 3 件、同じ族）のために残る。
+- 追記（同じ日）: Bad2 の第 2 の選言を「P₀(x) = x − 1 ∧ x の行 1 ≠ 0 ∧ BumpAbsC が破れる（Cons を満たす評価で）」に狭めた。TPLoWs・AbsDWs にしたので、この形で破れるのは BumpAbsC だけ（graftB の 9 個、同じ族）。前提が弱くなる HDropV2W の他の欄（ws・ua・hard・vst）は側 S の強い吸収の側で例外 0。graftB の Bad2 は約 513 個（強い吸収が破れる側 S 468・側 G の t = 2 の 36・BumpAbsC が破れる 9）。全体ビルド緑、公理は標準の 3 つ。
