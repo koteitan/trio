@@ -4270,3 +4270,10 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 追記（同じ日）: Bad2 の t = 2 の選言を「x の行 2 ≠ 0 ∧ x − 1 での強い吸収 UpgAbsX が破れる（Cons を満たす評価で）」に狭めた。t = 2 で NBPar(x − 1) を使うのは強い吸収が破れる場合だけ（`old_target_of_failure`・T2UABad の枝 `t2_qu_take_bad`）。側 G の t = 2 で強い吸収が破れるのは graftBb2G の 36 個（uaw0c の t2bad）。前提が弱くなる仮定: HDropV2W・HFrameV2 の欄は側 G 全体で例外 0（ua は強い選択肢が成り立つ）、t = 2 の文脈の仮定（T2VAncUse・KAG・種の欄など）は graftB 全体（Bad2 を含む）で測ってあり例外 0。全体ビルド緑、公理は標準の 3 つ。
 - 追記（同じ日）: 側 S（x が g の部分木）を x − 1 での強い吸収で分けた（graftBb2S: 成り立つ 30669・破れる 468 個、ext2b2S: 2133・0 個）。強い吸収が成り立つ側では PV・PO・UpgAbsXW0・t = 0 の o′(r) ◁ o(r) は例外 0。破れは TPLoW 10・AbsDW 5・BumpAbsC 9 件で、(P₀(x) の位置, t) で分けると P₀(x) = x − 1 ∧ t = 1（TPLoW・AbsDW・BumpAbsC 6）と t = 2（BumpAbsC 3）だけ。ほかの 6 組（P₀(x) ∈ {g, p} の t = 0・1・2 と P₀(x) = x − 1 の t = 0）は例外 0。
   - Bad2 を「x − 1 に上がり先 ∧ p は g の bump 子 ∧ [（g が x の祖先 ∨ x の行 2 ≠ 0）∧ 強い吸収が破れる ∨ P₀(x) = x − 1 ∧ x の行 1 ≠ 0]」に狭めた。強い吸収が成り立つ側 S では UpgAbsXW0 の弱い選択肢（NBParX）が偽なので強い選択肢が使われ、使う側の証明と合う。graftB の Bad2 は 80228 個から約 8950 個（破れる側 S 468・側 G の t = 2 で破れる 36・P₀(x) = x − 1 ∧ t ≥ 1 の 8445）に減った。全体ビルド緑、公理は標準の 3 つ。
+
+### HLeafV2（TP1LeafG・TP1WLeafG）の葉の形（2026-10-24、lead）
+
+- 前件の立つ葉（CPairG s B y s k、k は極限で OHole、s < k）を数えた（tmp の leafshape.py）: expP 40 万個で 857 件、t2ext 40 万個で 55 件、ext2 40 万個で 0 件。すべて「s は k の頭の部分和」（k = s + t、t ≠ 0）で、結論 s < fsD(k, η)（η = ψ_{holeLev y}(1)）と s < fsD(k, 1) も成り立つ。
+- この形なら結論は項だけで出る: fsD(s + t, η) = s + fsD(t, η)、fsD(t, η) ≠ 0（OHole t）。
+- 枠の文脈（状態 B が y と葉まで同じ形で、葉に Ω_s を持つ）を外すと、結論は破れる（tmp の leafsub.py: 数える子 c、s = v(c)、y = o(c) の引数に出る Ω_k、k > s・極限・OHole。expP 10 万個で 2053 件、ext2 で 1027 件。例 s = ω、k = Ω_1、fsD(Ω_1, η) = η = ω）。頭の部分和でない形も多い（v は v(P₁ c) + X と足すので、add が加数を落とす）。
+- よって HLeafV2 を示すには、前件の立つ枠で「s は k の頭の部分和」になる組合せの理由が要る。例では、i の数える子 e・c（e が先）で v(e) = Ω_{v(c)}（B = o(e) = Ω_{Ω_s}）、c の数える子 d で v(d) = Ω_k、k = s + s + …。
