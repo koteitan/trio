@@ -7,8 +7,9 @@
   Ω_s ≤ Ω_{v(c)} 以下か s の成分（= X の成分）以下、段 u > s では成分がない。
 - j* が m の行 1 の子孫なら、VAnc m j* は鎖の上の帰納法の仮定から出る（`vAnc_chain_rk`。鎖の列の順位は
   rk false j* < rk true j* < rk false c 以下）。
-- そうでないときの VAnc m j* が残り `VAncJ`。
-測定: VAnc m j* は j* が m の行 1 の子孫でない場合も例外 0（tmp/claude/vjstar4.py、std_a・d3s・ext2）。
+- そうでないときは残り `VAncJ`（結論は VAnc m c のまま）。VAnc m j* はこの場合に偽になりうる（集合では例外 0
+  だったが、作った標準形 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,0)(3,0,0)(2,1,0)(3,2,1)(4,2,1)(5,1,0)
+  の m = 9・j* = 12 で破れる。v(9) = ψ_0(Ω_1 + ψ_0(Ω_1 + 1)) の成分が Ω_{v(12)} = Ω_1 を超える。VAnc 9 10 は Ω_{v(10)} = Ω_{Ω_1} で成り立つ）。
 -/
 import Ytosk.V3VAncInd
 
@@ -195,15 +196,16 @@ theorem vAnc_chain_rk {N : Mat} {σ : Valn} {rk : Bool → Nat → Nat} (hC : Co
 
 /-! ## 残り -/
 
-/-- **Residual (standard matrices): `VAnc m j*` off the row-1 chain.** For a bump column `c` (row-1 parent `m`)
-whose added term has the positive subscript `v(j*)` of a bump grandchild `j*` that is not a row-1 descendant of
-`m`, `VAnc m j*` holds, given `VAnc` at every column of lower `v`-rank. -/
+/-- **Residual (standard matrices): the bump step when `j*` is off the row-1 chain.** For a bump column `c`
+(row-1 parent `m`) whose added term has the positive subscript `v(j*)` of a bump grandchild `j*` that is not a
+row-1 descendant of `m`, `VAnc m c` holds, given `VAnc` at every column of lower `v`-rank. (`VAnc m j*` itself can
+fail here; see the file header.) -/
 def VAncJ : Prop :=
   ∀ N σ rk, Std N → N ≠ SRO → Cons N σ → Good3 N σ → Rk N rk →
     ∀ c m j js, c < N.length → entry N 1 c ≠ 0 → entry N 2 c ≠ 0 → par N 1 c = some m →
       j ∈ children N c → col N j = bump N c → js ∈ children N j → σ.v js ≠ z →
       (∃ Y, bumpX N σ c = psi (σ.v js) Y z) → ¬ TRIO.le1 N m js →
-      (∀ e, e < N.length → rk false e < rk false c → VAncAt N σ e) → VAnc σ m js
+      (∀ e, e < N.length → rk false e < rk false c → VAncAt N σ e) → VAnc σ m c
 
 /-- **`VAncPos` from `VAncJ`.** -/
 theorem vAncPos_of_J (hJ : VAncJ) : VAncPos := by
@@ -224,11 +226,8 @@ theorem vAncPos_of_J (hJ : VAncJ) : VAncPos := by
   have hjsN : js < N.length := (mem_children hjs).2
   have hrk : rk false js < rk false c :=
     lt_trans (hR js hjsN).1 (((hR c hc).2.2 he1).2.2 he2 j hj hcol js hjs)
-  have hA : VAnc σ m js := by
-    by_cases hle : TRIO.le1 N m js
-    · exact vAnc_chain_rk hC hG hR ih (js + 1) m js (Nat.lt_succ_self _) hle hrk
-    · exact hJ N σ rk hS hne hC hG hR c m j js hc he1 he2 hm hj hcol hjs (hvjs ▸ hs)
-        ⟨Y, hvjs ▸ hX'⟩ hle ih
-  exact vAnc_of_vAnc_index hmo hv hvjs hA
+  by_cases hle : TRIO.le1 N m js
+  · exact vAnc_of_vAnc_index hmo hv hvjs (vAnc_chain_rk hC hG hR ih (js + 1) m js (Nat.lt_succ_self _) hle hrk)
+  · exact hJ N σ rk hS hne hC hG hR c m j js hc he1 he2 hm hj hcol hjs (hvjs ▸ hs) ⟨Y, hvjs ▸ hX'⟩ hle ih
 
 end Ytosk
