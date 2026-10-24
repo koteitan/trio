@@ -48,7 +48,7 @@ residual `HDropV2W` and the engines' step context assume `¬ Bad2 M`, the frame 
 and `HFrameV2` are guarded by `¬ Bad2`; the `Bad2` matrices are the new residuals `TakeBadV2` (the one-column drop:
 `Inv3V2` and the root strictly drops) and `BadOutV2` (the step for `n ≥ 2`: `Inv3V2` of `M[n]` and the descent); the
 descents to `M[0]`, `M[1]` (also through a `Bad2` prefix) are proved from the prefix chain (`root_chain_of_pre`). Measured on the grafted standard sets graftA・graftB (desc). -/
-theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hDB : DropBadV2B) (hBO : BadOutV2)
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hRB : RootBadV2) (hBO : BadOutV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -59,6 +59,8 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hDB : DropBadV2B) (hBO : B
       TRIO.srow M (M.length - 1) = 2 → T2VRACopyEsc M)
     (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : WellFounded Step' :=
+  have hDW : HDropV2W := hDropV2W_of_U hDU
+  have hDB : DropBadV2B := dropBadB_of_U hDU hRB
   have hDomB : T2SeedDomV2B := t2SeedDomV2B_of_Q hDomQ
   have hPRB : T2SeedPResRCV2B := t2SeedPResRCV2B_of_C (t2SeedPResRCV2C_of_D (t2SeedPResRCV2D_of_E hPRE))
   have hSV0 : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →

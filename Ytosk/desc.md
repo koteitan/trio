@@ -4235,8 +4235,8 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 
 | 残り | 中身 | 状態・手がかり |
 |---|---|---|
-| HDropV2W | 1 列落としの欄 hard・vst・ws・ua・ab（¬Bad2） | 接ぎ木の非 Bad2 で例外 0 |
-| DropBadV2B | Bad2 の 1 列落としの仮定 DropResB（HardArg・VSmallNew・BumpWeakSrcB・弱い選択肢に条件のない UpgAbsXW・BumpAbsCB）と根の真の減少 | Bad2 の集合で例外 0。TakeBadV2 はこれと HFrameV2・HLeafV2 から定理（drop_allB・bump_dropB・inv3V2_takeD） |
+| HDropU | すべての標準形で落とす補題の仮定 DropResHB（HardArg・VSmallNew・BumpWeakSrcB・条件のない UpgAbsXW・BumpAbsCB）∧（¬Bad2 → BumpAbsC） | 11 集合・接ぎ木で例外 0。HDropV2W は定理（hDropV2W_of_U） |
+| RootBadV2 | Bad2 の 1 列落としで根の真の減少 | Bad2 の集合で例外 0（takebad.py）。DropBadV2B は HDropU とこれから定理（dropBadB_of_U） |
 | BadOutV2 | Bad2 の n ≥ 2 の段: M[n] の Inv3V2 と根の下降 | 同上＋エンジンの弱い場合（t0 で o′(r) ⋪ o(r) の 72 件） |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
@@ -4317,3 +4317,12 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 次: DropResB の欄を 11 集合でも測り、成り立てば HDropV2W と DropBadV2B を前提なしの 1 つの残り（すべての標準形で DropResB）にまとめる。根の真の減少は dep_strict0（t = 0・1）と t = 2 の道から。
 - 追記（同じ日）: 形 B の BumpWeakShapeSrcB と、弱い選択肢に条件のない UpgAbsXW を 11 集合（各 20 万個まで、Cprime・t0ext・d3s・deep2・deep3・ext1x・t2ext・ext2・expP・std_a・ext1・expPt2）で測り、例外 0（tmp の formB11.out）。接ぎ木と合わせ、DropResB の欄はすべての測った標準形で成り立つ（argT・VSmallNew は前から、BumpAbsCB は BumpAbsC から）。
   - まとめる見通し: ¬Bad2 の文脈では、ws は noBad3_of_nb2 で古い形に戻り、ua は「強い吸収が破れて p が bump 子なら x は g の部分木になく行 2 = 0」（Bad2 の第 1 の選言の否定）で NBParX が出る。ab（BumpAbsC）は BumpAbsCB から論理では戻らないので、まとめた残りは「すべての標準形で DropResB（HardArg の形）∧（¬Bad2 → BumpAbsC）」になる。そのためには HardArg を使う drop_all_hard の形 B 版が要る（argT は M.take の標準形から出るので、Bad2 でも HardArg から始める）。
+
+### 落とす補題の残りを 1 つ（HDropU）にまとめた（2026-10-25、lead）
+
+- `pv_of_hardB`・`drop_all_hardB`（V3DropStrong）: drop_all_hard の形 B 版（HardArg から始める）。
+- `DropResHB`・`HDropU`（V3GlobV2）: すべての標準形で DropResHB、Bad2 の外で BumpAbsC。前提 ¬Bad2 を持たない。
+- `hDropV2W_of_U : HDropU → HDropV2W`: ¬Bad2 では、ws の第 2 の場合は noBad3_of_nb2 で消える。ua は、強い吸収が破れて p が bump 子なら、Bad2 の第 1 の選言の否定から「g は x の祖先でなく x の行 2 = 0」が出て NBParX になる。
+- `RootBadV2`（Bad2 の 1 列落としで根の真の減少）、`dropBadB_of_U : HDropU → RootBadV2 → DropBadV2B`（argT は M.take の標準形から argT_std で）。
+- 最上位 `trio_terminates_main_V2_cur` は (HDropV2W, DropBadV2B) の代わりに (HDropU, RootBadV2) を取る。仮定は 14 個のまま、全体ビルド緑 1075 jobs、公理は標準の 3 つ。
+- 測定: DropResHB の欄は 11 集合と接ぎ木で例外 0（formB・dropres・uaw0c・abcb）。BumpAbsC が破れるのは Bad2 の 9 個だけ。

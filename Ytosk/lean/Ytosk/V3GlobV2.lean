@@ -86,6 +86,74 @@ theorem dropBad_of_B (h : DropBadV2B) : DropBadV2 := by
     (bump_dropB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.kd I.td R.ab R.ws) R.ua,
     R.vst, hlt⟩
 
+/-- **The hypotheses of the drop lemma in the `Bad2` form with `HardArg`** (2026-10-25). -/
+structure DropResHB (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
+  hard : HardArg N x σ σ'
+  vst : VSmallNew N x σ σ'
+  ws : BumpWeakSrcB N x σ σ'
+  ua : ∀ i k W, i + 1 = x → upg N i = some k → σ.v k = add (vOpt σ (par N 1 i)) W → W ≠ z →
+    (∀ r ∈ summands (vOpt σ (par N 1 i)), r < W → Lhd z r W) ∨
+      (WCSP N σ i (add (vOpt σ (par N 1 i)) one) ∧
+        (∀ g ∈ comps z (add (vOpt σ (par N 1 i)) one), g < psi (add (vOpt σ (par N 1 i)) one) z z))
+  ab : BumpAbsCB N x σ
+
+/-- **Residual: the drop hypotheses of every standard matrix** (2026-10-25): the `Bad2` form `DropResHB` everywhere,
+and `BumpAbsC` outside `Bad2`. Measured on the 11 sets and the grafted sets with no exception (desc). It replaces
+`HDropV2W` (outside `Bad2`) and the drop part of `DropBadV2B` (on `Bad2`). -/
+def HDropU : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk →
+    DropResHB M (M.length - 1) ρ (drop1 M (M.length - 1) rk) ∧
+      (¬ Bad2 M → BumpAbsC M (M.length - 1) ρ)
+
+/-- **`HDropV2W` from `HDropU`**: outside `Bad2` the weak sources have the old shape (`noBad3_of_nb2`), and a weak
+alternative at `x − 1` with a bump parent has `x` above the grandparent and row 2 = 0 (else `Bad2`). -/
+theorem hDropV2W_of_U (h : HDropU) : HDropV2W := by
+  intro M ρ rk hM hS hE hNB I
+  obtain ⟨R, hab⟩ := h M ρ rk hM hS hE I
+  have h3 := noBad3_of_nb2 hNB I.cons
+  refine ⟨R.hard, R.vst, ⟨fun i h1 h2 j hj hjb k hk ⟨w, hw, hok⟩ hcase => ?_, R.ws.2, h3⟩, ?_, hab hNB⟩
+  · obtain ⟨hsh, hhead⟩ := R.ws.1 i h1 h2 j hj hjb k hk ⟨w, z, hw, hok⟩ hcase
+    rcases hsh with hsh | ⟨_, hu, hb⟩
+    · exact ⟨hsh, hhead⟩
+    · exact absurd ⟨hu, hb⟩ h3
+  · intro i k W hix hu hvk hW
+    rcases R.ua i k W hix hu hvk hW with hs | ⟨hwc, hss⟩
+    · exact Or.inl hs
+    by_cases hs : ∀ r ∈ summands (vOpt ρ (par M 1 i)), r < W → Lhd z r W
+    · exact Or.inl hs
+    refine Or.inr ⟨hwc, hss, fun p g hp hg hb => ?_⟩
+    by_contra hc
+    apply hNB
+    have hi2 : M.length - 2 = i := by omega
+    refine ⟨⟨k, by rw [hi2]; exact hu⟩, p, g, by rw [hi2]; exact hp, hg, hb, Or.inl ⟨?_, ρ, I.cons, ?_⟩⟩
+    · by_contra hn
+      push Not at hn
+      exact hc ⟨hn.1, hn.2⟩
+    · intro hS'
+      exact hs (hS' i k W (by omega) hu hvk hW)
+
+/-- **Residual: the strict descent of the root at the one-column drop of a `Bad2` matrix** (2026-10-25). -/
+def RootBadV2 : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Bad2 M → Inv3V2 M ρ rk →
+    root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ
+
+/-- **`DropBadV2B` from `HDropU` and `RootBadV2`**: `argT` from the standardness of `M.take x` (`drop_all_hardB`,
+`good3_take`, `argT_std`). -/
+theorem dropBadB_of_U (h : HDropU) (hR : RootBadV2) : DropBadV2B := by
+  intro M ρ rk hM hS hl hB I
+  have hE : M ≠ [] := by intro he; rw [he] at hl; simp at hl
+  obtain ⟨R, _⟩ := h M ρ rk hM hS hE I
+  have S := sInv_std hM hS
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last (M := M) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 := cons_of_rk hRk1
+  have hdrop := drop_all_hardB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.vs R.vst I.fc I.fo
+    R.hard (bump_dropB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.kd I.td R.ab R.ws) R.ua
+  have hGT := good3_take hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 hdrop
+  exact ⟨⟨argT_std hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 hGT, R.vst, R.ws, R.ua, R.ab⟩,
+    hR M ρ rk hM hS hl hB I⟩
+
 /-- **`TakeBadV2` from the drop conclusion and the two shared residuals.** -/
 theorem takeBad_of_drop (hDB : DropBadV2) (hF : HFrameV2) (hL : HLeafV2) : TakeBadV2 := by
   intro M ρ rk hM hS hl hB I
