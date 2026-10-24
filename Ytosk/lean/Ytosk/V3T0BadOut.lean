@@ -3,11 +3,12 @@
 
 - `BadOutT0`: `Bad2` で最後の列の行 0 の親で展開する場合（`srow = 0`）。`badOutT0_of` で、落とす補題の結論
   （`HDropU` から、`T0DropF.of_U`）・1 列落としの Inv3V2（`TakeBadV2`）・共有の残り `HFrameV2`・`HLeafV2` と、
-  新しい残り `T0BadSeeds`（`Bad2` での `T0AbsW` と種の事実 `T0SeedsN`）から、V3T0Bad のエンジンで証明する。
+  `HBumpExt`（`T0AbsW` は `t0AbsW_of_U`）と新しい残り `T0BadSeeds`（種の事実 `T0SeedsN`）から、V3T0Bad のエンジンで証明する。
 - `BadOutRest`: 残りの場合（t = 1・t = 2、最後の列が 0）。`badOutV2_of` で 2 つから `BadOutV2`。
 -/
 import Ytosk.V3T0Bad
 import Ytosk.V3GlobV2
+import Ytosk.V3BumpExt
 
 namespace Ytosk
 
@@ -28,13 +29,29 @@ theorem T0DropF.of_U (h : HDropU) {M : Mat} {ρ : Valn} {rk : Bool → Nat → N
   exact ⟨hdrop, drop_presD hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons
     ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdrop (h M ρ rk hM hS hE I).1.vst hC1 hRk1⟩
 
-/-- **Residual: the seed facts of a `Bad2` matrix at `t = 0`** (2026-10-25): the weak absorption `T0AbsW` and the
-seeds S1・S2・S3 of every `M[n]` (`T0SeedsN`). On graftB's 108 such matrices (`r = P_0(x)` is `g`, `p` or `x − 1`,
-36 each) all seeds hold for `n = 2, 3` (tmp: t0seed.py, t0cls.py). -/
+/-- **The weak absorption at `t = 0`** from `HDropU` (its `BumpAbsC` at `t = 0`, also on `Bad2`) and `HBumpExt`. -/
+theorem t0AbsW_of_U (hDU : HDropU) (hBE : HBumpExt) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
+    (hS : M ≠ SRO) (I : Inv3V2 M ρ rk) {r L : Nat} (hlen : r + L + 1 = M.length)
+    (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0) : T0AbsW M r L ρ := by
+  have S := sInv_std hM hS
+  have hE : M ≠ [] := by intro he; rw [he] at hlen; simp at hlen
+  have hxl : M.length - 1 = r + L := by omega
+  have hab := (hDU M ρ rk hM hS hE I).2 (Or.inr (by rw [hxl]; exact he1))
+  rw [hxl] at hab
+  have hcnt := counted_take_last (M := M) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat
+  rw [hxl] at hcnt
+  have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
+  have hτ := cons_of_rk hRk1
+  exact t0AbsW_of hτ (absWN_take_t0 hab I.cons (by omega) he1 hτ)
+    (t0BumpMono_of_ext hBE hM hlen hp he1 (S.r12 _ he1))
+
+/-- **Residual: the seed facts of a `Bad2` matrix at `t = 0`** (2026-10-25): the seeds S1・S2・S3 of every `M[n]`
+(`T0SeedsN`). On graftB's 108 such matrices (`r = P_0(x)` is `g`, `p` or `x − 1`, 36 each) all seeds hold for
+`n = 2, 3` (tmp: t0seed.py, t0cls.py). -/
 def T0BadSeeds : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → Bad2 M → Inv3V2 M ρ rk → ∀ r L, r + L + 1 = M.length → 0 < L →
     par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
-    T0AbsW M r L ρ ∧ ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → T0SeedsN M ρ r L n σ
+    ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → T0SeedsN M ρ r L n σ
 
 /-- **The `t = 0` part of `BadOutV2`.** -/
 def BadOutT0 : Prop :=
@@ -55,7 +72,8 @@ theorem badOutV2_of (h0 : BadOutT0) (h1 : BadOutRest) : BadOutV2 := by
   · exact h1 M ρ rk hM hS hE hB I h n hn
 
 /-- **`BadOutT0` from the drop residual, the one-column drop of `Bad2`, the shared residuals and the seeds.** -/
-theorem badOutT0_of (hDU : HDropU) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLeafV2) (hSe : T0BadSeeds) :
+theorem badOutT0_of (hDU : HDropU) (hBE : HBumpExt) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLeafV2)
+    (hSe : T0BadSeeds) :
     BadOutT0 := by
   intro M ρ rk hM hS hE hB I hz hs0 n hn2
   have S := sInv_std hM hS
@@ -64,12 +82,11 @@ theorem badOutT0_of (hDU : HDropU) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLea
   have D := T0DropF.of_U hDU hM hS hl2 I
   obtain ⟨I1, _⟩ := hTB M ρ rk hM hS hl2 hB I
   rw [show M.length - 1 = r + L by omega] at I1
-  obtain ⟨hAbW, hSd⟩ := hSe M ρ rk hM hS hB I r L hlen hL hp he1
-  have hLpos : ∀ r' L', par M 0 (r' + L') = some r' → 0 < L' := fun r' L' hp' => by
-    have := par_lt M 0 (r' + L') r' hp'; omega
+  have hSd := hSe M ρ rk hM hS hB I r L hlen hL hp he1
+  have hAbW := t0AbsW_of_U hDU hBE hM hS I hlen hp he1
   have hDF := t0DF_ofG hM hS (I.toC S) D I.ph I.vra.toLast
-    (fun r' L' hl' hp' he' => (hSe M ρ rk hM hS hB I r' L' hl' (hLpos r' L' hp') hp' he').1)
-    (fun r' L' hl' hL' hp' he' => (hSe M ρ rk hM hS hB I r' L' hl' hL' hp' he').2)
+    (fun r' L' hl' hp' he' => t0AbsW_of_U hDU hBE hM hS I hl' hp' he')
+    (fun r' L' hl' hL' hp' he' => hSe M ρ rk hM hS hB I r' L' hl' hL' hp' he')
   have hNs : ∀ n, 1 ≤ n → TRIO.gexp M r L 0 0 n ≠ [] := fun n hn he => by
     have h1 := congrArg List.length he
     have h2 : (TRIO.gexp M r L 0 0 n).length = r + n * L := lenN0 hlen hn

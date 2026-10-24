@@ -103,7 +103,7 @@ and `BumpAbsC` outside `Bad2`. Measured on the 11 sets and the grafted sets with
 def HDropU : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk →
     DropResHB M (M.length - 1) ρ (drop1 M (M.length - 1) rk) ∧
-      (¬ Bad2 M → BumpAbsC M (M.length - 1) ρ)
+      (¬ Bad2 M ∨ entry M 1 (M.length - 1) = 0 → BumpAbsC M (M.length - 1) ρ)
 
 /-- **`HDropV2W` from `HDropU`**: outside `Bad2` the weak sources have the old shape (`noBad3_of_nb2`), and a weak
 alternative at `x − 1` with a bump parent has `x` above the grandparent and row 2 = 0 (else `Bad2`). -/
@@ -111,7 +111,7 @@ theorem hDropV2W_of_U (h : HDropU) : HDropV2W := by
   intro M ρ rk hM hS hE hNB I
   obtain ⟨R, hab⟩ := h M ρ rk hM hS hE I
   have h3 := noBad3_of_nb2 hNB I.cons
-  refine ⟨R.hard, R.vst, ⟨fun i h1 h2 j hj hjb k hk ⟨w, hw, hok⟩ hcase => ?_, R.ws.2, h3⟩, ?_, hab hNB⟩
+  refine ⟨R.hard, R.vst, ⟨fun i h1 h2 j hj hjb k hk ⟨w, hw, hok⟩ hcase => ?_, R.ws.2, h3⟩, ?_, hab (Or.inl hNB)⟩
   · obtain ⟨hsh, hhead⟩ := R.ws.1 i h1 h2 j hj hjb k hk ⟨w, z, hw, hok⟩ hcase
     rcases hsh with hsh | ⟨_, hu, hb⟩
     · exact ⟨hsh, hhead⟩

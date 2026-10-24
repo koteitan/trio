@@ -50,8 +50,8 @@ and `HFrameV2` are guarded by `¬ Bad2`; the `Bad2` matrices are the new residua
 `Inv3V2` and the root strictly drops) and `BadOutV2` (the step for `n ≥ 2`: `Inv3V2` of `M[n]` and the descent); the
 descents to `M[0]`, `M[1]` (also through a `Bad2` prefix) are proved from the prefix chain (`root_chain_of_pre`). Measured on the grafted standard sets graftA・graftB (desc).
 2026-10-25: `BadOutV2` is split by the shape of the expansion: `t = 0` is proved (`badOutT0_of`, V3T0BadOut) from the
-engine run on the drop's conclusion (V3T0Bad) and the new residual `T0BadSeeds` (the weak absorption and the seeds
-S1・S2・S3 of `M[n]`); the rest is the residual `BadOutRest`. -/
+engine run on the drop's conclusion (V3T0Bad) and the new residual `T0BadSeeds` (the seeds S1・S2・S3 of `M[n]`; the weak absorption from
+`HDropU`, whose `BumpAbsC` now also covers `t = 0`, and `HBumpExt`); the rest is the residual `BadOutRest`. -/
 theorem trio_terminates_main_V2_cur (hDU : HDropU) (hRB : RootBadV2T2) (hBR : BadOutRest) (hT0S : T0BadSeeds)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
@@ -115,7 +115,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hRB : RootBadV2T2) (hBR : Ba
         (hP M ρ rk C hz h2) (hCF M ρ rk C hz h2)
         (fun r L q hlen hr hq hqr hncl => (hCl M ρ rk C hz h2 r L hlen hr).2.2 q hq hqr hncl))
   trio_terminates_main_V2_base (hDropV2_of' hDW) (takeBad_of_drop (dropBad_of_B hDB) hF hLf)
-    (badOutV2_of (badOutT0_of hDU (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf hT0S) hBR) hF hLf
+    (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf hT0S) hBR) hF hLf
     (t0AbWRes_of_ext (hDropV2_of' hDW) hBE)
     hCB hBX
     hPRV hDom (FDCopyRoot.t2FDCopyRes_of_path hBX (t2FOSeedV2_of hP hDom) hVU hAG) hQNG hSVCG
