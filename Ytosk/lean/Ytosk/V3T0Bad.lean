@@ -6,7 +6,7 @@
 `Bad2` ではこれらの欄が偽になる（DropRes の形 A が成り立たない）が、落とす補題の結論（`PO`・`PV`）と
 `ValInv` は `HDropU` から出る。
 
-- `T0SeedsN`: `N = M[n]` の種の事実（S1 の `◁`、S1 の節（`RClaim` つき）、S2、S3）。
+- `T0SeedsN`: `N = M[n]` の種の事実（S1 の節（`◁` と `RClaim`）、S2、S3）。S1 の `◁` は節から出る。
 - `t0_coreG`・`t0_otdG`: 旧エンジンの写しで、DropRes の欄の代わりに落とす補題の結論・`ValInv`・種の事実を取る。
   `BumpTermDec` の仮定は `o′(r) ≤ omid` だけ（`g3_lt`）、`hG0le` は `PO` から（`g0le_of_po`）。
 -/
@@ -18,12 +18,11 @@ open T
 
 set_option linter.unusedSectionVars false
 
-/-- **The seed facts of `N = M[n]`** (`t = 0`, `r = P_0(x)`, `g = P_0(r)`): S1 (`o(g)` drops by `◁` when `r`
-counts at `g`, also as a node with `RClaim`), S2 (`v(g)` when `r` is the bump child of `g`) and S3 (`v(p)` when
+/-- **The seed facts of `N = M[n]`** (`t = 0`, `r = P_0(x)`, `g = P_0(r)`): S1 (`o(g)` drops by `◁` as a node with `RClaim`
+when `r` counts at `g`), S2 (`v(g)` when `r` is the bump child of `g`) and S3 (`v(p)` when
 `g` is the bump child of `p`). -/
 def T0SeedsN (M : Mat) (ρ : Valn) (r L n : Nat) (σ : Valn) : Prop :=
   ∀ g, par M 0 r = some g →
-    (Counted M g r → Lhd z (σ.o g) (ρ.o g)) ∧
     (Counted M g r → ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧
       isOT (psi (ρ.v g) X' z) = true ∧ Lhd z (psi (ρ.v g) X' z) (psi (ρ.v g) X z) ∧
       ∀ U : T → Prop, RClaimU U ρ σ g) ∧
@@ -184,7 +183,10 @@ theorem t0_coreG {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L
     -- the drop at `r`
     have hDr : DepX M (r + L) true r := depLike_r hlen hL hp hx2 (depLike_depX M (r + L))
     have hlt : ρ'.o r < ρ.o r := hD true r hDr (by omega)
-    obtain ⟨hS1, -, hS2, hS3⟩ := hSd n hn2 σ hCN g hg
+    obtain ⟨hS1N, hS2, hS3⟩ := hSd n hn2 σ hCN g hg
+    have hS1 : Counted M g r → Lhd z (σ.o g) (ρ.o g) := fun hc => by
+      obtain ⟨X, X', hX, hX', -, hl, -⟩ := hS1N hc
+      rw [hX, hX']; exact hl
     have hG0le : ∀ g', par M 0 r = some g' → col M r = bump M g' → entry M 1 g' ≠ 0 → entry M 2 g' ≠ 0 →
         sumN ((children (M.take (r + L)) r).map ρ'.o) ≤ sumN ((children (M.take (r + L)) r).map ρ.o) :=
       fun _ _ _ _ _ => g0le_of_po hG hVT.g hdrop
@@ -361,7 +363,7 @@ theorem t0_otdG {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     -- the drop at `r`
     have hDr : DepX M (r + L) true r := depLike_r hlen hL hp hx2 (depLike_depX M (r + L))
     have hlt : ρ'.o r < ρ.o r := hD true r hDr (by omega)
-    obtain ⟨-, hS1N, hS2, hS3⟩ := hSd n hn2 σ hCN g hg
+    obtain ⟨hS1N, hS2, hS3⟩ := hSd n hn2 σ hCN g hg
     have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
     have hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z := by
       intro s' y' hs hne
