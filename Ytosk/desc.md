@@ -4205,3 +4205,9 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - BumpWeakSrc（ws）の 180 件は BumpWeakShapeSrc の「i の子は j だけ」が偽（i の子が j と x）。「i の子は j と x だけ」に広げると graftB 576 件・graftA 1898 件で例外 0。
   - BumpAbsC（ab）の 9 件: 例 …(13,1,1)(14,1,1)(10,2,0)(11,3,1)(12,3,1)(13,1,0)(14,1,0) の i = 31。x − 1 = 33 が上がり先を失い、その親 32 は 31 の bump 子。StrongG(31) は成り立つが、v(31) = W = ψ_ω(ψ_ω(ψ_ω(Ω_1))) に吸収される r = v(30) が W′ = Ω_1 では残り、v′(31) = r + Ω_1 ⋪ v(31)。弱い道（WkVA、WCSP は WCS(v(30), v′) で、CntX は数える子なし）で PV は成り立つ。前提に NBPar(x − 1) を足しても StrongG の側で前提が立つので 9 件残る。BumpAbsC を「強い吸収 ∨ 弱い道の条件」の選言にする必要がある。
   - 直す方針: (1) CntX を上の形に広げ、使う側（t0: CntX.nocnt_of_ne・nocnt_t0、V3T0Weak・V3T0ArgB・V3T0C）を直す。(2) UpgAbsXW0 の弱い選択肢から NBPar を外し、NBPar を使う箇所を直す。(3) BumpWeakShapeSrc の結論を「i の子は j と x だけ」に。(4) BumpAbsC を弱い道との選言に。落とす補題（drop_all_hard・bump_drop）の証明を、弱い道がこれらの場合にも通るように直す。Inv3V2 の TPLoW・AbsDW（t = 1・q = r）は別に調べる。
+- 追記（同じ日）: 直す範囲を調べた。
+  - probe_inv2 の欄（AbsUS・TPLoS・TrigS・VSmallRAll）は graftA・graftB で例外 0（tmp/claude/runinv2.py）。Inv3V2 で破れるのは今のところ TPLoW・AbsDW。
+  - 設計は「x − 1 で強い吸収が破れれば NBPar(x − 1)」に頼っている（`UpgAbsXW.toX_xm1`、V3T0UpgAbs の `strong_of_not_nb`、V3T2UpgAbs「強い吸収の破れは古い上げ先と NBPar を与える」）。接ぎ木ではこれが偽。
+  - CntX の新しい形では `CntX.nocnt_of_ne`・`PO.zero_of_ne`（x − 1 でない弱い列の o は引数 0）が偽になる（i = 16 の例で o(16) は数える子 x の値を引数に持つ）。`PO.zero_of_ne` は 9 ファイル 13 か所、`PO.zero_t0` は t0 のエンジン 9 ファイルで使う。
+  - t = 0（最後の列の行 1 = 0）、r = P₀(x) で o′(r) ◁ o(r)（t0 のエンジンが `PO.zero_t0` から出す hl）を測った（tmp/claude/t0or.py）: graftB で v′(r) ⋪ v(r) が 72 件（r < x − 1 で 36、r = x − 1 で 36）あり、そこでは o′(r) ≤ o(r) だが ◁ でない。t0ext・ext1 各 10 万と graftA では v は弱く変わらず、o′(r) ◁ o(r) は例外 0。例 …(4,2,0)(5,3,1)(6,3,1)(7,2,0)(6,0,0) の r = 16: o′ = Ω_{Ω_{ω+1}}、o = ψ_{Ω_{Ω_ω}}(1)。
+  - よって直すには、落とす補題の欄と CntX を広げるだけでなく、t = 0 のエンジンに「r が弱く変わる（v′(r) < v(r)、o′(r) = Ω_{v′(r)}）」場合を足す必要がある。この場合 M[n] の値の減少そのものは易しい（o′(r) の n 個の和は Ω_{v(r)} 未満）が、エンジンは M[n] の Inv3V2 まで作るので、その場合の値の関係を新しく示す必要がある。t = 2（V3T2Top・V3T2UpgAbs・V3T2QUBad）と t = 1・q = r（TPLoW・AbsDW）も同様。
