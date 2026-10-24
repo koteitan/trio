@@ -4341,3 +4341,4 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - (C) P₀(x) = x − 1: S3 の `t0_S3` は最後の写しに ◁（hσlast、エンジンでは hlB）を要る。弱い場合の版が要る。
   - (D) bumpTermDec_N_t0 の hlB、bumpKidsDec・bumpTermDec の hG0le（g0_drop_rel・v_lhd_bump_children）も弱い場合の手当てが要る。
   - 落とす補題の部分（drop_all・drop_pres）は hdrop_of_U・drop_presD で置き換えられる。T0AbsW は BumpAbsC から出るが、HDropU は Bad2 で BumpAbsC を言わないので、t = 0 の Bad2（BumpAbsC は成り立つ）では HDropU の前提を広げる必要がある。
+- 追記（同じ日）: (B) S2 の弱い最後の項（P₀(x) = p、tmp の s2dom.py）。g の v について、b = V + ω(1 + 最後以外の bump の項)、b′ = σ.v g（M[n]）、a = ρ.v g とすると、Lhd z b a・Lhd z b′ a は成り立つ（72 件）が、「b′ の成分がどれも b の成分で押さえられる」は偽。押さえられないのは最後の弱い項そのもの: 例 a = ψ_{Ω_ω}(ψ_{Ω_ω}(1))、b = ψ_{Ω_ω}(0)、b′ = ψ_{Ω_ω}(Ω_{ω+1})。b′ は ψ_A(B + c′)（B = 0、c′ = Ω_{ω+1}）の形で、`lhd_weak_childA` の前提（c′ の成分は B + c′ 以下か添字の成分以下）が成り立つ。bump の段でも omega が ψ_s(…) の形になるので、s1_core_weak と同じく lhd_weak_childA に持ち込むのが道（V ≠ 0 の和の場合は v_strong の吸収と合わせる）。
