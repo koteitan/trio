@@ -33,14 +33,15 @@ open T
 
 /-! ## 行列ごとの残り -/
 
-/-- **R-drop**: the one-column drop residual of every standard matrix with the redesigned invariant. -/
+/-- **R-drop**: the one-column drop residual of every standard matrix with the redesigned invariant, outside the
+grafted bad shape `Bad2` (2026-10-24: on `Bad2` matrices the drop fields fail, desc). -/
 def HDropV2 : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk →
+  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → ¬ Bad2 M → Inv3V2 M ρ rk →
     DropResH M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
 
 /-- **R-drop without the row-1 condition** (2026-10-17): `DropResH0` of every standard matrix. -/
 def HDropV2W : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk →
+  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → ¬ Bad2 M → Inv3V2 M ρ rk →
     DropResH0 M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
 
 /-- **The strong absorption at `x − 1` for `t = 0` outside the easy shape** (2026-10-17): the parent `r` of
@@ -51,12 +52,12 @@ def T0UpgAbsV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk → entry M 1 (M.length - 1) = 0 →
     ¬ T0Easy M (M.length - 1) → UpgAbsX M (M.length - 1) ρ
 
-theorem hDropV2_of (hD : HDropV2W) (h0 : T0UpgAbsV2) : HDropV2 := fun M ρ rk hM hS hE I =>
-  (hD M ρ rk hM hS hE I).toH (h0 M ρ rk hM hS hE I)
+theorem hDropV2_of (hD : HDropV2W) (h0 : T0UpgAbsV2) : HDropV2 := fun M ρ rk hM hS hE hNB I =>
+  (hD M ρ rk hM hS hE hNB I).toH (h0 M ρ rk hM hS hE I)
 
 /-- **`HDropV2` from `HDropV2W` alone** (2026-10-20): the strong absorption at `t = 0` (`T0UpgAbsV2`) is no
 longer needed; the `t = 0` engines use the weak form (`T0UpgAbs`, `t0_otdS` with `RowJ`・`BumpLeaf`). -/
-theorem hDropV2_of' (hD : HDropV2W) : HDropV2 := fun M ρ rk hM hS hE I => (hD M ρ rk hM hS hE I).toH'
+theorem hDropV2_of' (hD : HDropV2W) : HDropV2 := fun M ρ rk hM hS hE hNB I => (hD M ρ rk hM hS hE hNB I).toH'
 
 /-- **R-seed**: the seed condition (`hcs` of `t = 1`, `q = r`) of every standard matrix. -/
 def HSeedV2 : Prop :=
@@ -98,8 +99,9 @@ structure StepCtxV2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop whe
   S : SInv M
   I : Inv3V2 M ρ rk
   R : Res3AW M ρ rk
+  nb2 : ¬ Bad2 M
   pre : ∀ j, 1 ≤ j → j < M.length →
-    Inv3V2 (M.take j) (drop1 M j rk) rk ∧ Res3AW (M.take j) (drop1 M j rk) rk
+    Inv3V2 (M.take j) (drop1 M j rk) rk ∧ (¬ Bad2 (M.take j) → Res3AW (M.take j) (drop1 M j rk) rk)
 
 /-- **The bad shape of the C case at `t = 2`** (2026-10-17): `q = P_0(x) ≠ r`, `q` is not the last counted child of `r`,
 and `x − 1` upgrades (to an ancestor of `r`). The seed residual `T2SeedCResR.un` is false here (ext2: 6 standard matrices);

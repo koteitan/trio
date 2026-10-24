@@ -4213,3 +4213,17 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
   - よって直すには、落とす補題の欄と CntX を広げるだけでなく、t = 0 のエンジンに「r が弱く変わる（v′(r) < v(r)、o′(r) = Ω_{v′(r)}）」場合を足す必要がある。この場合 M[n] の値の減少そのものは易しい（o′(r) の n 個の和は Ω_{v(r)} 未満）が、エンジンは M[n] の Inv3V2 まで作るので、その場合の値の関係を新しく示す必要がある。t = 2（V3T2Top・V3T2UpgAbs・V3T2QUBad）と t = 1・q = r（TPLoW・AbsDW）も同様。
 - 追記（同じ日）: 破れはすべて構造の形 Bad2(M) :=「x − 1 に上がり先がある ∧ x − 1 の親が bump 子」の中にある（tmp/claude/badsplit2.py）。graftB の Bad2 でない 75698 個では HFrameV2（TPLoW・AbsDW）・落とす補題の欄（BumpWeakSrc・UpgAbsXW0・BumpAbsC）・PV・qncl がすべて例外 0（使っていない AbsSR・BumpAbsS を除く）。Bad2 は graftB の約半分、ext2 の 0.27%（4073 個）、std_a の 67 個。狭い形（UpgBad(x − 1) ∧ ¬NBPar(x − 1)、756 個）では BumpAbsC・TPLoW・AbsDW の破れが残る。
   - 直し方: 偽の欄・残りに前提 ¬Bad2 を付け、Bad2 の行列の段を新しい残りで受ける（T2CBad と同じやり方）。CntX などの定義は変えなくてよい。作業はブランチ guard-redesign（計画は Ytosk/redesign.md）。drop-redesign の書き換え（CntX を広げる案）は使わない。
+
+### 最上位を接ぎ木の悪い形 Bad2 で分けた（2026-10-24、lead、ブランチ guard-redesign → main）
+
+- `Bad2 M`（V3Inv2）:「x − 1 に上がり先がある ∧ x − 1 の親が bump 子」。
+- Inv3V2・TakeFrameV2 の tplow・adw を「¬ Bad2 M → …」に。HDropV2・HDropV2W に前提 ¬ Bad2 M。StepCtxV2 に欄 nb2 : ¬ Bad2 M、pre の Res3AW を「¬ Bad2 (M.take j) → …」に。Res3D の鎖も各段 ¬ Bad2 の前提つき。
+- 新しい残り（V3MainV2）: `TakeBadV2`（Bad2 の M の 1 列落としで Inv3V2 が保たれる）、`BadOutV2`（Bad2 の M の M[n] の Inv3V2 と、すべての n の根の下降）、`Drop0BadV2`（接頭辞のどれかが Bad2 なら M[0] への下降）。帰納法 hInvV2_all と desc3_V2O は Bad2 M をこれらで受け、そうでない M は今までの道（ctx_V2 に ¬ Bad2）。
+- 使われていない古い定理（V3T0AbW の bumpW_drop_std・t0BumpDrop_of・t0AbsW_of_drop・t0AbWRes_of）は消した。
+- 最上位 `trio_terminates_main_V2_cur` の仮定は 12 → 15（TakeBadV2・BadOutV2・Drop0BadV2 が増えた）。全体ビルド緑 1073 jobs、公理は標準の 3 つ。
+- 測定（接ぎ木で、前は破れていた主張）:
+  - HDropV2W・HFrameV2 は ¬Bad2 の前提つきで graftBn2 で例外 0（前節）。
+  - 根の下降: Bad2 の行列（graftB 80228・ext2 4073・std_a 67 個）で root(M[n]) < root(M)、n = 0..3 すべて（tmp/claude/baddesc.py）。graftA 全数も同じ。
+  - Inv3V2 の欄: Lean の形の VSmallF は graftB・graftA・ext2 で例外 0（tmp/claude/vsf.py、probe_inv3_prefix の VSmallF は逃げ道 B のない強い形で ext2 でも偽）。Good3・FrameOT・FrameClosed・BumpKidsDec・BumpTermDec・TP1・TP1W（inv_fields）、AbsUS・TPLoS・TrigS・VSmallRAll（probe_inv2）、P = S1〜S4・PH3s（probe_close_ph3）も graftB で例外 0。偽は古い形 AbsD・TPLo と、前提つきにした TPLoW・AbsDW だけ。
+  - 未測定: FC3・TP1C・TP1WC（Lean の形）と HLeafV2（前件が接ぎ木で立たない）。
+- drop-redesign（CntX を広げる案）は使わない。

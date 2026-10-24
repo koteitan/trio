@@ -33,12 +33,14 @@ open T
 `t = 0` fields (`t0`, the strong absorption `abS`) are replaced by the descent from t0's engine (`ExpT0OutV2`). -/
 structure Res3D (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   drop : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
-  chain : ∀ j, j + 1 < M.length → DropRes (M.take (j + 1)) j (drop1 M (j + 1) rk) (drop1 M j rk)
+  chain : ∀ j, j + 1 < M.length → ¬ Bad2 (M.take (j + 1)) →
+    DropRes (M.take (j + 1)) j (drop1 M (j + 1) rk) (drop1 M j rk)
 
 /-- **Step 1 for `t = 2`**: from the invariants, the remaining hypotheses (`Res3`, `Res3T2`) and a
 valuation of each `M[n]` (`n ≥ 2`), every expansion drops the root value. -/
 theorem t2_dropsC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (I : Inv3C M ρ rk) (R : Res3D M ρ rk) (R2 : Res3T2 M ρ rk) (hX : SInvX M) (hJ : RowJ M)
+    (hD0 : (∃ j, j + 1 < M.length ∧ Bad2 (M.take (j + 1))) → DropsAt M ρ 0)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hNval : ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
       ∃ σ rkN, Cons (expand M n) σ ∧ Rk (expand M n) rkN ∧ Good3 (expand M n) σ) :
@@ -312,9 +314,12 @@ theorem t2_dropsC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
         I.fc I.vs I.td I.kd hAbs hseed
   intro n
   rcases n with _ | _ | n
-  · apply dropsAt_of (by rw [hexp 0, gexp_zero_gen])
+  · by_cases hBp : ∃ j, j + 1 < M.length ∧ Bad2 (M.take (j + 1))
+    · exact hD0 hBp
+    apply dropsAt_of (by rw [hexp 0, gexp_zero_gen])
     exact drop_n0_gen hlen hL0 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
-      ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr (fun j _ hj => R.chain j (by omega)) hlast.2
+      ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr
+      (fun j _ hj => R.chain j (by omega) (fun hb => hBp ⟨j, by omega, hb⟩)) hlast.2
   · apply dropsAt_of (by rw [hexp 1, gexp_one_gen hlen])
     exact ⟨_, _, hC1, hRk1, hlast⟩
   · have hne := gexp_ne_SRO (n := n + 2) hlen hL0 hA hd0e
@@ -336,6 +341,7 @@ theorem t2_dropsC {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 theorem desc_stepV2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M ≠ [])
     (I : Inv3C M ρ rk) (R : Res3D M ρ rk)
+    (hD0 : (∃ j, j + 1 < M.length ∧ Bad2 (M.take (j + 1))) → DropsAt M ρ 0)
     (hT0 : col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 0 → ∀ n, 2 ≤ n → DropsAt M ρ n)
     (hT1 : col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 1 → ∀ n, 2 ≤ n → DropsAt M ρ n)
     (hT2 : col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n)
@@ -388,10 +394,12 @@ theorem desc_stepV2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M �
       | vupg h1 _ _ _ => exact h1 he1
       | vbump h1 _ _ _ _ _ => exact h1 he1
     rcases n with _ | _ | n
-    · apply dropsAt_of hexp
+    · by_cases hBp : ∃ j, j + 1 < M.length ∧ Bad2 (M.take (j + 1))
+      · exact hD0 hBp
+      apply dropsAt_of hexp
       exact drop_n0r (d0 := 0) hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hL0 hx2 hr hnx I.cons
         I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua
-        (fun j _ hj => hch j (by omega))
+        (fun j _ hj => hch j (by omega) (fun hb => hBp ⟨j, by omega, hb⟩))
     · apply dropsAt_of hexp
       exact drop_n1 (d0 := 0) hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be I.r01 I.e00 hL0 hx2 hr hnx I.cons
         I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua
@@ -430,11 +438,13 @@ theorem desc_stepV2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M �
       | vupg _ _ hu _ => have := upg_succ_lt hu; omega
       | vbump _ h2 _ _ _ _ => exact h2 hx2
     rcases n with _ | _ | n
-    · apply dropsAt_of hexp
+    · by_cases hBp : ∃ j, j + 1 < M.length ∧ Bad2 (M.take (j + 1))
+      · exact hD0 hBp
+      apply dropsAt_of hexp
       exact drop_n0r (d0 := entry M 0 (r + L) - entry M 0 r) hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
         I.be I.r01 I.e00 hL0 hx2 hq hnx I.cons
         I.good I.rank I.vs I.fc I.fo hdr.argT I.kd I.td hdr.ab hdr.ws hdr.vst hdr.ua
-        (fun j _ hj => hch j (by omega))
+        (fun j _ hj => hch j (by omega) (fun hb => hBp ⟨j, by omega, hb⟩))
     · apply dropsAt_of hexp
       exact drop_n1 (d0 := entry M 0 (r + L) - entry M 0 r) hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
         I.be I.r01 I.e00 hL0 hx2 hq hnx I.cons
@@ -445,7 +455,7 @@ theorem desc_stepV2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hne : M �
 /-! ## 行列ごとの残りから Res3A、1 列落とし、接頭辞 -/
 
 theorem res3AW_of_V2 (hD : HDropV2) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hE : M ≠ []) (I : Inv3V2 M ρ rk) :
+    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hE : M ≠ []) (hNB : ¬ Bad2 M) (I : Inv3V2 M ρ rk) :
     Res3AW M ρ rk := by
   have S := sInv_std hM hS
   have hl : 1 ≤ M.length := List.length_pos_of_ne_nil hE
@@ -453,7 +463,7 @@ theorem res3AW_of_V2 (hD : HDropV2) {M : Mat} {ρ : Valn}
   have hcnt := counted_take_last (M := M) hl S.r0p S.z2 S.sibDec S.z1c S.uat
   have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
   exact ⟨DropRes.ofH hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons
-    ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ (hD M ρ rk hM hS hE I) (cons_of_rk hRk1) hRk1⟩
+    ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ (hD M ρ rk hM hS hE hNB I) (cons_of_rk hRk1) hRk1⟩
 
 /-- **`RootP` of `M.take x` when `x` is a root column** (the residual `hRP0` of `inv3V2_take`). -/
 theorem rootP0_take {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (S : SInv M) (I : Inv3V2 M ρ rk)
@@ -467,12 +477,32 @@ theorem rootP0_take {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (S : SInv 
   have hk : col M (M.length - 1) = (0, 0, 0) := (col_zero_iff M _).mpr ⟨h0, h1, h2⟩
   exact rootP_take_root hx hk I.cons (cons_of_rk hRk1) hRk1 I.rootP
 
+/-! ## 接ぎ木の悪い形 `Bad2` の残り（2026-10-24） -/
+
+/-- **Residual: the one-column drop of a `Bad2` matrix** keeps the invariant (the output of `HTakeV2` with the
+drop lemma, which fails on `Bad2`). -/
+def TakeBadV2 : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Bad2 M → Inv3V2 M ρ rk →
+    Inv3V2 (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) rk
+
+/-- **Residual: the step of a `Bad2` matrix**: the invariant of `M[n]` (`n ≥ 2`) and the descent of the root
+for every `n` (the outputs of the engines, whose drop and frame fields fail on `Bad2`). -/
+def BadOutV2 : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Bad2 M → Inv3V2 M ρ rk →
+    (∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (expand M n) ρN rkN) ∧ ∀ n, DropsAt M ρ n
+
+/-- **Residual: the descent to `M[0]` when a prefix is `Bad2`** (the chain of drops of the prefixes breaks there). -/
+def Drop0BadV2 : Prop :=
+  ∀ M ρ rk, StepCtxV2 M ρ rk → (∃ j, j + 1 < M.length ∧ Bad2 (M.take (j + 1))) → DropsAt M ρ 0
+
 /-- **The one-column drop** with the drop valuation and the same ranking. -/
-theorem last_V2 (hD : HDropV2) (hT : HTakeV2) {M : Mat} {ρ : Valn}
+theorem last_V2 (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) {M : Mat} {ρ : Valn}
     {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hl : 2 ≤ M.length) (I : Inv3V2 M ρ rk) :
     Inv3V2 (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) rk := by
   have hE : M ≠ [] := by intro h; rw [h] at hl; simp at hl
-  have R := res3AW_of_V2 hD hM hS hE I
+  by_cases hB : Bad2 M
+  · exact hTB M ρ rk hM hS hl hB I
+  have R := res3AW_of_V2 hD hM hS hE hB I
   have T := hT M ρ rk hM hS hl I R
   exact inv3V2_take (sInv_std hM hS) I hl R.drop T.frame T.leaf T.leafW
     (rootP0_take (sInv_std hM hS) I hl)
@@ -481,16 +511,16 @@ theorem take_ne_nil_of {M : Mat} {j : Nat} (hj : 1 ≤ j) (hjl : j ≤ M.length)
   exact List.ne_nil_of_length_pos (by rw [List.length_take]; omega)
 
 /-- **Every prefix** `M.take j` (`1 ≤ j < |M|`) has the invariant with `drop1 M j rk`. -/
-theorem pre_V2 (hD : HDropV2) (hT : HTakeV2) {M : Mat} {ρ : Valn}
+theorem pre_V2 (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) {M : Mat} {ρ : Valn}
     {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3V2 M ρ rk) :
     ∀ j, 1 ≤ j → j < M.length →
-      Inv3V2 (M.take j) (drop1 M j rk) rk ∧ Res3AW (M.take j) (drop1 M j rk) rk := by
+      Inv3V2 (M.take j) (drop1 M j rk) rk ∧ (¬ Bad2 (M.take j) → Res3AW (M.take j) (drop1 M j rk) rk) := by
   have key : ∀ m j, 1 ≤ j → j + 1 + m = M.length → Inv3V2 (M.take j) (drop1 M j rk) rk := by
     intro m
     induction m with
     | zero =>
       intro j hj hm
-      have := last_V2 hD hT hM hS (by omega) I
+      have := last_V2 hD hT hTB hM hS (by omega) I
       rwa [show M.length - 1 = j by omega] at this
     | succ m ih =>
       intro j hj hm
@@ -498,26 +528,26 @@ theorem pre_V2 (hD : HDropV2) (hT : HTakeV2) {M : Mat} {ρ : Valn}
       have hl1 : (M.take (j + 1)).length = j + 1 := by rw [List.length_take]; omega
       have hM1 : Std (M.take (j + 1)) := std_take hM (j + 1) (by omega)
       have hS1 : M.take (j + 1) ≠ SRO := ne_SRO_of_rk I1.rank
-      have := last_V2 hD hT hM1 hS1 (by omega) I1
+      have := last_V2 hD hT hTB hM1 hS1 (by omega) I1
       rw [hl1, show j + 1 - 1 = j by omega, take_take_succ, drop1_take_succ] at this
       exact this
   intro j hj hjl
   have Ij := key (M.length - 1 - j) j hj (by omega)
-  exact ⟨Ij, res3AW_of_V2 hD (std_take hM j (by omega)) (ne_SRO_of_rk Ij.rank)
-    (take_ne_nil_of hj (by omega)) Ij⟩
+  exact ⟨Ij, fun hNBj => res3AW_of_V2 hD (std_take hM j (by omega)) (ne_SRO_of_rk Ij.rank)
+    (take_ne_nil_of hj (by omega)) hNBj Ij⟩
 
-theorem ctx_V2 (hD : HDropV2) (hT : HTakeV2) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hE : M ≠ []) (I : Inv3V2 M ρ rk) :
+theorem ctx_V2 (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hE : M ≠ []) (hNB : ¬ Bad2 M) (I : Inv3V2 M ρ rk) :
     StepCtxV2 M ρ rk :=
-  ⟨hM, hS, sInv_std hM hS, I, res3AW_of_V2 hD hM hS hE I, pre_V2 hD hT hM hS I⟩
+  ⟨hM, hS, sInv_std hM hS, I, res3AW_of_V2 hD hM hS hE hNB I, hNB, pre_V2 hD hT hTB hM hS I⟩
 
 /-- **`RwClosed` passes to the last drop** `M.take (|M| − 1)` with `drop1` (the drop lemma from `Res3AW.drop`). -/
 theorem rw_last_V2 (hD : HDropV2) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hl : 2 ≤ M.length) (I : Inv3V2 M ρ rk)
+    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hl : 2 ≤ M.length) (hNB : ¬ Bad2 M) (I : Inv3V2 M ρ rk)
     (hRw : RwClosed M ρ) : RwClosed (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) := by
   have hE : M ≠ [] := by intro h; rw [h] at hl; simp at hl
   have S := sInv_std hM hS
-  have R := res3AW_of_V2 hD hM hS hE I
+  have R := res3AW_of_V2 hD hM hS hE hNB I
   have hx : M.length - 1 + 1 = M.length := by omega
   have hcnt := counted_take_last (M := M) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat
   have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
@@ -529,24 +559,25 @@ theorem rw_last_V2 (hD : HDropV2) {M : Mat} {ρ : Valn}
   exact rwClosed_take hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 hdrop hRw
 
 /-- **`RwClosed` of every prefix** `M.take j` (`1 ≤ j < |M|`) with `drop1 M j rk`. -/
-theorem rw_pre_V2 (hD : HDropV2) (hT : HTakeV2) {M : Mat} {ρ : Valn}
-    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3V2 M ρ rk) (hRw : RwClosed M ρ) :
+theorem rw_pre_V2 (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3V2 M ρ rk) (hRw : RwClosed M ρ)
+    (hNBp : ∀ j, 2 ≤ j → j ≤ M.length → ¬ Bad2 (M.take j)) :
     ∀ j, 1 ≤ j → j < M.length → RwClosed (M.take j) (drop1 M j rk) := by
   have key : ∀ m j, 1 ≤ j → j + 1 + m = M.length → RwClosed (M.take j) (drop1 M j rk) := by
     intro m
     induction m with
     | zero =>
       intro j hj hm
-      have := rw_last_V2 hD hM hS (by omega) I hRw
+      have := rw_last_V2 hD hM hS (by omega) (by simpa using hNBp M.length (by omega) le_rfl) I hRw
       rwa [show M.length - 1 = j by omega] at this
     | succ m ih =>
       intro j hj hm
       have R1 := ih (j + 1) (by omega) (by omega)
-      have I1 := (pre_V2 hD hT hM hS I (j + 1) (by omega) (by omega)).1
+      have I1 := (pre_V2 hD hT hTB hM hS I (j + 1) (by omega) (by omega)).1
       have hl1 : (M.take (j + 1)).length = j + 1 := by rw [List.length_take]; omega
       have hM1 : Std (M.take (j + 1)) := std_take hM (j + 1) (by omega)
       have hS1 : M.take (j + 1) ≠ SRO := ne_SRO_of_rk I1.rank
-      have := rw_last_V2 hD hM1 hS1 (by omega) I1 R1
+      have := rw_last_V2 hD hM1 hS1 (by omega) (hNBp (j + 1) (by omega) (by omega)) I1 R1
       rw [hl1, show j + 1 - 1 = j by omega, take_take_succ, drop1_take_succ] at this
       exact this
   intro j hj hjl
@@ -563,7 +594,7 @@ theorem hBaseR (n : Nat) : ∃ ρ rk, Inv3V2 (expand SRO n) ρ rk ∧ RwClosed (
       base_vsmallF hF, base_frameClosed hF, base_frameOT hF, base_kd hF, base_td hF,
       G.base_ph3c hF, G.base_fc3 hF, base_vsmallRAll hF,
       base_absDS, base_absUS, base_tp1 hF, base_tplos, base_tp1w hF,
-      base_tplow hF, base_absUWL, base_absUW0, base_adw hF, base_trigS0 hF,
+      fun _ => base_tplow hF, base_absUWL, base_absUW0, fun _ => base_adw hF, base_trigS0 hF,
       base_tplon hF, base_adn hF, base_rootS hF (by omega), base_rootP hF (by omega)⟩
 
 /-! ## t = 1: 1 コピーの保存から展開の Inv3V2 と下降 -/
@@ -599,13 +630,13 @@ theorem expT1Out_of_step (h1 : ExpT1V2) : ExpT1OutV2 := by
   have hPs := h1 M ρ rk r L _ C hlen hL0 hd0e hr hx2
   rw [hexp]
   by_cases hq : par M 0 (r + L) = some r
-  · exact qr_final_inv3V2 hlen hL0 hd0e S I hr hx2 hq hdr hI1 hPs n hn
+  · exact qr_final_inv3V2 hlen hL0 hd0e S I hr hx2 hq C.nb2 hdr hI1 hPs n hn
   · exact qn_final_inv3V2 hlen hL0 hd0e S I hr hx2 hq hdr hI1 hPs n hn
 
 /-! ## 帰納法 -/
 
 /-- **Every nonempty standard matrix other than SRO has a valuation with `Inv3V2`.** -/
-theorem hInvV2_all (hD : HDropV2) (hT : HTakeV2)
+theorem hInvV2_all (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) (hBO : BadOutV2)
     (h0 : ExpT0OutV2) (h1 : ExpT1OutV2) (h2 : ExpT2V2) (hCB : T2CBadOut) :
     ∀ M, Std M → M ≠ SRO → M ≠ [] → ∃ ρ rk, Inv3V2 M ρ rk := by
   intro M hM
@@ -620,28 +651,23 @@ theorem hInvV2_all (hD : HDropV2) (hT : HTakeV2)
     by_cases hME : M = []
     · subst hME; exact absurd rfl hNE
     obtain ⟨ρ, rk, I⟩ := ih hMS hME
-    have C := ctx_V2 hD hT hM hMS hME I
     have hpre : ∀ j, j < M.length → M.take j ≠ [] → ∃ ρ' rk', Inv3V2 (M.take j) ρ' rk' := by
       intro j hj hjE
       have hj1 : 1 ≤ j := by
         rcases Nat.eq_zero_or_pos j with h | h
         · subst h; exact absurd List.take_zero hjE
         · exact h
-      exact ⟨_, rk, (C.pre j hj1 hj).1⟩
+      exact ⟨_, rk, (pre_V2 hD hT hTB hM hMS I j hj1 hj).1⟩
     have hlen : 0 < M.length := List.length_pos_of_ne_nil hME
     by_cases hz : col M (M.length - 1) = (0, 0, 0)
     · rw [expand_zero_last hME hz n] at hNE ⊢
       exact hpre _ (by omega) hNE
     rcases Nat.lt_or_ge n 2 with hn | hn
-    · rcases Nat.lt_or_ge n 1 with hn0 | hn1
-      · obtain rfl : n = 0 := by omega
-        obtain ⟨j, hj, he⟩ := expand_zero_take hME
-        rw [he] at hNE ⊢
-        exact hpre j hj hNE
-      · obtain rfl : n = 1 := by omega
-        rw [expand_one] at hNE ⊢
-        exact hpre _ (by omega) hNE
-    · have hsrow : TRIO.srow M (M.length - 1) = 0 ∨ TRIO.srow M (M.length - 1) = 1 ∨
+    swap
+    · by_cases hB : Bad2 M
+      · exact (hBO M ρ rk hM hMS hME hB I).1 n hn
+      have C := ctx_V2 hD hT hTB hM hMS hME hB I
+      have hsrow : TRIO.srow M (M.length - 1) = 0 ∨ TRIO.srow M (M.length - 1) = 1 ∨
           TRIO.srow M (M.length - 1) = 2 := by
         unfold TRIO.srow; split_ifs <;> simp
       rcases hsrow with hs | hs | hs
@@ -652,15 +678,23 @@ theorem hInvV2_all (hD : HDropV2) (hT : HTakeV2)
       · by_cases hb : T2CBad M
         · exact (hCB M ρ rk C hb hz hs).1 n hn
         · exact h2 M ρ rk ⟨C, hb⟩ hz hs n hn
+    · rcases Nat.lt_or_ge n 1 with hn0 | hn1
+      · obtain rfl : n = 0 := by omega
+        obtain ⟨j, hj, he⟩ := expand_zero_take hME
+        rw [he] at hNE ⊢
+        exact hpre j hj hNE
+      · obtain rfl : n = 1 := by omega
+        rw [expand_one] at hNE ⊢
+        exact hpre _ (by omega) hNE
 
 /-! ## 下降の残り `Res3` -/
 
 /-- **`Res3D` of a matrix in the induction**: the drop of the context, the chain from the prefixes. -/
 theorem res3D_of_V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk) : Res3D M ρ rk := by
   refine ⟨C.R.drop, ?_⟩
-  intro j hj
+  intro j hj hNBj
   have hlj : (M.take (j + 1)).length = j + 1 := by rw [List.length_take]; omega
-  have hD := (C.pre (j + 1) (by omega) hj).2.drop
+  have hD := ((C.pre (j + 1) (by omega) hj).2 hNBj).drop
   rw [hlj, show j + 1 - 1 = j by omega, drop1_take_succ] at hD
   exact hD
 
@@ -682,31 +716,34 @@ theorem hT1_V2 (h1 : ExpT1OutV2) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Na
   obtain ⟨ρN, rkN, IN, hot, hlt⟩ := h1 M ρ rk C hz hs n hn
   exact dropsAt_of rfl ⟨ρN, rkN, IN.cons, IN.rank, hot, hlt⟩
 
-theorem hT2_V2 (h2 : ExpT2V2) (hR2 : R2V2) (hCB : T2CBadOut) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (C : StepCtxV2 M ρ rk) (R : Res3D M ρ rk) :
+theorem hT2_V2 (h2 : ExpT2V2) (hR2 : R2V2) (hCB : T2CBadOut) (hD0 : Drop0BadV2) {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk) (R : Res3D M ρ rk) :
     col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 → ∀ n, DropsAt M ρ n := by
   intro hz hs
   obtain ⟨hX, hJ⟩ := sInvXJ_std C.std C.ne
   by_cases hb : T2CBad M
-  · apply t2_dropsC (Inv3V2.toC C.S C.I) R (hCB M ρ rk C hb hz hs).2 hX hJ hz hs
+  · apply t2_dropsC (Inv3V2.toC C.S C.I) R (hCB M ρ rk C hb hz hs).2 hX hJ (hD0 M ρ rk C) hz hs
     intro n hn _ _
     obtain ⟨ρN, rkN, IN⟩ := (hCB M ρ rk C hb hz hs).1 n hn
     exact ⟨ρN, rkN, IN.cons, IN.rank, IN.good⟩
-  · apply t2_dropsC (Inv3V2.toC C.S C.I) R (hR2 M ρ rk ⟨C, hb⟩ hz hs) hX hJ hz hs
+  · apply t2_dropsC (Inv3V2.toC C.S C.I) R (hR2 M ρ rk ⟨C, hb⟩ hz hs) hX hJ (hD0 M ρ rk C) hz hs
     intro n hn _ _
     obtain ⟨ρN, rkN, IN⟩ := h2 M ρ rk ⟨C, hb⟩ hz hs n hn
     exact ⟨ρN, rkN, IN.cons, IN.rank, IN.good⟩
 
 /-- **Desc3 from the residuals**, with `t = 0` and `t = 1` in the conclusion forms `ExpT0OutV2`・`ExpT1OutV2`
 (2026-10-17: no strong absorption `HAbSV2`; the `t = 0` descent comes from t0's engine). -/
-theorem desc3_V2O (hD : HDropV2) (hT : HTakeV2)
+theorem desc3_V2O (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) (hBO : BadOutV2) (hD0 : Drop0BadV2)
     (h0 : ExpT0OutV2) (h1 : ExpT1OutV2) (h2 : ExpT2V2) (hR2 : R2V2) (hCB : T2CBadOut) : Desc3 := by
   intro M n hM hS hE
-  obtain ⟨ρ, rk, I⟩ := hInvV2_all hD hT h0 h1 h2 hCB M hM hS hE
-  have C := ctx_V2 hD hT hM hS hE I
+  obtain ⟨ρ, rk, I⟩ := hInvV2_all hD hT hTB hBO h0 h1 h2 hCB M hM hS hE
+  by_cases hB : Bad2 M
+  · obtain ⟨t', hv, _, hlt⟩ := (hBO M ρ rk hM hS hE hB I).2 n
+    exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
+  have C := ctx_V2 hD hT hTB hM hS hE hB I
   have R := res3D_of_V2 C
-  obtain ⟨t', hv, _, hlt⟩ := desc_stepV2 hE (Inv3V2.toC C.S I) R (hT0_V2 h0 C) (hT1_V2 h1 C)
-    (hT2_V2 h2 hR2 hCB C R) n
+  obtain ⟨t', hv, _, hlt⟩ := desc_stepV2 hE (Inv3V2.toC C.S I) R (hD0 M ρ rk C) (hT0_V2 h0 C) (hT1_V2 h1 C)
+    (hT2_V2 h2 hR2 hCB hD0 C R) n
   exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
 
 end Ytosk

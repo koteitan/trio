@@ -62,7 +62,7 @@ theorem t0AbWRes_of_ext (hD : HDropV2) (hE : HBumpExt) : T0AbWRes := by
   intro M ρ rk C r L hlen hr he1
   have hK : 1 ≤ M.length := by omega
   have hKne : M ≠ [] := fun h => by rw [h] at hK; simp at hK
-  have hDr := hD M ρ rk C.std C.ne hKne C.I
+  have hDr := hD M ρ rk C.std C.ne hKne C.nb2 C.I
   have hxl : M.length - 1 = r + L := by omega
   rw [hxl] at hDr
   have hS := C.S
