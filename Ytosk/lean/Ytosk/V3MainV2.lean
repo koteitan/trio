@@ -30,17 +30,19 @@ open T
 /-! ## 接ぎ木の悪い形 `Bad2` の残り（2026-10-24） -/
 
 /-- **Residual: the one-column drop of a `Bad2` matrix** keeps the invariant and does not increase the root (the
-outputs of `HTakeV2` and `drop_root_le` with the drop lemma, which fails on `Bad2`). -/
+outputs of `HTakeV2` and of the descent to `M[1] = M.take (|M| − 1)`, from the drop lemma, which fails on
+`Bad2`). -/
 def TakeBadV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → 2 ≤ M.length → Bad2 M → Inv3V2 M ρ rk →
     Inv3V2 (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) rk ∧
-      root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) ≤ root M ρ
+      root (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) < root M ρ
 
-/-- **Residual: the step of a `Bad2` matrix**: the invariant of `M[n]` (`n ≥ 2`) and the descent of the root
-for every `n` (the outputs of the engines, whose drop and frame fields fail on `Bad2`). -/
+/-- **Residual: the step of a `Bad2` matrix** for `n ≥ 2`: the invariant of `M[n]` and the descent of the root
+(the outputs of the engines, whose drop and frame fields fail on `Bad2`; `n = 0, 1` follow from `TakeBadV2` and the
+prefix chain). -/
 def BadOutV2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Bad2 M → Inv3V2 M ρ rk →
-    (∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (expand M n) ρN rkN) ∧ ∀ n, DropsAt M ρ n
+    ∀ n, 2 ≤ n → (∃ ρN rkN, Inv3V2 (expand M n) ρN rkN) ∧ DropsAt M ρ n
 
 /-! ## 下降: 旧 `t2_drops`・`desc_step` を `Inv3C` で（証明は同じ） -/
 
@@ -689,7 +691,7 @@ theorem hInvV2_all (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) (hBO : BadOut
     rcases Nat.lt_or_ge n 2 with hn | hn
     swap
     · by_cases hB : Bad2 M
-      · exact (hBO M ρ rk hM hMS hME hB I).1 n hn
+      · exact (hBO M ρ rk hM hMS hME hB I n hn).1
       have C := ctx_V2 hD hT hTB hM hMS hME hB I
       have hsrow : TRIO.srow M (M.length - 1) = 0 ∨ TRIO.srow M (M.length - 1) = 1 ∨
           TRIO.srow M (M.length - 1) = 2 := by
@@ -727,33 +729,41 @@ theorem res3D_of_V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepC
 theorem root_take_zero (M : Mat) (σ : Valn) : root (M.take 0) σ = z := by simp [root, sumN]
 
 /-- **The prefixes of the context** have a valuation (`drop1`), the ranking and a standard root. -/
-theorem prefix_facts_pre {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk) :
+theorem prefix_facts_of_pre {M : Mat} {rk : Bool → Nat → Nat}
+    (hpre : ∀ j, 1 ≤ j → j < M.length →
+      Inv3V2 (M.take j) (drop1 M j rk) rk ∧ (¬ Bad2 (M.take j) → Res3AW (M.take j) (drop1 M j rk) rk)) :
     ∀ j, j < M.length → Cons (M.take j) (drop1 M j rk) ∧ Rk (M.take j) rk ∧
       isOT (root (M.take j) (drop1 M j rk)) = true := by
   intro j hj
   rcases Nat.eq_zero_or_pos j with rfl | hj1
   · have hR : Rk (M.take 0) rk := fun i hi => absurd hi (by simp)
     exact ⟨cons_of_rk hR, hR, by rw [root_take_zero]; rfl⟩
-  · have I := (C.pre j hj1 hj).1
+  · have I := (hpre j hj1 hj).1
     exact ⟨I.cons, I.rank, root_ot I.good⟩
+
+theorem prefix_facts_pre {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk) :
+    ∀ j, j < M.length → Cons (M.take j) (drop1 M j rk) ∧ Rk (M.take j) rk ∧
+      isOT (root (M.take j) (drop1 M j rk)) = true :=
+  prefix_facts_of_pre C.pre
 
 /-- **One drop of a prefix does not increase the root**: the drop lemma at a non-`Bad2` prefix, `TakeBadV2` at a
 `Bad2` one. -/
-theorem root_step_pre (hTB : TakeBadV2) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk)
+theorem root_step_pre (hTB : TakeBadV2) {M : Mat} {rk : Bool → Nat → Nat} (hM : Std M) (hpre : ∀ j, 1 ≤ j → j < M.length →
+      Inv3V2 (M.take j) (drop1 M j rk) rk ∧ (¬ Bad2 (M.take j) → Res3AW (M.take j) (drop1 M j rk) rk))
     {k : Nat} (hk1 : 1 ≤ k) (hk : k + 1 < M.length) :
     root (M.take k) (drop1 M k rk) ≤ root (M.take (k + 1)) (drop1 M (k + 1) rk) := by
   have hPl : (M.take (k + 1)).length = k + 1 := by rw [List.length_take]; omega
-  have IP := (C.pre (k + 1) (by omega) hk).1
-  have hStdP : Std (M.take (k + 1)) := std_take C.std (k + 1) (by omega)
+  have IP := (hpre (k + 1) (by omega) hk).1
+  have hStdP : Std (M.take (k + 1)) := std_take hM (k + 1) (by omega)
   have hSP : M.take (k + 1) ≠ SRO := ne_SRO_of_rk IP.rank
   by_cases hB : Bad2 (M.take (k + 1))
   · have h := (hTB _ _ rk hStdP hSP (by omega) hB IP).2
     rw [hPl, show k + 1 - 1 = k by omega, take_take_succ, drop1_take_succ] at h
-    exact h
-  · have RP := ((C.pre (k + 1) (by omega) hk).2 hB).drop
+    exact le_of_lt h
+  · have RP := ((hpre (k + 1) (by omega) hk).2 hB).drop
     rw [hPl, show k + 1 - 1 = k by omega] at RP
     have S := sInv_std hStdP hSP
-    have IK := (C.pre k hk1 (by omega)).1
+    have IK := (hpre k hk1 (by omega)).1
     have hD := (DropHypV.of ⟨IP.good, IP.vs, IP.fc, IP.fo, IP.kd, IP.td⟩ RP).toDropHyp S.uat S.uab
     have h := drop_root_le (N := M.take (k + 1)) (x := k) hPl.symm S.r0p S.z2 S.sibDec S.z1c hD IP.cons
       (by rw [take_take_succ, drop1_take_succ]; exact IK.cons) (by rw [take_take_succ]; exact IK.rank)
@@ -761,7 +771,8 @@ theorem root_step_pre (hTB : TakeBadV2) {M : Mat} {ρ : Valn} {rk : Bool → Nat
     exact h.2
 
 /-- **The chain of the prefixes**: the root does not increase from `M.take j` to `M.take k` (`j ≤ k < |M|`). -/
-theorem root_chain_pre (hTB : TakeBadV2) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk) :
+theorem root_chain_of_pre (hTB : TakeBadV2) {M : Mat} {rk : Bool → Nat → Nat} (hM : Std M) (hpre : ∀ j, 1 ≤ j → j < M.length →
+      Inv3V2 (M.take j) (drop1 M j rk) rk ∧ (¬ Bad2 (M.take j) → Res3AW (M.take j) (drop1 M j rk) rk)) :
     ∀ j k, j ≤ k → k < M.length → root (M.take j) (drop1 M j rk) ≤ root (M.take k) (drop1 M k rk) := by
   have key : ∀ d j, j + d < M.length → root (M.take j) (drop1 M j rk) ≤ root (M.take (j + d)) (drop1 M (j + d) rk) := by
     intro d
@@ -773,10 +784,14 @@ theorem root_chain_pre (hTB : TakeBadV2) {M : Mat} {ρ : Valn} {rk : Bool → Na
       rw [show j + (d + 1) = (j + d) + 1 by omega]
       rcases Nat.eq_zero_or_pos (j + d) with h0 | h1
       · rw [h0, root_take_zero]; exact z_le _
-      · exact root_step_pre hTB C h1 (by omega)
+      · exact root_step_pre hTB hM hpre h1 (by omega)
   intro j k hjk hk
   have := key (k - j) j (by omega)
   rwa [show j + (k - j) = k by omega] at this
+
+theorem root_chain_pre (hTB : TakeBadV2) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk) :
+    ∀ j k, j ≤ k → k < M.length → root (M.take j) (drop1 M j rk) ≤ root (M.take k) (drop1 M k rk) :=
+  root_chain_of_pre hTB C.std C.pre
 
 /-! ## 最上位 -/
 
@@ -818,8 +833,21 @@ theorem desc3_V2O (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) (hBO : BadOutV
   intro M n hM hS hE
   obtain ⟨ρ, rk, I⟩ := hInvV2_all hD hT hTB hBO h0 h1 h2 hCB M hM hS hE
   by_cases hB : Bad2 M
-  · obtain ⟨t', hv, _, hlt⟩ := (hBO M ρ rk hM hS hE hB I).2 n
-    exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
+  · have hl2 : 2 ≤ M.length := by
+      obtain ⟨⟨k, hu⟩, _⟩ := hB
+      have := upg_succ_lt hu; omega
+    have hpre := pre_V2 hD hT hTB hM hS I
+    obtain ⟨IT, hlast⟩ := hTB M ρ rk hM hS hl2 hB I
+    rcases n with _ | _ | n
+    · obtain ⟨j, hj, he⟩ := expand_zero_take hE
+      obtain ⟨hc, hrk, _⟩ := prefix_facts_of_pre hpre j hj
+      refine ⟨root M ρ, root (M.take j) (drop1 M j rk), ⟨ρ, rk, I.cons, I.rank, rfl⟩, ?_, root_ot I.good,
+        lt_of_le_of_lt (root_chain_of_pre hTB hM hpre j (M.length - 1) (by omega) (by omega)) hlast⟩
+      rw [he]; exact ⟨_, rk, hc, hrk, rfl⟩
+    · refine ⟨root M ρ, _, ⟨ρ, rk, I.cons, I.rank, rfl⟩, ?_, root_ot I.good, hlast⟩
+      rw [expand_one]; exact ⟨_, rk, IT.cons, IT.rank, rfl⟩
+    · obtain ⟨t', hv, _, hlt⟩ := (hBO M ρ rk hM hS hE hB I (n + 2) (by omega)).2
+      exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
   have C := ctx_V2 hD hT hTB hM hS hE hB I
   have R := res3D_of_V2 C
   obtain ⟨t', hv, _, hlt⟩ := desc_stepV2 hE (Inv3V2.toC C.S I) R (root_chain_pre hTB C) (prefix_facts_pre C)

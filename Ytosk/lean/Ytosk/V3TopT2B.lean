@@ -43,8 +43,8 @@ the seed columns (qn from `T2SeedDomV2` and `T2SeedQNBase`; the last child `c₀
 2026-10-24 (the grafted bad shape `Bad2`: `x − 1` has an upgrade target and its parent is a bump child): the drop
 residual `HDropV2W` and the engines' step context assume `¬ Bad2 M`, the frame fields `TPLoW`・`AbsDW` of `Inv3V2`
 and `HFrameV2` are guarded by `¬ Bad2`; the `Bad2` matrices are the new residuals `TakeBadV2` (the one-column drop:
-`Inv3V2` and the root does not increase) and `BadOutV2` (the step: `Inv3V2` of `M[n]` and the descent); the descent
-to `M[0]` through a `Bad2` prefix is proved from the prefix invariants of the context (`root_chain_pre`). Measured on the grafted standard sets graftA・graftB (desc). -/
+`Inv3V2` and the root strictly drops) and `BadOutV2` (the step for `n ≥ 2`: `Inv3V2` of `M[n]` and the descent); the
+descents to `M[0]`, `M[1]` (also through a `Bad2` prefix) are proved from the prefix chain (`root_chain_of_pre`). Measured on the grafted standard sets graftA・graftB (desc). -/
 theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hTB : TakeBadV2) (hBO : BadOutV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
