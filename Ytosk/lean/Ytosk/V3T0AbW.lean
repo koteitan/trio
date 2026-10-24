@@ -107,53 +107,6 @@ theorem bumpDropMono_of {N : Mat} {k0 : Nat}
   rw [← htt] at hC' hRk ⊢
   exact bumpW_take_le hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC' hRk hdrop (by omega)
 
-/-- **One drop of a standard prefix with `Inv3V2`**: `bumpW` does not increase (drop's `HDropV2`, `drop_all_H`,
-`bumpW_take_le`). -/
-theorem bumpW_drop_std (hD : HDropV2) {K : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hStd : Std K) (hne : K ≠ SRO)
-    (hK : 1 ≤ K.length) (I : Inv3V2 K ρ rk) {τ τ' : Valn} (hτ : Cons K τ) (hτ' : Cons (K.take (K.length - 1)) τ')
-    {i : Nat} (hi : i < K.length - 1) : bumpW (K.take (K.length - 1)) τ' i ≤ bumpW K τ i := by
-  have hS := sInv_std hStd hne
-  have hx : K.length - 1 + 1 = K.length := by omega
-  have hKne : K ≠ [] := fun h => by rw [h] at hK; simp at hK
-  have hDr := hD K ρ rk hStd hne hKne I
-  have hVI : ValInv K ρ := ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩
-  have hcnt := counted_take_last hK hS.r0p hS.z2 hS.sibDec hS.z1c hS.uat
-  have hRk1 : Rk (K.take (K.length - 1)) rk := rk_take (by omega) I.rank hcnt
-  have hC1 := cons_of_rk hRk1
-  have hdrop := drop_all_H hx hS.r0p hS.z2 hS.sibDec hS.z1c hS.uat hS.uab I.cons hVI hDr hC1 hRk1
-  have h := bumpW_take_le hx hS.r0p hS.z2 hS.sibDec hS.z1c hS.uat hS.uab I.cons I.good hC1 hRk1 hdrop hi
-  rw [bumpW_congr (agree_of_cons hτ' hC1 hRk1) i, bumpW_congr (agree_of_cons hτ I.cons I.rank) i]
-  exact h
-
-/-- **`T0BumpDrop` from `HDropV2`** and the invariants of the prefixes `M[n].take k` (`r + L ≤ k`). -/
-theorem t0BumpDrop_of (hD : HDropV2) {M : Mat} {r L : Nat}
-    (hP : ∀ n, 2 ≤ n → ∀ k, r + L ≤ k → k ≤ (TRIO.gexp M r L 0 0 n).length →
-      Std ((TRIO.gexp M r L 0 0 n).take k) ∧ (TRIO.gexp M r L 0 0 n).take k ≠ SRO ∧
-      ∃ ρk rkk, Inv3V2 ((TRIO.gexp M r L 0 0 n).take k) ρk rkk) : T0BumpDrop M r L := by
-  intro n hn
-  refine ⟨?_, ?_⟩
-  · intro k hk hkN τ τ' hC hC' i hi _ _
-    obtain ⟨hStd, hne, ρk, rkk, I⟩ := hP n hn k (by omega) hkN
-    have hlen : ((TRIO.gexp M r L 0 0 n).take k).length = k := by rw [List.length_take]; omega
-    have htt : ((TRIO.gexp M r L 0 0 n).take k).take (((TRIO.gexp M r L 0 0 n).take k).length - 1) =
-        (TRIO.gexp M r L 0 0 n).take (k - 1) := by
-      rw [hlen, List.take_take]; congr 1; omega
-    have h := bumpW_drop_std hD hStd hne (by rw [hlen]; omega) I hC (by rw [htt]; exact hC')
-      (i := i) (by rw [hlen]; omega)
-    rw [htt] at h
-    exact h
-  · intro k hk hkN
-    obtain ⟨_, _, ρk, rkk, I⟩ := hP n hn k hk hkN
-    exact ⟨rkk, I.rank⟩
-
-/-- **`T0AbsW` from the drop side, `HDropV2` and the prefix invariants of `M[n]`.** -/
-theorem t0AbsW_of_drop (hD : HDropV2) {M : Mat} {r L : Nat} {ρ τ : Valn} (hlen : r + L + 1 = M.length)
-    (hτ : Cons (M.take (r + L)) τ) (hA : AbsWN M (M.take (r + L)) r ρ τ)
-    (hP : ∀ n, 2 ≤ n → ∀ k, r + L ≤ k → k ≤ (TRIO.gexp M r L 0 0 n).length →
-      Std ((TRIO.gexp M r L 0 0 n).take k) ∧ (TRIO.gexp M r L 0 0 n).take k ≠ SRO ∧
-      ∃ ρk rkk, Inv3V2 ((TRIO.gexp M r L 0 0 n).take k) ρk rkk) : T0AbsW M r L ρ :=
-  t0AbsW_of hτ hA (t0BumpMono_of hlen (t0BumpDrop_of hD hP))
-
 /-- **The drop-side AbsWN at `t = 0`** from `BumpAbsC` (in `DropResH`): `v(x) = 0` since row 1 of `x` is `0`. -/
 theorem absWN_take_t0 {M : Mat} {x bnd : Nat} {ρ τ : Valn} (hAbsC : BumpAbsC M x ρ) (hC : Cons M ρ)
     (hx : x < M.length) (he1 : entry M 1 x = 0) (hτ : Cons (M.take x) τ) : AbsWN M (M.take x) bnd ρ τ := by
@@ -167,21 +120,5 @@ def T0PrefixInv : Prop :=
     entry M 1 (r + L) = 0 → ∀ n, 2 ≤ n → ∀ k, r + L ≤ k → k ≤ (TRIO.gexp M r L 0 0 n).length →
       Std ((TRIO.gexp M r L 0 0 n).take k) ∧ (TRIO.gexp M r L 0 0 n).take k ≠ SRO ∧
       ∃ ρk rkk, Inv3V2 ((TRIO.gexp M r L 0 0 n).take k) ρk rkk
-
-/-- **`T0AbWRes` from drop's `HDropV2` and the prefix invariants of `M[n]`.** -/
-theorem t0AbWRes_of (hD : HDropV2) (hP : T0PrefixInv) : T0AbWRes := by
-  intro M ρ rk C r L hlen hr he1
-  have hK : 1 ≤ M.length := by omega
-  have hKne : M ≠ [] := fun h => by rw [h] at hK; simp at hK
-  have hDr := hD M ρ rk C.std C.ne hKne C.I
-  have hxl : M.length - 1 = r + L := by omega
-  rw [hxl] at hDr
-  have hS := C.S
-  have hcnt := counted_take_last hK hS.r0p hS.z2 hS.sibDec hS.z1c hS.uat
-  rw [hxl] at hcnt
-  have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) C.I.rank hcnt
-  have hτ := cons_of_rk hRk1
-  exact t0AbsW_of_drop hD hlen hτ (absWN_take_t0 hDr.ab C.I.cons (by omega) he1 hτ)
-    (hP M ρ rk C r L hlen hr he1)
 
 end Ytosk

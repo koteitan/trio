@@ -39,8 +39,13 @@ drop `HDropV2W` (the seed condition `HSeedV2` follows from `◁`, `SeedComps.see
 t2 the closedness of the seed argument `T2SeedClV2B` (qn, and the `k`-free sv・C parts `T2SeedSVBase`・`T2SeedCBase`),
 (the seed standard forms come from `T2SeedClV2B`), the seed residual `T2SeedPResRCV2E` (qr, sv and C; the qn field is proved, 2026-10-23: `qn_take_t1L`・`qn_tqN_lhd`・`qn_drop_v_noupg`・`qn_drop_v_upg`), `T2SeedDomV2Q` (the qn part of `T2SeedDomV2B`; its C part `T2SeedCDom1` is proved, `t2SeedCDom1_holds`, 2026-10-22), `T2FDCopyRes` (the `σ`-invariance of FrameDom at the copy frames) is proved by `FDCopyRoot.t2FDCopyRes_of_path` from `T2VAncUse` and the path `T2VRAK KAG` (no residual since 2026-10-20; the pure `FDsh` is false, `FDCut.not_FDsh`),
 the seed columns (qn from `T2SeedDomV2` and `T2SeedQNBase`; the last child `c₀` from the drop lemma, C: `cl_C`; no residual), the prefix shape of the seed frames (from `T2SVc0`・`T2CFrRes`), the copy levels `T2VRACopyEsc` (level provenance only for components above the child Omega and target state; the former `T2VRACopy` is false); t1 the `σ`-step at the guarded copy frames
-`T2VRAK KAG` (with `T2VAncUse.vdom` it gives the frame condition `KVRA` of `qVRAshK_KVRA`); top `HSibColV2` (adjacent siblings with the same column, not both counted, `SibColU`). -/
-theorem trio_terminates_main_V2_cur (hDW : HDropV2W)
+`T2VRAK KAG` (with `T2VAncUse.vdom` it gives the frame condition `KVRA` of `qVRAshK_KVRA`); top `HSibColV2` (adjacent siblings with the same column, not both counted, `SibColU`). 
+2026-10-24 (the grafted bad shape `Bad2`: `x − 1` has an upgrade target and its parent is a bump child): the drop
+residual `HDropV2W` and the engines' step context assume `¬ Bad2 M`, the frame fields `TPLoW`・`AbsDW` of `Inv3V2`
+and `HFrameV2` are guarded by `¬ Bad2`; the `Bad2` matrices are the new residuals `TakeBadV2` (the one-column drop),
+`BadOutV2` (the step: `Inv3V2` of `M[n]` and the descent) and `Drop0BadV2` (the descent to `M[0]` when a prefix is
+`Bad2`). Measured on the grafted standard sets graftA・graftB (desc). -/
+theorem trio_terminates_main_V2_cur (hDW : HDropV2W) (hTB : TakeBadV2) (hBO : BadOutV2) (hD0 : Drop0BadV2)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -58,7 +63,7 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W)
       TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
         T2SVCase M r L → T2SVc0 M ρ r L := fun M ρ rk C hz h2 r L hlen hr hc =>
     t2SVc0_of (Inv3W.ofV2 C.S C.I) hlen (t2SVc0'_of_drop C.toStepCtxV2
-      (hDropV2_of' hDW M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.I) hlen)
+      (hDropV2_of' hDW M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.nb2 C.I) hlen)
   have hCF : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
         par M 0 (r + L) = some q → q ≠ r → (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2CFrRes M ρ r L q :=
@@ -66,7 +71,7 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W)
       ⟨cl_C C.std C.ne (Inv3W.ofV2 C.S C.I) hlen hr hq hqr hncl
         (by by_contra hne; exact C.good ⟨r, L, q, hlen, hr, hq, hqr, hncl, hne⟩), t2SVc0_of (Inv3W.ofV2 C.S C.I) hlen
         (t2SVc0'_of_drop C.toStepCtxV2
-          (hDropV2_of' hDW M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.I) hlen)⟩
+          (hDropV2_of' hDW M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.nb2 C.I) hlen)⟩
   have hDom : T2SeedDomV2 := t2SeedDomV2_of_B hCl hPRB hDomB
   have hQNG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
@@ -100,7 +105,7 @@ theorem trio_terminates_main_V2_cur (hDW : HDropV2W)
           (t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)))
         (hP M ρ rk C hz h2) (hCF M ρ rk C hz h2)
         (fun r L q hlen hr hq hqr hncl => (hCl M ρ rk C hz h2 r L hlen hr).2.2 q hq hqr hncl))
-  trio_terminates_main_V2_base (hDropV2_of' hDW) hF hLf
+  trio_terminates_main_V2_base (hDropV2_of' hDW) hTB hBO hD0 hF hLf
     (t0AbWRes_of_ext (hDropV2_of' hDW) hBE)
     hCB hBX
     hPR hSib hDom (FDCopyRoot.t2FDCopyRes_of_path hBX (t2FOSeedV2_of hP hDom) hVU hAG) hQNG hSVCG
