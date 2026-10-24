@@ -52,6 +52,13 @@ theorem trigS0_of_trigS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   fun r μ b h1 h0 h2 hro hs i L' c R hi hd hch hcnt hdc _ =>
     h r μ b h1 h0 h2 hro hs i L' c R hi hd hch hcnt hdc
 
+/-- **The grafted bad shape** (2026-10-24): the column `x − 1` (`x` the last column) has an upgrade target and its
+parent is a bump child. On standard matrices of this shape the frame fields `TPLoW`・`AbsDW` and the drop fields
+`BumpWeakSrc`・`UpgAbsXW0`・`BumpAbsC` can fail (grafted sets graftA・graftB, desc); outside it they hold. -/
+def Bad2 (M : Mat) : Prop :=
+  (∃ k, upg M (M.length - 2) = some k) ∧
+    ∃ p g, par M 0 (M.length - 2) = some p ∧ par M 0 p = some g ∧ col M p = bump M g
+
 /-- **The redesigned value part**. -/
 structure Inv3V2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   cons : Cons M ρ
@@ -70,10 +77,10 @@ structure Inv3V2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   tp1 : TP1C M ρ
   tplos : TPLoS M ρ rk
   tp1w : TP1WC M ρ
-  tplow : TPLoW M ρ
+  tplow : ¬ Bad2 M → TPLoW M ρ
   auwl : AbsUWL M ρ
   auw0 : AbsUW0 M ρ rk
-  adw : AbsDW M ρ
+  adw : ¬ Bad2 M → AbsDW M ρ
   trigs : TrigS0 M ρ rk
   tplon : TPLoN M ρ
   adn : AbsDN M ρ
@@ -88,7 +95,7 @@ theorem qr_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L d
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
     (S : SInv M) (I : Inv3V2 M ρ rk)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0)
-    (hq : par M 0 (r + L) = some r)
+    (hq : par M 0 (r + L) = some r) (hNB : ¬ Bad2 M)
     (R : DropRes M (r + L) ρ (drop1 M (r + L) rk))
     (I1 : Inv3V2 (M.take (r + L)) (drop1 M (r + L) rk) rk)
     (hPs : ExpStepT1 (fun N σ => ∃ rkN, Inv3V2 N σ rkN) M r L d0 ρ) :
@@ -99,7 +106,7 @@ theorem qr_final_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L d
   obtain ⟨ρN, _, _, _, _, ⟨rkN, IN⟩, hot, hlt⟩ :=
     qr_final4S hlen hL hd0e S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00
       h1 hx2 hq I.cons I.good I.rank I.vs I.fc I.fo R.argT I.kd I.td R.ab R.ws R.vst R.ua
-      I.tp1w I.tplow I.auwl I.auw0 I.adw I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
+      I.tp1w (I.tplow hNB) I.auwl I.auw0 (I.adw hNB) I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
       (fun N σ => ∃ rkN, Inv3V2 N σ rkN) ⟨rk, I1⟩ hPs n hn
   exact ⟨ρN, rkN, IN, hot, hlt⟩
 

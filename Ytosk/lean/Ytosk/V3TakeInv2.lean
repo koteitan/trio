@@ -19,10 +19,10 @@ structure TakeFrameV2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop w
   ads : AbsDS M ρ rk
   aus : AbsUS M ρ rk
   tplos : TPLoS M ρ rk
-  tplow : TPLoW M ρ
+  tplow : ¬ Bad2 M → TPLoW M ρ
   auwl : AbsUWL M ρ
   auw0 : AbsUW0 M ρ rk
-  adw : AbsDW M ρ
+  adw : ¬ Bad2 M → AbsDW M ρ
   trigs : TrigS0 M ρ rk
   tplon : TPLoN M ρ
   adn : AbsDN M ρ
