@@ -4231,13 +4231,14 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 追記（同じ日）: 残り Drop0BadV2 を証明した（12 → 15 → 14）。TakeBadV2 に「root(M.take) ≤ root(M)」を足し（Bad2 の行列 graftB 80228・ext2 4073・std_a 67 個で例外 0、tmp/claude/takebad.py）、M[0] への下降を、文脈 StepCtxV2 が持つ接頭辞の Inv3V2 から作る鎖 `root_chain_pre`（Bad2 でない段は drop_root_le、Bad2 の段は TakeBadV2）と最後の段の真の減少（t2 は hlast、t0・t1 は drop_n1）で示す。desc_stepV2・t2_dropsC は Drop0BadV2 の代わりに鎖と接頭辞の事実 `prefix_facts_pre` を取る。全体ビルド緑、公理は標準の 3 つ。
 - 追記（同じ日）: BadOutV2 を n ≥ 2 の部分だけに狭めた。TakeBadV2 の根の不等式を真の不等号に（M[1] = M.take(|M| − 1) の下降、Bad2 の行列すべてで例外 0）。Bad2 の M の n = 0・1 の下降は、pre_V2 の接頭辞の不変条件から作る鎖 `root_chain_of_pre` と TakeBadV2 で示す（desc3_V2O）。仮定は 14 個のまま、全体ビルド緑、公理は標準の 3 つ。
 
-### 最上位の残り 14 個の一覧（2026-10-24 時点、`trio_terminates_main_V2_cur`）
+### 最上位の残り 15 個の一覧（2026-10-25 時点、`trio_terminates_main_V2_cur`）
 
 | 残り | 中身 | 状態・手がかり |
 |---|---|---|
-| HDropU | すべての標準形で落とす補題の仮定 DropResHB（HardArg・VSmallNew・BumpWeakSrcB・条件のない UpgAbsXW・BumpAbsCB）∧（¬Bad2 → BumpAbsC） | 11 集合・接ぎ木で例外 0。HDropV2W は定理（hDropV2W_of_U） |
+| HDropU | すべての標準形で落とす補題の仮定 DropResHB（HardArg・VSmallNew・BumpWeakSrcB・条件のない UpgAbsXW・BumpAbsCB）∧（¬Bad2 ∨ x の行 1 = 0 → BumpAbsC） | 11 集合・接ぎ木で例外 0。HDropV2W は定理（hDropV2W_of_U） |
 | RootBadV2T2 | Bad2 の 1 列落としで根の真の減少（x の行 2 ≠ 0 で、x が親の bump 子か上げ先の場合だけ） | Bad2 の集合で例外 0。ほかは root_drop_e2z・root_drop_X で定理 |
-| BadOutV2 | Bad2 の n ≥ 2 の段: M[n] の Inv3V2 と根の下降 | 同上＋エンジンの弱い場合（t0 で o′(r) ⋪ o(r) の 72 件） |
+| BadOutRest | Bad2 の n ≥ 2 の段のうち t = 0 以外（t = 1・t = 2）: M[n] の Inv3V2 と根の下降 | t = 0 の部分は定理（badOutT0_of） |
+| T0BadSeeds | Bad2・t = 0 の M[n] の種 S1（◁ と RClaim つきの節）・S2・S3 | graftB の 108 個（r = g・p・x − 1 が 36 個ずつ）で n = 2, 3 とも成り立つ |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
 | HBumpExt | 接頭辞に沿った bump の単調性 | 1 列の場合は 11 集合で例外 0 |
@@ -4344,3 +4345,33 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 - 追記（同じ日）: (B) S2 の弱い最後の項（P₀(x) = p、tmp の s2dom.py）。g の v について、b = V + ω(1 + 最後以外の bump の項)、b′ = σ.v g（M[n]）、a = ρ.v g とすると、Lhd z b a・Lhd z b′ a は成り立つ（72 件）が、「b′ の成分がどれも b の成分で押さえられる」は偽。押さえられないのは最後の弱い項そのもの: 例 a = ψ_{Ω_ω}(ψ_{Ω_ω}(1))、b = ψ_{Ω_ω}(0)、b′ = ψ_{Ω_ω}(Ω_{ω+1})。b′ は ψ_A(B + c′)（B = 0、c′ = Ω_{ω+1}）の形で、`lhd_weak_childA` の前提（c′ の成分は B + c′ 以下か添字の成分以下）が成り立つ。bump の段でも omega が ψ_s(…) の形になるので、s1_core_weak と同じく lhd_weak_childA に持ち込むのが道（V ≠ 0 の和の場合は v_strong の吸収と合わせる）。
 - 追記（同じ日）: (B) の段を細かく測った（tmp の s2sum.py、72 件）: g の bump の和 S′ = 1 + Pl + O·(n − 1) + O′（M[n]）と S = 1 + Pl + X（M）で、和の段の Lhd z S′ S も omega の段の Lhd も成り立つ。頭の添字は同じ（例 S′ = ψ_{Ω_ω}(0) + Ω_{ω+1}、S = ψ_{Ω_ω}(1)）なので、BRelS の第 2 の選言から brelS_omega・v_strong の既存の道に乗る。足りないのは和の段の吸収の補題「P + O·m ◁ P + X（m ≥ 1、X = ω^{G0+1}、O = ω^{G0}）から、弱い O′ を足した P + O·m + O′ ◁ P + X」（Buchholz の成分の計算）。
 - 進め方の案: t0_core の中心 `t0_dep_lhd` は種の 3 つの事実 hS1・hS2・hS3（M[n] での ◁）を引数に取る。t0_core を「種の事実（と hlB・hG0le の使い道）を引数に取る形」に分ければ、Bad2 の t = 0 の残りを「種の段での ◁」という測れる項の事実に下げ、後で吸収の補題で示せる。
+
+### BadOutV2 の t = 0 を種の事実に下げた（2026-10-25、lead）
+
+t = 0 のエンジン（t0_core・t0_otdS）は落とす補題の残り DropRes の欄（argT・vst・ws・ua・ab）を受け取っていた。Bad2 ではこの形 A が偽になるが、落とす補題の結論（PO・PV）と M.take x の ValInv は HDropU から出る。そこでエンジンを、結論と種の事実から動く形に書き換えた（V3T0Bad）。
+
+- `T0DropF`（V3T0C）: 結論 PO・PV と ValInv の組。旧形 DropRes からは `T0DropF.of_res`、HDropU からは `T0DropF.of_U`（Bad2 でも）。T0CtxC の欄、t0_shape3C・t0_vsmallF_atC の入力をこれにした。
+  - t0_vsmallF_atC の弱い場合は、PV の弱い選択肢（WkVA・WCSP）だけで出る。NoBad3・NBParX は要らなかった。
+  - T0IVResC の前提 Res3C は使っていなかったので外した。
+- bumpTermDec_N_t0 の仮定 hl（g が bump 子のとき o′(r) ◁ o(r)）は、和の大小を出すためだけだった。o′(r) ≤ omid で足りる（項の補題 `g3_lt`、V3T0S3）。
+- hG0le（r の子の和は落とすと増えない）は PO から（`g0le_of_po`）。
+- D の帰納法の t0_dep_otS は、弱い葉の仮定の代わりに g での節の事実（X′・X・◁・RClaimU）を取る。旧の導き方は `t0_S1N_of` に移した。
+- `T0SeedsN M ρ r L n σ`: 種 S1（g での o の ◁）、S1 の節（RClaimU つき）、S2（r が g の bump 子のとき v(g) の ◁）、S3（g が p の bump 子のとき v(p) の ◁）。
+- `t0_coreG`・`t0_otdG`・`t0DF_ofG`・`t0_final_inv3V2G`: 旧の写しで、DropRes の欄の代わりに T0DropF と T0SeedsN を取る。
+- V3T0BadOut:
+  - `BadOutV2` を t = 0（`BadOutT0`）と残り（`BadOutRest`）に分けた（`badOutV2_of`）。
+  - `badOutT0_of`: HDropU・HBumpExt・TakeBadV2・HFrameV2・HLeafV2・新しい残り `T0BadSeeds` から BadOutT0。
+  - T0AbsW は `t0AbsW_of_U`（HDropU の BumpAbsC と HBumpExt）から出す。そのため HDropU の第 2 の欄を「¬Bad2 ∨ x の行 1 = 0 → BumpAbsC」に広げた。graftB の Bad2・t = 0 の 108 個で BumpAbsC の例外は 0。
+- 最上位の仮定は BadOutV2 の代わりに BadOutRest と T0BadSeeds（14 → 15 個）。全体ビルド緑 1077 jobs、公理は標準の 3 つ。
+
+T0BadSeeds の測定（t0seed.py・t0cls.py・t0dr.py、graftBb2Sf の t = 0 の 108 個、n = 2, 3, 4）。r = P₀(x) は Bad2 の g・p・x − 1 のどれか。エンジンの記法で g′ = P₀(r)。
+- r = g（r は弱く変わる、r の行 2 = 1）: r は N でも g′ で数える子。S1 は ◁。g′ での引数 X′・X は低い部分がない型（B0）で、X′ ◁ X。v(r) > v(g′) なので、旧の項の補題 weak_seed（v(r) ≤ v(g′) を仮定）は使えない。
+- r = p（r の落とし方は ◁）: S2 は ◁（和の段で O′ が弱い最後の項、前の節）。
+- r = x − 1（弱い、r の行 2 = 0）: S1・S3 は ◁。hlB（g′ が bump 子なら o′(r) ◁ o(r)）は偽なので、旧の S3 の導き方は使えない。g′ での引数は A 型（高い部分が同じ）。
+- 証明の見通し:
+  - r = x − 1 の S1・S1 の節は旧の補題（po_lhd_or_weak・counted_first0・index_le_of_cntx）で出る。
+  - r = x − 1 の S2 は前件が偽（x − 1 は上げを持つので行 2 = 0、bump 子は行 2 = 1）。
+  - r = p の S1・S1 の節は前件が偽（bump 子は数えない）。
+  - 残りは、弱い最後の項を吸収する項の補題: r = g の節（B0 型で X′ ◁ X）、r = x − 1 の S3、r = p の S2。
+  - 測定で前件が立たない組み合わせ（r = p の S3、r = g の S2・S3）は、一般の形で扱いが要る。
+
