@@ -25,6 +25,7 @@ import Ytosk.V3SibCanonTop
 import Ytosk.V3FDCopyRoot
 import Ytosk.V3T0BadCnt
 import Ytosk.V3T1Bad
+import Ytosk.V3RootAny
 
 namespace Ytosk
 
@@ -59,7 +60,7 @@ follows from the `M`-level sum `omid + o′(r) ◁ o(r)` (`t0_S3W`, V3T0BadS3), 
 V3T0BadS2), and that from a component fact of `ω^{G0′}` (`T0BadSeedsH6`, `lhd_sum_dom`); the counted fact of the
 first copy root reduces to `r − 1` not upgrading to `r` (`T0BadSeedsH7`, `counted_first0G`, V3T0BadCnt); the weak absorption from
 `HDropU`, whose `BumpAbsC` now also covers `t = 0`, and `HBumpExt`); the rest is the residual `BadOutRest`. -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hRB : RootBadV2T2) (hBR : BadOutT2B) (hT0H : T0BadSeedsH7)
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hBR : BadOutT2B) (hT0H : T0BadSeedsH7)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -71,7 +72,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hRB : RootBadV2T2) (hBR : Ba
     (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : WellFounded Step' :=
   have hDW : HDropV2W := hDropV2W_of_U hDU
-  have hDB : DropBadV2B := dropBadB_of_U hDU (rootBad_of_T2 hDU hRB)
+  have hDB : DropBadV2B := dropBadB_of_U hDU (rootBad_of_T2 hDU (rootBadV2T2_holds hDU))
   have hDomB : T2SeedDomV2B := t2SeedDomV2B_of_Q hDomQ
   have hPRB : T2SeedPResRCV2B := t2SeedPResRCV2B_of_C (t2SeedPResRCV2C_of_D (t2SeedPResRCV2D_of_E hPRE))
   have hSV0 : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
