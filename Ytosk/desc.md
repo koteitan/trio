@@ -4530,3 +4530,15 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
   - 展開 M[n]（n = 0〜3）での根の真の減少（baddesc.py）: b2grow1 の 6517 個すべて。
   - t = 2 の probe（tmp/claude/qS.sh）: trigs0・t2vra（T2VRAPre・T2VRASeed・QVRAsh・T2VRACopy）・t2vrak の KA・KG・seedrr3・preshape は b2grow1・shapegrow で例外 0。t2vrak の参考の欄 VD（VDomF をすべての写しの枠で）は b2grow1（すべて Bad2）の 1840 件で偽、shapegrow で 0。VDomF は T2VAncUse（hVU、文脈 StepCtxT2 は ¬Bad2）の中でだけ仮定されるので、生きている仮定は偽にならない。ただし t = 2 の文脈を Bad2 に広げる（BadOutT2B を t = 2 のエンジンで示す）と、この形のままでは偽になる。
   - 二段目の展開（b2grow1 の 500 個の標本を展開、b2grow.py に B2LIM、集合 b2grow2、新しい Bad2 10081 個）: 弱めた形・ua（条件なし）・PO/PV（67 万件）・T0BadSeedsH7 の 3 欄・根の真の減少（n = 0〜3）はすべて例外 0。旧形 BWSB は 3173 個で偽（tmp/claude/qT.sh）。
+
+### 1 列落としの根の真の減少を x の形によらず示し、RootBadV2T2 を定理にした（2026-10-25、lead）
+
+- `root_drop_X` は DepX の形の補題（OShape・dv_shape、x は bump 子でも上がり先でもない hXu・hXb）を使っていた。DepX に起点（x が bump 子・上がり先）を足すと、土台の nodep_v_qX（v(P₀(x)) は D に入らない）や dep_exitX が崩れる。
+- そこで `path_upG` と同じ帰納法で、x から根への登り道の各列で「o′ < o」を直接示した（V3RootPath の `path_strict`）。登り道の子はその列の最後の子なので、D のすべての列の形は要らない。
+  - 数える辺: `o_strict_frame`（登り道の子が最後の数える子）。
+  - bump の辺: `v_strict_bumpT`（`v_strict_bump` に、j のあとの bump でない子を許した版。末尾の 0 は和を変えない `sumN_append_zs`）。x が bump 子なら既存の `v_strict_bump_x`。
+  - 上げの迂回（数えない・bump でない子 p、p − 1 → p の上げ）: v(p) の狭義の減少から v(p − 1) = v(p) で p − 1 へ移り、親から p − 1 への道で登り直す。x が上がり先なら `v_strict_supx`（v(x − 1) = v(x) = V + ω、v′(x − 1) = V + 1）。迂回の底では、登り道の子のあとに数えない・bump でない子が残るので、その仮定（htr）を運ぶ。
+  - `o_lt_of_v_lt`: v′ < v から o′ < o（ψ の添字の比較）。
+- `root_drop_any`（V3RootAny）: 落とす補題の結論だけから、任意の標準形で 1 列落としの根の真の減少。`rootBadV2T2_holds : HDropU → RootBadV2T2`。
+- 最上位の仮定から RootBadV2T2 を外した（15 → 14）。全体ビルド緑 1085 jobs、公理は標準の 3 つ。
+- 測定（scratchpad の pathkinds.py）: b2grow1 の RootBadV2T2 の場面（x が bump 子、587 個）で、登り道には上げの迂回がよく現れる（例 b c c c c b U c b U c c）。
