@@ -4547,3 +4547,14 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
 
 - b2grow1・b2grow2・shapegrow で例外 0: T2VAncUse（usefld.py、vdomf 15135+31181+2594・辺 3758+6262+598 件。VDomF の破れは数える子のない枠だけで、T2VAncUse の範囲外）、種の dom（seeddom2）・qr・qn（seedqr）・sv・C（seedsvc・svcbase、場面なし）、HCanonV2 の測定 sibcolall、KA・KG（probe_t2vrak）、T2VRA（probe_t2vra）。
 - したがって BadOutT2B は、t = 2 のエンジンの文脈 StepCtxT2 から ¬Bad2 と DropRes（Bad2 で偽の旧形）を外し、落とす補題の結論（hdrop）と M.take x の Inv3V2 で動かせば、t = 2 の仮定のもとで出る見込み。書き換えの量: StepCtxT2 を型に持つ生きている定理 16、Res3W を持つ 95（多くは drop_all に欄を渡すだけ）、特別な使い道は QNDropV（強い BumpAbsC・NoBad3）・V3T2AbW・V3T2Top・t2_dropsC の n ≤ 1（root_drop_any で置き換えられる）。
+
+### BadOutT2B への手順 1〜2: t = 2 の束を落とす補題の結論にした（2026-10-25、lead）
+
+- `DropResHB`・`HDropU` の定義を V3DropResHB（新）へ、`Bad2` の定義を V3InvW へ移した（t = 2 の束から見えるように）。
+- StepCtxV2 に欄 `RB : DropResHB`（ctx_V2 で HDropU から）を足し、HDropU を hInvV2_all・desc3_V2O・trio_terminates_main_V2_base に通した。
+- `Res3W`（t = 2 のエンジンの束）を、落とす補題の結論 `hdrop`、¬Bad2 なら旧形 `old : DropRes`、`ab : XParNB → BumpAbsC` に替えた。
+  - 文脈からは `StepCtxV2.toW`（hdrop は RB から `drop_all_hardB`）、旧い Res3 からは `Res3W.ofDrop`。
+  - 15 ファイルの drop_all（DropRes の欄を渡すだけ）を `R.hdrop` に、Good3 は `good3_take` に置き換えた。
+  - 旧形を本当に読むのは 3 か所だけ: `qn_drop_v_upg`（強い BumpAbsC・ua・NoBad3、¬Bad2 を受け取る）、`t2_absWN_take`（欄 ab）、旧い `t2_drops_ge` の n ≤ 1（DropRes を受け取る。n ≥ 2 だけの `t2_drops_ge2` を分けた）。
+- 全体ビルド緑 1086 jobs、公理は標準の 3 つ。仮定は 14 個のまま。
+- 次: StepCtxT2 を ¬Bad2・旧形なしの文脈にする。残る旧形の使い道のうち、t2_absWN_take（AbsWN）は Bad2 の第 2 の選言（BumpAbsC が破れる）で要検討、qn_drop_v_upg は qn で x − 1 が上がる場合の種。
