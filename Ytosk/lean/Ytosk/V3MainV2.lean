@@ -562,10 +562,11 @@ theorem pre_V2 (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) {M : Mat} {ρ : V
   exact ⟨Ij, fun hNBj => res3AW_of_V2 hD (std_take hM j (by omega)) (ne_SRO_of_rk Ij.rank)
     (take_ne_nil_of hj (by omega)) hNBj Ij⟩
 
-theorem ctx_V2 (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) {M : Mat} {ρ : Valn}
+theorem ctx_V2 (hU : HDropU) (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) {M : Mat} {ρ : Valn}
     {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hE : M ≠ []) (hNB : ¬ Bad2 M) (I : Inv3V2 M ρ rk) :
     StepCtxV2 M ρ rk :=
-  ⟨hM, hS, sInv_std hM hS, I, res3AW_of_V2 hD hM hS hE hNB I, hNB, pre_V2 hD hT hTB hM hS I⟩
+  ⟨hM, hS, sInv_std hM hS, I, res3AW_of_V2 hD hM hS hE hNB I, hNB, pre_V2 hD hT hTB hM hS I,
+    (hU M ρ rk hM hS hE I).1⟩
 
 /-- **`RwClosed` passes to the last drop** `M.take (|M| − 1)` with `drop1` (the drop lemma from `Res3AW.drop`). -/
 theorem rw_last_V2 (hD : HDropV2) {M : Mat} {ρ : Valn}
@@ -662,7 +663,7 @@ theorem expT1Out_of_step (h1 : ExpT1V2) : ExpT1OutV2 := by
 /-! ## 帰納法 -/
 
 /-- **Every nonempty standard matrix other than SRO has a valuation with `Inv3V2`.** -/
-theorem hInvV2_all (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) (hBO : BadOutV2)
+theorem hInvV2_all (hU : HDropU) (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) (hBO : BadOutV2)
     (h0 : ExpT0OutV2) (h1 : ExpT1OutV2) (h2 : ExpT2V2) (hCB : T2CBadOut) :
     ∀ M, Std M → M ≠ SRO → M ≠ [] → ∃ ρ rk, Inv3V2 M ρ rk := by
   intro M hM
@@ -692,7 +693,7 @@ theorem hInvV2_all (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) (hBO : BadOut
     swap
     · by_cases hB : Bad2 M
       · exact (hBO M ρ rk hM hMS hME hB I n hn).1
-      have C := ctx_V2 hD hT hTB hM hMS hME hB I
+      have C := ctx_V2 hU hD hT hTB hM hMS hME hB I
       have hsrow : TRIO.srow M (M.length - 1) = 0 ∨ TRIO.srow M (M.length - 1) = 1 ∨
           TRIO.srow M (M.length - 1) = 2 := by
         unfold TRIO.srow; split_ifs <;> simp
@@ -828,10 +829,10 @@ theorem hT2_V2 (h2 : ExpT2V2) (hR2 : R2V2) (hCB : T2CBadOut) (hTB : TakeBadV2) {
 
 /-- **Desc3 from the residuals**, with `t = 0` and `t = 1` in the conclusion forms `ExpT0OutV2`・`ExpT1OutV2`
 (2026-10-17: no strong absorption `HAbSV2`; the `t = 0` descent comes from t0's engine). -/
-theorem desc3_V2O (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) (hBO : BadOutV2)
+theorem desc3_V2O (hU : HDropU) (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) (hBO : BadOutV2)
     (h0 : ExpT0OutV2) (h1 : ExpT1OutV2) (h2 : ExpT2V2) (hR2 : R2V2) (hCB : T2CBadOut) : Desc3 := by
   intro M n hM hS hE
-  obtain ⟨ρ, rk, I⟩ := hInvV2_all hD hT hTB hBO h0 h1 h2 hCB M hM hS hE
+  obtain ⟨ρ, rk, I⟩ := hInvV2_all hU hD hT hTB hBO h0 h1 h2 hCB M hM hS hE
   by_cases hB : Bad2 M
   · have hl2 : 2 ≤ M.length := by
       obtain ⟨⟨k, hu⟩, _⟩ := hB
@@ -848,7 +849,7 @@ theorem desc3_V2O (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) (hBO : BadOutV
       rw [expand_one]; exact ⟨_, rk, IT.cons, IT.rank, rfl⟩
     · obtain ⟨t', hv, _, hlt⟩ := (hBO M ρ rk hM hS hE hB I (n + 2) (by omega)).2
       exact ⟨root M ρ, t', ⟨ρ, rk, I.cons, I.rank, rfl⟩, hv, root_ot I.good, hlt⟩
-  have C := ctx_V2 hD hT hTB hM hS hE hB I
+  have C := ctx_V2 hU hD hT hTB hM hS hE hB I
   have R := res3D_of_V2 C
   obtain ⟨t', hv, _, hlt⟩ := desc_stepV2 hE (Inv3V2.toC C.S I) R (root_chain_pre hTB C) (prefix_facts_pre C)
     (hT0_V2 h0 C) (hT1_V2 h1 C) (hT2_V2 h2 hR2 hCB hTB C R) n

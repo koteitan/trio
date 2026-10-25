@@ -26,6 +26,7 @@ Inv3V2・Res3AW。Res3AW は Res3A から偽の強い吸収 abS を外したも�
 import Ytosk.V3TakeInv2
 import Ytosk.V3DropRH
 import Ytosk.V3T2Top
+import Ytosk.V3DropResHB
 
 namespace Ytosk
 
@@ -102,6 +103,8 @@ structure StepCtxV2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop whe
   nb2 : ¬ Bad2 M
   pre : ∀ j, 1 ≤ j → j < M.length →
     Inv3V2 (M.take j) (drop1 M j rk) rk ∧ (¬ Bad2 (M.take j) → Res3AW (M.take j) (drop1 M j rk) rk)
+  /-- The drop hypotheses in the `Bad2` form (`HDropU`, 2026-10-25), for the `t = 2` bundles. -/
+  RB : DropResHB M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
 
 /-- **The bad shape of the C case at `t = 2`** (2026-10-17): `q = P_0(x) ≠ r`, `q` is not the last counted child of `r`,
 and `x − 1` upgrades (to an ancestor of `r`). The seed residual `T2SeedCResR.un` is false here (ext2: 6 standard matrices);
