@@ -32,22 +32,109 @@ theorem AbsSR.upgX {M : Mat} {ρ : Valn} (h : AbsSR M ρ) {r L : Nat} (hlen : r 
   have e : M.length - 1 = r + L := by omega
   exact h.upg r (by rw [e]; exact h1) (by rw [e]; exact hq) (by omega) i k W (by omega) hu hv hW
 
-/-- **`t = 1`, `q = r`, all `n ≥ 2`**, with the seed conditions from the drop lemma. -/
-theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+/-- **The seed of `t = 1`, `q = r` is below `o(r)`** (`dep_strict0`), from the conclusion of the drop lemma. -/
+theorem qr_seed_lt {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hdrop : ∀ i, i < r + L → PO ρ (drop1 M (r + L) rkM) i ∧ PV M ρ (drop1 M (r + L) rkM) i) :
+    (drop1 M (r + L) rkM).o r < ρ.o r := by
+  have hx : r + L + 1 = M.length := hlen
+  have hr : r < r + L := par_lt M 1 (r + L) r h1
+  have hdep := qr_dep hx hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2 hq
+  have hxv : ¬ DepX M (r + L) false (r + L) := by
+    intro h
+    cases h with
+    | vpar _ hp hdm =>
+      rw [h1] at hp; cases hp
+      exact hdep.2.1 hdm
+    | vupg _ _ hu _ => have := upg_succ_lt hu; omega
+    | vbump _ h2 _ _ _ _ => exact h2 hx2
+  have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
+  have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
+  exact dep_strict0 hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop hx2 hq hxv true r hdep.1 hr
+
+/-- **The seed condition of `t = 1`, `q = r`** (2026-10-25, from `qr_final3`): `seed ◁ o(r)`, or a weak leaf
+`Ω_{w′}` with `w′ < v(r)` and `SmallSelf w′`. From the conclusion of the drop lemma and the absorption at `x − 1`
+(`hUAs`, strong or `SmallSelf (V + 1)`); the third case of `CntX` is excluded by `NoBad3` or handled as the second
+when `r = x − 1`. -/
+theorem qr_seedC_of {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    {ρ : Valn} {rkM : Bool → Nat → Nat} (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hdrop : ∀ i, i < r + L → PO ρ (drop1 M (r + L) rkM) i ∧ PV M ρ (drop1 M (r + L) rkM) i)
+    (hr : r < r + L) {b : T} (hro : ρ.o r = psi (ρ.v r) (app b (psi (succ (ρ.v r)) z z)) z)
+    (hlt : (drop1 M (r + L) rkM).o r < ρ.o r)
+    (hUAs : ∀ k W, r + 1 = r + L → upg M r = some k → ρ.v k = add (vOpt ρ (par M 1 r)) W → W ≠ z →
+      (∀ s ∈ summands (vOpt ρ (par M 1 r)), s < W → Lhd z s W) ∨ SmallSelf (add (vOpt ρ (par M 1 r)) one))
+    (h3 : NoBad3 M ρ ∨ r + 2 = M.length) :
+    Lhd z ((drop1 M (r + L) rkM).o r) (ρ.o r) ∨
+      ∃ w', (drop1 M (r + L) rkM).o r = psi w' z z ∧ w' < ρ.v r ∧ SmallSelf w' := by
+  have hrM : r < M.length := by omega
+  have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
+  have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
+  have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
+  obtain ⟨hPO, hsing⟩ := (hdrop r hr).1
+  have hold : (LhdE ((drop1 M (r + L) rkM).o r) (ρ.o r) ∨
+      (WkOA ((drop1 M (r + L) rkM).o r) (ρ.o r) ∧ ∃ w, ρ.o r = psi w z z)) →
+      Lhd z ((drop1 M (r + L) rkM).o r) (ρ.o r) := by
+    intro h
+    rcases h with hl | ⟨_, w, hw⟩
+    · rcases hl with he | hl
+      · exact absurd (he ▸ hlt) (lt_irrefl' _)
+      · exact hl
+    · rw [hro] at hw
+      exact absurd (T.psi.inj hw).2.1 (fun he => absurd (app_eq_z he).2 (by simp))
+  rcases hPO with hl | ⟨hW, hw | hnl⟩
+  · exact Or.inl (hold (Or.inl hl))
+  · exact Or.inl (hold (Or.inr ⟨hW, hw⟩))
+  have common : ∀ k W, r + 2 = M.length → upg M r = some k → ρ.v k = add (vOpt ρ (par M 1 r)) W → W ≠ z →
+      ¬ (∀ s ∈ summands (vOpt ρ (par M 1 r)), s < W → Lhd z s W) →
+      WkVA ((drop1 M (r + L) rkM).v r) (ρ.v r) →
+      Lhd z ((drop1 M (r + L) rkM).o r) (ρ.o r) ∨
+        ∃ w', (drop1 M (r + L) rkM).o r = psi w' z z ∧ w' < ρ.v r ∧ SmallSelf w' := by
+    intro k W hi2 hu hvk hWz hbad hWV
+    rcases hUAs k W (by omega) hu hvk hWz with h | hSm
+    · exact absurd h hbad
+    have h12 := upg_e12 hu
+    have h2r : entry M 2 r = 0 := by have := hZ2 r; omega
+    have hvr := v_last_take (x := r + L) (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1
+      (r := r) (by omega) h12.1 h2r
+    have hVot : isOT (add (vOpt ρ (par M 1 r)) one) = true := isOT_add (vOpt_ot hG hrM) isOT_one
+    rw [sf_ot hVot] at hvr
+    obtain ⟨w', w, X, hs, _, _⟩ := hW
+    obtain ⟨σ0, hs0⟩ := o_psi_sub hC1 hrT
+    rw [hs] at hs0
+    simp only [psi.injEq] at hs0
+    have hw' : w' = (drop1 M (r + L) rkM).v r := by rw [hs0.1, sf_ot (hdrop r hr).2.2]
+    rw [hw'] at hs
+    refine Or.inr ⟨_, hs, hWV.1, ?_⟩
+    rw [hvr]; exact hSm
+  rcases (hdrop r hr).2.1 with hl | ⟨hWV, _, hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩ | ⟨_, hub, hbp⟩⟩
+  · exact absurd hl hnl
+  · exact Or.inl (hold (Or.inr ⟨hW, _, o_of_no_counted hC hrM (hG.ot_v r hrM) hn⟩))
+  · exact common k W hi2 hu hvk hWz hbad hWV
+  · rcases h3 with h3 | h3
+    · exact absurd ⟨hub, hbp⟩ h3
+    obtain ⟨k, W, _, hu, hvk, hWz, hbad⟩ := hub
+    have e : M.length - 2 = r := by omega
+    rw [e] at hu hvk hbad
+    exact common k W h3 hu hvk hWz hbad hWV
+
+/-- **`t = 1`, `q = r`, all `n ≥ 2`, from the conclusion of the drop lemma and the seed condition** (2026-10-25). -/
+theorem qr_final3G {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
     (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
     (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r)
     {ρ : Valn} {rkM : Bool → Nat → Nat}
     (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
-    -- the drop lemma (as for `t1_main_final`)
-    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
-    (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
-      ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
-      ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
-    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
-    (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
-    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsXW M (r + L) ρ)
+    -- the conclusion of the drop lemma and the seed condition
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
+    (hdrop : ∀ i, i < r + L → PO ρ (drop1 M (r + L) rkM) i ∧ PV M ρ (drop1 M (r + L) rkM) i)
+    (hseedC : Lhd z ((drop1 M (r + L) rkM).o r) (ρ.o r) ∨
+      ∃ w', (drop1 M (r + L) rkM).o r = psi w' z z ∧ w' < ρ.v r ∧ SmallSelf w')
     -- value invariants
     (hTP : TP1WC M ρ) (hTPL : TPLoWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r)) (hAU' : AbsUWL M ρ) (hAD' : AbsDWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r))
     (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
@@ -106,46 +193,9 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
   have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
   have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
   have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
-  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hVSt hF hFO hArgT
-    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hTD hAbs hWS)
-    hUA
   have hlt : seed < ρ.o r := dep_strict0 hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop hx2 hq hxv
     true r hdep.1 hr
-  obtain ⟨hPO, hsing⟩ := (hdrop r hr).1
-  -- the seed: `◁ o(r)`, or (only at `r = x − 1`, which lost its upgrade) `Ω_{w′}` with `SmallSelf w′`
-  have hold : (LhdE seed (ρ.o r) ∨ (WkOA seed (ρ.o r) ∧ ∃ w, ρ.o r = psi w z z)) → Lhd z seed (ρ.o r) := by
-    intro h
-    rcases h with hl | ⟨_, w, hw⟩
-    · rcases hl with he | hl
-      · exact absurd (he ▸ hlt) (lt_irrefl' _)
-      · exact hl
-    · rw [hro] at hw
-      exact absurd (T.psi.inj hw).2.1 (fun he => absurd (app_eq_z he).2 (by simp))
-  have hseedC : Lhd z seed (ρ.o r) ∨ ∃ w', seed = psi w' z z ∧ w' < μ ∧ SmallSelf w' := by
-    rcases hPO with hl | ⟨hW, hw | hnl⟩
-    · exact Or.inl (hold (Or.inl hl))
-    · exact Or.inl (hold (Or.inr ⟨hW, hw⟩))
-    rcases (hdrop r hr).2.1 with hl | ⟨hWV, _, hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩ | ⟨_, hu3, hb3⟩⟩
-    · exact absurd hl hnl
-    · exact Or.inl (hold (Or.inr ⟨hW, _, o_of_no_counted hC hrM (hG.ot_v r hrM) hn⟩))
-    rotate_left
-    · exact absurd ⟨hu3, hb3⟩ hWS.2.2
-    rcases hUA r k W (by omega) hu hvk hWz with h | ⟨_, hSm, _⟩
-    · exact absurd h hbad
-    have h12 := upg_e12 hu
-    have h2r : entry M 2 r = 0 := by have := hZ2 r; omega
-    have hvr := v_last_take (x := r + L) (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1
-      (r := r) (by omega) h12.1 h2r
-    have hVot : isOT (add (vOpt ρ (par M 1 r)) one) = true := isOT_add (vOpt_ot hG hrM) isOT_one
-    rw [sf_ot hVot] at hvr
-    obtain ⟨w', w, X, hs, _, _⟩ := hW
-    obtain ⟨σ0, hs0⟩ := o_psi_sub hC1 hrT
-    rw [hs] at hs0
-    simp only [psi.injEq] at hs0
-    have hw' : w' = (drop1 M (r + L) rkM).v r := by rw [hs0.1, sf_ot (hdrop r hr).2.2]
-    rw [hw'] at hs
-    refine Or.inr ⟨_, hs, hWV.1, ?_⟩
-    rw [hvr]; exact hSm
+  have hsing := (hdrop r hr).1.2
   -- the form of the seed
   obtain ⟨σ1, hs1⟩ := o_psi_sub hC1 hrT
   set s1 := sf ((drop1 M (r + L) rkM).v r) with hs1def
@@ -233,5 +283,88 @@ theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0
   exact qr_final2 hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hKD hTD
     hTP hTPL hAU' hAD' hsM hpM hYB hS hsp0 hADs0 hAUs0 hLs
     (good3_take (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop) Pn hP1 hPs
+
+
+/-- **The conclusion of the drop lemma and the seed condition of `t = 1`, `q = r`** from the old drop fields. -/
+theorem qr_dropSeed {M : Mat} {r L : Nat} (hlen : r + L + 1 = M.length)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+    (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
+      ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
+      ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
+    (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsXW M (r + L) ρ) :
+    (∀ i, i < r + L → PO ρ (drop1 M (r + L) rkM) i ∧ PV M ρ (drop1 M (r + L) rkM) i) ∧
+      (Lhd z ((drop1 M (r + L) rkM).o r) (ρ.o r) ∨
+        ∃ w', (drop1 M (r + L) rkM).o r = psi w' z z ∧ w' < ρ.v r ∧ SmallSelf w') := by
+  have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
+  have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
+  have hdrop := drop_all (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hVS hVSt hF hFO hArgT
+    (bump_drop (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hKD hTD hAbs hWS)
+    hUA
+  obtain ⟨b0, hro, _, _⟩ := qr_o_r hlen hR0 hSD h1 hx2 hq hC hG hRM
+  have hlt := qr_seed_lt hlen hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2 hq hC hG hRM hdrop
+  exact ⟨hdrop, qr_seedC_of hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hRM hdrop (par_lt M 1 (r + L) r h1) hro hlt
+    (fun k W hi hu hvk hWz => (hUA r k W hi hu hvk hWz).imp id (fun h => h.2.1)) (Or.inl hWS.2.2)⟩
+
+/-- **`t = 1`, `q = r`, all `n ≥ 2`**, with the seed conditions from the drop lemma (`qr_final3G`). -/
+theorem qr_final3 {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    -- the drop lemma (as for `t1_main_final`)
+    (hVS : VSmallF M ρ) (hF : FrameClosed M ρ) (hFO : FrameOT M ρ)
+    (hArgT : ∀ i, i < r + L → ∀ (Lc : List Nat) (cs : Nat), CL (M.take (r + L)) i = Lc ++ [cs] →
+      ∀ s y, (drop1 M (r + L) rkM).o cs = psi s y z → ¬ lt s (ρ.v i) = true →
+      ∀ g ∈ comps (ρ.v i) y, g ≤ step (ρ.v i) (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) s y z)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ) (hAbs : BumpAbsC M (r + L) ρ)
+    (hWS : BumpWeakSrc M (r + L) ρ (drop1 M (r + L) rkM))
+    (hVSt : VSmallNew M (r + L) ρ (drop1 M (r + L) rkM)) (hUA : UpgAbsXW M (r + L) ρ)
+    -- value invariants
+    (hTP : TP1WC M ρ) (hTPL : TPLoWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r)) (hAU' : AbsUWL M ρ) (hAD' : AbsDWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r))
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    -- `q = r`
+    (hTP1 : TP1C M ρ)
+    (hYBs : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z →
+      ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+      Counted M i c → DepX M (r + L) true c →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L)))
+        (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c = 0 → ∀ s,
+      ρ.o c = psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z →
+      lt (preState M ρ i L') (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) = true →
+      lt (psi (ρ.v i) z z) (psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
+      lt (preState M ρ i L') (app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r)) = true)
+    (hADs0 : ∀ i, i < r + L →
+      DepX M (r + L) false i → entry M 2 i ≠ 0 →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+        q < fsD (bumpW M ρ i) ((drop1 M (r + L) rkM).o r))
+    (hAUs0 : ∀ i k, i < r + L → DepX M (r + L) false i → upg M i = some k →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
+      OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) →
+        q < fsD (last (ρ.v k)) ((drop1 M (r + L) rkM).o r))
+    (hLs0 : ∀ c, c < r + L → DepX M (r + L) true c →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c = 0 →
+      ∀ s y, ρ.o c = psi s y z → y ≠ app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z) →
+      (split y (psi (succ s) z z)).2 = z →
+      (split (fsD y ((drop1 M (r + L) rkM).o r)) (psi (succ s) z z)).2 = z)
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1 Pn M r L d0 ρ) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+
+  obtain ⟨hdrop, hseedC⟩ := qr_dropSeed hlen hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2 hq hC hG hRM hVS hF hFO hArgT
+    hKD hTD hAbs hWS hVSt hUA
+  exact qr_final3G hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hKD hTD
+    hdrop hseedC hTP hTPL hAU' hAD' hsM hpM hTP1 hYBs hADs0 hAUs0 hLs0 Pn hP1 hPs
 
 end Ytosk

@@ -293,10 +293,13 @@ theorem expStep_frameMapT1 :
 end
 
 /-- **The base**: `M.take x` with the drop valuation. -/
-theorem frameMapT1_take {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {r L : Nat} (S : SInv M)
+theorem frameMapT1_takeG {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {r L : Nat} (S : SInv M)
     (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take (r + L)) ρ') (hRk' : Rk (M.take (r + L)) rk)
     (hlen : r + L + 1 = M.length) (hx2 : entry M 2 (r + L) = 0)
-    (hdrop : ∀ i, i < r + L → PO ρ ρ' i ∧ PV M ρ ρ' i) (hUA : UpgAbsXW M (r + L) ρ) (h3 : NoBad3 M ρ) :
+    (hdrop : ∀ i, i < r + L → PO ρ ρ' i ∧ PV M ρ ρ' i)
+    (hUAs : ∀ k W, r + 1 = r + L → upg M r = some k → ρ.v k = add (vOpt ρ (par M 1 r)) W → W ≠ z →
+      (∀ s ∈ summands (vOpt ρ (par M 1 r)), s < W → Lhd z s W) ∨ SmallSelf (add (vOpt ρ (par M 1 r)) one))
+    (h3 : NoBad3 M ρ ∨ r + 2 = M.length) :
     FrameMapT1 M ρ r L (M.take (r + L)) ρ' ∧ VrDomQ M ρ r L (M.take (r + L)) ρ' := by
   constructor
   · intro k c Lc R s y hcl hsy ht
@@ -318,18 +321,11 @@ theorem frameMapT1_take {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {r
         rcases List.mem_append.mp hd with hd | hd
         · exact Or.inr ⟨d, hd, hgd⟩
         · simp [Gc, comps] at hd; subst hd; exact Or.inl (le_trans hgd (z_le _))
-    · rcases hnc with hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩ | ⟨_, hu3, hb3⟩
-      rotate_left 2
-      · exact absurd ⟨hu3, hb3⟩ h3
-      · exfalso
-        have hxch : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hq⟩
-        apply hn (r + L) hxch
-        refine ⟨fun h => ?_, fun h => ?_⟩
-        · have : entry M 2 (r + L) = (bump M r).2.2 := by rw [← h]; rfl
-          rw [hx2] at this; simp [bump] at this
-        · rw [not_isUpg_e2z hx2] at h; cases h.1
-      · -- `r = x − 1` lost its upgrade: `v′(r) = v(P_1 r) + 1`, whose components are below `Ω_{v′(r)}`
-        rcases hUA r k W (by omega) hu hvk hWz with h | ⟨_, hSm, _⟩
+    · have common : ∀ k W, r + 2 = M.length → upg M r = some k → ρ.v k = add (vOpt ρ (par M 1 r)) W → W ≠ z →
+          ¬ (∀ s ∈ summands (vOpt ρ (par M 1 r)), s < W → Lhd z s W) →
+          g ≤ psi (ρ'.v r) z z ∨ ∃ d ∈ comps u (ρ.v r), g ≤ d := by
+        intro k W hi2 hu hvk hWz hbad
+        rcases hUAs k W (by omega) hu hvk hWz with h | hSm
         · exact absurd h hbad
         · have h12 := upg_e12 hu
           have h2r : entry M 2 r = 0 := by have := S.z2 r; omega
@@ -339,6 +335,32 @@ theorem frameMapT1_take {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {r
             isOT_add (vOpt_ot hG (by omega)) isOT_one
           rw [hvr, sf_ot hVot] at hg ⊢
           exact Or.inl (le_of_lt (hSm g (comps_mono (z_le u) hg)))
+      rcases hnc with hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩ | ⟨_, hub, hbp⟩
+      rotate_left 2
+      · rcases h3 with h3 | h3
+        · exact absurd ⟨hub, hbp⟩ h3
+        obtain ⟨k, W, _, hu, hvk, hWz, hbad⟩ := hub
+        have e : M.length - 2 = r := by omega
+        rw [e] at hu hvk hbad
+        exact common k W h3 hu hvk hWz hbad
+      · exfalso
+        have hxch : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hq⟩
+        apply hn (r + L) hxch
+        refine ⟨fun h => ?_, fun h => ?_⟩
+        · have : entry M 2 (r + L) = (bump M r).2.2 := by rw [← h]; rfl
+          rw [hx2] at this; simp [bump] at this
+        · rw [not_isUpg_e2z hx2] at h; cases h.1
+      · -- `r = x − 1` lost its upgrade: `v′(r) = v(P_1 r) + 1`, whose components are below `Ω_{v′(r)}`
+        exact common k W hi2 hu hvk hWz hbad
+
+/-- **The base**: `M.take x` with the drop valuation (`frameMapT1_takeG`). -/
+theorem frameMapT1_take {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {r L : Nat} (S : SInv M)
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hC' : Cons (M.take (r + L)) ρ') (hRk' : Rk (M.take (r + L)) rk)
+    (hlen : r + L + 1 = M.length) (hx2 : entry M 2 (r + L) = 0)
+    (hdrop : ∀ i, i < r + L → PO ρ ρ' i ∧ PV M ρ ρ' i) (hUA : UpgAbsXW M (r + L) ρ) (h3 : NoBad3 M ρ) :
+    FrameMapT1 M ρ r L (M.take (r + L)) ρ' ∧ VrDomQ M ρ r L (M.take (r + L)) ρ' :=
+  frameMapT1_takeG S hC hG hC' hRk' hlen hx2 hdrop
+    (fun k W hi hu hvk hWz => (hUA r k W hi hu hvk hWz).imp id (fun h => h.2.1)) (Or.inl h3)
 
 /-- **`ExpT1OutV2` from the frame and leaf residuals and `S1`** (VSmallRAll is proved, `expStep_frameMapT1`). -/
 theorem expT1Out_V2 (hF : HFrameV2) (hLf : HLeafV2) (hS1 : S1Std) : ExpT1OutV2 := by
