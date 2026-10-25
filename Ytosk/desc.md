@@ -4601,3 +4601,4 @@ T2QNDomBad（ω_T の成分の支配）の材料（qnterms.py、b2grow1・b2grow
   - (F2) ω_T の 0 でない成分は V の成分以下。
   - V + ω^S には Ω_1 以上の成分がない u がある（F2a は偽）ので、Ω_1 未満の成分を一律に押さえる道はない。
 - T2CBad の形（cbad.py、ext2 の 74.9 万個の標本で 3 個、d3s・std_b では 0）: r = (2,1,0)、q = (3,2,1) は r の子で上げ先（数えない）、q の子は bump 子 (4,2,1) と x = (4,2,1)、x − 1 = (5,1,0) は前の bump 子の子で祖先 (1,1,1) へ上げる。Bad2 と同じ位置で、吸収は成り立つ形。
+- 同じ日に T2AbsNBad も狭めた（V3T2BelowR の `t2_absWN_bad`）: 列 i で落とし側の吸収（M.take x の bump 項に吸収されない V の加数が ◁ bumpW_M(i)）が成り立てば、T2BumpMono（HBumpExt）で M[n] 側に移す。残り `T2AbsNBad` は落とし側が破れる列だけ（graftBb2St の 3 個の行列、qr の形で x は x − 1 の子）。そこでは M[n] の前件が空（abswn.py・absex.py）。
