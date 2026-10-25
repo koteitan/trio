@@ -4542,3 +4542,8 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
 - `root_drop_any`（V3RootAny）: 落とす補題の結論だけから、任意の標準形で 1 列落としの根の真の減少。`rootBadV2T2_holds : HDropU → RootBadV2T2`。
 - 最上位の仮定から RootBadV2T2 を外した（15 → 14）。全体ビルド緑 1085 jobs、公理は標準の 3 つ。
 - 測定（scratchpad の pathkinds.py）: b2grow1 の RootBadV2T2 の場面（x が bump 子、587 個）で、登り道には上げの迂回がよく現れる（例 b c c c c b U c b U c c）。
+
+### t = 2 の仮定は Bad2 でも成り立つ（2026-10-25、lead）
+
+- b2grow1・b2grow2・shapegrow で例外 0: T2VAncUse（usefld.py、vdomf 15135+31181+2594・辺 3758+6262+598 件。VDomF の破れは数える子のない枠だけで、T2VAncUse の範囲外）、種の dom（seeddom2）・qr・qn（seedqr）・sv・C（seedsvc・svcbase、場面なし）、HCanonV2 の測定 sibcolall、KA・KG（probe_t2vrak）、T2VRA（probe_t2vra）。
+- したがって BadOutT2B は、t = 2 のエンジンの文脈 StepCtxT2 から ¬Bad2 と DropRes（Bad2 で偽の旧形）を外し、落とす補題の結論（hdrop）と M.take x の Inv3V2 で動かせば、t = 2 の仮定のもとで出る見込み。書き換えの量: StepCtxT2 を型に持つ生きている定理 16、Res3W を持つ 95（多くは drop_all に欄を渡すだけ）、特別な使い道は QNDropV（強い BumpAbsC・NoBad3）・V3T2AbW・V3T2Top・t2_dropsC の n ≤ 1（root_drop_any で置き換えられる）。
