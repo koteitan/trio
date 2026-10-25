@@ -40,7 +40,7 @@
   - 変わる所（V3T2D を読んだ結果）: nodep_v_qX（v(q) は D に入らない、q = P₀(x)）は snb で偽になる。使う側 uncnt_of_depvX の d = x の場合は「x が q で数えられるなら x は bump 子でも上がり先でもない」で局所の仮定に直せる（上がり先は topped なので数えない）。dep_exitX の vupg の場合 i + 1 = x（いまは hXu で除く）は、出口 c′ = x を許す形に結論を広げる必要があり、nodep_sibX・p1_depX がそれを受ける。ochild・vbump の形（OShape・dv_shape）はその上に乗る。b2grow1 では Bad2・t = 2 の 1879 個のうち 587 個が「x が親の bump 子」。
 - T0BadSeedsH7 の (1)・(2) は、上げの吸収の成分の性質（祖先への上げで例外 0）と v′(P₁(x − 1)) = v(P₁(x − 1)) から出せる見込み。(3) は UpgAbsX の破れを使う値の議論が要る（構造だけでは出ない、desc.md）。
 - BadOutT2B（t = 2）: t = 2 の仮定は Bad2 でも成り立つ（desc「t = 2 の仮定は Bad2 でも成り立つ」）。手順の案:
-  1. Res3W の欄を DropRes から DropResHB（形 B、HDropU の欄）に替える。Res3W を使い drop_all を呼ぶ 15 ファイルで、drop_all → drop_all_hardB、argT → hard、bump_drop → bump_dropB に置き換える（作業はブランチで）。
+  1. DropResHB の定義（いま V3GlobV2）を Res3W（V3InvW）より前のファイルへ移す（HardArg・VSmallNew・BumpWeakSrcB・BumpAbsCB に依る。import の循環を先に確かめる）。Res3W の欄を DropRes から DropResHB（形 B、HDropU の欄）に替える。Res3W を使い drop_all を呼ぶ 15 ファイルで、drop_all → drop_all_hardB、argT → hard、bump_drop → bump_dropB に置き換える（作業はブランチで）。
   2. StepCtxV2 に欄 RB : DropResHB（ctx_V2 で HDropU から）を足し、⟨C.R.drop⟩ を ⟨C.RB⟩ に。
   3. 特別な使い道（QNDropV の強い BumpAbsC と NoBad3、V3T2AbW、V3T2Top、t2_dropsC の n ≤ 1）を、¬Bad2 なら旧の欄、Bad2 なら種の事実か root_drop_any に分ける。
   4. t = 2 の仮定の文脈を「¬Bad2 も Bad2 も満たす文脈」に替え（中身は Bad2 で測ってある）、最上位の Bad2・t = 2 の枝をエンジンで示して BadOutT2B を消す。
