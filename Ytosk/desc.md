@@ -4558,3 +4558,17 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
   - 旧形を本当に読むのは 3 か所だけ: `qn_drop_v_upg`（強い BumpAbsC・ua・NoBad3、¬Bad2 を受け取る）、`t2_absWN_take`（欄 ab）、旧い `t2_drops_ge` の n ≤ 1（DropRes を受け取る。n ≥ 2 だけの `t2_drops_ge2` を分けた）。
 - 全体ビルド緑 1086 jobs、公理は標準の 3 つ。仮定は 14 個のまま。
 - 次: StepCtxT2 を ¬Bad2・旧形なしの文脈にする。残る旧形の使い道のうち、t2_absWN_take（AbsWN）は Bad2 の第 2 の選言（BumpAbsC が破れる）で要検討、qn_drop_v_upg は qn で x − 1 が上がる場合の種。
+
+### BadOutT2B を証明した。残りは Bad2 用の 2 つの値の事実（2026-10-25、lead）
+
+- 文脈を分けた（V3ResV2）。
+  - `StepCtxB`: std・ne・S・I・pre・RB（形 B の落とす補題の仮定）と、¬Bad2 のときだけの旧形 `old : ¬Bad2 → Res3AW`。Bad2 でも成り立つ（`ctxB_V2`）。
+  - `StepCtxV2 := StepCtxB + nb2`（t = 0・t = 1 のエンジン用、`C.R := C.old C.nb2`）。
+  - `StepCtxT2 := StepCtxB + good`（t = 2 のエンジン用、¬Bad2 を持たない）。`T2CBadOut` の文脈も StepCtxB にした。
+- `Res3W.ab` を ¬Bad2 のときだけにした。t = 2 のエンジンが旧形から取っていた事実は 2 つだけで、どちらも Bad2 では途中の形が偽:
+  - x より前の弱い吸収: 落とし側 `AbsWN M (M.take x)` は Bad2 で偽（graftBb2St の 3 個）。展開側 `AbsWN M M[n]` は成り立つ（b2grow1・b2grow2・graftBb2St、n = 2, 3、例外 0）。単調性 bumpW M ≤ bumpW M[n] は偽（x の項 1 が消える）。→ 残り `T2AbsNBad`（V3T2BelowR）。
+  - qn の種: x − 1 が上げる場合の `v_T(q) ⊴ v_M(q)`（`qn_drop_v_upg`）は Bad2 で偽（b2grow1 で 587 個中 319 個、b2grow2 で 821 個中 485 個）。v_T(q) ≤ v_M(q) は成り立つが ◁ でない。種の主張に要るのは反復 t_k = shf(V, V + ω^S, ·)^k(v_T(q)) の t_k ◁ v_M(q)（k ≥ 1）で、k = 1, 2, 3 は例外 0（4119 件）。k ≥ 2 の反復は t_1 以上で、成分は t_1 の成分と同じなので、t_1 ◁ v_M(q) だけで足りる（`qn_tqN_lhd1`）。→ 残り `T2QN1Bad`（V3QNDropV）。¬Bad2 では旧来どおり `v_T(q) ⊴ v_M(q)` から出す（`qn1_of_lhdE`）。
+  - 2 つを `T2BadRes := T2AbsNBad ∧ T2QN1Bad` にまとめた。
+- `badOutT2B_of`（V3TopT2B）: Bad2 の M に StepCtxB を作り、T2CBad なら T2CBadOut、そうでなければ t = 2 のエンジン（ExpT2V2・R2V2）で M[n] の Inv3V2 と Res3T2 を出し、n ≥ 2 の下降は `t2_drops_ge2`。最上位の仮定 BadOutT2B を T2BadRes に替えた（仮定は 14 個のまま）。
+- 文脈を広げたので、StepCtxT2 を持つ残り（hVU・hCl・hPRE・hDomQ・hVCp・hAG）は Bad2 でも主張する形になった。どれも b2grow1・b2grow2 で測ってある（上の「t = 2 の仮定は Bad2 でも成り立つ」）。Bad2 の t = 2 の形は qr と qn だけ（b2grow1: qr 1292・qn 587、b2grow2: qr 2310・qn 821、graftBb2St: qr 2673・qn 2711）。sv・C は現れず、T2CBad ∧ Bad2 の場面もない。
+- 全体ビルド緑 1086 jobs、公理は標準の 3 つ（3e447cfb）。測定は scratchpad の abswn.py・qnupg.py・qnseed.py・b2shape.py。
