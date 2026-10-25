@@ -40,6 +40,14 @@
   - 変わる所（V3T2D を読んだ結果）: nodep_v_qX（v(q) は D に入らない、q = P₀(x)）は snb で偽になる。使う側 uncnt_of_depvX の d = x の場合は「x が q で数えられるなら x は bump 子でも上がり先でもない」で局所の仮定に直せる（上がり先は topped なので数えない）。dep_exitX の vupg の場合 i + 1 = x（いまは hXu で除く）は、出口 c′ = x を許す形に結論を広げる必要があり、nodep_sibX・p1_depX がそれを受ける。ochild・vbump の形（OShape・dv_shape）はその上に乗る。b2grow1 では Bad2・t = 2 の 1879 個のうち 587 個が「x が親の bump 子」。
 - T0BadSeedsH7 の (1)・(2) は、上げの吸収の成分の性質（祖先への上げで例外 0）と v′(P₁(x − 1)) = v(P₁(x − 1)) から出せる見込み。(3) は UpgAbsX の破れを使う値の議論が要る（構造だけでは出ない、desc.md）。
 - （済、3e447cfb）BadOutT2B は `badOutT2B_of` で証明。文脈 StepCtxB（¬Bad2 なし）で t = 2 のエンジンを動かす。残りは Bad2 用の `T2BadRes`（AbsWN M M[n]・qn の t_1 ◁ v_M(q)）。次はこの 2 つを値の議論で示す。
+- T2BadRes の次の手（2026-10-25 の測定、scratchpad の qnstar.py・abswn.py）:
+  - T2QN1Bad（t_1 ◁ v_M(q)）: c ∈ (t_1, v_M(q)] の成分は V + ω^S の成分を押さえる（add_omega_succ_lhd）。なので
+    (★d′) ∀ u, comps u ω_T の各成分が comps u (V + ω^S) ∪ {0} のどれか以下（ω_T = v_T(q) の最後の項、= ω^{S_T}）
+    から t_1 ◁ v_M(q) が出る。c = v_M(q) の場合の (★d) は 4119 件すべてで成り立つ。S だけでの支配は偽（268 件、V = v(r) の成分が要る）。
+    - Bad2 の qn では g = q、p は q の前の bump 子、x − 1 は p の部分木の最後の列で、M では祖先 k へ上げ、M.take x では上げを失う（v_T(x − 1) = V′ + 1、V′ = v(P₁(x − 1))、P₁(x − 1) < r）。
+    - ω_T の成分は bump 子 j の子 k の o_T(k) の成分。PO の第 1 の選言（o_T(k) ⊴ o_M(k)）なら o_M(k) の成分で押さえられる。弱い k（x − 1）は o_T(x − 1) = ψ_{V′+1}(0) なので comps V′ が要る。これは T0BadSeedsH7 (1) と同じ核（上げ先が祖先のとき、W が吸収する V′ の項の成分は W と V′ の残りの成分で押さえられる、std 標本で例外 0）。
+  - T2AbsNBad（AbsWN M M[n]）: 形 B の BumpAbsCB（HDropU の欄、Bad2 でも成り立つ）の第 1 の選言と T2BumpMono（HBumpExt）から、弱い道をとらない列では出る（ガードは absWN_of_absC と同じに外せる）。弱い道の列（WkVA ∧ WCSP ∧ CntX）の扱いが残る。M[n] で前件が立つのは graftBb2St の 3 件だけ（i = q、x は q の bump 子の葉）。
+  - T2CBadOut: 欄 un（x − 1 が上げない）は C の形のエンジン全体（C_frame・qP_C など）で使われる。T2CBad（ext2 の 6 個）は C の形で x − 1 が上げるので、別のエンジンが要る。Bad2 ∧ T2CBad は測った集合に現れない。
 - （以下は当時の案）- BadOutT2B（t = 2）: t = 2 の仮定は Bad2 でも成り立つ（desc「t = 2 の仮定は Bad2 でも成り立つ」）。手順の案:
   1. DropResHB の定義（いま V3GlobV2）を Res3W（V3InvW）より前のファイルへ移す（HardArg・VSmallNew・BumpWeakSrcB・BumpAbsCB に依る。import の循環を先に確かめる）。Res3W の欄を DropRes から DropResHB（形 B、HDropU の欄）に替える。Res3W を使い drop_all を呼ぶ 15 ファイルで、drop_all → drop_all_hardB、argT → hard、bump_drop → bump_dropB に置き換える（作業はブランチで）。
   2. StepCtxV2 に欄 RB : DropResHB（ctx_V2 で HDropU から）を足し、⟨C.R.drop⟩ を ⟨C.RB⟩ に。
