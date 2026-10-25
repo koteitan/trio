@@ -4610,3 +4610,14 @@ T2QNDomBad（ω_T の成分の支配）の材料（qnterms.py、b2grow1・b2grow
 - T2CBad の例では、M.take x のすべての列で v_T ⊴ v_M・o_T ⊴ o_M（弱い変化なし）。q は M でも M.take x でも数えない（列 x − 4 が q へ上げ、q は topped）。ただし x − 1 は M[n] でも上げるので、M[n] と M.take x の値が x − 1 でずれる。C の形のエンジン（C_frame の値の一致）は欄 un をここで使うので、組み立てを変える必要がある。
 - cbadext で t = 2 の残りの今の形: trigs0・T2VRAPre・T2VRASeed・QVRAsh・KA・KG・seedrr3 の clPath・preshape・T2VAncUse（usefld）は例外 0。T2VRACopyEsc（probe_t2vra の写しに足した、scratchpad の probe_t2vra_esc.py）は 93 件で例外 0。旧い形の T2VRACopy（5366 件）と clAll（C 104・qn 66 件）は偽（どちらも前から偽と分かっている形）。
 - Bad2 の集合（b2grow1・b2grow2・graftBb2St）では T2VRACopyEsc の前件は 0 件。hVCp は文脈を広げたあとも空でなく偽でもない。
+
+### 一般の残り HUAC で、上げを失う場合を 3 つ証明した（2026-10-26、lead）
+
+- **HUAC**（V3HUAC）: 列 n が祖先 k へ上げる（k < n）とき、∀ u、comps u v(P₁ n) の各成分は comps u v(n) ∪ {0} のどれか以下。上げの定義（upg_spec）から P₁(n) = P₁(k)、k は行 2 = 1 の列、v(n) = v(k) = v(P₁ k) + bumpW(k) なので、上げ先の bump 型の列での吸収の成分版。測定（vcomp.py）: Cprime・d3s・deep2・deep3・expP・expPt2・ext1・ext2・t2ext・t0ext・graftA・graftB・b2grow1・b2grow2・shapegrow・cbadext・ext3s・e3exp の 18 集合、約 800 万件で例外 0。上げ先が n + 1 では偽（計 81 件）。
+- Bad2 で x − 1 が祖先へ上げると、M.take x では上げを失い v′(x − 1) = V′ + 1、o′(x − 1) = ψ_{V′+1}(0)（`lost_upg_take`）。弱い場合はどれもこの形だった（t0h7.py・qnshape.py）:
+  - T0BadSeedsH7 (1) で ◁ が破れるのは r = x − 1 で祖先へ上げる場合だけ（285 件）。
+  - (2) で ⊴ が破れるのは r の M.take x での子が [x − 1] だけの場合（721 件）。
+  - T2QNDomBad の弱い場合（805 件）は、q の x より前の子が [p]、p の子が [x − 1]、x − 1 は祖先へ上げる。ω^{ψ_a(0)} = ψ_a(0)（`omega_psi_zz`）なので ω_T = ψ_{V′+1}(0)、s′ の最後の項は ψ_{v(x−1)}(0)。
+- 証明: `t0BadSeedsH7_of : HUAC → T0BadSeedsH8 → T0BadSeedsH7`（V3HUAC）、`t2QNDomBad_of : HUAC → T2QNDomBad2 → T2QNDomBad`（V3QNDomS、`qnDom_simple`）。成分の補題 `comps_add_sub`・`comps_psi_zz`・`dom_add_one`・`o_nochild` も足した。
+- 残り: T0BadSeedsH8（(1)・(2) は上の形の外だけ、そこでは強い選言が成り立つ。(3) はそのまま）、T2QNDomBad2（単純な形の外だけ、測った集合では弱い場合に現れない）、HUAC。仮定の数は 14 → 15（H7 が H8 と一般の HUAC に、T2QNDomBad が T2QNDomBad2 に）。
+- 全体ビルド緑 1088 jobs、公理は標準の 3 つ（e864c2fb）。
