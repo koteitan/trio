@@ -26,6 +26,8 @@ import Ytosk.V3FDCopyRoot
 import Ytosk.V3T0BadCnt
 import Ytosk.V3T1Bad
 import Ytosk.V3RootAny
+import Ytosk.V3HUAC
+import Ytosk.V3QNDomS
 
 namespace Ytosk
 
@@ -41,7 +43,7 @@ theorem hSibHard_of_col (h : HSibColV2) : HSibHardV2 := fun N σ rk hN hS hC hR 
 /-- **The `Bad2` residuals of the `t = 2` engines** (2026-10-25): the weak absorption `AbsWN M M[n]` and the first qn
 subscript (as the component bound `T2QNDomBad`), the two facts that the engines take from the old drop residual
 outside `Bad2`. -/
-def T2BadRes : Prop := T2AbsNBad ∧ T2QNDomBad
+def T2BadRes : Prop := T2AbsNBad ∧ T2QNDomBad2
 
 /-- **`BadOutT2B` from the `t = 2` engines** (2026-10-25): the context `StepCtxB` holds on `Bad2` too, the engines run
 on it (`ExpT2V2`, `R2V2`, and `T2CBadOut` at the bad C shape), and the descent for `n ≥ 2` is `t2_drops_ge2`. -/
@@ -85,8 +87,12 @@ first copy root reduces to `r − 1` not upgrading to `r` (`T0BadSeedsH7`, `coun
 2026-10-25: `BadOutRest` is proved: `t = 1` by `badOutT1`, `t = 2` by `badOutT2B_of` (the step context `StepCtxB` drops
 `¬ Bad2`; the `t = 2` engines run on it). The two facts the `t = 2` engines took from the old drop residual are the
 `Bad2` residual `T2BadRes`: `AbsWN M M[n]` (`T2AbsNBad`; the drop side `AbsWN M (M.take x)` is false on `Bad2`) and the
-first qn subscript `t_1 ◁ v_M(q)` (from the component bound `T2QNDomBad`; the drop `v_T(q) ⊴ v_M(q)` is false on `Bad2`). -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hT0H : T0BadSeedsH7)
+first qn subscript `t_1 ◁ v_M(q)` (from the component bound `T2QNDomBad`; the drop `v_T(q) ⊴ v_M(q)` is false on `Bad2`).
+2026-10-26: the general residual `HUAC` (V3HUAC: the components of `v(P₁ n)` are bounded by those of `v(n)` when `n`
+upgrades to an ancestor) proves the lost-upgrade cases: `T0BadSeedsH7` from `T0BadSeedsH8` (`t0BadSeedsH7_of`) and
+`T2QNDomBad` from `T2QNDomBad2` (`t2QNDomBad_of`, V3QNDomS), the narrowed residuals asserting only the shapes that do
+not occur weakly on the sets. -/
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUAC : HUAC) (hT0H8 : T0BadSeedsH8)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -100,7 +106,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hT0H : T0B
   have hDW : HDropV2W := hDropV2W_of_U hDU
   have hDB : DropBadV2B := dropBadB_of_U hDU (rootBad_of_T2 hDU (rootBadV2T2_holds hDU))
   have hDomB : T2SeedDomV2B := t2SeedDomV2B_of_Q hDomQ
-  have hPRB : T2SeedPResRCV2B := t2SeedPResRCV2B_of_C (t2SeedPResRCV2C_of_D (t2SeedPResRCV2D_of_E hTB2.2 hPRE))
+  have hPRB : T2SeedPResRCV2B := t2SeedPResRCV2B_of_C (t2SeedPResRCV2C_of_D (t2SeedPResRCV2D_of_E (t2QNDomBad_of hUAC hTB2.2) hPRE))
   have hSV0 : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
         T2SVCase M r L → T2SVc0 M ρ r L := fun M ρ rk C hz h2 r L hlen hr hc =>
@@ -157,7 +163,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hT0H : T0B
   have hBR : BadOutT2B := badOutT2B_of hDU (hDropV2_of' hDW) (hTake_of_glob hF hLf)
     (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hE2 (r2V2_of hBX) hCB
   trio_terminates_main_V2_base hDU (hDropV2_of' hDW) (takeBad_of_drop (dropBad_of_B hDB) hF hLf)
-    (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf (t0BadSeeds_of hDU (t0BadSeedsH_of hDU (t0BadSeedsH2_of hDU hBE (t0BadSeedsH3_of hDU (t0BadSeedsH4_of hDU hBE (t0BadSeedsH5_of hDU (t0BadSeedsH6_of hT0H)))))))) (badOutRest_of (badOutT12_of hDU (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf hBR))) hF hLf
+    (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf (t0BadSeeds_of hDU (t0BadSeedsH_of hDU (t0BadSeedsH2_of hDU hBE (t0BadSeedsH3_of hDU (t0BadSeedsH4_of hDU hBE (t0BadSeedsH5_of hDU (t0BadSeedsH6_of (t0BadSeedsH7_of hUAC hT0H8))))))))) (badOutRest_of (badOutT12_of hDU (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf hBR))) hF hLf
     (t0AbWRes_of_ext (hDropV2_of' hDW) hBE)
     hCB hBX
     hPRV hDom hFD hQNG hSVCG
