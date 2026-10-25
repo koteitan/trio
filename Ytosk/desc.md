@@ -4238,7 +4238,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | HDropU | すべての標準形で落とす補題の仮定 DropResHB（HardArg・VSmallNew・BumpWeakSrcB・条件のない UpgAbsXW・BumpAbsCB）∧（¬Bad2 ∨ x の行 1 = 0 → BumpAbsC） | 11 集合・接ぎ木で例外 0。HDropV2W は定理（hDropV2W_of_U） |
 | RootBadV2T2 | Bad2 の 1 列落としで根の真の減少（x の行 2 ≠ 0 で、x が親の bump 子か上げ先の場合だけ） | Bad2 の集合で例外 0。ほかは root_drop_e2z・root_drop_X で定理 |
 | BadOutRest | Bad2 の n ≥ 2 の段のうち t = 0 以外（t = 1・t = 2）: M[n] の Inv3V2 と根の下降 | t = 0 の部分は定理（badOutT0_of） |
-| T0BadSeedsH6 | Bad2・t = 0: (1) S3 の前件で、r の落とし方が ◁ か、弱い葉 ψ_{w′}(0) の w′ の成分がすべて 0 か v(r) の成分以下、(2) S2 の前件で、ω^{G0′} ⊴ ω^{G0} か、ω^{G0′} の成分がすべて 0・b′・b′ の成分・s の成分のどれか以下（ω^{G0} = ψ_s(b′)）、(3) r ≠ x − 1 なら r は M[n] でも g で数える子 | graftB の 108 個と新しい接ぎ木 135 個で成り立つ。種 S1・S2・S3 はこれらから定理 |
+| T0BadSeedsH7 | Bad2・t = 0: (1) S3 の前件で、r の落とし方が ◁ か、弱い葉 ψ_{w′}(0) の w′ の成分がすべて 0 か v(r) の成分以下、(2) S2 の前件で、ω^{G0′} ⊴ ω^{G0} か、ω^{G0′} の成分がすべて 0・b′・b′ の成分・s の成分のどれか以下（ω^{G0} = ψ_s(b′)）、(3) r ≠ x − 1 で r が g で数えられ M.take x で topped なら、列 r − 1 は r へ上げない | graftB の 108 個と新しい接ぎ木 135 個で成り立つ。種 S1・S2・S3 と「r は M[n] でも数える」はこれらから定理 |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
 | HBumpExt | 接頭辞に沿った bump の単調性 | 1 列の場合は 11 集合で例外 0 |
@@ -4469,4 +4469,20 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
   - 一般の性質「上げ先が祖先（k < n）の列 n で、W = last(v(k)) が V = v(P₁ n) の下の加数を吸収するとき、その加数の成分は W と V の残りの成分で押さえられる」は、d3s・graftBb2St・std_b と ext2 の各 15 万個の標本で例外 0。
   - 上げ先が n + 1 のときは偽の例がある（d3s で 5 件、V = ψ₀(1)、W = ψ₁(0)）。
   - Bad2 の r = x − 1 では v′(P₁(x − 1)) = v(P₁(x − 1))（81 個すべて）。この 2 つから (1) の弱い場合が出る見込み（w′ = V + 1、v(r) = add V W）。
+
+### 「r は M[n] でも数える」を 1 点に下げ、t = 1 の Bad2 を調べた（2026-10-25、lead）
+
+- V3T0BadCnt の `counted_first0G`: 最初の写しの根 r は、M で g で数えられれば M[n] でも数える。ただし「r が M.take x で topped で、列 r − 1 が r へ上げる」場合を除く。
+  - 証明は counted_last0 と同じ議論: N で r を上げ先にできる列を、M の前の部分（upg_pre0）、写しの中（upg_copy0 の shk、upg_copy_last0）、最後（upg_none_last0）に分ける。
+  - bad part の中からの上げは upg_r_not_topped で消える。上げ先が自分になることはない（upg_spec）。
+- 残り `T0BadSeedsH7`（表）。`t0BadSeedsH6_of`。全体ビルド緑 1082 jobs、公理は標準の 3 つ。仮定は 15 個のまま。
+- Bad2 の内訳（graftBb2Sf、b2t.py）: t = 0 が 108 個、t = 1 が 288 個、t = 2 が 72 個。
+- t = 1 の Bad2（t1pos.py）: r = P₁(x) は次のどちらか。
+  - Bad2 の g より上の祖先で、r での落とし方は ◁（252 個）。q = P₀(x) は g・p・x − 1 のどれか。
+  - r = x − 1 で、r での落とし方は弱い（36 個）。
+- t = 1 のエンジン（qr_final4S・t1_main_vlocS、その下の qr_final3・QRN・MainT1D・MainT1F・VLocT1）が DropRes の欄を読むのは主に drop_all・drop_pres の中。
+  - ほかに qr_final3 の種の形 hseedC がある。CntX の第 3 の選言を NoBad3 で除き、r = x − 1 の弱い葉の SmallSelf を ua の弱い選択肢から取っている。
+  - ua の弱い選択肢の NBParX は使っていない。CntX の第 3 の選言でも r = x − 1 なら UpgBad の上げを ua に渡せる。
+  - したがって t = 1 も、t = 0 と同じく「落とす補題の結論＋条件のない ua（DropResHB.ua）」から動かせる見込み。
+  - MainT1D の hUA.toX_xm1（NBPar から強い吸収を出す）の使い道は要確認。
 

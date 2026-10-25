@@ -24,6 +24,9 @@
 ### 済んだ手順（2026-10-25、続き）
 5. BadOutV2 の t = 0: エンジンを落とす補題の結論（T0DropF）と種の事実（T0SeedsN）から動かした（V3T0Bad）。BadOutV2 = BadOutT0（定理）＋ BadOutRest（残り）。BadOutT0 の残りは T0BadSeeds だけ。詳しくは desc.md「BadOutV2 の t = 0 を種の事実に下げた」。
 
+### 済んだ手順（2026-10-25、さらに）
+6. T0BadSeeds を M の段の 3 つの事実（T0BadSeedsH7）に下げた: S1 の節（weak_seed_hi）、S2・S3（和の段の ◁ を成分の支配から、t0_S2GW・t0_S3W）、「r は M[n] でも数える」（counted_first0G）。
+
 ### 次
-- T0BadSeeds の証明: 易しい場合（r = x − 1 の S1・S2、r = p の S1）から。難しいのは弱い最後の項の吸収（r = g の節、r = x − 1 の S3、r = p の S2）。
-- BadOutRest（t = 1・t = 2）: エンジンが ¬Bad2 に頼る箇所を同じ手順で調べる。t = 2 は文脈 StepCtxT2 の残りがすべて ¬Bad2 を前提にしているので重い。
+- T0BadSeedsH7 の (1)・(2) は、上げの吸収の成分の性質（祖先への上げで例外 0）と v′(P₁(x − 1)) = v(P₁(x − 1)) から出せる見込み。(3) は接ぎ木の構造の事実。
+- BadOutRest の t = 1: エンジンを落とす補題の結論と条件のない ua（DropResHB.ua）から動かす（desc.md「t = 1 の Bad2 を調べた」）。t = 2 は文脈 StepCtxT2 の残りがすべて ¬Bad2 を前提にしているので重い。
