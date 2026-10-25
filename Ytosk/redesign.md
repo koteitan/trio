@@ -48,6 +48,12 @@
     - ω_T の成分は bump 子 j の子 k の o_T(k) の成分。PO の第 1 の選言（o_T(k) ⊴ o_M(k)）なら o_M(k) の成分で押さえられる。弱い k（x − 1）は o_T(x − 1) = ψ_{V′+1}(0) なので comps V′ が要る。これは T0BadSeedsH7 (1) と同じ核（上げ先が祖先のとき、W が吸収する V′ の項の成分は W と V′ の残りの成分で押さえられる、std 標本で例外 0）。
   - T2AbsNBad（AbsWN M M[n]）: 形 B の BumpAbsCB（HDropU の欄、Bad2 でも成り立つ）の第 1 の選言と T2BumpMono（HBumpExt）から、弱い道をとらない列では出る（ガードは absWN_of_absC と同じに外せる）。弱い道の列（WkVA ∧ WCSP ∧ CntX）の扱いが残る。M[n] で前件が立つのは graftBb2St の 3 件だけ（i = q、x は q の bump 子の葉）。
   - T2CBadOut: 欄 un（x − 1 が上げない）は C の形のエンジン全体（C_frame・qP_C など）で使われる。T2CBad（ext2 の 6 個）は C の形で x − 1 が上げるので、別のエンジンが要る。Bad2 ∧ T2CBad は測った集合に現れない。
+- T2CBadOut を消す案（2026-10-26 の調べ）:
+  - C の形のエンジンは欄 un（x − 1 が上げない）を 12 ファイル・約 60 か所で使う。核は V3T2SeedC の `qP_C`（q は M.take x で数えない）、`C_frame`（M[n] の r・q の形）、V3T2CVq の `c_vqP_of_un`（v_T(q) = qnS）。他はこれらに un を渡すだけ。
+  - `C_frame` は agree_by_rank で、M[n] と M.take x の値が o(r) より順位の低いすべての列（o(q) を除く）で一致することを使う。T2CBad では x − 1 が M[n] で上げ（M と同じ、upg_NQ は x − 1 → x の上げがないことだけを要る）、M.take x では上げないので、x − 1 から q までの道で一致が崩れる。
+  - 直し方の見込み: q の部分木（q < i < x）では M[n] の値を M の値と比べ（上げ・数える子・子が M と同じ）、q の部分木の外では今までどおり M.take x と比べる。v_N(q) = qnS は un なしでも成り立つ見込み（M[n] の x は bump 子でないので項が消え、p の項は M と同じ）。`qP_C` は「x − 1 が q へ上げない」で足りる見込み。
+  - 残り hPRE の欄 C の `un` は T2CBad で偽なので、文脈を T2CBad に広げる前に外す必要がある。
+  - T2CBad の族: cbadext（3756 個）に 10 個。
 - （以下は当時の案）- BadOutT2B（t = 2）: t = 2 の仮定は Bad2 でも成り立つ（desc「t = 2 の仮定は Bad2 でも成り立つ」）。手順の案:
   1. DropResHB の定義（いま V3GlobV2）を Res3W（V3InvW）より前のファイルへ移す（HardArg・VSmallNew・BumpWeakSrcB・BumpAbsCB に依る。import の循環を先に確かめる）。Res3W の欄を DropRes から DropResHB（形 B、HDropU の欄）に替える。Res3W を使い drop_all を呼ぶ 15 ファイルで、drop_all → drop_all_hardB、argT → hard、bump_drop → bump_dropB に置き換える（作業はブランチで）。
   2. StepCtxV2 に欄 RB : DropResHB（ctx_V2 で HDropU から）を足し、⟨C.R.drop⟩ を ⟨C.RB⟩ に。
