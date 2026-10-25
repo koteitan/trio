@@ -4602,3 +4602,11 @@ T2QNDomBad（ω_T の成分の支配）の材料（qnterms.py、b2grow1・b2grow
   - V + ω^S には Ω_1 以上の成分がない u がある（F2a は偽）ので、Ω_1 未満の成分を一律に押さえる道はない。
 - T2CBad の形（cbad.py、ext2 の 74.9 万個の標本で 3 個、d3s・std_b では 0）: r = (2,1,0)、q = (3,2,1) は r の子で上げ先（数えない）、q の子は bump 子 (4,2,1) と x = (4,2,1)、x − 1 = (5,1,0) は前の bump 子の子で祖先 (1,1,1) へ上げる。Bad2 と同じ位置で、吸収は成り立つ形。
 - 同じ日に T2AbsNBad も狭めた（V3T2BelowR の `t2_absWN_bad`）: 列 i で落とし側の吸収（M.take x の bump 項に吸収されない V の加数が ◁ bumpW_M(i)）が成り立てば、T2BumpMono（HBumpExt）で M[n] 側に移す。残り `T2AbsNBad` は落とし側が破れる列だけ（graftBb2St の 3 個の行列、qr の形で x は x − 1 の子）。そこでは M[n] の前件が空（abswn.py・absex.py）。
+
+### T2CBad の族を増やして残りを測り直した（2026-10-26、lead）
+
+- 集合 cbadext（tmp の cbadgrow.py・cbadgrow2.py）: T2CBad の 3 個から展開（n = 2, 3）と接頭辞で 2 段（726 個）、その各接頭辞に 1 列 (a, b, 1) を足して bms -s で標準形を選んだもの（3447 個）。合わせて 3756 個。T2CBad の形は 10 個（展開と接頭辞だけでは増えず、1 列足しで 3 → 10）。
+- T2CBadOut の中身: 10 個の M[2]・M[3] の接頭辞 227 個で probe_inv2 の欄（AbsUS・TPLoS・VSmallRAll）に例外 0、根の減少は n = 0〜3 で 10 個すべて成り立つ。
+- T2CBad の例では、M.take x のすべての列で v_T ⊴ v_M・o_T ⊴ o_M（弱い変化なし）。q は M でも M.take x でも数えない（列 x − 4 が q へ上げ、q は topped）。ただし x − 1 は M[n] でも上げるので、M[n] と M.take x の値が x − 1 でずれる。C の形のエンジン（C_frame の値の一致）は欄 un をここで使うので、組み立てを変える必要がある。
+- cbadext で t = 2 の残りの今の形: trigs0・T2VRAPre・T2VRASeed・QVRAsh・KA・KG・seedrr3 の clPath・preshape・T2VAncUse（usefld）は例外 0。T2VRACopyEsc（probe_t2vra の写しに足した、scratchpad の probe_t2vra_esc.py）は 93 件で例外 0。旧い形の T2VRACopy（5366 件）と clAll（C 104・qn 66 件）は偽（どちらも前から偽と分かっている形）。
+- Bad2 の集合（b2grow1・b2grow2・graftBb2St）では T2VRACopyEsc の前件は 0 件。hVCp は文脈を広げたあとも空でなく偽でもない。
