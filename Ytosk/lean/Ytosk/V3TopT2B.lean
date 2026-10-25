@@ -53,9 +53,10 @@ descents to `M[0]`, `M[1]` (also through a `Bad2` prefix) are proved from the pr
 engine run on the drop's conclusion (V3T0Bad) and the new residual `T0BadSeeds` (the seeds S1・S2・S3 of `M[n]`, narrowed to `T0BadSeedsH` by `t0BadSeeds_of`: for `r = x − 1` S1 and S2
 are proved, V3T0BadSeed; then to `T0BadSeedsH2` by `t0BadSeedsH_of`: the node S1 for `r ≠ x − 1` follows from the
 structural fact that `r` still counts at `g` in `M[n]` (`weak_seed_hi` for `v(r) > v(g)`, V3T0BadNode); then to `T0BadSeedsH3` by `t0BadSeedsH2_of`: S3
-follows from the `M`-level sum `omid + o′(r) ◁ o(r)` (`t0_S3W`, V3T0BadS3); the weak absorption from
+follows from the `M`-level sum `omid + o′(r) ◁ o(r)` (`t0_S3W`, V3T0BadS3), and that from the component fact of the weak leaf
+(`T0BadSeedsH4`, `lhd_sum_weak`: every component of `w′ = v′(r)` is `0` or below a component of `v(r)`); the weak absorption from
 `HDropU`, whose `BumpAbsC` now also covers `t = 0`, and `HBumpExt`); the rest is the residual `BadOutRest`. -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hRB : RootBadV2T2) (hBR : BadOutRest) (hT0H : T0BadSeedsH3)
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hRB : RootBadV2T2) (hBR : BadOutRest) (hT0H : T0BadSeedsH4)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -118,7 +119,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hRB : RootBadV2T2) (hBR : Ba
         (hP M ρ rk C hz h2) (hCF M ρ rk C hz h2)
         (fun r L q hlen hr hq hqr hncl => (hCl M ρ rk C hz h2 r L hlen hr).2.2 q hq hqr hncl))
   trio_terminates_main_V2_base (hDropV2_of' hDW) (takeBad_of_drop (dropBad_of_B hDB) hF hLf)
-    (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf (t0BadSeeds_of hDU (t0BadSeedsH_of hDU (t0BadSeedsH2_of hDU hBE hT0H)))) hBR) hF hLf
+    (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf (t0BadSeeds_of hDU (t0BadSeedsH_of hDU (t0BadSeedsH2_of hDU hBE (t0BadSeedsH3_of hDU hT0H))))) hBR) hF hLf
     (t0AbWRes_of_ext (hDropV2_of' hDW) hBE)
     hCB hBX
     hPRV hDom (FDCopyRoot.t2FDCopyRes_of_path hBX (t2FOSeedV2_of hP hDom) hVU hAG) hQNG hSVCG

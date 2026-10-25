@@ -323,4 +323,92 @@ theorem t0BadSeedsH2_of (hDU : HDropU) (hBE : HBumpExt) (h3 : T0BadSeedsH3) : T0
   exact t0_S3_of_sum IC D hlen hL hp he1 (t0AbsW_of_U hDU hBE hM hS I hlen hp he1) hsum hn2 hCN g hg pp hpg
     h1 h2 hjb
 
+/-- **The sum-level fact with a weak leaf** `ψ_{w′}(0)` (`w′ < v`): `ψ_v(B0) + ψ_{w′}(0) ◁ ψ_v(B0 + 1)` when every
+component of `w′` is `0` or below a component of `v` (at every level `u ≤ w′`). -/
+theorem lhd_sum_weak {v B0 w' : T} (hB0 : isOT (app B0 one) = true) (hw : w' < v)
+    (hdom : ∀ u, ¬ w' < u → ∀ g ∈ comps u w', ∃ d ∈ z :: comps u v, g ≤ d) :
+    Lhd z (app (psi v B0 z) (psi w' z z)) (psi v (app B0 one) z) := by
+  have hleaf : psi w' z z ≤ psi v B0 z := le_of_lt (psi_lt_psi_z_iff.mpr (Or.inl hw))
+  have hbO : psi v B0 z ≤ app (psi v B0 z) (psi w' z z) := le_app_self _ _
+  refine ⟨?_, fun u c h1 h2 g hg => ?_⟩
+  · refine lt_of_le_of_lt (app_le_app_left _ hleaf) ?_
+    have e : app (psi v B0 z) (psi v B0 z) = mulT (psi v B0 z) 2 := by simp [mulT, app_z_right]
+    rw [e]; exact (lhd_mulT (η := z) 2).1
+  obtain ⟨C, R, rfl, hC1, hC2⟩ := between_psi (lt_of_le_of_lt hbO h1) h2
+  have hz : z ∈ comps u (psi v C R) ++ Gc u z := List.mem_append_right _ (by simp [Gc])
+  rw [comps_app] at hg
+  by_cases hvu : v < u
+  · exfalso
+    have h1' : lt v u = true := hvu
+    have h2' : lt w' u = true := lt_trans hw hvu
+    simp [comps, h1', h2'] at hg
+  have hc : comps u (psi v C R) = C :: (comps u C ++ comps u v) ++ comps u R := by
+    have h' : lt v u = false := by simpa [lt_iff_lt] using hvu
+    simp [comps, h']
+  have hin : ∀ d, d ∈ C :: (comps u C ++ comps u v) → d ∈ comps u (psi v C R) ++ Gc u z := fun d hd =>
+    List.mem_append_left _ (by rw [hc]; exact List.mem_append_left _ hd)
+  rw [comps_psi_z_of_ge hvu] at hg
+  rcases List.mem_append.mp hg with hg | hg
+  · rcases List.mem_cons.mp hg with rfl | hg
+    · exact ⟨C, hin C List.mem_cons_self, hC1⟩
+    rcases List.mem_append.mp hg with hg | hg
+    · rcases (le_iff _ _).mp hC1 with hlt | heq
+      · obtain ⟨d, hd, hgd⟩ := (lhd_pred_succ hB0).2 u C hlt hC2 g hg
+        rcases List.mem_append.mp hd with hd | hd
+        · exact ⟨d, hin d (List.mem_cons_of_mem _ (List.mem_append_left _ hd)), hgd⟩
+        · exact ⟨d, List.mem_append_right _ hd, hgd⟩
+      · subst heq
+        exact ⟨g, hin g (List.mem_cons_of_mem _ (List.mem_append_left _ hg)), le_refl _⟩
+    · exact ⟨g, hin g (List.mem_cons_of_mem _ (List.mem_append_right _ hg)), le_refl _⟩
+  · by_cases hwu : w' < u
+    · have h2' : lt w' u = true := hwu
+      simp [comps, h2'] at hg
+    rw [comps_psi_z_of_ge hwu] at hg
+    rcases List.mem_cons.mp hg with rfl | hg
+    · exact ⟨z, hz, le_refl _⟩
+    have hg' : g ∈ comps u w' := by simpa [comps] using hg
+    obtain ⟨d, hd, hgd⟩ := hdom u hwu g hg'
+    rcases List.mem_cons.mp hd with rfl | hd
+    · exact ⟨z, hz, hgd⟩
+    · exact ⟨d, hin d (List.mem_cons_of_mem _ (List.mem_append_right _ hd)), hgd⟩
+
+/-- **Residual: the hard seeds of a `Bad2` matrix at `t = 0`, S3 as a component fact** (2026-10-25): where S3
+applies, the drop at `r` is `◁`, or the weak leaf `o′(r) = ψ_{w′}(0)` has every component of `w′` equal to `0` or below
+a component of `v(r)` (`lhd_sum_weak`). The other two fields as in `T0BadSeedsH3`. -/
+def T0BadSeedsH4 : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → Bad2 M → Inv3V2 M ρ rk → ∀ r L, r + L + 1 = M.length → 0 < L →
+    par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    (∀ g pp, par M 0 r = some g → par M 0 g = some pp → entry M 1 pp ≠ 0 → entry M 2 pp ≠ 0 →
+      col M g = bump M pp →
+      Lhd z ((drop1 M (r + L) rk).o r) (ρ.o r) ∨
+        ∀ w', (drop1 M (r + L) rk).o r = psi w' z z →
+          ∀ u, ¬ w' < u → ∀ e ∈ comps u w', ∃ d ∈ z :: comps u (ρ.v r), e ≤ d) ∧
+    ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
+      (r ≠ r + L - 1 → Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r) ∧
+      (r ≠ r + L - 1 → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g))
+
+theorem t0BadSeedsH3_of (hDU : HDropU) (h4 : T0BadSeedsH4) : T0BadSeedsH3 := by
+  intro M ρ rk hM hS hB I r L hlen hL hp he1
+  obtain ⟨hS3M, hrest⟩ := h4 M ρ rk hM hS hB I r L hlen hL hp he1
+  refine ⟨fun g pp hg hpg h1 h2 hjb => ?_, hrest⟩
+  rcases hS3M g pp hg hpg h1 h2 hjb with hl | hdom
+  · exact Or.inl hl
+  have S := sInv_std hM hS
+  have IC := I.toC S
+  have D := T0DropF.of_U hDU hM hS (by omega) I
+  have K := t0NCtx_of IC D hlen hL hp he1 (le_refl 2) (cons_of_rk (rk_N0 hlen hL hp (by omega : 1 ≤ 2)
+    S.r0p S.z2 (S.r12 _ he1) (le_refl 2) I.rank))
+  have hDP := D.po
+  rw [show M.length - 1 = r + L by omega] at hDP
+  obtain ⟨hPO, hPV⟩ := hDP r (by omega)
+  rcases po_lhd_or_weak I.cons I.good K.C1 (by omega) (by omega) hPO hPV hg K.nz K.lt with hl | ⟨_, w', hw', hWk, -⟩
+  · exact Or.inl hl
+  right
+  obtain ⟨hor, hom⟩ := o_r_omid hlen hL hp (by omega : 1 ≤ 2) S.r0p S.z2 S.sibDec S.z1c S.uat S.uab he1
+    (S.r12 _ he1) (le_refl 2) I.cons I.good
+  have hot := I.good.ot_o r (by omega)
+  rw [hor] at hot ⊢
+  rw [hom, hw']
+  exact lhd_sum_weak (isOT_arg hot) hWk.1 (hdom w' hw')
+
 end Ytosk
