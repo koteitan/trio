@@ -4529,3 +4529,4 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
   - HBumpExt（hbe.py、すべての接頭辞）: b2grow1・shapegrow の各 800 個の標本で例外 0（97 万件）。
   - 展開 M[n]（n = 0〜3）での根の真の減少（baddesc.py）: b2grow1 の 6517 個すべて。
   - t = 2 の probe（tmp/claude/qS.sh）: trigs0・t2vra（T2VRAPre・T2VRASeed・QVRAsh・T2VRACopy）・t2vrak の KA・KG・seedrr3・preshape は b2grow1・shapegrow で例外 0。t2vrak の参考の欄 VD（VDomF をすべての写しの枠で）は b2grow1（すべて Bad2）の 1840 件で偽、shapegrow で 0。VDomF は T2VAncUse（hVU、文脈 StepCtxT2 は ¬Bad2）の中でだけ仮定されるので、生きている仮定は偽にならない。ただし t = 2 の文脈を Bad2 に広げる（BadOutT2B を t = 2 のエンジンで示す）と、この形のままでは偽になる。
+  - 二段目の展開（b2grow1 の 500 個の標本を展開、b2grow.py に B2LIM、集合 b2grow2、新しい Bad2 10081 個）: 弱めた形・ua（条件なし）・PO/PV（67 万件）・T0BadSeedsH7 の 3 欄・根の真の減少（n = 0〜3）はすべて例外 0。旧形 BWSB は 3173 個で偽（tmp/claude/qT.sh）。
