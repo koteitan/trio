@@ -4426,3 +4426,28 @@ T0BadSeeds の測定（t0seed.py・t0cls.py・t0dr.py、graftBb2Sf の t = 0 の
   - G の段の ◁ には、w′ の成分が c = K + ψ_v(C) + R の成分で押さえられることが要る。
   - V が W に吸収される場合（例: V = ψ₀(1)、W = ψ_{ψ₀(1)}(0)）でも、W の成分に V の成分が現れれば成り立つ。一般の条件はまだ。
 
+### 「r は N でも数える」と S3 をさらに調べた（2026-10-25、lead、Lean は未着手）
+
+「r は N でも数える」（T0BadSeedsH2 の第 1 欄）は、次の 1 つの局所の事実に下がる見込み。
+- Counted N g r が破れるのは、isUpg N r ∧ topped N r のとき。
+- topped N r = topped (M.take x) r（topped_copy0、k = 0）。
+- 上げ先の形（upg_spec）: 上げ先は j + 1 か、j より前の祖先。上げ先 r が j と一致することはない。
+- r を上げ先にできる j は 3 通り。
+  - j ∈ (r, x − 1]: upg_r_not_topped（counted_last0 と同じ議論）で topped (M.take x) r = false になり、矛盾。
+  - j が後ろの写しの列: r はその祖先でない。
+  - j = r − 1（上げ先 = j + 1 = r）: N でも M と同じ。
+- したがって残るのは「topped (M.take x) r なら upg M (r − 1) ≠ some r」。
+  - Lean では counted_last0 の k = 0 版になる。upg N j = upg M j（j < r、および最初の写しの中の j）の補題が要る。
+
+S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean の val）から:
+- 上げを失った x − 1 の値は w′ = V + 1。V = v(P₁(x − 1))。
+- M での値は v = add V W。W = last(v(k))、k は上げ先、v(k) = add V (ω^{p_k})。
+- c ∈ (G′, G] は K + ψ_v(C) + R（C は B0 か B0 + 1）の形。
+- comps u w′ = comps u V（u = 0 では 0 も）。
+  - W が V のどの加数よりも小さいとき: v = V + W なので comps u v ⊇ comps u V。G の段の ◁ が成り立つ。
+  - W が V の下の加数 V_lo を吸収するとき: V_lo の成分が W の成分で上から押さえられることが要る。
+    - Bad2 の UpgBad は「V_lo の加数 q で q ◁ W が破れるものがある」と言っている。
+    - ただし ◁ の検査は (q, W] のすべての c にわたる。ここで要るのは W 自身の成分だけなので、もっと弱い。
+    - 例では W = ψ_V(0) で、W の添字が V そのもの。上げ先 k の bump 孫の o の添字が V を含むためと見られる。
+    - 一般に「v(P₁ n) は v(n) の接頭辞（吸収を除く）」の形の不変条件があれば出る見込み。次は Python で測る。
+
