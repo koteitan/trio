@@ -16,15 +16,16 @@ namespace Ytosk
 
 open T
 
-/-- **The shape of the weak sources** (the `Bad2` form): the source `k` may have counted children, and `i` may have
-the second child `x` at the bad position when the upgrade of `x − 1` fails the absorption. -/
+/-- **The shape of the weak sources** (the `Bad2` form, 2026-10-25): when a source `k` under a bump child `j` of `i`
+changes weakly and `x` is a counted child of `i`, the upgrade of `x − 1` fails the absorption at the bad position.
+(The earlier form fixed `children M i = [j]` or `[j, x]` and `k` first among the children of `j`; both are false on the
+expansions of `Bad2` matrices, b2grow1: `i` may have earlier bump children and `k` earlier siblings.) -/
 def BumpWeakShapeSrcB (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
   ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
     ∀ k ∈ children M j, (∃ w y, w ≠ z ∧ ρ.o k = psi w y z) →
       ((k = x ∧ children M j = [x] ∧ ¬ LhdE (ρ'.v i) (ρ.v i)) ∨
         (k < x ∧ ρ'.o k ≠ ρ.o k ∧ ¬ LhdE (ρ'.v k) (ρ.v k))) →
-      (children M i = [j] ∨ (children M i = [j, x] ∧ UpgBad M ρ (M.length - 2) ∧ BadPos M)) ∧
-        (children M j).head? = some k
+      x ∈ children M i → Counted M i x → UpgBad M ρ (M.length - 2) ∧ BadPos M
 
 /-- **The absorption at a bump-type column** (the `Bad2` form): `BumpAbsC`, or the weak route of `PV` at `i`
 (on graftB the absorption fails at 9 columns, where the weak route holds, desc). -/
@@ -53,7 +54,7 @@ theorem g_levelB {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     (hIH : ∀ k ∈ children M jl, k < x → PO ρ ρ' k ∧ PV M ρ ρ' k) :
     (∀ t ∈ (children (M.take x) jl).map ρ'.o, Single t) ∧
     (BRelS (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∨
-      (BWk (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∧
+      (sumN ((children (M.take x) jl).map ρ'.o) ≤ sumN ((children M jl).map ρ.o) ∧
         ∃ k ∈ children M jl, ∃ w y, w ≠ z ∧ ρ.o k = psi w y z ∧
           ((k = x ∧ children M jl = [x]) ∨ (k < x ∧ ρ'.o k ≠ ρ.o k ∧ ¬ LhdE (ρ'.v k) (ρ.v k))))) := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
@@ -77,7 +78,7 @@ theorem g_levelB {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       by_cases hvx : ρ.v x = z
       · left; rw [hvx]
         exact Or.inl ⟨Or.inr (lhd_zero (by simp)), one_lt_E0⟩
-      · right; exact ⟨⟨z_le _, Or.inl (T.z_lt_psi _ _ _)⟩, x, by simp, _, z, hvx, hox, Or.inl ⟨rfl, by simp⟩⟩
+      · right; exact ⟨z_le _, x, by simp, _, z, hvx, hox, Or.inl ⟨rfl, by simp⟩⟩
   · rw [List.concat_eq_append] at hKT
     have hklT : kl ∈ children (M.take x) jl := by rw [hKT]; simp
     obtain ⟨hklx, hklM⟩ := mem_children_take hklT
@@ -160,8 +161,8 @@ theorem g_levelB {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         · by_cases hlv : LhdE (ρ'.v kl) (ρ.v kl)
           · left; exact brelS_fix hlv (one_le_of_ne_z hv'z)
           right
-          refine ⟨bwk_fix (le_trans (psi_le_psi_z (le_of_lt hWk.1)) (psi_le_psi_rest (z_le _)))
-            hWk.2.1, kl, by simp, ρ.v kl, y0, ?_, hy0,
+          refine ⟨(bwk_fix (le_trans (psi_le_psi_z (le_of_lt hWk.1)) (psi_le_psi_rest (z_le _)))
+            hWk.2.1).1, kl, by simp, ρ.v kl, y0, ?_, hy0,
             Or.inr ⟨hklx, by
               rw [ho', hy0]
               intro h; simp only [psi.injEq] at h; exact hv h.1, hlv⟩⟩
@@ -182,17 +183,19 @@ theorem g_levelB {M : Mat} {x : Nat} (hx : x + 1 = M.length)
             rw [hy1, hy0, ey1]
             exact lhdE_oq_v hlv
           exact brelS_app_same hS0 hlo _
-        exfalso
+        -- a weak last source after earlier siblings: only `≤` (2026-10-25, b2grow1)
         have hne : ρ'.o kl ≠ ρ.o kl := fun h => by
           rw [e1', e2] at h; simp only [psi.injEq] at h; rw [h.1] at hWk; exact lt_irrefl' _ hWk.1
         have hw2 : w2 ≠ z := by
           intro hz; rw [hz] at hWk; exact T.not_lt_z _ hWk.1
-        obtain ⟨_, hhead⟩ := hWS.1 i h1 h2 jl hjlM hjlb kl hklM ⟨w2, X, hw2, e2⟩ (Or.inr ⟨hklx, hne, hlv⟩)
-        rw [hchM] at hhead
-        obtain ⟨k0, K0', rfl⟩ := List.exists_cons_of_ne_nil hK0
-        simp only [List.cons_append, List.head?_cons, Option.some.injEq] at hhead
-        have := hK0lt k0 (by simp)
-        omega
+        right
+        refine ⟨le_trans (app_le_app_left _ hlekl) (lhdE_prefix _ _).le, kl, by simp, w2, X, hw2, e2,
+          Or.inr ⟨hklx, hne, hlv⟩⟩
+
+/-- Lists with the same prefix and a smaller last element. -/
+theorem forall2_le_snoc : ∀ (l : List T) {a b : T}, a ≤ b → List.Forall₂ (· ≤ ·) (l ++ [a]) (l ++ [b])
+  | [], _, _, h => .cons h .nil
+  | c :: l, _, _, h => .cons (le_refl c) (forall2_le_snoc l h)
 
 theorem bump_relB {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
@@ -431,7 +434,7 @@ theorem bump_relB {M : Mat} {x : Nat} (hx : x + 1 = M.length)
           rw [hmapT]
           simpa using hn
         · exact Or.inr hwk
-    · -- the weak case
+    · -- the weak case (2026-10-25): `v′ ≤ v` from the sums, and `CntX` from the children (all bump children but `x`)
       by_cases hli : LhdE (ρ'.v i) (ρ.v i)
       · exact Or.inl hli
       have hkx' : (k = x ∧ children M jl = [x] ∧ ¬ LhdE (ρ'.v i) (ρ.v i)) ∨
@@ -439,109 +442,56 @@ theorem bump_relB {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         rcases hkx with ⟨hk1, hk2⟩ | hk'
         · exact Or.inl ⟨hk1, hk2, hli⟩
         · exact Or.inr hk'
-      obtain ⟨hshape, _⟩ := hWS.1 i h1 h2 jl hjlM hjlb k hk ⟨w, y, hw, hok⟩ hkx'
-      have ht := bwk_omega hG'ot hGot hWk
-      have hp := bwk_onep (single_omega hG'ot) (single_omega hGot) ht
-      have hpot1 : isOT (sumN [one, omega G]) = true := by
-        apply isOT_sumN; intro t ht; simp at ht; rcases ht with rfl | rfl
-        · rfl
-        · exact isOT_omega hGot
-      have hp'ot1 : isOT (sumN [one, omega G']) = true := by
-        apply isOT_sumN; intro t ht; simp at ht; rcases ht with rfl | rfl
-        · rfl
-        · exact isOT_omega hG'ot
       have hwc := hWS.2 i hi hli
+      have hωle : omega G' ≤ omega G := omega_le_omega hG'ot hGot hWk
+      have hotL : ∀ t ∈ one :: (Pl ++ [omega G']), isOT t = true := fun t ht => by
+        rcases List.mem_cons.mp ht with rfl | ht
+        · rfl
+        · exact (hsL t ht).1
+      have hotR : ∀ t ∈ one :: (Pl ++ [omega G]), isOT t = true := fun t ht => by
+        rcases List.mem_cons.mp ht with rfl | ht
+        · rfl
+        · rcases List.mem_append.mp ht with ht | ht
+          · exact (hsP t ht).1
+          · simp at ht; rw [ht]; exact isOT_omega hGot
+      have hsum1 : sumN (one :: (Pl ++ [omega G'])) ≤ sumN (one :: (Pl ++ [omega G])) :=
+        sumN_le2 (.cons (le_refl _) (forall2_le_snoc Pl hωle)) hotL hotR
+      have hXIot : ∀ t ∈ XI.map (bumpTerm M ρ i), isOT t = true := fun t ht => by
+        obtain ⟨d, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm hG i d
+      have hsum2 : sumN (one :: (Pl ++ [omega G])) ≤ sumN (one :: (children M i).map (bumpTerm M ρ i)) := by
+        rw [hmapM, show one :: (Pl ++ [omega G] ++ XI.map (bumpTerm M ρ i)) =
+          (one :: (Pl ++ [omega G])) ++ XI.map (bumpTerm M ρ i) from rfl]
+        exact le_sumN_append _ _ hotR hXIot
+      have hvle : ρ'.v i ≤ ρ.v i := by
+        rw [ev', ev]
+        exact add_le_add_single V (single_omega hp'ot).2 (single_omega hpot).2
+          (omega_le_omega hp'ot hpot (le_trans hsum1 hsum2))
+      have hvlt : ρ'.v i < ρ.v i := by
+        rcases (le_iff _ _).mp hvle with h | h
+        · exact h
+        · exact absurd (Or.inl h) hli
+      have h1v : one ≤ ρ'.v i := by
+        rw [ev']
+        exact le_trans (one_le_of_ne_z (single_ne_z (single_omega hp'ot))) (le_add_single V (single_omega hp'ot).2)
+      have hwk : WkVA (ρ'.v i) (ρ.v i) := ⟨hvlt, h1v, hv'ot⟩
+      have hTnc : ∀ c ∈ children (M.take x) i, ¬ Counted M i c := fun c hc hcnt => hcnt.1 (hAb c hc)
+      refine Or.inr ⟨hwk, hwc, ?_⟩
       rcases hXIc with rfl | ⟨rfl, hxi⟩
-      · -- no new child: the shape is `[jl]`
-        have hone : children M i = [jl] := by
-          rcases hshape with h | ⟨h, _⟩
-          · exact h
-          · exfalso
-            rw [hXI, hA] at h
-            simp only [List.append_nil] at h
-            have := congrArg List.getLast? h
-            simp only [List.getLast?_append, List.getLast?_singleton, List.getLast?_cons_cons] at this
-            simp at this
-            omega
-        have hnil : A0 = [] := by
-          rw [hXI, hA] at hone
-          have hl := congrArg List.length hone
-          simp only [List.length_append, List.length_singleton, List.length_nil] at hl
-          exact List.eq_nil_of_length_eq_zero (by omega)
-        subst hnil
-        have hW := bwk_omega hp'ot1 hpot1 hp
-        have e' : ρ'.v i = add V (omega (sumN [one, omega G'])) := by rw [ev']; simp [hPldef]
-        have e : ρ.v i = add V (omega (sumN [one, omega G])) := by rw [ev, hmapM]; simp [hPldef]
-        rw [e'] at hwc
-        rw [e', e]
-        rcases v_weak hVot (single_omega hp'ot1) (single_omega hpot1) hW with heq | hwk
-        · exact Or.inl (Or.inl heq)
-        · refine Or.inr ⟨hwk, hwc, Or.inl fun c hc hcnt => ?_⟩
-          rw [hone] at hc
-          simp at hc
-          rw [hc] at hcnt
-          exact hcnt.1 hjlb
-      · -- the new child `x` at the bad position: the shape is `[jl, x]`
-        obtain ⟨hone, hub, hbp⟩ : children M i = [jl, x] ∧ UpgBad M ρ (M.length - 2) ∧ BadPos M := by
-          rcases hshape with h | h
-          · exfalso
-            rw [hXI, hA] at h
-            have hl := congrArg List.length h
-            simp at hl
-          · exact h
-        have hnil : A0 = [] := by
-          rw [hXI, hA] at hone
-          have hl := congrArg List.length hone
-          simp only [List.length_append, List.length_cons, List.length_nil] at hl
-          exact List.eq_nil_of_length_eq_zero (by omega)
-        subst hnil
-        have hcx : CntX M ρ i := Or.inr (Or.inr ⟨fun c hc hcnt => by
-          rw [hone] at hc
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
-          rcases hc with rfl | rfl
-          · exact absurd hjlb hcnt.1
-          · omega, hub, hbp⟩)
-        have hxc : children M x = [] := by
-          rw [List.eq_nil_iff_forall_not_mem]
-          intro c hc; have := mem_children hc; omega
-        have e' : ρ'.v i = add V (omega (sumN [one, omega G'])) := by rw [ev']; simp [hPldef]
-        rw [e'] at hwc
-        rw [e']
-        by_cases hxb : col M x = bump M i
-        · have hbx : bumpTerm M ρ i x = one := by
-            unfold bumpTerm; rw [if_pos hxb, hxc]
-            simp only [List.map_nil, sumN_nil]
-            rw [omega_small (T.z_lt_psi _ _ _)]; rfl
-          have hsL : ∀ t ∈ [one, omega G], Single t := by
-            intro t ht; simp at ht; rcases ht with rfl | rfl
-            · exact ⟨rfl, z, z, rfl⟩
-            · exact single_omega hGot
-          have hsn : sumN [one, omega G, one] = add (sumN [one, omega G]) one :=
-            sumN_snoc_ot (l := [one, omega G]) hsL ⟨rfl, z, z, rfl⟩
-          have e : ρ.v i = add V (omega (add (sumN [one, omega G]) one)) := by
-            rw [ev, hmapM, ← hsn]; simp [hPldef, hbx]
-          have hpot2 : isOT (add (sumN [one, omega G]) one) = true := isOT_add hpot1 isOT_one
-          have hle : sumN [one, omega G] ≤ add (sumN [one, omega G]) one := by
-            rw [add_one_eq_app]; exact le_of_lt (lt_app_one _)
-          have hW := bwk_omega hp'ot1 hpot2 ⟨le_trans hp.1 hle, hp.2⟩
-          rw [e]
-          rcases v_weak hVot (single_omega hp'ot1) (single_omega hpot2) hW with heq | hwk
-          · exact Or.inl (Or.inl heq)
-          · exact Or.inr ⟨hwk, hwc, hcx⟩
-        · have hbx : bumpTerm M ρ i x = z := by unfold bumpTerm; rw [if_neg hxb]
-          have hot2 : ∀ t ∈ [one, omega G], isOT t = true := by
-            intro t ht; simp at ht; rcases ht with rfl | rfl
-            · rfl
-            · exact isOT_omega hGot
-          have e : ρ.v i = add V (omega (sumN [one, omega G])) := by
-            rw [ev, hmapM]
-            simp only [hPldef, List.map_nil, List.nil_append, List.map_cons, hbx]
-            rw [show one :: ([omega G] ++ [z]) = [one, omega G] ++ [z] from rfl, sumN_snoc_z hot2]
-          have hW := bwk_omega hp'ot1 hpot1 hp
-          rw [e]
-          rcases v_weak hVot (single_omega hp'ot1) (single_omega hpot1) hW with heq | hwk
-          · exact Or.inl (Or.inl heq)
-          · exact Or.inr ⟨hwk, hwc, hcx⟩
+      · refine Or.inl fun c hc => ?_
+        rw [hXI, List.append_nil] at hc
+        exact hTnc c hc
+      · by_cases hxc : Counted M i x
+        · obtain ⟨hub, hbp⟩ := hWS.1 i h1 h2 jl hjlM hjlb k hk ⟨w, y, hw, hok⟩ hkx' hxi hxc
+          refine Or.inr (Or.inr ⟨fun c hc hcnt => ?_, hub, hbp⟩)
+          rw [hXI] at hc
+          rcases List.mem_append.mp hc with hc | hc
+          · exact absurd hcnt (hTnc c hc)
+          · simp at hc; omega
+        · refine Or.inl fun c hc => ?_
+          rw [hXI] at hc
+          rcases List.mem_append.mp hc with hc | hc
+          · exact hTnc c hc
+          · simp at hc; rw [hc]; exact hxc
 
 /-- **The bump-type `v` step of the drop** (the `Bad2` form). -/
 theorem bump_dropB {M : Mat} {x : Nat} (hx : x + 1 = M.length)

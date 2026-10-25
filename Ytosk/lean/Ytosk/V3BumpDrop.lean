@@ -539,12 +539,15 @@ relation directly): without it, CS fails on standard matrices, e.g. at `i = 11` 
 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(2,1,0)(3,2,1)(4,2,1)(5,2,0), where
 `v′(11) ◁ v(11)`.
 This form: SRO からの乱択の展開とその M[n] の接頭辞閉包（標準形 40 万個）で例外 0. -/
+/- 2026-10-25: the conclusion was `children M i = [j] ∧ (children M j).head? = some k`; false on the expansions of
+`Bad2` matrices (b2grow1). Now only: a counted child `x` of `i` is at the bad position with a failed upgrade (with
+`NoBad3` in `BumpWeakSrc`: `x` is not a counted child of `i`). -/
 def BumpWeakShapeSrc (M : Mat) (x : Nat) (ρ ρ' : Valn) : Prop :=
   ∀ i, entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ j ∈ children M i, col M j = bump M i →
     ∀ k ∈ children M j, (∃ w, w ≠ z ∧ ρ.o k = psi w z z) →
       ((k = x ∧ children M j = [x] ∧ ¬ LhdE (ρ'.v i) (ρ.v i)) ∨
         (k < x ∧ ρ'.o k ≠ ρ.o k ∧ ¬ LhdE (ρ'.v k) (ρ.v k))) →
-      children M i = [j] ∧ (children M j).head? = some k
+      x ∈ children M i → Counted M i x → UpgBad M ρ (M.length - 2) ∧ BadPos M
 
 /-- **Hypothesis on the drop** (2026-10-17): the shape of the weak sources (`BumpWeakShapeSrc`, the earlier
 `BumpWeakSrc` without its component conjunct) and the component condition of every weakly changed `v`
@@ -622,8 +625,13 @@ theorem brelS_z_psi {w : T} (h : BRelS z (psi w z z)) : w = z := by
   · cases he
 
 theorem BumpWeakShape.src {M : Mat} {ρ : Valn} (h : BumpWeakShape M ρ) (x : Nat) (ρ' : Valn)
-    (hWC : WeakCS M x ρ ρ') (h3 : NoBad3 M ρ) : BumpWeakSrc M x ρ ρ' := ⟨fun i h1 h2 j hj hjb k hk hw _ =>
-  let ⟨a, b, _⟩ := h i h1 h2 j hj hjb k hk hw; ⟨a, b⟩, hWC, h3⟩
+    (hWC : WeakCS M x ρ ρ') (h3 : NoBad3 M ρ) : BumpWeakSrc M x ρ ρ' :=
+  ⟨fun i h1 h2 j hj hjb k hk hw _ hxi hxc => by
+    obtain ⟨a, _, _⟩ := h i h1 h2 j hj hjb k hk hw
+    rw [a] at hxi
+    simp only [List.mem_singleton] at hxi
+    rw [hxi] at hxc
+    exact absurd hjb hxc.1, hWC, h3⟩
 
 @[simp] theorem sumN_nil : sumN [] = z := rfl
 
@@ -679,7 +687,7 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
     (hIH : ∀ k ∈ children M jl, k < x → PO ρ ρ' k ∧ PV M ρ ρ' k) :
     (∀ t ∈ (children (M.take x) jl).map ρ'.o, Single t) ∧
     (BRelS (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∨
-      (BWk (sumN ((children (M.take x) jl).map ρ'.o)) (sumN ((children M jl).map ρ.o)) ∧
+      (sumN ((children (M.take x) jl).map ρ'.o) ≤ sumN ((children M jl).map ρ.o) ∧
         ∃ k ∈ children M jl, ∃ w, w ≠ z ∧ ρ.o k = psi w z z ∧
           ((k = x ∧ children M jl = [x]) ∨ (k < x ∧ ρ'.o k ≠ ρ.o k ∧ ¬ LhdE (ρ'.v k) (ρ.v k))))) := by
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
@@ -703,7 +711,7 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
       by_cases hvx : ρ.v x = z
       · left; rw [hvx]
         exact Or.inl ⟨Or.inr (lhd_zero (by simp)), one_lt_E0⟩
-      · right; exact ⟨⟨z_le _, Or.inl (T.z_lt_psi _ _ _)⟩, x, by simp, _, hvx, hox, Or.inl ⟨rfl, by simp⟩⟩
+      · right; exact ⟨z_le _, x, by simp, _, hvx, hox, Or.inl ⟨rfl, by simp⟩⟩
   · rw [List.concat_eq_append] at hKT
     have hklT : kl ∈ children (M.take x) jl := by rw [hKT]; simp
     obtain ⟨hklx, hklM⟩ := mem_children_take hklT
@@ -787,8 +795,8 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
           · left; exact brelS_fix hlv (one_le_of_ne_z hv'z)
           right
           have hnc := hnc.nocnt_of_bump (mem_children_iff.mp hklM).2 (mem_children_iff.mp hjlM).2 hjlb hWS.2.2
-          refine ⟨bwk_fix (le_trans (psi_le_psi_z (le_of_lt hWk.1)) (psi_le_psi_rest (z_le _)))
-            hWk.2.1, kl, by simp, ρ.v kl, ?_, o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc,
+          refine ⟨(bwk_fix (le_trans (psi_le_psi_z (le_of_lt hWk.1)) (psi_le_psi_rest (z_le _)))
+            hWk.2.1).1, kl, by simp, ρ.v kl, ?_, o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc,
             Or.inr ⟨hklx, by
               rw [ho', o_of_no_counted hC hklL (hG.ot_v kl hklL) hnc]
               intro h; simp only [psi.injEq] at h; exact hv h.1, hlv⟩⟩
@@ -809,7 +817,6 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
             rw [hy1, hy0, ey1]
             exact lhdE_oq_v hlv
           exact brelS_app_same hS0 hlo _
-        exfalso
         have hnc : ∀ c ∈ children M kl, ¬ Counted M kl c := by
           rcases hPV.1 with hl' | ⟨_, _, hnc'⟩
           · exact absurd hl' hlv
@@ -822,12 +829,10 @@ theorem g_level {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         simp only [psi.injEq] at e2
         have hw2 : w ≠ z := by
           rw [e2.1]; intro hz; rw [hz] at hWk; exact T.not_lt_z _ hWk.1
-        obtain ⟨_, hhead⟩ := hWS.1 i h1 h2 jl hjlM hjlb kl hklM ⟨w, hw2, hw⟩ (Or.inr ⟨hklx, hne, hlv⟩)
-        rw [hchM] at hhead
-        obtain ⟨k0, K0', rfl⟩ := List.exists_cons_of_ne_nil hK0
-        simp only [List.cons_append, List.head?_cons, Option.some.injEq] at hhead
-        have := hK0lt k0 (by simp)
-        omega
+        -- a weak last source after earlier siblings: only `≤` (2026-10-25, b2grow1)
+        right
+        refine ⟨le_trans (app_le_app_left _ hlekl) (lhdE_prefix _ _).le, kl, by simp, w, hw2, hw,
+          Or.inr ⟨hklx, hne, hlv⟩⟩
 
 /-! ## 組み立て -/
 
@@ -893,6 +898,56 @@ theorem early_sib {M : Mat} {x : Nat} (hx : x + 1 = M.length)
   split
   · congr 2; exact List.map_congr_left ho
   · rfl
+
+/-! ## 和の単調性（bump_rel の弱い場合用、V3StrictR・V3DropPres の写し） -/
+
+theorem foldl_sf_leO : ∀ {l' l : List T}, List.Forall₂ (· ≤ ·) l' l → ∀ (acc' acc : T),
+    isOT acc' = true → isOT acc = true → (∀ t ∈ l', isOT t = true) → (∀ t ∈ l, isOT t = true) →
+    acc' ≤ acc → l'.foldl (fun a b => sf (add a b)) acc' ≤ l.foldl (fun a b => sf (add a b)) acc
+  | _, _, .nil, _, _, _, _, _, _, h => h
+  | _, _, .cons (a := t') (b := t) htt hrest, acc', acc, h1, h2, hl', hl, hle => by
+    simp only [List.foldl_cons]
+    have ht' := hl' t' List.mem_cons_self
+    have ht := hl t List.mem_cons_self
+    apply foldl_sf_leO hrest
+    · rw [sf_ot (isOT_add h1 ht')]; exact isOT_add h1 ht'
+    · rw [sf_ot (isOT_add h2 ht)]; exact isOT_add h2 ht
+    · exact fun u hu => hl' u (List.mem_cons_of_mem _ hu)
+    · exact fun u hu => hl u (List.mem_cons_of_mem _ hu)
+    · rw [sf_ot (isOT_add h1 ht'), sf_ot (isOT_add h2 ht)]
+      exact le_trans (add_le_add_left acc' htt) (add_le_add_right t h2 ht hle)
+
+theorem sumN_le2O {l' l : List T} (h : List.Forall₂ (· ≤ ·) l' l)
+    (hl' : ∀ t ∈ l', isOT t = true) (hl : ∀ t ∈ l, isOT t = true) : sumN l' ≤ sumN l :=
+  foldl_sf_leO h z z rfl rfl hl' hl (le_refl _)
+
+theorem le_foldl_sfO : ∀ (l : List T) (acc : T), isOT acc = true → (∀ t ∈ l, isOT t = true) →
+    acc ≤ l.foldl (fun a b => sf (add a b)) acc
+  | [], _, _, _ => le_refl _
+  | t :: l, acc, h, hl => by
+    simp only [List.foldl_cons]
+    have ht := hl t List.mem_cons_self
+    have hot : isOT (add acc t) = true := isOT_add h ht
+    rw [sf_ot hot]
+    have h1 : acc ≤ add acc t := by
+      have := add_le_add_left acc (z_le t); rwa [add_z_right] at this
+    exact le_trans h1 (le_foldl_sfO l _ hot (fun u hu => hl u (List.mem_cons_of_mem _ hu)))
+
+theorem le_sumN_appendO (l m : List T) (hl : ∀ t ∈ l, isOT t = true) (hm : ∀ t ∈ m, isOT t = true) :
+    sumN l ≤ sumN (l ++ m) := by
+  unfold sumN
+  rw [List.foldl_append]
+  exact le_foldl_sfO m _ (isOT_sumN l hl) hm
+
+theorem omega_le_omegaO {X Y : T} (hX : isOT X = true) (hY : isOT Y = true) (h : X ≤ Y) :
+    omega X ≤ omega Y := by
+  rcases (le_iff _ _).mp h with h | h
+  · exact le_of_lt (omega_lt_omega hX hY h)
+  · rw [h]
+
+theorem forall2_le_snocO : ∀ (l : List T) {a b : T}, a ≤ b → List.Forall₂ (· ≤ ·) (l ++ [a]) (l ++ [b])
+  | [], _, _, h => .cons h .nil
+  | c :: l, _, _, h => .cons (le_refl c) (forall2_le_snocO l h)
 
 /-- **The bump-type `v` frame** (relation and standardness): `v′(i) ⊴ v(i)`, or weakly below with no
 counted child of `i` in `M`. -/
@@ -1127,7 +1182,7 @@ theorem bump_rel {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         unfold bumpW
         rw [hmapT]
         simpa using hn
-    · -- the weak case
+    · -- the weak case (2026-10-25): `v′ ≤ v` from the sums; no counted child (the shape and `NoBad3`)
       by_cases hli : LhdE (ρ'.v i) (ρ.v i)
       · exact Or.inl hli
       have hkx' : (k = x ∧ children M jl = [x] ∧ ¬ LhdE (ρ'.v i) (ρ.v i)) ∨
@@ -1135,36 +1190,48 @@ theorem bump_rel {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         rcases hkx with ⟨hk1, hk2⟩ | hk'
         · exact Or.inl ⟨hk1, hk2, hli⟩
         · exact Or.inr hk'
-      obtain ⟨hone, _⟩ := hWS.1 i h1 h2 jl hjlM hjlb k hk ⟨w, hw, hok⟩ hkx'
-      have hnil : A0 = [] ∧ XI = [] := by
-        rw [hXI, hA] at hone
-        have hl := congrArg List.length hone
-        simp only [List.length_append, List.length_singleton] at hl
-        exact ⟨List.eq_nil_of_length_eq_zero (by omega), List.eq_nil_of_length_eq_zero (by omega)⟩
-      obtain ⟨rfl, rfl⟩ := hnil
-      have ht := bwk_omega hG'ot hGot hWk
-      have hp := bwk_onep (single_omega hG'ot) (single_omega hGot) ht
-      have hpot1 : isOT (sumN [one, omega G]) = true := by
-        apply isOT_sumN; intro t ht; simp at ht; rcases ht with rfl | rfl
-        · rfl
-        · exact isOT_omega hGot
-      have hp'ot1 : isOT (sumN [one, omega G']) = true := by
-        apply isOT_sumN; intro t ht; simp at ht; rcases ht with rfl | rfl
-        · rfl
-        · exact isOT_omega hG'ot
-      have hW := bwk_omega hp'ot1 hpot1 hp
-      have e' : ρ'.v i = add V (omega (sumN [one, omega G'])) := by rw [ev']; simp [hPldef]
-      have e : ρ.v i = add V (omega (sumN [one, omega G])) := by rw [ev, hmapM]; simp [hPldef]
       have hwc := hWS.2.1 i hi hli
-      rw [e'] at hwc
-      rw [e', e]
-      rcases v_weak hVot (single_omega hp'ot1) (single_omega hpot1) hW with heq | hwk
-      · exact Or.inl (Or.inl heq)
-      · refine Or.inr ⟨hwk, hwc, fun c hc hcnt => ?_⟩
-        rw [hone] at hc
-        simp at hc
-        rw [hc] at hcnt
-        exact hcnt.1 hjlb
+      have hωle : omega G' ≤ omega G := omega_le_omegaO hG'ot hGot hWk
+      have hotL : ∀ t ∈ one :: (Pl ++ [omega G']), isOT t = true := fun t ht => by
+        rcases List.mem_cons.mp ht with rfl | ht
+        · rfl
+        · exact (hsL t ht).1
+      have hotR : ∀ t ∈ one :: (Pl ++ [omega G]), isOT t = true := fun t ht => by
+        rcases List.mem_cons.mp ht with rfl | ht
+        · rfl
+        · rcases List.mem_append.mp ht with ht | ht
+          · exact (hsP t ht).1
+          · simp at ht; rw [ht]; exact isOT_omega hGot
+      have hsum1 : sumN (one :: (Pl ++ [omega G'])) ≤ sumN (one :: (Pl ++ [omega G])) :=
+        sumN_le2O (.cons (le_refl _) (forall2_le_snocO Pl hωle)) hotL hotR
+      have hXIot : ∀ t ∈ XI.map (bumpTerm M ρ i), isOT t = true := fun t ht => by
+        obtain ⟨d, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm hG i d
+      have hsum2 : sumN (one :: (Pl ++ [omega G])) ≤ sumN (one :: (children M i).map (bumpTerm M ρ i)) := by
+        rw [hmapM, show one :: (Pl ++ [omega G] ++ XI.map (bumpTerm M ρ i)) =
+          (one :: (Pl ++ [omega G])) ++ XI.map (bumpTerm M ρ i) from rfl]
+        exact le_sumN_appendO _ _ hotR hXIot
+      have hvle : ρ'.v i ≤ ρ.v i := by
+        rw [ev', ev]
+        exact add_le_add_single V (single_omega hp'ot).2 (single_omega hpot).2
+          (omega_le_omegaO hp'ot hpot (le_trans hsum1 hsum2))
+      have hvlt : ρ'.v i < ρ.v i := by
+        rcases (le_iff _ _).mp hvle with h | h
+        · exact h
+        · exact absurd (Or.inl h) hli
+      have h1v : one ≤ ρ'.v i := by
+        rw [ev']
+        exact le_trans (one_le_of_ne_z (single_ne_z (single_omega hp'ot))) (le_add_single V (single_omega hp'ot).2)
+      have hwk : WkVA (ρ'.v i) (ρ.v i) := ⟨hvlt, h1v, hv'ot⟩
+      have hTnc : ∀ c ∈ children (M.take x) i, ¬ Counted M i c := fun c hc hcnt => hcnt.1 (hAb c hc)
+      refine Or.inr ⟨hwk, hwc, fun c hc hcnt => ?_⟩
+      rw [hXI] at hc
+      rcases List.mem_append.mp hc with hc | hc
+      · exact hTnc c hc hcnt
+      · rcases hXIc with rfl | ⟨rfl, hxi⟩
+        · simp at hc
+        · simp at hc
+          rw [hc] at hcnt
+          exact hWS.2.2 (hWS.1 i h1 h2 jl hjlM hjlb k hk ⟨w, hw, hok⟩ hkx' hxi hcnt)
 
 /-- **Hypothesis on `M.take x`** (an instance of `VSmall` for the new values): where the bump-type
 `v` strictly drops (`◁`), its components are at most `Ω_{v′}`. `VSmall` holds for all values of standard

@@ -254,7 +254,7 @@ theorem bump_relW {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         unfold bumpW
         rw [hmapT]
         simpa using hn
-    · -- the weak case
+    · -- the weak case (2026-10-25): `v′ ≤ v` from the sums; no counted child (the shape and `NoBad3`)
       by_cases hli : LhdE (ρ'.v i) (ρ.v i)
       · exact Or.inl hli
       have hkx' : (k = x ∧ children M jl = [x] ∧ ¬ LhdE (ρ'.v i) (ρ.v i)) ∨
@@ -262,36 +262,48 @@ theorem bump_relW {M : Mat} {x : Nat} (hx : x + 1 = M.length)
         rcases hkx with ⟨hk1, hk2⟩ | hk'
         · exact Or.inl ⟨hk1, hk2, hli⟩
         · exact Or.inr hk'
-      obtain ⟨hone, _⟩ := hWS.1 i h1 h2 jl hjlM hjlb k hk ⟨w, hw, hok⟩ hkx'
-      have hnil : A0 = [] ∧ XI = [] := by
-        rw [hXI, hA] at hone
-        have hl := congrArg List.length hone
-        simp only [List.length_append, List.length_singleton] at hl
-        exact ⟨List.eq_nil_of_length_eq_zero (by omega), List.eq_nil_of_length_eq_zero (by omega)⟩
-      obtain ⟨rfl, rfl⟩ := hnil
-      have ht := bwk_omega hG'ot hGot hWk
-      have hp := bwk_onep (single_omega hG'ot) (single_omega hGot) ht
-      have hpot1 : isOT (sumN [one, omega G]) = true := by
-        apply isOT_sumN; intro t ht; simp at ht; rcases ht with rfl | rfl
-        · rfl
-        · exact isOT_omega hGot
-      have hp'ot1 : isOT (sumN [one, omega G']) = true := by
-        apply isOT_sumN; intro t ht; simp at ht; rcases ht with rfl | rfl
-        · rfl
-        · exact isOT_omega hG'ot
-      have hW := bwk_omega hp'ot1 hpot1 hp
-      have e' : ρ'.v i = add V (omega (sumN [one, omega G'])) := by rw [ev']; simp [hPldef]
-      have e : ρ.v i = add V (omega (sumN [one, omega G])) := by rw [ev, hmapM]; simp [hPldef]
       have hwc := hWS.2.1 i hi hli
-      rw [e'] at hwc
-      rw [e', e]
-      rcases v_weak hVot (single_omega hp'ot1) (single_omega hpot1) hW with heq | hwk
-      · exact Or.inl (Or.inl heq)
-      · refine Or.inr ⟨hwk, hwc, fun c hc hcnt => ?_⟩
-        rw [hone] at hc
-        simp at hc
-        rw [hc] at hcnt
-        exact hcnt.1 hjlb
+      have hωle : omega G' ≤ omega G := omega_le_omegaO hG'ot hGot hWk
+      have hotL : ∀ t ∈ one :: (Pl ++ [omega G']), isOT t = true := fun t ht => by
+        rcases List.mem_cons.mp ht with rfl | ht
+        · rfl
+        · exact (hsL t ht).1
+      have hotR : ∀ t ∈ one :: (Pl ++ [omega G]), isOT t = true := fun t ht => by
+        rcases List.mem_cons.mp ht with rfl | ht
+        · rfl
+        · rcases List.mem_append.mp ht with ht | ht
+          · exact (hsP t ht).1
+          · simp at ht; rw [ht]; exact isOT_omega hGot
+      have hsum1 : sumN (one :: (Pl ++ [omega G'])) ≤ sumN (one :: (Pl ++ [omega G])) :=
+        sumN_le2O (.cons (le_refl _) (forall2_le_snocO Pl hωle)) hotL hotR
+      have hXIot : ∀ t ∈ XI.map (bumpTerm M ρ i), isOT t = true := fun t ht => by
+        obtain ⟨d, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm hG i d
+      have hsum2 : sumN (one :: (Pl ++ [omega G])) ≤ sumN (one :: (children M i).map (bumpTerm M ρ i)) := by
+        rw [hmapM, show one :: (Pl ++ [omega G] ++ XI.map (bumpTerm M ρ i)) =
+          (one :: (Pl ++ [omega G])) ++ XI.map (bumpTerm M ρ i) from rfl]
+        exact le_sumN_appendO _ _ hotR hXIot
+      have hvle : ρ'.v i ≤ ρ.v i := by
+        rw [ev', ev]
+        exact add_le_add_single V (single_omega hp'ot).2 (single_omega hpot).2
+          (omega_le_omegaO hp'ot hpot (le_trans hsum1 hsum2))
+      have hvlt : ρ'.v i < ρ.v i := by
+        rcases (le_iff _ _).mp hvle with h | h
+        · exact h
+        · exact absurd (Or.inl h) hli
+      have h1v : one ≤ ρ'.v i := by
+        rw [ev']
+        exact le_trans (one_le_of_ne_z (single_ne_z (single_omega hp'ot))) (le_add_single V (single_omega hp'ot).2)
+      have hwk : WkVA (ρ'.v i) (ρ.v i) := ⟨hvlt, h1v, hv'ot⟩
+      have hTnc : ∀ c ∈ children (M.take x) i, ¬ Counted M i c := fun c hc hcnt => hcnt.1 (hAb c hc)
+      refine Or.inr ⟨hwk, hwc, fun c hc hcnt => ?_⟩
+      rw [hXI] at hc
+      rcases List.mem_append.mp hc with hc | hc
+      · exact hTnc c hc hcnt
+      · rcases hXIc with rfl | ⟨rfl, hxi⟩
+        · simp at hc
+        · simp at hc
+          rw [hc] at hcnt
+          exact hWS.2.2 (hWS.1 i h1 h2 jl hjlM hjlb k hk ⟨w, hw, hok⟩ hkx' hxi hcnt)
 
 /-- **The bump-type `v` frame of the drop** (`hBump` of `drop_all`). -/
 theorem bump_dropW {M : Mat} {x : Nat} (hx : x + 1 = M.length)

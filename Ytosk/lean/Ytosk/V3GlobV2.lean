@@ -111,11 +111,8 @@ theorem hDropV2W_of_U (h : HDropU) : HDropV2W := by
   intro M ρ rk hM hS hE hNB I
   obtain ⟨R, hab⟩ := h M ρ rk hM hS hE I
   have h3 := noBad3_of_nb2 hNB I.cons
-  refine ⟨R.hard, R.vst, ⟨fun i h1 h2 j hj hjb k hk ⟨w, hw, hok⟩ hcase => ?_, R.ws.2, h3⟩, ?_, hab (Or.inl hNB)⟩
-  · obtain ⟨hsh, hhead⟩ := R.ws.1 i h1 h2 j hj hjb k hk ⟨w, z, hw, hok⟩ hcase
-    rcases hsh with hsh | ⟨_, hu, hb⟩
-    · exact ⟨hsh, hhead⟩
-    · exact absurd ⟨hu, hb⟩ h3
+  refine ⟨R.hard, R.vst, ⟨fun i h1 h2 j hj hjb k hk ⟨w, hw, hok⟩ hcase =>
+    R.ws.1 i h1 h2 j hj hjb k hk ⟨w, z, hw, hok⟩ hcase, R.ws.2, h3⟩, ?_, hab (Or.inl hNB)⟩
   · intro i k W hix hu hvk hW
     rcases R.ua i k W hix hu hvk hW with hs | ⟨hwc, hss⟩
     · exact Or.inl hs

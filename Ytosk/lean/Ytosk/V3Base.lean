@@ -100,15 +100,14 @@ theorem base_dropRes : DropRes (Mlen (1 + 3 * n)) ((Mlen (1 + 3 * n)).length - 1
       by_cases h : i + 1 < 1 + 3 * n ∧ (i - 1) % 3 ≠ 2
       · rw [Mlen_children_AB h.1 hi1 h.2] at hj; simp at hj; exact ⟨hj, h⟩
       · rw [Mlen_children_nil (by omega)] at hj; simp at hj
-    rw [hjc.1] at hj hb hk ⊢
-    have hkA := (Mlen_col_eq_bump hjc.2.1 hi1 rfl).mp hb
+    rw [hjc.1] at hj hb
     have hch := Mlen_children_AB hjc.2.1 hi1 hjc.2.2
-    have hk' : i + 1 + 1 < 1 + 3 * n := by
-      by_contra hne
-      rw [Mlen_children_nil (Or.inl (by omega))] at hk; simp at hk
-    have hchj := Mlen_children_AB hk' (by omega) (by omega)
-    rw [hchj] at hk; simp at hk; subst hk
-    exact ⟨hch, by rw [hchj]; rfl⟩
+    intro hxi hxc
+    rw [hch] at hxi
+    simp only [List.mem_singleton] at hxi
+    exfalso
+    apply hxc.1
+    convert hb using 2
   · -- UpgAbsX
     intro i k W _ _ _ _; left; intro r hr; rw [vOpt_par1] at hr; simp [summands] at hr
   · -- BumpAbsC

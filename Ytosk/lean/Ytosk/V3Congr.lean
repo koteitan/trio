@@ -109,16 +109,24 @@ theorem dropRes_congr {N : Mat} {x : Nat} {σ σ' τ τ' : Valn} (hx : x < N.len
     · have hkN := (mem_children hk).2
       have hiN := lt_of_entry_ne h1
       have hok := (h k hkN).1
-      apply hD.ws.1 i h1 h2 j hj hjb k hk (by rw [hok]; exact hw)
-      rcases hcase with ⟨hkx, hch, hl⟩ | ⟨hkx, hne, hl⟩
-      · have hij : i < j := (mem_children hj).1
-        have hjk : j < k := (mem_children hk).1
-        refine Or.inl ⟨hkx, hch, ?_⟩
-        rw [(h' i (by omega)).2, (h i hiN).2]; exact hl
-      · right
-        refine ⟨hkx, ?_, ?_⟩
-        · rw [(h' k (by omega)).1, hok]; exact hne
-        · rw [(h' k (by omega)).2, (h k hkN).2]; exact hl
+      intro hxi hxc
+      have hcase' : (k = x ∧ children N j = [x] ∧ ¬ LhdE (σ'.v i) (σ.v i)) ∨
+          (k < x ∧ σ'.o k ≠ σ.o k ∧ ¬ LhdE (σ'.v k) (σ.v k)) := by
+        rcases hcase with ⟨hkx, hch, hl⟩ | ⟨hkx, hne, hl⟩
+        · have hij : i < j := (mem_children hj).1
+          have hjk : j < k := (mem_children hk).1
+          refine Or.inl ⟨hkx, hch, ?_⟩
+          rw [(h' i (by omega)).2, (h i hiN).2]; exact hl
+        · right
+          refine ⟨hkx, ?_, ?_⟩
+          · rw [(h' k (by omega)).1, hok]; exact hne
+          · rw [(h' k (by omega)).2, (h k hkN).2]; exact hl
+      obtain ⟨⟨k', W, hi2, hu, hvk, hWz, hn⟩, hb⟩ :=
+        hD.ws.1 i h1 h2 j hj hjb k hk (by rw [hok]; exact hw) hcase' hxi hxc
+      have hiN' : N.length - 2 < N.length := by omega
+      rw [vOpt_par_congr (r := 1) h hiN'] at hvk hn
+      rw [(h k' (upg_lt hiN' hu)).2] at hvk
+      exact ⟨⟨k', W, hi2, hu, hvk, hWz, hn⟩, hb⟩
     · have hiN : i < N.length := by omega
       have hl' : ¬ LhdE (σ'.v i) (σ.v i) := by rw [(h' i (by omega)).2, (h i hiN).2]; exact hl
       have hw := hD.ws.2.1 i hi hl'
