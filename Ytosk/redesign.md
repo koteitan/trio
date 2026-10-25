@@ -2,6 +2,20 @@
 
 接ぎ木の標準形（tmp/ytosk-handoff/sets/graftA.pkl・graftB.pkl、作り方 tmp/claude/gen_graft.py）で、最上位の残り HFrameV2・HDropV2W と不変条件 Inv3V2 の欄 TPLoW・AbsDW が偽だった。
 
+## 残りの地図（2026-10-26、最上位 trio_terminates_main_V2_cur の 14 個）
+
+| 残り | 中身 | 測定 | 消すのに要るもの |
+|---|---|---|---|
+| HDropU | 落とす補題の仮定（形 B）と条件のない ua | 全集合で例外 0 | 落とす補題の仮定を値の不変条件から出す（核） |
+| T2BadRes | Bad2 の t = 2: T2AbsNBad（落とし側が破れる列での M[n] の弱い吸収）・T2QNDomBad（v_T(q) ⋬ v_M(q) のときの ω_T の成分の支配） | 例外 0（前件は graftBb2St 3 個・b2grow 804 件） | AbsN: M[n] の bump 項の下からの評価。QNDom: HUAC（下）＋ ω の成分の補題・和の吸収の補題 |
+| T0BadSeedsH7 | Bad2 の t = 0 の種の 3 つの事実 | 例外 0 | (1) は HUAC と同じ核。(3) は UpgAbsX の破れを使う値の議論 |
+| HFrameV2・HLeafV2 | 標準形の 1 列落としの枠・葉の欄 | 例外 0 | 欄ごとの値の議論 |
+| HBumpExt | 接頭辞で bump 項が増える | 例外 0 | M[n]（不変条件のない行列）について言うので落とす補題から出ない |
+| T2CBadOut | C の形で x − 1 が上げる（T2CBad）の出力 | cbadext の 10 個で例外 0 | 別の組み立て（q − 1 → q の上げで o_N(d) ≠ o_T(d)、C_frame の hval が偽） |
+| hVU・hCl・hPRE・hCan・hDomQ・hVCp・hAG | t = 2 の種と写しの枠の残り（文脈 StepCtxT2 は Bad2 を含む） | Bad2・cbadext でも例外 0 | 欄ごと。hCan（隣の兄弟の v の比較）は不変条件として運ぶ必要 |
+
+新しい一般の性質の候補 **HUAC**: 列 n が祖先 k へ上げるとき（k < n）、∀ u、comps u v(P₁ n) の各成分は comps u v(n) ∪ {0} のどれか以下。v(n) = v(k)・P₁(n) = P₁(k) なので、上げ先の bump 型の列 k の吸収の成分版。18 集合・約 800 万件で例外 0（上げ先が n + 1 では偽、計 81 件）。T2QNDomBad と T0BadSeedsH7 (1) の共通の核（scratchpad の vcomp.py・qnweak.py）。
+
 ## 済んだこと（main）
 - Bad2 で分けた（偽の欄・残りに ¬Bad2、Bad2 の行列は残り TakeBadV2・BadOutV2）。
 - Bad2 を狭めた。今の形: x − 1 に上がり先 ∧ p（x − 1 の親）は g の bump 子 ∧ [（g が x の祖先 ∨ x の行 2 ≠ 0）∧ x − 1 での強い吸収 UpgAbsX が破れる ∨ P₀(x) = x − 1 ∧ x の行 1 ≠ 0 ∧ BumpAbsC が破れる]。graftB の Bad2 は 80228 → 約 513 個。
