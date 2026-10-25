@@ -28,15 +28,42 @@ def T2BumpMonoV2 : Prop :=
   ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → T2BumpMono M r L
 
-/-- **Residual (t2, `Bad2`): the weak absorption `AbsWN M M[n]` before `x`** (2026-10-25). Outside `Bad2` it comes from
-the drop side `AbsWN M (M.take x)` and the bump monotonicity (`t2_absWN`); on `Bad2` the drop side is false
-(graftBb2St: 3 standard matrices) but `AbsWN M M[n]` holds (b2grow1・b2grow2・graftBb2St, `n = 2, 3`: no exception). -/
+/-- **Residual (t2, `Bad2`): the weak absorption of `M[n]` at the columns where that of `M.take x` fails**
+(2026-10-25/26). Outside `Bad2`, `AbsWN M M[n]` comes from the drop side `AbsWN M (M.take x)` and the bump monotonicity
+(`t2_absWN`); on `Bad2` the drop side is false at some columns (graftBb2St: 3 standard matrices, the qr shape with
+`x` a child of `x − 1`), where the premise of `M[n]` is empty (the bump term of `M[n]` stays large). At the other
+columns the drop side and `T2BumpMono` give it (`t2_absWN_bad`). -/
 def T2AbsNBad : Prop :=
   ∀ M ρ rk, StepCtxT2 M ρ rk → Bad2 M → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
-    ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ n, 2 ≤ n → ∀ σ,
-      Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
-      AbsWN M (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n)
-        (r + L) ρ σ
+    ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → ∀ τ, Cons (M.take (r + L)) τ →
+      ∀ i, i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+      ¬ (∀ s ∈ summands (vOpt ρ (par M 1 i)), ¬ s < psi z two z → ¬ s < bumpW (M.take (r + L)) τ i →
+          s < bumpW M ρ i → Lhd z s (bumpW M ρ i)) →
+      ∀ n, 2 ≤ n → ∀ σ,
+        Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
+        ∀ s ∈ summands (vOpt ρ (par M 1 i)), ¬ s < psi z two z →
+          ¬ s < bumpW (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ i →
+          s < bumpW M ρ i → Lhd z s (bumpW M ρ i)
+
+/-- **`AbsWN M M[n]` on `Bad2`**: the drop side where it holds (with `T2BumpMono`), `T2AbsNBad` where it fails. -/
+theorem t2_absWN_bad (hAB : T2AbsNBad) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxT2 M ρ rk)
+    (hB2 : Bad2 M) (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2) {r L : Nat}
+    (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r) (hm : T2BumpMono M r L) {n : Nat} (hn : 2 ≤ n)
+    {σ : Valn}
+    (hCN : Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ) :
+    AbsWN M (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n)
+      (r + L) ρ σ := by
+  have I := C.I
+  have hcnt := counted_take_last (M := M) (by omega) C.S.r0p C.S.z2 C.S.sibDec C.S.z1c C.S.uat
+  rw [show M.length - 1 = r + L by omega] at hcnt
+  have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
+  have hC0 := cons_of_rk hRk1
+  intro i hi h1 h2' s hs hs2 hnN hlt
+  by_cases hT : ∀ s ∈ summands (vOpt ρ (par M 1 i)), ¬ s < psi z two z →
+      ¬ s < bumpW (M.take (r + L)) (rhsIt (M.take (r + L)) (rkBound (M.take (r + L)) rk)) i →
+      s < bumpW M ρ i → Lhd z s (bumpW M ρ i)
+  · exact hT s hs hs2 (fun h => hnN (lt_of_lt_of_le h (hm _ hC0 n hn σ hCN i hi h1 h2'))) hlt
+  · exact hAB M ρ rk C hB2 hz h2 r L hlen hr _ hC0 i hi h1 h2' hT n hn σ hCN s hs hs2 hnN hlt
 
 /-- **`T2BelowRV2` from the seed residuals, the closedness and the bump monotonicity** (and `T2AbsNBad` on `Bad2`). -/
 theorem t2BelowRV2_of (hP : T2SeedPResV2) (hCl : T2SeedClV2) (hBM : T2BumpMonoV2) (hAB : T2AbsNBad) :
@@ -49,7 +76,7 @@ theorem t2BelowRV2_of (hP : T2SeedPResV2) (hCl : T2SeedClV2) (hBM : T2BumpMonoV2
   refine ⟨fun p hp => ?_, ?_⟩
   swap
   · by_cases hB2 : Bad2 M
-    · exact hAB M ρ rk C hB2 hz h2 r L hlen hr n hn σ hCN
+    · exact t2_absWN_bad hAB C hB2 hz h2 hlen hr (hBM M ρ rk C hz h2 r L hlen hr) hn hCN
     · exact t2_absWN C.std C.ne IW RW hB2 hlen hr (hBM M ρ rk C hz h2 r L hlen hr) hn hCN
   have hpr : p = r := by
     rcases hp with ⟨_, h⟩ | ⟨q, hq, hqr, hpq⟩
