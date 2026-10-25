@@ -4528,3 +4528,4 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
   - HDropU の欄（dropres2、b2t.py）: shapegrow で破れるのは旧形 BWS と、HDropU に入っていない BumpAbsS・AbsSR だけ。
   - HBumpExt（hbe.py、すべての接頭辞）: b2grow1・shapegrow の各 800 個の標本で例外 0（97 万件）。
   - 展開 M[n]（n = 0〜3）での根の真の減少（baddesc.py）: b2grow1 の 6517 個すべて。
+  - t = 2 の probe（tmp/claude/qS.sh）: trigs0・t2vra（T2VRAPre・T2VRASeed・QVRAsh・T2VRACopy）・t2vrak の KA・KG・seedrr3・preshape は b2grow1・shapegrow で例外 0。t2vrak の参考の欄 VD（VDomF をすべての写しの枠で）は b2grow1（すべて Bad2）の 1840 件で偽、shapegrow で 0。VDomF は T2VAncUse（hVU、文脈 StepCtxT2 は ¬Bad2）の中でだけ仮定されるので、生きている仮定は偽にならない。ただし t = 2 の文脈を Bad2 に広げる（BadOutT2B を t = 2 のエンジンで示す）と、この形のままでは偽になる。
