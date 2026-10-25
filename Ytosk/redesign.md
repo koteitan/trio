@@ -54,6 +54,7 @@
   - 直し方の見込み: q の部分木（q < i < x）では M[n] の値を M の値と比べ（上げ・数える子・子が M と同じ）、q の部分木の外では今までどおり M.take x と比べる。v_N(q) = qnS は un なしでも成り立つ見込み（M[n] の x は bump 子でないので項が消え、p の項は M と同じ）。`qP_C` は「x − 1 が q へ上げない」で足りる見込み。
   - 残り hPRE の欄 C の `un` は T2CBad で偽なので、文脈を T2CBad に広げる前に外す必要がある。
   - T2CBad の族: cbadext（3756 個）に 10 個。
+  - 確かめた結果（10 個、M[2]・M[3] の 20 件）: v_N(q) = qnS、q の部分木で M[n] の値 = M の値、q は M.take x で数えない、は成り立つ。しかし T2CBad では q − 1 が q へ上げる（10 個すべて）ので、v(q) の違いが q の前の兄弟 d（CL_T(r) の列）へ伝わり、o_N(d) は o_T(d) とも o_M(d) とも違う。C_frame の結論 hval（d ∈ CL_T(r) で o_N(d) = o_T(d)）がそもそも偽なので、一致の範囲を絞るだけの直しでは足りない。種 o_N(r) の引数が M.take x の値で書けないので、C の形とは別の組み立てが要る。
 - （以下は当時の案）- BadOutT2B（t = 2）: t = 2 の仮定は Bad2 でも成り立つ（desc「t = 2 の仮定は Bad2 でも成り立つ」）。手順の案:
   1. DropResHB の定義（いま V3GlobV2）を Res3W（V3InvW）より前のファイルへ移す（HardArg・VSmallNew・BumpWeakSrcB・BumpAbsCB に依る。import の循環を先に確かめる）。Res3W の欄を DropRes から DropResHB（形 B、HDropU の欄）に替える。Res3W を使い drop_all を呼ぶ 15 ファイルで、drop_all → drop_all_hardB、argT → hard、bump_drop → bump_dropB に置き換える（作業はブランチで）。
   2. StepCtxV2 に欄 RB : DropResHB（ctx_V2 で HDropU から）を足し、⟨C.R.drop⟩ を ⟨C.RB⟩ に。
