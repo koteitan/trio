@@ -4572,3 +4572,10 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
 - `badOutT2B_of`（V3TopT2B）: Bad2 の M に StepCtxB を作り、T2CBad なら T2CBadOut、そうでなければ t = 2 のエンジン（ExpT2V2・R2V2）で M[n] の Inv3V2 と Res3T2 を出し、n ≥ 2 の下降は `t2_drops_ge2`。最上位の仮定 BadOutT2B を T2BadRes に替えた（仮定は 14 個のまま）。
 - 文脈を広げたので、StepCtxT2 を持つ残り（hVU・hCl・hPRE・hDomQ・hVCp・hAG）は Bad2 でも主張する形になった。どれも b2grow1・b2grow2 で測ってある（上の「t = 2 の仮定は Bad2 でも成り立つ」）。Bad2 の t = 2 の形は qr と qn だけ（b2grow1: qr 1292・qn 587、b2grow2: qr 2310・qn 821、graftBb2St: qr 2673・qn 2711）。sv・C は現れず、T2CBad ∧ Bad2 の場面もない。
 - 全体ビルド緑 1086 jobs、公理は標準の 3 つ（3e447cfb）。測定は scratchpad の abswn.py・qnupg.py・qnseed.py・b2shape.py。
+
+### Bad2 の qn の残りを成分の支配に下げた（2026-10-25、lead）
+
+- `qn_t1_lhd_of_dom`（V3QNTakeL）: v_T(q) = V + ω_T（ω_T は 1 項）で、ω_T のどの成分も V + ω^S の成分か 0 以下なら、t_1 = V + ω^S + ω_T ◁ V + ω^{S+1}。c ∈ (t_1, V + ω^{S+1}] は V + ω^S より大きいので、add_omega_succ_lhd で V + ω^S の成分が c の成分で押さえられる。`qn1_of_dom` は M の形での包み。
+- 残り T2QN1Bad（t_1 ◁ v_M(q)）を `T2QNDomBad`（ω_T の成分の支配）に替えた。測定（qnstar.py）: 4119 件すべてで成り立つ。S の成分だけでの支配は 268 件で偽（V = v(r) の成分が要る）。
+- 次の分解の材料（qnkids.py）: Bad2 の qn では、q の bump 子 j の子 k のうち o_T(k) ⊴ o_M(k) が破れるのは x − 1 だけ（b2grow1 587・b2grow2 821。graftBb2St では x − 1 も ⊴）。x − 1 の o_T の成分は V + ω^S の成分で押さえられる（例外 0）。x − 1 は M.take x で上げを失い o_T(x − 1) = ψ_{V′+1}(0)（V′ = v(P₁(x − 1))、P₁(x − 1) < r）。ただし和 S の中で前の bump 項が吸収されると成分が消えるので、k ごとの支配から ω_T の支配を出すには吸収の扱いが要る。
+- 全体ビルド緑 1086 jobs、公理は標準の 3 つ（459eeae5）。仮定は 14 個のまま。
