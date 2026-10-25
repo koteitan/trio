@@ -438,4 +438,109 @@ theorem t0BadSeedsH4_of (hDU : HDropU) (hBE : HBumpExt) (h5 : T0BadSeedsH5) : T0
     · exact h
   exact t0_S2_of_sum IC D hlen hL hp he1 (t0AbsW_of_U hDU hBE hM hS I hlen hp he1) hT1M hn2 hCN g hg hjb h1 h2
 
+/-- **The sum-level fact for a general last summand** `O′ = ψ_{s′}(y′) < ψ_v(B0)`: `ψ_v(B0) + O′ ◁ ψ_v(B0 + 1)` when
+every component of `O′` is below `0`, `B0`, a component of `B0` or a component of `v`. -/
+theorem lhd_sum_dom {v B0 O' : T} (hB0 : isOT (app B0 one) = true) (hO' : ∃ s y, O' = psi s y z)
+    (hlt : O' < psi v B0 z)
+    (hdom : ∀ u, ∀ g ∈ comps u O', ∃ d ∈ z :: B0 :: (comps u B0 ++ comps u v), g ≤ d) :
+    Lhd z (app (psi v B0 z) O') (psi v (app B0 one) z) := by
+  obtain ⟨s', y', rfl⟩ := hO'
+  have hbO : psi v B0 z ≤ app (psi v B0 z) (psi s' y' z) := le_app_self _ _
+  refine ⟨?_, fun u c h1 h2 g hg => ?_⟩
+  · refine lt_of_le_of_lt (app_le_app_left _ (le_of_lt hlt)) ?_
+    have e : app (psi v B0 z) (psi v B0 z) = mulT (psi v B0 z) 2 := by simp [mulT, app_z_right]
+    rw [e]; exact (lhd_mulT (η := z) 2).1
+  obtain ⟨C, R, rfl, hC1, hC2⟩ := between_psi (lt_of_le_of_lt hbO h1) h2
+  have hz : z ∈ comps u (psi v C R) ++ Gc u z := List.mem_append_right _ (by simp [Gc])
+  have hsv : ¬ v < s' := fun h => by
+    rcases psi_lt_psi_z_iff.mp hlt with h' | ⟨h', _⟩
+    · exact lt_irrefl' _ (lt_trans h h')
+    · rw [h'] at h; exact lt_irrefl' _ h
+  rw [comps_app] at hg
+  by_cases hvu : v < u
+  · exfalso
+    have h1' : lt v u = true := hvu
+    have h2' : lt s' u = true := by
+      rcases (le_iff _ _).mp (not_lt.mp hsv) with h | h
+      · exact lt_trans h hvu
+      · rw [h]; exact hvu
+    simp [comps, h1', h2'] at hg
+  have hc : comps u (psi v C R) = C :: (comps u C ++ comps u v) ++ comps u R := by
+    have h' : lt v u = false := by simpa [lt_iff_lt] using hvu
+    simp [comps, h']
+  have hin : ∀ d, d ∈ C :: (comps u C ++ comps u v) → d ∈ comps u (psi v C R) ++ Gc u z := fun d hd =>
+    List.mem_append_left _ (by rw [hc]; exact List.mem_append_left _ hd)
+  have hlift : ∀ d ∈ z :: B0 :: (comps u B0 ++ comps u v), ∃ d' ∈ comps u (psi v C R) ++ Gc u z, d ≤ d' := by
+    intro d hd
+    rcases List.mem_cons.mp hd with rfl | hd
+    · exact ⟨z, hz, le_refl _⟩
+    rcases List.mem_cons.mp hd with rfl | hd
+    · exact ⟨C, hin C List.mem_cons_self, hC1⟩
+    rcases List.mem_append.mp hd with hd | hd
+    · rcases (le_iff _ _).mp hC1 with hlt' | heq
+      · obtain ⟨d', hd', hdd'⟩ := (lhd_pred_succ hB0).2 u C hlt' hC2 d hd
+        rcases List.mem_append.mp hd' with hd' | hd'
+        · exact ⟨d', hin d' (List.mem_cons_of_mem _ (List.mem_append_left _ hd')), hdd'⟩
+        · exact ⟨d', List.mem_append_right _ hd', hdd'⟩
+      · subst heq
+        exact ⟨d, hin d (List.mem_cons_of_mem _ (List.mem_append_left _ hd)), le_refl _⟩
+    · exact ⟨d, hin d (List.mem_cons_of_mem _ (List.mem_append_right _ hd)), le_refl _⟩
+  rw [comps_psi_z_of_ge hvu] at hg
+  rcases List.mem_append.mp hg with hg | hg
+  · exact hlift g (List.mem_cons_of_mem _ hg)
+  · obtain ⟨d, hd, hgd⟩ := hdom u g hg
+    obtain ⟨d', hd', hdd'⟩ := hlift d hd
+    exact ⟨d', hd', le_trans hgd hdd'⟩
+
+/-- **Residual: the hard seeds of a `Bad2` matrix at `t = 0`, as component facts** (2026-10-25): S3 as in
+`T0BadSeedsH4`; S2: `ω^{G0′} ⊴ ω^{G0}`, or every component of `ω^{G0′}` is below `0`, `b′`, a component of `b′` or of
+`s`, where `ω^{G0} = ψ_s(b′)` (`lhd_sum_dom`); the counted fact as in `T0BadSeedsH5`. -/
+def T0BadSeedsH6 : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → Bad2 M → Inv3V2 M ρ rk → ∀ r L, r + L + 1 = M.length → 0 < L →
+    par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    (∀ g pp, par M 0 r = some g → par M 0 g = some pp → entry M 1 pp ≠ 0 → entry M 2 pp ≠ 0 →
+      col M g = bump M pp →
+      Lhd z ((drop1 M (r + L) rk).o r) (ρ.o r) ∨
+        ∀ w', (drop1 M (r + L) rk).o r = psi w' z z →
+          ∀ u, ¬ w' < u → ∀ e ∈ comps u w', ∃ d ∈ z :: comps u (ρ.v r), e ≤ d) ∧
+    (∀ g, par M 0 r = some g → r ≠ r + L - 1 → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
+      LhdE (omega (sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rk).o)))
+          (omega (sumN ((children (M.take (r + L)) r).map ρ.o))) ∨
+        ∀ s b', omega (sumN ((children (M.take (r + L)) r).map ρ.o)) = psi s b' z →
+          ∀ u, ∀ e ∈ comps u (omega (sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rk).o))),
+            ∃ d ∈ z :: b' :: (comps u b' ++ comps u s), e ≤ d) ∧
+    ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
+      r ≠ r + L - 1 → Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r
+
+theorem t0BadSeedsH5_of (hDU : HDropU) (h6 : T0BadSeedsH6) : T0BadSeedsH5 := by
+  intro M ρ rk hM hS hB I r L hlen hL hp he1
+  obtain ⟨hS3, hS2, hcnt⟩ := h6 M ρ rk hM hS hB I r L hlen hL hp he1
+  refine ⟨hS3, fun g hg hrx hjb h1 h2 => ?_, hcnt⟩
+  rcases hS2 g hg hrx hjb h1 h2 with h | hdom
+  · exact Or.inl h
+  right
+  have D := T0DropF.of_U hDU hM hS (by omega) I
+  have hDP := D.po
+  have hDV := D.vt
+  rw [show M.length - 1 = r + L by omega] at hDP hDV
+  set G0 := sumN ((children (M.take (r + L)) r).map ρ.o) with hG0
+  set G0' := sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rk).o) with hG0'
+  have hG0ot : isOT G0 = true := isOT_sumN _ (fun t ht => by
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+    rw [children_take, List.mem_filter] at hc
+    exact I.good.ot_o c (mem_children hc.1).2)
+  have hG0'ot : isOT G0' = true := isOT_sumN _ (fun t ht => by
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp ht
+    exact hDV.g.ot_o c (mem_children hc).2)
+  have hle : omega G0' ≤ omega G0 := omega_le_omega hG0'ot hG0ot (g0le_of_po I.good hDV.g hDP)
+  obtain ⟨sO, bO, hOf, hXf⟩ := omega_succ_form hG0ot
+  have hXot : isOT (app G0 one) = true := by have := isOT_succ hG0ot; simpa [succ] using this
+  have hXs := (single_omega hXot).1
+  rw [hXf] at hXs
+  rw [hOf, hXf]
+  rcases (le_iff _ _).mp hle with hlt | heq
+  · rw [hOf] at hlt
+    exact lhd_sum_dom (isOT_arg hXs) (single_omega hG0'ot).2 hlt (hdom sO bO hOf)
+  · rw [heq, hOf]; exact lhd_sum_of_lhdE (Or.inl rfl)
+
 end Ytosk
