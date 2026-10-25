@@ -263,21 +263,25 @@ def T2SeedPResRCV2E : Prop :=
   ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     T2SeedPResRC5 M ρ
 
-/-- **Residual (t2, `Bad2`): the first qn subscript** `t_1 ◁ v_M(q)` (`t_0 = v_T(q)`, 2026-10-25). Outside `Bad2` it
-follows from the drop at `q` (`qn_drop_v_upg`・`qn1_of_lhdE`); on `Bad2` (where `x − 1` always upgrades) the drop
-`v_T(q) ⊴ v_M(q)` is false (b2grow1: 319 of 587) but `t_1 ◁ v_M(q)` holds (b2grow1・b2grow2・graftBb2St, 4119 cases;
-`t_2`, `t_3` too). -/
-def T2QN1Bad : Prop :=
+/-- **Residual (t2, `Bad2`): the components of the top bump summand of `v_T(q)`** (2026-10-25): with
+`v_T(q) = V + ω_T` (`V = v(r)`, `ω_T` a single summand), every component of `ω_T` is at most a component of
+`s′ = V + ω^S` (`qnS`) or `0`. It gives the first qn subscript `t_1 ◁ v_M(q)` (`qn1_of_dom`). Outside `Bad2` that
+follows from the drop at `q` (`qn_drop_v_upg`・`qn1_of_lhdE`); on `Bad2` (where `x − 1` always upgrades, to an
+ancestor, and loses the upgrade in `M.take x`) the drop `v_T(q) ⊴ v_M(q)` is false (b2grow1: 319 of 587) but this holds
+(b2grow1・b2grow2・graftBb2St, 4119 cases). The bound by the components of `S` alone is false (268 cases: those of `V`
+are needed). -/
+def T2QNDomBad : Prop :=
   ∀ M ρ rk, StepCtxT2 M ρ rk → Bad2 M → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
-      ∀ Lc, CL M r = Lc ++ [q] → ∀ τ, Cons (M.take (r + L)) τ →
-        Lhd z (tqN (ρ.v r) (qnS M ρ r L q) (τ.v q) 1) (ρ.v q)
+      ∀ Lc, CL M r = Lc ++ [q] → ∀ τ, Cons (M.take (r + L)) τ → ∀ ωT, τ.v q = add (ρ.v r) ωT →
+        (∃ a b, ωT = psi a b z) → ∀ u, Dom (comps u ωT) (comps u (qnS M ρ r L q) ++ [z])
 
-theorem t2SeedPResRCV2D_of_E (hQB : T2QN1Bad) (h : T2SeedPResRCV2E) : T2SeedPResRCV2D := fun M ρ rk C hz h2 =>
+theorem t2SeedPResRCV2D_of_E (hQB : T2QNDomBad) (h : T2SeedPResRCV2E) : T2SeedPResRCV2D := fun M ρ rk C hz h2 =>
   have H := h M ρ rk C hz h2
   ⟨H.qr, H.sv, fun r L q hlen hr hq hqr Lc hCL hu τ hτ => by
     by_cases hB2 : Bad2 M
-    · exact hQB M ρ rk C hB2 hz h2 r L q hlen hr hq hqr Lc hCL τ hτ
+    · exact qn1_of_dom C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hlen hr hq hqr hCL
+        (hQB M ρ rk C hB2 hz h2 r L q hlen hr hq hqr Lc hCL) τ hτ
     cases hk : upg M (r + L - 1) with
     | none => exact absurd hk hu
     | some k =>

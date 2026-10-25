@@ -39,8 +39,9 @@ theorem hSibHard_of_col (h : HSibColV2) : HSibHardV2 := fun N σ rk hN hS hC hR 
     (sibColW_of_U (sInvXJ_std hN hS).1 hC hG (h N σ rk hN hS hC hR hG))
 
 /-- **The `Bad2` residuals of the `t = 2` engines** (2026-10-25): the weak absorption `AbsWN M M[n]` and the first qn
-subscript, the two facts that the engines take from the old drop residual outside `Bad2`. -/
-def T2BadRes : Prop := T2AbsNBad ∧ T2QN1Bad
+subscript (as the component bound `T2QNDomBad`), the two facts that the engines take from the old drop residual
+outside `Bad2`. -/
+def T2BadRes : Prop := T2AbsNBad ∧ T2QNDomBad
 
 /-- **`BadOutT2B` from the `t = 2` engines** (2026-10-25): the context `StepCtxB` holds on `Bad2` too, the engines run
 on it (`ExpT2V2`, `R2V2`, and `T2CBadOut` at the bad C shape), and the descent for `n ≥ 2` is `t2_drops_ge2`. -/
@@ -84,7 +85,7 @@ first copy root reduces to `r − 1` not upgrading to `r` (`T0BadSeedsH7`, `coun
 2026-10-25: `BadOutRest` is proved: `t = 1` by `badOutT1`, `t = 2` by `badOutT2B_of` (the step context `StepCtxB` drops
 `¬ Bad2`; the `t = 2` engines run on it). The two facts the `t = 2` engines took from the old drop residual are the
 `Bad2` residual `T2BadRes`: `AbsWN M M[n]` (`T2AbsNBad`; the drop side `AbsWN M (M.take x)` is false on `Bad2`) and the
-first qn subscript `t_1 ◁ v_M(q)` (`T2QN1Bad`; the drop `v_T(q) ⊴ v_M(q)` is false on `Bad2`). -/
+first qn subscript `t_1 ◁ v_M(q)` (from the component bound `T2QNDomBad`; the drop `v_T(q) ⊴ v_M(q)` is false on `Bad2`). -/
 theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hT0H : T0BadSeedsH7)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)

@@ -470,6 +470,91 @@ theorem qn1_of_lhdE {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   · exact absurd he (ne_of_lt h.1)
   · exact hl
 
+/-- **The first qn subscript from the components** (2026-10-25): `t_1 = V + ω^S + ω_T ◁ V + ω^{S+1}` when every
+component of `ω_T` is at most a component of `V + ω^S` or `0`. A `c ∈ (t_1, V + ω^{S+1}]` is above `V + ω^S`, so its
+components bound those of `V + ω^S` (`add_omega_succ_lhd`). -/
+theorem qn_t1_lhd_of_dom {V S ωT : T} (hV : isOT V = true) (hS : isOT S = true) (hωlev : ¬ V < lev (omega S))
+    (hωTot : isOT ωT = true) (hωTf : ∃ a b, ωT = psi a b z) (hωT : ωT ≤ omega S)
+    (hDom : ∀ u, Dom (comps u ωT) (comps u (add V (omega S)) ++ [z])) :
+    Lhd z (tqN V (add V (omega S)) (add V ωT) 1) (add V (omega (succ S))) := by
+  set ω := omega S with hωdef
+  have hωot : isOT ω = true := isOT_omega hS
+  obtain ⟨a, b, hωf⟩ := omega_psi_form S
+  rw [← hωdef] at hωf
+  obtain ⟨a1, b1, hωTf⟩ := hωTf
+  have hs'ot : isOT (add V ω) = true := isOT_add hV hωot
+  have hlast : last (add V ω) = ω := by
+    obtain ⟨P, hP, _⟩ := add_eq_app_prefix V ω
+    rw [hP, last_app P (by rw [hωf]; simp), hωf]; rfl
+  have hωTlev : ¬ V < lev ωT := fun h => hωlev (lt_of_lt_of_le h (lev_le_of_le hωT))
+  have hshωT : sh V (add V ω) ωT = ωT := sh_fix hωTot hωTlev
+  have hsubV : ∀ Y, sub (add V Y) V = Y := fun Y => by
+    rw [sub_add_dist Y hV hV (le_refl _), sub_self_T]; rfl
+  have hheadT : head ωT ≤ ω := by rw [hωTf]; show psi a1 b1 z ≤ ω; rw [← hωTf]; exact hωT
+  have h1e : tqN V (add V ω) (add V ωT) 1 = app (add V ω) ωT := by
+    show add (add V ω) (sh V (add V ω) (sub (add V ωT) V)) = _
+    rw [hsubV, hshωT]
+    exact add_eq_app_of_last hs'ot (by rw [hlast]; exact hheadT)
+  rw [h1e]
+  have hX0 : ωT ≠ z := by rw [hωTf]; simp
+  have hSs : isOT (succ S) = true := isOT_succ hS
+  obtain ⟨a', b', hω'f⟩ := omega_psi_form (succ S)
+  have hωω' : ω < omega (succ S) := omega_lt_omega hS hSs (lt_succ_self S)
+  have hlt : app (add V ω) ωT < add V (omega (succ S)) := by
+    rw [hωf, ← add_app_single ωT V, ← hωf]
+    apply add_lt_add_left V
+    rw [hωf, hω'f] at hωω' ⊢
+    simp only [app_psi, app_z]
+    rw [T.psi_lt_psi] at hωω' ⊢
+    rcases hωω' with h | ⟨h1, h⟩ | ⟨h1, h2, h⟩
+    · exact Or.inl h
+    · exact Or.inr (Or.inl ⟨h1, h⟩)
+    · exact absurd h (T.not_lt_z _)
+  refine ⟨hlt, fun u c h1 h2 g hg => ?_⟩
+  have hs'c : add V ω < c := lt_trans (lhd_prefix (η := z) hX0).1 h1
+  have hLs := add_omega_succ_lhd hV hS
+  rw [comps_app] at hg
+  rcases List.mem_append.mp hg with hg | hg
+  · exact hLs.2 u c hs'c h2 g hg
+  · obtain ⟨d, hd, hgd⟩ := hDom u g hg
+    rcases List.mem_append.mp hd with hd | hd
+    · obtain ⟨d', hd', hdd'⟩ := hLs.2 u c hs'c h2 d hd
+      exact ⟨d', hd', le_trans hgd hdd'⟩
+    · rw [List.mem_singleton] at hd
+      subst hd
+      exact ⟨z, List.mem_append_right _ (List.mem_cons_self ..), hgd⟩
+
+/-- **The first qn subscript from the components** of the top summand `ω_T` of `v_T(q)` (`qn_t1_lhd_of_dom`). -/
+theorem qn1_of_dom {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+    {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) {Lc : List Nat} (hCL : CL M r = Lc ++ [q])
+    (hDom : ∀ τ, Cons (M.take (r + L)) τ → ∀ ωT, τ.v q = add (ρ.v r) ωT → (∃ a b, ωT = psi a b z) →
+      ∀ u, Dom (comps u ωT) (comps u (qnS M ρ r L q) ++ [z])) :
+    ∀ τ, Cons (M.take (r + L)) τ → Lhd z (tqN (ρ.v r) (qnS M ρ r L q) (τ.v q) 1) (ρ.v q) := by
+  intro τ hτ
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  obtain ⟨ωT, hsp, hvq, hωTot, hωTf, hωT, hvqM⟩ := qn_take_t1L hM hS I R hlen hr hq hqr hCL hτ
+  have hpq := par0_q_t2 hM hS I hlen hr hq hqr
+  have hrq : r < q := par_lt M 0 _ _ hpq
+  have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
+  have hpq' : par M 0 (r + (q - r)) = some r := by rw [show r + (q - r) = q by omega]; exact hpq
+  obtain ⟨Txb, -⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+  rw [show r + (q - r) = q by omega] at Txb
+  have hωlev := qn_omega_lev hX hJ I.cons I.good I.rank (by omega) hr hq hpq Txb
+  have hV : isOT (ρ.v r) = true := I.good.ot_v r (by omega)
+  have hSot : isOT (sumN (one :: ((children M q).filter (fun d => decide (d < r + L))).map
+      (bumpTerm M ρ q))) = true := by
+    apply isOT_sumN
+    intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · exact isOT_one
+    · obtain ⟨j, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm I.good q j
+  have hD := hDom τ hτ ωT hvq hωTf
+  unfold qnS at hD
+  unfold qnS; rw [hvq, hvqM]
+  exact qn_t1_lhd_of_dom hV hSot hωlev hωTot hωTf hωT hD
+
 /-- **The qn field of `T2SeedPResRC2`** from the drop at `q`: `v_T(q) ⊴ v_M(q)` (`T = M.take x`). -/
 theorem t2SeedPResQN_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
