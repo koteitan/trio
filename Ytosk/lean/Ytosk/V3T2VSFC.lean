@@ -122,7 +122,7 @@ def T2SeedFCV2 : Prop :=
     T2SeedFrames QFC M
 
 /-- The fields of `M.take x` for every consistent valuation, from the context. -/
-theorem take_fields_ctx {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk)
+theorem take_fields_ctx {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxB M ρ rk)
     (hl : 2 ≤ M.length) {τ : Valn} (hτ : Cons (M.take (M.length - 1)) τ) :
     Good3 (M.take (M.length - 1)) τ ∧ VSmallF (M.take (M.length - 1)) τ ∧
       FrameClosed (M.take (M.length - 1)) τ := by
@@ -143,9 +143,9 @@ theorem t2VSFCV2_of (hB : T2BelowXResV2) (hFC : T2FDCopyRes) (hSV : T2SeedVSFV2)
   have IW := Inv3W.ofV2 C.S C.I
   have RW : Res3W M ρ rk := C.toW
   refine ⟨vsmallF_expand_t2V (hB M ρ rk C) C.std C.ne IW RW hz h2
-      (fun τ hτ => ⟨(take_fields_ctx C.toStepCtxV2 hl2 hτ).1, (take_fields_ctx C.toStepCtxV2 hl2 hτ).2.1⟩)
+      (fun τ hτ => ⟨(take_fields_ctx C.toStepCtxB hl2 hτ).1, (take_fields_ctx C.toStepCtxB hl2 hτ).2.1⟩)
       (hSV M ρ rk C hz h2) n (by omega) σ hCN hGN,
-    frameClosed_expand_t2K (hB M ρ rk C) C.std C.ne IW RW hz h2 (fun τ hτ => (take_fields_ctx C.toStepCtxV2 hl2 hτ).2.2)
+    frameClosed_expand_t2K (hB M ρ rk C) C.std C.ne IW RW hz h2 (fun τ hτ => (take_fields_ctx C.toStepCtxB hl2 hτ).2.2)
       (hSF M ρ rk C hz h2) (hFC M ρ rk C hz h2) n (by omega) σ hCN⟩
 
 end Ytosk

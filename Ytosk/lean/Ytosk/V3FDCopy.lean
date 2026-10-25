@@ -400,7 +400,7 @@ theorem source_v_base_nonseed {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     intro m hm hm2 τ hτ
     obtain rfl : m = 1 := by omega
     rw [hP] at hτ ⊢
-    have h := (take_fields_ctx C.toStepCtxV2 hl2
+    have h := (take_fields_ctx C.toStepCtxB hl2
       (show Cons (M.take (M.length - 1)) τ by simpa [show M.length - 1 = r + L by omega] using hτ)).1
     simpa [show M.length - 1 = r + L by omega] using h
   have hBS := t2BelowXS_of hB C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 hlen hr
@@ -465,7 +465,7 @@ theorem root_v_base_original {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     intro m hm hm2 τ hτ
     obtain rfl : m = 1 := by omega
     rw [hP] at hτ ⊢
-    have h := (take_fields_ctx C.toStepCtxV2 hl2
+    have h := (take_fields_ctx C.toStepCtxB hl2
       (show Cons (M.take (M.length - 1)) τ by simpa [show M.length - 1 = r + L by omega] using hτ)).1
     simpa [show M.length - 1 = r + L by omega] using h
   have hRaw := hB C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 r L hlen hr

@@ -92,22 +92,30 @@ def HTakeV2 : Prop :=
 
 /-! ## 展開 -/
 
-/-- **What an expansion step knows about `M`**: its invariants and those of all its prefixes, with the drop
-valuations and the same ranking. -/
-structure StepCtxV2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
+/-- **What an expansion step knows about `M`, with or without `Bad2`**: its invariants and those of all its prefixes,
+with the drop valuations and the same ranking; the old drop residual outside `Bad2`, and the drop hypotheses in the
+`Bad2` form (`HDropU`). (2026-10-25: split off `StepCtxV2` so that the `t = 2` engines run on `Bad2`.) -/
+structure StepCtxB (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   std : Std M
   ne : M ≠ SRO
   S : SInv M
   I : Inv3V2 M ρ rk
-  R : Res3AW M ρ rk
-  nb2 : ¬ Bad2 M
+  old : ¬ Bad2 M → Res3AW M ρ rk
   pre : ∀ j, 1 ≤ j → j < M.length →
     Inv3V2 (M.take j) (drop1 M j rk) rk ∧ (¬ Bad2 (M.take j) → Res3AW (M.take j) (drop1 M j rk) rk)
   /-- The drop hypotheses in the `Bad2` form (`HDropU`, 2026-10-25), for the `t = 2` bundles. -/
   RB : DropResHB M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
 
+/-- **What an expansion step knows about `M`** outside `Bad2`. -/
+structure StepCtxV2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop extends StepCtxB M ρ rk where
+  nb2 : ¬ Bad2 M
+
+/-- The old drop residual of the context. -/
+theorem StepCtxV2.R {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk) : Res3AW M ρ rk :=
+  C.old C.nb2
+
 /-- **The conclusion of the drop lemma in the context** (from the `Bad2` form `RB`). -/
-theorem StepCtxV2.hdrop {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk) :
+theorem StepCtxB.hdrop {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxB M ρ rk) :
     ∀ i, i < M.length - 1 → PO ρ (drop1 M (M.length - 1) rk) i ∧ PV M ρ (drop1 M (M.length - 1) rk) i := by
   intro i hi
   have hl : 1 ≤ M.length := by omega
@@ -122,8 +130,8 @@ theorem StepCtxV2.hdrop {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : S
     R.hard (bump_dropB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.kd I.td R.ab R.ws) R.ua i hi
 
 /-- **The `t = 2` drop bundle of the context.** -/
-theorem StepCtxV2.toW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk) : Res3W M ρ rk :=
-  ⟨C.hdrop, fun _ => C.R.drop, fun _ => C.R.drop.ab⟩
+theorem StepCtxB.toW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxB M ρ rk) : Res3W M ρ rk :=
+  ⟨C.hdrop, fun h => (C.old h).drop, fun h _ => (C.old h).drop.ab⟩
 
 /-- **The bad shape of the C case at `t = 2`** (2026-10-17): `q = P_0(x) ≠ r`, `q` is not the last counted child of `r`,
 and `x − 1` upgrades (to an ancestor of `r`). The seed residual `T2SeedCResR.un` is false here (ext2: 6 standard matrices);
@@ -132,8 +140,8 @@ def T2CBad (M : Mat) : Prop :=
   ∃ r L q, r + L + 1 = M.length ∧ par M 2 (r + L) = some r ∧ par M 0 (r + L) = some q ∧ q ≠ r ∧
     (¬ ∃ Lc, CL M r = Lc ++ [q]) ∧ upg M (r + L - 1) ≠ none
 
-/-- **The step context of the `t = 2` engines**: `StepCtxV2` outside the bad C shape. -/
-structure StepCtxT2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop extends StepCtxV2 M ρ rk where
+/-- **The step context of the `t = 2` engines**: `StepCtxB` (with or without `Bad2`) outside the bad C shape. -/
+structure StepCtxT2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop extends StepCtxB M ρ rk where
   good : ¬ T2CBad M
 
 /-- **R-t0**: the expansions `M[n]` (`n ≥ 2`) with a last column of type `t = 0` have the invariant. -/
@@ -200,7 +208,7 @@ def HRwClL : Prop :=
 
 /-- **Residual: the `t = 2` step at the bad C shape** (the output of the `t = 2` engines there). -/
 def T2CBadOut : Prop :=
-  ∀ M ρ rk, StepCtxV2 M ρ rk → T2CBad M → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
+  ∀ M ρ rk, StepCtxB M ρ rk → T2CBad M → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     (∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V2 (expand M n) ρN rkN) ∧ Res3T2 M ρ rk
 
 /-- `TRwOut 2` in the context of the `t = 2` engines. -/

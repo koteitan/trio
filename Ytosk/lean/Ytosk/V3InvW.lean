@@ -60,8 +60,8 @@ structure Res3W (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   hdrop : ∀ i, i < M.length - 1 →
     PO ρ (drop1 M (M.length - 1) rk) i ∧ PV M ρ (drop1 M (M.length - 1) rk) i
   old : ¬ Bad2 M → DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
-  /-- `BumpAbsC` when the parent of `x` is not a bump child (what `t2_absWN_take` reads). -/
-  ab : XParNB M (M.length - 1) → BumpAbsC M (M.length - 1) ρ
+  /-- `BumpAbsC` outside `Bad2` when the parent of `x` is not a bump child (what `t2_absWN_take` reads). -/
+  ab : ¬ Bad2 M → XParNB M (M.length - 1) → BumpAbsC M (M.length - 1) ρ
 
 theorem Inv3.toW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3 M ρ rk) : Inv3W M ρ rk :=
   ⟨I.r0p, I.z2, I.sd, I.z1, I.uat, I.uab, I.r12, I.be, I.r01, I.e00, I.cons, I.good, I.rank, I.vs, I.fc,
@@ -78,7 +78,7 @@ theorem Res3W.ofDrop {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3
   exact ⟨drop_all hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs hD.vst
     I.fc I.fo hD.argT
     (bump_drop hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hD.ab hD.ws)
-    hD.ua, fun _ => hD, fun _ => hD.ab⟩
+    hD.ua, fun _ => hD, fun _ _ => hD.ab⟩
 
 
 /-- The structural part of `Inv3W`. -/

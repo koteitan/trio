@@ -569,8 +569,9 @@ theorem t2SVc0_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M
 /-- **`T2SVc0'` from the drop lemma**: with a nonzero argument, `c₀` has a counted child in `M.take x`, so it is not
 `TopC` and its `v` does not change (`chg_struct`, `chg_off`); the drop lemma gives `o_{M.take x}(c₀) ◁= o_M(c₀)`
 (`drop_all_H`, the weak alternative has argument `0`), hence the same subscript and a smaller argument. -/
-theorem t2SVc0'_of_drop {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk)
-    (hD : DropResH M (M.length - 1) ρ (drop1 M (M.length - 1) rk)) {r L : Nat} (hlen : r + L + 1 = M.length) :
+theorem t2SVc0'_of_drop {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxB M ρ rk)
+    (hD : ∀ i, i < M.length - 1 → PO ρ (drop1 M (M.length - 1) rk) i ∧ PV M ρ (drop1 M (M.length - 1) rk) i)
+    {r L : Nat} (hlen : r + L + 1 = M.length) :
     T2SVc0' M ρ r L := by
   intro τ hτ Lc0 c0 hT s y hsy hy
   have IW := Inv3W.ofV2 C.S C.I
@@ -585,7 +586,7 @@ theorem t2SVc0'_of_drop {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : S
   have hc0T : c0 < (M.take (r + L)).length := (mem_children hc0.1).2
   have hc0x : c0 < r + L := by rw [List.length_take] at hc0T; omega
   have hag := agree_of_cons hτ hC1 hRk1 c0 hc0T
-  have hPO := (drop_all_H hlen IW.r0p IW.z2 IW.sd IW.z1 IW.uat IW.uab IW.cons ⟨C.I.good, C.I.vs, C.I.fc, C.I.fo, C.I.kd, C.I.td⟩ hD hC1 hRk1 c0 hc0x).1.1
+  have hPO := (hD c0 hc0x).1.1
   -- `τ` on `M.take x` is good
   have hτ' : Cons (M.take (M.length - 1)) τ := by rw [hx]; exact hτ
   have hG := good3_take_any IW C.toW (by omega) hτ'

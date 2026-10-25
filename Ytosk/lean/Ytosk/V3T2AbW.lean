@@ -39,16 +39,17 @@ theorem t2_xparNB {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M)
     rw [show r + (q - r) = q by omega] at Tqb
     exact Tqb hb
 
-/-- **The weak absorption for the drop** (`t = 2`), from the drop residual `BumpAbsC`. -/
+/-- **The weak absorption for the drop** (`t = 2`, outside `Bad2`), from the drop residual `BumpAbsC`. On `Bad2` it
+is false (graftBb2St: 3 standard matrices), while `AbsWN M M[n]` holds there (the residual `T2AbsNBad`, V3T2BelowR). -/
 theorem t2_absWN_take {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
-    (I : Inv3W M ρ rk) (R : Res3W M ρ rk) {r L : Nat} (hlen : r + L + 1 = M.length)
+    (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hNB : ¬ Bad2 M) {r L : Nat} (hlen : r + L + 1 = M.length)
     (hr : par M 2 (r + L) = some r) {τ : Valn} (hτ : Cons (M.take (r + L)) τ) :
     AbsWN M (M.take (r + L)) (r + L) ρ τ := by
   have hA := anc0_of_par M 2 r (r + L) hr
   have hrx : r < r + L := par_lt M 2 _ _ hr
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
   have hnb := t2_xparNB hM hS I hlen hr hq
-  have hab := R.ab (by
+  have hab := R.ab hNB (by
     intro q' i hq' hi
     rw [show M.length - 1 = r + L by omega, hq] at hq'
     cases hq'
@@ -66,7 +67,7 @@ def T2BumpMono (M : Mat) (r L : Nat) : Prop :=
 
 /-- **AbsWN for `t = 2`** from the drop and `T2BumpMono`. -/
 theorem t2_absWN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
-    (I : Inv3W M ρ rk) (R : Res3W M ρ rk) {r L : Nat} (hlen : r + L + 1 = M.length)
+    (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hNB : ¬ Bad2 M) {r L : Nat} (hlen : r + L + 1 = M.length)
     (hr : par M 2 (r + L) = some r) (hm : T2BumpMono M r L) {n : Nat} (hn : 2 ≤ n) {σ : Valn}
     (hCN : Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ) :
     AbsWN M (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n)
@@ -75,6 +76,6 @@ theorem t2_absWN {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) 
   rw [show M.length - 1 = r + L by omega] at hcnt
   have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
   have hC0 := cons_of_rk hRk1
-  exact absWN_mono (t2_absWN_take hM hS I R hlen hr hC0) (hm _ hC0 n hn σ hCN)
+  exact absWN_mono (t2_absWN_take hM hS I R hNB hlen hr hC0) (hm _ hC0 n hn σ hCN)
 
 end Ytosk

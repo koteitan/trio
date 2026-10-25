@@ -24,7 +24,7 @@ def T2SeedDomV2 : Prop :=
       (¬ ∃ Lc, CL M r = Lc ++ [q]) → G.T2SeedCDom M ρ r L q)
 
 /-- `FrameOT` of `M.take x` for every consistent valuation, from the context. -/
-theorem take_fo_ctx {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk)
+theorem take_fo_ctx {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxB M ρ rk)
     (hl : 2 ≤ M.length) {τ : Valn} (hτ : Cons (M.take (M.length - 1)) τ) :
     FrameOT (M.take (M.length - 1)) τ := by
   obtain ⟨I1, _⟩ := C.pre (M.length - 1) (by omega) (by omega)
@@ -114,7 +114,7 @@ theorem t2SeedFrV2_of (hPR : T2SeedPResV2) (hD : T2SeedDomV2) :
       have := par_lt M 2 _ r hr; omega
     obtain ⟨hQND, hCD⟩ := hD M ρ rk C hz h2
     exact t2SeedFrames3 C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hPR M ρ rk C hz h2) hQND hCD
-      (fun τ hτ => ⟨(take_fields_ctx C.toStepCtxV2 hl2 hτ).2.1, take_fo_ctx C.toStepCtxV2 hl2 hτ, (take_fields_ctx C.toStepCtxV2 hl2 hτ).2.2⟩)
+      (fun τ hτ => ⟨(take_fields_ctx C.toStepCtxB hl2 hτ).2.1, take_fo_ctx C.toStepCtxB hl2 hτ, (take_fields_ctx C.toStepCtxB hl2 hτ).2.2⟩)
   refine ⟨fun M ρ rk C hz h2 => (main M ρ rk C hz h2).1, fun M ρ rk C hz h2 => ?_,
     fun M ρ rk C hz h2 => (main M ρ rk C hz h2).2.1⟩
   intro r L hlen hr n hn hGlow σ hCN hGN i hi Lc c R hCL

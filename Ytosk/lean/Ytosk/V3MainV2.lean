@@ -562,11 +562,17 @@ theorem pre_V2 (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) {M : Mat} {ρ : V
   exact ⟨Ij, fun hNBj => res3AW_of_V2 hD (std_take hM j (by omega)) (ne_SRO_of_rk Ij.rank)
     (take_ne_nil_of hj (by omega)) hNBj Ij⟩
 
+/-- **The step context with or without `Bad2`.** -/
+theorem ctxB_V2 (hU : HDropU) (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) {M : Mat} {ρ : Valn}
+    {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hE : M ≠ []) (I : Inv3V2 M ρ rk) :
+    StepCtxB M ρ rk :=
+  ⟨hM, hS, sInv_std hM hS, I, fun hNB => res3AW_of_V2 hD hM hS hE hNB I, pre_V2 hD hT hTB hM hS I,
+    (hU M ρ rk hM hS hE I).1⟩
+
 theorem ctx_V2 (hU : HDropU) (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) {M : Mat} {ρ : Valn}
     {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hE : M ≠ []) (hNB : ¬ Bad2 M) (I : Inv3V2 M ρ rk) :
     StepCtxV2 M ρ rk :=
-  ⟨hM, hS, sInv_std hM hS, I, res3AW_of_V2 hD hM hS hE hNB I, hNB, pre_V2 hD hT hTB hM hS I,
-    (hU M ρ rk hM hS hE I).1⟩
+  ⟨ctxB_V2 hU hD hT hTB hM hS hE I, hNB⟩
 
 /-- **`RwClosed` passes to the last drop** `M.take (|M| − 1)` with `drop1` (the drop lemma from `Res3AW.drop`). -/
 theorem rw_last_V2 (hD : HDropV2) {M : Mat} {ρ : Valn}
@@ -703,8 +709,8 @@ theorem hInvV2_all (hU : HDropU) (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2)
       · obtain ⟨ρN, rkN, IN, _⟩ := h1 M ρ rk C hz hs n hn
         exact ⟨ρN, rkN, IN⟩
       · by_cases hb : T2CBad M
-        · exact (hCB M ρ rk C hb hz hs).1 n hn
-        · exact h2 M ρ rk ⟨C, hb⟩ hz hs n hn
+        · exact (hCB M ρ rk C.toStepCtxB hb hz hs).1 n hn
+        · exact h2 M ρ rk ⟨C.toStepCtxB, hb⟩ hz hs n hn
     · rcases Nat.lt_or_ge n 1 with hn0 | hn1
       · obtain rfl : n = 0 := by omega
         obtain ⟨j, hj, he⟩ := expand_zero_take hME
@@ -818,13 +824,13 @@ theorem hT2_V2 (h2 : ExpT2V2) (hR2 : R2V2) (hCB : T2CBadOut) (hTB : TakeBadV2) {
   intro hz hs
   obtain ⟨hX, hJ⟩ := sInvXJ_std C.std C.ne
   by_cases hb : T2CBad M
-  · apply t2_dropsC (Inv3V2.toC C.S C.I) R (hCB M ρ rk C hb hz hs).2 hX hJ (root_chain_pre hTB C) (prefix_facts_pre C) hz hs
+  · apply t2_dropsC (Inv3V2.toC C.S C.I) R (hCB M ρ rk C.toStepCtxB hb hz hs).2 hX hJ (root_chain_pre hTB C) (prefix_facts_pre C) hz hs
     intro n hn _ _
-    obtain ⟨ρN, rkN, IN⟩ := (hCB M ρ rk C hb hz hs).1 n hn
+    obtain ⟨ρN, rkN, IN⟩ := (hCB M ρ rk C.toStepCtxB hb hz hs).1 n hn
     exact ⟨ρN, rkN, IN.cons, IN.rank, IN.good⟩
-  · apply t2_dropsC (Inv3V2.toC C.S C.I) R (hR2 M ρ rk ⟨C, hb⟩ hz hs) hX hJ (root_chain_pre hTB C) (prefix_facts_pre C) hz hs
+  · apply t2_dropsC (Inv3V2.toC C.S C.I) R (hR2 M ρ rk ⟨C.toStepCtxB, hb⟩ hz hs) hX hJ (root_chain_pre hTB C) (prefix_facts_pre C) hz hs
     intro n hn _ _
-    obtain ⟨ρN, rkN, IN⟩ := h2 M ρ rk ⟨C, hb⟩ hz hs n hn
+    obtain ⟨ρN, rkN, IN⟩ := h2 M ρ rk ⟨C.toStepCtxB, hb⟩ hz hs n hn
     exact ⟨ρN, rkN, IN.cons, IN.rank, IN.good⟩
 
 /-- **Desc3 from the residuals**, with `t = 0` and `t = 1` in the conclusion forms `ExpT0OutV2`・`ExpT1OutV2`

@@ -7,7 +7,7 @@
 - エンジン（`qr_final4SG`・`frameMapT1_takeG`）を落とす補題の結論（`hdrop_of_U`）と条件のない ua（`HDropU`）から
   動かす。CntX の第 3 の選言は r = x − 1 なので第 2 の選言と同じに扱える。
 - q ≠ r（P₀(x) ≠ P₁(x)）のエンジン（`t1_main_vlocSG`）は落とす補題の結論だけを読む。
-残り `BadOutT2B`: t = 2。
+t = 2 の `BadOutT2B` は V3TopT2B の `badOutT2B_of` で証明（エンジンを Bad2 でも動く文脈 StepCtxB で動かす）。
 -/
 import Ytosk.V3T0BadOut
 import Ytosk.V3T1VSRAll
@@ -166,7 +166,8 @@ theorem badOutT1 (hDU : HDropU) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLeafV2
   exact inv3V2_of_core hRN hcore (vsmallRAll_of_mapT1 hmap I.vra)
     (hF _ ρN rkN hStdN hNS hNE hCN hRN hGN) hTP hTPW
 
-/-- **Residual: `BadOutV2` at `t = 2`** (2026-10-25; `t = 0` is `BadOutT0`, `t = 1` is `badOutT1`). -/
+/-- **`BadOutV2` at `t = 2`** (2026-10-25; `t = 0` is `BadOutT0`, `t = 1` is `badOutT1`). Proved by `badOutT2B_of`
+(V3TopT2B): the `t = 2` engines run on the context `StepCtxB`, which holds on `Bad2` too. -/
 def BadOutT2B : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Bad2 M → Inv3V2 M ρ rk → TRIO.srow M (M.length - 1) = 2 →
     ∀ n, 2 ≤ n → (∃ ρN rkN, Inv3V2 (expand M n) ρN rkN) ∧ DropsAt M ρ n

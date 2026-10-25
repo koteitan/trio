@@ -5,7 +5,7 @@
 x より前の残り `T2BelowRV2` を `t2BelowRV2_of`（V3T2BelowR）で、種の標準形 `T2SeedOTV2` を `t2SeedOTV2_of`
 （V3T2SeedOTP）で、種の列の枠の形 `T2SeedPreShape` を `t2SeedPreShape_of`（V3T2SeedPre）で小さい残りに替える。
 影の枠の閉じ方は G3 の切り口の形（PH3cG）と段を限った種の上限から（V3CutClosed の `shadow_hShL_from_kind`、2026-10-18）。残り HRwClL は外した。種の残りは `T2SeedPResRCV2` と、兄弟の値の条件 `HSibColV2`（V3SibCol の SibColW）から。
-最上位はこのファイルの `trio_terminates_main_V2_cur` 1 本。
+最上位はこのファイルの `trio_terminates_main_V2_cur` 1 本。Bad2 の t = 2（`BadOutT2B`）もここで `badOutT2B_of` で証明する（2026-10-25）。
 -/
 import Ytosk.V3TopV2
 import Ytosk.V3SibCol
@@ -38,6 +38,27 @@ theorem hSibHard_of_col (h : HSibColV2) : HSibHardV2 := fun N σ rk hN hS hC hR 
   upgSibVHard_of_col (sInvXJ_std hN hS).1 (sInvXJ_std hN hS).2 hC hR hG
     (sibColW_of_U (sInvXJ_std hN hS).1 hC hG (h N σ rk hN hS hC hR hG))
 
+/-- **The `Bad2` residuals of the `t = 2` engines** (2026-10-25): the weak absorption `AbsWN M M[n]` and the first qn
+subscript, the two facts that the engines take from the old drop residual outside `Bad2`. -/
+def T2BadRes : Prop := T2AbsNBad ∧ T2QN1Bad
+
+/-- **`BadOutT2B` from the `t = 2` engines** (2026-10-25): the context `StepCtxB` holds on `Bad2` too, the engines run
+on it (`ExpT2V2`, `R2V2`, and `T2CBadOut` at the bad C shape), and the descent for `n ≥ 2` is `t2_drops_ge2`. -/
+theorem badOutT2B_of (hU : HDropU) (hD : HDropV2) (hT : HTakeV2) (hTB : TakeBadV2) (h2 : ExpT2V2) (hR2 : R2V2)
+    (hCB : T2CBadOut) : BadOutT2B := by
+  intro M ρ rk hM hS hE hB I h2t n hn
+  have CB := ctxB_V2 hU hD hT hTB hM hS hE I
+  have hz : col M (M.length - 1) ≠ (0, 0, 0) := bad2_col_ne_zero hB
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  have key : (∀ m, 2 ≤ m → ∃ ρN rkN, Inv3V2 (expand M m) ρN rkN) ∧ Res3T2 M ρ rk := by
+    by_cases hb : T2CBad M
+    · exact hCB M ρ rk CB hb hz h2t
+    · exact ⟨fun m hm => h2 M ρ rk ⟨CB, hb⟩ hz h2t m hm, hR2 M ρ rk ⟨CB, hb⟩ hz h2t⟩
+  refine ⟨key.1 n hn, ?_⟩
+  exact t2_drops_ge2 (Inv3W.ofV2 CB.S CB.I) CB.toW key.2 hX hJ hz h2t (fun m hm _ _ => by
+    obtain ⟨ρN, rkN, IN⟩ := key.1 m hm
+    exact ⟨ρN, rkN, IN.cons, IN.rank, IN.good⟩) n hn
+
 /-- **The current top theorem.** The hypotheses are the named residuals:
 drop `HDropV2W` (the seed condition `HSeedV2` follows from `◁`, `SeedComps.seed_comps_lt`, 2026-10-21; the strong absorption at `t = 0` `T0UpgAbsV2` is no longer needed, 2026-10-20); shared `HFrameV2`・`HLeafV2`; t0 uses node Lhd and RClaimU instead of the former `T0ArgBRes`; the bump monotonicity along prefixes `HBumpExt` (gives t0's `T0AbWRes` and t2's `T2BumpMonoV2`); `T2VAncUse` (what the copy frames use of `VAnc`: `VDomF` at the guarded copy frames with a counted child and `VAnc` on the root edge `r → r + L` of `M[n]`, 2026-10-24; the former `HVAncStd`/`T2VAncStep` (`VAncStep` of every `M[n]`) is false on standard matrices, see desc; with `T2VRAK KAG` it gives the frame condition `KVRA`);
 t2 the closedness of the seed argument `T2SeedClV2B` (qn, and the `k`-free sv・C parts `T2SeedSVBase`・`T2SeedCBase`),
@@ -59,8 +80,12 @@ follows from the `M`-level sum `omid + o′(r) ◁ o(r)` (`t0_S3W`, V3T0BadS3), 
 (`T0BadSeedsH4`, `lhd_sum_weak`: every component of `w′ = v′(r)` is `0` or below a component of `v(r)`); S2 likewise from the `M`-level sum `ω^{G0} + ω^{G0′} ◁ ω^{G0 + 1}` (`T0BadSeedsH5`, `t0_S2GW`,
 V3T0BadS2), and that from a component fact of `ω^{G0′}` (`T0BadSeedsH6`, `lhd_sum_dom`); the counted fact of the
 first copy root reduces to `r − 1` not upgrading to `r` (`T0BadSeedsH7`, `counted_first0G`, V3T0BadCnt); the weak absorption from
-`HDropU`, whose `BumpAbsC` now also covers `t = 0`, and `HBumpExt`); the rest is the residual `BadOutRest`. -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hBR : BadOutT2B) (hT0H : T0BadSeedsH7)
+`HDropU`, whose `BumpAbsC` now also covers `t = 0`, and `HBumpExt`); the rest is the residual `BadOutRest`.
+2026-10-25: `BadOutRest` is proved: `t = 1` by `badOutT1`, `t = 2` by `badOutT2B_of` (the step context `StepCtxB` drops
+`¬ Bad2`; the `t = 2` engines run on it). The two facts the `t = 2` engines took from the old drop residual are the
+`Bad2` residual `T2BadRes`: `AbsWN M M[n]` (`T2AbsNBad`; the drop side `AbsWN M (M.take x)` is false on `Bad2`) and the
+first qn subscript `t_1 ◁ v_M(q)` (`T2QN1Bad`; the drop `v_T(q) ⊴ v_M(q)` is false on `Bad2`). -/
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hT0H : T0BadSeedsH7)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -74,20 +99,18 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hBR : BadOutT2B) (hT0H : T0B
   have hDW : HDropV2W := hDropV2W_of_U hDU
   have hDB : DropBadV2B := dropBadB_of_U hDU (rootBad_of_T2 hDU (rootBadV2T2_holds hDU))
   have hDomB : T2SeedDomV2B := t2SeedDomV2B_of_Q hDomQ
-  have hPRB : T2SeedPResRCV2B := t2SeedPResRCV2B_of_C (t2SeedPResRCV2C_of_D (t2SeedPResRCV2D_of_E hPRE))
+  have hPRB : T2SeedPResRCV2B := t2SeedPResRCV2B_of_C (t2SeedPResRCV2C_of_D (t2SeedPResRCV2D_of_E hTB2.2 hPRE))
   have hSV0 : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
         T2SVCase M r L → T2SVc0 M ρ r L := fun M ρ rk C hz h2 r L hlen hr hc =>
-    t2SVc0_of (Inv3W.ofV2 C.S C.I) hlen (t2SVc0'_of_drop C.toStepCtxV2
-      (hDropV2_of' hDW M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.nb2 C.I) hlen)
+    t2SVc0_of (Inv3W.ofV2 C.S C.I) hlen (t2SVc0'_of_drop C.toStepCtxB C.hdrop hlen)
   have hCF : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
         par M 0 (r + L) = some q → q ≠ r → (¬ ∃ Lc, CL M r = Lc ++ [q]) → T2CFrRes M ρ r L q :=
     fun M ρ rk C hz h2 r L q hlen hr hq hqr hncl =>
       ⟨cl_C C.std C.ne (Inv3W.ofV2 C.S C.I) hlen hr hq hqr hncl
         (by by_contra hne; exact C.good ⟨r, L, q, hlen, hr, hq, hqr, hncl, hne⟩), t2SVc0_of (Inv3W.ofV2 C.S C.I) hlen
-        (t2SVc0'_of_drop C.toStepCtxV2
-          (hDropV2_of' hDW M ρ rk C.std C.ne (by intro h; rw [h] at hlen; simp at hlen) C.nb2 C.I) hlen)⟩
+        (t2SVc0'_of_drop C.toStepCtxB C.hdrop hlen)⟩
   have hDom : T2SeedDomV2 := t2SeedDomV2_of_B hCl hPRB hDomB
   have hQNG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
@@ -102,7 +125,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hBR : BadOutT2B) (hT0H : T0B
   have hPR : T2SeedPResRCV2 := t2SeedPResRCV2_of_B hCl hPRB
   have hPRV : T2SeedPResRV2 := t2SeedPResR_of_canon hCan hPR
   have hP : T2SeedPResV2 := t2SeedPResV2_of hPRV
-  have hBX : T2BelowXResV2 := t2BelowXResV2_of (t2BelowRV2_of hP (t2SeedClV2_of_B hCl hP) (t2BumpMonoV2_of_ext hBE)) hP (t2SeedOTV2_of hP (t2SeedOTRestV2_of_B hCl hP))
+  have hBX : T2BelowXResV2 := t2BelowXResV2_of (t2BelowRV2_of hP (t2SeedClV2_of_B hCl hP) (t2BumpMonoV2_of_ext hBE) hTB2.1) hP (t2SeedOTV2_of hP (t2SeedOTRestV2_of_B hCl hP))
   have hVPrC : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2SeedPreShapeC M ρ := fun M ρ rk C hz h2 =>
     t2SeedPreShapeC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hP M ρ rk C hz h2)
@@ -122,11 +145,21 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hBR : BadOutT2B) (hT0H : T0B
           (t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hVPr M ρ rk C hz h2)))
         (hP M ρ rk C hz h2) (hCF M ρ rk C hz h2)
         (fun r L q hlen hr hq hqr hncl => (hCl M ρ rk C hz h2 r L hlen hr).2.2 q hq hqr hncl))
+  have hPreG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
+      TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ := fun M ρ rk C hz h2 =>
+    t2VRAPre_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2
+      (t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hVPr M ρ rk C hz h2))
+  have hFD : T2FDCopyRes := FDCopyRoot.t2FDCopyRes_of_path hBX (t2FOSeedV2_of hP hDom) hVU hAG
+  have hE2 : ExpT2V2 := expT2V2_of hBX (t2FOSeedV2_of hP hDom) hP (t2VSFCV2_of2 hBX hFD hP hDom)
+    (t2VRAV2_of qVRAshK_KVRA hBX (t2VRASeedG_of hBX hP hPreG hQNG hSVCG) hPreG hVCp
+      (fun M ρ rk C hz h2 => t2VRAK_KVRA_of (hVU M ρ rk C hz h2).vdom (hAG M ρ rk C hz h2))) hF hLf
+  have hBR : BadOutT2B := badOutT2B_of hDU (hDropV2_of' hDW) (hTake_of_glob hF hLf)
+    (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hE2 (r2V2_of hBX) hCB
   trio_terminates_main_V2_base hDU (hDropV2_of' hDW) (takeBad_of_drop (dropBad_of_B hDB) hF hLf)
     (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf (t0BadSeeds_of hDU (t0BadSeedsH_of hDU (t0BadSeedsH2_of hDU hBE (t0BadSeedsH3_of hDU (t0BadSeedsH4_of hDU hBE (t0BadSeedsH5_of hDU (t0BadSeedsH6_of hT0H)))))))) (badOutRest_of (badOutT12_of hDU (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf hBR))) hF hLf
     (t0AbWRes_of_ext (hDropV2_of' hDW) hBE)
     hCB hBX
-    hPRV hDom (FDCopyRoot.t2FDCopyRes_of_path hBX (t2FOSeedV2_of hP hDom) hVU hAG) hQNG hSVCG
+    hPRV hDom hFD hQNG hSVCG
     (fun M ρ rk C hz h2 => t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hVPr M ρ rk C hz h2))
     hVCp (fun M ρ rk C hz h2 => t2VRAK_KVRA_of
       (hVU M ρ rk C hz h2).vdom
