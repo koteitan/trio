@@ -4579,3 +4579,16 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
 - 残り T2QN1Bad（t_1 ◁ v_M(q)）を `T2QNDomBad`（ω_T の成分の支配）に替えた。測定（qnstar.py）: 4119 件すべてで成り立つ。S の成分だけでの支配は 268 件で偽（V = v(r) の成分が要る）。
 - 次の分解の材料（qnkids.py）: Bad2 の qn では、q の bump 子 j の子 k のうち o_T(k) ⊴ o_M(k) が破れるのは x − 1 だけ（b2grow1 587・b2grow2 821。graftBb2St では x − 1 も ⊴）。x − 1 の o_T の成分は V + ω^S の成分で押さえられる（例外 0）。x − 1 は M.take x で上げを失い o_T(x − 1) = ψ_{V′+1}(0)（V′ = v(P₁(x − 1))、P₁(x − 1) < r）。ただし和 S の中で前の bump 項が吸収されると成分が消えるので、k ごとの支配から ω_T の支配を出すには吸収の扱いが要る。
 - 全体ビルド緑 1086 jobs、公理は標準の 3 つ（459eeae5）。仮定は 14 個のまま。
+
+### T2BadRes の 2 欄をさらに調べた（2026-10-25、lead、Lean は未着手）
+
+T2AbsNBad（AbsWN M M[n]）:
+- 落とし側が偽の 3 件（graftBb2St）は qr の形（r = x − 1、x は x − 1 の子で行 1 ≠ 0、Bad2 の第 2 の選言）。i = g（p = P₀(x − 1) を bump 子に持つ列）で bumpW_T(i) = ω^1（bump 項が消える）、bumpW_N(i) = ψ_ω(Ω_{ω+1})、bumpW_M(i) = ψ_ω(Ω_{ω·2})。M[n] では bump 項が大きく残るので、V の加数はすべて bumpW_N に吸収され、前件が空になる。示すには M[n] の bump 項の下からの評価が要る。
+
+T2QNDomBad（ω_T の成分の支配）の材料（qnterms.py、b2grow1・b2grow2・graftBb2St のすべて）:
+- q の子 j < x の bump 項は、x − 1 を含む子 p 以外で変わらない。p は x の直前の子で q の bump 子。x − 1 は p の最後の子で葉。p の他の子の o・v も変わらない。S_T の最後以外の加数は S の加数。
+- ω^{S_T} ⊴ ω^S、S_T ⊴ S、t_T(p) ⊴ t_M(p)、o_T(x − 1) ⊴ o_M(x − 1) はどれも b2grow で偽（319・319・453・587 件）。V = v(r) の成分が要る。
+- P₁(x − 1) は r の行 1 の祖先で、V′ = v(P₁(x − 1)) ≤ V、V′ の成分は V の成分か 0 で押さえられる（例外 0）。
+- 一般の性質「行 1 の親 a = P₁(i) の v の成分は v(i) の成分か 0 で押さえられる」は偽（graftBb2St で e2 の列 216 件、d3s・ext2 で上げる列 9 件）。上げる列の偽は上げ先が n + 1 の場合だけ。上げ先が祖先なら例外 0（核 UpgAncComp。T0BadSeedsH7 (1) と共通）。
+- omega x は ψ_x(0) ではない（Term.lean の ω^x、x ≥ ψ₀(Ω) では ψ_s(p + (x − ψ_s(p)))）ので、成分を omega を通してたどるには comps (omega X) の補題が要る。今のライブラリにはない。
+- 測定 scratchpad の absex.py・qnterms.py・vcomp.py。
