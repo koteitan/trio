@@ -4521,3 +4521,10 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
   - V3BumpDrop に和の単調性の補題の写し（`sumN_le2O` など）を置いた（V3StrictR・V3DropPres は後のファイル）。
   - V3Congr: 形の結論に UpgBad（評価による）が入ったので、σ から τ へ運ぶ。
 - 測定: 弱めた形は b2grow1・graftBb2Sf・graftB（形の場面 756 件）ですべて成り立つ（scratchpad の bwsb2.py）。全体ビルド緑 1083 jobs、公理は標準の 3 つ。
+- 測り直し（同じ日、b2grow1 と shapegrow）:
+  - shapegrow: Bad2 の展開の接頭辞に任意の 1 列を足した標準形のうち旧形が破れる 2372 個（Bad2 1194・¬Bad2 1178、scratchpad の bwsbwide2.py）。弱めた形の破れは 0。
+  - T0BadSeedsH7 の 3 欄（Lean の文のとおり、t0h7.py）: graftBb2Sf と b2grow1 で例外 0（欄 1: 144、欄 2: 422、欄 3: 844 件）。
+  - HFrameV2・HLeafV2（probe_hframe）、Inv3V2 の欄 AbsUS・TPLoS・TrigS・VSmallRAll（probe_inv2）: b2grow1・shapegrow で例外 0。
+  - HDropU の欄（dropres2、b2t.py）: shapegrow で破れるのは旧形 BWS と、HDropU に入っていない BumpAbsS・AbsSR だけ。
+  - HBumpExt（hbe.py、すべての接頭辞）: b2grow1・shapegrow の各 800 個の標本で例外 0（97 万件）。
+  - 展開 M[n]（n = 0〜3）での根の真の減少（baddesc.py）: b2grow1 の 6517 個すべて。
