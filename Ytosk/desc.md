@@ -4486,3 +4486,21 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
   - したがって t = 1 も、t = 0 と同じく「落とす補題の結論＋条件のない ua（DropResHB.ua）」から動かせる見込み。
   - MainT1D の hUA.toX_xm1（NBPar から強い吸収を出す）の使い道は要確認。
 
+
+### Bad2 の t = 1 を証明し、BadOutV2 の残りを t = 2 だけにした（2026-10-25、lead）
+
+- `bad2_col_ne_zero`（V3T0BadOut）: Bad2 の最後の列は (0,0,0) でない（x は g の子孫か、行 2 ≠ 0 か、行 1 ≠ 0）。BadOutRest の「最後の列が 0」の場合は起きない。
+- t = 1 のエンジンを、落とす補題の結論 hdrop（PO・PV）から動く G 版にした。元の名前の定理は、古い欄から hdrop を作って G 版を呼ぶ包みにした（`qr_dropSeed`・`t1_drop_of_fields`）。
+  - q = r: `qr_seed_lt`・`qr_seedC_of`・`qr_final3G`・`qr_final4_seedG`・`qr_final4SG`（V3QRFinal3・V3QRFinal4）。始点の条件 hseedC は「ua（強い吸収か SmallSelf(V + 1)）」と「NoBad3 ∨ r = x − 1」から出す。CntX の第 3 の選言でも r = x − 1 なら UpgBad の上げを ua に渡せる。
+  - q ≠ r: `t1_main_dropG`・`t1_main_valG`・`t1_main_tp1G`・`t1_main_vlocSG`。この鎖は落とす補題の欄を hdrop を作るためだけに使っていた。
+  - `frameMapT1_takeG`（V3T1VSRAll）: NoBad3 は VrDomQ（P₀(x) = r の場合）でしか使わないので、引数を「P₀(x) = r → NoBad3 ∨ r = x − 1」にした。
+- `t1qr_bad_xm1`（V3T1Bad）: Bad2 で t = 1・P₀(x) = P₁(x) = r なら r = x − 1。
+  - x が g の部分木にあれば r は g・p・x − 1 のどれか。
+  - r = p: x は p（行 2 = 1）の子なので Z1C で e1 x ≤ e1 p。P₁(x) = p から e1 p < e1 x。矛盾。
+  - r = g: p と x は g の子で p < x なので、兄弟の SibDec（`sib_le`）で e1 x ≤ e1 g。P₁(x) = g から e1 g < e1 x。矛盾。
+  - Bad2 の第 2 の選言（P₀(x) = x − 1）ではそのまま r = x − 1。
+- `badOutT1`: Bad2 の t = 1 を、HDropU（hdrop と条件のない ua）・TakeBadV2・HFrameV2・HLeafV2 から証明。
+- 残り `BadOutT2B`（Bad2 の t = 2）。`badOutT12_of`。全体ビルド緑 1083 jobs、公理は標準の 3 つ。仮定は 15 個のまま（BadOutRest → BadOutT2B）。
+- 測定:
+  - std_b（741 万個）に 1 列足して Bad2 を探した（scratchpad の b2count.py・b2search.py）。最後の列 i が「行 1 ≠ 0・行 2 = 0、P₀(i) が bump 子」の候補は 10101 個。どの列を足しても Bad2 の標準形は 0 個。検出器は graftBb2Sf の接頭辞で既知の Bad2 を拾う（36 接頭辞中 20 で 260 個）。Bad2 は長い行列にしか現れず、試験集合は接ぎ木の形に限られる。
+  - T0BadSeedsH7 の第 3 欄（r − 1 は r へ上げない）: r = p は topped から x − 1 = bump p となり、x − 1 の上がり先と矛盾する。r = g が本題。構造の前提を全部満たし Bad2 だけが欠ける標準形がある（…(4,2,0)(5,3,1)(6,3,1)(7,3,0)(5,3,1)(6,3,1)(7,1,0)(6,0,0)、UpgAbsX が成り立つ）。なので第 3 欄の証明には UpgAbsX の破れ（値の議論）が要る。g の前に列を挟んで g − 1 → g の上げを作った形（f3ins.py・f3copy.py）は、Bad2 の形になるものがすべて標準形でなかった。
