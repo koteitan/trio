@@ -4504,3 +4504,20 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
 - 測定:
   - std_b（741 万個）に 1 列足して Bad2 を探した（scratchpad の b2count.py・b2search.py）。最後の列 i が「行 1 ≠ 0・行 2 = 0、P₀(i) が bump 子」の候補は 10101 個。どの列を足しても Bad2 の標準形は 0 個。検出器は graftBb2Sf の接頭辞で既知の Bad2 を拾う（36 接頭辞中 20 で 260 個）。Bad2 は長い行列にしか現れず、試験集合は接ぎ木の形に限られる。
   - T0BadSeedsH7 の第 3 欄（r − 1 は r へ上げない）: r = p は topped から x − 1 = bump p となり、x − 1 の上がり先と矛盾する。r = g が本題。構造の前提を全部満たし Bad2 だけが欠ける標準形がある（…(4,2,0)(5,3,1)(6,3,1)(7,3,0)(5,3,1)(6,3,1)(7,1,0)(6,0,0)、UpgAbsX が成り立つ）。なので第 3 欄の証明には UpgAbsX の破れ（値の議論）が要る。g の前に列を挟んで g − 1 → g の上げを作った形（f3ins.py・f3copy.py）は、Bad2 の形になるものがすべて標準形でなかった。
+
+### 落とす補題の弱い源の形が偽だったので弱めた（2026-10-25、lead）
+
+- Bad2 の試験集合を増やした: Bad2 の行列（graftBb2Sf・b2t0test）を展開 M[2]・M[3] し、その接頭辞（最後の列が「行 1 ≠ 0・行 2 = 0・P₀ が bump 子」）に 1 列足して Bad2 の標準形を集めた（scratchpad の b2grow.py、集合 b2grow1、6517 個、先頭 12 列は同じ）。
+- b2grow1 で、HDropU の欄 ws の形 `BumpWeakShapeSrcB` が 2058 個で偽（bms -s で標準形を確認）。
+  - 例 …(5,3,1)(6,3,1)(7,2,0)(6,3,1)(7,2,0)(6,0,0): i = (5,3,1) の子が [bump, bump, x]。弱い源 k = x − 1 は 2 つ目の bump 子の下。
+  - ほかに、j の子で k の前に兄弟がある形（…(6,3,1)(7,2,0)(7,2,0)…）。
+  - 旧形は「i の子は [j] か [j, x]、k は j の最初の子」と決めていたが、どちらも破れる。
+- Bad2 でない標準形でも旧形（¬Bad2 用の DropRes の ws）が偽: Bad2 の展開の接頭辞に任意の 1 列を足した標準形で 1688 個（例 …(5,3,1)(6,3,1)(7,2,0)(7,2,0)(7,2,0)(5,3,1)(6,3,1)(7,2,0)(7,2,0)(4,0,0)、scratchpad の bwsbwide.py）。つまり HDropU と、そこから出していた HDropV2W は偽で、最上位の定理は空だった。
+- 落とす補題の結論（PO・PV、30 万件）と HDropU のほかの欄（ua・HardArg・VSmallNew・WeakCS・BumpAbsC）は b2grow1 ですべて成り立つ。
+- 直し（V3BumpDrop・V3BumpDropB・V3BumpW・V3Congr・V3Base・V3GlobV2）:
+  - 形を「弱い源の前提のもとで、x が i の数える子なら UpgBad(x − 1) ∧ BadPos」に弱めた（`BumpWeakShapeSrcB`・`BumpWeakShapeSrc`）。¬Bad2 用は NoBad3 と合わせて「x は i の数える子でない」になる。
+  - g_level・g_levelB: 弱い場合の結論を BWk から `G′ ≤ G` に弱めた。k の前に兄弟がある弱い場合も ≤ で返す（`app_le_app_left`・`lhdE_prefix`）。BWk の形の部分（E0 未満か単独の ψ_{w′}(0)）は v_weak でも使われていなかった。
+  - bump_rel・bump_relB・bump_relW の弱い場合: v′(i) ≤ v(i) を和の単調性（`sumN_le2`・`le_sumN_append`・`omega_le_omega`・`add_le_add_single`）で出し、¬(v′ ⊴ v) から WkVA。CntX（旧形では「数える子なし」）は「M.take x での i の子はすべて bump 子」と、x が数える子なら形の仮定（旧形では NoBad3 で矛盾）から。
+  - V3BumpDrop に和の単調性の補題の写し（`sumN_le2O` など）を置いた（V3StrictR・V3DropPres は後のファイル）。
+  - V3Congr: 形の結論に UpgBad（評価による）が入ったので、σ から τ へ運ぶ。
+- 測定: 弱めた形は b2grow1・graftBb2Sf・graftB（形の場面 756 件）ですべて成り立つ（scratchpad の bwsb2.py）。全体ビルド緑 1083 jobs、公理は標準の 3 つ。
