@@ -4621,3 +4621,12 @@ T2QNDomBad（ω_T の成分の支配）の材料（qnterms.py、b2grow1・b2grow
 - 証明: `t0BadSeedsH7_of : HUAC → T0BadSeedsH8 → T0BadSeedsH7`（V3HUAC）、`t2QNDomBad_of : HUAC → T2QNDomBad2 → T2QNDomBad`（V3QNDomS、`qnDom_simple`）。成分の補題 `comps_add_sub`・`comps_psi_zz`・`dom_add_one`・`o_nochild` も足した。
 - 残り: T0BadSeedsH8（(1)・(2) は上の形の外だけ、そこでは強い選言が成り立つ。(3) はそのまま）、T2QNDomBad2（単純な形の外だけ、測った集合では弱い場合に現れない）、HUAC。仮定の数は 14 → 15（H7 が H8 と一般の HUAC に、T2QNDomBad が T2QNDomBad2 に）。
 - 全体ビルド緑 1088 jobs、公理は標準の 3 つ（e864c2fb）。
+
+### HUAC がなぜ上げ先で成り立つかを調べた（2026-10-26、lead、Lean は未着手）
+
+- 祖先への上げ n → k では、いつも P₀(k) = P₁(k) = m（k は m の行 0 の子、col k = (e0 m + 1, e1 n, 1)）。bumpW(k) が v(m) の項を吸収することはよくある（d3s 9%・graftB 40%・b2grow1 57%、huacwhy.py）ので、HUAC は「吸収がない」からは出ない。
+- 行 2 = 1 の列 i 全体での同じ支配（vcomp2.py、d3s・ext2・graftB・graftBb2St の各 4 万個の標本）:
+  - P₀(i) ≠ P₁(i) の列ではいつも成り立つ（64 万件）。
+  - P₀(i) = P₁(i) で上げ先の列ではいつも成り立つ（上げ先が n + 1 の 5 件を除く）。
+  - 偽は P₀(i) = P₁(i) で上げ先でない列だけ（d3s 26・ext2 13・graftB 2514・graftBb2St 216 件）。例はどれも V = v(P₁ i) = ω（u = 0 の成分 1）が bumpW(i) = Ω_1 に吸収され、v(i) = Ω_1 の成分が 0 だけになる形。
+- したがって HUAC の理由は「上げ先なら、v(P₁ k) = ω のような小さい項が Ω_1 だけの bump 項に吸収される形が起きない」ことにある。上げ元 n が k の部分木にあって v(n) = v(k) になることが、k の bump 子の値に何を課すかを次に調べる。
