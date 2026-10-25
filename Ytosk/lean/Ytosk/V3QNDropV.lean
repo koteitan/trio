@@ -269,12 +269,14 @@ def T2SeedPResRCV2E : Prop :=
 follows from the drop at `q` (`qn_drop_v_upg`・`qn1_of_lhdE`); on `Bad2` (where `x − 1` always upgrades, to an
 ancestor, and loses the upgrade in `M.take x`) the drop `v_T(q) ⊴ v_M(q)` is false (b2grow1: 319 of 587) but this holds
 (b2grow1・b2grow2・graftBb2St, 4119 cases). The bound by the components of `S` alone is false (268 cases: those of `V`
-are needed). -/
+are needed). Only where the drop `v_T(q) ⊴ v_M(q)` fails (b2grow1: 319 of 587, b2grow2: 485 of 821); there `PV`
+takes the weak branch, whose `WCS (v(r)) (v_T(q))` bounds the components by those of `v(r)` or `Ω_1` (desc). -/
 def T2QNDomBad : Prop :=
   ∀ M ρ rk, StepCtxT2 M ρ rk → Bad2 M → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
-      ∀ Lc, CL M r = Lc ++ [q] → ∀ τ, Cons (M.take (r + L)) τ → ∀ ωT, τ.v q = add (ρ.v r) ωT →
-        (∃ a b, ωT = psi a b z) → ∀ u, Dom (comps u ωT) (comps u (qnS M ρ r L q) ++ [z])
+      ∀ Lc, CL M r = Lc ++ [q] → ∀ τ, Cons (M.take (r + L)) τ → ¬ LhdE (τ.v q) (ρ.v q) →
+        ∀ ωT, τ.v q = add (ρ.v r) ωT → (∃ a b, ωT = psi a b z) →
+          ∀ u, Dom (comps u ωT) (comps u (qnS M ρ r L q) ++ [z])
 
 theorem t2SeedPResRCV2D_of_E (hQB : T2QNDomBad) (h : T2SeedPResRCV2E) : T2SeedPResRCV2D := fun M ρ rk C hz h2 =>
   have H := h M ρ rk C hz h2

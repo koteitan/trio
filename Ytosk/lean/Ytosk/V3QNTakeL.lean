@@ -524,13 +524,14 @@ theorem qn_t1_lhd_of_dom {V S ωT : T} (hV : isOT V = true) (hS : isOT S = true)
       subst hd
       exact ⟨z, List.mem_append_right _ (List.mem_cons_self ..), hgd⟩
 
-/-- **The first qn subscript from the components** of the top summand `ω_T` of `v_T(q)` (`qn_t1_lhd_of_dom`). -/
+/-- **The first qn subscript** from the drop `v_T(q) ⊴ v_M(q)` (`qn_tqN_lhd`) or, where it fails, from the components
+of the top summand `ω_T` of `v_T(q)` (`qn_t1_lhd_of_dom`). -/
 theorem qn1_of_dom {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) {Lc : List Nat} (hCL : CL M r = Lc ++ [q])
-    (hDom : ∀ τ, Cons (M.take (r + L)) τ → ∀ ωT, τ.v q = add (ρ.v r) ωT → (∃ a b, ωT = psi a b z) →
-      ∀ u, Dom (comps u ωT) (comps u (qnS M ρ r L q) ++ [z])) :
+    (hDom : ∀ τ, Cons (M.take (r + L)) τ → ¬ LhdE (τ.v q) (ρ.v q) → ∀ ωT, τ.v q = add (ρ.v r) ωT →
+      (∃ a b, ωT = psi a b z) → ∀ u, Dom (comps u ωT) (comps u (qnS M ρ r L q) ++ [z])) :
     ∀ τ, Cons (M.take (r + L)) τ → Lhd z (tqN (ρ.v r) (qnS M ρ r L q) (τ.v q) 1) (ρ.v q) := by
   intro τ hτ
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
@@ -550,7 +551,14 @@ theorem qn1_of_dom {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     rcases List.mem_cons.mp ht with rfl | ht
     · exact isOT_one
     · obtain ⟨j, _, rfl⟩ := List.mem_map.mp ht; exact isOT_bumpTerm I.good q j
-  have hD := hDom τ hτ ωT hvq hωTf
+  by_cases hE : LhdE (τ.v q) (ρ.v q)
+  · rw [hvq, hvqM] at hE
+    have h := qn_tqN_lhd hV hSot hωlev hωTot hωTf hωT hE 1 le_rfl
+    unfold qnS; rw [hvq, hvqM]
+    rcases h.2 with he | hl
+    · exact absurd he (ne_of_lt h.1)
+    · exact hl
+  have hD := hDom τ hτ hE ωT hvq hωTf
   unfold qnS at hD
   unfold qnS; rw [hvq, hvqM]
   exact qn_t1_lhd_of_dom hV hSot hωlev hωTot hωTf hωT hD
