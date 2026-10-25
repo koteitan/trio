@@ -101,4 +101,29 @@ theorem badOutT0_of (hDU : HDropU) (hBE : HBumpExt) (hTB : TakeBadV2) (hF : HFra
     n hn2
   exact ⟨⟨ρN, rkN, by rw [hexp n]; exact IN⟩, dropsAt_of (hexp n) ⟨ρN, rkN, IN.cons, IN.rank, hot, hlt⟩⟩
 
+/-- **The last column of a `Bad2` matrix is not `(0,0,0)`**: `x` lies under `g`, or has row 2 ≠ 0, or row 1 ≠ 0. -/
+theorem bad2_col_ne_zero {M : Mat} (hB : Bad2 M) : col M (M.length - 1) ≠ (0, 0, 0) := by
+  intro h0
+  have hc : M.getD (M.length - 1) (0, 0, 0) = (0, 0, 0) := h0
+  have e1 : entry M 1 (M.length - 1) = 0 := by unfold entry; rw [hc]; rfl
+  have e2 : entry M 2 (M.length - 1) = 0 := by unfold entry; rw [hc]; rfl
+  have e0 : entry M 0 (M.length - 1) = 0 := by unfold entry; rw [hc]; rfl
+  obtain ⟨⟨k, hu⟩, p, g, hp, hg, hb, hcase⟩ := hB
+  rcases hcase with ⟨hA | hA, _⟩ | ⟨_, hA, _⟩
+  · have hpl := par_lt M 0 _ _ hp
+    have hgl := par_lt M 0 _ _ hg
+    have := anc0_e0_lt hA (by omega)
+    omega
+  · exact hA e2
+  · exact hA e1
+
+/-- **Residual: `BadOutV2` at `t = 1` and `t = 2`** (2026-10-25; the zero last column does not occur in `Bad2`). -/
+def BadOutT12 : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Bad2 M → Inv3V2 M ρ rk → TRIO.srow M (M.length - 1) ≠ 0 →
+    ∀ n, 2 ≤ n → (∃ ρN rkN, Inv3V2 (expand M n) ρN rkN) ∧ DropsAt M ρ n
+
+theorem badOutRest_of (h : BadOutT12) : BadOutRest := by
+  intro M ρ rk hM hS hE hB I hn0 n hn
+  exact h M ρ rk hM hS hE hB I (fun h0 => hn0 ⟨bad2_col_ne_zero hB, h0⟩) n hn
+
 end Ytosk
