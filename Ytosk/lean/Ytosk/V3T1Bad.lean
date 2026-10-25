@@ -1,12 +1,13 @@
 /-
-**Bad2 の t = 1・q = r（2026-10-25）。**
+**Bad2 の t = 1（2026-10-25）。**
 
 `Bad2` の行列で最後の列 x の型が t = 1 で、P₀(x) = P₁(x) = r のとき:
 - r = x − 1 になる（`t1qr_bad_xm1`）。x が g の部分木にあれば r は g・p・x − 1 のどれかで、r = p は Z1C（行 2 = 1 の
   列の子の行 1 は親以下）と P₁(x) = p で矛盾、r = g は兄弟 p < x の SibDec と P₁(x) = g で矛盾する。
 - エンジン（`qr_final4SG`・`frameMapT1_takeG`）を落とす補題の結論（`hdrop_of_U`）と条件のない ua（`HDropU`）から
   動かす。CntX の第 3 の選言は r = x − 1 なので第 2 の選言と同じに扱える。
-残り `BadOutT12N`: t = 2 と、t = 1 で P₀(x) ≠ P₁(x) の場合。
+- q ≠ r（P₀(x) ≠ P₁(x)）のエンジン（`t1_main_vlocSG`）は落とす補題の結論だけを読む。
+残り `BadOutT2B`: t = 2。
 -/
 import Ytosk.V3T0BadOut
 import Ytosk.V3T1VSRAll
@@ -71,16 +72,18 @@ theorem t1qr_bad_xm1 {M : Mat} (hR0 : R0P M) (hSD : SibDec M) (hZ1 : Z1C M) (hB 
     have := par_lt M 1 _ _ h1
     omega
 
-/-- **`Bad2` at `t = 1` with `P₀(x) = P₁(x)`**: the invariant of `M[n]` and the descent, from the drop residual, the
-one-column drop of `Bad2` and the shared residuals. -/
-theorem badOutT1QR (hDU : HDropU) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLeafV2)
+/-- **`Bad2` at `t = 1`**: the invariant of `M[n]` and the descent, from the drop residual, the one-column drop of
+`Bad2` and the shared residuals. The engines read only the conclusion of the drop lemma, the unconditional absorption
+at `x − 1` (`q = r`, where `r = x − 1`), and the value invariants. -/
+theorem badOutT1 (hDU : HDropU) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLeafV2)
     {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (hE : M ≠ []) (hB : Bad2 M)
-    (I : Inv3V2 M ρ rk) (h1t : TRIO.srow M (M.length - 1) = 1) {r : Nat}
-    (hr : par M 1 (M.length - 1) = some r) (hq0 : par M 0 (M.length - 1) = some r) :
+    (I : Inv3V2 M ρ rk) (h1t : TRIO.srow M (M.length - 1) = 1) :
     ∀ n, 2 ≤ n → (∃ ρN rkN, Inv3V2 (expand M n) ρN rkN) ∧ DropsAt M ρ n := by
   intro n hn
   have S := sInv_std hM hS
   have hz : col M (M.length - 1) ≠ (0, 0, 0) := bad2_col_ne_zero hB
+  obtain ⟨r, hr⟩ := parLast_of S.e00 S.r01 S.r12 hz
+  rw [h1t] at hr
   have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
       TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
   have hrx : r < M.length - 1 := par_lt M 1 _ r hr
@@ -96,7 +99,7 @@ theorem badOutT1QR (hDU : HDropU) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLeaf
   have hdrop := hdrop_of_U hDU hM hS hlen2 I
   have hUA := (hDU M ρ rk hM hS hE I).1.ua
   obtain ⟨L, hL⟩ : ∃ L, M.length - 1 = r + L := ⟨M.length - 1 - r, by omega⟩
-  rw [hL] at hexp hr hx2 I1 hdrop hUA hq0
+  rw [hL] at hexp hr hx2 I1 hdrop hUA
   simp only [Nat.add_sub_cancel_left] at hexp
   have hlen : r + L + 1 = M.length := by omega
   have hL0 : 0 < L := by omega
@@ -109,7 +112,6 @@ theorem badOutT1QR (hDU : HDropU) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLeaf
       (entry M 0 (r + L) - entry M 0 r) ρ :=
     expStep_and (expStep_core_vsmallF_pass_inv3V2 S I hlen hL0 hd0e hr hx2 hPR)
       (expStep_frameMapT1 S I.cons I.good I.rank hlen hL0 hd0e hr hx2)
-  have hr2 : r + 2 = M.length := t1qr_bad_xm1 S.r0p S.sibDec S.z1c hB hlen hr hq0 hx2
   have hUAs : ∀ k W, r + 1 = r + L → upg M r = some k → ρ.v k = add (vOpt ρ (par M 1 r)) W → W ≠ z →
       (∀ s ∈ summands (vOpt ρ (par M 1 r)), s < W → Lhd z s W) ∨ SmallSelf (add (vOpt ρ (par M 1 r)) one) :=
     fun k W hi hu hvk hWz => (hUA r k W hi hu hvk hWz).imp id (fun h => h.2)
@@ -121,16 +123,37 @@ theorem badOutT1QR (hDU : HDropU) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLeaf
       (FrameMapT1 M ρ r L (M.take (r + L)) (drop1 M (r + L) rk) ∧
         VrDomQ M ρ r L (M.take (r + L)) (drop1 M (r + L) rk)) :=
     ⟨⟨I1.copyCore, hvle, I1.vs⟩,
-      frameMapT1_takeG S I.cons I.good I1.cons I1.rank hlen hx2 hdrop hUAs (Or.inr hr2)⟩
-  obtain ⟨b0, hro, _, _⟩ := qr_o_r hlen S.r0p S.sibDec hr hx2 hq0 I.cons I.good I.rank
-  have hlt := qr_seed_lt hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hr hx2 hq0 I.cons I.good I.rank hdrop
-  have hseedC := qr_seedC_of hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good I.rank hdrop hrL hro hlt
-    hUAs (Or.inr hr2)
-  obtain ⟨ρN, rkN, hCN, hRN, hGN, ⟨hcore, hmap, _⟩, hot, hlt⟩ :=
-    qr_final4SG hlen hL0 hd0e S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00
-      hr hx2 hq0 I.cons I.good I.rank I.kd I.td hdrop hseedC
-      I.tp1w (I.tplowAt hlen hr) I.auwl I.auw0 (I.adwAt hlen hr) I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
-      _ hbase hstep n hn
+      frameMapT1_takeG S I.cons I.good I1.cons I1.rank hlen hx2 hdrop hUAs
+        (fun hq => Or.inr (t1qr_bad_xm1 S.r0p S.sibDec S.z1c hB hlen hr hq hx2))⟩
+  have hfin : ∃ ρN rkN, Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN ∧
+      Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN ∧
+      (T1Core r ρ (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN ∧
+        (FrameMapT1 M ρ r L (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN ∧
+          VrDomQ M ρ r L (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN)) ∧
+      isOT (root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN) = true ∧
+      root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n) ρN < root M ρ := by
+    by_cases hq : par M 0 (r + L) = some r
+    · have hr2 : r + 2 = M.length := t1qr_bad_xm1 S.r0p S.sibDec S.z1c hB hlen hr hq hx2
+      obtain ⟨b0, hro, _, _⟩ := qr_o_r hlen S.r0p S.sibDec hr hx2 hq I.cons I.good I.rank
+      have hlt := qr_seed_lt hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hr hx2 hq I.cons I.good I.rank hdrop
+      have hseedC := qr_seedC_of hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good I.rank hdrop hrL hro
+        hlt hUAs (Or.inr hr2)
+      exact qr_final4SG hlen hL0 hd0e S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00
+        hr hx2 hq I.cons I.good I.rank I.kd I.td hdrop hseedC
+        I.tp1w (I.tplowAt hlen hr) I.auwl I.auw0 (I.adwAt hlen hr) I.tp1 I.trigs I.tplon I.adn I.rootS I.rootP
+        _ hbase hstep n hn
+    · have hrM : r < M.length := by omega
+      obtain ⟨br, hro⟩ := o_psi_sub I.cons hrM
+      rw [sf_ot (I.good.ot_v r hrM)] at hro
+      have hne : (drop1 M (r + L) rk).o r ≠ ρ.o r :=
+        ne_of_lt (o_r_strict0 hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2
+          hr hx2 hq I.cons I.good I1.cons I1.rank hdrop)
+      exact t1_main_vlocSG hlen hL0 hd0e S.r0p S.z2 S.sibDec S.z1c S.uat S.uab S.r12 S.bumpE2 S.r01 S.e00
+        hr hx2 hq I.cons I.good I.rank I.vs I.fc I.fo I.tp1 I.tplos I.ads I.aus
+        I.kd I.td hdrop hne rfl hro I.rootS I.rootP I1.good
+        _ hbase hstep n hn
+  obtain ⟨ρN, rkN, hCN, hRN, hGN, ⟨hcore, hmap, _⟩, hot, hlt⟩ := hfin
   rw [hexp] at hStdN
   have hNE : TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) 0 n ≠ [] := by
     apply List.ne_nil_of_length_pos
@@ -143,31 +166,20 @@ theorem badOutT1QR (hDU : HDropU) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLeaf
   exact inv3V2_of_core hRN hcore (vsmallRAll_of_mapT1 hmap I.vra)
     (hF _ ρN rkN hStdN hNS hNE hCN hRN hGN) hTP hTPW
 
-/-- **Residual: `BadOutV2` at `t = 2`, and at `t = 1` with `P₀(x) ≠ P₁(x)`** (2026-10-25). -/
-def BadOutT12N : Prop :=
-  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Bad2 M → Inv3V2 M ρ rk →
-    (TRIO.srow M (M.length - 1) = 2 ∨
-      (TRIO.srow M (M.length - 1) = 1 ∧
-        ∀ r, par M 1 (M.length - 1) = some r → par M 0 (M.length - 1) ≠ some r)) →
+/-- **Residual: `BadOutV2` at `t = 2`** (2026-10-25; `t = 0` is `BadOutT0`, `t = 1` is `badOutT1`). -/
+def BadOutT2B : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Bad2 M → Inv3V2 M ρ rk → TRIO.srow M (M.length - 1) = 2 →
     ∀ n, 2 ≤ n → (∃ ρN rkN, Inv3V2 (expand M n) ρN rkN) ∧ DropsAt M ρ n
 
-theorem badOutT12_of (hDU : HDropU) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLeafV2) (hN : BadOutT12N) :
+theorem badOutT12_of (hDU : HDropU) (hTB : TakeBadV2) (hF : HFrameV2) (hLf : HLeafV2) (hN : BadOutT2B) :
     BadOutT12 := by
   intro M ρ rk hM hS hE hB I hs0 n hn
-  have S := sInv_std hM hS
   have hsrow : TRIO.srow M (M.length - 1) = 0 ∨ TRIO.srow M (M.length - 1) = 1 ∨
       TRIO.srow M (M.length - 1) = 2 := by
     unfold TRIO.srow; split_ifs <;> simp
   rcases hsrow with h0 | h1t | h2t
   · exact absurd h0 hs0
-  · obtain ⟨r, hr⟩ := parLast_of S.e00 S.r01 S.r12 (bad2_col_ne_zero hB)
-    rw [h1t] at hr
-    by_cases hq : par M 0 (M.length - 1) = some r
-    · exact badOutT1QR hDU hTB hF hLf hM hS hE hB I h1t hr hq n hn
-    · refine hN M ρ rk hM hS hE hB I (Or.inr ⟨h1t, fun r' hr' => ?_⟩) n hn
-      rw [hr] at hr'
-      cases hr'
-      exact hq
-  · exact hN M ρ rk hM hS hE hB I (Or.inl h2t) n hn
+  · exact badOutT1 hDU hTB hF hLf hM hS hE hB I h1t n hn
+  · exact hN M ρ rk hM hS hE hB I h2t n hn
 
 end Ytosk

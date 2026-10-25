@@ -299,7 +299,7 @@ theorem frameMapT1_takeG {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {
     (hdrop : ∀ i, i < r + L → PO ρ ρ' i ∧ PV M ρ ρ' i)
     (hUAs : ∀ k W, r + 1 = r + L → upg M r = some k → ρ.v k = add (vOpt ρ (par M 1 r)) W → W ≠ z →
       (∀ s ∈ summands (vOpt ρ (par M 1 r)), s < W → Lhd z s W) ∨ SmallSelf (add (vOpt ρ (par M 1 r)) one))
-    (h3 : NoBad3 M ρ ∨ r + 2 = M.length) :
+    (h3 : par M 0 (r + L) = some r → NoBad3 M ρ ∨ r + 2 = M.length) :
     FrameMapT1 M ρ r L (M.take (r + L)) ρ' ∧ VrDomQ M ρ r L (M.take (r + L)) ρ' := by
   constructor
   · intro k c Lc R s y hcl hsy ht
@@ -337,7 +337,7 @@ theorem frameMapT1_takeG {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {
           exact Or.inl (le_of_lt (hSm g (comps_mono (z_le u) hg)))
       rcases hnc with hn | ⟨_, _, k, W, hi2, hu, hvk, hWz, hbad⟩ | ⟨_, hub, hbp⟩
       rotate_left 2
-      · rcases h3 with h3 | h3
+      · rcases h3 hq with h3 | h3
         · exact absurd ⟨hub, hbp⟩ h3
         obtain ⟨k, W, _, hu, hvk, hWz, hbad⟩ := hub
         have e : M.length - 2 = r := by omega
@@ -360,7 +360,7 @@ theorem frameMapT1_take {M : Mat} {ρ ρ' : Valn} {rk : Bool → Nat → Nat} {r
     (hdrop : ∀ i, i < r + L → PO ρ ρ' i ∧ PV M ρ ρ' i) (hUA : UpgAbsXW M (r + L) ρ) (h3 : NoBad3 M ρ) :
     FrameMapT1 M ρ r L (M.take (r + L)) ρ' ∧ VrDomQ M ρ r L (M.take (r + L)) ρ' :=
   frameMapT1_takeG S hC hG hC' hRk' hlen hx2 hdrop
-    (fun k W hi hu hvk hWz => (hUA r k W hi hu hvk hWz).imp id (fun h => h.2.1)) (Or.inl h3)
+    (fun k W hi hu hvk hWz => (hUA r k W hi hu hvk hWz).imp id (fun h => h.2.1)) (fun _ => Or.inl h3)
 
 /-- **`ExpT1OutV2` from the frame and leaf residuals and `S1`** (VSmallRAll is proved, `expStep_frameMapT1`). -/
 theorem expT1Out_V2 (hF : HFrameV2) (hLf : HLeafV2) (hS1 : S1Std) : ExpT1OutV2 := by
