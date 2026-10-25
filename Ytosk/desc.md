@@ -4238,7 +4238,7 @@ PassRootRes の全数確認は全 10 集合で完了。入力 5,375,155 行列�
 | HDropU | すべての標準形で落とす補題の仮定 DropResHB（HardArg・VSmallNew・BumpWeakSrcB・条件のない UpgAbsXW・BumpAbsCB）∧（¬Bad2 ∨ x の行 1 = 0 → BumpAbsC） | 11 集合・接ぎ木で例外 0。HDropV2W は定理（hDropV2W_of_U） |
 | RootBadV2T2 | Bad2 の 1 列落としで根の真の減少（x の行 2 ≠ 0 で、x が親の bump 子か上げ先の場合だけ） | Bad2 の集合で例外 0。ほかは root_drop_e2z・root_drop_X で定理 |
 | BadOutRest | Bad2 の n ≥ 2 の段のうち t = 0 以外（t = 1・t = 2）: M[n] の Inv3V2 と根の下降 | t = 0 の部分は定理（badOutT0_of） |
-| T0BadSeedsH2 | Bad2・t = 0: r ≠ x − 1 なら r は M[n] でも g で数える子（構造）と S2、すべての r で S3 | graftB の 108 個と新しい接ぎ木 135 個で成り立つ。S1 の節はすべて定理（t0BadSeeds_of・t0BadSeedsH_of） |
+| T0BadSeedsH6 | Bad2・t = 0: (1) S3 の前件で、r の落とし方が ◁ か、弱い葉 ψ_{w′}(0) の w′ の成分がすべて 0 か v(r) の成分以下、(2) S2 の前件で、ω^{G0′} ⊴ ω^{G0} か、ω^{G0′} の成分がすべて 0・b′・b′ の成分・s の成分のどれか以下（ω^{G0} = ψ_s(b′)）、(3) r ≠ x − 1 なら r は M[n] でも g で数える子 | graftB の 108 個と新しい接ぎ木 135 個で成り立つ。種 S1・S2・S3 はこれらから定理 |
 | HFrameV2 | TakeFrameV2 の 10 欄（TPLoW・AbsDW は実際の種での形 TPLoWs・AbsDWs、前提なし） | 接ぎ木（Bad2 を含む）で例外 0 |
 | HLeafV2 | TP1LeafG・TP1WLeafG | 接ぎ木では前件が立たない |
 | HBumpExt | 接頭辞に沿った bump の単調性 | 1 列の場合は 11 集合で例外 0 |
@@ -4450,4 +4450,23 @@ S3（r = x − 1）の G の段の ◁ の条件。評価の定義（Eval.lean �
     - ただし ◁ の検査は (q, W] のすべての c にわたる。ここで要るのは W 自身の成分だけなので、もっと弱い。
     - 例では W = ψ_V(0) で、W の添字が V そのもの。上げ先 k の bump 孫の o の添字が V を含むためと見られる。
     - 一般に「v(P₁ n) は v(n) の接頭辞（吸収を除く）」の形の不変条件があれば出る見込み。次は Python で測る。
+
+### 種 S2・S3 を成分の支配の事実に下げた（2026-10-25、lead）
+
+旧の t0_S3・t0_S2G は、最後の写しの値が ◁ で落ちること（o′(r) ◁ o(r)、ω^{G0′} ⊴ ω^{G0}）を仮定していた。この仮定は和の段の ◁ を出すためだけに使われていた。Bad2 ではこの仮定が偽でも、和の段の ◁ は成り立つ。
+- V3T0BadS3:
+  - `lhd_mulT_mono`: O + o′ ◁ X なら O·k + o′ ◁ X（k ≥ 1）。写しが増えても成分の集合は同じで、検査の範囲が狭まるだけ。
+  - `g3_brelW`・`t0_S3W`: 和の段の事実 omid + o′(r) ◁ o(r) から S3。`t0_S3_of_sum`: 文脈 T0NCtx から S3。
+  - `lhd_sum_of_lhd`: o′ ◁ X なら和の段の事実。
+  - `lhd_sum_weak`: 弱い葉 ψ_{w′}(0) で、w′ の成分がすべて 0 か v の成分以下なら和の段の事実。
+- V3T0BadS2:
+  - `s2_p2W`・`t0_S2GW`・`t0_S2_of_sum`: S2 の同じ形の版。
+  - `lhd_sum_of_lhdE`: O′ ⊴ O なら和の段の事実。
+  - `lhd_sum_dom`: 一般の最後の項 O′ < ψ_v(B0) で、O′ の成分がすべて 0・B0・B0 の成分・v の成分のどれか以下なら和の段の事実。
+- 残りは T0BadSeedsH6（表）。全体ビルド緑 1081 jobs、公理は標準の 3 つ。仮定は 15 個のまま。
+- 測定（scratchpad の absorbW*.py・x1lhd.py・x1dom.py・s2sumM.py・s2dom2.py）:
+  - S3 の成分の支配と、S2 の成分の支配は、Bad2 の t = 0 の 81 個（r = x − 1、r = p）ですべて成り立つ。S2 の O′ も例では ψ_{w′}(0) の形。
+  - 一般の性質「上げ先が祖先（k < n）の列 n で、W = last(v(k)) が V = v(P₁ n) の下の加数を吸収するとき、その加数の成分は W と V の残りの成分で押さえられる」は、d3s・graftBb2St・std_b と ext2 の各 15 万個の標本で例外 0。
+  - 上げ先が n + 1 のときは偽の例がある（d3s で 5 件、V = ψ₀(1)、W = ψ₁(0)）。
+  - Bad2 の r = x − 1 では v′(P₁(x − 1)) = v(P₁(x − 1))（81 個すべて）。この 2 つから (1) の弱い場合が出る見込み（w′ = V + 1、v(r) = add V W）。
 
