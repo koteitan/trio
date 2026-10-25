@@ -35,6 +35,8 @@
 
 ### 次
 - 残りの仮定は b2grow1・shapegrow で測り直した（desc.md）。二段目の展開（b2grow2）でも測る。
-- RootBadV2T2 を消す案: 根の減少を運ぶ DepX（V3Dep）には、x が i の bump 子の場合（bumpW(i) から x の項 1 が消えて v(i) が真に減る）と、i が x へ上がる場合（v(x − 1) = V + ω → V + 1）の起点がない。起点を 2 つ足した帰納型 DepY を作り、dep_strict0X・形の補題 hOS_t1X・dv_shapeX・nodep_* を写せば、hXu・hXb なしで root_take_lt が出る見込み。b2grow1 では Bad2・t = 2 の 1879 個のうち 587 個が「x が親の bump 子」。
+- RootBadV2T2 を消す案: 根の減少を運ぶ DepX（V3Dep）には、x が i の bump 子の場合（bumpW(i) から x の項 1 が消えて v(i) が真に減る）と、i が x へ上がる場合（v(x − 1) = V + ω → V + 1）の起点がない。起点を 2 つ足した帰納型 DepY を作り、dep_strict0X・形の補題 hOS_t1X・dv_shapeX・nodep_* を写せば、hXu・hXb なしで root_take_lt が出る見込み。
+  - 新しい起点の狭義の減少は短い: snb は bumpW(i) の末尾の項 1 が消える（和に 1 を足すと真に増える）、supx は v(x − 1) = v(x) = V + ω と v′(x − 1) = V + 1（v_upg_eq・v_last_take）。
+  - 変わる所（V3T2D を読んだ結果）: nodep_v_qX（v(q) は D に入らない、q = P₀(x)）は snb で偽になる。使う側 uncnt_of_depvX の d = x の場合は「x が q で数えられるなら x は bump 子でも上がり先でもない」で局所の仮定に直せる（上がり先は topped なので数えない）。dep_exitX の vupg の場合 i + 1 = x（いまは hXu で除く）は、出口 c′ = x を許す形に結論を広げる必要があり、nodep_sibX・p1_depX がそれを受ける。ochild・vbump の形（OShape・dv_shape）はその上に乗る。b2grow1 では Bad2・t = 2 の 1879 個のうち 587 個が「x が親の bump 子」。
 - T0BadSeedsH7 の (1)・(2) は、上げの吸収の成分の性質（祖先への上げで例外 0）と v′(P₁(x − 1)) = v(P₁(x − 1)) から出せる見込み。(3) は UpgAbsX の破れを使う値の議論が要る（構造だけでは出ない、desc.md）。
 - BadOutT2B（t = 2）: 文脈 StepCtxT2 の残りがすべて ¬Bad2 を前提にしている。t = 1 と同じく、エンジンが文脈から何を読むかを先に調べる。
