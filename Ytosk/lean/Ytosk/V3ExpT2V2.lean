@@ -69,7 +69,7 @@ theorem expand_ne_nil_t2 {M : Mat} (hX : SInvX M) (hz : col M (M.length - 1) ≠
 /-- **R2V2 from `T2BelowXRes`.** -/
 theorem r2V2_of (hB : T2BelowXResV2) : R2V2 := by
   intro M ρ rk C hz h2
-  exact hR2_t2_ofW (hB M ρ rk C) C.std (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2
+  exact hR2_t2_ofW (hB M ρ rk C) C.std (Inv3W.ofV2 C.S C.I) C.toW hz h2
 
 /-- **ExpT2V2 from the named residuals.** -/
 theorem expT2V2_of (hB : T2BelowXResV2) (hFO : T2FOSeedV2) (hPR : T2SeedPResV2) (hVF : T2VSFCV2)
@@ -83,7 +83,7 @@ theorem expT2V2_of (hB : T2BelowXResV2) (hFO : T2FOSeedV2) (hPR : T2SeedPResV2) 
   obtain ⟨I1, _⟩ := C.pre (M.length - 1) (by omega) (by omega)
   have hE := expand_ne_nil_t2 hX hz h2 (n := n) (by omega)
   have hStd : Std (expand M n) := Std.exp n C.std
-  obtain ⟨ρN, rkN, IN, _⟩ := hExp_t2_inv3V2 (hB M ρ rk C) C.std C.ne C.I C.R.drop I1 hz h2
+  obtain ⟨ρN, rkN, IN, _⟩ := hExp_t2_inv3V2 (hB M ρ rk C) C.std C.ne C.I C.toW I1 hz h2
     (hFO M ρ rk C hz h2) (hPR M ρ rk C hz h2)
     (fun m hm σ rkN hCN hRN hGN hPN => by
       have hEm := expand_ne_nil_t2 hX hz h2 (n := m) (by omega)

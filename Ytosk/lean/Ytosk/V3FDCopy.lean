@@ -403,7 +403,7 @@ theorem source_v_base_nonseed {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     have h := (take_fields_ctx C.toStepCtxV2 hl2
       (show Cons (M.take (M.length - 1)) τ by simpa [show M.length - 1 = r + L by omega] using hτ)).1
     simpa [show M.length - 1 = r + L by omega] using h
-  have hBS := t2BelowXS_of hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 hlen hr
+  have hBS := t2BelowXS_of hB C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 hlen hr
   have hsh := (hBS 2 (by omega) hGlow σ hCN
     (fun j _ hj => ⟨hGN.ot_o j hj, hGN.ot_v j hj⟩) i hi).2.2.2.1 hsc
   have hci : c ∈ CL M i := mem_cl_of_mem_cl_take C.S hx hi hc
@@ -468,7 +468,7 @@ theorem root_v_base_original {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     have h := (take_fields_ctx C.toStepCtxV2 hl2
       (show Cons (M.take (M.length - 1)) τ by simpa [show M.length - 1 = r + L by omega] using hτ)).1
     simpa [show M.length - 1 = r + L by omega] using h
-  have hRaw := hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 r L hlen hr
+  have hRaw := hB C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 r L hlen hr
     2 (by omega) hGlow σ hCN (fun b j _ hj => by
       cases b
       · exact hGN.ot_v j hj
@@ -1544,7 +1544,7 @@ theorem t2CopyK_FDshAt_of_fd {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hSeedFO : T2SeedFrames QFO M) (hVS : T2VAncStep M)
     (hAGfd : T2VRAKFD KAG M) : T2CopyK FDshAt M := by
   have IW := Inv3W.ofV2 C.S C.I
-  have RW : Res3W M ρ rk := ⟨C.R.drop⟩
+  have RW : Res3W M ρ rk := C.toW
   have hCR := t2CopyResAll_holds M ρ rk C.std C.ne IW RW hz h2
   have hG := good3_expand_t2 C.std C.ne IW RW hz h2
     (t2BelowXE_of hB C.std C.ne IW RW hz h2) hCR

@@ -232,7 +232,7 @@ theorem root_v_original {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hG : ∀ m, 1 ≤ m → ∀ τ, Cons (G2 M r L m) τ → Good3 (G2 M r L m) τ)
     {σ : Valn} (hCN : Cons (G2 M r L n) σ) : σ.v r = ρ.v r := by
   have hGN := hG n (by omega) σ hCN
-  have hRaw := hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 r L hlen hr
+  have hRaw := hB C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 r L hlen hr
     n hn (fun m hm _ τ hτ => hG m hm τ hτ) σ hCN (fun b j _ hj => by
       cases b
       · exact hGN.ot_v j hj
@@ -266,7 +266,7 @@ theorem t2VAncUse_of_step {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (C : StepCtxT2 M ρ rk) (hB : T2BelowXResAt M ρ rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hVS : T2VAncStep M) : T2VAncUse M := by
-  refine ⟨t2CopyK_vDom_of hB C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 hVS, ?_⟩
+  refine ⟨t2CopyK_vDom_of hB C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 hVS, ?_⟩
   intro r L hlen hr n hn σ hCN hGN
   have hStep : VAncStep (G2 M r L n) σ := by
     have hGN' := hGN
@@ -285,7 +285,7 @@ theorem t2CopyK_FDshAt_of_path {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hSeedFO : T2SeedFrames QFO M) (hU : T2VAncUse M)
     (hAG : T2VRAK KAG M) : T2CopyK FDshAt M := by
   have IW := Inv3W.ofV2 C.S C.I
-  have RW : Res3W M ρ rk := ⟨C.R.drop⟩
+  have RW : Res3W M ρ rk := C.toW
   have hCR := t2CopyResAll_holds M ρ rk C.std C.ne IW RW hz h2
   have hG := good3_expand_t2 C.std C.ne IW RW hz h2
     (t2BelowXE_of hB C.std C.ne IW RW hz h2) hCR

@@ -52,23 +52,6 @@ theorem trigS0_of_trigS {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   fun r μ b h1 h0 h2 hro hs i L' c R hi hd hch hcnt hdc _ =>
     h r μ b h1 h0 h2 hro hs i L' c R hi hd hch hcnt hdc
 
-/-- **The grafted bad shape** (2026-10-24): the column `x − 1` (`x` the last column) has an upgrade target, its
-parent `p` is the bump child of `g`, and either the strong absorption at `x − 1` fails while `x` lies under `g` or has
-row 2 ≠ 0, or `x` is the child of `x − 1` with row 1 ≠ 0 and `BumpAbsC` fails. On standard matrices of this shape the frame fields
-`TPLoW`・`AbsDW` and the drop fields `BumpWeakSrc`・`UpgAbsXW0`・`BumpAbsC` can fail (grafted sets graftA・graftB,
-desc); outside it they hold. (The same day it was narrowed twice from "upgrade target ∧ bump parent": when `x` lies
-above `g` the fields hold with `NBParX` in place of `NBPar` in `UpgAbsXW0`; at `t = 2` the engines need
-`NBPar M (x − 1)` only when the strong absorption fails; under `g` with the strong absorption the fields fail only
-when `x` is the child of `x − 1` with row 1 ≠ 0; after `TPLoWs`・`AbsDWs` replaced `TPLoW`・`AbsDW` only `BumpAbsC`
-fails there.) -/
-def Bad2 (M : Mat) : Prop :=
-  (∃ k, upg M (M.length - 2) = some k) ∧
-    ∃ p g, par M 0 (M.length - 2) = some p ∧ par M 0 p = some g ∧ col M p = bump M g ∧
-      (((Anc0 M g (M.length - 1) ∨ entry M 2 (M.length - 1) ≠ 0) ∧
-          ∃ ρ, Cons M ρ ∧ ¬ UpgAbsX M (M.length - 1) ρ) ∨
-        (par M 0 (M.length - 1) = some (M.length - 2) ∧ entry M 1 (M.length - 1) ≠ 0 ∧
-          ∃ ρ, Cons M ρ ∧ ¬ BumpAbsC M (M.length - 1) ρ))
-
 /-- **Outside `Bad2` the third case of `CntX` does not occur**: a failed upgrade of `x − 1` at the bad position is
 `Bad2`. -/
 theorem noBad3_of_nb2 {M : Mat} {ρ : Valn} (hNB : ¬ Bad2 M) (hC : Cons M ρ) : NoBad3 M ρ := by

@@ -219,10 +219,7 @@ theorem good3_take_any {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : In
   have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
   have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
   have hC1 := cons_of_rk hRk1
-  have hdrop := drop_all hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs R.drop.vst
-    I.fc I.fo R.drop.argT
-    (bump_drop hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td R.drop.ab R.drop.ws)
-    R.drop.ua
+  have hdrop := R.hdrop
   have hG1 := good3_take hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 hdrop
   exact good3_congr hG1 (agree_of_cons hC1 hτ hRk1)
 

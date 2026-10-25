@@ -156,7 +156,7 @@ theorem qn_drop_v_noupg {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 /-- **The qn drop at `q`** when `x − 1` upgrades: `v_T(q) ◁ v_M(q)` from the `n ≤ 1` engine
 (`T2UpgAbs.qnu_take_of_drop_full`). Its seed `o(r)` changes because `t₁ < v(q)` (`qn_take_t1L`, `leaf_M_side`). -/
 theorem qn_drop_v_upg {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk)
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hNB : ¬ Bad2 M)
     {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
     (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) {Lc : List Nat} (hCL : CL M r = Lc ++ [q])
     {k : Nat} (hux : upg M (r + L - 1) = some k) :
@@ -177,13 +177,10 @@ theorem qn_drop_v_upg {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
   have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
   have hC1 := cons_of_rk hRk1
-  have hdrop := drop_all hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs R.drop.vst
-    I.fc I.fo R.drop.argT
-    (bump_drop hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td R.drop.ab R.drop.ws)
-    R.drop.ua
+  have hdrop := R.hdrop
   have hG1 := good3_take hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 hdrop
-  have hab := R.drop.ab
-  have hua := R.drop.ua
+  have hab := (R.old hNB).ab
+  have hua := (R.old hNB).ua
   rw [show M.length - 1 = r + L by omega] at hRk1 hC1 hdrop hG1 hab hua
   have hAbs := absWN_of_absC hab hC1 hq' (fun i h => by rw [hpq'] at h; cases h; exact Tqb)
   -- the seed `o(r)` changes
@@ -211,10 +208,10 @@ theorem qn_drop_v_upg {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     rw [h2.1] at ht1lt
     exact lt_irrefl' _ ht1lt
   have hs1 := T2UpgAbs.strong_seed_of_drop hlen I.cons I.good (p := r) (by omega) (by omega) Tclpq
-    (hdrop r (by omega)) hne R.drop.ws.2.2
+    (hdrop r (by omega)) hne (R.old hNB).ws.2.2
   have H := T2UpgAbs.qnu_take_of_drop_full hlen (by omega) hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
     I.uat I.uab I.r12 I.r01 I.e00 hpq' Tqb Te2pq Tclq Tclpq hux Up1 Up1a Uqsh Udv Uos Uvsh
-    I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hua R.drop.ws.2.2 hdrop hAbs hs1
+    I.cons I.good I.rank hC1 hG1 hRk1 I.fc I.vs I.td I.kd hua (R.old hNB).ws.2.2 hdrop hAbs hs1
   have h := H.2
   rw [show r + (q - r) = q by omega] at h
   have hag := agree_of_cons hτ hC1 hRk1
@@ -269,7 +266,7 @@ theorem t2SeedPResRCV2D_of_E (h : T2SeedPResRCV2E) : T2SeedPResRCV2D := fun M ρ
   ⟨H.qr, H.sv, fun r L q hlen hr hq hqr Lc hCL hu τ hτ => by
     cases hk : upg M (r + L - 1) with
     | none => exact absurd hk hu
-    | some k => exact qn_drop_v_upg C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hlen hr hq hqr hCL hk τ hτ,
+    | some k => exact qn_drop_v_upg C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW C.nb2 hlen hr hq hqr hCL hk τ hτ,
     H.C⟩
 
 end Ytosk

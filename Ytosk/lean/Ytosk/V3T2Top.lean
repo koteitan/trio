@@ -919,7 +919,8 @@ structure Res3T2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
 /-- **Step 1 for `t = 2`**: from the invariants, the remaining hypotheses (`Res3`, `Res3T2`) and a
 valuation of each `M[n]` (`n ≥ 2`), every expansion drops the root value. -/
 theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
-    (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (R2 : Res3T2 M ρ rk) (hX : SInvX M) (hJ : RowJ M)
+    (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (hD : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
+    (R2 : Res3T2 M ρ rk) (hX : SInvX M) (hJ : RowJ M)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hNval : ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
       ∃ σ rkN, Cons (expand M n) σ ∧ Rk (expand M n) rkN ∧ Good3 (expand M n) σ) :
@@ -978,7 +979,7 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     exact h
   -- the valuation of `M.take x`
   have hdr : DropRes M (r + L) ρ (drop1 M (r + L) rk) := by
-    have := R.drop; rw [hL] at this; exact this
+    have := hD; rw [hL] at this; exact this
   have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank (hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat)
   have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rk) := cons_of_rk hRk1
   have hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rk) :=
@@ -1212,6 +1213,196 @@ theorem t2_drops_ge {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     apply dropsAt_of (hexp (n + 2))
     exact ⟨σ, rkN, hCN, hRN, hbig (n + 2) (by omega) σ rkN hCN hRN hGN⟩
 
+
+/-- (n ≥ 2 only, from the conclusion of the drop lemma, 2026-10-25)  **Step 1 for `t = 2`**: from the invariants, the remaining hypotheses (`Res3`, `Res3T2`) and a
+valuation of each `M[n]` (`n ≥ 2`), every expansion drops the root value. -/
+theorem t2_drops_ge2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (I : Inv3W M ρ rk) (R : Res3W M ρ rk) (R2 : Res3T2 M ρ rk) (hX : SInvX M) (hJ : RowJ M)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (hNval : ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
+      ∃ σ rkN, Cons (expand M n) σ ∧ Rk (expand M n) rkN ∧ Good3 (expand M n) σ) :
+    ∀ n, 2 ≤ n → DropsAt M ρ n := by
+  obtain ⟨r, hr⟩ := parLast_of I.e00 I.r01 I.r12 hz
+  have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
+  rw [h2] at hr
+  have hrx : r < M.length - 1 := par_lt M 2 _ r hr
+  have hlen2 : 2 ≤ M.length := by omega
+  obtain ⟨L, hL⟩ : ∃ L, M.length - 1 = r + L := ⟨M.length - 1 - r, by omega⟩
+  have hlen : r + L + 1 = M.length := by omega
+  have hL0 : 0 < L := by omega
+  rw [hL] at hr
+  have hA : Anc0 M r (r + L) := anc0_of_par M 2 r (r + L) hr
+  have hd0e : entry M 0 (r + L) = entry M 0 r + (entry M 0 (r + L) - entry M 0 r) := by
+    have := anc0_e0_lt hA (by omega); omega
+  obtain ⟨he2r, h1lt⟩ := par2_facts I.z2 (by omega) hr
+  have hxbr : col M (r + L) ≠ bump M r := fun h => by
+    have := e1_of_col (show col M (r + L) = (entry M 0 r + 1, entry M 1 r, 1) from h); omega
+  have hXu_of : upg M (r + L - 1) ≠ some (r + L) → ∀ i, upg M i ≠ some (r + L) := by
+    intro hux i hu
+    obtain ⟨_, _, _, _, hcase⟩ := upg_spec hu
+    have hi : i < M.length := by
+      by_contra h
+      exact (upg_e12 hu).1 (entry_out (by omega) 1)
+    rcases hcase with h | ⟨_, h⟩
+    · exact hux (by rw [show r + L - 1 = i by omega]; exact hu)
+    · omega
+  have hrb : ∀ p, par M 0 r = some p → col M r ≠ bump M p := fun p _ h => by
+    have := e2_of_col (show col M r = (entry M 0 p + 1, entry M 1 p, 1) from h); omega
+  have hrU : isUpg M r = false := by
+    cases h : isUpg M r with
+    | false => rfl
+    | true =>
+      exfalso
+      unfold isUpg at h
+      obtain ⟨k, _, hk⟩ := List.any_eq_true.mp h
+      have := upg_target_e2 (of_decide_eq_true hk); omega
+  have hrcl_of : par M 0 (r + L) = some r → upg M (r + L - 1) ≠ some (r + L) → CL M r ≠ [] := by
+    intro hq hux hnil
+    have hcnt : Counted M r (r + L) := ⟨hxbr, by rw [isUpg_x_false (hXu_of hux)]; simp⟩
+    have hxin : r + L ∈ CL M r := by
+      unfold CL; rw [List.mem_filter]
+      exact ⟨mem_children_iff.mpr ⟨by omega, hq⟩, by simpa using hcnt⟩
+    rw [hnil] at hxin; simp at hxin
+  have hexp : ∀ n, expand M n = TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+      (entry M 1 (r + L) - entry M 1 r) n := by
+    intro n
+    have h := expand_eq_gexp M n hlen2 hzT (by rw [h2]; rw [hL]; exact hr)
+    rw [h2, hL] at h
+    simp only [show (0 < 2) from by omega, show (1 < 2) from by omega, if_true,
+      Nat.add_sub_cancel_left] at h
+    exact h
+  -- the valuation of `M.take x`
+  have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank (hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat)
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rk) := cons_of_rk hRk1
+  have hdrop : ∀ i, i < r + L → PO ρ (drop1 M (r + L) rk) i ∧ PV M ρ (drop1 M (r + L) rk) i := by
+    have := R.hdrop; rw [hL] at this; exact this
+  have hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rk) :=
+    good3_take (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 hdrop
+  have hseed1 : UpgAbsX M (r + L) ρ → ∀ p, p < r + L → CL M p ≠ [] → (drop1 M (r + L) rk).o p ≠ ρ.o p →
+      Lhd z ((drop1 M (r + L) rk).o p) (ρ.o p) :=
+    fun hua p hp hcl hne => lhd_of_po I.cons I.good (by omega) hcl
+      (PO.zero_of_strong (by omega) hua I.cons I.good (by omega) (hdrop p hp).1 (hdrop p hp).2) hne
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
+  have hrq : r ≤ q := (anc0_par hA (by omega) hq).le
+  have hqx : q < r + L := par_lt M 0 _ q hq
+  -- `n ≥ 2`
+  have hbig : ∀ n, 2 ≤ n → ∀ σ rkN,
+      Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
+      Rk (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) rkN →
+      Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ →
+      isOT (root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+        (entry M 1 (r + L) - entry M 1 r) n) σ) = true ∧
+      root (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ <
+        root M ρ := by
+    intro n hn σ rkN hCN hRN hGN
+    have hT : (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n).take
+        (r + L) = M.take (r + L) := gexp_take_x hlen (by omega)
+    have hUN : UAT (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) := by
+      rw [← hexp n]; exact (sInvX_expand hX n).toSInv.uat
+    have hlN := TRIO.gexp_length (M := M) (j0 := r) (Lb := L) (d0 := entry M 0 (r + L) - entry M 0 r)
+      (d1 := entry M 1 (r + L) - entry M 1 r) (n := n) hlen
+    have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L (by omega)
+    have hcolN : ∀ d, d < r + L →
+        col (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) d = col M d :=
+      fun d hd => col_gexp_pre hlen (by omega) hd
+    have hbN : ∀ c, c < r + L →
+        bump (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c = bump M c :=
+      fun c hc => by unfold bump; rw [entry_gexp_pre hlen (by omega) 0 hc, entry_gexp_pre hlen (by omega) 1 hc]
+    by_cases hqr : q = r
+    · rw [hqr] at hq
+      have T := R2.qr r L hlen hr hq
+      have hAbs := R2.absN r L hlen hr n σ hn hCN hGN
+      by_cases hux : upg M (r + L - 1) = some (r + L)
+      · have T' := T.sv hux
+        obtain ⟨Sp1, _, Sdv, Sos, Svsh⟩ := sv_shapes hlen hL0 hq hux (rx_of_sv hlen I.z2 I.z1 hr hux) hrb he2r
+          I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12 I.be
+        have hseed := T'.big n σ hn hCN
+        have hIUt : ∀ c, c < r + L → topped M c = true →
+            isUpg (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c =
+              isUpg M c := by
+          intro c hc htM
+          have hcr : c ≠ r := by
+            intro hcr'
+            rw [hcr'] at htM
+            have hxr : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hq⟩
+            have hsplit := children_split_x hlen hxr
+            unfold topped at htM; rw [hsplit] at htM; simp at htM
+            exact hxbr htM
+          have hch := children_N2 (d1 := entry M 1 (r + L) - entry M 1 r) hlen hL0 hq hd0e (by omega) hn hc
+          apply isUpg_topped_take (by omega) (by omega) hT I.uat hUN hc _ htM
+          rw [topped_eq_of hch (fun d hd => hcolN d (by
+            have := (mem_children hd).2
+            by_contra h'
+            have hdx : d = r + L := by omega
+            have := (mem_children_iff.mp hd).2; rw [hdx, hq] at this; exact hcr (Option.some.inj this).symm))
+            (hbN c hc)]
+          exact htM
+        exact t2_sv_main hlen hL0 hq hd0e hn hux I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hrb (rcl_sv hlen hq hr hux I.z2 I.z1 I.r0p I.uat I.be he2r) hIUt
+          Sp1 Sdv Sos Svsh I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hAbs hseed
+      · have hseed := T.big hux n σ hn hCN
+        have hIU : ∀ c, c < r + L → topped M c = true →
+            isUpg (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c =
+              isUpg M c := by
+          intro c hc htM
+          apply isUpg_topped_take (by omega) (by omega) hT I.uat hUN hc _ htM
+          rw [topped_N2 (d1 := entry M 1 (r + L) - entry M 1 r) hlen hL0 hq hd0e hn (hXu_of hux) hxbr he2r hc]
+          exact htM
+        have hxcN : Counted (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+            (entry M 1 (r + L) - entry M 1 r) n) r (r + L) := by
+          have hx2 := (entry_xprime (d1 := entry M 1 (r + L) - entry M 1 r) hlen hL0 hq hd0e (by omega) hn).1
+          refine ⟨fun h => ?_, fun ⟨hiu, _⟩ => ?_⟩
+          · have := e2_of_col (show col _ (r + L) = (_, _, 1) from h); omega
+          · unfold isUpg at hiu
+            obtain ⟨k0, _, hk0⟩ := List.any_eq_true.mp hiu
+            have := upg_target_e2 (of_decide_eq_true hk0); omega
+        exact t2_qr_main hlen hL0 hq hd0e hn (hXu_of hux) hxbr hrb he2r hIU I.r0p I.z2 I.sd I.z1 I.uat I.uab I.r12
+          I.be I.r01 I.e00 I.cons I.good I.rank hCN hGN hRN I.fc I.vs I.td I.kd hAbs hxcN hseed
+    · obtain ⟨pq, hpq⟩ := par0_of_anc (anc0_par hA (by omega) hq) (fun h => hqr h.symm)
+      have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
+      have hpq' : par M 0 (r + (q - r)) = some pq := by rw [show r + (q - r) = q by omega]; exact hpq
+      have T := R2.qn r L (q - r) pq hlen hr hq' (by omega) hpq'
+      obtain ⟨Txb, Tqb, Te2pq, Tclq, Tclpq⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+      obtain ⟨Tp1, TqL, Tdv, Tos, Tvsh⟩ := qn_shapes hlen hA hq' (by omega) Txb I.be I.r0p I.z2 I.sd I.z1
+        I.uat I.uab I.r12 hpq' Tqb
+      have hAbs := R2.absN r L hlen hr n σ hn hCN hGN
+      have hseed := T.big n σ hn hCN
+      have hIUt : ∀ c, c < r + L → c ≠ r + (q - r) → topped M c = true →
+          isUpg (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) c =
+            isUpg M c := by
+        intro c hc hcq htM
+        have hch := children_N2Q (d1 := entry M 1 (r + L) - entry M 1 r) hlen hL0 hA hq' (by omega) hd0e
+          (by omega) hn hc
+        apply isUpg_topped_take (by omega) (by omega) hT I.uat hUN hc _ htM
+        rw [topped_eq_of hch (fun d hd => hcolN d (by
+          have := (mem_children hd).2
+          by_contra h'
+          have hdx : d = r + L := by omega
+          have := (mem_children_iff.mp hd).2; rw [hdx, hq'] at this; exact hcq (Option.some.inj this).symm))
+          (hbN c hc)]
+        exact htM
+      exact t2_qn_main hlen hL0 hA hq' (by omega) hd0e hn Txb I.be I.z2 I.uat I.r12 I.r01 I.e00 he2r hpq'
+        Tqb Te2pq Tclq Tclpq hIUt Tp1 TqL Tdv Tos Tvsh I.cons I.good I.rank hCN hGN hRN
+        I.fc I.vs I.td I.kd hAbs hseed
+  intro n hn2
+  obtain ⟨n, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
+  · have hne := gexp_ne_SRO (n := n + 2) hlen hL0 hA hd0e
+      (show entry M 1 (r + L) = entry M 1 r + (entry M 1 (r + L) - entry M 1 r) by omega) he2r h1lt
+      (by omega)
+    have hnil : TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) (n + 2)
+        ≠ [] := by
+      intro h
+      have hl := TRIO.gexp_length (M := M) (j0 := r) (Lb := L)
+        (d0 := entry M 0 (r + L) - entry M 0 r) (d1 := entry M 1 (r + L) - entry M 1 r) (n := n + 2) hlen
+      rw [h] at hl
+      have : L ≤ (n + 2) * L := Nat.le_mul_of_pos_left L (by omega)
+      simp at hl; omega
+    obtain ⟨σ, rkN, hCN, hRN, hGN⟩ := hNval (n + 2) (by omega) (by rw [hexp]; exact hne)
+      (by rw [hexp]; exact hnil)
+    rw [hexp] at hCN hRN hGN
+    apply dropsAt_of (hexp (n + 2))
+    exact ⟨σ, rkN, hCN, hRN, hbig (n + 2) (by omega) σ rkN hCN hRN hGN⟩
+
 /-- **Step 1 for `t = 2`**: every expansion drops the root value (`n = 0` by the chain of drops). -/
 theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (I : Inv3W M ρ rk) (R : Res3 M ρ rk) (R2 : Res3T2 M ρ rk) (hX : SInvX M) (hJ : RowJ M)
@@ -1219,7 +1410,7 @@ theorem t2_drops {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     (hNval : ∀ n, 2 ≤ n → expand M n ≠ SRO → expand M n ≠ [] →
       ∃ σ rkN, Cons (expand M n) σ ∧ Rk (expand M n) rkN ∧ Good3 (expand M n) σ) :
     ∀ n, DropsAt M ρ n := by
-  obtain ⟨hlast, hge⟩ := t2_drops_ge I R.toW R2 hX hJ hz h2 hNval
+  obtain ⟨hlast, hge⟩ := t2_drops_ge I (Res3W.ofDrop I (by intro h; rw [h] at hz; exact hz rfl) R.drop) R.drop R2 hX hJ hz h2 hNval
   obtain ⟨r, hr⟩ := parLast_of I.e00 I.r01 I.r12 hz
   have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
       TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)

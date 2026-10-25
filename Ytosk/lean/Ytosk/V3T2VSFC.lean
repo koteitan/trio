@@ -141,7 +141,7 @@ theorem t2VSFCV2_of (hB : T2BelowXResV2) (hFC : T2FDCopyRes) (hSV : T2SeedVSFV2)
     rw [h2] at hr
     have := par_lt M 2 _ r hr; omega
   have IW := Inv3W.ofV2 C.S C.I
-  have RW : Res3W M ρ rk := ⟨C.R.drop⟩
+  have RW : Res3W M ρ rk := C.toW
   refine ⟨vsmallF_expand_t2V (hB M ρ rk C) C.std C.ne IW RW hz h2
       (fun τ hτ => ⟨(take_fields_ctx C.toStepCtxV2 hl2 hτ).1, (take_fields_ctx C.toStepCtxV2 hl2 hτ).2.1⟩)
       (hSV M ρ rk C hz h2) n (by omega) σ hCN hGN,

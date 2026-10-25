@@ -57,7 +57,7 @@ theorem t2_val_expand {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2
 the named residuals, every `M[n]` (`n ≥ 2`) has `Inv3V2`, a standard value, and a smaller value. -/
 theorem hExp_t2_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXResAt M ρ rk)
     (hM : Std M) (hS : M ≠ SRO) (I : Inv3V2 M ρ rk)
-    (R : DropRes M (M.length - 1) ρ (drop1 M (M.length - 1) rk))
+    (RW : Res3W M ρ rk)
     (I1 : Inv3V2 (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) rk)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
     (hFO : T2SeedFrames QFO M) (hPR : G.T2SeedPRes M ρ)
@@ -68,7 +68,6 @@ theorem hExp_t2_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T
   intro n hn
   have S := sInv_std hM hS
   have IW : Inv3W M ρ rk := Inv3W.ofV2 S I
-  have RW : Res3W M ρ rk := ⟨R⟩
   obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
   obtain ⟨rkN, hRN⟩ := rk_expand_t2 hX hJ hz h2 I.rank n (by omega)
   have hCN := cons_of_rk hRN
@@ -98,7 +97,7 @@ theorem hExp_t2_inv3V2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T
     NR.frame.adw, NR.frame.trigs, NR.frame.tplon, NR.frame.adn, rootS_of_good hCN hGN, hrp⟩, ?_⟩
   -- the drop of the value
   have R2 := hR2_t2_ofW hB hM IW RW hz h2
-  obtain ⟨_, hge⟩ := t2_drops_ge IW RW R2 hX hJ hz h2
+  have hge := t2_drops_ge2 IW RW R2 hX hJ hz h2
     (fun m hm _ _ => t2_val_expand hB hM hS IW RW hz h2 m hm)
   obtain ⟨t', ⟨ρ', rk', hC', hR', hroot⟩, hot, hlt⟩ := hge n hn
   have heq : root (expand M n) σ = t' := by

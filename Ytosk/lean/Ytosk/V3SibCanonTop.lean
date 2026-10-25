@@ -25,7 +25,7 @@ theorem t2SeedPResR_of_canon (hCan : HCanonV2) (h : T2SeedPResRCV2) : T2SeedPRes
   refine ⟨H.qr, fun r L hlen hr hq hux => ?_, fun r L q hlen hr hq hqr Lc hCL => ?_,
     fun r L q hlen hr hq hqr hncl => ⟨t2SeedCRes_of C.std C.ne IW hlen hr hq hqr (H.C r L q hlen hr hq hqr hncl), ?_⟩⟩
   · obtain ⟨hSt, hlhd⟩ := H.sv r L hlen hr hq hux
-    exact ⟨sv_rw_of C.std C.ne IW ⟨C.R.drop⟩ hlen hr hq hux hSt, hlhd⟩
+    exact ⟨sv_rw_of C.std C.ne IW C.toW hlen hr hq hux hSt, hlhd⟩
   · exact t2SeedQNResR_of2 C.std C.ne IW hlen hr hq hqr hCL
       ⟨SibConsumer.qnUncRes_of_canonical C.std C.ne IW hlen hr hq hqr hCL
           (hCan M ρ rk C.std C.ne C.I.cons C.I.rank C.I.good),
@@ -34,7 +34,7 @@ theorem t2SeedPResR_of_canon (hCan : HCanonV2) (h : T2SeedPResRCV2) : T2SeedPRes
       have := par_lt M 0 (r + L) q hq
       have := par_lt M 2 (r + L) r hr; omega
     obtain ⟨I1, _⟩ := C.pre (r + L) (by omega) (by omega)
-    exact SibConsumer.t2SeedCBig_of_canonical C.std C.ne IW ⟨C.R.drop⟩ hlen hr hq hqr hncl
+    exact SibConsumer.t2SeedCBig_of_canonical C.std C.ne IW C.toW hlen hr hq hqr hncl
       (t2SeedCRes_of C.std C.ne IW hlen hr hq hqr (H.C r L q hlen hr hq hqr hncl))
       (fun τ hτ hG => hCan _ τ rk (std_take C.std (r + L) (by omega)) (ne_SRO_of_rk I1.rank) hτ I1.rank hG)
 

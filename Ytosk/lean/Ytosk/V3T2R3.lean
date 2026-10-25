@@ -21,18 +21,13 @@ theorem t2_drop_ctx {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W
     {x : Nat} (hlen : x + 1 = M.length) :
     Cons (M.take x) (drop1 M x rk) ∧ Rk (M.take x) rk ∧ Good3 (M.take x) (drop1 M x rk) ∧
       ∀ i, i < x → PO ρ (drop1 M x rk) i ∧ PV M ρ (drop1 M x rk) i := by
-  have hdr : DropRes M x ρ (drop1 M x rk) := by
-    have := R.drop; rw [show M.length - 1 = x by omega] at this; exact this
+  have hdrop : ∀ i, i < x → PO ρ (drop1 M x rk) i ∧ PV M ρ (drop1 M x rk) i := by
+    have := R.hdrop; rw [show M.length - 1 = x by omega] at this; exact this
   have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
   rw [show M.length - 1 = x by omega] at hcnt
   have hRk1 : Rk (M.take x) rk := rk_take (by omega) I.rank hcnt
   have hC1 : Cons (M.take x) (drop1 M x rk) := cons_of_rk hRk1
-  have hG1 := good3_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
-    ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr
-  have hdrop := drop_all hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs hdr.vst
-    I.fc I.fo hdr.argT
-    (bump_drop hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hdr.ab hdr.ws)
-    hdr.ua
+  have hG1 := good3_take hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 hdrop
   exact ⟨hC1, hRk1, hG1, fun i hi => ⟨(hdrop i hi).1, (hdrop i hi).2⟩⟩
 
 /-- The row-1 parent `m` of a column `i < x` keeps its `v` under the drop. -/
@@ -204,6 +199,6 @@ theorem hR2_t2_ofW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2Bel
 theorem hR2_t2_of (hB : T2BelowXRes) :
     ∀ M ρ rk, Std M → Inv3 M ρ rk → Res3 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → Res3T2 M ρ rk :=
-  fun M ρ rk hM I R => hR2_t2_ofW (hB M ρ rk) hM I.toW R.toW
+  fun M ρ rk hM I R hz h2 => hR2_t2_ofW (hB M ρ rk) hM I.toW (Res3W.ofDrop I.toW (by intro h; rw [h] at hz; exact hz rfl) R.drop) hz h2
 
 end Ytosk

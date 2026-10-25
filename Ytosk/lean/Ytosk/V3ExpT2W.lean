@@ -383,13 +383,13 @@ theorem good3_expand_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : 
       Good3 (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) 1) σ := by
     intro σ hσ
     rw [gexp_one_gen hlen] at hσ ⊢
-    have hD : DropRes M (r + L) ρ (drop1 M (r + L) rk) := by
-      have := R.drop; rwa [show M.length - 1 = r + L by omega] at this
-    have hG := good3_drop1 (x := r + L) hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
-      ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hD
     have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
     rw [show M.length - 1 = r + L by omega] at hcnt
     have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank hcnt
+    have hdrop : ∀ i, i < r + L → PO ρ (drop1 M (r + L) rk) i ∧ PV M ρ (drop1 M (r + L) rk) i := by
+      have := R.hdrop; rwa [show M.length - 1 = r + L by omega] at this
+    have hG := good3_take (x := r + L) hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good (cons_of_rk hRk1) hRk1
+      hdrop
     exact good3_congr hG (agree_of_cons (cons_of_rk hRk1) hσ hRk1)
   intro n hn σ hσ
   rw [hexp n] at hσ ⊢

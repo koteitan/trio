@@ -113,7 +113,7 @@ theorem t2SeedFrV2_of (hPR : T2SeedPResV2) (hD : T2SeedDomV2) :
       rw [h2] at hr
       have := par_lt M 2 _ r hr; omega
     obtain ⟨hQND, hCD⟩ := hD M ρ rk C hz h2
-    exact t2SeedFrames3 C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hPR M ρ rk C hz h2) hQND hCD
+    exact t2SeedFrames3 C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hPR M ρ rk C hz h2) hQND hCD
       (fun τ hτ => ⟨(take_fields_ctx C.toStepCtxV2 hl2 hτ).2.1, take_fo_ctx C.toStepCtxV2 hl2 hτ, (take_fields_ctx C.toStepCtxV2 hl2 hτ).2.2⟩)
   refine ⟨fun M ρ rk C hz h2 => (main M ρ rk C hz h2).1, fun M ρ rk C hz h2 => ?_,
     fun M ρ rk C hz h2 => (main M ρ rk C hz h2).2.1⟩

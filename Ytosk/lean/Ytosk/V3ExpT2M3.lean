@@ -91,7 +91,7 @@ theorem hExp_t2_of_lastV
       col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
       ∀ n, 2 ≤ n → ∃ ρN rkN, Inv3V (expand M n) ρN rkN := by
   intro M ρ rk hM hS hE I R hz h2 n hn
-  apply hExp_t2_V (hB M ρ rk) hRest hM hS I.toW R.toW hz h2 _ n hn
+  apply hExp_t2_V (hB M ρ rk) hRest hM hS I.toW (Res3W.ofDrop I.toW hE R.drop) hz h2 _ n hn
   intro j hj hjS hjE
   obtain ⟨τ, rkT, V, R'⟩ := hTake_of_last hLast M ρ rk hM hS hE I R j hj hjS hjE
   exact ⟨τ, rkT, Inv3.ofV (sInv_std (std_take hM j (by omega)) hjS) V, R'⟩

@@ -308,7 +308,7 @@ theorem t2VRASeedG_of (hB : T2BelowXResV2) (hPR : T2SeedPResV2)
       TRIO.srow M (M.length - 1) = 2 → T2VRASeedSVC M) :
     ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRASeed M :=
-  fun M ρ rk C hz h2 => t2VRASeed_of (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 C.I.vra
+  fun M ρ rk C hz h2 => t2VRASeed_of (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 C.I.vra
     (hPR M ρ rk C hz h2) (hPreG M ρ rk C hz h2) (hQNG M ρ rk C hz h2) (hSVCG M ρ rk C hz h2)
 
 end Ytosk

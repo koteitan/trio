@@ -588,7 +588,7 @@ theorem t2SVc0'_of_drop {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : S
   have hPO := (drop_all_H hlen IW.r0p IW.z2 IW.sd IW.z1 IW.uat IW.uab IW.cons ⟨C.I.good, C.I.vs, C.I.fc, C.I.fo, C.I.kd, C.I.td⟩ hD hC1 hRk1 c0 hc0x).1.1
   -- `τ` on `M.take x` is good
   have hτ' : Cons (M.take (M.length - 1)) τ := by rw [hx]; exact hτ
-  have hG := good3_take_any IW ⟨C.R.drop⟩ (by omega) hτ'
+  have hG := good3_take_any IW C.toW (by omega) hτ'
   rw [hx] at hG
   -- `v(c₀)` does not change
   have hnch : ¬ ChgX M (r + L) false c0 := by

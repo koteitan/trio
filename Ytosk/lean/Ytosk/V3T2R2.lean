@@ -94,15 +94,9 @@ theorem hR2_t2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hB : T2BelowXR
   have hdropOf : ∀ r L, r + L + 1 = M.length →
       ∀ i, i < r + L → PO ρ (drop1 M (r + L) rk) i ∧ PV M ρ (drop1 M (r + L) rk) i := by
     intro r L hlen
-    have hdr : DropRes M (r + L) ρ (drop1 M (r + L) rk) := by
-      have := R.drop; rw [show M.length - 1 = r + L by omega] at this; exact this
     have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank (hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat)
     have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rk) := cons_of_rk hRk1
-    have hdrop := drop_all (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs hdr.vst
-      I.fc I.fo hdr.argT
-      (bump_drop (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hdr.ab hdr.ws)
-      hdr.ua
-    exact fun i hi => ⟨(hdrop i hi).1, (hdrop i hi).2⟩
+    have := R.hdrop; rw [show M.length - 1 = r + L by omega] at this; exact this
   have hctx : ∀ r L, r + L + 1 = M.length →
       Cons (M.take (r + L)) (drop1 M (r + L) rk) ∧ Rk (M.take (r + L)) rk := by
     intro r L hlen

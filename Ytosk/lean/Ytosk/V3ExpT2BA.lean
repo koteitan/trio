@@ -126,17 +126,12 @@ theorem t2BelowXS_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hRes : T
       Nat.add_sub_cancel_left] at h
     exact h
   -- the valuation of `M.take x`
-  have hdr : DropRes M (r + L) ρ (drop1 M (r + L) rk) := by
-    have := R.drop; rw [hL] at this; exact this
   have hRk1 : Rk (M.take (r + L)) rk := rk_take (by omega) I.rank (hcnt_t1 hlen I.r0p I.z2 I.sd I.z1 I.uat)
   have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rk) := cons_of_rk hRk1
+  have hdrop : ∀ i, i < r + L → PO ρ (drop1 M (r + L) rk) i ∧ PV M ρ (drop1 M (r + L) rk) i := by
+    have := R.hdrop; rw [hL] at this; exact this
   have hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rk) :=
-    good3_drop1 hlen I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.rank
-      ⟨I.good, I.vs, I.fc, I.fo, I.kd, I.td⟩ hdr
-  have hdrop := drop_all (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs hdr.vst
-    I.fc I.fo hdr.argT
-    (bump_drop (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hdr.ab hdr.ws)
-    hdr.ua
+    good3_take (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 hdrop
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
   have hrq : r ≤ q := (anc0_par hA (by omega) hq).le
   have hqx : q < r + L := par_lt M 0 _ q hq

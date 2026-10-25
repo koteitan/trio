@@ -381,7 +381,7 @@ theorem t2VRAV2_of {K : T → T → T → List T → T → T → Prop} (hsh : QV
   obtain ⟨I1, _⟩ := C.pre (M.length - 1) (by omega) (by omega)
   have hRk1 : Rk (M.take (M.length - 1)) rk := I1.rank
   have hC1 := I1.cons
-  exact vsmallRAll_expand_t2 hsh (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 C.I.vra
+  exact vsmallRAll_expand_t2 hsh (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 C.I.vra
     (fun τ hτ => vsmallRAll_congr (agree_of_cons hC1 hτ hRk1) I1.vra)
     (hSeedG M ρ rk C hz h2) (hPreG M ρ rk C hz h2) (hCopyG M ρ rk C hz h2) (hKG M ρ rk C hz h2) n (by omega) σ hCN
 

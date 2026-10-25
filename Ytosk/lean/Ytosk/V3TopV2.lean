@@ -42,7 +42,7 @@ def T2SeedPResRV2 : Prop :=
 
 theorem t2SeedPResV2_of (h : T2SeedPResRV2) : T2SeedPResV2 := by
   intro M ρ rk C hz h2
-  exact t2SeedPRes_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ (h M ρ rk C hz h2)
+  exact t2SeedPRes_of C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW (h M ρ rk C hz h2)
 
 /-- **The value residual `UpgSibV` of every standard matrix.** -/
 def HSibV2 : Prop :=
@@ -87,7 +87,7 @@ theorem t2SeedPResR_of_sib (hSib : HSibV2) (h : T2SeedPResRCV2) : T2SeedPResRV2 
   refine ⟨H.qr, fun r L hlen hr hq hux => ?_, fun r L q hlen hr hq hqr Lc hCL => ?_,
     fun r L q hlen hr hq hqr hncl => ⟨t2SeedCRes_of C.std C.ne IW hlen hr hq hqr (H.C r L q hlen hr hq hqr hncl), ?_⟩⟩
   · obtain ⟨hSt, hlhd⟩ := H.sv r L hlen hr hq hux
-    exact ⟨sv_rw_of C.std C.ne IW ⟨C.R.drop⟩ hlen hr hq hux hSt, hlhd⟩
+    exact ⟨sv_rw_of C.std C.ne IW C.toW hlen hr hq hux hSt, hlhd⟩
   · exact t2SeedQNResR_of2 C.std C.ne IW hlen hr hq hqr hCL
       ⟨qnUncRes_of_sibV C.std C.ne IW hlen hr hq hqr hCL (hSib M ρ rk C.std C.ne C.I.cons C.I.rank C.I.good),
         H.qn r L q hlen hr hq hqr Lc hCL⟩
@@ -95,7 +95,7 @@ theorem t2SeedPResR_of_sib (hSib : HSibV2) (h : T2SeedPResRCV2) : T2SeedPResRV2 
       have := par_lt M 0 (r + L) q hq
       have := par_lt M 2 (r + L) r hr; omega
     obtain ⟨I1, _⟩ := C.pre (r + L) (by omega) (by omega)
-    exact G.t2SeedCBig_of_sibV C.std C.ne IW ⟨C.R.drop⟩ hlen hr hq hqr hncl
+    exact G.t2SeedCBig_of_sibV C.std C.ne IW C.toW hlen hr hq hqr hncl
       (t2SeedCRes_of C.std C.ne IW hlen hr hq hqr (H.C r L q hlen hr hq hqr hncl))
       (fun τ hτ hG => hSib _ τ rk (std_take C.std (r + L) (by omega)) (ne_SRO_of_rk I1.rank) hτ I1.rank hG)
 
@@ -141,7 +141,7 @@ theorem trio_terminates_main_V2_base (hU : HDropU) (hD : HDropV2) (hTB : TakeBad
   have hP : T2SeedPResV2 := t2SeedPResV2_of hPRV
   have hPreG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAPre M ρ := fun M ρ rk C hz h2 =>
-    t2VRAPre_of (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)
+    t2VRAPre_of (hB M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hVPr M ρ rk C hz h2)
   terminates_of_desc3 (desc3_V2O hU hD (hTake_of_glob hF hLf) hTB hBO
     (expT0Out_of4 hAbW (t0Leaf_of_glob hLf) (t0Frame_of_glob hF))
     (expT1Out_V2_glob hF hLf)

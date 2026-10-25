@@ -60,10 +60,7 @@ theorem qn_take_t1L {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
   have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
   have hC1 := cons_of_rk hRk1
-  have hdrop := drop_all hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs R.drop.vst
-    I.fc I.fo R.drop.argT
-    (bump_drop hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td R.drop.ab R.drop.ws)
-    R.drop.ua
+  have hdrop := R.hdrop
   have hG1 := good3_take hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 hdrop
   have hpre : ∀ i, i < M.length - 1 → ∃ Tl, CL M i = CL (M.take (M.length - 1)) i ++ Tl :=
     fun i hi => cl_prefix hx1 I.r0p I.z2 I.sd I.z1 I.uat hi
@@ -360,7 +357,7 @@ def T2SeedPResRCV2C : Prop :=
 theorem t2SeedPResRCV2B_of_C (h : T2SeedPResRCV2C) : T2SeedPResRCV2B := fun M ρ rk C hz h2 =>
   have H := h M ρ rk C hz h2
   ⟨H.qr, H.sv, fun r L q hlen hr hq hqr Lc hCL τ hτ =>
-    t2SeedPResQN_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hlen hr hq hqr hCL
+    t2SeedPResQN_of C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hlen hr hq hqr hCL
       (H.qn r L q hlen hr hq hqr Lc hCL) τ hτ, H.C⟩
 
 end Ytosk

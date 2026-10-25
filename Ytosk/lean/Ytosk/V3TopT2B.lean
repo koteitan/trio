@@ -105,21 +105,21 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hBR : BadOutT2B) (hT0H : T0B
   have hBX : T2BelowXResV2 := t2BelowXResV2_of (t2BelowRV2_of hP (t2SeedClV2_of_B hCl hP) (t2BumpMonoV2_of_ext hBE)) hP (t2SeedOTV2_of hP (t2SeedOTRestV2_of_B hCl hP))
   have hVPrC : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2SeedPreShapeC M ρ := fun M ρ rk C hz h2 =>
-    t2SeedPreShapeC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hP M ρ rk C hz h2)
+    t2SeedPreShapeC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hP M ρ rk C hz h2)
       (hCF M ρ rk C hz h2)
   have hVPr : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2SeedPreShapeSVC M ρ := fun M ρ rk C hz h2 =>
-    t2SeedPreShapeSVC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2
+    t2SeedPreShapeSVC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2
       (hSV0 M ρ rk C hz h2) (hVPrC M ρ rk C hz h2)
   have hSVCG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRASeedSVC M := fun M ρ rk C hz h2 =>
-    t2VRASeedSVC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 C.I.vra
-      (t2VRAPre_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2
-        (t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)))
+    t2VRASeedSVC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 C.I.vra
+      (t2VRAPre_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2
+        (t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hVPr M ρ rk C hz h2)))
       (hSV0 M ρ rk C hz h2)
-      (t2VRASeedC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 C.I.vra
-        (t2VRAPre_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2
-          (t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2)))
+      (t2VRASeedC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 C.I.vra
+        (t2VRAPre_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2
+          (t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hVPr M ρ rk C hz h2)))
         (hP M ρ rk C hz h2) (hCF M ρ rk C hz h2)
         (fun r L q hlen hr hq hqr hncl => (hCl M ρ rk C hz h2 r L hlen hr).2.2 q hq hqr hncl))
   trio_terminates_main_V2_base hDU (hDropV2_of' hDW) (takeBad_of_drop (dropBad_of_B hDB) hF hLf)
@@ -127,7 +127,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hBR : BadOutT2B) (hT0H : T0B
     (t0AbWRes_of_ext (hDropV2_of' hDW) hBE)
     hCB hBX
     hPRV hDom (FDCopyRoot.t2FDCopyRes_of_path hBX (t2FOSeedV2_of hP hDom) hVU hAG) hQNG hSVCG
-    (fun M ρ rk C hz h2 => t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hz h2 (hVPr M ρ rk C hz h2))
+    (fun M ρ rk C hz h2 => t2SeedPreShape_of C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hVPr M ρ rk C hz h2))
     hVCp (fun M ρ rk C hz h2 => t2VRAK_KVRA_of
       (hVU M ρ rk C hz h2).vdom
       (hAG M ρ rk C hz h2))

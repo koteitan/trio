@@ -106,6 +106,25 @@ structure StepCtxV2 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop whe
   /-- The drop hypotheses in the `Bad2` form (`HDropU`, 2026-10-25), for the `t = 2` bundles. -/
   RB : DropResHB M (M.length - 1) ρ (drop1 M (M.length - 1) rk)
 
+/-- **The conclusion of the drop lemma in the context** (from the `Bad2` form `RB`). -/
+theorem StepCtxV2.hdrop {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk) :
+    ∀ i, i < M.length - 1 → PO ρ (drop1 M (M.length - 1) rk) i ∧ PV M ρ (drop1 M (M.length - 1) rk) i := by
+  intro i hi
+  have hl : 1 ≤ M.length := by omega
+  have S := C.S
+  have I := C.I
+  have R := C.RB
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last (M := M) hl S.r0p S.z2 S.sibDec S.z1c S.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 := cons_of_rk hRk1
+  exact drop_all_hardB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.vs R.vst I.fc I.fo
+    R.hard (bump_dropB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.kd I.td R.ab R.ws) R.ua i hi
+
+/-- **The `t = 2` drop bundle of the context.** -/
+theorem StepCtxV2.toW {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (C : StepCtxV2 M ρ rk) : Res3W M ρ rk :=
+  ⟨C.hdrop, fun _ => C.R.drop, fun _ => C.R.drop.ab⟩
+
 /-- **The bad shape of the C case at `t = 2`** (2026-10-17): `q = P_0(x) ≠ r`, `q` is not the last counted child of `r`,
 and `x − 1` upgrades (to an ancestor of `r`). The seed residual `T2SeedCResR.un` is false here (ext2: 6 standard matrices);
 the `t = 2` engines assume its absence (`StepCtxT2`), and the shape is the separate residual `T2CBadOut`. -/

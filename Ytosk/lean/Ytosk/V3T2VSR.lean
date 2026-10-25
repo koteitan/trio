@@ -206,14 +206,10 @@ theorem hVSRexp_t2 (hSh : QVRsh) (hB : T2BelowXRes)
   intro M ρ rk hM hS hE I R P hz h2 n hn _ _ ρN rkN V
   have hlen1 : 1 ≤ M.length := by cases M with | nil => exact absurd rfl hE | cons => simp
   have hx : M.length - 1 + 1 = M.length := by omega
-  have hdr := R.drop
   have hRk1 : Rk (M.take (M.length - 1)) rk :=
     rk_take (by omega) I.rank (counted_take_last hlen1 I.r0p I.z2 I.sd I.z1 I.uat)
   have hC1 : Cons (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) := cons_of_rk hRk1
-  have hdrop := drop_all hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs hdr.vst
-    I.fc I.fo hdr.argT
-    (bump_drop hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td hdr.ab hdr.ws)
-    hdr.ua
+  have hdrop := R.hdrop
   have hVT : VSmallR (M.take (M.length - 1)) (drop1 M (M.length - 1) rk) :=
     vsmallR_take hx I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 hdrop P
   exact (clField_expand_t2S hSh qVR_low (hB M ρ rk) hM hS I R hz h2 P

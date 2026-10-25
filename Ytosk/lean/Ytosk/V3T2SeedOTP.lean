@@ -34,10 +34,7 @@ theorem seedOT_qr {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
   have hcnt := counted_take_last (M := M) (by omega) I.r0p I.z2 I.sd I.z1 I.uat
   have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
   have hC1 := cons_of_rk hRk1
-  have hdrop := drop_all hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.vs R.drop.vst
-    I.fc I.fo R.drop.argT
-    (bump_drop hx1 I.r0p I.z2 I.sd I.z1 I.uat I.uab I.cons I.good hC1 hRk1 I.kd I.td R.drop.ab R.drop.ws)
-    R.drop.ua
+  have hdrop := R.hdrop
   have hτ' : Cons (M.take (M.length - 1)) τ := by rw [show M.length - 1 = r + L by omega]; exact hτ
   have hag := agree_of_cons hC1 hτ' hRk1
   have hG1 := good3_take_any I R (by omega) hτ'
@@ -163,9 +160,9 @@ def T2SeedOTRestV2 : Prop :=
 theorem t2SeedOTV2_of (hP : T2SeedPResV2) (h : T2SeedOTRestV2) : T2SeedOTV2 := by
   intro M ρ rk C hz h2 r L hlen hr
   obtain ⟨h1, h3⟩ := h M ρ rk C hz h2 r L hlen hr
-  refine ⟨fun hqx Lc hCLM => ?_, h1, fun hsv => seedOT_sv C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩
+  refine ⟨fun hqx Lc hCLM => ?_, h1, fun hsv => seedOT_sv C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW
     hlen hr hsv.1 hsv.2, h3⟩
-  exact seedOT_qr C.std C.ne (Inv3W.ofV2 C.S C.I) ⟨C.R.drop⟩ hlen hr hqx.1 hqx.2 hCLM
+  exact seedOT_qr C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hlen hr hqx.1 hqx.2 hCLM
     ((hP M ρ rk C hz h2).qr r L hlen hr hqx.1 hqx.2 Lc hCLM)
 
 end Ytosk

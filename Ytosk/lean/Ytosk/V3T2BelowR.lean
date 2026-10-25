@@ -31,7 +31,7 @@ def T2BumpMonoV2 : Prop :=
 theorem t2BelowRV2_of (hP : T2SeedPResV2) (hCl : T2SeedClV2) (hBM : T2BumpMonoV2) : T2BelowRV2 := by
   intro M ρ rk C hz h2 r L hlen hr n hn hG σ hCN _ hor hoq hdec
   have IW := Inv3W.ofV2 C.S C.I
-  have RW : Res3W M ρ rk := ⟨C.R.drop⟩
+  have RW : Res3W M ρ rk := C.toW
   have hPR := hP M ρ rk C hz h2
   obtain ⟨hQN, hSV, hCC⟩ := hCl M ρ rk C hz h2 r L hlen hr
   refine ⟨fun p hp => ?_, t2_absWN C.std C.ne IW RW hlen hr (hBM M ρ rk C hz h2 r L hlen hr) hn hCN⟩

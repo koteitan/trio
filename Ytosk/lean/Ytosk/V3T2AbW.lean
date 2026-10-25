@@ -47,9 +47,14 @@ theorem t2_absWN_take {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : St
   have hA := anc0_of_par M 2 r (r + L) hr
   have hrx : r < r + L := par_lt M 2 _ _ hr
   obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
-  have hab := R.drop.ab
+  have hnb := t2_xparNB hM hS I hlen hr hq
+  have hab := R.ab (by
+    intro q' i hq' hi
+    rw [show M.length - 1 = r + L by omega, hq] at hq'
+    cases hq'
+    exact hnb i hi)
   rw [show M.length - 1 = r + L by omega] at hab
-  exact absWN_of_absC hab hτ hq (t2_xparNB hM hS I hlen hr hq)
+  exact absWN_of_absC hab hτ hq hnb
 
 /-- **The monotonicity of the bump term** from `M.take x` to `M[n]` (`t = 2`, columns before `x`). -/
 def T2BumpMono (M : Mat) (r L : Nat) : Prop :=
