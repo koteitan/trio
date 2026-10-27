@@ -4643,3 +4643,11 @@ T2QNDomBad（ω_T の成分の支配）の材料（qnterms.py、b2grow1・b2grow
 - 添字が等しければ `PO` の弱い選言 `WkOA` は起きない。最後の数える子 x を落とす狭義性（`o_strict_frame`）と合わせて `◁` が出る。
 - 最上位は `T0BadSeedsH8` を、旧欄 (2)・(3) だけの `T0SeedOutside.T0BadSeedsH9` に替えた。変換は `t0BadSeedsH8_of : HDropU → T0BadSeedsH9 → T0BadSeedsH8`。残りの仮定の数は 15 のまま、中身を 1 欄減らした。
 - 別の補助 `V3T2AbsNWeak` は、落とし側の弱い吸収が破れる列で `BumpAbsCB` から `WkVA ∧ WCSP ∧ CntX` を取り出す（`weak_of_drop_failure`）。`T2AbsNBad` を証明したわけではなく、展開側の bump 項の下からの評価はまだ必要。
+
+### Bad2 の t = 0 の種の和も HUAC から証明した（2026-10-27、trio-codex 氏）
+
+- `V3T0SeedSum.seed_sum_lhd`: 旧 `T0BadSeedsH8` の欄 (2) の外の場合では、和の強い関係が `HDropU`・`HUAC` と既存の不変条件から出る。接頭辞の子が最後の列だけで、その列が祖先への上げを失う場合は、従来どおり HUAC の既存の証明が扱う。
+- 最後の子より前の兄弟の o は変わらない（`earlier_o_stable`）。最後の子が上げを失う列でなければ、添字が変わらず `PO` の強い選言が出る（`last_child_v_stable`）。
+- 最後の子が上げを失っても、前の兄弟が残るなら、その兄弟が新しい葉の成分を押さえる（`HUACPath.earlier_sibling_leaf_dom`）。行 2 が 0 で次の列へ上げない列の行 1 の道に沿って HUAC をつなぐ。兄弟の辞書順と `BumpLeaf`・`RowJ` が、この道と必要な行の条件を与える。
+- 共通の先頭部分が末尾の成分を押さえれば、区間内のすべての項が同じ先頭部分を持つことから `Lhd` が出る。さらに和の形の `BRelS` を通して omega の強い関係が出る（`omega_sum_last`）。
+- 最上位は残りを `T0SeedSum.T0BadSeedsH10` に縮めた。これは旧 H8 の欄 (3) だけ、すなわち数える列 r が頭打ちで r − 1 がその親でない場合の、r − 1 から r への上げの除外である。変換は `t0BadSeedsH9_of : HDropU → HUAC → T0BadSeedsH10 → T0BadSeedsH9`。仮定の数は 15 のまま。
