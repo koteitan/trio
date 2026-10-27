@@ -27,6 +27,7 @@ import Ytosk.V3T0BadCnt
 import Ytosk.V3T1Bad
 import Ytosk.V3RootAny
 import Ytosk.V3HUAC
+import Ytosk.V3HUACCopy
 import Ytosk.V3QNDomS
 import Ytosk.V3T0SeedOutside
 import Ytosk.V3T0SeedSum
@@ -96,8 +97,10 @@ upgrades to an ancestor) proves the lost-upgrade cases: `T0BadSeedsH7` from `T0B
 not occur weakly on the sets.
 2026-10-27: H8's first field follows strongly from the drop conclusion (T0SeedOutside.seed_lhd_outside).
 2026-10-27: HUAC also proves the second field (T0SeedSum.seed_sum_lhd).
-The top keeps only the preceding-upgrade exclusion as T0SeedSum.T0BadSeedsH10; the count stays 15. -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUAC : HUAC) (hT0H10 : T0SeedSum.T0BadSeedsH10)
+The top keeps only the preceding-upgrade exclusion as T0SeedSum.T0BadSeedsH10.
+HUACCopy.hUAC_of proves the return-grandchild cases, leaving HUACCopy.HUAC' for the others.
+The count stays 15. -/
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUAC' : HUACCopy.HUAC') (hT0H10 : T0SeedSum.T0BadSeedsH10)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -108,6 +111,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUAC : HUA
       TRIO.srow M (M.length - 1) = 2 → T2VRACopyEsc M)
     (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : WellFounded Step' :=
+  have hUAC : HUAC := HUACCopy.hUAC_of hUAC'
   have hDW : HDropV2W := hDropV2W_of_U hDU
   have hDB : DropBadV2B := dropBadB_of_U hDU (rootBad_of_T2 hDU (rootBadV2T2_holds hDU))
   have hDomB : T2SeedDomV2B := t2SeedDomV2B_of_Q hDomQ
