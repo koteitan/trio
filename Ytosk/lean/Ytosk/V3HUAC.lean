@@ -110,10 +110,36 @@ theorem lost_upg_take {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : St
   have hlT : (M.take x).length = x := by rw [List.length_take]; omega
   rw [o_nochild hC1 (by omega) (children_last (by omega)) (by rw [hv]; exact hVot), hv]
 
+/-- **An upgrade target's row-0 parent is its row-1 parent**: if `n` upgrades to `k` then `P₀(k) = P₁(k) = P₁(n)`
+(`col k = (e0 m + 1, …)` with `m` a row-0 ancestor of `k`). -/
+theorem upg_target_par0 {M : Mat} (hR0 : R0P M) {n k : Nat} (h : upg M n = some k) :
+    ∃ m, par M 1 n = some m ∧ par M 0 k = some m := by
+  obtain ⟨m, hm, hmk, hcol, _⟩ := upg_spec h
+  refine ⟨m, hm, ?_⟩
+  have hA : Anc0 M m k := anc0_of_par M 1 m k hmk
+  have hmk' : m ≠ k := by have := par_lt M 1 k m hmk; omega
+  have he0k : entry M 0 k = entry M 0 m + 1 := by
+    have := congrArg (fun c : Nat × Nat × Nat => c.1) hcol
+    simpa [col_eq_entries] using this
+  cases hp : par M 0 k with
+  | none =>
+    exfalso
+    cases hA with
+    | refl => exact hmk' rfl
+    | step h' _ => rw [hp] at h'; cases h'
+  | some p =>
+    have hAp : Anc0 M m p := anc0_par hA hmk' hp
+    have he0p := hR0 k p hp
+    by_cases hmp : m = p
+    · rw [hmp]
+    · have := anc0_e0_lt hAp hmp; omega
+
 /-- **Residual: `T0BadSeedsH7` outside the lost upgrade** (2026-10-26): field (1) when not `r = x − 1` upgrading to an
 ancestor, field (2) when the children of `r` in `M.take x` are not just `x − 1` upgrading to an ancestor. In those
 excluded cases the weak disjunct holds by `HUAC` (`t0BadSeedsH7_of`); outside them the strong disjunct holds on the
-sets (b2grow1・b2grow2・graftBb2St: field (1) `Lhd` 2708 cases, field (2) `⊴` 2973 cases). -/
+sets (b2grow1・b2grow2・graftBb2St: field (1) `Lhd` 2708 cases, field (2) `⊴` 2973 cases). Field (3) only when `r − 1`
+is not the row-0 parent `g` of `r` (b2grow2: 56 cases; for `r − 1 = g` an upgrade `r − 1 → r` would make `g = P₁(r − 1)`,
+`upg_target_par0`). -/
 def T0BadSeedsH8 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → Bad2 M → Inv3V2 M ρ rk → ∀ r L, r + L + 1 = M.length → 0 < L →
     par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
@@ -130,13 +156,21 @@ def T0BadSeedsH8 : Prop :=
         ∀ s b', omega (sumN ((children (M.take (r + L)) r).map ρ.o)) = psi s b' z →
           ∀ u, ∀ e ∈ comps u (omega (sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rk).o))),
             ∃ d ∈ z :: b' :: (comps u b' ++ comps u s), e ≤ d) ∧
-    (∀ g, par M 0 r = some g → r ≠ r + L - 1 → Counted M g r → topped (M.take (r + L)) r = true →
+    (∀ g, par M 0 r = some g → r ≠ r + L - 1 → r - 1 ≠ g → Counted M g r → topped (M.take (r + L)) r = true →
       upg M (r - 1) ≠ some r)
 
 theorem t0BadSeedsH7_of (hU : HUAC) (h8 : T0BadSeedsH8) : T0BadSeedsH7 := by
   intro M ρ rk hM hS hB I r L hlen hL hp he1
   obtain ⟨h1, h2, h3⟩ := h8 M ρ rk hM hS hB I r L hlen hL hp he1
-  refine ⟨fun g pp hg hpp h1p h2p hgb => ?_, fun g hg hrx hrb h1g h2g => ?_, h3⟩
+  refine ⟨fun g pp hg hpp h1p h2p hgb => ?_, fun g hg hrx hrb h1g h2g => ?_,
+    fun g hg hrx hcnt htop hu => ?_⟩
+  rotate_left 2
+  · by_cases hrg : r - 1 = g
+    · obtain ⟨m, hm, hm0⟩ := upg_target_par0 (sInv_std hM hS).r0p hu
+      rw [hg] at hm0; cases hm0
+      rw [← hrg] at hm
+      have := par_lt M 1 _ _ hm; omega
+    · exact h3 g hg hrx hrg hcnt htop hu
   · by_cases hs : L = 1 ∧ ∃ k, upg M r = some k ∧ k < r
     · obtain ⟨hL1, k, hk, hkr⟩ := hs
       subst hL1
