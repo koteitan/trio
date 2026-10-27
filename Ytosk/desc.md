@@ -4634,3 +4634,12 @@ T2QNDomBad（ω_T の成分の支配）の材料（qnterms.py、b2grow1・b2grow
 - b2grow1 の例: V = v(m) = ω、W = bumpW(k) = ψ_ω(0)、v(k) = ψ_ω(0)。W の ψ の添字が V そのもので、V の成分 1 は W の添字 ω の成分 1 で押さえられる（強い ◁ は c = Ω_1 などで破れる）。上げ先 k の bump 子の子の o の添字（v の値）を通して v(m) が bump 項の添字に入り込む形と見られる。HUAC を示すにはこの入り込みを構造の帰納法で運ぶ必要がある。
 - 続き（huaclev.py、各 3 万個の標本）: 上げ先 k で 0 でない成分の項が吸収される場合、ほとんどで lev(bumpW(k)) = v(m)（W = ψ_{v(m)}(y) の形）: b2grow1 27878 件すべて、b2grow2 79327 / 79421、graftB 19046 / 20208、graftBb2St 14276 / 15258。このとき HUAC はすぐ出る（u ≤ V なら comps u V ⊆ comps u W、u > V なら comps u V は空）。lev(W) ≠ V の場合（約 2500 件）も W の成分で押さえられる。例（b2grow1）: W = Ω_ω = ω^{Ω_ω}、bump 子の子 c の o(c) = ψ_{v(m)}(0) で v(c) = v(m)。次は「上げ先の bump 子の子に v = v(m) の列がある」形を構造から示せるかを見る。
 - 続き（huacc.py）: lev(bumpW(k)) = v(m) のとき、k の最後の bump 子 j の最後の子 c で v(c) = v(m) となる列がいつもある（b2grow1 27878・graftB 15311 件。graftB の 6 件は c が j の最後の子でない）。c は行 1 の値が m と同じ、行 2 = 0、P₁(c) ≠ m（m の写しの列）。o(c) = ψ_{v(m)}(…) が j の G の最後の項になり、ω を通して bump 項の添字に v(m) が入る。HUAC を示すには「上げ先の最後の bump 子の最後の子は m の写しで v が等しい」形の値の不変条件が要る見込み。
+
+### Bad2 の t = 0 の種の第 1 欄を証明した（2026-10-27、trio-codex 氏、V3T0SeedOutside）
+
+- `seed_lhd_outside`: `T0BadSeedsH8` の欄 (1) の、上げを失う形の外では、弱い選言を使わず `o′(r) ◁ o(r)` が出る。新しい仮定は要らず、既存の `HDropU` が与える落とす補題の結論 `PO ∧ PV` を使う。
+- 添字の不変性（`seed_v_stable`）が鍵。bump 子の下で子を持つ列 r は、`BumpLeaf` と `RowJ` により行 2 が 0。行 2 が 0 の列が接頭辞に子を残すなら v は変わらない（`topC_no_child_zero`・`v_stable_zero_child`）。変わる列の形 `TopC` では、その子が数えるなら矛盾し、数えないなら上げ先なので行 1 の親が r となり、やはり `TopC` に反する。
+- r が接頭辞の最後なら、除いた形でない限り上げ先はない。次の列への上げは子 x の存在で除かれ、祖先への上げは除外条件で除かれる。この場合も `v′(r) = v(r)`。
+- 添字が等しければ `PO` の弱い選言 `WkOA` は起きない。最後の数える子 x を落とす狭義性（`o_strict_frame`）と合わせて `◁` が出る。
+- 最上位は `T0BadSeedsH8` を、旧欄 (2)・(3) だけの `T0SeedOutside.T0BadSeedsH9` に替えた。変換は `t0BadSeedsH8_of : HDropU → T0BadSeedsH9 → T0BadSeedsH8`。残りの仮定の数は 15 のまま、中身を 1 欄減らした。
+- 別の補助 `V3T2AbsNWeak` は、落とし側の弱い吸収が破れる列で `BumpAbsCB` から `WkVA ∧ WCSP ∧ CntX` を取り出す（`weak_of_drop_failure`）。`T2AbsNBad` を証明したわけではなく、展開側の bump 項の下からの評価はまだ必要。

@@ -28,6 +28,7 @@ import Ytosk.V3T1Bad
 import Ytosk.V3RootAny
 import Ytosk.V3HUAC
 import Ytosk.V3QNDomS
+import Ytosk.V3T0SeedOutside
 
 namespace Ytosk
 
@@ -91,8 +92,10 @@ first qn subscript `t_1 ◁ v_M(q)` (from the component bound `T2QNDomBad`; the 
 2026-10-26: the general residual `HUAC` (V3HUAC: the components of `v(P₁ n)` are bounded by those of `v(n)` when `n`
 upgrades to an ancestor) proves the lost-upgrade cases: `T0BadSeedsH7` from `T0BadSeedsH8` (`t0BadSeedsH7_of`) and
 `T2QNDomBad` from `T2QNDomBad2` (`t2QNDomBad_of`, V3QNDomS), the narrowed residuals asserting only the shapes that do
-not occur weakly on the sets. -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUAC : HUAC) (hT0H8 : T0BadSeedsH8)
+not occur weakly on the sets.
+2026-10-27: H8's first field follows strongly from the drop conclusion (T0SeedOutside.seed_lhd_outside).
+The top keeps only its last two fields as T0SeedOutside.T0BadSeedsH9, with the count unchanged at 15. -/
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUAC : HUAC) (hT0H9 : T0SeedOutside.T0BadSeedsH9)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -163,7 +166,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUAC : HUA
   have hBR : BadOutT2B := badOutT2B_of hDU (hDropV2_of' hDW) (hTake_of_glob hF hLf)
     (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hE2 (r2V2_of hBX) hCB
   trio_terminates_main_V2_base hDU (hDropV2_of' hDW) (takeBad_of_drop (dropBad_of_B hDB) hF hLf)
-    (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf (t0BadSeeds_of hDU (t0BadSeedsH_of hDU (t0BadSeedsH2_of hDU hBE (t0BadSeedsH3_of hDU (t0BadSeedsH4_of hDU hBE (t0BadSeedsH5_of hDU (t0BadSeedsH6_of (t0BadSeedsH7_of hUAC hT0H8))))))))) (badOutRest_of (badOutT12_of hDU (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf hBR))) hF hLf
+    (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf (t0BadSeeds_of hDU (t0BadSeedsH_of hDU (t0BadSeedsH2_of hDU hBE (t0BadSeedsH3_of hDU (t0BadSeedsH4_of hDU hBE (t0BadSeedsH5_of hDU (t0BadSeedsH6_of (t0BadSeedsH7_of hUAC (T0SeedOutside.t0BadSeedsH8_of hDU hT0H9)))))))))) (badOutRest_of (badOutT12_of hDU (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf hBR))) hF hLf
     (t0AbWRes_of_ext (hDropV2_of' hDW) hBE)
     hCB hBX
     hPRV hDom hFD hQNG hSVCG
