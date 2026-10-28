@@ -2,13 +2,13 @@
 
 接ぎ木の標準形（tmp/ytosk-handoff/sets/graftA.pkl・graftB.pkl、作り方 tmp/claude/gen_graft.py）で、最上位の残り HFrameV2・HDropV2W と不変条件 Inv3V2 の欄 TPLoW・AbsDW が偽だった。
 
-## 残りの地図（2026-10-29、最上位 trio_terminates_main_V2_cur の 15 個）
+## 残りの地図（2026-10-29、最上位 trio_terminates_main_V2_cur の 14 個）
 
 | 残り | 中身 | 測定 | 消すのに要るもの |
 |---|---|---|---|
 | HDropU | 落とす補題の仮定（形 B）と条件のない ua | 全集合で例外 0 | 落とす補題の仮定を値の不変条件から出す（核） |
 | T2BadRes | Bad2 の t = 2: T2AbsNBad（落とし側が破れる列での M[n] の弱い吸収）・T2QNDomBad2（単純な形の外の qn の成分の支配。単純な形は HUAC から証明済み） | 例外 0（AbsN の前件は graftBb2St 3 個。QNDom2 は測った集合で弱い場合に現れない） | AbsN: M[n] の bump 項の下からの評価。2026-10-29: WfT2AbsSrc の t2AbsNBad_of で T2AbsNSrc（M の側、L = 1・i は r の祖父・失敗する項 < ψ_{v(r)}(Ω_{v(r)+1})）と T2AbsNExp（展開の側の計算 ψ_{v(r)}(Ω_{v(r)+1}) ≤ bumpW_N(i)）に分けた（1192 列で例外 0、トップには未接続） |
-| T0H10Core.T0BadSeedsH10Big | H8 の欄 (3) のうち entry1(g)>=2 の場合だけ。小さい場合は構造から証明済み | **偽（2026-10-29）**: 29 列の標準の Bad2 の行列で、Inv3V2 を除いた形が WfH10Cex.h10_core_false で反証済み（Inv3V2 は実際の値で Python の検査だけ）。使う側の H6 の欄 (3)（r が M[n] でも数えられる）も偽（h6_counted_core_false） | 残りとしては消せない。使う側 t0_S1N_cnt（V3T0BadNode）を「r−1 が r へ上げ、r が M.take x で頭打ち」の場合で分けて作り直す。その場合の S1 の ◁ は 12,645 件で真 |
+| ~~T0H10Core.T0BadSeedsH10Big~~ | **最上位から外した（2026-10-29）**。偽（WfH10Cex.h10_core_false、29 列の標準の Bad2 の行列） | — | 使う側 t0_S1N_cnt（V3T0BadNode）を作り直した: v(r) > v(g) の枝は数える写しが 0 個（m = 0）でもよい（weak_seed_hiG。m = 0 では古い枠が書き換えない t0IVResC_holds ので、写しだけの状態 B は古い引数の接頭辞）。v(r) ≤ v(g) の枝では r − 1 → r の上げは起きない（v_par0_lt_of_upg_prev: P₁(r) = P₀(r) = g なので v(g) < v(r)）ので counted_first0G で数える。T0BadSeedsH2〜H6 の数える欄は「r − 1 が r へ上げ r が頭打ち」でないときだけに弱め、構造から証明（t0BadSeedsH6_of_W）。残りの 2 欄は HDropU と HUAC だけから（WfH10b.t0BadSeedsH7W_of）。置き換える残りはない |
 | WfHUACDeep.HUACDeepShape | 危険な吸収があるとき、零添字・最後のコピー孫・深い行 1 の戻り（DeepWitness: 最後の bump 子の子 c が m の行 1 祖先 a の段へ戻り、鎖の上げの増分の成分が v(a) に押さえられる）のどれか。旧 HUACShape は標準の 48 列の行列で偽（WfHUACShapeFalse.not_HUACShape） | 11 集合と接ぎ木・展開の族 401 万行列（危険な枠 1265 万）で例外 0 | StepDom（鎖の上げ先に bump 子がない・v(a) の段 0 の成分 ≥ 1）と、危険のもとで証人があること |
 | HFrameV2・HLeafV2 | 標準形の 1 列落としの枠・葉の欄 | 例外 0 | 欄ごとの値の議論 |
 | HBumpExt | 接頭辞で bump 項が増える | 例外 0 | M[n]（不変条件のない行列）について言うので落とす補題から出ない |
