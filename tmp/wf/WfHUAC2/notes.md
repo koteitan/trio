@@ -63,7 +63,7 @@ surv.py on graftBb2St/graftA).
 (b) StepDom at the chain level of the first grandchild.  The data says more: the
 upgrade targets above a have no bump child, so each U-increment is ω (`last_v_noBump`),
 and v(a) has a level-0 component >= 1 (`stepDom_of_noBump` turns (i)+(ii) into StepDom).
-Why Danger forces (i): in every N frame with a U-step some target t above a has a bump
-child, and then the increment ω^{P(t)} is not below W (no danger).  A proof has to
+Observed: in every N frame with a U-step some target t above a has a bump child.
+Conjecture (NOT measured): then the increment ω^{P(t)} is not below W, which is why there is no danger.  A proof has to
 compare P(t) (grandchildren under t's bump child) with P(k) (grandchildren under k's
 last bump child); this is the remaining value content.
