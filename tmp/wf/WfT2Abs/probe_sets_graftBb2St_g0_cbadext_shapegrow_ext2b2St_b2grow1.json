@@ -1,0 +1,52 @@
+{
+ "graftBb2St_g0": {
+  "counts": {
+   "input": 2738
+  },
+  "bad": [],
+  "nbad": 0,
+  "distinct_cases": 0,
+  "sec": 0.0
+ },
+ "cbadext": {
+  "counts": {
+   "input": 3756,
+   "shape_pre": 297,
+   "eval_FAIL": 2
+  },
+  "bad": [],
+  "nbad": 0,
+  "distinct_cases": 0,
+  "sec": 0.1
+ },
+ "shapegrow": {
+  "counts": {
+   "input": 2372,
+   "shape_pre": 299
+  },
+  "bad": [],
+  "nbad": 0,
+  "distinct_cases": 0,
+  "sec": 0.3
+ },
+ "ext2b2St": {
+  "counts": {
+   "input": 2133,
+   "shape_pre": 1012
+  },
+  "bad": [],
+  "nbad": 0,
+  "distinct_cases": 0,
+  "sec": 0.6
+ },
+ "b2grow1": {
+  "counts": {
+   "input": 6517,
+   "shape_pre": 1879
+  },
+  "bad": [],
+  "nbad": 0,
+  "distinct_cases": 0,
+  "sec": 2.0
+ }
+}

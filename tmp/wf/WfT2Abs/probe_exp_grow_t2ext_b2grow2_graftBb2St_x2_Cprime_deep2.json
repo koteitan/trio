@@ -1,0 +1,68 @@
+{
+ "grow": {
+  "counts": {
+   "input": 404218,
+   "ante": 14782,
+   "BleWN.True": 29564,
+   "vrN.True": 29564
+  },
+  "bad": [],
+  "nbad": 0,
+  "sec": 178.3
+ },
+ "t2ext": {
+  "counts": {
+   "input": 1207960,
+   "ante": 851,
+   "BleWN.True": 1702,
+   "vrN.True": 1702
+  },
+  "bad": [],
+  "nbad": 0,
+  "sec": 6.3
+ },
+ "b2grow2": {
+  "counts": {
+   "input": 10081,
+   "ante": 27,
+   "BleWN.True": 54,
+   "vrN.True": 54
+  },
+  "bad": [],
+  "nbad": 0,
+  "sec": 0.2
+ },
+ "graftBb2St_x2": {
+  "counts": {
+   "input": 2673,
+   "ante": 2673,
+   "BleWN.True": 5346,
+   "vrN.True": 5346
+  },
+  "bad": [],
+  "nbad": 0,
+  "sec": 2.5
+ },
+ "Cprime": {
+  "counts": {
+   "input": 404051,
+   "ante": 528,
+   "BleWN.True": 1056,
+   "vrN.True": 1056
+  },
+  "bad": [],
+  "nbad": 0,
+  "sec": 2.2
+ },
+ "deep2": {
+  "counts": {
+   "input": 128150,
+   "ante": 259,
+   "BleWN.True": 518,
+   "vrN.True": 518
+  },
+  "bad": [],
+  "nbad": 0,
+  "sec": 1.0
+ }
+}
