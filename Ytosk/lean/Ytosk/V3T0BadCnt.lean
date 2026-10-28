@@ -111,9 +111,34 @@ def T0BadSeedsH7 : Prop :=
 
 theorem t0BadSeedsH6_of (h7 : T0BadSeedsH7) : T0BadSeedsH6 := by
   intro M ρ rk hM hS hB I r L hlen hL hp he1
-  obtain ⟨hS3, hS2, hup⟩ := h7 M ρ rk hM hS hB I r L hlen hL hp he1
+  obtain ⟨hS3, hS2, -⟩ := h7 M ρ rk hM hS hB I r L hlen hL hp he1
   have S := sInv_std hM hS
-  refine ⟨hS3, hS2, fun n hn2 σ _ g hg hrx hc => ?_⟩
-  exact counted_first0G hlen hL hp hn2 S.r0p S.z2 S.sibDec S.z1c S.uab (S.r12 _ he1) hg hc (hup g hg hrx hc)
+  refine ⟨hS3, hS2, fun n hn2 σ _ g hg hrx hc hT => ?_⟩
+  exact counted_first0G hlen hL hp hn2 S.r0p S.z2 S.sibDec S.z1c S.uab (S.r12 _ he1) hg hc hT
+
+/-- **The two component fields of `T0BadSeedsH7`** (2026-10-29): `T0BadSeedsH7` without its third field (the
+preceding-upgrade exclusion, false on a standard `Bad2` matrix, WfH10Cex). They are the first two fields of
+`T0BadSeedsH6`; its third field is now guarded and structural (`counted_first0G`). -/
+def T0BadSeedsH7W : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → Bad2 M → Inv3V2 M ρ rk → ∀ r L, r + L + 1 = M.length → 0 < L →
+    par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    (∀ g pp, par M 0 r = some g → par M 0 g = some pp → entry M 1 pp ≠ 0 → entry M 2 pp ≠ 0 →
+      col M g = bump M pp →
+      Lhd z ((drop1 M (r + L) rk).o r) (ρ.o r) ∨
+        ∀ w', (drop1 M (r + L) rk).o r = psi w' z z →
+          ∀ u, ¬ w' < u → ∀ e ∈ comps u w', ∃ d ∈ z :: comps u (ρ.v r), e ≤ d) ∧
+    (∀ g, par M 0 r = some g → r ≠ r + L - 1 → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 →
+      LhdE (omega (sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rk).o)))
+          (omega (sumN ((children (M.take (r + L)) r).map ρ.o))) ∨
+        ∀ s b', omega (sumN ((children (M.take (r + L)) r).map ρ.o)) = psi s b' z →
+          ∀ u, ∀ e ∈ comps u (omega (sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rk).o))),
+            ∃ d ∈ z :: b' :: (comps u b' ++ comps u s), e ≤ d)
+
+theorem t0BadSeedsH6_of_W (h7 : T0BadSeedsH7W) : T0BadSeedsH6 := by
+  intro M ρ rk hM hS hB I r L hlen hL hp he1
+  obtain ⟨hS3, hS2⟩ := h7 M ρ rk hM hS hB I r L hlen hL hp he1
+  have S := sInv_std hM hS
+  refine ⟨hS3, hS2, fun n hn2 σ _ g hg hrx hc hT => ?_⟩
+  exact counted_first0G hlen hL hp hn2 S.r0p S.z2 S.sibDec S.z1c S.uab (S.r12 _ he1) hg hc hT
 
 end Ytosk

@@ -145,6 +145,178 @@ theorem weak_seed_hi {a B v Y0 w' : T} {m : Nat} (hm : 1 ≤ m)
         · rw [hHX'] at h; exact Or.inl (lt_of_le_of_lt hgd h)
         · exact Or.inr (Or.inr ⟨d', hd', le_trans hgd hdd'⟩)
 
+/-! ## Any number of copies (2026-10-29: `m = 0` when the first copy root does not count in `N`)
+
+With no counted middle copy (`m = 0`) the old frame does not rewrite (`t0IVResC_holds`), so the copies-only state
+`B` is a prefix of the old argument `B + ψ_v(Y0 + 1)`. -/
+
+/-- **`copies_lhd_arg` for any `m`**: `m ≥ 1`, or `m = 0` and the old frame does not rewrite. -/
+theorem copies_lhd_argG {a B v Y0 : T} {m : Nat}
+    (hm : 1 ≤ m ∨ ¬ (lt B (app Y0 one) = true ∧ lt (psi a z z) (psi v (app Y0 one) z) = true))
+    (hOld : isOT (psi a (spArg a B (psi v (app Y0 one) z)) z) = true)
+    (hX : isOT (psi v (app Y0 one) z) = true) (hO : isOT (psi v Y0 z) = true)
+    (hBX : ∀ q ∈ summands B, psi v (app Y0 one) z ≤ q) :
+    Lhd z (spArg a B (mulT (psi v Y0 z) m)) (spArg a B (psi v (app Y0 one) z)) := by
+  by_cases h1 : 1 ≤ m
+  · exact copies_lhd_arg h1 hOld hX hO hBX
+  · have hno := hm.resolve_left h1
+    obtain rfl : m = 0 := by omega
+    have e : spArg a B (psi v (app Y0 one) z) = app B (psi v (app Y0 one) z) := by
+      rw [spArg_single]; unfold step; rw [if_neg hno]; exact add_eq_app_of_ge ⟨_, _, rfl⟩ B hBX
+    rw [e]
+    show Lhd z B _
+    exact lhd_prefix (by simp)
+
+/-- **`copies_ot` for any `m`** (`m = 0`: the frame lemma `ot_of_lhd_frame`). -/
+theorem copies_otG {a B v Y0 : T} {m : Nat}
+    (hm : 1 ≤ m ∨ ¬ (lt B (app Y0 one) = true ∧ lt (psi a z z) (psi v (app Y0 one) z) = true))
+    (hBot : isOT B = true)
+    (hOld : isOT (psi a (spArg a B (psi v (app Y0 one) z)) z) = true)
+    (hX : isOT (psi v (app Y0 one) z) = true) (hO : isOT (psi v Y0 z) = true)
+    (hBX : ∀ q ∈ summands B, psi v (app Y0 one) z ≤ q) :
+    isOT (psi a (spArg a B (mulT (psi v Y0 z) m)) z) = true := by
+  by_cases h1 : 1 ≤ m
+  · exact T0ArgB.copies_ot h1 hOld hX hO hBX
+  · obtain rfl : m = 0 := by omega
+    exact ot_of_lhd_frame (isOT_sub hOld) hOld hBot (copies_lhd_argG hm hOld hX hO hBX)
+
+/-- **`s1_core_weak` for any `m`.** -/
+theorem s1_core_weakG {a B v Y0 w' : T} {m : Nat}
+    (hm : 1 ≤ m ∨ ¬ (lt B (app Y0 one) = true ∧ lt (psi a z z) (psi v (app Y0 one) z) = true))
+    (hOld : isOT (psi a (spArg a B (psi v (app Y0 one) z)) z) = true)
+    (hX : isOT (psi v (app Y0 one) z) = true) (hO : isOT (psi v Y0 z) = true)
+    (hBX : ∀ q ∈ summands B, psi v (app Y0 one) z ≤ q)
+    (hW : WkVA w' v) (hWC : WCS a w') (hc' : isOT (psi w' z z) = true) :
+    Lhd z (psi a (spArg a (spArg a B (mulT (psi v Y0 z) m)) (psi w' z z)) z)
+      (psi a (spArg a B (psi v (app Y0 one) z)) z) := by
+  by_cases h1 : 1 ≤ m
+  · exact s1_core_weak h1 hOld hX hO hBX hW hWC hc'
+  have hl0 := copies_lhd_argG hm hOld hX hO hBX
+  obtain rfl : m = 0 := by omega
+  set O := psi v Y0 z with hOdef
+  set F := spArg a B (psi v (app Y0 one) z) with hF
+  set B' := spArg a B (mulT O 0) with hB'
+  have hOX : O < psi v (app Y0 one) z := psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_app_one Y0⟩)
+  have hB'O : ∀ q ∈ summands B', O ≤ q :=
+    spArg_summands_ge ⟨v, Y0, rfl⟩ (mulT O 0) B (isOT_mulT hO ⟨_, _, rfl⟩ 0)
+      (fun q hq => by rw [summands_mulT ⟨_, _, rfl⟩ 0 q hq])
+      (fun q hq => le_trans (le_of_lt hOX) (hBX q hq))
+  have hX'O : psi w' z z < O := psi_lt_psi_z_iff.mpr (Or.inl hW.1)
+  have hB'X : ∀ q ∈ summands B', psi w' z z ≤ q := fun q hq => le_trans (le_of_lt hX'O) (hB'O q hq)
+  have hl : Lhd z (psi a B' z) (psi a F z) := lhd_psi a hl0
+  have hlf1 : Lhd z (psi a (spArg a B (mulT O (0 + 1))) z) (psi a F z) :=
+    lhd_psi a (copies_lhd_arg (le_refl 1) hOld hX hO hBX)
+  have hMid : spArg a B (mulT O (0 + 1)) = step a B' v Y0 z := by
+    rw [mulT_succ', spArg_app, hOdef, spArg_single]
+  have hlt1 : app B' (psi w' z z) < step a B' v Y0 z := leaf_lt_step hO hB'O hX'O
+  have hlt2 : step a B' v Y0 z < F := by
+    have h := hlf1.1
+    rw [hMid] at h
+    rcases psi_lt_psi_z_iff.mp h with h' | ⟨_, h'⟩
+    · exact absurd h' (lt_irrefl' _)
+    · exact h'
+  have hsp : spArg a B' (psi w' z z) = app B' (psi w' z z) := by
+    rw [spArg_single, step_leaf]; exact add_eq_app_of_ge ⟨w', z, rfl⟩ B' hB'X
+  rw [hsp]
+  exact lhd_weak_childA hl (by simp)
+    (fun u hu g hg => (self_small_weakA hWC hW.2.1 u hu g hg).imp
+      (fun h => le_trans h (le_app_of_ge B' hB'X)) id) (lt_trans hlt1 hlt2)
+
+/-- **`weak_seed_hi` for any `m`.** -/
+theorem weak_seed_hiG {a B v Y0 w' : T} {m : Nat}
+    (hm : 1 ≤ m ∨ ¬ (lt B (app Y0 one) = true ∧ lt (psi a z z) (psi v (app Y0 one) z) = true))
+    (hBot : isOT B = true)
+    (hOld : isOT (psi a (spArg a B (psi v (app Y0 one) z)) z) = true)
+    (hX : isOT (psi v (app Y0 one) z) = true) (hO : isOT (psi v Y0 z) = true)
+    (hBX : ∀ q ∈ summands B, psi v (app Y0 one) z ≤ q)
+    (hW : WkVA w' v) (hWC : WCS a w') (hc' : isOT (psi w' z z) = true) (haw : succ a ≤ w') :
+    isOT (psi a (spArg a (spArg a B (mulT (psi v Y0 z) m)) (psi w' z z)) z) = true ∧
+      Lhd z (psi a (spArg a (spArg a B (mulT (psi v Y0 z) m)) (psi w' z z)) z)
+        (psi a (spArg a B (psi v (app Y0 one) z)) z) ∧
+      ∀ (U : T → Prop) (ρ σ : Valn) (i : Nat), ρ.o i = psi a (spArg a B (psi v (app Y0 one) z)) z →
+        σ.o i = psi a (spArg a (spArg a B (mulT (psi v Y0 z) m)) (psi w' z z)) z → RClaimU U ρ σ i := by
+  have hlhd := s1_core_weakG hm hOld hX hO hBX hW hWC hc'
+  set O := psi v Y0 z with hOdef
+  set B' := spArg a B (mulT O m) with hB'
+  set X := spArg a B (psi v (app Y0 one) z) with hXdef
+  have hOX : O < psi v (app Y0 one) z := psi_lt_psi_z_iff.mpr (Or.inr ⟨rfl, lt_app_one Y0⟩)
+  have hB'O : ∀ q ∈ summands B', O ≤ q :=
+    spArg_summands_ge ⟨v, Y0, rfl⟩ _ B (isOT_mulT hO ⟨_, _, rfl⟩ m)
+      (fun q hq => by rw [summands_mulT ⟨_, _, rfl⟩ m q hq])
+      (fun q hq => le_trans (le_of_lt hOX) (hBX q hq))
+  have hleafO : psi w' z z < O := psi_lt_psi_z_iff.mpr (Or.inl hW.1)
+  have hB'leaf : ∀ q ∈ summands B', psi w' z z ≤ q := fun q hq => le_trans (le_of_lt hleafO) (hB'O q hq)
+  have hnew : spArg a B' (psi w' z z) = app B' (psi w' z z) := by
+    rw [spArg_single, step_leaf]; exact add_eq_app_of_ge ⟨w', z, rfl⟩ B' hB'leaf
+  have hmid := copies_otG hm hBot hOld hX hO hBX
+  change isOT (psi a B' z) = true at hmid
+  have harg := isOT_app_of (isOT_arg hmid) hc' hB'leaf
+  have haot : isOT a = true := isOT_sub hOld
+  have hθw : psi (succ a) z z ≤ psi w' z z := psi_le_psi_z haw
+  have hX'w : psi w' z z ≤ app B' (psi w' z z) := le_app_of_ge B' hB'leaf
+  have hone : psi one z z ≤ psi (succ a) z z :=
+    psi_le_psi_z (one_le_of_ne_z (fun h => T.not_lt_z a (h ▸ lt_succ_self a)))
+  have hOm1 : Om one ≤ app B' (psi w' z z) := le_trans hone (le_trans hθw hX'w)
+  have haθ : psi a z z < psi (succ a) z z := psi_lt_psi_z_iff.mpr (Or.inl (lt_succ_self a))
+  have haw' : a < w' := lt_of_lt_of_le (lt_succ_self a) haw
+  have hX'pos : z < app B' (psi w' z z) := lt_of_lt_of_le (T.z_lt_psi _ _ _) hX'w
+  have hcz : ∀ u, comps u z = [] := fun _ => rfl
+  have hot : isOT (psi a (app B' (psi w' z z)) z) = true := by
+    rw [isOT_psi_iff]
+    refine ⟨haot, harg, rfl, z_le _, ?_⟩
+    intro g hg
+    rw [comps_app] at hg
+    rcases List.mem_append.mp hg with hg | hg
+    · exact lt_of_lt_of_le (comps_lt hmid g hg) (le_app_self _ _)
+    · rw [comps_psi_z_of_ge (not_lt.mpr (le_of_lt haw')), hcz, List.nil_append] at hg
+      rcases List.mem_cons.mp hg with rfl | hg
+      · exact hX'pos
+      · rcases hWC a (fun h => lt_irrefl' _ (show a < a from h)) g hg with h | ⟨d, hd, _⟩
+        · exact lt_of_lt_of_le h hOm1
+        · rw [comps_self_nil haot] at hd; simp at hd
+  refine ⟨by rw [hnew]; exact hot, hlhd, ?_⟩
+  intro U ρ σ i hXi hX'i
+  rw [hnew] at hX'i
+  intro p y y' q hy hy' hpq hprem
+  rw [hXi] at hy; rw [hX'i] at hy'
+  simp only [psi.injEq] at hy hy'
+  obtain ⟨rfl, rfl, -⟩ := hy
+  obtain ⟨-, rfl, -⟩ := hy'
+  have hXs : ∀ q ∈ summands X, psi v (app Y0 one) z ≤ q :=
+    spArg_summands_ge ⟨v, app Y0 one, rfl⟩ (psi v (app Y0 one) z) B hX
+      (fun q hq => by simp [summands] at hq; subst hq; exact le_refl _) hBX
+  have hva : succ a ≤ v := le_trans haw (le_of_lt hW.1)
+  have hloX : (split X (psi (succ a) z z)).2 = z :=
+    split_snd_z_of_ge (fun q hq => not_lt.mpr (le_trans (psi_le_psi_z hva) (hXs q hq)))
+  have hloX' : (split (app B' (psi w' z z)) (psi (succ a) z z)).2 = z := by
+    apply split_snd_z_of_ge
+    intro q hq
+    rw [summands_app] at hq
+    rcases List.mem_append.mp hq with hq | hq
+    · exact not_lt.mpr (le_trans hθw (hB'leaf q hq))
+    · simp [summands] at hq; subst hq; exact not_lt.mpr hθw
+  have hHX := H_of_lo_z hOld hloX
+  have hHX' := H_of_lo_z hot hloX'
+  rw [hHX, hHX']
+  have hR0 : RelRU U q B' X := by
+    have := relR_prefix_lhdU (U := U) (q := q) (P := z) (copies_lhd_argG hm hOld hX hO hBX)
+    simpa [app] using this
+  apply relR_of_subU hR0 (le_app_self _ _)
+  intro u hU hu g hg
+  have hua : ¬ lt a u = true := fun h => hu (lt_of_le_of_lt (not_lt.mp hpq) (show a < u from h))
+  rw [comps_app] at hg
+  rcases List.mem_append.mp hg with hg | hg
+  · exact Or.inr (Or.inl hg)
+  · rw [comps_psi_z_of_ge (fun h => hua (lt_trans haw' h)), hcz, List.nil_append] at hg
+    rcases List.mem_cons.mp hg with rfl | hg
+    · exact Or.inl hX'pos
+    · rcases hWC u hua g hg with h | ⟨d, hd, hgd⟩
+      · exact Or.inl (lt_of_lt_of_le h hOm1)
+      · rcases hprem u hU hu d hd with h | h | ⟨d', hd', hdd'⟩
+        · exact Or.inl (lt_of_le_of_lt (le_trans hgd h) (lt_of_lt_of_le haθ (le_trans hθw hX'w)))
+        · rw [hHX'] at h; exact Or.inl (lt_of_le_of_lt hgd h)
+        · exact Or.inr (Or.inr ⟨d', hd', le_trans hgd hdd'⟩)
+
 section
 variable {M : Mat} {r L n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hp : par M 0 (r + L) = some r) (hn : 1 ≤ n)
@@ -165,7 +337,9 @@ theorem t0_S1AW_nodeHi {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : 
     (hw : ∃ w', ρ'.o r = psi w' z z ∧ WkVA w' (ρ.v r) ∧ WCS (ρ.v g) w' ∧ isOT (psi w' z z) = true)
     (hy' : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r → y' = z)
     (hC1 : Cons (M.take (r + L)) ρ') (hGT : Good3 (M.take (r + L)) ρ')
-    (hrN : Counted (TRIO.gexp M r L 0 0 n) g r)
+    (hG0 : (∀ k, k + 1 < n → ¬ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)) →
+      ∀ Lc0 : List Nat, CL M g = Lc0 ++ [r] → ∀ s y, ρ.o r = psi s y z →
+        ¬ (lt (spArg (ρ.v g) z (sumN (Lc0.map ρ.o))) y = true ∧ lt (psi (ρ.v g) z z) (psi s y z) = true))
     (hav : ρ.v g < ρ.v r)
     (hvch : ∀ s' y', ρ'.o r = psi s' y' z → s' ≠ ρ.v r →
       ¬ psi (ρ.v r) z z < psi (succ (ρ.v g)) z z → ¬ psi s' z z < psi (succ (ρ.v g)) z z) :
@@ -317,18 +491,17 @@ theorem t0_S1AW_nodeHi {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : 
   have hO0 : isOT (psi v Y0 z) = true := by rw [← hOv]; exact hsO.1
   have hOT' : isOT (spArg a (spArg a (spArg a z (sumN Lv)) (mulT (psi v Y0 z) m)) (ρ'.o r)) = true :=
     isOT_spArg a _ _ (isOT_spArg a _ _ (isOT_spArg a _ _ rfl hLs.1) (isOT_mulT hO0 ⟨_, _, rfl⟩ m)) hsLr.1
-  have hm : 1 ≤ m := hm1' ⟨0, by omega, by simpa using hrN⟩
-  have hX'O : ρ'.o r ≤ psi v Y0 z := by
-    have hp1 := List.pairwise_append.mp hpN
-    rw [← hOv]
-    exact hp1.2.2 (omid M r L ρ) (List.mem_append_right _ (List.mem_replicate.mpr ⟨by omega, rfl⟩))
-      (ρ'.o r) (by simp)
+  have hm : 1 ≤ m ∨ ¬ (lt (spArg a z (sumN Lv)) (app Y0 one) = true ∧
+      lt (psi a z z) (psi v (app Y0 one) z) = true) := by
+    by_cases h : ∃ k, k + 1 < n ∧ Counted (TRIO.gexp M r L 0 0 n) g (r + k * L)
+    · exact Or.inl (hm1' h)
+    · exact Or.inr (hG0 (fun k hk hk' => h ⟨k, hk, hk'⟩) Lc hclM v (app Y0 one) hor)
   have hoN' : σ.o g = psi a (spArg a (spArg a (spArg a z (sumN Lv)) (mulT (psi v Y0 z) m)) (ρ'.o r)) z := by
     rw [hoN, hOv]
   obtain ⟨w',hw',hWk,hWC,hcw⟩ := hw
   have hres := hvch w' z hw' (ne_of_lt hWk.1) (not_lt.mpr (psi_le_psi_z (succ_le_of_lt hav)))
   have haw : succ a ≤ w' := not_lt.mp (fun h => hres (psi_lt_psi_z_iff.mpr (Or.inl h)))
-  have hweak := weak_seed_hi hm hOld hXot hO0 hBXs hWk hWC hcw haw
+  have hweak := weak_seed_hiG hm (isOT_spArg a _ _ rfl hLs.1) hOld hXot hO0 hBXs hWk hWC hcw haw
   rw [← hw'] at hweak
   refine ⟨_,_,hoM,hoN',hweak.1,hweak.2.1,?_⟩
   intro U
@@ -336,14 +509,45 @@ theorem t0_S1AW_nodeHi {g : Nat} (hg : par M 0 r = some g) {ρ' : Valn} (hcnt : 
 
 end
 
-/-- **Seed S1 as a node when `r ≠ x − 1`** (`Bad2`, `t = 0`), from the structural fact that the first copy root still
-counts at `g` in `N`: the drop at `r` is `◁` (`t0_S1N_of`), a weak leaf with `v(r) ≤ v(g)` (`t0_S1N_of`), or a weak
-leaf with `v(r) > v(g)` (`t0_S1AW_nodeHi`). -/
+/-- **An upgrade from the previous column raises `v` above the row-0 parent**: if `r − 1` upgrades to `r`, then
+`P₁(r) = P₀(r) = g` (as `upg_target_par0`), so `v(g) < v(r)` (`v_par1_lt`). -/
+theorem v_par0_lt_of_upg_prev {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hR0 : R0P M) (hC : Cons M ρ)
+    (hG : Good3 M ρ) (hR : Rk M rk) {r g : Nat} (hrM : r < M.length) (hg : par M 0 r = some g)
+    (hu : upg M (r - 1) = some r) : ρ.v g < ρ.v r := by
+  obtain ⟨m, _, hmk, hcol, _⟩ := upg_spec hu
+  have hpm : par M 0 r = some m := by
+    have hA : Anc0 M m r := anc0_of_par M 1 m r hmk
+    have hmk' : m ≠ r := by have := par_lt M 1 r m hmk; omega
+    have he0k : entry M 0 r = entry M 0 m + 1 := by
+      have := congrArg (fun c : Nat × Nat × Nat => c.1) hcol
+      simpa [col_eq_entries] using this
+    cases hp : par M 0 r with
+    | none =>
+      exfalso
+      cases hA with
+      | refl => exact hmk' rfl
+      | step h' _ => rw [hp] at h'; cases h'
+    | some p =>
+      have hAp : Anc0 M m p := anc0_par hA hmk' hp
+      have he0p := hR0 r p hp
+      by_cases hmp : m = p
+      · rw [hmp]
+      · have := anc0_e0_lt hAp hmp; omega
+  rw [hg] at hpm
+  cases hpm
+  have h1 : entry M 1 r ≠ 0 := by rw [e1_of_col hcol]; exact (upg_e12 hu).1
+  exact v_par1_lt hC hG hR _ r g (le_refl _) hrM h1 hmk
+
+/-- **Seed S1 as a node when `r ≠ x − 1`** (`Bad2`, `t = 0`): the drop at `r` is `◁` (`t0_S1N_of`), a weak leaf with
+`v(r) ≤ v(g)` (`t0_S1N_of`; then `r − 1` does not upgrade to `r` by `v_par0_lt_of_upg_prev`, so the first copy root
+counts at `g` in `N` by `hcN`), or a weak leaf with `v(r) > v(g)` (`t0_S1AW_nodeHi`, with any number of counted
+middle copies, also none: 2026-10-29, the first copy root need not count in `N`). -/
 theorem t0_S1N_cnt {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat} (hM : Std M) (hS : M ≠ SRO)
     (I : Inv3C M ρ rk) (D : T0DropF M ρ rk) (hlen : r + L + 1 = M.length) (hL : 0 < L)
     (hp : par M 0 (r + L) = some r) (he1 : entry M 1 (r + L) = 0)
     {n : Nat} (hn2 : 2 ≤ n) {σ : Valn} (hCN : Cons (TRIO.gexp M r L 0 0 n) σ)
-    (hcN : ∀ g, par M 0 r = some g → Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r) :
+    (hcN : ∀ g, par M 0 r = some g → Counted M g r →
+      (topped (M.take (r + L)) r = true → upg M (r - 1) ≠ some r) → Counted (TRIO.gexp M r L 0 0 n) g r) :
     ∀ g, par M 0 r = some g → Counted M g r → ∃ X X', ρ.o g = psi (ρ.v g) X z ∧ σ.o g = psi (ρ.v g) X' z ∧
       isOT (psi (ρ.v g) X' z) = true ∧ Lhd z (psi (ρ.v g) X' z) (psi (ρ.v g) X z) ∧
       ∀ U : T → Prop, RClaimU U ρ σ g := by
@@ -364,20 +568,24 @@ theorem t0_S1N_cnt {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} {r L : Nat}
       K.GT K.offD K.σmid K.σlast (Or.inl hl) K.y' hLast hvch hG0 hcnt
   by_cases hva : ρ.v r ≤ ρ.v g
   · exact t0_S1N_of hlen hL hp (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab he1 hx2 hn2 I.cons I.good hCN hg K.C1
-      K.GT K.offD K.σmid K.σlast (Or.inr ⟨hw, hcN g hg, fun _ => hva⟩) K.y' hLast hvch hG0 hcnt
+      K.GT K.offD K.σmid K.σlast (Or.inr ⟨hw, fun hc => hcN g hg hc (fun _ hu => absurd hva
+        (not_le.mpr (v_par0_lt_of_upg_prev I.r0p I.cons I.good I.rank (by omega) hg hu))), fun _ => hva⟩)
+      K.y' hLast hvch hG0 hcnt
   · have hσvg : σ.v g = ρ.v g := (K.offD g hgr).2 (fun hd =>
       uncnt_of_depv hx I.r0p I.z2 I.sd I.z1 I.uat I.uab hx2 hp (by omega) hd hrg hcnt)
     exact t0_S1AW_nodeHi hlen hL hp (by omega) I.r0p I.z2 I.sd I.z1 I.uat I.uab he1 hx2 hn2 I.cons I.good hCN hg
       hcnt (fun c hc hd => (K.offD c hc).1 hd) hσvg K.σmid K.σlast (hLast hcnt) hw K.y' K.C1 K.GT
-      (hcN g hg hcnt) (lt_of_not_ge hva) hvch
+      (hG0 hcnt) (lt_of_not_ge hva) hvch
 
 /-- **Residual: the hard seeds of a `Bad2` matrix at `t = 0`, narrowed** (2026-10-25): for `r ≠ x − 1` the first copy
-root still counts at `g` in `N` (a structural fact) and S2; S3 for every `r`. -/
+root still counts at `g` in `N` unless `r − 1` upgrades to `r` while `r` is topped in `M.take x` (2026-10-29: that guard
+makes the field a structural fact, `counted_first0G`; the unguarded field is false, WfH10Cex) and S2; S3 for every `r`. -/
 def T0BadSeedsH2 : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → Bad2 M → Inv3V2 M ρ rk → ∀ r L, r + L + 1 = M.length → 0 < L →
     par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
-      (r ≠ r + L - 1 → Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r) ∧
+      (r ≠ r + L - 1 → Counted M g r → (topped (M.take (r + L)) r = true → upg M (r - 1) ≠ some r) →
+        Counted (TRIO.gexp M r L 0 0 n) g r) ∧
       (r ≠ r + L - 1 → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g)) ∧
       (∀ pp, par M 0 g = some pp → entry M 1 pp ≠ 0 → entry M 2 pp ≠ 0 → col M g = bump M pp →
         Lhd z (σ.v pp) (ρ.v pp))

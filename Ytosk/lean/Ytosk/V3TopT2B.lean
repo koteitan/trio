@@ -36,6 +36,7 @@ import Ytosk.V3QNDomS
 import Ytosk.V3T0SeedOutside
 import Ytosk.V3T0SeedSum
 import Ytosk.V3T0H10Core
+import Ytosk.WfH10bChain
 
 namespace Ytosk
 
@@ -108,10 +109,14 @@ as T0H10Core.T0BadSeedsH10Big. The small case follows from structural lemmas.
 WfHUACDeep.hUAC_of_deep derives HUAC from a zero head, a return grandchild, or a deep row-1 return
 (DeepWitness) at dangerous absorption. Only WfHUACDeep.HUACDeepShape remains for HUAC.
 2026-10-29: T0H10Core.T0BadSeedsH10Big is false on a standard Bad2 matrix (WfH10Cex.h10_core_false
-refutes it without its Inv3V2 premise; that premise is checked only numerically). It stays here until
-t0_S1N_cnt is redesigned.
-The count stays 15. -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUD : WfHUACDeep.HUACDeepShape) (hT0H10Big : T0H10Core.T0BadSeedsH10Big)
+refutes it without its Inv3V2 premise; that premise is checked only numerically). It is removed:
+its only consumer t0_S1N_cnt (V3T0BadNode) is redesigned. For v(r) > v(g) the node lemma t0_S1AW_nodeHi now
+allows no counted middle copy (m = 0: the old frame does not rewrite, t0IVResC_holds, so the copies-only state is a
+prefix of the old argument); for v(r) <= v(g) an upgrade r - 1 -> r is impossible (v_par0_lt_of_upg_prev), so
+counted_first0G gives the count. The component fields come from HDropU and HUAC alone
+(WfH10b.t0BadSeedsH7W_of, t0BadSeedsH6_of_W).
+The count is 14. -/
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUD : WfHUACDeep.HUACDeepShape)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -122,7 +127,6 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUD : WfHU
       TRIO.srow M (M.length - 1) = 2 → T2VRACopyEsc M)
     (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : WellFounded Step' :=
-  have hT0H10 : T0SeedSum.T0BadSeedsH10 := T0H10Core.h10_of_big hT0H10Big
   have hUAC : HUAC := WfHUACDeep.hUAC_of_deep hUD
   have hDW : HDropV2W := hDropV2W_of_U hDU
   have hDB : DropBadV2B := dropBadB_of_U hDU (rootBad_of_T2 hDU (rootBadV2T2_holds hDU))
@@ -184,7 +188,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUD : WfHU
   have hBR : BadOutT2B := badOutT2B_of hDU (hDropV2_of' hDW) (hTake_of_glob hF hLf)
     (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hE2 (r2V2_of hBX) hCB
   trio_terminates_main_V2_base hDU (hDropV2_of' hDW) (takeBad_of_drop (dropBad_of_B hDB) hF hLf)
-    (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf (t0BadSeeds_of hDU (t0BadSeedsH_of hDU (t0BadSeedsH2_of hDU hBE (t0BadSeedsH3_of hDU (t0BadSeedsH4_of hDU hBE (t0BadSeedsH5_of hDU (t0BadSeedsH6_of (t0BadSeedsH7_of hUAC (T0SeedOutside.t0BadSeedsH8_of hDU (T0SeedSum.t0BadSeedsH9_of hDU hUAC hT0H10))))))))))) (badOutRest_of (badOutT12_of hDU (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf hBR))) hF hLf
+    (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf (t0BadSeeds_of hDU (t0BadSeedsH_of hDU (t0BadSeedsH2_of hDU hBE (t0BadSeedsH3_of hDU (t0BadSeedsH4_of hDU hBE (t0BadSeedsH5_of hDU (t0BadSeedsH6_of_W (WfH10b.t0BadSeedsH7W_of hDU hUAC))))))))) (badOutRest_of (badOutT12_of hDU (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf hBR))) hF hLf
     (t0AbWRes_of_ext (hDropV2_of' hDW) hBE)
     hCB hBX
     hPRV hDom hFD hQNG hSVCG

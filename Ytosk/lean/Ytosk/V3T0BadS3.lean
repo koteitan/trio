@@ -300,7 +300,8 @@ def T0BadSeedsH3 : Prop :=
       Lhd z ((drop1 M (r + L) rk).o r) (ρ.o r) ∨
         Lhd z (app (omid M r L ρ) ((drop1 M (r + L) rk).o r)) (ρ.o r)) ∧
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
-      (r ≠ r + L - 1 → Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r) ∧
+      (r ≠ r + L - 1 → Counted M g r → (topped (M.take (r + L)) r = true → upg M (r - 1) ≠ some r) →
+        Counted (TRIO.gexp M r L 0 0 n) g r) ∧
       (r ≠ r + L - 1 → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g))
 
 theorem t0BadSeedsH2_of (hDU : HDropU) (hBE : HBumpExt) (h3 : T0BadSeedsH3) : T0BadSeedsH2 := by
@@ -384,7 +385,8 @@ def T0BadSeedsH4 : Prop :=
         ∀ w', (drop1 M (r + L) rk).o r = psi w' z z →
           ∀ u, ¬ w' < u → ∀ e ∈ comps u w', ∃ d ∈ z :: comps u (ρ.v r), e ≤ d) ∧
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
-      (r ≠ r + L - 1 → Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r) ∧
+      (r ≠ r + L - 1 → Counted M g r → (topped (M.take (r + L)) r = true → upg M (r - 1) ≠ some r) →
+        Counted (TRIO.gexp M r L 0 0 n) g r) ∧
       (r ≠ r + L - 1 → col M r = bump M g → entry M 1 g ≠ 0 → entry M 2 g ≠ 0 → Lhd z (σ.v g) (ρ.v g))
 
 theorem t0BadSeedsH3_of (hDU : HDropU) (h4 : T0BadSeedsH4) : T0BadSeedsH3 := by

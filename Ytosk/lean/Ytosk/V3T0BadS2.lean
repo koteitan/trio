@@ -415,7 +415,8 @@ def T0BadSeedsH5 : Prop :=
           (omega (sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rk).o))))
           (omega (app (sumN ((children (M.take (r + L)) r).map ρ.o)) one))) ∧
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
-      r ≠ r + L - 1 → Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r
+      r ≠ r + L - 1 → Counted M g r → (topped (M.take (r + L)) r = true → upg M (r - 1) ≠ some r) →
+        Counted (TRIO.gexp M r L 0 0 n) g r
 
 theorem t0BadSeedsH4_of (hDU : HDropU) (hBE : HBumpExt) (h5 : T0BadSeedsH5) : T0BadSeedsH4 := by
   intro M ρ rk hM hS hB I r L hlen hL hp he1
@@ -510,7 +511,8 @@ def T0BadSeedsH6 : Prop :=
           ∀ u, ∀ e ∈ comps u (omega (sumN ((children (M.take (r + L)) r).map (drop1 M (r + L) rk).o))),
             ∃ d ∈ z :: b' :: (comps u b' ++ comps u s), e ≤ d) ∧
     ∀ n, 2 ≤ n → ∀ σ, Cons (TRIO.gexp M r L 0 0 n) σ → ∀ g, par M 0 r = some g →
-      r ≠ r + L - 1 → Counted M g r → Counted (TRIO.gexp M r L 0 0 n) g r
+      r ≠ r + L - 1 → Counted M g r → (topped (M.take (r + L)) r = true → upg M (r - 1) ≠ some r) →
+        Counted (TRIO.gexp M r L 0 0 n) g r
 
 theorem t0BadSeedsH5_of (hDU : HDropU) (h6 : T0BadSeedsH6) : T0BadSeedsH5 := by
   intro M ρ rk hM hS hB I r L hlen hL hp he1
