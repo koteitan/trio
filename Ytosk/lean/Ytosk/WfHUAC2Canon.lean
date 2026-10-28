@@ -169,4 +169,76 @@ theorem deepShape_of_canon (h : HUACCanon) : HUACDeepShape := by
 /-- HUAC from the value residual. -/
 theorem hUAC_of_canon (h : HUACCanon) : HUAC := hUAC_of_deep (deepShape_of_canon h)
 
+/-- Every child of a bump child has row 2 equal to `0` (RowJ below row 1 of `j`, BumpLeaf at it). -/
+theorem bump_kid_e2 {N : Mat} (hN : Std N) (hNe : N ≠ SRO) {k j d : Nat}
+    (hj : j ∈ children N k) (hjb : col N j = bump N k) (hd : d ∈ children N j) :
+    entry N 2 d = 0 := by
+  have SX : SInvX N := (sInvX_std' hN).resolve_left hNe
+  have hj1 : entry N 1 j = entry N 1 k := e1_of_col hjb
+  rcases Nat.lt_or_ge (entry N 1 d) (entry N 1 k) with h | h
+  · by_contra h2
+    have := rowJ_std hN d j h2 (mem_children_iff.mp hd).2
+    omega
+  · exact (SX.loc.2.2.2 k j d hj hjb hd h).1
+
+/-- **Survival** of the first grandchild: the children of a bump child are all counted
+with their `o` value, so Good3.dec makes their `o` values non-increasing. -/
+theorem first_kid_survives {N : Mat} {σ : Valn} (hN : Std N) (hNe : N ≠ SRO)
+    (hC : Cons N σ) (hG : Good3 N σ) {k j c : Nat} {C : List Nat}
+    (hj : j ∈ children N k) (hjb : col N j = bump N k) (hCc : children N j = c :: C) :
+    σ.o c ∈ summands (sumN ((children N j).map σ.o)) := by
+  have hjN : j < N.length := (mem_children hj).2
+  have hcnt : ∀ d ∈ children N j, cnt N σ j d = σ.o d := by
+    intro d hd
+    have h2 := bump_kid_e2 hN hNe hj hjb hd
+    unfold cnt
+    have hnb : col N d ≠ bump N j := by
+      intro h; have := e2_of_col h; omega
+    rw [if_neg hnb, not_isUpg_e2z h2]
+    simp
+  have hmap : (children N j).map (cnt N σ j) = (children N j).map σ.o :=
+    List.map_congr_left hcnt
+  have hsing : ∀ u ∈ (children N j).map σ.o, Single u := by
+    intro u hu
+    obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hu
+    exact single_o hC hG (mem_children hd).2
+  have hnz : nzs ((children N j).map σ.o) = (children N j).map σ.o := by
+    unfold nzs
+    apply List.filter_eq_self.mpr
+    intro u hu
+    obtain ⟨s, y, hsy⟩ := (hsing u hu).2
+    simp [hsy]
+  have hdec := hG.dec j hjN
+  unfold cvals at hdec
+  rw [hmap, hnz] at hdec
+  rw [hCc, List.map_cons] at hdec hsing ⊢
+  rw [sumN_cons_dec hsing hdec]
+  obtain ⟨s, y, hsy⟩ := (hsing _ List.mem_cons_self).2
+  rw [hsy]
+  simp [app, summands]
+
+/-- **Residual (StepDom only).**  At a dangerous absorption with nonzero head index,
+the last bump child `j` of `k` has a first child `c`, and `StepDom` holds at the
+row-1 level of `c` on the chain of `m`. -/
+def HUACStep : Prop :=
+  ∀ N σ rk, Std N → N ≠ SRO → Cons N σ → Rk N rk → Good3 N σ →
+    ∀ n k m, upg N n = some k → k < n → par N 0 k = some m →
+      HUACShapes.Danger (vOpt σ (par N 1 n)) (bumpW N σ k) →
+      lev (bumpW N σ k) = z ∨
+      ∃ L j R c C, children N k = L ++ j :: R ∧ col N j = bump N k ∧
+        (∀ d ∈ R, col N d ≠ bump N k) ∧ children N j = c :: C ∧
+        ∀ a, Up1 N a m → entry N 1 a = entry N 1 c → StepDom N σ a m
+
+/-- **Bridge**: `HUACStep → HUACDeepShape`. -/
+theorem deepShape_of_step (h : HUACStep) : HUACDeepShape := by
+  apply deepShape_of_canon
+  intro N σ rk hN hNe hC hR hG n k m hu hkn hkm hd
+  rcases h N σ rk hN hNe hC hR hG n k m hu hkn hkm hd with hz | ⟨L, j, R, c, C, hL, hjb, hR', hCc, hst⟩
+  · exact Or.inl hz
+  · have hj : j ∈ children N k := by rw [hL]; simp
+    exact Or.inr ⟨L, j, R, c, C, hL, hjb, hR', hCc, first_kid_survives hN hNe hC hG hj hjb hCc, hst⟩
+
+/-- HUAC from the StepDom residual. -/
+theorem hUAC_of_step (h : HUACStep) : HUAC := hUAC_of_deep (deepShape_of_step h)
+
 end Ytosk.WfHUAC2Canon
