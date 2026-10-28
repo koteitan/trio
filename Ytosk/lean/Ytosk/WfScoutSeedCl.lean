@@ -5,7 +5,7 @@
 (`T2SeedQNBase`・`T2SeedSVBase`・`T2SeedCBase`). Several of their fields follow from the invariant of
 `M.take x` alone:
 
-- qn: `ψ_V(X₁)` is standard, because `X₁` is the argument of `o_{M.take x}(r)` and `v_{M.take x}(r) = v_M(r)`
+- qn: `t₁ = V + ω_T ≤ V + ω^S = s′` (`qn_take_t1L`), and `ψ_V(X₁)` is standard, because `X₁` is the argument of `o_{M.take x}(r)` and `v_{M.take x}(r) = v_M(r)`
   (`r` is not topped in `M.take x`, `topP_C`, `v_take_of_untopped`).
 - sv and C: `X₁` is standard (the same argument), and at the level `u = V` the components of `X₁` are below `X₁`
   (the standard form of `ψ_V(X₁)`); the components of `V` at its own level are none (`comps_self_nil`).
@@ -25,6 +25,7 @@ import Ytosk.V3T2SeedQNV
 import Ytosk.V3StrictR
 import Ytosk.V3Tame
 import Ytosk.V3ResV2
+import Ytosk.V3QNTakeL
 
 namespace Ytosk.WfScout
 
@@ -156,12 +157,11 @@ theorem x1_facts {M : Mat} {ρ : Valn} {r L : Nat} {τ : Valn} (hτ : Cons (M.ta
   rw [← hvr]
   exact h5
 
-/-- **Residual (qn base without the standard form of `ψ_V(X₁)`).** -/
+/-- **Residual (qn base without the standard form of `ψ_V(X₁)` and the bound `t₁ ≤ s′`).** -/
 def T2SeedQNBaseR (M : Mat) (ρ : Valn) (r L q : Nat) (Lc : List Nat) : Prop :=
   ∀ τ, Cons (M.take (r + L)) τ → ∀ t1,
     spArg (τ.v r) z (sumN ((CL (M.take (r + L)) r).map τ.o)) = app (t2B (ρ.v r) ρ Lc) (psi t1 z z) →
       (∀ g ∈ comps (ρ.v r) (qnS M ρ r L q), g < app (t2B (ρ.v r) ρ Lc) (psi t1 z z)) ∧
-      (Lc = [] → t1 ≤ qnS M ρ r L q) ∧
       ∀ u, PathLvAll M ρ r u → ¬ lt (ρ.v r) u = true →
         ∀ g ∈ comps u t1 ++ comps u (qnS M ρ r L q), g < app (t2B (ρ.v r) ρ Lc) (psi t1 z z)
 
@@ -212,10 +212,15 @@ theorem t2SeedClV2B_of_R (h : T2SeedClV2R) : T2SeedClV2B := by
   refine ⟨fun q Lc hq hqr hCL => ?_, fun hc => ?_, fun q hq hqr hncl => ?_⟩
   · -- qn
     intro τ hτ t1 hsp
-    obtain ⟨H1, H2, H3⟩ := hQN q Lc hq hqr hCL τ hτ t1 hsp
+    obtain ⟨H1, H3⟩ := hQN q Lc hq hqr hCL τ hτ t1 hsp
     have hG := hG3 τ hτ
     have hvr : τ.v r = ρ.v r :=
       v_take_of_untopped I (by omega) (par_lt M 2 _ _ hr) (topP_C hM hS I hlen hr hq hqr) hτ
+    obtain ⟨ωT, hsp', -, -, -, hωT, -⟩ := qn_take_t1L hM hS I R hlen hr hq hqr hCL hτ
+    have he := app_left_cancel (hsp.symm.trans hsp')
+    have ht1 : t1 = add (ρ.v r) ωT := (psi.inj he).1
+    have H2 : Lc = [] → t1 ≤ qnS M ρ r L q := fun _ => by
+      rw [ht1]; unfold qnS; exact add_le_add_left _ hωT
     have hot := hG.ot_o r hrT
     rw [o_cl_eq hτ hG hrT, hsp, hvr] at hot
     exact ⟨hot, H1, H2, H3⟩

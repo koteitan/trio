@@ -1,0 +1,10 @@
+b2grow2 {"n": 10081, "counts": {"qn": 821, "weak": 485, "('simple', True, 'form', True, 'dom', True)": 485}, "examples": [], "sec": 2.654174327850342}
+cbadext {"n": 3756, "counts": {"qn": 364, "weak": 6, "('simple', True, 'form', True, 'dom', True)": 6}, "examples": [], "sec": 0.3564469814300537}
+ext2b2St {"n": 2133, "counts": {"qn": 30}, "examples": [], "sec": 0.17186927795410156}
+graftBb2 {"n": 80228, "counts": {"qn": 3364, "weak": 36, "('simple', True, 'form', True, 'dom', True)": 36}, "examples": [], "sec": 3.727698802947998}
+graftB {"n": 155926, "counts": {"qn": 5030, "weak": 36, "('simple', True, 'form', True, 'dom', True)": 36}, "examples": [], "sec": 6.5975775718688965}
+grow 3617 3750
+grow 39431 43181
+grow 361037 404218
+grow {"n": 404218, "counts": {"qn": 66636}, "examples": [], "sec": 816.4610035419464}
+ufam {"n": 911416, "counts": {"qn": 164956}, "examples": [], "sec": 488.89095306396484}
