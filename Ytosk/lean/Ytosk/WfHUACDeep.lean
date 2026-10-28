@@ -67,7 +67,8 @@ theorem dom_of_grandchild_dom {M : Mat} {ρ : Valn} (S : SInv M)
     (hn : n < M.length) (hu : upg M n = some k)
     (hkm : par M 0 k = some m)
     (hj : j ∈ children M k) (hjb : col M j = bump M k)
-    (hBP : bumpTerm M ρ k j ∈ summands (sumN (one :: (children M k).map (bumpTerm M ρ k))))
+    (hB_P : ∀ u, Dom (comps u (bumpTerm M ρ k j))
+      (comps u (sumN (one :: (children M k).map (bumpTerm M ρ k))) ++ [z]))
     (hc : c ∈ children M j) (hoG : ρ.o c ∈ summands (sumN ((children M j).map ρ.o)))
     (hdom : ∀ u, Dom (comps u (ρ.v m)) (comps u (ρ.v c) ++ [z])) :
     ∀ u, Dom (comps u (vOpt ρ (par M 1 n))) (comps u (ρ.v n) ++ [z]) := by
@@ -91,8 +92,6 @@ theorem dom_of_grandchild_dom {M : Mat} {ρ : Valn} (S : SInv M)
     rw [if_pos hjb]
     exact OmegaComps.dom_comps_omega hGot
   let P := sumN (one :: (children M k).map (bumpTerm M ρ k))
-  have hB_P : ∀ u, Dom (comps u (bumpTerm M ρ k j)) (comps u P ++ [z]) :=
-    fun u g hg => ⟨g, List.mem_append_left _ (comps_summand_subH u hBP g hg), le_refl _⟩
   have hP_W : ∀ u, Dom (comps u P) (comps u (bumpW M ρ k) ++ [z]) :=
     OmegaComps.dom_comps_omega (isOT_bumpP hG k)
   have hW_v : ∀ u, Dom (comps u (bumpW M ρ k)) (comps u (ρ.v n) ++ [z]) := by
@@ -104,6 +103,34 @@ theorem dom_of_grandchild_dom {M : Mat} {ρ : Valn} (S : SInv M)
   simp only [vOpt]
   exact HUACPath.comp_dom_trans hV_o (HUACPath.comp_dom_trans ho_G
     (HUACPath.comp_dom_trans hG_B (HUACPath.comp_dom_trans hB_P (HUACPath.comp_dom_trans hP_W hW_v))))
+
+/-- A surviving bump term passes its components to `P`. -/
+theorem bp_dom_of_mem {M : Mat} {ρ : Valn} {k j : Nat}
+    (hBP : bumpTerm M ρ k j ∈ summands (sumN (one :: (children M k).map (bumpTerm M ρ k)))) :
+    ∀ u, Dom (comps u (bumpTerm M ρ k j))
+      (comps u (sumN (one :: (children M k).map (bumpTerm M ρ k))) ++ [z]) :=
+  fun u g hg => ⟨g, List.mem_append_left _ (comps_summand_subH u hBP g hg), le_refl _⟩
+
+/-- The last bump child's term always passes its components to `P`. -/
+theorem bp_dom_of_last {M : Mat} {ρ : Valn} (hG : Good3 M ρ) {k j : Nat} {L R : List Nat}
+    (hL : children M k = L ++ j :: R) (hR : ∀ d ∈ R, col M d ≠ bump M k) :
+    ∀ u, Dom (comps u (bumpTerm M ρ k j))
+      (comps u (sumN (one :: (children M k).map (bumpTerm M ρ k))) ++ [z]) := by
+  intro u a ha
+  refine ⟨a, List.mem_append_left _ ?_, le_refl _⟩
+  rw [hL, List.map_append, List.map_cons]
+  change a ∈ comps u (sumN ((one :: L.map (bumpTerm M ρ k)) ++
+    bumpTerm M ρ k j :: R.map (bumpTerm M ρ k)))
+  apply SumComps.mem_sumN_last_nonzero ?_ (isOT_bumpTerm hG k j) ?_ ha
+  · intro q hq
+    rcases List.mem_cons.mp hq with rfl | hq
+    · rfl
+    · obtain ⟨d, _, rfl⟩ := List.mem_map.mp hq
+      exact isOT_bumpTerm hG k d
+  · intro q hq
+    obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hq
+    unfold bumpTerm
+    rw [if_neg (hR d hd)]
 
 /-- Two row-2-zero columns with the same row-1 entry, row-1 parent and upgrade
 have the same value. -/
@@ -443,12 +470,12 @@ theorem stepDom_of_noBump {M : Mat} {ρ : Valn} (S : SInv M) (hC : Cons M ρ) (h
   rw [last_v_noBump S hC hG hyN ht (hnb y h1 h2 hne t ht)]
   exact dom_omega_of_comp hg
 
-/-- Deep return witness (residual shape).  Survival of the two chosen summands
-is explicit; `a` is `m` or a row-1 ancestor of `m` at the row-1 level of `c`;
+/-- Deep return witness (residual shape).  `j` is the LAST bump child of `k`
+(its term survives in `P` automatically); survival of `o(c)` in `G_j` is explicit; `a` is `m` or a row-1 ancestor of `m` at the row-1 level of `c`;
 the remaining value part is `StepDom` (implied by `StepSupport`). -/
 def DeepWitness (M : Mat) (ρ : Valn) (n k m : Nat) : Prop :=
-  ∃ j c a, j ∈ children M k ∧ col M j = bump M k ∧
-    bumpTerm M ρ k j ∈ summands (sumN (one :: (children M k).map (bumpTerm M ρ k))) ∧
+  ∃ L j R c a, children M k = L ++ j :: R ∧ col M j = bump M k ∧
+    (∀ d ∈ R, col M d ≠ bump M k) ∧
     c ∈ children M j ∧ ρ.o c ∈ summands (sumN ((children M j).map ρ.o)) ∧
     c < n ∧ Up1 M a m ∧ entry M 1 c = entry M 1 a ∧ entry M 2 c = 0 ∧
     StepDom M ρ a m
@@ -458,7 +485,8 @@ theorem dom_of_deep {M : Mat} {ρ : Valn} (S : SInv M)
     (hn : n < M.length) (hu : upg M n = some k) (hkn : k < n)
     (hkm : par M 0 k = some m) (hw : DeepWitness M ρ n k m) :
     ∀ u, Dom (comps u (vOpt ρ (par M 1 n))) (comps u (ρ.v n) ++ [z]) := by
-  obtain ⟨j, c, a, hj, hjb, hBP, hc, hoG, hcn, hA, h1, hc2, hst⟩ := hw
+  obtain ⟨L, j, R, c, a, hL, hjb, hR, hc, hoG, hcn, hA, h1, hc2, hst⟩ := hw
+  have hj : j ∈ children M k := by rw [hL]; simp
   have hcN := (mem_children hc).2
   have hmN : m < M.length := by
     have := par_lt M 0 k m hkm
@@ -475,7 +503,8 @@ theorem dom_of_deep {M : Mat} {ρ : Valn} (S : SInv M)
   obtain ⟨hp, hup⟩ := deep_return S hn hu hkn hkm hj hjb hc hcn hA h1 hc2 ha2
   have hv := value_eq_of_same_rhs hC hcN haN h1 hc2 ha2 hp hup
   have hs := dom_up1 S hC hG hA hmN hm2 (fun y h1 h2 hne t ht => hst y h1 h2 hne t ht)
-  exact dom_of_grandchild_dom S hC hG hn hu hkm hj hjb hBP hc hoG (by rw [hv]; exact hs)
+  exact dom_of_grandchild_dom S hC hG hn hu hkm hj hjb (bp_dom_of_last hG hL hR) hc hoG
+    (by rw [hv]; exact hs)
 
 /-- Residual: at a dangerous absorption, a zero head index, the last return
 copy, or a deep return witness exists. -/

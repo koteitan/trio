@@ -75,3 +75,21 @@ graftBb2St: 154 U-steps, all with t = upg y an ancestor, P(t) = 1 (t has no bump
 child), last v(t) = ω = v(a) exactly.  So StepDom reduces there to comps(ω) ⊑ comps(v a).
 Example: (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,0,0)(7,1,1)(8,1,1)(9,1,0)(7,1,1)(8,1,0)(9,2,1)(10,2,1)(11,2,0)(9,2,1)(10,2,0)(11,3,1)(12,3,1)(13,1,0)(14,2,0)(12,3,0)(13,4,1)(14,4,1)(15,1,0)(16,2,0)
 n=27, k=23, m=22, c=25, a=17, y=22, t=21; V=ω+ω, W=Ω_ω-ish, v(a)=ω, last v(t)=ω.
+
+## More sets (deep_exist.py), 0 exceptions
+| set | anc. upgrades | danger | zero | i=0 | i=1 | i=2+ | no witness | step fail |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| graftBb2 | 414,964 | 55,349 | 636 | 51,570 | 2,900 | 243 | 0 | 0 |
+| graftBb2G | 263,707 | 38,816 | 319 | 36,046 | 2,266 | 185 | 0 | 0 |
+| graftBb2S | 151,257 | 16,533 | 317 | 15,524 | 634 | 58 | 0 | 0 |
+| graftA | 42,715 | 3,844 | 33 | 3,646 | 150 | 15 | 0 | 0 |
+
+## U-steps on more sets (ustep.py)
+graftB 708, graftBn2 84, graftBb2 624, graftBb2G 470, graftA 42 U-steps (b2grow2 none):
+every one has P(t) = 1 (upgrade target t has no bump child), last v(t) = ω = v(a),
+t an ancestor of y.
+
+## Sufficient form (proved in Lean, NOT adopted as residual)
+`stepDom_of_noBump`: (every upgrade target t strictly below a has no bump child)
+∧ (∃ g ∈ comps 0 (v a), 1 ≤ g)  ->  StepDom.  Uses `last_v_noBump` (last v(t) = ω)
+and `dom_omega_of_comp`.  Kept as a tool; the residual stays the weaker StepDom.
