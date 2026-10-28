@@ -2,7 +2,9 @@
 The exact structural input still needed for H10.
 U3 has been checked on all 20 probe sets. The implication from U3 to H10
 uses no value comparison: a row-1-zero parent makes absorption empty.
-The structural implication from Core and S1 is not asserted here.
+The proposed universal U3 is false on 68 graft/expansion frames (bms standard,
+below SRO). All 68 still have strong absorption: their parent values are
+finite naturals 1, 2 or 3. No U3 theorem or top-level replacement is asserted.
 -/
 import Ytosk.V3T0SeedSum
 import Ytosk.V3S1Std
@@ -45,7 +47,20 @@ theorem strong_of_parent_zero {M : Mat} {ρ : Valn} (hC : Cons M ρ)
   rw [hv] at hq
   simp only [summands, List.not_mem_nil] at hq
 
-/-- A structural proof of U3 suffices to remove the whole remaining H10 field. -/
+/-- Finite natural parent values also make absorption strong.
+This covers the 68 measured counterexamples to the overstrong U3 proposal. -/
+theorem strong_of_finite_parent {M : Mat} {ρ : Valn} {x : Nat}
+    (hfinite : ∀ q ∈ summands (vOpt ρ (par M 1 (x - 1))), q = one) :
+    UpgAbsX M x ρ := by
+  intro i k W hix _ _ _ q hq hlt
+  have hi : i = x - 1 := by omega
+  subst i
+  have hq1 := hfinite q hq
+  subst q
+  exact lhd_one hlt
+
+/-- Hypothetical bridge from U3 to H10. The universal premise is refuted in
+V3T0H10U3Counterexample and is not an assumption of the top theorem. -/
 theorem h10_of_parent_zero
     (hU3 : ∀ M, Std M → M ≠ SRO → ∀ r L g, Frame M r L g → ParentZeroAt M r L) :
     T0SeedSum.T0BadSeedsH10 := by
