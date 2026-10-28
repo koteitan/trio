@@ -4,3 +4,4 @@ import Ytosk.WfHUACDeep
 #print axioms Ytosk.WfHUACDeep.support_up1
 #print axioms Ytosk.WfHUACDeep.dom_up1
 #print axioms Ytosk.WfHUACDeep.dom_of_deep
+#print axioms Ytosk.WfHUACDeep.stepDom_of_noBump

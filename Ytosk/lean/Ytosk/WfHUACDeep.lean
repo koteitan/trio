@@ -6,6 +6,7 @@ is enough.  The case a = m is the old return witness; the old support witness
 is the case where the support is checked against v(c) directly.
 -/
 import Ytosk.V3HUACShape
+import Ytosk.V3SibCol
 
 namespace Ytosk.WfHUACDeep
 open T
@@ -387,6 +388,60 @@ theorem dom_up1 {M : Mat} {ρ : Valn} (S : SInv M) (hC : Cons M ρ) (hG : Good3 
       rcases comps_add_sub u _ _ g hg with hg | hg
       · exact ihy u g hg
       · exact hst x (Up1.step hp hA) (Up1.refl x) hxa t hu u g hg
+
+/-- The upgrade increment of a target without bump children is `ω`. -/
+theorem last_v_noBump {M : Mat} {ρ : Valn} (_S : SInv M) (hC : Cons M ρ) (hG : Good3 M ρ)
+    {y t : Nat} (hyN : y < M.length) (hu : upg M y = some t)
+    (hnb : ∀ d ∈ children M t, col M d ≠ bump M t) :
+    last (ρ.v t) = psi z one z := by
+  have htN := upg_lt hyN hu
+  obtain ⟨p, hp1, _, hcol, _⟩ := upg_spec hu
+  have h1t : entry M 1 t ≠ 0 := by have := e1_of_col hcol; have := (upg_e12 hu).1; omega
+  have h2t : entry M 2 t ≠ 0 := by have := e2_of_col hcol; omega
+  have hz : ∀ q ∈ (children M t).map (bumpTerm M ρ t), q = z := by
+    intro q hq
+    obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hq
+    unfold bumpTerm
+    rw [if_neg (hnb d hd)]
+  have hP : sumN (one :: (children M t).map (bumpTerm M ρ t)) = one := by
+    rw [sumN_one_zeros hz]; decide
+  have hom : omega one = psi z one z := by decide
+  have hvOT : isOT (vOpt ρ (par M 1 t)) = true := vOpt_ot hG htN
+  rw [(hC t htN).2]
+  unfold vRhs
+  rw [if_neg h1t, if_neg h2t, hP, hom, sf_ot (isOT_add hvOT (by decide))]
+  exact last_add_single _
+
+/-- `ω`'s components are dominated as soon as `v(a)` has a level-zero component `≥ 1`. -/
+theorem dom_omega_of_comp {A : T} (h : ∃ g ∈ comps z A, one ≤ g) :
+    ∀ u, Dom (comps u (psi z one z)) (comps u A ++ [z]) := by
+  obtain ⟨g, hg, hle⟩ := h
+  intro u e he
+  by_cases hu : u = z
+  · subst hu
+    have : comps z (psi z one z) = [one, z] := by decide
+    rw [this] at he
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl
+    · exact ⟨g, List.mem_append_left _ hg, hle⟩
+    · exact ⟨z, List.mem_append_right _ (by simp), le_refl _⟩
+  · have hzu : lt z u = true := by
+      cases u with
+      | z => exact absurd rfl hu
+      | psi => rfl
+    simp [comps, hzu] at he
+
+/-- A sufficient (stronger, measured) form of `StepDom`: every upgrade target
+strictly below `a` has no bump child, and `v(a)` has a level-zero component `≥ 1`. -/
+theorem stepDom_of_noBump {M : Mat} {ρ : Valn} (S : SInv M) (hC : Cons M ρ) (hG : Good3 M ρ)
+    {a m : Nat} (hmN : m < M.length)
+    (hnb : ∀ y, Up1 M a y → Up1 M y m → y ≠ a → ∀ t, upg M y = some t →
+      ∀ d ∈ children M t, col M d ≠ bump M t)
+    (hg : ∃ g ∈ comps z (ρ.v a), one ≤ g) : StepDom M ρ a m := by
+  intro y h1 h2 hne t ht
+  have hyN : y < M.length := by have := up1_le h2; omega
+  rw [last_v_noBump S hC hG hyN ht (hnb y h1 h2 hne t ht)]
+  exact dom_omega_of_comp hg
 
 /-- Deep return witness (residual shape).  Survival of the two chosen summands
 is explicit; `a` is `m` or a row-1 ancestor of `m` at the row-1 level of `c`;
