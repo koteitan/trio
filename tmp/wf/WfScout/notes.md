@@ -34,7 +34,7 @@ and are never weak.  Structurally (without the strong-absorption failure) g != q
 so g = q is a value fact, not structural.
 k = x is impossible structurally (P1(x-1) would be q with e1 q < e1(x-1) = e1 q).
 
-HCanonV2 (canon.py): graftBb2St 35, graftB 1,727, std_a 7,205 antecedents, conclusion true in all;
+HCanonV2 (canon.py): graftBb2St 35, graftB 1,727, std_a 7,205, ufam 40,281 antecedents (shape_d3s, kbump, b2grow1/2: 0), conclusion true in all;
 a's children are always all bump children of a; sb <= sa lexicographically always.
 
 No residual was found false.
