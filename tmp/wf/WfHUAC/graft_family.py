@@ -49,8 +49,11 @@ if __name__=='__main__':
       if len(M)<160:cand.add(M+((a,b,c),))
   cand=sorted(cand-set(seeds));ok=pool.map(std,cand,chunksize=200)
   ext=[M for M,o in zip(cand,ok) if o];print('ext1 cand',len(cand),'std',len(ext),flush=True)
+ pickle.dump({'seeds':seeds,'ext':ext},open('/home/koteitan/proofs/trio/tmp/wf/WfHUAC/deepfam_stage1.pkl','wb'))
  fam=set(seeds)|set(ext);front=set(fam)
- for depth in range(2):
+ est=sum(len(trio.expand([list(x) for x in M],n)) for M in list(front)[:200] for n in range(5))
+ print('estimate round1 prefixes ~',est*len(front)//200,flush=True)
+ for depth in range(int(sys.argv[1]) if len(sys.argv)>1 else 1):
   new=set()
   for M in front:
    for n in range(5):

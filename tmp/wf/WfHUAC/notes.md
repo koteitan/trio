@@ -37,9 +37,12 @@ New residual `WfHUACDeep.HUACDeepShape`:
    Danger (vOpt σ (par N 1 n)) (bumpW N σ k) →
    lev (bumpW N σ k) = z ∨ ReturnWitness N n k m ∨ DeepWitness N σ n k m
 DeepWitness N σ n k m :=
-  ∃ j c a, j ∈ children k ∧ col j = bump k ∧ bumpTerm k j ∈ summands P ∧
+  ∃ L j R c a, children k = L ++ j :: R ∧ col j = bump k ∧ (∀ d ∈ R, col d ≠ bump k) ∧
     c ∈ children j ∧ o c ∈ summands (Σ o(children j)) ∧ c < n ∧
     Up1 a m ∧ e1 c = e1 a ∧ e2 c = 0 ∧ StepDom σ a m
+(j = LAST bump child: its survival in P is proved by `bp_dom_of_last`.  In every
+measured danger witness the first surviving bump child IS the last one, and c is the
+first child of j.)
 StepDom σ a m := ∀ y, Up1 a y → Up1 y m → y ≠ a → ∀ t, upg y = some t →
     ∀ u, Dom (comps u (last (v t))) (comps u (v a) ++ [0])
 
@@ -93,3 +96,22 @@ t an ancestor of y.
 `stepDom_of_noBump`: (every upgrade target t strictly below a has no bump child)
 ∧ (∃ g ∈ comps 0 (v a), 1 ≤ g)  ->  StepDom.  Uses `last_v_noBump` (last v(t) = ω)
 and `dom_omega_of_comp`.  Kept as a tool; the residual stays the weaker StepDom.
+
+## Targeted family (graft_family.py -> deepfam.pkl, not committed: 1.6 GB)
+Seeds: 933 bms-standard matrices from graftBb2St, b2grow2, graftA having a dangerous
+frame without the last-child return.  + 59,467 bms-standard one-column extensions
+(of 227,906 candidates), + one round of expansions n=0..4 with all prefixes
+(len <= 160, below SRO).  Total 4,015,492 matrices, 42,820,878 ancestor upgrades.
+
+Run 1 (run_fam.py = deep_exist.py, LITERAL Support used to pick a): 12,651,393 danger
+positive frames; i=0 3,885,285, i=1 8,086,464, i=2+ 679,644; jlast and cfirst always;
+156 frames with NO witness under literal Support.  Smallest (bms -s = 1), n=64:
+(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,1)(7,2,1)(8,1,0)(4,2,0)(5,3,1)(6,3,1)(7,2,0)(6,3,0)(7,4,1)(8,4,1)(9,2,0)(8,4,0)(9,5,1)(10,5,1)(11,2,0)(5,3,0)(6,4,1)(7,4,1)(8,2,0)(7,4,0)(8,5,1)(9,5,1)(10,2,0)(6,4,1)(7,4,0)(8,5,1)(9,5,1)(10,2,0)(9,5,0)(10,6,1)(11,6,1)(12,2,0)(8,5,1)(9,5,0)(10,6,1)(11,6,1)(12,2,0)(11,6,0)(12,7,1)(13,7,1)(14,2,0)(10,6,1)(11,6,0)(12,7,1)(13,7,1)(14,2,0)(13,7,0)(14,8,1)(15,8,1)(16,2,0)(12,7,1)
+k=61, m=60, chain 60,51,42,33,21,8,0; c=63 (14,2,0) returns to a=21 (4,2,0);
+V = X+ω+ω+ω with X = v(21) = ψ_ω(ψ_{ψ_{ψ_ω(0)}(0)}(0)); U-steps 60,51,42 add ω, which is
+NOT a summand of v(a) = X but IS comps-dominated (index ω of X).  So literal
+Support (and StepSupport, and the old SupportWitness-style certificate) is false here,
+while the Lean residual StepDom holds.  This is why StepDom (Dom, not Support) is the
+residual.  HUAC holds on this frame.
+
+Run 2 (deep_exist2.py, exact Lean DeepWitness with StepDom): see deep_exist2_deepfam.json.
