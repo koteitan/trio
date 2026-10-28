@@ -34,6 +34,7 @@ import Ytosk.V3HUACShape
 import Ytosk.V3QNDomS
 import Ytosk.V3T0SeedOutside
 import Ytosk.V3T0SeedSum
+import Ytosk.V3T0H10Core
 
 namespace Ytosk
 
@@ -100,12 +101,13 @@ upgrades to an ancestor) proves the lost-upgrade cases: `T0BadSeedsH7` from `T0B
 not occur weakly on the sets.
 2026-10-27: H8's first field follows strongly from the drop conclusion (T0SeedOutside.seed_lhd_outside).
 2026-10-27: HUAC also proves the second field (T0SeedSum.seed_sum_lhd).
-The top keeps only the preceding-upgrade exclusion as T0SeedSum.T0BadSeedsH10.
+The top keeps the preceding-upgrade exclusion only when entry1(g) >= 2,
+as T0H10Core.T0BadSeedsH10Big. The small case follows from structural lemmas.
 HUACShapes.hUAC_of derives HUAC from a zero head, return grandchild, or finite input-support witness
 only at dangerous absorption. Non-dangerous cases are theorems without a shape premise.
 Only HUACShapes.HUACShape remains.
 The count stays 15. -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUS : HUACShapes.HUACShape) (hT0H10 : T0SeedSum.T0BadSeedsH10)
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUS : HUACShapes.HUACShape) (hT0H10Big : T0H10Core.T0BadSeedsH10Big)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -116,6 +118,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUS : HUAC
       TRIO.srow M (M.length - 1) = 2 → T2VRACopyEsc M)
     (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : WellFounded Step' :=
+  have hT0H10 : T0SeedSum.T0BadSeedsH10 := T0H10Core.h10_of_big hT0H10Big
   have hUAC : HUAC := HUACShapes.hUAC_of hUS
   have hDW : HDropV2W := hDropV2W_of_U hDU
   have hDB : DropBadV2B := dropBadB_of_U hDU (rootBad_of_T2 hDU (rootBadV2T2_holds hDU))

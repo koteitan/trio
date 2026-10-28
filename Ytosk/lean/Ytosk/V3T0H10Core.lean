@@ -152,6 +152,49 @@ theorem parent_zero_of_small_grandparent {M : Mat} {r L g : Nat} (S : SInv M)
   have hp1 := par1_entry_lt hp
   exact ⟨p, hp, by omega⟩
 
+/-- The actual remaining H10 field, restricted to entry1(g) at least two.
+The U3 conclusion is not assumed here; standard U3 counterexamples still
+have strong absorption and hence do not satisfy Bad2. -/
+def T0BadSeedsH10Big : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → Bad2 M → Inv3V2 M ρ rk → ∀ r L,
+    r + L + 1 = M.length → 0 < L → par M 0 (r + L) = some r → entry M 1 (r + L) = 0 →
+    ∀ g, par M 0 r = some g → 2 ≤ entry M 1 g →
+      r ≠ r + L - 1 → r - 1 ≠ g → Counted M g r → topped (M.take (r + L)) r = true →
+        upg M (r - 1) ≠ some r
+
+/-- A pointwise parent-zero certificate contradicts Bad2 in this frame. -/
+theorem no_upgrade_of_parent_zero {M : Mat} {r L g : Nat}
+    (F : Frame M r L g) (hBad : Bad2 M) (hP : ParentZeroAt M r L) :
+    upg M (r - 1) ≠ some r := by
+  intro hu
+  have hlen := F.len
+  have hlength : M.length - 1 = r + L := by omega
+  have hlength' : M.length - 2 = r + L - 1 := by omega
+  obtain ⟨⟨k, hk⟩, p, b, hp', hb, hcol, hbad⟩ := hBad
+  rw [hlength'] at hk
+  obtain ⟨q, hq, hq1⟩ := hP hu k hk
+  rcases hbad with hbad | hbad
+  · obtain ⟨_, σ, hσ, hnot⟩ := hbad
+    rw [hlength] at hnot
+    exact hnot (strong_of_parent_zero hσ (by omega) hq hq1)
+  · have hne := hbad.2.1
+    rw [hlength] at hne
+    exact hne F.row1
+
+/-- Only the large-grandparent case needs a residual. The small case is a theorem. -/
+theorem h10_of_big (hBig : T0BadSeedsH10Big) : T0SeedSum.T0BadSeedsH10 := by
+  intro M ρ rk hM hNe hBad I r L hlen hL hp he g hg hr hn hc ht
+  by_cases hbig : 2 ≤ entry M 1 g
+  · exact hBig M ρ rk hM hNe hBad I r L hlen hL hp he g hg hbig hr hn hc ht
+  · have F : Frame M r L g := ⟨hlen, hL, hp, he, hg, hr, hn, hc, ht⟩
+    exact no_upgrade_of_parent_zero F hBad
+      (parent_zero_of_small_grandparent (sInv_std hM hNe) F (by omega))
+
+/-- The restricted residual follows immediately from the former one. -/
+theorem h10_big_of_h10 (h : T0SeedSum.T0BadSeedsH10) : T0BadSeedsH10Big := by
+  intro M ρ rk hM hNe hBad I r L hlen hL hp he g hg _ hr hn hc ht
+  exact h M ρ rk hM hNe hBad I r L hlen hL hp he g hg hr hn hc ht
+
 /-- The Core comparison at P1(g),g is above the final source parent. -/
 theorem core_parent_above_source_parent {M : Mat} {r L g k p : Nat} (S : SInv M)
     (F : Frame M r L g) (hu : upg M (r + L - 1) = some k)
