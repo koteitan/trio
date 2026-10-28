@@ -31,6 +31,7 @@ import Ytosk.V3HUACCopy
 import Ytosk.V3HUACZero
 import Ytosk.V3HUACSupport
 import Ytosk.V3HUACShape
+import Ytosk.WfHUACDeep
 import Ytosk.V3QNDomS
 import Ytosk.V3T0SeedOutside
 import Ytosk.V3T0SeedSum
@@ -103,11 +104,14 @@ not occur weakly on the sets.
 2026-10-27: HUAC also proves the second field (T0SeedSum.seed_sum_lhd).
 The top keeps the preceding-upgrade exclusion only when entry1(g) >= 2,
 as T0H10Core.T0BadSeedsH10Big. The small case follows from structural lemmas.
-HUACShapes.hUAC_of derives HUAC from a zero head, return grandchild, or finite input-support witness
-only at dangerous absorption. Non-dangerous cases are theorems without a shape premise.
-Only HUACShapes.HUACShape remains.
+2026-10-29: HUACShapes.HUACShape is false (WfHUACShapeFalse.not_HUACShape, a standard 48-column matrix).
+WfHUACDeep.hUAC_of_deep derives HUAC from a zero head, a return grandchild, or a deep row-1 return
+(DeepWitness) at dangerous absorption. Only WfHUACDeep.HUACDeepShape remains for HUAC.
+2026-10-29: T0H10Core.T0BadSeedsH10Big is false on a standard Bad2 matrix (WfH10Cex.h10_core_false
+refutes it without its Inv3V2 premise; that premise is checked only numerically). It stays here until
+t0_S1N_cnt is redesigned.
 The count stays 15. -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUS : HUACShapes.HUACShape) (hT0H10Big : T0H10Core.T0BadSeedsH10Big)
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUD : WfHUACDeep.HUACDeepShape) (hT0H10Big : T0H10Core.T0BadSeedsH10Big)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -119,7 +123,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUS : HUAC
     (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : WellFounded Step' :=
   have hT0H10 : T0SeedSum.T0BadSeedsH10 := T0H10Core.h10_of_big hT0H10Big
-  have hUAC : HUAC := HUACShapes.hUAC_of hUS
+  have hUAC : HUAC := WfHUACDeep.hUAC_of_deep hUD
   have hDW : HDropV2W := hDropV2W_of_U hDU
   have hDB : DropBadV2B := dropBadB_of_U hDU (rootBad_of_T2 hDU (rootBadV2T2_holds hDU))
   have hDomB : T2SeedDomV2B := t2SeedDomV2B_of_Q hDomQ
