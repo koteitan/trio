@@ -66,3 +66,24 @@ Ytosk/lean/Ytosk/WfH10Cex.lean:
 H10Big adds only the premise Inv3V2 M ρ rk; it is false unless some Inv3V2 field fails on this M,
 and all probed fields hold.  So H10Big cannot be proved; the t=0 Bad2 engine must handle
 "r uncounted at g in M[n]" (counted_first0G's hT is not available).
+
+## 8. Where H10 is consumed, and what still holds (2026-10-29)
+Chain: H10 -> H9 field 2 -> H8/H7 field 3 -> H6 field 3 via counted_first0G (hT = H10) giving
+"Counted M g r -> Counted (gexp M r L 0 0 n) g r" -> passed unchanged through H5..H2 -> used ONLY in
+t0_S1N_cnt (V3T0BadNode) as hcN, i.e. for S1 of T0SeedsN at g.
+In t0_S1N_cnt, hcN is used only in two branches:
+  (a) drop at r is lhd (po_lhd_or_weak left): hcN NOT used;
+  (b) weak, v r <= v g: hcN used (t0_S1N_of Or.inr);
+  (c) weak, v r > v g: hcN used (t0_S1AW_nodeHi).
+s1_measure.py (H10 case = frame + upg(r-1)=r; shape_d3s + kbump_d3s, n = 2,3,4):
+  S1 Lhd part  o_N(g) = psi_{v g}(X') lhd o(g)  holds 12,627/12,627 (not Bad2) and 18/18 (Bad2);
+  r is uncounted at g in N in every case.
+droplhd_measure.py: in the H10 case v r > v g always (4,215/4,215, branch (c) when weak);
+  drop lhd at r: true on all non-Bad2, false on 3 of the 6 Bad2 (incl. the 29-col matrix).
+So on the counterexample the engine goes to branch (c), t0_S1AW_nodeHi, which needs Counted N g r: false.
+The seed fact S1 itself is numerically true there; only the route is missing.
+RClaimU (the other conjunct of S1) was NOT measured.
+
+Proposed replacement (not adopted, not in Lean): in t0_S1N_cnt split on the H10 case
+(r-1 upgrades to r and r topped in M.take x).  Outside it, counted_first0G gives hcN with no residual.
+Inside it, a new S1 node lemma for "r uncounted in N" is needed (o_N(g) loses o(r), keeps the copies).
