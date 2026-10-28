@@ -1,0 +1,17 @@
+{
+ "src": "/home/koteitan/proofs/trio/tmp/wf/WfHUAC/deepfam.pkl",
+ "total": 4015492,
+ "sec": 4575.497459888458,
+ "counts": {
+  "anc_upg": 42820878,
+  "danger": 12651549,
+  "deep_i1": 8086464,
+  "deep_support_True": 8766108,
+  "return": 3885285,
+  "deep_i2": 644249,
+  "deep_i3": 35551,
+  "deep_support_False": 156
+ },
+ "nowit": [],
+ "nowit_count": 0
+}

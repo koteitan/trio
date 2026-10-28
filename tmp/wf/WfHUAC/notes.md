@@ -115,3 +115,31 @@ while the Lean residual StepDom holds.  This is why StepDom (Dom, not Support) i
 residual.  HUAC holds on this frame.
 
 Run 2 (deep_exist2.py, exact Lean DeepWitness with StepDom): see deep_exist2_deepfam.json.
+
+## The old residual HUACShape is FALSE (Lean, green)
+Ytosk/lean/Ytosk/WfHUACShapeFalse.lean: `not_HUACShape : ¬ HUACShapes.HUACShape`
+(axioms propext, Quot.sound).  Matrix (48 columns, bms -s = 1, below SRO; `standard`
+via an explicit Std.exp trace from SRO, reach48.json):
+(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,1)(7,2,1)(8,1,0)(4,2,0)(5,3,1)(6,3,1)(7,2,0)(6,3,0)(7,4,1)(8,4,1)(9,2,0)(8,4,0)(9,5,1)(10,5,1)(11,2,0)(5,3,0)(6,4,1)(7,4,1)(8,2,0)(7,4,0)(8,5,1)(9,5,1)(10,2,0)(6,4,1)(7,4,0)(8,5,1)(9,5,1)(10,2,0)(9,5,0)(10,6,1)
+Frame n=46, k=43, m=42 (P1 chain 42 -> 33 -> 21 -> 8 -> 0).  The canonical valuation
+(tables oT, vT, ranks rkO, rkV from Ctx) satisfies Cons, Rk, Good3 by `decide`.
+v(42) = X + ω, X = v(21) = ψ_ω(ψ_{ψ_{ψ_ω(0)}(0)}(0)); W = bumpW 43 = ψ_X(0); ω < W
+is dangerous.  Only bump child 44, its only child 45 = (10,2,0) has row 1 = 2 ≠ 4:
+no ReturnWitness; SupportWitness needs Support(increment 42 = ω, v(45) = X): false.
+`deep_witness_here : WfHUACDeep.DeepWitness M σ 46 43 42` (a = 21; U-step 42 adds ω,
+dominated through the index ω of X) is also proved, so the new residual holds there.
+
+## Run 2 result (exact Lean HUACDeepShape, deep_exist2.py on deepfam.pkl)
+4,015,492 matrices, 42,820,878 ancestor upgrades, 12,651,549 danger frames:
+ReturnWitness 3,885,285; DeepWitness 8,766,264 (i=1 8,086,464, i=2 644,249, i>=3 35,551);
+of the deep ones 156 need StepDom (literal support false); zero-index 0;
+NO WITNESS 0; structural mismatch (P1/upg/v of c vs a) 0.  (deep_exist2_deepfam.json)
+
+## What remains (exact Lean)
+`Ytosk.WfHUACDeep.HUACDeepShape` (see above).  Bridge `Ytosk.WfHUACDeep.hUAC_of_deep :
+HUACDeepShape → HUAC`.  The lead should replace the hypothesis `hUS : HUACShapes.HUACShape`
+(which is FALSE: `WfHUACShapeFalse.not_HUACShape`) by `hUD : WfHUACDeep.HUACDeepShape` and
+`HUACShapes.hUAC_of hUS` by `WfHUACDeep.hUAC_of_deep hUD`.
+Open content: existence (under Danger, lev W ≠ 0, no last-child return) of a surviving
+first-level grandchild c under the last bump child that returns to a row-1 ancestor a of m,
+plus StepDom (U-increments ω^{P(t)} of chain columns between m and a are comps-dominated by v(a)).
