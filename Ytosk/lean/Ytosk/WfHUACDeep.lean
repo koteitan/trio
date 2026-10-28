@@ -60,6 +60,50 @@ theorem dom_of_grandchild_support {M : Mat} {ρ : Valn} (S : SInv M)
   exact HUACPath.comp_dom_trans hV_o (HUACPath.comp_dom_trans ho_G
     (HUACPath.comp_dom_trans hG_B (HUACPath.comp_dom_trans hB_P (HUACPath.comp_dom_trans hP_W hW_v))))
 
+/-- Generic transport from component domination of `v(m)` by `v(c)`. -/
+theorem dom_of_grandchild_dom {M : Mat} {ρ : Valn} (S : SInv M)
+    (hC : Cons M ρ) (hG : Good3 M ρ) {n k m j c : Nat}
+    (hn : n < M.length) (hu : upg M n = some k)
+    (hkm : par M 0 k = some m)
+    (hj : j ∈ children M k) (hjb : col M j = bump M k)
+    (hBP : bumpTerm M ρ k j ∈ summands (sumN (one :: (children M k).map (bumpTerm M ρ k))))
+    (hc : c ∈ children M j) (hoG : ρ.o c ∈ summands (sumN ((children M j).map ρ.o)))
+    (hdom : ∀ u, Dom (comps u (ρ.v m)) (comps u (ρ.v c) ++ [z])) :
+    ∀ u, Dom (comps u (vOpt ρ (par M 1 n))) (comps u (ρ.v n) ++ [z]) := by
+  have _hj := hj
+  have hcN := (mem_children hc).2
+  obtain ⟨m', hm', hk0⟩ := upg_target_par0 S.r0p hu
+  rw [hkm] at hk0; cases hk0
+  obtain ⟨y, hy⟩ := o_psi_sub hC hcN
+  rw [sf_ot (hG.ot_v c hcN)] at hy
+  have hV_o : ∀ u, Dom (comps u (ρ.v m)) (comps u (ρ.o c) ++ [z]) := by
+    rw [hy]
+    exact HUACPath.comp_dom_trans hdom (HUACPath.index_comp_dom (hG.ot_v c hcN))
+  have ho_G : ∀ u, Dom (comps u (ρ.o c))
+      (comps u (sumN ((children M j).map ρ.o)) ++ [z]) :=
+    fun u g hg => ⟨g, List.mem_append_left _ (comps_summand_subH u hoG g hg), le_refl _⟩
+  have hGot : isOT (sumN ((children M j).map ρ.o)) = true :=
+    isOT_sumN _ (by intro q hq; obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hq; exact hG.ot_o d (mem_children hd).2)
+  have hG_B : ∀ u, Dom (comps u (sumN ((children M j).map ρ.o)))
+      (comps u (bumpTerm M ρ k j) ++ [z]) := by
+    unfold bumpTerm
+    rw [if_pos hjb]
+    exact OmegaComps.dom_comps_omega hGot
+  let P := sumN (one :: (children M k).map (bumpTerm M ρ k))
+  have hB_P : ∀ u, Dom (comps u (bumpTerm M ρ k j)) (comps u P ++ [z]) :=
+    fun u g hg => ⟨g, List.mem_append_left _ (comps_summand_subH u hBP g hg), le_refl _⟩
+  have hP_W : ∀ u, Dom (comps u P) (comps u (bumpW M ρ k) ++ [z]) :=
+    OmegaComps.dom_comps_omega (isOT_bumpP hG k)
+  have hW_v : ∀ u, Dom (comps u (bumpW M ρ k)) (comps u (ρ.v n) ++ [z]) := by
+    intro u g hg
+    refine ⟨g, List.mem_append_left _ ?_, le_refl _⟩
+    rw [value_at_target S hC hG hn hu]
+    exact SumComps.mem_add_right hg
+  rw [hm']
+  simp only [vOpt]
+  exact HUACPath.comp_dom_trans hV_o (HUACPath.comp_dom_trans ho_G
+    (HUACPath.comp_dom_trans hG_B (HUACPath.comp_dom_trans hB_P (HUACPath.comp_dom_trans hP_W hW_v))))
+
 /-- Two row-2-zero columns with the same row-1 entry, row-1 parent and upgrade
 have the same value. -/
 theorem value_eq_of_same_rhs {M : Mat} {ρ : Valn} (hC : Cons M ρ) {c a : Nat}
@@ -295,15 +339,64 @@ theorem support_up1 {M : Mat} {ρ : Valn} (S : SInv M) (hC : Cons M ρ) (hG : Go
     intro t ht
     exact hst x (Up1.step hp hA) (Up1.refl x) hxa t ht
 
+/-- Weaker value residual: component domination (instead of literal support)
+of every upgrade increment strictly below `a` by `v(a)`. -/
+def StepDom (M : Mat) (ρ : Valn) (a m : Nat) : Prop :=
+  ∀ y, Up1 M a y → Up1 M y m → y ≠ a →
+    ∀ t, upg M y = some t → ∀ u, Dom (comps u (last (ρ.v t))) (comps u (ρ.v a) ++ [z])
+
+theorem stepDom_of_stepSupport {M : Mat} {ρ : Valn} {a m : Nat} (h : StepSupport M ρ a m) :
+    StepDom M ρ a m :=
+  fun y h1 h2 hne t ht => dom_of_support (h y h1 h2 hne t ht)
+
+/-- Component domination of `v(x)` by `v(a)` along the row-1 chain. -/
+theorem dom_up1 {M : Mat} {ρ : Valn} (S : SInv M) (hC : Cons M ρ) (hG : Good3 M ρ)
+    {a x : Nat} (hA : Up1 M a x) (hxN : x < M.length) (hx2 : entry M 2 x = 0)
+    (hst : ∀ y, Up1 M a y → Up1 M y x → y ≠ a →
+      ∀ t, upg M y = some t → ∀ u, Dom (comps u (last (ρ.v t))) (comps u (ρ.v a) ++ [z])) :
+    ∀ u, Dom (comps u (ρ.v x)) (comps u (ρ.v a) ++ [z]) := by
+  induction hA with
+  | refl => intro u g hg; exact ⟨g, List.mem_append_left _ hg, le_refl _⟩
+  | @step x y hp hA ih =>
+    have hyx := par_lt M 1 x y hp
+    have hy2 : entry M 2 y = 0 := by
+      have := par1_e2_ne_one S.z1c hp
+      have := S.z2 y
+      omega
+    have hay := up1_le hA
+    have hxa : x ≠ a := by omega
+    have h1 : entry M 1 x ≠ 0 := by have := par1_entry_lt hp; omega
+    have ihy := ih (by omega) hy2 (fun w h1 h2 hne t ht => hst w h1 (Up1.step hp h2) hne t ht)
+    have hpOT := vOpt_ot hG hxN
+    rw [hp] at hpOT
+    simp only [vOpt] at hpOT
+    rw [(hC x hxN).2]
+    unfold vRhs
+    rw [if_neg h1, if_pos hx2, hp]
+    simp only [vOpt]
+    cases hu : upg M x with
+    | none =>
+      rw [sf_ot (isOT_add hpOT isOT_one)]
+      intro u g hg
+      rcases comps_add_sub u _ _ g hg with hg | hg
+      · exact ihy u g hg
+      · exact ⟨z, List.mem_append_right _ (by simp), by simp [comps_one_eq hg]⟩
+    | some t =>
+      rw [sf_ot (isOT_add hpOT (isOT_last (hG.ot_v t (upg_lt hxN hu))))]
+      intro u g hg
+      rcases comps_add_sub u _ _ g hg with hg | hg
+      · exact ihy u g hg
+      · exact hst x (Up1.step hp hA) (Up1.refl x) hxa t hu u g hg
+
 /-- Deep return witness (residual shape).  Survival of the two chosen summands
 is explicit; `a` is `m` or a row-1 ancestor of `m` at the row-1 level of `c`;
-the remaining value part is `StepSupport`. -/
+the remaining value part is `StepDom` (implied by `StepSupport`). -/
 def DeepWitness (M : Mat) (ρ : Valn) (n k m : Nat) : Prop :=
   ∃ j c a, j ∈ children M k ∧ col M j = bump M k ∧
     bumpTerm M ρ k j ∈ summands (sumN (one :: (children M k).map (bumpTerm M ρ k))) ∧
     c ∈ children M j ∧ ρ.o c ∈ summands (sumN ((children M j).map ρ.o)) ∧
     c < n ∧ Up1 M a m ∧ entry M 1 c = entry M 1 a ∧ entry M 2 c = 0 ∧
-    StepSupport M ρ a m
+    StepDom M ρ a m
 
 theorem dom_of_deep {M : Mat} {ρ : Valn} (S : SInv M)
     (hC : Cons M ρ) (hG : Good3 M ρ) {n k m : Nat}
@@ -326,8 +419,8 @@ theorem dom_of_deep {M : Mat} {ρ : Valn} (S : SInv M)
   have haN : a < M.length := by have := up1_le hA; omega
   obtain ⟨hp, hup⟩ := deep_return S hn hu hkn hkm hj hjb hc hcn hA h1 hc2 ha2
   have hv := value_eq_of_same_rhs hC hcN haN h1 hc2 ha2 hp hup
-  have hs := support_up1 S hC hG hA hmN hm2 (fun y h1 h2 hne t ht => hst y h1 h2 hne t ht)
-  exact dom_of_grandchild_support S hC hG hn hu hkm hj hjb hBP hc hoG (by rw [hv]; exact hs)
+  have hs := dom_up1 S hC hG hA hmN hm2 (fun y h1 h2 hne t ht => hst y h1 h2 hne t ht)
+  exact dom_of_grandchild_dom S hC hG hn hu hkm hj hjb hBP hc hoG (by rw [hv]; exact hs)
 
 /-- Residual: at a dangerous absorption, a zero head index, the last return
 copy, or a deep return witness exists. -/
