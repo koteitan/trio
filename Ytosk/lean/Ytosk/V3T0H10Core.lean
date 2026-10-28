@@ -254,6 +254,32 @@ theorem sibling_subtree_bound {M : Mat} (hS : S1 M) (p : Nat) :
         simpa only [List.append_assoc, List.singleton_append] using h
       exact TRIO.sle_trans (ih (pre ++ [a]) c htail b hb) hac
 
+/-- R1S makes every actual row-1 parent edge a unit step.
+This rules out the lifted full-Core counterexamples with skipped row-1 values. -/
+theorem par1_row_eq_succ {M : Mat} (hR1 : R1S M) {c p : Nat}
+    (hp : par M 1 c = some p) : entry M 1 c = entry M 1 p + 1 := by
+  have hpc := par_lt M 1 c p hp
+  have hA : Anc0 M p c := anc0_of_par M 1 p c hp
+  obtain ⟨d, hdp, hAdc⟩ := anc0_child hA (by omega)
+  have hpd := par_lt M 0 d p hdp
+  have hlow := par1_between hp d hAdc hpd
+  have hupp := hR1 d p hdp
+  have hlt := par1_entry_lt hp
+  omega
+
+/-- With the R1S input supplied by Std, Core at P1(g),g has row-1 shift exactly one. -/
+theorem core_pair_unit_shift {M : Mat} {r L g k p : Nat} (S : SInv M) (hR1 : R1S M)
+    (F : Frame M r L g) (hu0 : upg M (r - 1) = some r)
+    (hu : upg M (r + L - 1) = some k) (hp : par M 1 (r + L - 1) = some p) :
+    ∃ a d, par M 1 g = some a ∧ entry M 2 a = 0 ∧ 0 < d ∧
+      col M g = (entry M 0 a + d, entry M 1 a + 1, 0) := by
+  obtain ⟨a, d, f, ha, ha2, hd, hf, hcol⟩ := core_pair_shape S F hu0 hu hp
+  have hunit := par1_row_eq_succ hR1 ha
+  have hrow := e1_of_col hcol
+  have hfeq : f = 1 := by omega
+  subst f
+  exact ⟨a, d, ha, ha2, hd, hcol⟩
+
 /-- The proved standard-form input available for the remaining structural proof. -/
 theorem core_of_std {M : Mat} (hM : Std M) (hne : M ≠ []) : TRIO.ArgDomCoreOn M :=
   TRIO.argDomCoreOn_ST_TS ((std_stts hM).resolve_left hne)
