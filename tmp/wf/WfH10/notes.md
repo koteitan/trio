@@ -34,3 +34,35 @@ Ytosk/lean/Ytosk/WfH10Bridge.lean:
 - KNoBump (residual candidate): H10Big frame + e1 g >= 2 + upg(r-1)=r + upg(x-1)=k + Bad2 shape
   (P0(x-1)=p, P0 p=b, col p = bump b, Anc0 b x)  ->  no child of k is a bump child of k.
 - h10Big_of_kNoBump : KNoBump -> T0H10Core.T0BadSeedsH10Big.  axioms [propext, Classical.choice, Quot.sound].
+
+## 6. KNoBump is FALSE, and H10Big itself is FALSE (2026-10-29)
+graft_kbump.py: insert a bump child (and small subtrees) under k in the 1,609 d3s antecedents.
+11,457 structural candidates, 2,606 standard (bms -s = 1, below SRO): KNoBump false.
+Among them 6 standard matrices where the strong absorption at x FAILS -> Bad2 holds -> H10 conclusion false.
+Smallest (29 cols), all checks:
+(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,1)(6,3,1)(7,3,0)(5,3,1)(6,3,1)(7,2,0)(6,0,0)
+ r=25 (5,3,1), L=3, g=21 (4,2,0) e1 g = 2, x=28 (6,0,0), x-1=27 (7,2,0), p=26 = bump(25).
+ upg(24)=25, upg(27)=18 (3,2,1); 18 has bump child 19 (4,2,1) with child 20 (5,1,0).
+ V = v(P1 27) = v(11) = omega; v(18) = W = bumpW(18) = Omega_omega; omega not lhd Omega_omega
+ (u = 0, c = Omega_1: comps_0(omega) = {1, 0} not dominated by comps_0(Omega_1) ++ [0] = {0}).
+ Python Inv3V2 probes on the actual valuation: probe_inv3_prefix inv_fields (Good3, VSmallF, FrameOT,
+ FrameClosed, TP1, TP1W, TrigOm, BumpKidsDec, BumpTermDec, AbsD/AbsDW/AbsDN, AbsU/AbsUW, TPLo/TPLoW/TPLoN,
+ rootS, rootP): 0 failures; PH3cG, FC3 (codex checker): 0 failures; VSmallRAll (probe_inv2): 12 cases, 0 failures.
+ The x-frame fields (AbsDS, AbsUS, TPLoS, TPLoWs, AbsUWL, AbsUW0, AbsDWs, TrigS0) are vacuous: P1 x = none.
+ Only drop fields fail (BumpAbsC, BumpWeakSrc, UpgAbsX) -- expected on Bad2.
+ reach.py: SRO -> M in 143 expansions (reach_cex29.json).
+Other 5: same prefix with (7,2,0) doubled, or extra (5,1,0)/(6,1,0) under 19.
+
+Consumer: T0BadSeedsH6's third field "Counted M g r -> Counted (gexp M r L 0 0 n) g r" fails on this M:
+in M[n] (n=1,2,3) r=25 is isUpg (from 24) and topped (only child 26 = bump), so not counted at g.
+
+## 7. Lean (green, build 1104 jobs)
+Ytosk/lean/Ytosk/WfH10Cex.lean:
+- standard : Std M (143-step trace, decide); frame : Frame M 25 3 21; big; preceding_upgrade; final_upgrade
+- cons : Cons M ρ for an explicit table valuation; not_strong : ¬ UpgAbsX M 28 ρ; bad2 : Bad2 M
+- h10_core_false : ¬ (∀ N, Std N → N ≠ SRO → Bad2 N → ∀ r L g, Frame N r L g → 2 ≤ e1 g → upg N (r-1) ≠ some r)   [propext]
+- counted_M, not_counted_exp2, not_counted_gexp2,
+  h6_counted_core_false : the structural core of H6 field 3 (without Inv3V2) is false.  [propext, Classical.choice, Quot.sound]
+H10Big adds only the premise Inv3V2 M ρ rk; it is false unless some Inv3V2 field fails on this M,
+and all probed fields hold.  So H10Big cannot be proved; the t=0 Bad2 engine must handle
+"r uncounted at g in M[n]" (counted_first0G's hT is not available).

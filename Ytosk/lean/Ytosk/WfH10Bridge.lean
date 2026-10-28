@@ -5,6 +5,10 @@ In the frame of T0BadSeedsH10Big, Bad2's shape forces the grandparent of x - 1
 to be an ancestor of x.  When the upgrade target k of x - 1 has no bump child,
 bumpW k = ω, so every absorbed summand is finite and the strong absorption at
 x holds.  This contradicts Bad2.  No value hypothesis is assumed.
+
+KNoBump is FALSE on standard matrices (2,606 standard grafts; e.g. WfH10Cex.M,
+where k = 18 has the bump child 19).  H10Big itself fails on WfH10Cex.M, so this
+bridge only records the reduction; it is not a route to eliminate H10Big.
 -/
 import Ytosk.V3T0H10Core
 import Ytosk.V3T2UpgAbs
