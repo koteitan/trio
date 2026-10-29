@@ -102,6 +102,21 @@ theorem source_leaf_shapes {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
     exact (lost_upg_take C.std C.ne C.I hx hn1 hu).2
   exact ⟨hno, k, p, g, hu, hkn, hp, hg, hpb, hleaf, ho, hoT⟩
 
+/-- The old leaf's subscript is precisely V+W_k, while the prefix uses
+V+one. W_k is the canonical bump term, not an arbitrary new guard. -/
+theorem leaf_increment {M : Mat} {ρ : Valn} (S : SInv M)
+    (hC : Cons M ρ) (hG : Good3 M ρ) {n k : Nat}
+    (hn : n < M.length) (hu : upg M n = some k) (hl : children M n = []) :
+    ρ.o n = psi (add (vOpt ρ (par M 1 n)) (bumpW M ρ k)) z z ∧
+      Single (bumpW M ρ k) := by
+  obtain ⟨h1, h2⟩ := upg_e12 hu
+  have h20 : entry M 2 n = 0 := by have := S.z2 n; omega
+  have hv := v_upg_eq hC hn h1 h20 hu (vOpt_ot hG hn)
+    (fun j _ _ d hd => hG.ot_o d (mem_children hd).2)
+  obtain ⟨_, _, _, _, hk, hW⟩ := upg_target_val hC hG hn hu
+  refine ⟨?_, hW⟩
+  rw [o_nochild hC hn hl (hG.ot_v n hn), hv, hk]
+
 /-- The measured one-term replacement inside a bump child is structural:
 the changing child is last, all earlier o-values agree, and both sums have
 the same prefix. This does not assume any absorption comparison. -/
@@ -278,5 +293,59 @@ theorem child_sum_le_bumpW {M : Mat} {τ : Valn} (hG : Good3 M τ)
   rw [hbt] at hle
   exact le_trans (self_le_omega hGOT)
     (le_trans hle (self_le_omega (isOT_sumN _ hterms)))
+
+/-- Exact outer sums after isolating the final changing branch. The old
+sum retains the contribution of x when x is itself a child of i. -/
+theorem bump_sums_of_last_branch {M : Mat} {ρ τ : Valn} {x i j : Nat}
+    (hG : Good3 M ρ) (hGT : Good3 (M.take x) τ)
+    (hx : x + 1 = M.length) {L : List Nat}
+    (hch : children (M.take x) i = L ++ [j])
+    (hfix : ∀ d ∈ L, bumpTerm (M.take x) τ i d = bumpTerm M ρ i d) :
+    let Q := sumN (one :: L.map (bumpTerm M ρ i))
+    sumN (one :: (children (M.take x) i).map (bumpTerm (M.take x) τ i)) =
+        add Q (bumpTerm (M.take x) τ i j) ∧
+    sumN (one :: (children M i).map (bumpTerm M ρ i)) =
+        if x ∈ children M i then add (add Q (bumpTerm M ρ i j)) (bumpTerm M ρ i x)
+        else add Q (bumpTerm M ρ i j) := by
+  classical
+  dsimp only
+  have hOT : ∀ t ∈ one :: L.map (bumpTerm M ρ i), isOT t = true := by
+    intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · exact isOT_one
+    · obtain ⟨d, _, rfl⟩ := List.mem_map.mp ht
+      exact isOT_bumpTerm hG i d
+  have he : sumN (one :: (L ++ [j]).map (bumpTerm M ρ i)) =
+      add (sumN (one :: L.map (bumpTerm M ρ i))) (bumpTerm M ρ i j) := by
+    rw [List.map_append, List.map_singleton, ← List.cons_append,
+      sumN_snoc_add hOT (isOT_bumpTerm hG i j)]
+  constructor
+  · rw [hch, List.map_append, List.map_singleton, ← List.cons_append,
+      List.map_congr_left hfix, sumN_snoc_add hOT (isOT_bumpTerm hGT i j)]
+  · by_cases hxi : x ∈ children M i
+    · rw [if_pos hxi, children_split_x hx hxi,
+        ← children_take M x i, hch]
+      rw [List.map_append, List.map_singleton, ← List.cons_append,
+        sumN_snoc_add (by
+          intro t ht
+          rcases List.mem_cons.mp ht with rfl | ht
+          · exact isOT_one
+          · obtain ⟨d, _, rfl⟩ := List.mem_map.mp ht
+            exact isOT_bumpTerm hG i d) (isOT_bumpTerm hG i x), he]
+    · rw [if_neg hxi]
+      have heq : children M i = L ++ [j] := by
+        rw [children_take, children_filter_x hx hxi] at hch
+        exact hch
+      rw [heq, he]
+
+/-- The extra last-column contribution in the old outer sum is exactly
+one when it is a bump child, and zero otherwise. -/
+theorem bumpTerm_last {M : Mat} {ρ : Valn} {x i : Nat}
+    (hx : x + 1 = M.length) :
+    bumpTerm M ρ i x = if col M x = bump M i then one else z := by
+  unfold bumpTerm
+  rw [children_last hx]
+  simp only [List.map_nil, sumN, List.foldl_nil]
+  split <;> rfl
 
 end Ytosk.T2SrcLeaf
