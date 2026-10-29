@@ -28,6 +28,40 @@ theorem dom_zero_index_iff {A b : T} (hb : isOT (psi z b z) = true) :
       rw [OmegaComps.comps_nil_above_head hb hzu] at hg
       simp at hg
 
+/-- A small zero-index increment can be certified by an old head that survives
+addition, even when neither the anchor value nor the new bump term certifies it. -/
+theorem dom_zero_index_into_retained_head {s a c B b : T}
+    (hb : isOT (psi z b z) = true) (hkeep : ¬ psi s a z < head B) (hba : b ≤ a) :
+    ∀ u, Dom (comps u (psi z b z)) (comps u (add (psi s a c) B) ++ [z]) := by
+  apply (dom_zero_index_iff hb).mpr
+  refine ⟨a, List.mem_append_left _ ?_, hba⟩
+  cases B with
+  | z => exact comps_psi_mem_of (not_lt_z _) (Or.inl rfl)
+  | psi v d e =>
+    rw [add_psi_psi, if_neg (show ¬ psi s a z < psi v d z from hkeep)]
+    exact comps_psi_mem_of (not_lt_z _) (Or.inl rfl)
+
+/-- The retained old head can certify a zero-index tail that is absorbed.
+This does not require its components to be certified by the new right operand. -/
+theorem dom_add_zero_tail_of_retained_head {s a B b : T}
+    (hb : isOT (psi z b z) = true) (hkeep : ¬ psi s a z < head B) (hba : b ≤ a) :
+    ∀ u, Dom (comps u (psi s a (psi z b z)))
+      (comps u (add (psi s a (psi z b z)) B) ++ [z]) := by
+  have hh : ∀ u g, g ∈ comps u (psi s a z) →
+      g ∈ comps u (add (psi s a (psi z b z)) B) := by
+    intro u g hg
+    cases B with
+    | z => exact comps_summand_subH u (by simp [summands]) g hg
+    | psi v d e =>
+      rw [add_psi_psi, if_neg (show ¬ psi s a z < psi v d z from hkeep)]
+      exact comps_summand_subH u (by simp [summands]) g hg
+  intro u g hg
+  change g ∈ comps u (app (psi s a z) (psi z b z)) at hg
+  rw [comps_app] at hg
+  rcases List.mem_append.mp hg with hg | hg
+  · exact ⟨g, List.mem_append_left _ (hh u g hg), le_refl _⟩
+  · exact dom_zero_index_into_retained_head hb hkeep hba u g hg
+
 /-- It suffices to certify absorbed base summands and small upgrade increments.
 Large increments are kept, and increments equal to one have only zero components. -/
 theorem chain_absorbed {M : Mat} {ρ : Valn} (S : SInv M)
