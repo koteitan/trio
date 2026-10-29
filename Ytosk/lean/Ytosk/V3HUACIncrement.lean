@@ -9,6 +9,25 @@ import Ytosk.WfStepFacts3
 namespace Ytosk.HUACIncrement
 open T WfHUACDeep WfStepFacts WfStepFacts3
 
+/-- A zero-index increment has no components at positive levels. Its entire
+certificate is a single bound on its argument at level zero. -/
+theorem dom_zero_index_iff {A b : T} (hb : isOT (psi z b z) = true) :
+    (∀ u, Dom (comps u (psi z b z)) (comps u A ++ [z])) ↔
+      ∃ d ∈ comps z A ++ [z], b ≤ d := by
+  constructor
+  · intro h
+    exact h z b (comps_psi_mem_of (not_lt_z _) (Or.inl rfl))
+  · rintro ⟨d, hd, hbd⟩ u g hg
+    by_cases hu : u = z
+    · subst u
+      exact ⟨d, hd, le_trans (comps_tail_le hb (le_refl _) g hg) hbd⟩
+    · have hzu : z < u := by
+        cases u with
+        | z => exact False.elim (hu rfl)
+        | psi => exact z_lt_psi _ _ _
+      rw [OmegaComps.comps_nil_above_head hb hzu] at hg
+      simp at hg
+
 /-- It suffices to certify absorbed base summands and small upgrade increments.
 Large increments are kept, and increments equal to one have only zero components. -/
 theorem chain_absorbed {M : Mat} {ρ : Valn} (S : SInv M)
