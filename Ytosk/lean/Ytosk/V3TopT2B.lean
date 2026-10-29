@@ -34,6 +34,9 @@ import Ytosk.V3HUACShape
 import Ytosk.WfHUACDeep
 import Ytosk.WfHUAC2Canon
 import Ytosk.WfT2Exp
+import Ytosk.WfStepFacts3
+import Ytosk.WfT2Src
+import Ytosk.WfScoutSeedCl
 import Ytosk.V3QNDomS
 import Ytosk.V3T0SeedOutside
 import Ytosk.V3T0SeedSum
@@ -55,7 +58,7 @@ theorem hSibHard_of_col (h : HSibColV2) : HSibHardV2 := fun N σ rk hN hS hC hR 
 subscript (as the component bound `T2QNDomBad`), the two facts that the engines take from the old drop residual
 outside `Bad2`. 2026-10-29: the first field is the M-side `WfT2Abs.T2AbsNSrc`; the expansion side is proved
 (`WfT2Exp.t2BelowRV2_of_src`). -/
-def T2BadRes : Prop := WfT2Abs.T2AbsNSrc ∧ T2QNDomBad2
+def T2BadRes : Prop := WfT2Src.T2AbsNSrcW ∧ T2QNDomBad2
 
 /-- **`BadOutT2B` from the `t = 2` engines** (2026-10-25): the context `StepCtxB` holds on `Bad2` too, the engines run
 on it (`ExpT2V2`, `R2V2`, and `T2CBadOut` at the bad C shape), and the descent for `n ≥ 2` is `t2_drops_ge2`. -/
@@ -119,19 +122,24 @@ allows no counted middle copy (m = 0: the old frame does not rewrite, t0IVResC_h
 prefix of the old argument); for v(r) <= v(g) an upgrade r - 1 -> r is impossible (v_par0_lt_of_upg_prev), so
 counted_first0G gives the count. The component fields come from HDropU and HUAC alone
 (WfH10b.t0BadSeedsH7W_of, t0BadSeedsH6_of_W).
+2026-10-29: WfStepHUACStepFalse.not_HUACStep refutes HUACStep (standard 39-column matrix); HUAC now comes from
+the danger-free chain facts WfStepFacts3.StepFacts3. T2BadRes's first field is WfT2Src.T2AbsNSrcW (structural facts at
+a failed drop absorption proved, src_facts). hCl is WfScout.T2SeedClV2R (the isOT, level-V and summand-bound
+fields proved).
 The count is 14. -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUS2 : WfHUAC2Canon.HUACStep)
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hSF3 : WfStepFacts3.StepFacts3)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → FDCopyRoot.T2VAncUse M)
-    (hCl : T2SeedClV2B) (hPRE : T2SeedPResRCV2E) (hCan : HCanonV2)
+    (hClR : WfScout.T2SeedClV2R) (hPRE : T2SeedPResRCV2E) (hCan : HCanonV2)
     (hDomQ : T2SeedDomV2Q)
     (hVCp : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRACopyEsc M)
     (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : WellFounded Step' :=
-  have hUAC : HUAC := WfHUAC2Canon.hUAC_of_step hUS2
+  have hCl : T2SeedClV2B := WfScout.t2SeedClV2B_of_R hClR
+  have hUAC : HUAC := WfStepFacts3.hUAC_of_facts3 hSF3
   have hDW : HDropV2W := hDropV2W_of_U hDU
   have hDB : DropBadV2B := dropBadB_of_U hDU (rootBad_of_T2 hDU (rootBadV2T2_holds hDU))
   have hDomB : T2SeedDomV2B := t2SeedDomV2B_of_Q hDomQ
@@ -161,7 +169,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUS2 : WfH
   have hPR : T2SeedPResRCV2 := t2SeedPResRCV2_of_B hCl hPRB
   have hPRV : T2SeedPResRV2 := t2SeedPResR_of_canon hCan hPR
   have hP : T2SeedPResV2 := t2SeedPResV2_of hPRV
-  have hBX : T2BelowXResV2 := t2BelowXResV2_of (WfT2Exp.t2BelowRV2_of_src hP (t2SeedClV2_of_B hCl hP) (t2BumpMonoV2_of_ext hBE) hTB2.1) hP (t2SeedOTV2_of hP (t2SeedOTRestV2_of_B hCl hP))
+  have hBX : T2BelowXResV2 := t2BelowXResV2_of (WfT2Exp.t2BelowRV2_of_src hP (t2SeedClV2_of_B hCl hP) (t2BumpMonoV2_of_ext hBE) (WfT2Src.t2AbsNSrc_of_W hTB2.1)) hP (t2SeedOTV2_of hP (t2SeedOTRestV2_of_B hCl hP))
   have hVPrC : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2SeedPreShapeC M ρ := fun M ρ rk C hz h2 =>
     t2SeedPreShapeC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hP M ρ rk C hz h2)
