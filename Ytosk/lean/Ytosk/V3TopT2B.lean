@@ -122,12 +122,13 @@ allows no counted middle copy (m = 0: the old frame does not rewrite, t0IVResC_h
 prefix of the old argument); for v(r) <= v(g) an upgrade r - 1 -> r is impossible (v_par0_lt_of_upg_prev), so
 counted_first0G gives the count. The component fields come from HDropU and HUAC alone
 (WfH10b.t0BadSeedsH7W_of, t0BadSeedsH6_of_W).
-2026-10-29: WfStepHUACStepFalse.not_HUACStep refutes HUACStep (standard 39-column matrix); HUAC now comes from
-the danger-free chain facts WfStepFacts3.StepFacts3. T2BadRes's first field is WfT2Src.T2AbsNSrcW (structural facts at
+2026-10-29: WfStepHUACStepFalse.not_HUACStep refutes HUACStep (standard 39-column matrix); StepFacts3 is false too
+(StepFacts3False.not_StepFacts3, standard 40-column matrix). The HUAC slot is now HUACZero.HUACPositive: HUAC's own
+conclusion on the cases not yet proved (no return grandchild, positive head index). T2BadRes's first field is WfT2Src.T2AbsNSrcW (structural facts at
 a failed drop absorption proved, src_facts). hCl is WfScout.T2SeedClV2R (the isOT, level-V and summand-bound
 fields proved).
 The count is 14. -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hSF3 : WfStepFacts3.StepFacts3)
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hUP : HUACZero.HUACPositive)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -139,7 +140,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hSF3 : WfS
     (hAG : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2VRAK KAG M) : WellFounded Step' :=
   have hCl : T2SeedClV2B := WfScout.t2SeedClV2B_of_R hClR
-  have hUAC : HUAC := WfStepFacts3.hUAC_of_facts3 hSF3
+  have hUAC : HUAC := HUACCopy.hUAC_of (HUACZero.hUAC'_of hUP)
   have hDW : HDropV2W := hDropV2W_of_U hDU
   have hDB : DropBadV2B := dropBadB_of_U hDU (rootBad_of_T2 hDU (rootBadV2T2_holds hDU))
   have hDomB : T2SeedDomV2B := t2SeedDomV2B_of_Q hDomQ
