@@ -7,9 +7,9 @@
 | 残り | 中身 | 測定 | 消すのに要るもの |
 |---|---|---|---|
 | HDropU | 落とす補題の仮定（形 B）と条件のない ua | 全集合で例外 0 | 落とす補題の仮定を値の不変条件から出す（核） |
-| T2BadRes | Bad2 の t = 2: WfT2Abs.T2AbsNSrc（M と M.take x だけの主張: 落とし側の吸収が破れる列 i で L = 1・i は r の祖父・失敗する項 < ψ_{v(r)}(Ω_{v(r)+1})）・T2QNDomBad2。展開の側 ψ_{v(r)}(Ω_{v(r)+1}) ≤ bumpW_N(i) は WfT2Exp で証明済み（2026-10-29） | T2AbsNSrc は 1192 列で例外 0 | T2AbsNSrc: weak_of_drop_failure の CntX の場合 1・3 から L = 1 と祖父の位置を出し、UpgAbsX(x−1) で項を押さえる |
+| T2BadRes | Bad2 の t = 2: WfT2Src.T2AbsNSrcW（T2AbsNSrc に構造の事実 SrcFacts（src_facts で証明済み）を前提に足した形。M と M.take x だけの主張: 落とし側の吸収が破れる列 i で L = 1・i は r の祖父・失敗する項 < ψ_{v(r)}(Ω_{v(r)+1})）・T2QNDomBad2。展開の側 ψ_{v(r)}(Ω_{v(r)+1}) ≤ bumpW_N(i) は WfT2Exp で証明済み（2026-10-29） | T2AbsNSrc は 1192 列で例外 0 | T2AbsNSrc: weak_of_drop_failure の CntX の場合 1・3 から L = 1 と祖父の位置を出し、UpgAbsX(x−1) で項を押さえる |
 | ~~T0H10Core.T0BadSeedsH10Big~~ | **最上位から外した（2026-10-29）**。偽（WfH10Cex.h10_core_false、29 列の標準の Bad2 の行列） | — | 使う側 t0_S1N_cnt（V3T0BadNode）を作り直した: v(r) > v(g) の枝は数える写しが 0 個（m = 0）でもよい（weak_seed_hiG。m = 0 では古い枠が書き換えない t0IVResC_holds ので、写しだけの状態 B は古い引数の接頭辞）。v(r) ≤ v(g) の枝では r − 1 → r の上げは起きない（v_par0_lt_of_upg_prev: P₁(r) = P₀(r) = g なので v(g) < v(r)）ので counted_first0G で数える。T0BadSeedsH2〜H6 の数える欄は「r − 1 が r へ上げ r が頭打ち」でないときだけに弱め、構造から証明（t0BadSeedsH6_of_W）。残りの 2 欄は HDropU と HUAC だけから（WfH10b.t0BadSeedsH7W_of）。置き換える残りはない |
-| WfHUAC2Canon.HUACStep | 危険な吸収のもとで、lev W = 0 か、k の最後の bump 子 j に子 c があり、c の段の行 1 祖先 a で StepDom（m と a の間の鎖の列の上げの増分の成分が v(a) に押さえられる）。DeepWitness の構造の部分（canon_struct）と o(c) の生存は証明済み（2026-10-29）。旧 HUACShape は標準の 48 列の行列で偽 | 危険な枠 1265 万（401 万行列の族）と新しい族 196 万で例外 0。危険のない枠では StepDom も (i) も偽 | stepDom_of_noBump で (i) 鎖の上げ先に bump 子がない・(ii) v(a) の段 0 の成分 ≥ 1 に減る。危険の項と W = ω^{P(k)} の値の比較が要る |
+| WfStepFacts3.StepFacts3 | 危険の条件を含まない鎖の事実: lev(bumpW k) ≠ 0 のとき、子を持つ最後の bump 子 j・その最初の子 c・c の段の m の行 1 祖先 a で、(A) (a, m] の鎖の列が bump 子を持つ上げ先 t へ上げるなら bumpW k ≤ last v(t)、(II) bump 子のない上げ先へ上げる列があれば v(a) の段 0 の成分 ≥ 1。旧 HUACStep は標準の 39 列の行列で偽（WfStepHUACStepFalse.not_HUACStep、2026-10-29） | 新しい族 b2fam 2420 万枠・bfam 1230 万枠・deepfam・ufam・接ぎ木の各集合で例外 0 | (A)・(II) を値の比較で示す |
 | HFrameV2・HLeafV2 | 標準形の 1 列落としの枠・葉の欄 | 例外 0 | 欄ごとの値の議論 |
 | HBumpExt | 接頭辞で bump 項が増える | 例外 0 | M[n]（不変条件のない行列）について言うので落とす補題から出ない |
 | T2CBadOut | C の形で x − 1 が上げる（T2CBad）の出力 | cbadext の 10 個で例外 0 | 別の組み立て（q − 1 → q の上げで o_N(d) ≠ o_T(d)、C_frame の hval が偽） |
