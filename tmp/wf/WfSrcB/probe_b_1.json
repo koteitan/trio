@@ -1,0 +1,89 @@
+{
+  "seconds": 7.25,
+  "sets": {
+    "b2grow1": {
+      "input": 6517,
+      "counts": {
+        "input": 6517,
+        "B.frames": 31,
+        "B.r_is_prev": 31,
+        "Wchg": 39,
+        "Wchg.fail": 0,
+        "Wchg.fail.i_is_g": 0,
+        "c.lost.ok.prevdesc": 31,
+        "c.high.ok.outside": 4,
+        "c.nonlost_return.ok.prevdesc": 4
+      },
+      "examples": {}
+    },
+    "b2grow2": {
+      "input": 10081,
+      "counts": {
+        "input": 10081,
+        "B.frames": 27,
+        "B.r_is_prev": 27,
+        "Wchg": 63,
+        "Wchg.fail": 0,
+        "Wchg.fail.i_is_g": 0,
+        "c.lost.ok.prevdesc": 27,
+        "c.high.ok.outside": 18,
+        "c.nonlost_return.ok.prevdesc": 18
+      },
+      "examples": {}
+    },
+    "tmp/codex/t2src_a_wide_grafts_trio_codex.pkl": {
+      "input": 3545,
+      "counts": {
+        "input": 3545,
+        "B.frames": 12,
+        "B.r_is_prev": 12,
+        "Wchg": 49,
+        "Wchg.fail": 0,
+        "Wchg.fail.i_is_g": 0,
+        "c.high.ok.outside": 17,
+        "c.lost.ok.prevdesc": 12,
+        "c.nonlost_return.ok.prevdesc": 16,
+        "c.earlier_return.ok.prevdesc": 4
+      },
+      "examples": {}
+    },
+    "graftBb2St_x2": {
+      "input": 2673,
+      "counts": {
+        "input": 2673,
+        "B.frames": 2673,
+        "B.r_is_prev": 2673,
+        "Wchg": 5706,
+        "Wchg.fail": 3,
+        "Wchg.fail.i_is_g": 3,
+        "c.lost.ok.prevdesc": 2670,
+        "c.nonlost_return.ok.prevdesc": 1636,
+        "c.pending.ok.prevdesc": 7,
+        "pending.c_eq_p": 0,
+        "pending.i_eq_g": 0,
+        "pending.e1c_eq_e1m": 0,
+        "c.high.ok.outside": 1390,
+        "c.lost.fail.prevdesc": 3
+      },
+      "examples": {
+        "pending.prevdesc": {
+          "matrix_text": "(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,0,0)(7,1,1)(8,1,1)(9,1,0)(7,1,1)(8,1,1)(9,1,0)(7,1,0)(8,2,1)(9,2,1)(10,0,0)(11,1,1)(12,1,1)(13,1,0)(11,1,1)(12,1,1)(12,1,0)(13,2,1)(14,2,1)(15,1,0)(16,2,1)",
+          "n": 39,
+          "x": 38,
+          "i": 26,
+          "j": 27,
+          "c": 28,
+          "m": 25,
+          "p": 36,
+          "g": 35,
+          "k": 32,
+          "V": "1",
+          "W": "p(p_{p_{p(1+1)}(p_{p(1+1)+p(1)}(0))}(0))",
+          "WT": "p(p_{p_{p(1+1)}(0)}(0)+p_{p(1+1)}(p_{p_{1}(0)}(0)))",
+          "oc": "p(p_{p_{p(1+1)}(p_{p(1+1)+p(1)}(0))}(0))",
+          "ocT": "p(p_{p_{p(1+1)}(0)}(0)+p_{p(1+1)}(p_{p_{1}(0)}(0)))"
+        }
+      }
+    }
+  }
+}
