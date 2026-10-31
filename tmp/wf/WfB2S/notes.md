@@ -1,4 +1,17 @@
-# WfB2S notes (2026-10-31): B2Step narrowed to the absorption case
+# WfB2S notes (2026-10-31): B2Step is FALSE; replaced by B2StepAb (absorption case, last bump child with children)
+
+## PRIORITY: B2Step is false (Lean, `Ytosk/lean/Ytosk/WfB2SFalse.lean`)
+- 28 columns, standard (Std.exp trace from SRO, 116 steps, kernel checked), Bad2:
+  (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,2,0)(3,2,0)(4,3,1)(5,3,1)(6,3,0)(4,3,1)(5,3,1)(6,2,0)(5,3,1)(5,3,0)(6,4,1)(7,4,1)(8,3,0)(8,2,0)
+  n = 26 upgrades to k = 19 = (4,3,1), m = 15. children 19 = [20, 22, 23]; 20 and 22 are bump children; the LAST bump
+  child 22 is a leaf. bumpW(19) = psi_{w+1}(1), lev != 0. So neither disjunct of B2Step holds.
+- `not_B2NoUB : ¬ WfH7W2.B2NoUB` (unconditional), `not_B2StepCore` (Inv3V2 replaced by Cons/Rk/Good3, unconditional),
+  `not_B2Step_of (hInvV2_all's 9 hypotheses) : ¬ WfH7W2.B2Step` (via cons_unique: every valuation has the same bumpW).
+- Found as the prefix (take 28) of a graft3 matrix with a NOCANON frame at n = 26 (nocanon.py).
+- HUACB2 holds there: the last bump child WITH children (20) has first child 21 = (6,2,0) at the level of m (a = m).
+- Fix: `WfB2S.B2StepAb` takes j = last bump child with children (later bump children may be leaves; their bump term
+  is 1, so j's term survives in P: `bp_dom_of_lastK`, `mem_sumN_last_le1`). fr5.py (this canonical choice): the
+  NOCANON frames disappear, all other counts unchanged.
 
 ## Result (Lean, green; full build 1142 jobs; axioms propext, Classical.choice, Quot.sound)
 - `Ytosk/lean/Ytosk/WfB2S.lean`

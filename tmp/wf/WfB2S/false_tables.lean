@@ -1,0 +1,39 @@
+def M : Mat := [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0), (1, 1, 1), (2, 1, 0), (3, 2, 1), (4, 2, 1), (5, 2, 0), (3, 2, 1), (4, 2, 1), (5, 2, 0), (3, 2, 0), (4, 3, 1), (5, 3, 1), (6, 3, 0), (4, 3, 1), (5, 3, 1), (6, 2, 0), (5, 3, 1), (5, 3, 0), (6, 4, 1), (7, 4, 1), (8, 3, 0), (8, 2, 0)]
+
+def trace : List Nat := [3, 1, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 1, 0, 1, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 0, 1, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 0, 1, 1, 1, 1, 1, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 1, 2, 2, 2, 1, 0, 1, 1, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 1, 1, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 0, 1, 1, 1, 1, 1, 1, 1]
+
+private def t0 : T := psi z z z
+private def t1 : T := psi z t0 t0
+private def t2 : T := psi t1 t0 z
+private def t3 : T := psi t1 z z
+private def t4 : T := psi t2 t3 z
+private def t5 : T := psi t2 t4 z
+private def t6 : T := psi t5 z z
+private def t7 : T := psi z t6 z
+private def t8 : T := psi z t0 z
+private def t9 : T := psi t8 z z
+private def t10 : T := psi t9 z z
+private def t11 : T := psi t10 z z
+private def t12 : T := psi t8 t10 z
+private def t13 : T := psi t8 t9 z
+private def t14 : T := psi t8 t6 z
+private def t15 : T := psi t3 z z
+private def t16 : T := psi t15 z z
+private def t17 : T := psi z t0 t8
+private def t18 : T := psi t17 t15 z
+private def t19 : T := psi t17 t3 z
+private def t20 : T := psi t1 t6 z
+private def t21 : T := psi t2 z z
+private def t22 : T := psi t21 z z
+private def t23 : T := psi t17 t21 z
+private def t24 : T := psi t2 t6 z
+private def t25 : T := psi t17 z z
+private def t26 : T := psi t1 t0 t8
+private def t27 : T := psi t2 z t3
+private def t28 : T := psi t26 t27 z
+
+def oT : List T := [t7, t11, t12, t10, t10, t13, t9, t14, t14, t16, t18, t15, t15, t19, t3, t20, t22, t23, t21, t24, t19, t3, t25, t24, t6, t28, t21, t3]
+def vT : List T := [z, t10, t8, t9, t9, t8, t8, t8, t8, t15, t17, t3, t3, t17, t1, t1, t21, t17, t2, t2, t17, t1, t17, t2, t5, t26, t2, t1]
+def rkO : List Nat := [16, 9, 8, 7, 6, 5, 4, 15, 14, 10, 9, 8, 7, 6, 5, 13, 10, 9, 8, 12, 6, 5, 6, 11, 10, 9, 8, 5]
+def rkV : List Nat := [1, 8, 2, 6, 5, 2, 3, 2, 3, 9, 4, 7, 6, 4, 4, 4, 9, 5, 7, 6, 5, 4, 5, 7, 9, 8, 7, 4]
+def Wt : T := t2

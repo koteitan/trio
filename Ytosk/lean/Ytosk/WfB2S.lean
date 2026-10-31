@@ -7,6 +7,9 @@ v(n) = v(k) = v(m) + W（標準形の和）。
   HUACB2 はこの場合 Bad2 も StepDom もなしで成り立つ（`huacB2_noabs`）。
 - 吸収がある（v(m) のある加数 r < W）場合だけ B2Step が要る: 残り `B2StepAb`。
   `huacB2_of_ab : B2StepAb → WfH7W.HUACB2`、`b2StepAb_of_step : B2Step → B2StepAb`（弱めであること）。
+- B2Step は偽（`WfB2SFalse`、28 列の標準形の Bad2: k の最後の bump 子が葉）。B2StepAb では j を
+  「子を持つ最後の bump 子」にとる（後ろの bump 子は葉でよい。葉の bump 項は 1 で、j の項は和に残る:
+  `bp_dom_of_lastK`）。
 
 測定（tmp/wf/WfB2S/notes.md）: P₀ n が bump 子の枠（Bad2 を仮定しない、すべての位置 n）で、吸収があるなら
 鎖の段 a より上に上げる列はない（StepDom は空）。吸収がない枠では m が上げ（a = P₁ m）、StepDom は偽になりうる
@@ -70,19 +73,132 @@ theorem huacB2_noabs {M : Mat} {ρ : Valn} (S : SInv M) (hC : Cons M ρ) (hG : G
   rw [hbW] at hno
   exact dom_add_noabs _ hno
 
+/-- Adding `1` keeps every component. -/
+theorem comps_add_one_sub {u g : T} : ∀ X : T, g ∈ comps u X → g ∈ comps u (add X one)
+  | z, h => by simp [comps] at h
+  | psi a b c, h => by
+    have hlt : ¬ psi a b z < one := by
+      intro h'; have := lt_one_iff.mp h'; cases this
+    have hadd : add (psi a b c) one = psi a b (add c one) := by
+      show add (psi a b c) (psi z z z) = _
+      simp only [add, if_neg (show ¬ lt (psi a b z) (psi z z z) = true from hlt)]
+      rfl
+    rw [hadd]
+    simp only [comps, List.mem_append] at h ⊢
+    rcases h with h | h
+    · exact Or.inl h
+    · exact Or.inr (comps_add_one_sub c h)
+
+/-- The last input before trailing `0`s and `1`s keeps its components in `sumN`. -/
+theorem mem_sumN_last_le1 {l r : List T} {t u g : T}
+    (hl : ∀ q ∈ l, isOT q = true) (ht : isOT t = true)
+    (hr : ∀ q ∈ r, q = z ∨ q = one) (hg : g ∈ comps u t) :
+    g ∈ comps u (sumN (l ++ t :: r)) := by
+  have key : ∀ r : List T, (∀ q ∈ r, q = z ∨ q = one) → ∀ X, isOT X = true → g ∈ comps u X →
+      g ∈ comps u (r.foldl (fun a b => sf (add a b)) X) := by
+    intro r
+    induction r with
+    | nil => intro _ X _ h; exact h
+    | cons q r ih =>
+      intro hq X hX h
+      rw [List.foldl_cons]
+      rcases hq q (by simp) with rfl | rfl
+      · rw [add_z_right, sf_ot hX]
+        exact ih (fun q hq' => hq q (by simp [hq'])) X hX h
+      · have hot := isOT_add hX isOT_one
+        rw [sf_ot hot]
+        exact ih (fun q hq' => hq q (by simp [hq'])) _ hot (comps_add_one_sub X h)
+  have he : l ++ t :: r = (l ++ [t]) ++ r := by simp
+  rw [he]
+  have hfold : sumN ((l ++ [t]) ++ r) = r.foldl (fun a b => sf (add a b)) (sumN (l ++ [t])) := by
+    simp only [sumN, List.foldl_append]
+  rw [hfold]
+  have hs : ∀ q ∈ l ++ [t], isOT q = true := by
+    intro q hq
+    rcases List.mem_append.mp hq with hq | hq
+    · exact hl q hq
+    · simp only [List.mem_singleton] at hq; subst q; exact ht
+  exact key r hr _ (isOT_sumN _ hs) (SumComps.mem_sumN_snoc hl ht hg)
+
+/-- The bump term of a leaf bump child is `1`. -/
+theorem bumpTerm_leaf {M : Mat} {ρ : Valn} {k d : Nat} (hb : col M d = bump M k) (hd : children M d = []) :
+    bumpTerm M ρ k d = one := by
+  unfold bumpTerm
+  rw [if_pos hb, hd]
+  rfl
+
+/-- **The last bump child with children keeps its bump term in `P`** (later bump children are leaves). -/
+theorem bp_dom_of_lastK {M : Mat} {ρ : Valn} (hG : Good3 M ρ) {k j : Nat} {L R : List Nat}
+    (hL : children M k = L ++ j :: R) (hR : ∀ d ∈ R, col M d = bump M k → children M d = []) :
+    ∀ u, Dom (comps u (bumpTerm M ρ k j))
+      (comps u (sumN (one :: (children M k).map (bumpTerm M ρ k))) ++ [z]) := by
+  intro u a ha
+  refine ⟨a, List.mem_append_left _ ?_, le_refl _⟩
+  rw [hL, List.map_append, List.map_cons]
+  change a ∈ comps u (sumN ((one :: L.map (bumpTerm M ρ k)) ++
+    bumpTerm M ρ k j :: R.map (bumpTerm M ρ k)))
+  apply mem_sumN_last_le1 ?_ (isOT_bumpTerm hG k j) ?_ ha
+  · intro q hq
+    rcases List.mem_cons.mp hq with rfl | hq
+    · exact isOT_one
+    · obtain ⟨d, _, rfl⟩ := List.mem_map.mp hq
+      exact isOT_bumpTerm hG k d
+  · intro q hq
+    obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hq
+    by_cases hb : col M d = bump M k
+    · exact Or.inr (bumpTerm_leaf hb (hR d hd hb))
+    · left; unfold bumpTerm; rw [if_neg hb]
+
+/-- `WfHUACDeep.dom_of_deep` with `j` the last bump child that has children. -/
+theorem dom_of_deepK {M : Mat} {ρ : Valn} (S : SInv M)
+    (hC : Cons M ρ) (hG : Good3 M ρ) {n k m : Nat}
+    (hn : n < M.length) (hu : upg M n = some k) (hkn : k < n)
+    (hkm : par M 0 k = some m) {L R : List Nat} {j c a : Nat}
+    (hL : children M k = L ++ j :: R) (hjb : col M j = bump M k)
+    (hR : ∀ d ∈ R, col M d = bump M k → children M d = [])
+    (hc : c ∈ children M j) (hoG : ρ.o c ∈ summands (sumN ((children M j).map ρ.o)))
+    (hcn : c < n) (hA : WfHUACDeep.Up1 M a m) (h1 : entry M 1 c = entry M 1 a) (hc2 : entry M 2 c = 0)
+    (hst : WfHUACDeep.StepDom M ρ a m) :
+    ∀ u, Dom (comps u (vOpt ρ (par M 1 n))) (comps u (ρ.v n) ++ [z]) := by
+  have hj : j ∈ children M k := by rw [hL]; simp
+  have hcN := (mem_children hc).2
+  have hmN : m < M.length := by
+    have := par_lt M 0 k m hkm
+    have := upg_lt hn hu
+    omega
+  have hm2 : entry M 2 m = 0 := by
+    obtain ⟨m', hm', hk0⟩ := upg_target_par0 S.r0p hu
+    rw [hkm] at hk0; cases hk0
+    obtain ⟨m'', hm'', _, hcol, _⟩ := upg_spec hu
+    rw [hm'] at hm''; cases hm''
+    have := e2_of_col hcol; have := S.z2 k; omega
+  have ha2 := WfHUACDeep.up1_e2 S hA hm2
+  have haN : a < M.length := by have := WfHUACDeep.up1_le hA; omega
+  obtain ⟨hp, hup⟩ := WfHUACDeep.deep_return S hn hu hkn hkm hj hjb hc hcn hA h1 hc2 ha2
+  have hv := WfHUACDeep.value_eq_of_same_rhs hC hcN haN h1 hc2 ha2 hp hup
+  have hs := WfHUACDeep.dom_up1 S hC hG hA hmN hm2 (fun y h1 h2 hne t ht => hst y h1 h2 hne t ht)
+  exact WfHUACDeep.dom_of_grandchild_dom S hC hG hn hu hkm hj hjb (bp_dom_of_lastK hG hL hR) hc hoG
+    (by rw [hv]; exact hs)
+
 /-- **Residual (`B2Step` only with absorption)**: the frame of `WfH7W2.B2Step` with the extra premise that some
-summand of `v(m)` (`m = P₀ k = P₁ n`) is below `bumpW(k)`. Measured without `Bad2` at every position `n` whose row-0
-parent is a bump child: with absorption the row-1 chain of `m` has no upgrade above the level of `c`. -/
+summand of `v(m)` (`m = P₀ k = P₁ n`) is below `bumpW(k)`, and with `j` the last bump child of `k` that has children
+(the later bump children of `k` may be leaves; `B2Step` demanded the last bump child, which is false:
+`WfB2SFalse`). Measured without `Bad2` at every position `n` whose row-0 parent is a bump child: with absorption
+the row-1 chain of `m` has no upgrade above the level of `c`. -/
 def B2StepAb : Prop :=
   ∀ M ρ rk, Std M → M ≠ SRO → Bad2 M → Inv3V2 M ρ rk → ∀ n, n + 2 = M.length → ∀ k m, upg M n = some k →
     k < n → par M 0 k = some m → (∃ r ∈ summands (ρ.v m), r < bumpW M ρ k) →
     lev (bumpW M ρ k) = z ∨
-    ∃ L j R c C, children M k = L ++ j :: R ∧ col M j = bump M k ∧ (∀ d ∈ R, col M d ≠ bump M k) ∧
+    ∃ L j R c C, children M k = L ++ j :: R ∧ col M j = bump M k ∧
+      (∀ d ∈ R, col M d = bump M k → children M d = []) ∧
       children M j = c :: C ∧
       ∀ a, WfHUACDeep.Up1 M a m → entry M 1 a = entry M 1 c → WfHUACDeep.StepDom M ρ a m
 
-theorem b2StepAb_of_step (h : WfH7W2.B2Step) : B2StepAb :=
-  fun M ρ rk hM hS hB I n hn k m hu hk hkm _ => h M ρ rk hM hS hB I n hn k m hu hk hkm
+theorem b2StepAb_of_step (h : WfH7W2.B2Step) : B2StepAb := by
+  intro M ρ rk hM hS hB I n hn k m hu hk hkm _
+  rcases h M ρ rk hM hS hB I n hn k m hu hk hkm with h0 | ⟨L, j, R, c, C, hL, hjb, hR, hCc, hst⟩
+  · exact Or.inl h0
+  · exact Or.inr ⟨L, j, R, c, C, hL, hjb, fun d hd hb => absurd hb (hR d hd), hCc, hst⟩
 
 /-- **`HUACB2` from `B2StepAb`**: without absorption by `huacB2_noabs`, with absorption by the deep return
 (`WfH7W2.huacB2_of_step` restricted). -/
@@ -96,13 +212,14 @@ theorem huacB2_of_ab (h : B2StepAb) : WfH7W.HUACB2 := by
     · exact HUACZero.dom_of_zero S I.cons I.good hnN hu h0 u
     · have hj : j ∈ children M k := by rw [hL]; simp
       obtain ⟨hcn, hc2, a, ha, hae⟩ := WfHUAC2Canon.canon_struct hM hS hu hk hkm hL hjb hCc
-      exact WfHUACDeep.dom_of_deep S I.cons I.good hnN hu hk hkm
-        ⟨L, j, R, c, a, hL, hjb, hR, by rw [hCc]; simp,
-          WfHUAC2Canon.first_kid_survives hM hS I.cons I.good hj hjb hCc, hcn, ha, hae.symm, hc2,
-          hst a ha hae⟩ u
+      exact dom_of_deepK S I.cons I.good hnN hu hk hkm hL hjb hR (by rw [hCc]; simp)
+        (WfHUAC2Canon.first_kid_survives hM hS I.cons I.good hj hjb hCc) hcn ha hae.symm hc2
+        (hst a ha hae) u
   · refine huacB2_noabs S I.cons I.good hnN hu ?_ u
     rw [hmn]
     intro r hr hlt
     exact hab ⟨r, hr, hlt⟩
+
+#print axioms huacB2_of_ab
 
 end Ytosk.WfB2S
