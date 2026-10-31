@@ -25,3 +25,10 @@
 {"set": "graftAn.pkl", "n": 13876, "sec": 6, "cnt": {"cases": 3307, "strong": 2370, "weak": 937}, "ex": {}}
 {"set": "d3s.pkl", "n": 15000, "sec": 12, "cnt": {"cases": 4112, "strong": 4112}, "ex": {}}
 {"set": "b2grow2.pkl", "n": 10081, "sec": 18, "cnt": {"cases": 10081, "weak": 10081}, "ex": {}}
+{"set": "graftBb2St.pkl", "n": 30669, "sec": 20, "cnt": {"cases": 30669, "strong": 30669}, "ex": {}}
+{"set": "graftBb2S.pkl", "n": 31137, "sec": 19, "cnt": {"cases": 31137, "strong": 30669, "weak": 468}, "ex": {}}
+{"set": "std_a.pkl", "n": 79201, "sec": 7, "cnt": {"cases": 6017, "strong": 6009, "weak": 8}, "ex": {}}
+{"set": "std_an2.pkl", "n": 79134, "sec": 6, "cnt": {"cases": 5950, "strong": 5942, "weak": 8}, "ex": {}}
+{"set": "graftBb2G.pkl", "n": 49091, "sec": 39, "cnt": {"cases": 49091, "strong": 48803, "weak": 288}, "ex": {}}
+{"set": "graftBn2.pkl", "n": 75698, "sec": 50, "cnt": {}, "ex": {}}
+{"set": "graftBb2.pkl", "n": 80228, "sec": 74, "cnt": {"cases": 80228, "strong": 79472, "weak": 756}, "ex": {}}
