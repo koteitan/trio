@@ -4,6 +4,13 @@
 
 ## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個）
 
+**11 回目（2026-11-01）**: すべて緑（1235 jobs）。
+- q = r（WfQrH1〜8）: 連鎖の仮定 hLocE を名前つきの欄に置き換えた（qr_chainH3）。hX・o(x) = Ω_{v(r)+1} などを証明。DQ の値の標準形 C_strip を DQC として形式化（DQC.ot）。古い OmSide は 1 層で満たせない（not_omSide_single）ので OmSide1 に直した。残りは、o の枠の欄（TrigN・Last・葉の判定）を M の側の事実から出すこと（試した M の側の形はすべて偽）、ω の層の 1 層の成分、v_{M[1]}(r) ≤ v(r)、Inv3V2A の展開の段 ExpStepQ。
+- q ≠ r（WfQnH1〜8）: 構造の残り hu0 を証明。閉包の外で OLocal・VLocal を TPLoSX から出した（olocal_t1B、vlocal_t1_atXB）。悪い葉で (E3) を証明（leaf_E3）。入れ子の悪い呼び出しは測ったどこにもない。閉包の中の ◁ の伝播エンジン deps_lhd_otU を用意。残りはその構造の仮定と最終の組み立て。
+- 種（WfSdH1〜4）: 古い fsD の形の q = r 連鎖を、弱い種 SeedC2 で動かした（qr_final4SGW）。BumpAbsCB2 は全データで例外 0。残りは ExpStepT1 の作り手の写しと、PV2 から SeedC2 を出すこと。
+- t = 2 の Bad2（WfT2X1〜8）: D のエンジンを悪い列つきに（deps_lhd_otX）、T2BelowXS を FrameShapeX に、7 つの読み手のうち必要な X 版の補題を用意。偽の AbsWN 欄を外した T2BelowRV2X と、旧形からの橋を証明。残りは読み手の骨組みの写しと、構造の残り NotBumpKidX。
+- 全射（WfCofH1〜3）: HRootD・HNotSucc を証明。HShiftD を Desc3 + Good3 に帰着。HEngD・HPathRD をエンジンの下界 HEngPath に帰着（0 失敗）。残りは HCID と数え上げ HCountS（t = 0・2）。
+
 **10 回目（2026-11-01）**: 新しい形を Lean につないだ（すべて緑、1204 jobs）。
 - q = r（WfQrL1〜18）: DQ の形の連鎖 qr_chainE。M[n] の真の値づけは、自分の D の値での glue に等しい（true_glue_eq）。D のすべての呼び出しで σ = DQ(古い値)（qr_engineDQ2）。残りは仮定 hLocE（o の枠の 5 形・ω の層の 3 形を M の側の欄から出すこと）と、DQ の値の標準形（条件 C_strip、測って例外 0）、Inv3V2A の展開の段。
 - q ≠ r（WfBad・WfQnL1〜8）: 共通の定義 BadCall / BadSet。D の v の呼び出しは VLocal か悪い（vlocal_t1_atX）。閉包の外で真の値づけ = glue（E1_M）。悪い呼び出しの右辺 = sf(v(P₁ i) + A[ζ]) < A。根が下がる（root_N_E3）。残りは閉包の中の (E3)、入れ子の悪い呼び出し、OLocal を TPLoSX から出すこと、構造の残り hu0。
