@@ -63,3 +63,19 @@ N (35 columns, 487-step trace, ua35.txt), not Bad2:
 - remeasure.py bug fixed: importing residual_extension_t2 replaces residual_extension_local.run (A.run = run);
   the 'local' probe now keeps the original as run_local. rm_graftM36.jsonl's 'local' counts are the t2 run;
   use rm2_graftM36.jsonl.
+
+## PRIORITY 0: the invariant field AbsDN is false; HFrameV2 is false; Inv3V2 fails on a standard matrix
+(Lean, Ytosk/lean/Ytosk/WfReM4.lean, green; axioms propext / Classical.choice / Quot.sound)
+N (38 columns, 150-step trace, adn38.txt), an expansion prefix in graftM36x:
+(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)
+(7,2,1)(8,2,0)(6,2,1)(7,2,1)(8,1,0)(9,2,1)(10,2,1)(11,2,0)(9,2,1)(10,2,1)(11,1,0)(12,0,0)(13,1,1)(14,1,1)(10,2,0)
+(11,3,1)(12,3,1)(13,1,0)(14,0,0)(15,1,1)(16,1,1)(17,1,0)
+- i = 31 = (11,3,1): W = bumpW(31) = psi_{psi(1)}(psi_{psi(1)}(psi_{psi(1)}(psi(Omega_{Omega_1})))) (OHole, cof omega,
+  not a node). q0 = psi_{psi(1)}(psi_{psi(1)}(psi_{psi(1)}(psi(Omega_{psi(2)})))) in summands v(30) = v(P1 31),
+  q0 < W, not q0 < W[1].
+- not_absDN, no_inv3V2 (no valuation has Inv3V2), not_HFrameV2 (premises Std/Cons/Rk/Good3 proved),
+  not_hInvV2_all_hyps (hInvV2_all's 9 hypotheses inconsistent).
+- graftM36x: 2 AbsDN failures (38 and 72 columns, the second is a copy). Earlier sets: 0.
+- 38 = the prefix (14,0,0)(15,1,1)(16,1,1)(17,1,0) after the 34-column frame of the 36-column M: a t = 0 step.
+
+## graftM36x (expand_fam.py): M[2], M[3] of 1594 graftM36 matrices, prefixes past the bad root: 18227.
