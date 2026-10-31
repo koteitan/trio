@@ -1,0 +1,640 @@
+/-
+**WfSdH3: the `t = 1`, `q = r` assembly with the seed condition `SeedC2` (2026-11-01).**
+
+Copies of `qr_final` (V3QRFinal), `qr_final2` (V3QRFinal2), and the `PV2` copies `qr_final3G2`, `qr_final4_seedG2`,
+`qr_final4SG2` (WfDrL4) with
+- `hS : ∀ a′ ≤ μ, SeedOK a′ b_r μ seed` replaced by `hSr : SeedOK μ b_r μ seed` and `hok0 : HokQ μ b_r μ seed`
+  (`qr_finalW`, `qr_final2W`); the index-0 condition at the `D` values, the root and the hole data from
+  `qr_only_mu_col` / `qr_diag_col`;
+- the old seed condition (`◁` or `Ω_{w′}` with `SmallSelf w′`, false on graftD) replaced by `WfDrE2.SeedC2`
+  (`qr_final3GW`, `qr_final4_seedGW`, `qr_final4SGW`): its strong branch gives the old `hS`, its weak branch
+  `SeedOK μ` and `HokQ` by `hok_of_seedC2`;
+- the carried property over `HoleDataW` (`ExpStepT1W`).
+-/
+import Ytosk.WfSdH2
+import Ytosk.WfDrL4
+
+namespace Ytosk
+
+open T
+
+/-- **`qr_final` with `SeedOK μ` and `HokQ`** in place of `SeedOK` at every diagonal point, and the chain over
+`HoleDataW` / `ExpStepT1W`. -/
+theorem qr_finalW {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
+    (hTP : TP1WC M ρ) (hTPL : TPLoWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r)) (hAU' : AbsUWL M ρ) (hAD' : AbsDWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r))
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    -- `A = o(r) = ψ_μ(b + Ω_{μ+1})`
+    {b : T} (hro : ρ.o r = psi (ρ.v r) (app b (psi (succ (ρ.v r)) z z)) z)
+    (hb : AllGeT (psi (succ (ρ.v r)) z z) b)
+    (hpre : preState M ρ r ((children M r).filter (fun d => decide (d < r + L))) = b)
+    -- the frames with the child `ψ_s(b_r)`
+    (hYB : ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R → Counted M i c →
+      DepX M (r + L) true c → ∀ s, ρ.o c = psi s (app b (psi (succ (ρ.v r)) z z)) z →
+      lt (preState M ρ i L') (app b (psi (succ (ρ.v r)) z z)) = true →
+      lt (psi (ρ.v i) z z) (psi s (app b (psi (succ (ρ.v r)) z z)) z) = true →
+      ∀ m', lt (preState M ρ i L')
+        (app b (gamS (ρ.v r) (app b (psi (succ (ρ.v r)) z z)) ((drop1 M (r + L) rkM).o r)
+          (m' + dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) c))) = true)
+    -- the seed `o_{M[1]}(r)`
+    (hSr : SeedOK (ρ.v r) (app b (psi (succ (ρ.v r)) z z)) (ρ.v r) ((drop1 M (r + L) rkM).o r))
+    (hok0 : HokQ (ρ.v r) (app b (psi (succ (ρ.v r)) z z)) (ρ.v r) ((drop1 M (r + L) rkM).o r))
+    (hsp0 : spArg (ρ.v r) b ((drop1 M (r + L) rkM).o r) = app b ((drop1 M (r + L) rkM).o r))
+    (hADs0 : ∀ i, i < r + L →
+      DepX M (r + L) false i → entry M 2 i ≠ 0 →
+      dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) i = 0 →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+        q < fsD (bumpW M ρ i) ((drop1 M (r + L) rkM).o r))
+    (hAUs0 : ∀ i k, i < r + L → DepX M (r + L) false i → upg M i = some k →
+      dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) i = 0 →
+      OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) →
+        q < fsD (last (ρ.v k)) ((drop1 M (r + L) rkM).o r))
+    (hLs : ∀ c, c < r + L → DepX M (r + L) true c →
+      dOf M (r + L) (loQ M ρ (ρ.v r) b) (lbQ M ρ (ρ.v r) b) c = 0 →
+      ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ (ρ.v r)) z z) →
+      (split y (psi (succ s) z z)).2 = z →
+      (split (fsD y ((drop1 M (r + L) rkM).o r)) (psi (succ s) z z)).2 = z)
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM))
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1W Pn M r L d0 ρ) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  have hx : r + L + 1 = M.length := hlen
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hrx : r < r + L := by omega
+  have hrM : r < M.length := by omega
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  set μ := ρ.v r with hμ
+  set seed := (drop1 M (r + L) rkM).o r with hseed
+  have hox : ρ.o (r + L) = psi (succ μ) z z :=
+    o_last_t1 hlen hC hG h1 (by have := par1_entry_lt h1; omega) hx2
+  have hdep := qr_dep hx hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2 hq
+  have hOS := hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq
+  have hVS : ∀ i, i < r + L → DepX M (r + L) false i → VShape M (r + L) i :=
+    fun i hi hv => dv_shape hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hi hv
+  have hS3 := hS3_t1 h1 hA (by omega) hlen hR0 hZ2 hSD hZ1
+  have hBk : ∀ i j k, i < r + L → DepX M (r + L) false i → j ∈ children M i → col M j = bump M i →
+      k ∈ children M j → DepX M (r + L) true k → k < r + L := by
+    intro i j k hi hv hj hjb hk hdk
+    have hir : i ≤ r := by
+      by_contra h
+      exact hdep.2.2 false i (by omega) hi hv
+    have := hS3 i j k hir hj hjb hk hdk
+    omega
+  have hxv : ¬ DepX M (r + L) false (r + L) := by
+    intro h
+    cases h with
+    | vpar _ hp hdm =>
+      rw [h1] at hp; cases hp
+      exact hdep.2.1 hdm
+    | vupg _ _ hu _ => have := upg_succ_lt hu; omega
+    | vbump _ h2 _ _ _ _ => exact h2 hx2
+  -- the base `M[1] = M.take x`
+  have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
+  have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
+  have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
+  have hseedS : ∃ a X, seed = psi a X z := by
+    obtain ⟨σ, hσ⟩ := o_psi_sub hC1 hrT
+    exact ⟨_, σ, hσ⟩
+  -- the lifts
+  have hxr : r + L ∈ children M r := mem_children_iff.mpr ⟨by omega, hq⟩
+  obtain ⟨hxcb, hxcu⟩ := qr_x_counted hx h1 hx2 hq
+  have hdr : dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) r = 0 := by
+    rw [dOf_ochild hx hxv hOS hVS hxr hxcb hxcu DepX.leaf, dOf_x hx hxv hOS hVS]
+    unfold loQ
+    rw [if_neg]
+    rintro ⟨h, _⟩
+    rw [hox] at h
+    exact absurd (T.psi.inj h).2.1.symm (fun he => absurd (app_eq_z he).2 (by simp))
+  -- the root
+  obtain ⟨Rt, hRA, hRt0, hRlast⟩ := root_t1 hR01 hR12 h00 (r + L)
+  have hRd := dep_anc_x hUAT hZ2 hR12 hBE hlen hx2 hRA
+  have hRx : Rt < r + L := by
+    rcases Nat.lt_or_ge Rt (r + L) with h | h
+    · exact h
+    · exfalso
+      have : Rt = r + L := by have := hRA.le; omega
+      rw [this] at hRt0
+      have h2 := congrArg (fun p : Nat × Nat × Nat => p.2.1) hRt0
+      have he : entry M 1 (r + L) = 0 := by
+        unfold entry; unfold col at h2; simpa using h2
+      have := par1_entry_lt h1; omega
+  have hrot : isOT (psi μ (app b (psi (succ μ) z z)) z) = true := by rw [← hro]; exact hG.ot_o r hrM
+  have hseedz : seed ≠ z := by obtain ⟨a, X, he⟩ := hseedS; rw [he]; simp
+  have hgS : ∀ k, ∃ a X, gamS μ (app b (psi (succ μ) z z)) seed k = psi a X z := by
+    intro k; cases k with
+    | zero => exact hseedS
+    | succ k => exact ⟨μ, _, rfl⟩
+  -- the holes of the `D` values give standard, smaller, nonzero values
+  have hHok : ∀ bb i, DepX M (r + L) bb i → i < r + L → ∀ m,
+      isOT (fsD (valB ρ bb i) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ
+        (app b (psi (succ μ) z z)) seed m i)) = true ∧
+      fsD (valB ρ bb i) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ
+        (app b (psi (succ μ) z z)) seed m i) < valB ρ bb i := by
+    intro bb i hd hi m
+    obtain ⟨hH, _⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS bb i hd hi
+    have hot : isOT (valB ρ bb i) = true := by
+      cases bb
+      · exact hG.ot_v i (by omega)
+      · exact hG.ot_o i (by omega)
+    exact hok0 _ (m + dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) i) hot hH
+      (fun h0 => qr_only_mu_col hx hC hG hKD hTD hq hro hOS hVS hBk hxv hd hi (by omega))
+  have hOT : ∀ m, (∀ i, i < r + L → DepX M (r + L) true i →
+        isOT (fsD (ρ.o i) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ
+          (app b (psi (succ μ) z z)) seed m i)) = true) ∧
+      (∀ i, i < r + L → DepX M (r + L) false i →
+        isOT (fsD (ρ.v i) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ
+          (app b (psi (succ μ) z z)) seed m i)) = true) ∧
+      (∀ c, c < r + L → DepX M (r + L) true c →
+        fsD (ρ.o c) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ (app b (psi (succ μ) z z)) seed m c)
+          ≤ ρ.o c ∧
+        fsD (ρ.o c) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ (app b (psi (succ μ) z z)) seed m c)
+          ≠ z) := by
+    intro m
+    refine ⟨fun i hi hd => (hHok true i hd hi m).1, fun i hi hd => (hHok false i hd hi m).1,
+      fun c hc hd => ⟨(hHok true c hd hc m).2.le, ?_⟩⟩
+    have hcM : c < M.length := by omega
+    obtain ⟨hH, _⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS true c hd hc
+    simp only [valB, cond_true] at hH
+    exact single_ne_z (single_fsD (o_psi_form hC hcM) (holeT_not_succ hH)
+      (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hH)) (hgS _)
+      (hok0 _ (m + dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) c) (hG.ot_o c hcM) hH
+        (fun h0 => qr_only_mu_col hx hC hG hKD hTD hq hro hOS hVS hBk hxv hd hc (by omega))).1)
+  have hRt : ∀ m, Single (fsD (ρ.o Rt) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ
+        (app b (psi (succ μ) z z)) seed m Rt)) ∧
+      fsD (ρ.o Rt) (zfQ M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) μ (app b (psi (succ μ) z z)) seed m Rt)
+        < ρ.o Rt := by
+    intro m
+    obtain ⟨hHR, _⟩ := qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS
+      true Rt hRd hRx
+    simp only [valB, cond_true] at hHR
+    have hRM' : Rt < M.length := by omega
+    have hok := hok0 _ (m + dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) Rt) (hG.ot_o Rt hRM') hHR
+      (fun h0 => qr_only_mu_col hx hC hG hKD hTD hq hro hOS hVS hBk hxv hRd hRx (by omega))
+    refine ⟨?_, hok.2⟩
+    exact single_fsD (o_psi_form hC hRM') (holeT_not_succ hHR)
+      (fun s y he hy => not_succ_arg_of_holeT hy (by rw [← he]; exact hHR)) (hgS _) hok.1
+  intro n hn
+  obtain ⟨ρN, rkN, hCN, hRN, hGN, hPN, _, _, hot, hlt⟩ :=
+    qr_mainW hlen hL hA hd0e hpath hx2 (hxnb_t1 hlen hL hA hd0e hZ2 hZ1 h1) (hZ2 r)
+      (fun n hn => hiu_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn)
+      (fun n hn => hiux_t1 hlen hL hA hd0e hpath hx2 (hZ2 r) hn)
+      (hnd_t1 hlen hL hA hd0e hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2) hC hG hRM
+      (fun h => absurd (app_eq_z h).2 (by simp)) cof_br hro hdep.1 (fun ζ => by
+        rw [hox]; exact fsD_leaf (isSucc_succ μ) (succ_ne_z μ))
+      (fun m => ⟨by rw [hox]; exact (gamS_lt_om hrot cof_br (lt_irrefl' μ) hSr m).le,
+        gamS_ne_z_q hseedz m⟩)
+      hRA hRt0 hRlast hRd hsM hpM hxv hOS hVS hdr
+      (fun m => qr_olocW hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro rfl hb hpre hox
+        hOS hVS hBk hxv hSr hok0 hseedS hsp0 hTP hTPL hYB hLs m)
+      (fun m => qr_vlocW hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS hb hVS
+        hBk hxv hseedS hTPL hLs hSr hok0 hAU' hAUs0 hAD' hADs0 m)
+      hRt hOT ⟨hrot, cof_br, lt_irrefl' μ, hSr, hok0, hseedS, fun bb i hd hi =>
+        (qr_holeD hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 h1 hq hC hG hKD hTD hro hox hOS bb i hd hi).1⟩
+      (fun bb i hd hi h0 => qr_diag_col hx hC hG hKD hTD hq hro hOS hVS hBk hxv hd hi h0)
+      (ρ1 := drop1 M (r + L) rkM) (rk1 := rkM) (by rw [gexp_one_eq hlen]; exact hC1)
+      (by rw [gexp_one_eq hlen]; exact hRk1) (by rw [gexp_one_eq hlen]; exact hG1) rfl
+      (fun g hg a ha h => by
+        rw [gexp_one_eq hlen] at h
+        exact base_v_read hlen hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hg ha h)
+      Pn (by rw [gexp_one_eq hlen]; exact hP1) hPs n hn
+  exact ⟨ρN, rkN, hCN, hRN, hGN, hPN, hot, hlt⟩
+
+/-- **`qr_final2` with `SeedOK μ` and `HokQ`** (`b = qrB`). -/
+theorem qr_final2W {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
+    (hTP : TP1WC M ρ) (hTPL : TPLoWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r)) (hAU' : AbsUWL M ρ) (hAD' : AbsDWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r))
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    (hYB : ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R → Counted M i c →
+      DepX M (r + L) true c → ∀ s,
+      ρ.o c = psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z →
+      lt (preState M ρ i L') (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) = true →
+      lt (psi (ρ.v i) z z) (psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
+      ∀ m', lt (preState M ρ i L') (app (qrB M ρ r (r + L))
+        (gamS (ρ.v r) (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) ((drop1 M (r + L) rkM).o r)
+          (m' + dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L)))
+            (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c)))
+        = true)
+    (hSr : SeedOK (ρ.v r) (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) (ρ.v r)
+      ((drop1 M (r + L) rkM).o r))
+    (hok0 : HokQ (ρ.v r) (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) (ρ.v r)
+      ((drop1 M (r + L) rkM).o r))
+    (hsp0 : spArg (ρ.v r) (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r) =
+      app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
+    (hADs0 : ∀ i, i < r + L →
+      DepX M (r + L) false i → entry M 2 i ≠ 0 →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+        q < fsD (bumpW M ρ i) ((drop1 M (r + L) rkM).o r))
+    (hAUs0 : ∀ i k, i < r + L → DepX M (r + L) false i → upg M i = some k →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
+      OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) →
+        q < fsD (last (ρ.v k)) ((drop1 M (r + L) rkM).o r))
+    (hLs : ∀ c, c < r + L → DepX M (r + L) true c →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c = 0 →
+      ∀ s y, ρ.o c = psi s y z → y ≠ app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z) →
+      (split y (psi (succ s) z z)).2 = z →
+      (split (fsD y ((drop1 M (r + L) rkM).o r)) (psi (succ s) z z)).2 = z)
+    (hG1 : Good3 (M.take (r + L)) (drop1 M (r + L) rkM))
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1W Pn M r L d0 ρ) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  obtain ⟨b, hro, hbe, hb⟩ := qr_o_r hlen hR0 hSD h1 hx2 hq hC hG hRM
+  have hbq : b = qrB M ρ r (r + L) := hbe
+  subst hbq
+  exact qr_finalW hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hKD hTD
+    hTP hTPL hAU' hAD' hsM hpM hro hb rfl hYB hSr hok0 hsp0 hADs0 hAUs0 hLs hG1 Pn hP1 hPs
+
+section
+
+
+/-- **`qr_final3G2` with the seed condition `SeedC2`** (no `SmallSelf`): the strong branch gives `SeedOK` at every
+diagonal point as before, the weak branch `SeedOK μ` and `HokQ` (`hok_of_seedC2`). -/
+theorem qr_final3GW {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    -- the conclusion of the drop lemma and the seed condition
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
+    (hdrop : ∀ i, i < r + L → PO ρ (drop1 M (r + L) rkM) i ∧ PV2 M ρ (drop1 M (r + L) rkM) i)
+    (hseedC : SeedC2 (ρ.v r) (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
+    -- value invariants
+    (hTP : TP1WC M ρ) (hTPL : TPLoWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r)) (hAU' : AbsUWL M ρ) (hAD' : AbsDWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r))
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    -- `q = r`
+    (hTP1 : TP1C M ρ)
+    (hYBs : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z →
+      ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+      Counted M i c → DepX M (r + L) true c →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L)))
+        (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c = 0 → ∀ s,
+      ρ.o c = psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z →
+      lt (preState M ρ i L') (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) = true →
+      lt (psi (ρ.v i) z z) (psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
+      lt (preState M ρ i L') (app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r)) = true)
+    (hADs0 : ∀ i, i < r + L →
+      DepX M (r + L) false i → entry M 2 i ≠ 0 →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i →
+        q < fsD (bumpW M ρ i) ((drop1 M (r + L) rkM).o r))
+    (hAUs0 : ∀ i k, i < r + L → DepX M (r + L) false i → upg M i = some k →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) i = 0 →
+      OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) →
+        q < fsD (last (ρ.v k)) ((drop1 M (r + L) rkM).o r))
+    (hLs0 : ∀ c, c < r + L → DepX M (r + L) true c →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L))) (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c = 0 →
+      ∀ s y, ρ.o c = psi s y z → y ≠ app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z) →
+      (split y (psi (succ s) z z)).2 = z →
+      (split (fsD y ((drop1 M (r + L) rkM).o r)) (psi (succ s) z z)).2 = z)
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1W Pn M r L d0 ρ) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  have hx : r + L + 1 = M.length := hlen
+  have hr : r < r + L := by omega
+  have hrM : r < M.length := by omega
+  have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
+  set μ := ρ.v r with hμ
+  set b := qrB M ρ r (r + L) with hbdef
+  set seed := (drop1 M (r + L) rkM).o r with hseed
+  -- `o(r) = A`
+  obtain ⟨b0, hro, hbe, hb⟩ := qr_o_r hlen hR0 hSD h1 hx2 hq hC hG hRM
+  have hbb : b0 = b := hbe
+  rw [hbb] at hro hb
+  have hrot : isOT (psi μ (app b (psi (succ μ) z z)) z) = true := by rw [← hro]; exact hG.ot_o r hrM
+  have hdep := qr_dep hx hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2 hq
+  have hxv : ¬ DepX M (r + L) false (r + L) := by
+    intro h
+    cases h with
+    | vpar _ hp hdm =>
+      rw [h1] at hp; cases hp
+      exact hdep.2.1 hdm
+    | vupg _ _ hu _ => have := upg_succ_lt hu; omega
+    | vbump _ h2 _ _ _ _ => exact h2 hx2
+  -- the drop lemma
+  have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
+  have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
+  have hlt : seed < ρ.o r := dep_strict02 hx hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop hx2 hq hxv
+    true r hdep.1 hr
+  have hsing := (hdrop r hr).1.2
+  -- the form of the seed
+  obtain ⟨σ1, hs1⟩ := o_psi_sub hC1 hrT
+  set s1 := sf ((drop1 M (r + L) rkM).v r) with hs1def
+  have hs1' : seed = psi s1 σ1 z := hs1
+  have hsot : isOT (psi s1 σ1 z) = true := by rw [← hs1]; exact hsing.1
+  have hlt' : psi s1 σ1 z < psi μ (app b (psi (succ μ) z z)) z := by rw [← hs1, ← hro]; exact hlt
+  have hseedz : seed ≠ z := by rw [hs1']; simp
+  -- `spArg(μ, b, seed) = b + seed`
+  have hsp0 : spArg μ b seed = app b seed := by rw [hs1']; exact spArg_seed hb hsot hlt'
+  -- `SeedOK`
+  have hbot : isOT b = true := isOT_app_left (isOT_arg hrot)
+  have hS_strong : Lhd z seed (psi μ (app b (psi (succ μ) z z)) z) →
+      ∀ a', ¬ lt μ a' = true → isOT (psi a' (app b (psi (succ μ) z z)) z) = true →
+      SeedOK a' (app b (psi (succ μ) z z)) μ seed := by
+    intro hlhd' a' ha' hot'
+    have hlhd : Lhd z seed (ρ.o r) := by rw [hro]; exact hlhd'
+    rw [hs1']
+    have hsub := hlt'
+    rw [psi_lt_psi_z_iff] at hsub
+    rcases hsub with hsμ | ⟨hsμ, hσb⟩
+    · -- the subscript is below `μ`
+      apply seedOK_of_lhd_below ha' hsot hsμ
+      · rw [← hro, ← hs1']; exact hlhd
+      · have hl2 : Lhd z (psi s1 σ1 z) (psi μ (app b (psi (succ μ) z z)) z) := by
+          rw [← hro, ← hs1']; exact hlhd
+        exact SeedComps.seed_comps_lt hl2 hsμ ha' hot'
+    · -- the subscript is `μ`
+      rw [hsμ] at hsot ⊢
+      have hl' : Lhd z (psi μ σ1 z) (psi μ (app b (psi (succ μ) z z)) z) := by
+        rw [← hro]; rw [hs1', hsμ] at hlhd; exact hlhd
+      exact seedOK_of_lhd_top hot' cof_br ha' hsot hσb hl'
+  -- `SeedC2`: the strong branch gives the old `hS`; the weak branch `SeedOK μ` and `HokQ` (`hok_of_seedC2`)
+  obtain ⟨hSr, hok0⟩ : SeedOK μ (app b (psi (succ μ) z z)) μ seed ∧ HokQ μ (app b (psi (succ μ) z z)) μ seed := by
+    rcases hseedC with hl | ⟨_, _, _, hSr, hl⟩
+    · exact ⟨hS_strong hl μ (lt_irrefl' μ) hrot, hokQ_of_S hrot cof_br (lt_irrefl' μ) (hS_strong hl)⟩
+    · exact ⟨hSr, hokQ_of_seedC2 hrot hSr hl⟩
+  -- the (L)(ii) at the seed
+  have hLs : ∀ c, c < r + L → DepX M (r + L) true c →
+      dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
+      ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) →
+      (split y (psi (succ s) z z)).2 = z → (split (fsD y seed) (psi (succ s) z z)).2 = z := by
+    exact hLs0
+  -- The seed bound is used only when the child's lift count is zero.
+  have hYB : ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+      Counted M i c → DepX M (r + L) true c → ∀ s, ρ.o c = psi s (app b (psi (succ μ) z z)) z →
+      lt (preState M ρ i L') (app b (psi (succ μ) z z)) = true →
+      lt (psi (ρ.v i) z z) (psi s (app b (psi (succ μ) z z)) z) = true →
+      ∀ m', lt (preState M ρ i L') (app b (gamS μ (app b (psi (succ μ) z z)) seed
+        (m' + dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) c))) = true := by
+    intro i L' c R hi hd hch hcnt hdc s hcv htr1 htr2 m'
+    have h0 := hTP1 i L' c R hch hcnt s _ hcv htr1 htr2 (ohole_of_cof_big cof_br)
+    rw [holeLev_cof cof_br, fsD_eq_fs cof_br, fs_br] at h0
+    set d := dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) c
+    by_cases h1s : psi μ one z ≤ gamS μ (app b (psi (succ μ) z z)) seed (m' + d)
+    · refine lt_of_lt_of_le (show preState M ρ i L' < app b (psi μ one z) from h0) ?_
+      rcases (le_iff _ _).mp h1s with h | h
+      · exact le_of_lt (app_lt_app_left b h)
+      · rw [h]
+    · have hz : m' + d = 0 := by
+        by_contra hn
+        obtain ⟨k, hk⟩ : ∃ k, m' + d = k + 1 := ⟨m' + d - 1, by omega⟩
+        rw [hk] at h1s
+        exact h1s (gamS_ge_psi1 hseedz k)
+      have hd0 : d = 0 := by omega
+      rw [hz]
+      have hlt1 : seed < psi μ one z := by
+        rcases lt_trichotomy' seed (psi μ one z) with h | h | h
+        · exact h
+        · exact (h1s (by rw [hz]; change psi μ one z ≤ seed; rw [h])).elim
+        · exact (h1s (by rw [hz]; exact le_of_lt h)).elim
+      exact hYBs hlt1 i L' c R hi hd hch hcnt hdc hd0 s hcv htr1 htr2
+  exact qr_final2W hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM hKD hTD
+    hTP hTPL hAU' hAD' hsM hpM hYB hSr hok0 hsp0 hADs0 hAUs0 hLs
+    (good3_take2 (by omega) hR0 hZ2 hSD hZ1 hUAT hUAB hC hG hC1 hRk1 hdrop) Pn hP1 hPs
+end
+
+section
+
+
+/-- Shared final assembly with the trigger restricted to zero-lift children. -/
+theorem qr_final4_seedGW {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    -- the conclusion of the drop lemma and the seed condition
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
+    (hdrop : ∀ i, i < r + L → PO ρ (drop1 M (r + L) rkM) i ∧ PV2 M ρ (drop1 M (r + L) rkM) i)
+    (hseedC : SeedC2 (ρ.v r) (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
+    -- value invariants
+    (hTP : TP1WC M ρ) (hTPL : TPLoWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r)) (hAU' : AbsUWL M ρ) (hAU0 : AbsUW0 M ρ rkM) (hAD' : AbsDWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r))
+    (hTP1 : TP1C M ρ) (hYBs : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z →
+      ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+      Counted M i c → DepX M (r + L) true c →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L)))
+        (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c = 0 →
+      ∀ s, ρ.o c = psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z →
+      lt (preState M ρ i L') (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) = true →
+      lt (psi (ρ.v i) z z) (psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
+      lt (preState M ρ i L') (app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r)) = true) (hTPN : TPLoN M ρ) (hADN : AbsDN M ρ)
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    -- the seed
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1W Pn M r L d0 ρ) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  have hx : r + L + 1 = M.length := hlen
+  have hrx : r < r + L := by omega
+  have hrM : r < M.length := by omega
+  set μ := ρ.v r with hμ
+  set b := qrB M ρ r (r + L) with hbdef
+  set seed := (drop1 M (r + L) rkM).o r with hseed
+  obtain ⟨b0, hro, hbe, hb⟩ := qr_o_r hlen hR0 hSD h1 hx2 hq hC hG hRM
+  have hbb : b0 = b := hbe
+  rw [hbb] at hro hb
+  have hdep := qr_dep hx hR0 hZ2 hSD hZ1 hUAT hUAB h1 hx2 hq
+  have hOS := hOS_t1 hlen hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq
+  have hVS' : ∀ i, i < r + L → DepX M (r + L) false i → VShape M (r + L) i :=
+    fun i hi hv => dv_shape hx hR0 hZ2 hSD hZ1 hUAT hUAB hx2 hq hi hv
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hS3 := hS3_t1 h1 hA (by omega) hlen hR0 hZ2 hSD hZ1
+  have hBk : ∀ i j k, i < r + L → DepX M (r + L) false i → j ∈ children M i → col M j = bump M i →
+      k ∈ children M j → DepX M (r + L) true k → k < r + L := by
+    intro i j k hi hv hj hjb hk hdk
+    have hir : i ≤ r := by
+      by_contra h
+      exact hdep.2.2 false i (by omega) hi hv
+    have := hS3 i j k hir hj hjb hk hdk
+    omega
+  have hxv : ¬ DepX M (r + L) false (r + L) := by
+    intro h
+    cases h with
+    | vpar _ hp hdm =>
+      rw [h1] at hp; cases hp
+      exact hdep.2.1 hdm
+    | vupg _ _ hu _ => have := upg_succ_lt hu; omega
+    | vbump _ h2 _ _ _ _ => exact h2 hx2
+  have hox : ρ.o (r + L) = psi (succ μ) z z :=
+    o_last_t1 hlen hC hG h1 (by have := par1_entry_lt h1; omega) hx2
+  -- the base
+  have hcnt := hcnt_t1 hlen hR0 hZ2 hSD hZ1 hUAT
+  have hRk1 : Rk (M.take (r + L)) rkM := rk_take (by omega) hRM hcnt
+  have hC1 : Cons (M.take (r + L)) (drop1 M (r + L) rkM) := cons_of_rk hRk1
+  have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
+  have hseedz : seed ≠ z := by
+    obtain ⟨σ1, hs1⟩ := o_psi_sub hC1 hrT
+    show (drop1 M (r + L) rkM).o r ≠ z
+    rw [hs1]; simp
+  have h1s : one ≤ seed := one_le_of_ne_z hseedz
+  -- the DiagAt and the `A`-freeness of lift-free columns
+  have hdiag : ∀ bb c, c < r + L → DepX M (r + L) bb c →
+      dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
+      DiagAt μ (app b (psi (succ μ) z z)) μ (valB ρ bb c) ∧
+      (bb = true → (∀ s y, ρ.o c = psi s y z → ∀ a, last y = psi a z z →
+          a ≠ psi μ (app b (psi (succ μ) z z)) z)) ∧
+      (bb = false → last (ρ.v c) ≠ psi μ (app b (psi (succ μ) z z)) z) := by
+    intro bb c hc hdc hd0
+    obtain ⟨d, hd⟩ := depL_of_depX (lo := loQ M ρ μ b) (lb := lbQ M ρ μ b) hdc
+    have hdd : d = 0 := by
+      cases bb with
+      | true => rw [← dOf_o hx hxv hOS hVS' (by omega) hd]; exact hd0
+      | false => rw [← dOf_v hx hxv hOS hVS' (by omega) hd]; exact hd0
+    have hNA := qr_lastNA hx hC hG hKD hTD hq hro hOS hVS' hBk hb hd hc hdd
+    refine ⟨qr_diag0 hx hC hG hKD hTD hq hro hOS hVS' hBk hd hc hdd, fun h => (hNA.1 h).1, hNA.2⟩
+  -- hLs0
+  have hLs0 : ∀ c, c < r + L → DepX M (r + L) true c →
+      dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) c = 0 →
+      ∀ s y, ρ.o c = psi s y z → y ≠ app b (psi (succ μ) z z) →
+      (split y (psi (succ s) z z)).2 = z → (split (fsD y seed) (psi (succ s) z z)).2 = z := by
+    intro c hc hdc hd0 s y hcv hyb hl
+    by_cases hyz : y = z
+    · subst hyz; simp [fsD, split]
+    obtain ⟨hD, hNA, _⟩ := hdiag true c hc hdc hd0
+    simp only [valB, cond_true] at hD
+    rw [hcv] at hD
+    refine lo_keep_Q hD hyz hyb ?_ (le_refl _) hl
+    intro hl' a hla hns hOa hca
+    have hDy : DiagAt μ _ μ y := DiagAt.arg_inv hD hyz (fun h => hyb h.2)
+    have hDl := hDy.last_g
+    rw [hla] at hDl
+    have hDa : DiagAt μ (app b (psi (succ μ) z z)) μ a := by
+      generalize hBB : app b (psi (succ μ) z z) = BB at hDl ⊢
+      cases hDl with
+      | here hb' _ _ => exact absurd rfl hb'
+      | arg hb' _ _ => exact absurd rfl hb'
+      | sub _ _ h => exact h
+    have hxl : M.length - 1 = r + L := by omega
+    have hTPN' := hTPN (drop1 M (r + L) rkM) rkM (by rw [hxl]; exact hC1) (by rw [hxl]; exact hRk1)
+    exact hTPN' r μ b (by rw [hxl]; exact h1) (by rw [hxl]; exact hq) (by rw [hxl]; exact hx2) hro c
+      (by rw [hxl]; exact hc) (by rw [hxl]; exact hdc) (by rw [hxl]; exact hd0) s y hcv hyb hl' a hla hns hOa hca
+      (notNode_of_diag hDa (hNA rfl s y hcv a hla))
+  -- hADs0
+  have hADs0 : ∀ i, i < r + L → DepX M (r + L) false i → entry M 2 i ≠ 0 →
+      dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) i = 0 →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < bumpW M ρ i → q < fsD (bumpW M ρ i) seed := by
+    intro i hi hv h2 hd0 q hq hlt
+    have hiM : i < M.length := by omega
+    obtain ⟨h1', _, hcase⟩ := hVS' i hi hv
+    rcases hcase with ⟨h2', _⟩ | ⟨_, L', K, j, k, hch, hjb, hchj, hdk, _, _⟩
+    · exact absurd h2' h2
+    have hj : j ∈ children M i := by rw [hch]; simp
+    have hkj : k ∈ children M j := by rw [hchj]; simp
+    have hkx : k < r + L := hBk i j k hi hv hj hjb hkj hdk
+    have hdb := dOf_bump hx hxv hOS hVS' (lo := loQ M ρ μ b) (lb := lbQ M ρ μ b) hi h1' h2 hj hjb hkj hdk
+    have hdk0 : dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) k = 0 := by omega
+    obtain ⟨hDk, _, _⟩ := hdiag true k hkx hdk hdk0
+    simp only [valB, cond_true] at hDk
+    obtain ⟨_, _, hNAi⟩ := hdiag false i hi hv hd0
+    have hNA := hNAi rfl
+    have hBD : BumpData M ρ μ i L' K j k := bump_data hC hG hKD hTD h1' h2 hch hjb hchj
+    set P := nzs (L'.map (bumpTerm M ρ i)) with hPdef
+    set G := sumN (K.map ρ.o ++ [ρ.o k]) with hGdef
+    have hGot : isOT G = true := (sumN_dec _ hBD.sK hBD.pK).1
+    have hkS : Single (ρ.o k) := hBD.sK _ (List.mem_append_right _ (List.mem_singleton_self _))
+    have hGe : G = app (sumN (K.map ρ.o)) (ρ.o k) := sumN_snoc_dec hBD.sK hBD.pK
+    have hDG : DiagAt μ (app b (psi (succ μ) z z)) μ G := by
+      rw [hGe]; exact DiagAt.append _ (single_ne_z hkS) hDk
+    have hωGz : omega G ≠ z := single_ne_z (single_omega hGot)
+    have hDW : DiagAt μ (app b (psi (succ μ) z z)) μ (bumpW M ρ i) := by
+      rw [hBD.W]
+      exact diag_omega hBD.potW (DiagAt.append _ hωGz (diag_omega hGot hDG))
+    -- `W` is the last summand of `v(i)`
+    have hvi := v_bump_valueG hC hiM h1' h2 hch hjb hchj hBD.sK hBD.pK hBD.sL hBD.pp hBD.gt
+      (vOpt_ot hG (by omega))
+    have hsW := single_omega hBD.potW
+    have hWz : omega (app (sumN P) (omega G)) ≠ z := single_ne_z hsW
+    obtain ⟨_, s0, y0, hW0⟩ := hsW
+    obtain ⟨B, X, _, _, hadd⟩ := add_prefix s0 y0 (vOpt ρ (par M 1 i))
+    have hlast : last (ρ.v i) = bumpW M ρ i := by
+      rw [hvi, hW0, hadd, last_app B (by simp), hBD.W, hW0]; rfl
+    have hWne : bumpW M ρ i ≠ psi μ (app b (psi (succ μ) z z)) z := by rw [← hlast]; exact hNA
+    have h0 := hADN i hiM h1' h2 (ohole_of_diag hDW) (DiagAt.cof_omega hDW)
+      (notNode_of_diag hDW hWne) q hq hlt
+    exact lt_of_lt_of_le h0 (fsD_mono_eta (ohole_of_diag hDW) h1s)
+  have hAUL : AbsUWL M ρ := hAU'
+  have hAUs0 : ∀ i k, i < r + L → DepX M (r + L) false i → upg M i = some k →
+      dOf M (r + L) (loQ M ρ μ b) (lbQ M ρ μ b) i = 0 →
+      OHole (last (ρ.v k)) → cof (last (ρ.v k)) = .omega →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), q < last (ρ.v k) → q < fsD (last (ρ.v k)) seed :=
+    fun i k hi hv hu hd hO hc qq hqq hlt => by
+      have h := hAU0
+      unfold AbsUW0 at h
+      rw [show M.length - 1 = r + L by omega] at h
+      exact h r μ b h1 hq hx2 hro i k hi hv hu hd hO hc qq hqq hlt
+  exact qr_final3GW hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00 h1 hx2 hq hC hG hRM
+    hKD hTD hdrop hseedC hTP hTPL hAUL hAD' hsM hpM hTP1 hYBs hADs0 hAUs0 hLs0 Pn hP1 hPs
+end
+
+section
+
+
+/-- The seed trigger of Inv3V2, without the false global TrigOmC. -/
+theorem qr_final4SGW {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (hR0 : R0P M) (hZ2 : Z2 M) (hSD : SibDec M) (hZ1 : Z1C M) (hUAT : UAT M) (hUAB : UAB M)
+    (hR12 : R12 M) (hBE : BumpE2 M) (hR01 : R01 M) (h00 : entry M 0 0 = 0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (hq : par M 0 (r + L) = some r)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    -- the conclusion of the drop lemma and the seed condition
+    (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
+    (hdrop : ∀ i, i < r + L → PO ρ (drop1 M (r + L) rkM) i ∧ PV2 M ρ (drop1 M (r + L) rkM) i)
+    (hseedC : SeedC2 (ρ.v r) (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r))
+    -- value invariants
+    (hTP : TP1WC M ρ) (hTPL : TPLoWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r)) (hAU' : AbsUWL M ρ) (hAU0 : AbsUW0 M ρ rkM) (hAD' : AbsDWAt M ρ (fun _ => (drop1 M (r + L) rkM).o r))
+    (hTP1 : TP1C M ρ) (hTS : TrigS0 M ρ rkM) (hTPN : TPLoN M ρ) (hADN : AbsDN M ρ)
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    -- the seed
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (M.take (r + L)) (drop1 M (r + L) rkM)) (hPs : ExpStepT1W Pn M r L d0 ρ) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  have hlast : M.length - 1 = r + L := by omega
+  have hro : ρ.o r = psi (ρ.v r)
+      (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z := by
+    obtain ⟨b0, hro, hbe, _⟩ := qr_o_r hlen hR0 hSD h1 hx2 hq hC hG hRM
+    have hbb : b0 = qrB M ρ r (r + L) := hbe
+    rw [hbb] at hro
+    exact hro
+  have hYBs : (drop1 M (r + L) rkM).o r < psi (ρ.v r) one z →
+      ∀ i L' c R, i < r + L → DepX M (r + L) true i → children M i = L' ++ c :: R →
+      Counted M i c → DepX M (r + L) true c →
+      dOf M (r + L) (loQ M ρ (ρ.v r) (qrB M ρ r (r + L)))
+        (lbQ M ρ (ρ.v r) (qrB M ρ r (r + L))) c = 0 →
+      ∀ s, ρ.o c = psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z →
+      lt (preState M ρ i L') (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) = true →
+      lt (psi (ρ.v i) z z) (psi s (app (qrB M ρ r (r + L)) (psi (succ (ρ.v r)) z z)) z) = true →
+      lt (preState M ρ i L') (app (qrB M ρ r (r + L)) ((drop1 M (r + L) rkM).o r)) = true := by
+    have h := hTS r (ρ.v r) (qrB M ρ r (r + L))
+      (by simpa only [hlast] using h1) (by simpa only [hlast] using hq)
+      (by simpa only [hlast] using hx2) hro
+    simpa only [hlast] using h
+  exact qr_final4_seedGW hlen hL hd0e hR0 hZ2 hSD hZ1 hUAT hUAB hR12 hBE hR01 h00
+    h1 hx2 hq hC hG hRM hKD hTD hdrop hseedC
+    hTP hTPL hAU' hAU0 hAD' hTP1 hYBs hTPN hADN hsM hpM Pn hP1 hPs
+end
+
+end Ytosk
