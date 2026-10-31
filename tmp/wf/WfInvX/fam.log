@@ -23,3 +23,18 @@ maximal 381230
 {"shard": 210000, "n": 163230, "sec": 280, "fails": {"adn.fail": 10}}
 {"shard": 220000, "n": 157624, "sec": 256, "fails": {"adn.fail": 6}}
 {"shard": 230000, "n": 155092, "sec": 276, "fails": {"adn.fail": 10}}
+{"shard": 240000, "n": 171964, "sec": 292, "fails": {"adn.fail": 15}}
+{"shard": 250000, "n": 139216, "sec": 250, "fails": {"adn.fail": 5}}
+{"shard": 260000, "n": 149915, "sec": 286, "fails": {"adn.fail": 26}}
+{"shard": 270000, "n": 139459, "sec": 279, "fails": {"adn.fail": 18}}
+{"shard": 280000, "n": 145973, "sec": 302, "fails": {"adn.fail": 8}}
+{"shard": 290000, "n": 151688, "sec": 334, "fails": {"adn.fail": 11}}
+{"shard": 300000, "n": 166696, "sec": 380, "fails": {"adn.fail": 17}}
+{"shard": 310000, "n": 177803, "sec": 433, "fails": {"adn.fail": 27}}
+{"shard": 320000, "n": 182195, "sec": 375, "fails": {"adn.fail": 28}}
+{"shard": 330000, "n": 221156, "sec": 541, "fails": {"adn.fail": 25, "ads.fail": 1, "tplos.fail": 2}}
+{"shard": 340000, "n": 233230, "sec": 637, "fails": {"adn.fail": 24}}
+{"shard": 350000, "n": 207156, "sec": 664, "fails": {"adn.fail": 61, "ads.fail": 1, "tplos.fail": 2}}
+{"shard": 360000, "n": 274889, "sec": 974, "fails": {"adn.fail": 93}}
+{"shard": 370000, "n": 324425, "sec": 1447, "fails": {"adn.fail": 52}}
+{"shard": 380000, "n": 50438, "sec": 333, "fails": {}}

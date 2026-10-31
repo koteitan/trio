@@ -13,7 +13,7 @@ if __name__=='__main__':
             r=json.loads(l);s=r['set'].split('/')[-1];nmat[s]+=r['n']
             tot.update(r['cnt']);per[s].update({k:v for k,v in r['cnt'].items() if k.endswith('.fail') or k.endswith('.cases')})
             for k,L in r['ex'].items():ex[k]+=[tuple(w) for w in L]
-    fields=sorted({k.rsplit('.',1)[0] for k in tot if k.rsplit('.',1)[1] in('cases','fail','mats','fmats')})
+    fields=sorted({k.rsplit('.',1)[0] for k in tot if k.rsplit('.',1)[-1] in('cases','fail','mats','fmats') and '.' in k})
     out={'matrices':sum(nmat.values()),'sets':dict(nmat),'other':{k:v for k,v in tot.items() if k.rsplit('.',1)[-1] not in('cases','fail','mats','fmats')},'fields':{}}
     for f in fields:
         d={k:tot.get(f+'.'+k,0) for k in('cases','fail','mats','fmats')}
