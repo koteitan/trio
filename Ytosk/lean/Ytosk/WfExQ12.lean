@@ -9,10 +9,11 @@ At the v call i = 34 = (12,3,0) (D, upgrade to k = 35, d_i = 2): W = last v(35) 
 q0 = ψ_{ψ(1)}(ψ_{ψ(1)}(ψ_{ψ(1)}(ψ(ψ_{ψ(1)}(0))))) of v(P_1 34) has q0 < W but not q0 < W[gamS μ b_r 1 2].
 It is the upgrade-frame instance of the bad call (WfBad.BadCall: W = A, a summand of v(P1 i) re-exposed), like the
 dropped `AbsDWs`; the DQ engine (WfQrE1.v_upgDQ) needs no absorption.  So `auwl` is dropped from the bundle
-(`Inv3V3b`, WfExQ13).
-Theorems: `not_absUWL` (the Cons valuation), `no_inv3V2`, `no_inv3V3` (no valuation of N has Inv3V2 / Inv3V3).
+(WfExQ1.Inv3V3).
+Theorems: `not_absUWL` (the Cons valuation), `no_inv3V2`, `no_inv3V2A` (no valuation of N has Inv3V2 / Inv3V2A).
+The first version of WfExQ1.Inv3V3 (commit aad2270f) had `auwl`; it was removed after this refutation.
 -/
-import Ytosk.WfExQ1
+import Ytosk.WfInvA1
 import Ytosk.V3Total
 import Ytosk.V3QRIdx
 import Ytosk.V3StructT1
@@ -168,12 +169,12 @@ theorem no_inv3V2 : ¬ ∃ ρ' rk, Inv3V2 N ρ' rk := by
   rintro ⟨ρ', rk, I⟩
   exact absUWL_fails ρ' rk I.rank I.cons I.auwl
 
-/-- **No valuation of N has `Inv3V3`** (WfExQ1; field `auwl`): `auwl` must leave the bundle. -/
-theorem no_inv3V3 : ¬ ∃ ρ' rk, WfExQ1.Inv3V3 N ρ' rk := by
+/-- **No valuation of N has `Inv3V2A`** (WfInvA1; field `auwl`). -/
+theorem no_inv3V2A : ¬ ∃ ρ' rk, Inv3V2A N ρ' rk := by
   rintro ⟨ρ', rk, I⟩
   exact absUWL_fails ρ' rk I.rank I.cons I.auwl
 
-theorem main : Std N ∧ N ≠ SRO ∧ (¬ ∃ ρ' rk, Inv3V2 N ρ' rk) ∧ ¬ ∃ ρ' rk, WfExQ1.Inv3V3 N ρ' rk :=
-  ⟨standard, ne_sro, no_inv3V2, no_inv3V3⟩
+theorem main : Std N ∧ N ≠ SRO ∧ (¬ ∃ ρ' rk, Inv3V2 N ρ' rk) ∧ ¬ ∃ ρ' rk, Inv3V2A N ρ' rk :=
+  ⟨standard, ne_sro, no_inv3V2, no_inv3V2A⟩
 
 end Ytosk.WfExQ12

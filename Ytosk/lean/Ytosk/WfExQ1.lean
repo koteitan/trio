@@ -7,6 +7,8 @@
 - `tplow : TPLoWs` → `tploq : TPLoQ`   (below: the old conclusion, or the re-exposed form `P + W[g]` at every
   source `v` call of the hole `a`; WfQrE notes §3 (L')),
 - `adw   : AbsDWs` dropped (the DQ engine does not use absorption),
+- `auwl  : AbsUWL` dropped (absorption at upgrade calls; false on a standard 39-column matrix, WfExQ12; the first
+  version of this file, commit aad2270f, still had it),
 - `ads   : AbsDS`  → `adsx  : AbsDSX`  (WfQnE2),
 - `tplos : TPLoS`  → `tplosx : TPLoSX` (WfQnE2).
 Every other field is unchanged.  Bridges: `Inv3V2A.toV3`, `Inv3V2.toV3` (each new form is weaker).
@@ -68,7 +70,6 @@ structure Inv3V3 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
   tplosx : TPLoSX M ρ rk
   tp1w : TP1WC M ρ
   tploq : TPLoQ M ρ rk
-  auwl : AbsUWL M ρ
   auw0 : AbsUW0 M ρ rk
   trigs : TrigS0 M ρ rk
   tplon : TPLoN M ρ
@@ -79,7 +80,7 @@ structure Inv3V3 (M : Mat) (ρ : Valn) (rk : Bool → Nat → Nat) : Prop where
 /-- `Inv3V2A` gives `Inv3V3`. -/
 theorem Inv3V2A.toV3 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3V2A M ρ rk) : Inv3V3 M ρ rk :=
   ⟨I.cons, I.good, I.rank, I.vs, I.fc, I.fo, I.kd, I.td, I.ph, I.fc3, I.vra, absDSX_of_absDS I.ads, I.aus,
-    I.tp1, tpLoSX_of_tpLoS I.tplos, I.tp1w, tpLoQ_of_tpLoWs I.tplow, I.auwl, I.auw0, I.trigs, I.tplon,
+    I.tp1, tpLoSX_of_tpLoS I.tplos, I.tp1w, tpLoQ_of_tpLoWs I.tplow, I.auw0, I.trigs, I.tplon,
     I.adn0, I.rootS, I.rootP⟩
 
 /-- `Inv3V2` gives `Inv3V3`. -/

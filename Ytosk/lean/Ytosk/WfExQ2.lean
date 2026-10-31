@@ -9,7 +9,7 @@ The 24 fields of `Inv3V3` on `M[n] = gexp M r L d0 0 n` split into three groups:
 - **carried through the DQ copy, need a new argument** (`CarryV3`): `vs`, `fc`, `fo`, `kd`, `td`, `ph`, `fc3`, `vra`
   (the old proofs are for `glueZ`, i.e. `D` values `fsD(old, Z)`; with `DQ` values the inserted summands `Q` enter);
 - **frame fields of the last column of `M[n]`** (`FrameV3`, the analogue of the global residual `HFrameV2`) and the two
-  leaf conditions (`HLeafV2`): `adsx`, `aus`, `tplosx`, `tploq`, `auwl`, `auw0`, `trigs`, `tplon`, `adn0`;
+  leaf conditions (`HLeafV2`): `adsx`, `aus`, `tplosx`, `tploq`, `auw0`, `trigs`, `tplon`, `adn0`;
   `tp1`, `tp1w` follow from `ph` and the leaf conditions (`tp1C_of_ph3cG`, `tp1WC_of_ph3cG`).
 `expStepQ_V3` assembles `ExpStepQ PnV3 (ExDQ M r L ρ)` from the two residual groups.
 -/
@@ -142,7 +142,6 @@ structure FrameV3 (N : Mat) (σ : Valn) (rk : Bool → Nat → Nat) : Prop where
   aus : AbsUS N σ rk
   tplosx : WfQnE2.TPLoSX N σ rk
   tploq : TPLoQ N σ rk
-  auwl : AbsUWL N σ
   auw0 : AbsUW0 N σ rk
   trigs : TrigS0 N σ rk
   tplon : TPLoN N σ
@@ -154,7 +153,7 @@ theorem inv3V3_of_parts {N : Mat} {σ : Valn} {rk : Bool → Nat → Nat}
     (K : CarryV3 N σ) (F : FrameV3 N σ rk) (hTP : TP1LeafG N σ) (hTPW : TP1WLeafG N σ) : Inv3V3 N σ rk :=
   ⟨hC, hG, hR, K.vs, K.fc, K.fo, K.kd, K.td, K.ph, K.fc3, K.vra, F.adsx, F.aus,
     tp1C_of_ph3cG hC ⟨hG.ot_o, hG.ot_v⟩ K.ph hTP, F.tplosx,
-    tp1WC_of_ph3cG hC ⟨hG.ot_o, hG.ot_v⟩ K.ph hTPW, F.tploq, F.auwl, F.auw0, F.trigs, F.tplon, F.adn0, hS, hP⟩
+    tp1WC_of_ph3cG hC ⟨hG.ot_o, hG.ot_v⟩ K.ph hTPW, F.tploq, F.auw0, F.trigs, F.tplon, F.adn0, hS, hP⟩
 
 /-- **The frame residual at the expansions**: every valuation of `M[n]` with `Cons`, `Rk`, `Good3` has the frame
 fields and the leaf conditions (the analogue of `HFrameV2` ∧ `HLeafV2`, restricted to `M[n]`). -/
