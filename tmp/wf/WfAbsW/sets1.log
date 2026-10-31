@@ -1,0 +1,67 @@
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/graftBb2St.pkl 5384
+  5422 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same
+  10768 pairs
+  5422 pairs.fail
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(4,2,0)(5,3,1)(6,3,1)(7,1,0)(6,3,1)', 2, 11)
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/b2grow1.pkl 1879
+  1174 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same
+  3758 pairs
+  1174 pairs.fail
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,1)(6,3,1)(7,2,0)(7,2,0)(7,2,0)(6,3,1)', 2, 16)
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/b2grow2.pkl 3131
+  1642 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same
+  6262 pairs
+  1642 pairs.fail
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(4,2,0)(5,3,1)(6,3,1)(7,2,0)(8,1,0)(9,2,1)(10,2,1)(11,2,0)(9,2,1)(10,2,1)(11,1,0)(12,2,1)(13,2,1)(10,2,0)(11,3,1)(12,3,1)(13,2,0)(14,1,0)(15,2,1)(16,2,1)(17,2,0)(15,2,1)(16,2,1)(17,1,0)(18,2,1)(19,2,1)(16,2,0)(17,3,1)(18,3,1)(19,2,0)(20,0,0)(21,1,1)(22,1,1)(23,1,0)(21,1,1)(22,1,1)(23,1,0)(21,1,1)(22,1,0)(23,2,1)(24,2,1)(25,2,0)(23,2,1)(24,2,1)(25,1,0)(26,2,1)(27,2,1)(24,2,0)(25,3,1)(26,3,1)(27,2,0)(28,1,0)(29,2,1)(30,2,1)(31,2,0)(29,2,1)(30,2,1)(31,1,0)(32,2,1)(33,2,1)(30,2,0)(31,3,1)(32,3,1)(33,2,0)(34,1,0)(35,2,1)(36,2,1)(37,2,0)(35,2,1)(36,2,1)(37,1,0)(38,2,1)(39,2,1)(36,2,0)(37,3,1)(38,3,1)(39,2,0)(40,0,0)(41,1,1)(42,1,1)(43,1,0)(41,1,1)(42,1,1)(43,1,0)(41,1,1)(42,1,0)(43,2,1)(44,2,1)(45,2,0)(43,2,1)(44,2,1)(45,1,0)(46,2,1)(47,2,1)(44,2,0)(45,3,1)(46,3,1)(47,2,0)(48,1,0)(49,2,1)(50,2,1)(51,2,0)(49,2,1)(50,2,1)(51,1,0)(52,2,1)(53,2,1)(50,2,0)(51,3,1)(52,3,1)(53,2,0)(54,1,0)(55,2,1)(56,2,1)(57,2,0)(55,2,1)(56,2,1)(57,1,0)(58,2,1)(59,2,1)(56,2,0)(57,3,1)(58,3,1)(59,2,0)(58,3,1)', 2, 138)
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/cbadext.pkl 3447
+  2 N.noval
+  1 o i=q NOTLT e12 P0=P1 noLhdV vsame rec=None@2 cnt lastcnt vP0same
+  728 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same
+  812 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 notcnt notlast vP0same
+  1 o i=r NOTLT note12 P0=P1 noLhdV vsame rec=None@1
+  6888 pairs
+  1541 pairs.fail
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,1)(6,3,1)(7,3,0)(5,3,1)(6,3,1)(7,1,0)(6,3,0)(7,4,1)(8,4,1)(9,4,0)(7,4,1)(8,4,0)(9,5,1)(10,5,1)(11,5,0)(9,5,1)(10,5,0)(11,6,1)(12,6,1)', 2, 36)
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 notcnt notlast vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(4,2,1)', 2, 12)
+EX o i=r NOTLT note12 P0=P1 noLhdV vsame rec=None@1 ('(0,0,0)(1,1,1)(2,2,1)', 3, 0)
+EX o i=q NOTLT e12 P0=P1 noLhdV vsame rec=None@2 cnt lastcnt vP0same ('(0,0,0)(1,1,1)(2,2,1)', 3, 1)
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/ext2b2St.pkl 1012
+  60 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same
+  4 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 notcnt notlast vP0same
+  2024 pairs
+  64 pairs.fail
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,1,0)(7,2,1)', 2, 9)
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 notcnt notlast vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(4,2,1)', 2, 12)
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/ext2b2.pkl 2609
+  84 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same
+  6 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 notcnt notlast vP0same
+  5218 pairs
+  90 pairs.fail
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,1,0)(4,2,1)', 2, 9)
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 notcnt notlast vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,1,0)(4,2,1)', 2, 12)
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/shapegrow.pkl 299
+  286 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same
+  598 pairs
+  286 pairs.fail
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,1)(7,2,1)(8,1,0)(9,2,1)(10,2,1)(11,2,0)(9,2,0)(7,2,0)(8,3,1)(9,3,1)(10,2,0)(9,3,1)(10,2,0)(9,3,1)(10,2,0)(8,3,0)(9,4,1)(10,4,1)(11,2,0)(10,4,1)(11,2,0)(10,4,1)', 2, 34)
+/home/koteitan/proofs/trio/tmp/wf/WfB2S/graft4.pkl 3147
+  1260 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same
+  94 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 notcnt notlast vP0same
+  6294 pairs
+  1354 pairs.fail
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,1)(6,3,1)(7,3,0)(5,3,1)(6,3,1)(7,1,0)(6,3,0)(7,4,1)(8,4,1)(9,3,0)(10,2,0)(8,4,1)', 2, 23)
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 notcnt notlast vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,1)(7,2,1)(8,1,0)(9,2,1)(10,2,1)(11,2,0)(9,2,1)(10,2,1)(11,1,0)(12,0,0)(7,2,0)(8,3,1)(9,3,1)(10,2,0)(11,0,0)(12,1,1)(13,1,1)(14,1,0)(12,1,1)(13,1,1)(14,1,0)(12,1,1)(13,1,0)(14,2,1)(15,2,1)(16,2,0)(14,2,1)(15,2,1)(16,1,0)(17,2,1)(18,2,1)(19,2,0)(17,2,1)(18,2,1)(19,1,0)(20,2,1)(21,2,1)(22,2,0)(20,2,1)(21,2,1)(22,1,0)(23,0,0)(18,2,0)(19,3,1)(20,3,1)(21,2,0)(22,0,0)(23,1,1)(24,1,1)(25,1,0)(23,1,1)(24,1,1)(25,1,0)(23,1,1)(24,1,0)(25,2,1)(26,2,1)(27,2,0)(25,2,1)(26,2,1)(27,1,0)(28,2,1)(29,2,1)(30,2,0)(28,2,1)(29,2,1)(30,1,0)(31,2,1)(32,2,1)(33,2,0)(31,2,1)(32,2,1)(33,1,0)(34,0,0)(29,2,0)(30,3,1)(31,3,1)(32,2,0)(31,3,0)(15,2,1)', 2, 44)
+/home/koteitan/proofs/trio/tmp/wf/WfB2S/graft5.pkl 3493
+  1678 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same
+  6986 pairs
+  1678 pairs.fail
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(4,2,0)(5,3,1)(6,3,1)(7,3,0)(5,3,1)(6,3,1)(7,1,0)(6,3,0)(7,4,1)(8,4,1)(9,3,0)(10,2,0)(8,4,1)', 2, 23)
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/graftBb2St_g1.pkl 0
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/graftBb2St_x1.pkl 0
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/graftBb2.pkl 13854
+  6728 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same
+  54 o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 notcnt notlast vP0same
+  27708 pairs
+  6782 pairs.fail
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 cnt lastcnt vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,0)(8,3,0)(9,2,0)(10,3,0)(11,2,0)(12,1,0)(13,2,1)(14,2,0)(15,3,0)(4,2,0)(5,3,1)(6,3,1)(7,1,0)(6,3,1)', 2, 20)
+EX o i=q lt e12 P0=P1 noLhdV vchg rec=lhd@1 notcnt notlast vP0same ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,1)(7,2,1)(8,1,0)(9,2,1)(10,2,1)(11,2,0)(7,2,0)(8,3,1)(9,3,1)(10,1,0)(4,2,1)', 2, 12)
