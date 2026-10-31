@@ -58,3 +58,6 @@
   t is always an ancestor of m (t < m).
 - Bad2 is not needed for either (measured at all positions). Without the bump parent, B2LevS fails (hsf.pkl,
   i = 2 at n = 37 of the HUACStep counterexample).
+- graft5.py (second generation; 200 seeds from graft4 with an i1 frame where m upgrades, cut at n+2): 12214
+  bms-standard grafts; all positions: i1 18755, all with m upgrading, all bumpW(k) <= last v(t); 0 exceptions
+  (fr6g5.log).
