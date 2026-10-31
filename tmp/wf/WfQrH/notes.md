@@ -47,7 +47,47 @@ C_strip (new components of b_N not in comps(a, b_S) are < b_S) and isOT(ψ_a(b_S
 isOT(fsD l η).  DQC.ot: isOT t -> isOT tN.  std_of_DQC gives the standard-form conjuncts of hLocE.
 New fields to measure: OT_S (isOT ψ_a(b_S)), OT_Q (isOT Q) — compq2.py.
 
-## Measurements
-mside.py (M < SRO, every q = r frame of 71 sets: WfInvA/frames/* (all sets incl. the 15 families), frames_g/graftA1-3,
-graftE, graftF, graftG): OX, RX (now theorems), S1 (base ρ1.o r < o(x), ≠ 0): see mside0.jsonl.
-oframe.py / compq2.py (n = 2, 3): see of_*.jsonl, cq_*.jsonl (results summarized below when finished).
+## Lean defects found in the round-10 statements (proved)
+- WfQrL13.OmSide is unsatisfiable on a single layer (WfQrH4.not_omSide_single: its hQ0 quantifies over every
+  decomposition and `Y_N = 0 ++ (Y_N ++ 0)` forces `Y_N = 0`).  So WfQrL16.LayerOK holds on a single layer only via the
+  ε0 / node shapes, while 97% of changed layers are single (369,262 single / 8,078 multi / 574 ε0 crossing).
+  frames.py tested the weaker "Y single -> Y_N single".  Fix: OmSide1 (hQ0 only for the single-last decomposition of
+  the DQ), omega_DQ_true1, LayerF, bumpW_DQ3, bump_step3.
+- WfQrL3.hi_keep_DQ's side condition hlNz is unsatisfiable (WfQrH2.hi_keep_hlNz_false); frame_step_trigArg proves the
+  kept high part for the single-last decomposition instead.
+- All WfQrH fields are stated for the single-last decomposition (`∃ s0 y0, l = ψ_{s0}(y0)` and the DQ premise).
+
+## WfQrH8: hUpgL from the single last summand (DQ.last1, upgL_of)
+
+## Measurements (all 0 failures unless stated)
+mside.py, every q = r frame (M < SRO) of the 71 sets in sets1.txt (WfInvA/frames/* = all handoff sets + the 15
+families, frames_g/graftA1-3, graftE, graftF, graftG): 3,481,601 frames: OX, RX (now theorems), S1, V1
+(`v_{M.take x}(r) ≤ v(r)`, hv1 of qr_chainH3) 0 failures (mside1.jsonl).
+oframe.py (n = 2, 3; CAP = 2000 random frames per set; 72 sets incl. famframes.pkl = 208,964 q = r frames among all
+prefixes of the family members and of their M[2], M[3]): 64,642 frames, 645,356 triggered-arg o frames:
+  forms: only sub / arg / base at the leaf parent x (no other base form, no base at c ≠ x);
+  OFields: TrigN, lNz, Last, Leaf (add 64,642 / leafpar 64,642, Leaf.lt) 0 failures; untriggered arg -> no trigger in
+  M[n] 358,688 ok (this is the Lean lemma notTrig_arg).
+  M-side candidates for TrigN are FALSE: PreB `pre ≤ init(y)` (100,700 failures; smallest witness 9 columns
+  (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,0)(2,2,1)(3,2,1)(4,1,0)(5,2,0), n = 2, i = 0, c = 4), PreS (3,154), PreSeed / PreEta
+  `pre < η` (153k), PreB ∨ PreEta (97k), lNgeEta `last(y_N) ≥ η` (67,948).  lastNotOne (last(y) ≠ 1) 0 failures.
+  layers: single 369,262, multi 8,078, ε0 crossing 574, no other crossing.
+compq2.py (n = 2, 3, same samples): DQ 1,801,736 ok; C_strip 8,648,670 ok; OT_S (isOT ψ_a(b_S)) 8,648,670 ok;
+  OT_Q 200 ok (non-empty Q is rare).
+graftH.py (new graft family around trigsub / leafpar / non-empty-Q frames; WfInvD graftD.gen): see graftH.log,
+  mside_H.jsonl, of_H.jsonl, cq_H.jsonl.
+
+## Remaining hypotheses of WfQrH7.qr_chainH3 (exact)
+1. hLocH (per n ≥ 2, true valuation σ of M[n], given ρP.o r < o(x), ρP.o r ≠ 0):
+   a. C_strip: `∃ η tS, DQC η false (o c) (σ.o c) tS` for c ≤ x in D, `∃ η tS, DQC η true (v i) (σ.v i) tS` for
+      i < x in D (measured: C_strip, OT_S, OT_Q, DQ);
+   b. Ex n ρP σ.o σ.v (ExpStepQ side facts for Pn; unchanged);
+   c. OFields at every last-child o frame for every η with DQ η false (o c) (σ.o c): leaf / Ω_s / arg-decomposition at
+      a base form; TrigN, lNz, Last at a triggered argument form (N-side; measured);
+   d. hUpgL (WfQrH8.upgL_of: single last summand of v_N(k), standard v_N(k));
+   e. hBW2 (WfQrH4.bump_step3: Single bumpW / bumpWQ, the VLocZ list conditions, LayerF at both layers).
+2. hv1: v_{M[1]}(r) ≤ v(r) (measured, 3.48M frames).
+3. The structural hypotheses of qr_chainE (hpath, hx2, hxnb, hz2, hiu, hiux, hnd, hOS, hOSD, hVS, hPre, Rt, hsM, hpM,
+   h1x, hp1, base Cons/Rk/Good3/Pn of M[1], hPv1, ExpStepQ).
+Not M-side: TrigN / Last / leaf decision need a lower bound of DQ values against the chain values η along the DQ path;
+the naive M-side forms are false (above).

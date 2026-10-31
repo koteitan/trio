@@ -1,0 +1,72 @@
+{"set": "t0ext.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "hunt_found.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_x2.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_x0.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_p1.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_p0.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_g2.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_g1.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_g0.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftAb.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graft36c.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graft36b.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graft36.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "ext2b2Sf.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "expPt2.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "cex36.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "b2t0test.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "std_ab2S.pkl", "n": 2, "sec": 0, "cnt": {"C_strip.ok": 16, "DQ.ok": 28, "OT_S.ok": 16, "frames": 2, "mats": 2}, "ex": {}}
+{"set": "std_ab2G.pkl", "n": 3, "sec": 0, "cnt": {"DQ.ok": 18, "frames": 3, "mats": 3}, "ex": {}}
+{"set": "std_ab2.pkl", "n": 5, "sec": 0, "cnt": {"C_strip.ok": 16, "DQ.ok": 46, "OT_S.ok": 16, "frames": 5, "mats": 5}, "ex": {}}
+{"set": "graftM36.pkl", "n": 14, "sec": 0, "cnt": {"C_strip.ok": 768, "DQ.ok": 456, "OT_S.ok": 768, "frames": 14, "mats": 14}, "ex": {}}
+{"set": "ext2b2G.pkl", "n": 54, "sec": 0, "cnt": {"C_strip.ok": 424, "DQ.ok": 636, "OT_S.ok": 424, "frames": 54, "mats": 54}, "ex": {}}
+{"set": "b2grow2.pkl", "n": 27, "sec": 0, "cnt": {"C_strip.ok": 900, "DQ.ok": 810, "OT_S.ok": 900, "frames": 27, "mats": 27}, "ex": {}}
+{"set": "graftBb2Sf.pkl", "n": 36, "sec": 0, "cnt": {"C_strip.ok": 1212, "DQ.ok": 1080, "OT_S.ok": 1212, "frames": 36, "mats": 36}, "ex": {}}
+{"set": "cbadext.pkl", "n": 46, "sec": 0, "cnt": {"C_strip.ok": 212, "DQ.ok": 566, "OT_S.ok": 212, "frames": 46, "mats": 46}, "ex": {}}
+{"set": "b2grow1.pkl", "n": 31, "sec": 0, "cnt": {"C_strip.ok": 500, "DQ.ok": 646, "OT_S.ok": 500, "frames": 31, "mats": 31}, "ex": {}}
+{"set": "graftBb.pkl", "n": 72, "sec": 0, "cnt": {"C_strip.ok": 1560, "DQ.ok": 1872, "OT_S.ok": 1560, "frames": 72, "mats": 72}, "ex": {}}
+{"set": "g36_1.pkl", "n": 121, "sec": 1, "cnt": {"C_strip.ok": 3302, "DQ.ok": 2380, "OT_S.ok": 3302, "frames": 121, "mats": 121}, "ex": {}}
+{"set": "graft3.pkl", "n": 88, "sec": 1, "cnt": {"C_strip.ok": 5038, "DQ.ok": 2304, "OT_S.ok": 5038, "frames": 88, "mats": 88}, "ex": {}}
+{"set": "graftAn.pkl", "n": 232, "sec": 3, "cnt": {"C_strip.ok": 36636, "DQ.ok": 9826, "OT_S.ok": 36636, "frames": 232, "mats": 232}, "ex": {}}
+{"set": "graftA.pkl", "n": 232, "sec": 1, "cnt": {"C_strip.ok": 36636, "DQ.ok": 9826, "OT_S.ok": 36636, "frames": 232, "mats": 232}, "ex": {}}
+{"set": "shapegrow.pkl", "n": 162, "sec": 1, "cnt": {"C_strip.ok": 2218, "DQ.ok": 3290, "OT_S.ok": 2218, "frames": 162, "mats": 162}, "ex": {}}
+{"set": "graft2.pkl", "n": 184, "sec": 4, "cnt": {"C_strip.ok": 15018, "DQ.ok": 4438, "OT_S.ok": 15018, "frames": 184, "mats": 184}, "ex": {}}
+{"set": "ext2b2St.pkl", "n": 529, "sec": 3, "cnt": {"C_strip.ok": 77838, "DQ.ok": 28268, "OT_S.ok": 77838, "frames": 529, "mats": 529}, "ex": {}}
+{"set": "ext2b2S.pkl", "n": 529, "sec": 3, "cnt": {"C_strip.ok": 77838, "DQ.ok": 28268, "OT_S.ok": 77838, "frames": 529, "mats": 529}, "ex": {}}
+{"set": "ext2b2.pkl", "n": 583, "sec": 3, "cnt": {"C_strip.ok": 78262, "DQ.ok": 28904, "OT_S.ok": 78262, "frames": 583, "mats": 583}, "ex": {}}
+{"set": "g36_2.pkl", "n": 727, "sec": 10, "cnt": {"C_strip.ok": 24128, "DQ.ok": 16034, "OT_Q.ok": 25, "OT_S.ok": 24128, "frames": 727, "mats": 727}, "ex": {}}
+{"set": "graft5.pkl", "n": 1000, "sec": 4, "cnt": {"C_strip.ok": 5514, "DQ.ok": 11096, "OT_S.ok": 5514, "frames": 1000, "mats": 1000}, "ex": {}}
+{"set": "lift2.pkl", "n": 551, "sec": 11, "cnt": {"C_strip.ok": 30790, "DQ.ok": 13154, "OT_S.ok": 30790, "frames": 551, "mats": 551}, "ex": {}}
+{"set": "lift1.pkl", "n": 962, "sec": 9, "cnt": {"C_strip.ok": 76420, "DQ.ok": 30180, "OT_S.ok": 76420, "frames": 962, "mats": 962}, "ex": {}}
+{"set": "graft4.pkl", "n": 1674, "sec": 18, "cnt": {"C_strip.ok": 69374, "DQ.ok": 29508, "OT_S.ok": 69374, "frames": 1674, "mats": 1674}, "ex": {}}
+{"set": "graftBb2St_x1.pkl", "n": 2000, "sec": 9, "cnt": {"C_strip.ok": 68700, "DQ.ok": 55528, "OT_S.ok": 68700, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "graftBb2St.pkl", "n": 2000, "sec": 7, "cnt": {"C_strip.ok": 69218, "DQ.ok": 55882, "OT_S.ok": 69218, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "graftBb2S.pkl", "n": 2000, "sec": 7, "cnt": {"C_strip.ok": 68832, "DQ.ok": 55528, "OT_S.ok": 68832, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "d3s.pkl", "n": 2000, "sec": 23, "cnt": {"C_strip.ok": 756402, "DQ.ok": 96630, "OT_S.ok": 756402, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "graftBb2G.pkl", "n": 2000, "sec": 10, "cnt": {"C_strip.ok": 23382, "DQ.ok": 38552, "OT_S.ok": 23382, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "graftM36x.pkl", "n": 1846, "sec": 63, "cnt": {"C_strip.ok": 626204, "DQ.ok": 112286, "OT_Q.ok": 25, "OT_S.ok": 626204, "frames": 1846, "mats": 1846}, "ex": {}}
+{"set": "std_an2.pkl", "n": 2000, "sec": 1, "cnt": {"C_strip.ok": 5502, "DQ.ok": 7992, "OT_S.ok": 5502, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "std_a.pkl", "n": 2000, "sec": 1, "cnt": {"C_strip.ok": 5714, "DQ.ok": 8138, "OT_S.ok": 5714, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "graftBb2.pkl", "n": 2000, "sec": 9, "cnt": {"C_strip.ok": 36944, "DQ.ok": 43728, "OT_S.ok": 36944, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "graftBn2.pkl", "n": 2000, "sec": 10, "cnt": {"C_strip.ok": 19760, "DQ.ok": 29626, "OT_S.ok": 19760, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "graftBn.pkl", "n": 2000, "sec": 8, "cnt": {"C_strip.ok": 28036, "DQ.ok": 36192, "OT_S.ok": 28036, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "graftB.pkl", "n": 2000, "sec": 8, "cnt": {"C_strip.ok": 26668, "DQ.ok": 35118, "OT_S.ok": 26668, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "deep3.pkl", "n": 2000, "sec": 23, "cnt": {"C_strip.ok": 750360, "DQ.ok": 97292, "OT_S.ok": 750360, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "ext1x.pkl", "n": 2000, "sec": 5, "cnt": {"C_strip.ok": 147130, "DQ.ok": 39646, "OT_S.ok": 147130, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "deep2.pkl", "n": 2000, "sec": 23, "cnt": {"C_strip.ok": 743388, "DQ.ok": 95816, "OT_S.ok": 743388, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "e3exp.pkl", "n": 2000, "sec": 5, "cnt": {"C_strip.ok": 115020, "DQ.ok": 38356, "OT_S.ok": 115020, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "ext3s.pkl", "n": 2000, "sec": 4, "cnt": {"C_strip.ok": 35748, "DQ.ok": 19812, "OT_S.ok": 35748, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "Cprime.pkl", "n": 2000, "sec": 6, "cnt": {"C_strip.ok": 233776, "DQ.ok": 48236, "OT_S.ok": 233776, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "ext1.pkl", "n": 2000, "sec": 2, "cnt": {"C_strip.ok": 30374, "DQ.ok": 17698, "OT_S.ok": 30374, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "expP.pkl", "n": 2000, "sec": 10, "cnt": {"C_strip.ok": 307218, "DQ.ok": 56300, "OT_S.ok": 307218, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "ext2.pkl", "n": 2000, "sec": 14, "cnt": {"C_strip.ok": 347020, "DQ.ok": 55598, "OT_S.ok": 347020, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "ext2n2.pkl", "n": 2000, "sec": 13, "cnt": {"C_strip.ok": 351590, "DQ.ok": 55320, "OT_S.ok": 351590, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "t2ext.pkl", "n": 2000, "sec": 10, "cnt": {"C_strip.ok": 321202, "DQ.ok": 56988, "OT_S.ok": 321202, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "std_b.pkl", "n": 2000, "sec": 5, "cnt": {"C_strip.ok": 6926, "DQ.ok": 8634, "OT_S.ok": 6926, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "graftF.pkl", "n": 2000, "sec": 1, "cnt": {"C_strip.ok": 5144, "DQ.ok": 2550, "OT_S.ok": 5144, "frames": 285, "mats": 2000}, "ex": {}}
+{"set": "graftG.pkl", "n": 2000, "sec": 1, "cnt": {"C_strip.ok": 5200, "DQ.ok": 3092, "OT_S.ok": 5200, "frames": 372, "mats": 2000}, "ex": {}}
+{"set": "graftE.pkl", "n": 2000, "sec": 3, "cnt": {"C_strip.ok": 6350, "DQ.ok": 4828, "OT_S.ok": 6350, "frames": 275, "mats": 2000}, "ex": {}}
+{"set": "graftA1.pkl", "n": 2000, "sec": 48, "cnt": {"C_strip.ok": 770500, "DQ.ok": 101850, "OT_Q.ok": 50, "OT_S.ok": 770500, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "graftA2.pkl", "n": 2000, "sec": 38, "cnt": {"C_strip.ok": 607226, "DQ.ok": 88008, "OT_Q.ok": 75, "OT_S.ok": 607226, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "graftA3.pkl", "n": 2000, "sec": 156, "cnt": {"C_strip.ok": 1242608, "DQ.ok": 123162, "OT_Q.ok": 25, "OT_S.ok": 1242608, "frames": 2000, "mats": 2000}, "ex": {}}
+{"set": "famframes.pkl", "n": 2000, "sec": 58, "cnt": {"C_strip.ok": 341908, "DQ.ok": 89716, "OT_S.ok": 341908, "frames": 2000, "mats": 2000}, "ex": {}}
