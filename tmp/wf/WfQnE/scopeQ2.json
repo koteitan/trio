@@ -1,0 +1,22 @@
+{
+ "n": 29364,
+ "cnt": {
+  "ADS.cases": 72223,
+  "ADS.fail": 15048,
+  "ADS.fail.WisA": 15048,
+  "ADSX.ok": 15048,
+  "P.v.bad": 18496,
+  "SC.B": 18496,
+  "SC.dev": 301980,
+  "SC.ge.ok": 301980,
+  "SC.lt.ok": 301980,
+  "SC.out.ok": 301980,
+  "TPL.cases": 95207,
+  "TPL.fail": 30096,
+  "TPLX.ok": 30096,
+  "dev.n2": 15048,
+  "dev.n3": 3448,
+  "frames": 44677
+ },
+ "ex": {}
+}

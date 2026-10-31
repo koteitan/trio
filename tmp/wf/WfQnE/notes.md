@@ -33,3 +33,24 @@ Same mechanism as the q = r witness M13 (i = 9 = (3,2,1), P0 = P1 = 8, bad shape
 - Gen-1 grafts (graftQ1.pkl, 4540 standard t = 1 q != r grafts of the 56 seeds = 6 witnesses + their frame prefixes;
   ops: inserted children/larger siblings, row-1 +2/+3 (b >= 4), +-1 mutations, delete/duplicate, new last column, M[2]/M[3]
   prefixes): ADS fail 304 (all W = A, ADSX 304/304), TPL fail 608 (TPLX 608/608), primary deviations 397 all P.v.bad, 0 other.
+- Gen-2 grafts (graftQ2.pkl, 29364 grafts of the 304 failing gen-1 grafts): ADS fail 15048 (all W = A, ADSX 15048/15048),
+  TPL fail 30096 (TPLX 30096/30096), primary deviations 18496 all P.v.bad, 0 other.
+- scope() on every failing graft (+2% sample of the rest), n = 2, 3: graftQ2 301980 deviating calls, graftQ1 5510:
+  all inside DepXB(B), all with glue <= true < old (scopeQ1.json, scopeQ2.json).
+- Sanity (fields hold there, so the glue must be exact): std_b 200k sample (27430 frames), graftM36x 100k (6285 frames),
+  ext2 100k (40195 frames): 0 bad calls, 0 deviations in the scope sample.
+
+## Proposal (the generalized t = 1, q != r engine)
+Let A = o(r) = psi_mu(b), zeta = gamS mu b seed m (n = m + 2), and
+  B_zeta = { i < x : DepX false i, e1 i, e2 i != 0, BadShape1 M i, bumpW i = A, exists q in summands v(P1 i), A[zeta] <= q < A }.
+The true valuation sigma of gexp M r L d0 0 n satisfies
+  (E1) sigma = glueZ M x rho (shiftV rhoP L) (fun _ => zeta) off DepXB M B_zeta (WfQnE3.AgreeOffB; congruence lemmas done);
+  (E2) at i in B_zeta: sigma.v i = sf(add v(P1 i) A[zeta]) (< A by WfQnE2.bad_v_lt), sigma.o i = o-equation with CL i = [];
+  (E3) on DepXB: fsD(old, zeta) <= sigma < old.
+The fields used by the engine become AbsDSX / TPLoSX (WfQnE2): they are exactly the old ones with the bad case B allowed
+(0 exceptions on all failures and grafts).  Proof plan: (1) generalize vlocal_t1_at to VLocal or bad (the bad case is the
+bump frame with K = [] , k = r, W = A); (2) build sigma by cons_of_rk, prove (E1) by AgreeOffB induction on the rank;
+(3) Good3 / Pn on DepXB from (E2), (E3) and the bad shape (o(m) = psi_{v(m)}(Lc + Omega_{v(i)}), the low part stays
+empty because v(m) <= v(m) + A[zeta]); (4) root N < root M from (E3) at the root.
+The q = r witness M13 (tplow / adw) has the same shape (i = 9, P0 = P1 = 8, BadShape1, W = A), so the q = r engine
+(qr_vloc / qr_lkeep) should take the same generalization with zeta = gamS (m + d_i).
