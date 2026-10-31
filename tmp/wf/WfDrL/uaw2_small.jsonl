@@ -24,3 +24,4 @@
 {"set": "graftA.pkl", "n": 13876, "sec": 6, "cnt": {"cases": 3307, "strong": 2370, "weak": 937}, "ex": {}}
 {"set": "graftAn.pkl", "n": 13876, "sec": 6, "cnt": {"cases": 3307, "strong": 2370, "weak": 937}, "ex": {}}
 {"set": "d3s.pkl", "n": 15000, "sec": 12, "cnt": {"cases": 4112, "strong": 4112}, "ex": {}}
+{"set": "b2grow2.pkl", "n": 10081, "sec": 18, "cnt": {"cases": 10081, "weak": 10081}, "ex": {}}
