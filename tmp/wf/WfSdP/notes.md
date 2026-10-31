@@ -50,3 +50,16 @@ hole_dom needs the domination (Lhd). New interface (WfSdP3):
 WfSdP4: the 18 live producers copied over ExpStepT1D (suffix D); WfSdP5: qr_chainD .. qr_final4SGD, qr_final4SGD2
 (no hseedC); WfSdP6: qr_t1_D = the q = r branch of V3T1Bad.badOutT1 with PV2 drop, SeedC2 from UAwR, D producers
 (base hP1 still a hypothesis, as in badOutT1).
+
+## UAwRA (WfSdP7): one hypothesis for the seed and the base
+UAwRA = UAwR at every level u (the VrDomQ form: g in comps u (V+1) -> g <= Om_{V+1} or dominated in comps u v(x-1)).
+It gives UAwR (WCSA.toWCS2) and the base FrameMapT1 and VrDomQ (frameMapT1_takeG3, replacing SmallSelf(V+1)).
+qr_t1_D2: the q = r branch with only T1Core at M.take x as the base hypothesis.
+Measurement (uawra.py, exact enumeration as uaw2.py):
+- graftD, graftE, graftF/F_a/F_b, graftG, graftQ1, graftQ2, graftH and the 15 family pkls: 24 sets, 61694 weak cases, 0 fail
+  (uawra_graft.jsonl).
+- graft attack graftR (graftR.py: 40 smallest seeds with domV false, gen1+gen2, 31558 matrices): 4717 weak cases
+  (2626 with domV false), 0 fail (uawra_graftR.jsonl).
+- 50 handoff sets: uawra_sets.jsonl (started 2026-11-01 ~03:40, smallest first; earlier uawr_sets.jsonl: 8 sets, 0 fail).
+Not derived in Lean: PV2/UAw2 give WCS2 relative to v(P0(x-1)); UAwRA is relative to v(x-1) = sf(V + last v(k)),
+where sf may absorb summands of V (domV false), so the bound g <= Om_{V+1} is needed there.

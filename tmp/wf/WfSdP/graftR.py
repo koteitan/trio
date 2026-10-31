@@ -6,7 +6,7 @@ usage: nice -n 15 python3 graftR.py NPROC"""
 import sys,pickle,random
 sys.path.insert(0,'/home/koteitan/proofs/trio/tmp/wf/WfDrE');sys.path.insert(0,'/home/koteitan/proofs/trio/tmp/wf/WfSdP')
 import graftE as GE
-import uawr
+import uawra as uawr
 from pv2 import load
 from multiprocessing import Pool
 def isseed(M):

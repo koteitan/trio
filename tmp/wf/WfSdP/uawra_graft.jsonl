@@ -1,0 +1,24 @@
+{"set": "graftD.pkl", "n": 37749, "sec": 55, "cnt": {"cases": 16502, "strong": 5482, "weak": 11020, "weak.UAwRA=1.domV=0.UAw2=1": 17, "weak.UAwRA=1.domV=1.UAw2=1": 11003}, "ex": {}}
+{"set": "graftE.pkl", "n": 54990, "sec": 65, "cnt": {"cases": 24110, "strong": 7159, "weak": 16951, "weak.UAwRA=1.domV=0.UAw2=1": 786, "weak.UAwRA=1.domV=1.UAw2=1": 16165}, "ex": {}}
+{"set": "graftF.pkl", "n": 48754, "sec": 5, "cnt": {"cases": 10835, "strong": 10835}, "ex": {}}
+{"set": "graftF_a.pkl", "n": 24377, "sec": 3, "cnt": {"cases": 5469, "strong": 5469}, "ex": {}}
+{"set": "graftF_b.pkl", "n": 24377, "sec": 3, "cnt": {"cases": 5366, "strong": 5366}, "ex": {}}
+{"set": "graftG.pkl", "n": 56699, "sec": 8, "cnt": {"cases": 18116, "strong": 18114, "weak": 2, "weak.UAwRA=1.domV=1.UAw2=1": 2}, "ex": {}}
+{"set": "graftQ1.pkl", "n": 4540, "sec": 6, "cnt": {"cases": 298, "strong": 132, "weak": 166, "weak.UAwRA=1.domV=1.UAw2=1": 166}, "ex": {}}
+{"set": "graftQ2.pkl", "n": 29364, "sec": 49, "cnt": {"cases": 505, "strong": 379, "weak": 126, "weak.UAwRA=1.domV=1.UAw2=1": 126}, "ex": {}}
+{"set": "graftH.pkl", "n": 21905, "sec": 17, "cnt": {"cases": 7669, "strong": 7386, "weak": 283, "weak.UAwRA=1.domV=1.UAw2=1": 283}, "ex": {}}
+{"set": "cex36.pkl", "n": 1, "sec": 0, "cnt": {"cases": 1, "strong": 1}, "ex": {}}
+{"set": "hunt_found.pkl", "n": 10, "sec": 0, "cnt": {"cases": 10, "weak": 10, "weak.UAwRA=1.domV=1.UAw2=1": 10}, "ex": {}}
+{"set": "graft36.pkl", "n": 100, "sec": 0, "cnt": {"cases": 36, "strong": 35, "weak": 1, "weak.UAwRA=1.domV=1.UAw2=1": 1}, "ex": {}}
+{"set": "g36_1.pkl", "n": 1102, "sec": 1, "cnt": {"cases": 226, "strong": 206, "weak": 20, "weak.UAwRA=1.domV=1.UAw2=1": 20}, "ex": {}}
+{"set": "graft36b.pkl", "n": 3461, "sec": 3, "cnt": {"cases": 1182, "strong": 1146, "weak": 36, "weak.UAwRA=1.domV=1.UAw2=1": 36}, "ex": {}}
+{"set": "g36_2.pkl", "n": 5962, "sec": 8, "cnt": {"cases": 1730, "strong": 1460, "weak": 270, "weak.UAwRA=1.domV=1.UAw2=1": 270}, "ex": {}}
+{"set": "graft3.pkl", "n": 6638, "sec": 7, "cnt": {"cases": 5353, "strong": 835, "weak": 4518, "weak.UAwRA=1.domV=1.UAw2=1": 4518}, "ex": {}}
+{"set": "graft5.pkl", "n": 12214, "sec": 6, "cnt": {"cases": 4873, "strong": 4341, "weak": 532, "weak.UAwRA=1.domV=1.UAw2=1": 532}, "ex": {}}
+{"set": "graft2.pkl", "n": 9680, "sec": 10, "cnt": {"cases": 7187, "strong": 1302, "weak": 5885, "weak.UAwRA=1.domV=1.UAw2=1": 5885}, "ex": {}}
+{"set": "graft36c.pkl", "n": 11451, "sec": 14, "cnt": {"cases": 4293, "strong": 4178, "weak": 115, "weak.UAwRA=1.domV=1.UAw2=1": 115}, "ex": {}}
+{"set": "graft4.pkl", "n": 17293, "sec": 24, "cnt": {"cases": 7640, "strong": 2385, "weak": 5255, "weak.UAwRA=1.domV=1.UAw2=1": 5255}, "ex": {}}
+{"set": "lift2.pkl", "n": 7279, "sec": 11, "cnt": {"cases": 7037, "strong": 4684, "weak": 2353, "weak.UAwRA=1.domV=1.UAw2=1": 2353}, "ex": {}}
+{"set": "lift1.pkl", "n": 15190, "sec": 37, "cnt": {"cases": 14550, "strong": 5636, "weak": 8914, "weak.UAwRA=1.domV=1.UAw2=1": 8914}, "ex": {}}
+{"set": "graftM36x.pkl", "n": 18227, "sec": 37, "cnt": {"cases": 6504, "strong": 4493, "weak": 2011, "weak.UAwRA=1.domV=1.UAw2=1": 2011}, "ex": {}}
+{"set": "graftM36.pkl", "n": 24690, "sec": 56, "cnt": {"cases": 12597, "strong": 9371, "weak": 3226, "weak.UAwRA=1.domV=1.UAw2=1": 3226}, "ex": {}}
