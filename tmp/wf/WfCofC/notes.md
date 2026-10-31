@@ -68,3 +68,17 @@ CAP 6000 per file (out2/, summary2.txt), all 0 failures:
 - HCntV2 (VP) 103,998 × 3. HNoSucc1: no t = 1 matrix of successor type among 176,057 t = 1 diagonal + others.
 - False forms: V2 21,673 / 25,043 / 28,317; DT mid 91,932, r 56,062 (smallest
   (0,0,0)(1,1,1)(2,1,0)(3,2,0)(4,3,0)(5,3,0)(6,3,0)(7,0,0)(5,3,0)).
+
+Grafts and the t = 0 split (out3/):
+- graftC.pkl (graftC.py, 11,486 standard matrices; seeds: 15 diagonal matrices whose point in tA has subscript ≠ μ;
+  no t = 0 / t = 2 matrix has equality fsD(o_A(Rt), 0) = o_{A[2]}(Rt), so no tight count seeds exist):
+  CI / HDiagLoc 6,597, HDiagStep Rt 2,736 / mid 4,989 / r 6,597, HCntPath0 2,653 × 3 n, HCntRoot2 993 × 3: 0 failures.
+- probeY (CAP 6000, all 77 files + graftC): HCntAtG0 (G0) 67,975 × 3 n, HCntStep0 (E0, antecedent true)
+  435,811 × 3 n: 0 failures (the antecedent never failed either).
+
+## Remaining (surjectivity)
+Desc3 (order preservation), HGood3, HRootSP, HDiagT1, HEngPath (earlier rounds);
+HDiagLoc, HDiagStep (HCID); HCntAtG0, HCntStep0 (t = 0); HNoSucc1; HCntRoot2 (t = 2; design HCntV2 along row 1).
+Next: HCntAtG0 from t0_core (the copies are the last children of g: state_N(g) = P + omid·(k+1) + o_{A[1]}(r) vs
+state_A(g) = P + ψ_v(Y0 + 1)) needs fsD to pass through sf/sp of o(g); HDiagStep/HCntStep0 are the same kind of
+one-edge term lemma (last child d of c; fsD / DiagAt through sf ψ_{v(c)}(spArg(…+cnt(d)))).
