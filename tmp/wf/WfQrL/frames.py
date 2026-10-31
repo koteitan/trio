@@ -13,10 +13,34 @@ import trio
 from probe_inv3_prefix import Z, lt, isOT, split, succ, last, spa
 from probe_adn import gamS, dependencies, lift_counts, Ctx, ms
 from compq import dq, dq1
+from probe_inv3_prefix import ONE, fsD, sumN
+import ytosk_eval as YE
+E0=(Z,(ONE,Z,Z),Z)
+def lo_(b,a):return split(b,(succ(a),Z,Z))
+def omside(eta,Y,YN):
+    r={}
+    if lt(Y,E0)!=lt(YN,E0):
+        return {'cross.E0toSmall':(Y==E0 and lt(YN,E0))}
+    r['ot']=isOT(Y) and isOT(YN)
+    r['e0']=lt(Y,E0)==lt(YN,E0)
+    r['q0']=not(Y and not Y[2]) or (YN and not YN[2])
+    ok=True
+    if Y and YN and not Y[2] and not YN[2] and Y[0]==YN[0] and Y[1]:
+        a=Y[0];h,l=lo_(Y[1],a);hN,lN=lo_(YN[1],a)
+        ok=(lN==Z) if l==Z else (hN==h and lN!=Z)
+        if not ok and l==Z and last(Y[1])==(succ(a),Z,Z) and hN==init_(Y[1]) and lt(YN,(succ(a),Z,Z)):
+            return {'node':True}
+    r['lo']=ok
+    r['B']=(YN!=fsD(Y,eta)) or (fsD(YE.omega(Y),eta)==YE.omega(YN) and lt(fsD(YE.omega(Y),eta),YE.omega(Y)))
+    return r
 NMAX=3
 def init_(t):
     if not t or not t[2]:return Z
     return (t[0],t[1],init_(t[2]))
+def summ_(t):
+    r=[]
+    while t:r.append((t[0],t[1],Z));t=t[2]
+    return r
 def single(t):return bool(t) and not t[2]
 def lo0(y,s):return split(y,(succ(s),Z,Z))[1]==Z
 def bad(cnt,ex,name,key):
@@ -55,8 +79,21 @@ def check(M,cnt,ex):
                     if not trM and not trN:cnt['hTrig.add']+=1
                     elif trM and trN and s2==s and lo0(y,s) and lo0(y2,s) and dq(y,y2,Zf(c)) is not None:cnt['hTrig.trig']+=1
                     elif trM and trN and s2==s and lo0(y,s) and not lo0(y2,s) and y and last(y)==(succ(s),Z,Z) and split(y2,(succ(s),Z,Z))[0]==init_(y) and lt((s,y2,Z),(succ(s),Z,Z)):cnt['hTrig.node']+=1
+                    elif trM and trN and s2==s and not lo0(y,s) and not lo0(y2,s) and split(y2,(succ(s),Z,Z))[0]==split(y,(succ(s),Z,Z))[0] and dq(y,y2,Zf(c)) is not None:cnt['hTrig.triglo']+=1
                     elif c==x:
                         cnt['hTrig.leafpar.%s%s.%s'%('M' if trM else '-','N' if trN else '-','DQ' if isdq else 'noDQ')]+=1
+                        okL=False
+                        ox=C.o(c)
+                        if y==Z and ox[0] and YE.isSucc(ox[0]) if hasattr(YE,'isSucc') else False:pass
+                        from probe_inv3_prefix import isSucc as isS
+                        if y==Z and ox[0] and isS(ox[0]) and trN and not lo0(y2,s2) and lt(oc,ox):
+                            ad=summ_(YE.add(pre,ox));Bl=ad[:-1]
+                            hi_=summ_(split(y2,(succ(s2),Z,Z))[0])
+                            if ad[-1]==(ox[0],ox[1],Z) and hi_[:len(Bl)]==Bl:
+                                Ql=hi_[len(Bl):]
+                                okL=all(not lt(q,(s2,y2,Z)) and lt(q,ox) for q in Ql)
+                        if okL:cnt['hTrig.leafpar.lemma.ok']+=1
+                        else:bad(cnt,ex,'hTrig.leafpar.lemma',key)
                         if not isdq:bad(cnt,ex,'hTrig.leafpar.noDQ',key)
                     else:
                         bad(cnt,ex,'hTrig.%s%s.%s'%('M' if trM else '-','N' if trN else '-','DQ' if isdq else 'noDQ'),key)
@@ -77,6 +114,16 @@ def check(M,cnt,ex):
                     js=[j for j in C.ch(i) if M[j]==C.e.bump(i)]
                     ks=[C.ch(j)[-1] for j in js if C.ch(j)]
                     etas=[Zf(i)]+[Zf(k) for k in ks]
+                    for j in js:
+                        if not C.ch(j):continue
+                        k=C.ch(j)[-1]
+                        G=sumN([C.o(e) for e in C.ch(j)]);GN=sumN([CN.o(e) for e in C.ch(j)])
+                        S=sumN([ONE]+[C.bumpTerm(i,jj) for jj in C.ch(i)]);SN=sumN([ONE]+[CN.bumpTerm(i,jj) for jj in C.ch(i)])
+                        for lay,(Y_,YN_) in (('1',(G,GN)),('2',(S,SN))):
+                            if Y_==YN_:cnt['om%s.same'%lay]+=1;continue
+                            for nm,v in omside(Zf(k),Y_,YN_).items():
+                                if v:cnt['om%s.%s.ok'%(lay,nm)]+=1
+                                else:bad(cnt,ex,'om%s.%s'%(lay,nm),key)
                     if W==WN:cnt['hBW.same']+=1
                     elif any(dq1(W,WN,e,1) is not None for e in etas):cnt['hBW.ok']+=1
                     else:bad(cnt,ex,'hBW.dq',key)
