@@ -4,6 +4,12 @@
 
 ## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個）
 
+**10 回目（2026-11-01）**: 新しい形を Lean につないだ（すべて緑、1204 jobs）。
+- q = r（WfQrL1〜18）: DQ の形の連鎖 qr_chainE。M[n] の真の値づけは、自分の D の値での glue に等しい（true_glue_eq）。D のすべての呼び出しで σ = DQ(古い値)（qr_engineDQ2）。残りは仮定 hLocE（o の枠の 5 形・ω の層の 3 形を M の側の欄から出すこと）と、DQ の値の標準形（条件 C_strip、測って例外 0）、Inv3V2A の展開の段。
+- q ≠ r（WfBad・WfQnL1〜8）: 共通の定義 BadCall / BadSet。D の v の呼び出しは VLocal か悪い（vlocal_t1_atX）。閉包の外で真の値づけ = glue（E1_M）。悪い呼び出しの右辺 = sf(v(P₁ i) + A[ζ]) < A。根が下がる（root_N_E3）。残りは閉包の中の (E3)、入れ子の悪い呼び出し、OLocal を TPLoSX から出すこと、構造の残り hu0。
+- 落とす補題（WfDrL1〜4）: PV2 は graftE（5.5 万個、PV は 901 回偽）でも例外 0、UAw2・SeedC2 も例外 0。PV を使う生きた 111 個の定数のうち 72 個を PV2 版に写した（残りは落とす補題そのもの・包み・構造の欄）。添字 0 の条件（d = 0 の列の対角の点は μ だけ）を証明（WfDrL3）。
+- 全射（WfCofL1〜4）: 項の補題（対角の点で t[k] = fsD(t, γ_k)）を証明。EvalFSNZ 2 をエンジン側の名前つきの事実（HEngD・HPathRD・HShiftD・HCID・HRootD・HNotSucc・HCountS）に帰着。どれも測って例外 0。
+
 **9 回目（2026-11-01）**: t = 1 の偽の欄（adn・tplow・adw・ads・tplos）はすべて 1 つの現象から来る。悪い形の bump の呼び出し i（P₀ i = P₁ i = m、CL i = []、i へ上げる列なし）で bump 項 W が A = o(r) そのもの、v(P₁ i) の項 q が [A[ζ], A) にあると、M では A に吸収された q が M[n] では残る。
 - q = r: 真の値は fsD に残る項 Q を差し込んだ DQ（WfQrE1、例外 0）。tplow → TPLoQ（0/285 万）、adw は不要、adn → AbsDN0。
 - q ≠ r: 悪い集合 B_ζ の外は今までの glue、B_ζ の上は v = v(P₁ i) + A[ζ]（WfQnE1〜3）。ads・tplos → AbsDSX・TPLoSX。古い出力の形が偽であることは Lean で示した（not_cons_glue2/3）。
