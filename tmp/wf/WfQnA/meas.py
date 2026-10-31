@@ -105,6 +105,9 @@ def meas(M):
                     if not lt(q,W2) and lt(q,W):
                         ok=LX.lhd(q,W); c['ABS.cl.ok' if ok else 'ABS.cl.FAIL']+=1
                         if not ok: e.setdefault('ABScl',(M,n,i))
+                        if i not in B and not lt(q,CE.bumpW(i)):
+                            ok=LX.lhd(q,W); c['ABSW.cl.ok' if ok else 'ABSW.cl.FAIL']+=1
+                            if not ok: e.setdefault('ABSWcl',(M,n,i))
             for i in B:
                 for q in summ(C.vOpt1(i)):
                     if lt(q,A_) and not lt(q,Az):

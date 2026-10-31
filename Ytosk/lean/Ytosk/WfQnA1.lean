@@ -1,9 +1,10 @@
 /-
 **WfQnA1 (2026-11-01): the `◁` engine `WfQnH7.deps_lhd_otU` with the value hypotheses asked only in the closure.**
 `deps_lhd_otUD` = `deps_lhd_otU` where `hVSN` and `hHard` are asked only at `o` calls `i` of `DepS M S` and the
-absorption field `hAbs` only at `v` calls of `DepS M S` (the engine reads them only there).  The global `hAbs`
-is the invariant `BumpAbs`, which is false on reachable matrices (desc.md); the restricted form is measured
-(tmp/wf/WfQnA/meas.py `ABS.cl`).
+absorption field `hAbs` only at the non-seed `v` calls of `DepS M S` (the engine reads them only there), in the
+weak form of `AbsWN` (only the summands that survive the new bump term `bumpW N σ i`, `v_bump_lhdW`).
+The strong form restricted to the closure (`BumpAbs` at closure calls) is false: 3 failures on graftQ1
+(tmp/wf/WfQnA/meas.py `ABS.cl`); the weak form is measured as `ABSW.cl`.
 -/
 import Ytosk.V3DepOT
 
@@ -47,8 +48,9 @@ theorem deps_lhd_otUD {M N : Mat} {S U : Bool → Nat → Prop} {bnd : Nat} {ρ 
         (∀ d ∈ Lb, bumpTerm N σ i d = bumpTerm M ρ i d) ∧ (¬ DepS M S false k → U false k)))
     (hupgK : ∀ i k, i < bnd → upg M i = some k → ∀ j ∈ children N k, col N j = bump N k →
       ∀ k' ∈ children N j, k' < bnd → j ∈ children M k ∧ col M j = bump M k ∧ k' ∈ children M j)
-    (hAbs : ∀ i, i < bnd → DepS M S false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → ∀ q ∈ summands (vOpt ρ (par M 1 i)),
-      ¬ q < psi z two z → q < bumpW M ρ i → Lhd z q (bumpW M ρ i)) :
+    (hAbs : ∀ i, i < bnd → DepS M S false i → ¬ S false i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)),
+      ¬ q < psi z two z → ¬ q < bumpW N σ i → q < bumpW M ρ i → Lhd z q (bumpW M ρ i)) :
     ∀ b i, DepS M S b i → i < bnd → Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true := by
   have key : ∀ K, ∀ b i, rk b i ≤ K → DepS M S b i → i < bnd →
       Lhd z (valB σ b i) (valB ρ b i) ∧ isOT (valB σ b i) = true := by
@@ -297,8 +299,8 @@ theorem deps_lhd_otUD {M N : Mat} {S U : Bool → Nat → Prop} {bnd : Nat} {ρ 
             rcases List.mem_append.mp hu with h | h
             · exact (hsK u h).1
             · simp at h; rw [h]; exact hG.ot_o k0 hkM)
-          refine ⟨v_bump_lhd hC hG hCN hiM hiN h1 h2 he1 he2 hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt
-            hTD (hAbs i hi hD0 h1 h2), ?_⟩
+          refine ⟨v_bump_lhdW hC hG hCN hiM hiN h1 h2 he1 he2 hV hch hchN hbL hbjM hbjN hGot hG'ot hS hlt
+            hTD (hAbs i hi hD0 hs h1 h2), ?_⟩
           -- the new `v` is `V + ω^Y` with `V`, `Y` standard
           have hmapN : (children N i).map (bumpTerm N σ i) = Lb.map (bumpTerm M ρ i) ++ [omega
               (sumN (Kb.map ρ.o ++ [σ.o k0]))] := by
