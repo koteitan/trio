@@ -1,3 +1,3 @@
-import Ytosk.WfSrcB1
+import Ytosk.WfSrcB2
+#print axioms Ytosk.WfSrcB.srcBNonlost_of_2
 #print axioms Ytosk.WfSrcB.t2AbsNSrcW_of
-#print axioms Ytosk.WfSrcB.shape_b

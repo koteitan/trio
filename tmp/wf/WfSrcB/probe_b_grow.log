@@ -1,0 +1,5 @@
+grow 3617 3750
+grow 39431 43181
+grow 361037 404218
+{"set": "grow", "counts": {"input": 404218, "B.frames": 14782, "B.r_is_prev": 14782, "Wchg": 159907, "Wchg.fail": 1192, "Wchg.fail.i_is_g": 1192, "c.high.ok.outside": 57717, "c.nonlost_return.ok.prevdesc": 56159, "c.pending.ok.prevdesc": 30496, "pending.c_eq_p": 0, "pending.i_eq_g": 0, "pending.e1c_eq_e1m": 0, "c.lost.ok.prevdesc": 13590, "c.earlier_return.ok.prevdesc": 753, "c.lost.fail.prevdesc": 1192}}
+{"set": "tmp/codex/t2src_a_upgrade_paired_grafts_trio_codex.pkl", "counts": {"input": 400}}

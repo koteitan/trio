@@ -1,0 +1,51 @@
+{
+  "seconds": 408.55,
+  "sets": {
+    "grow": {
+      "input": 404218,
+      "counts": {
+        "input": 404218,
+        "B.frames": 14782,
+        "B.r_is_prev": 14782,
+        "Wchg": 159907,
+        "Wchg.fail": 1192,
+        "Wchg.fail.i_is_g": 1192,
+        "c.high.ok.outside": 57717,
+        "c.nonlost_return.ok.prevdesc": 56159,
+        "c.pending.ok.prevdesc": 30496,
+        "pending.c_eq_p": 0,
+        "pending.i_eq_g": 0,
+        "pending.e1c_eq_e1m": 0,
+        "c.lost.ok.prevdesc": 13590,
+        "c.earlier_return.ok.prevdesc": 753,
+        "c.lost.fail.prevdesc": 1192
+      },
+      "examples": {
+        "pending.prevdesc": {
+          "matrix_text": "(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,0,0)(6,1,1)(7,1,1)(8,1,0)(6,1,1)(7,1,1)(8,1,0)(6,1,1)(7,1,0)(8,2,1)(9,2,1)(10,1,0)(11,2,1)",
+          "n": 27,
+          "x": 26,
+          "i": 12,
+          "j": 13,
+          "c": 14,
+          "m": 8,
+          "p": 24,
+          "g": 23,
+          "k": 21,
+          "V": "p(1)",
+          "W": "p(p_{p_{p_{p(1)}(0)}(0)}(0)+p_{p(1)}(p_{p_{p(1)}(p_{p(1)+p(1)}(0))}(0)))",
+          "WT": "p(p_{p_{p_{p(1)}(0)}(0)}(0)+p_{p(1)}(p_{p_{1}(0)}(0)))",
+          "oc": "p(p_{p_{p_{p(1)}(0)}(0)}(0)+p_{p(1)}(p_{p_{p(1)}(p_{p(1)+p(1)}(0))}(0)))",
+          "ocT": "p(p_{p_{p_{p(1)}(0)}(0)}(0)+p_{p(1)}(p_{p_{1}(0)}(0)))"
+        }
+      }
+    },
+    "tmp/codex/t2src_a_upgrade_paired_grafts_trio_codex.pkl": {
+      "input": 400,
+      "counts": {
+        "input": 400
+      },
+      "examples": {}
+    }
+  }
+}
