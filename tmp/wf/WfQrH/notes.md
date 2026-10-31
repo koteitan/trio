@@ -74,8 +74,12 @@ prefixes of the family members and of their M[2], M[3]): 64,642 frames, 645,356 
   layers: single 369,262, multi 8,078, ε0 crossing 574, no other crossing.
 compq2.py (n = 2, 3, same samples): DQ 1,801,736 ok; C_strip 8,648,670 ok; OT_S (isOT ψ_a(b_S)) 8,648,670 ok;
   OT_Q 200 ok (non-empty Q is rare).
-graftH.py (new graft family around trigsub / leafpar / non-empty-Q frames; WfInvD graftD.gen): see graftH.log,
-  mside_H.jsonl, of_H.jsonl, cq_H.jsonl.
+graftH.py (new graft family: 15 seeds = 5 trigsub (PreB false) + 5 leafpar + 5 non-empty-Q frames from g36_2,
+  graftM36x, graftA1, lift1; WfInvD graftD.gen gen 1 + 300-sample gen 2; graftH.pkl, 21,905 standard matrices < SRO,
+  3,610 q = r frames), full run n = 2, 3: OX/RX/S1/V1 0 fail; TrigN 14,012, lNz, lastNotOne, Last 12,518,
+  Leaf add 3,610 / leafpar 3,610 0 fail; forms only sub / arg / leaf; DQ 98,666, C_strip 200,904, OT_S 200,904,
+  OT_Q 12,850 0 fail.  PreB 4,988 fail, PreS 4 fail, lNgeEta 26 fail (still false).
+famframes.pkl through mside.py: mside_fam.jsonl (if present).
 
 ## Remaining hypotheses of WfQrH7.qr_chainH3 (exact)
 1. hLocH (per n ≥ 2, true valuation σ of M[n], given ρP.o r < o(x), ρP.o r ≠ 0):
