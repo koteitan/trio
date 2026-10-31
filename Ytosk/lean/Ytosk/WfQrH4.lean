@@ -2,18 +2,69 @@
 **WfQrH4 (2026-11-01): the `ω` layer step reduced to the single-summand case.**
 An `ω` layer `Y → Y_N` (`DQ η true Y Y_N`) needs no shape hypothesis when both are below `ε₀` (`omega_DQ_small`)
 or when both are `≥ ε₀` and `Y` has more than one summand (`omega_DQ_rest`).  `LayerF` adds these two cases to
-`LayerOK` and asks `OmSide` only at the `η` of the given `DQ`; `layer_step` and `bumpW_DQ3` are `layer_DQ` / `bumpW_DQ2` (WfQrL16) with `LayerF`.
+`LayerOK`, asks `OmSide` only at the `η` of the given `DQ`, and fixes its `hQ0` (`OmSide1`; the original is
+unsatisfiable on a single layer: `not_omSide_single`); `layer_step` and `bumpW_DQ3` are `layer_DQ` / `bumpW_DQ2` (WfQrL16) with `LayerF`.
 -/
 import Ytosk.WfQrL17
 
 namespace Ytosk.WfQrH4
 open T Ytosk Ytosk.WfQrL1 Ytosk.WfQrL2 Ytosk.WfQrL13 Ytosk.WfQrL16 Ytosk.WfQrL17
 
+/-- **`OmSide` is unsatisfiable on a single layer**: its `hQ0` quantifies over every decomposition, and
+`Y_N = 0 ++ (Y_N ++ 0)` forces `Y_N = 0`.  (frames.py tested the weaker "`Y` single → `Y_N` single".)  So `LayerOK`
+(WfQrL16) holds on a single layer only through the `ε₀` / node shapes; `OmSide1` below fixes `hQ0`. -/
+theorem not_omSide_single {η s b YN : T} (hYN : YN ≠ z) : ¬ OmSide η (psi s b z) YN := by
+  rintro ⟨-, -, -, hQ0, -, -⟩
+  have := hQ0 s b rfl z (psi s b z) z YN (by simp [app]) (by simp [app])
+  exact hYN this
+
+/-- `OmSide` with `hQ0` only for the single-last decomposition of the `DQ`. -/
+def OmSide1 (η Y YN : T) : Prop :=
+  isOT Y = true ∧ isOT YN = true ∧ ((Y < E0 ∧ YN < E0) ∨ (¬ Y < E0 ∧ ¬ YN < E0)) ∧
+  (∀ s b, Y = psi s b z → ∀ B l lN Q, Y = app B l → (∃ s0 y0, l = psi s0 y0 z) → YN = app B (app Q lN) →
+    DQ η false l lN → Q = z) ∧
+  (∀ a b bN, Y = psi a b z → YN = psi a bN z → b ≠ z →
+    (loOf a b = z → loOf a bN = z) ∧ (loOf a b ≠ z → hiOf a bN = hiOf a b ∧ loOf a bN ≠ z)) ∧
+  (YN = fsD Y η → fsD (omega Y) η = omega (fsD Y η) ∧ fsD (omega Y) η < omega Y)
+
+/-- **`omega_DQ_true` with `OmSide1`.** -/
+theorem omega_DQ_true1 {η Y YN : T} (h : DQ η true Y YN) (hO : OmSide1 η Y YN) :
+    DQ η false (omega Y) (omega YN) := by
+  obtain ⟨hY, hYN, hsm, hQ0, hLo, hB⟩ := hO
+  rcases hsm with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · exact omega_DQ_small h1 h2 h
+  cases Y with
+  | z =>
+    exfalso
+    obtain ⟨B, l, lN, Q, s, y, eY, _, hl, _, _⟩ := DQ.true_inv h
+    rw [hl] at eY; exact app_single_ne_z eY.symm
+  | psi a b c =>
+    by_cases hc : c = z
+    · subst hc
+      obtain ⟨B, l, lN, Q, s, y, eY, eYN, hl, hd, _⟩ := DQ.true_inv h
+      have hQz := hQ0 a b rfl B l lN Q eY ⟨s, y, hl⟩ eYN hd
+      subst hQz
+      have hB0 : B = z := by
+        cases B with
+        | z => rfl
+        | psi a1 b1 c1 =>
+          simp only [app_psi] at eY
+          injection eY with _ _ h3
+          rw [hl] at h3
+          exact absurd h3.symm app_single_ne_z
+      subst hB0
+      have hlY : l = psi a b z := by simpa [app] using eY.symm
+      have hYN' : YN = lN := by simpa [app] using eYN
+      subst hYN'
+      rw [hlY] at hd
+      exact omega_DQ hd hY hYN h1 h2 hLo hB
+    · exact omega_DQ_rest hc hY hYN h1 h2 h
+
 /-- The layer fields: small, multi-summand, or one of the three shapes of `LayerOK`. -/
 def LayerF (Y YN : T) : Prop :=
   (Y < E0 ∧ YN < E0) ∨
   (isOT Y = true ∧ isOT YN = true ∧ ¬ Y < E0 ∧ ¬ YN < E0 ∧ ∃ a b c, Y = psi a b c ∧ c ≠ z) ∨
-  (∀ η, DQ η true Y YN → OmSide η Y YN) ∨
+  (∀ η, DQ η true Y YN → OmSide1 η Y YN) ∨
   -- the `ε₀` crossing and the node shape of `LayerOK`
   ((Y = E0 ∧ YN < E0 ∧ isOT E0 = true) ∨
     (∃ a B bN, Y = psi a (app B (psi (succ a) z z)) z ∧ YN = psi a bN z ∧
@@ -28,8 +79,7 @@ theorem layer_step {Y YN : T} (hd : ∃ η, DQ η true Y YN) (h : LayerF Y YN) :
   rcases h with ⟨h1, h2⟩ | ⟨hY, hYN, h1, h2, a, b, c, rfl, hc⟩ | hO | h
   · exact ⟨η, omega_DQ_small h1 h2 hη⟩
   · exact ⟨η, omega_DQ_rest hc hY hYN h1 h2 hη⟩
-  · obtain ⟨hY, hYN, hsm, hQ0, hLo, hB⟩ := hO η hη
-    exact ⟨η, omega_DQ_true hη hY hYN hsm hQ0 hLo hB⟩
+  · exact ⟨η, omega_DQ_true1 hη (hO η hη)⟩
   · exact layer_DQ ⟨η, hη⟩ (Or.inr h)
 
 /-- **The bump term, two `ω` layers, each with `LayerF`.** -/
