@@ -46,4 +46,12 @@ Files Ytosk/lean/Ytosk/WfQnA1..18.lean.
   ABS.leaf 18496/18496, VSN 32435 ok, HARD 61108 ok (pre 110290), LZ.cl/E3 301980 all.
 - graftA2 (53563 frames), graftA (7395): no bad call (B = 0).
 - sample graftQ1 150: B.ltr 15/15, B.kr 15/15, R.outDB 15/15.
-(see meas2.log / m2_*.json for the graftQ3 graft round and the re-runs with ABSW/R.inDB/B.ltr/B.kr.)
+- GRAFT ROUND graftQ3 (graftQ3.py: 1500 bad-frame seeds of graftQ2, WfQnE/graft.py ops; 215650 grafts, all
+  frames): B 154128 bad calls; B.Vlt 154128/154128 (hVlt), B.ltr 154128 (hBr), B.kr 154128 (hKr: last bump
+  grandchild = r), NEST 0, R.inDB 0 (hrB), TZ.fail 308256 all in DB (TPLoSXIn), ABS.leaf 154128/154128 (hRwin),
+  VSN 271617 ok / 0 fail, HARD 614155 ok / 0 fail (antecedent 1066808 pre-cases), ABSW.cl: 0 cases (the weak
+  absorption antecedent never fires in the closure), LZ.cl / E3 2766927 all ok, ABS.cl (strong, unused) 2259 FAIL.
+- re-runs graftQ1/graftQ2 with the new counters (m2_*.json): same, ABSW 0 cases, B.ltr/B.kr/R.outDB all.
+- Not run (stopped at the time budget): graftA3, graftB, expP, ext1 (earlier rounds: no bad call in these).
+- WfQnA19: `win_of_fail`/`witness_bad`: a TPLoSX witness at a failing comparison is in BadSet (given e1, e2 != 0
+  and hVlt); the remaining half of TPLoSXIn is the climb of the closure from m = P0 i to c.
