@@ -1,0 +1,3 @@
+Cprime 404051 30 {"P0k_eq_P1k.True": 148, "b_eq_m.False": 38, "b_eq_m.True": 110, "c_anc_r.False.lt": 36, "k_anc_r.True": 148, "mp_anc_r.True": 148, "occ": 148, "vc_vr.lt": 36, "vm_vr.eq": 124, "vm_vr.gt": 24, "vmp_vr.eq": 4, "vmp_vr.lt": 144} []
+ext2 1497986 76 {"P0k_eq_P1k.True": 78, "b_eq_m.False": 51, "b_eq_m.True": 27, "c_anc_r.False.lt": 8, "k_anc_r.True": 78, "mp_anc_r.True": 78, "occ": 78, "vc_vr.lt": 8, "vm_vr.eq": 74, "vm_vr.gt": 4, "vmp_vr.lt": 78} []
+t2ext 1207960 113 {"P0k_eq_P1k.True": 162, "b_eq_m.False": 63, "b_eq_m.True": 99, "c_anc_r.False.lt": 40, "k_anc_r.True": 162, "mp_anc_r.True": 162, "occ": 162, "vc_vr.lt": 40, "vm_vr.eq": 113, "vm_vr.gt": 49, "vmp_vr.eq": 4, "vmp_vr.lt": 158} []
