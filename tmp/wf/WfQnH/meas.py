@@ -17,6 +17,7 @@ from probe_inv3_prefix import Ctx, Z, fsD, holelev, lt, le, summ, ohole, split, 
 from probe_inv2 import dependencies
 import ytosk_eval as YV
 import trio
+import lhd_exact as LX
 NS=(2,3)
 def ms(M):return ''.join('(%d,%d,%d)'%tuple(c) for c in M)
 def single(t): return t!=Z and t[2]==Z
@@ -83,6 +84,21 @@ def meas(M):
                 if tv!=fv: e.setdefault(tag+'ne',(M,n,i))
                 c[tag+('ltA' if lt(tv,A_) else 'geA')]+=1
                 c[tag+('geAz' if le(fsD(C.v(i),zeta),tv) else 'ltAz')]+=1
+            for (bb,i) in D:
+                if i>=x: continue
+                old=C.o(i) if bb else C.v(i)
+                tru=CE.o(i) if bb else CE.v(i)
+                if (bb,i) in DB:
+                    ok=LX.lhd(tru,old); c['LZ.cl.ok' if ok else 'LZ.cl.FAIL']+=1
+                    if not ok: e.setdefault('LZcl',(M,n,i,bb))
+                else:
+                    g=fsD(old,zeta)
+                    ok=LX.lhd(g,old); c['LZ.glue.ok' if ok else 'LZ.glue.FAIL']+=1
+                    if not ok: e.setdefault('LZglue',(M,n,i,bb))
+            for i in B:
+                g=YV.sf(YV.add(C.vOpt1(i),Az))
+                ok=LX.lhd(g,A_); c['LZ.leaf.ok' if ok else 'LZ.leaf.FAIL']+=1
+                if not ok: e.setdefault('LZleaf',(M,n,i))
             for (bb,i) in DB:
                 old=C.o(i) if bb else C.v(i)
                 tru=CE.o(i) if bb else CE.v(i)
