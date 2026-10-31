@@ -1,0 +1,2 @@
+{"set": "m13.pkl", "n": 1, "sec": 0, "cnt": {"C_strip.ok": 10, "DQ.ok": 14, "OT_Q.ok": 5, "OT_S.ok": 10, "frames": 1, "mats": 1}, "ex": {}}
+{"set": "g36_2.pkl", "n": 5962, "sec": 32, "cnt": {"C_strip.ok": 24128, "DQ.ok": 16034, "OT_Q.ok": 25, "OT_S.ok": 24128, "frames": 727, "mats": 5962}, "ex": {}}
