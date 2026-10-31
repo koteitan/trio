@@ -2,7 +2,7 @@
 **WfQrH4 (2026-11-01): the `ω` layer step reduced to the single-summand case.**
 An `ω` layer `Y → Y_N` (`DQ η true Y Y_N`) needs no shape hypothesis when both are below `ε₀` (`omega_DQ_small`)
 or when both are `≥ ε₀` and `Y` has more than one summand (`omega_DQ_rest`).  `LayerF` adds these two cases to
-`LayerOK`; `layer_step` and `bumpW_DQ3` are `layer_DQ` / `bumpW_DQ2` (WfQrL16) with `LayerF`.
+`LayerOK` and asks `OmSide` only at the `η` of the given `DQ`; `layer_step` and `bumpW_DQ3` are `layer_DQ` / `bumpW_DQ2` (WfQrL16) with `LayerF`.
 -/
 import Ytosk.WfQrL17
 
@@ -13,16 +13,24 @@ open T Ytosk Ytosk.WfQrL1 Ytosk.WfQrL2 Ytosk.WfQrL13 Ytosk.WfQrL16 Ytosk.WfQrL17
 def LayerF (Y YN : T) : Prop :=
   (Y < E0 ∧ YN < E0) ∨
   (isOT Y = true ∧ isOT YN = true ∧ ¬ Y < E0 ∧ ¬ YN < E0 ∧ ∃ a b c, Y = psi a b c ∧ c ≠ z) ∨
-  LayerOK Y YN
+  (∀ η, DQ η true Y YN → OmSide η Y YN) ∨
+  -- the `ε₀` crossing and the node shape of `LayerOK`
+  ((Y = E0 ∧ YN < E0 ∧ isOT E0 = true) ∨
+    (∃ a B bN, Y = psi a (app B (psi (succ a) z z)) z ∧ YN = psi a bN z ∧
+      isOT (psi a (app B (psi (succ a) z z)) z) = true ∧ isOT (psi a bN z) = true ∧
+      ¬ psi a (app B (psi (succ a) z z)) z < E0 ∧ ¬ psi a bN z < E0 ∧
+      loOf a (app B (psi (succ a) z z)) = z ∧ loOf a bN ≠ z ∧ hiOf a bN = B ∧ psi a bN z < psi (succ a) z z))
 
 /-- **An `ω` layer step from `LayerF`.** -/
 theorem layer_step {Y YN : T} (hd : ∃ η, DQ η true Y YN) (h : LayerF Y YN) :
     ∃ η', DQ η' false (omega Y) (omega YN) := by
   obtain ⟨η, hη⟩ := hd
-  rcases h with ⟨h1, h2⟩ | ⟨hY, hYN, h1, h2, a, b, c, rfl, hc⟩ | h
+  rcases h with ⟨h1, h2⟩ | ⟨hY, hYN, h1, h2, a, b, c, rfl, hc⟩ | hO | h
   · exact ⟨η, omega_DQ_small h1 h2 hη⟩
   · exact ⟨η, omega_DQ_rest hc hY hYN h1 h2 hη⟩
-  · exact layer_DQ ⟨η, hη⟩ h
+  · obtain ⟨hY, hYN, hsm, hQ0, hLo, hB⟩ := hO η hη
+    exact ⟨η, omega_DQ_true hη hY hYN hsm hQ0 hLo hB⟩
+  · exact layer_DQ ⟨η, hη⟩ (Or.inr h)
 
 /-- **The bump term, two `ω` layers, each with `LayerF`.** -/
 theorem bumpW_DQ3 {P0 K0 ok oN : T} (hok : ∃ s y, ok = psi s y z) (hd : ∃ η, DQ η false ok oN)

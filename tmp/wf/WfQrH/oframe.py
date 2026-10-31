@@ -16,6 +16,8 @@ import trio
 from probe_inv3_prefix import Z, lt, isOT, split, succ, last, isSucc
 from probe_adn import dependencies, Ctx, ms
 import ytosk_eval as YE
+from probe_inv3_prefix import ONE, sumN
+E0=(Z,(ONE,Z,Z),Z)
 def summ(t):
     r=[]
     while t:r.append((t[0],t[1],Z));t=t[2]
@@ -42,6 +44,19 @@ def check(M,cnt,ex):
         N=[tuple(c) for c in trio.expand([list(c) for c in M],n)];CN=Ctx(N)
         if not CN.ok:cnt['Nevalfail']+=1;continue
         for i in range(x):
+            if (False,i) in D and M[i][1] and M[i][2]:
+                for j in [j for j in C.ch(i) if M[j]==C.e.bump(i)]:
+                    if not C.ch(j):continue
+                    G=sumN([C.o(e) for e in C.ch(j)]);GN=sumN([CN.o(e) for e in C.ch(j)])
+                    S=sumN([ONE]+[C.bumpTerm(i,jj) for jj in C.ch(i)]);SN=sumN([ONE]+[CN.bumpTerm(i,jj) for jj in C.ch(i)])
+                    for lay,(Y_,YN_) in (('1',(G,GN)),('2',(S,SN))):
+                        if Y_==YN_:cnt['lay.same']+=1;continue
+                        sm=lt(Y_,E0);smN=lt(YN_,E0)
+                        if sm and smN:cnt['lay.small']+=1
+                        elif not sm and not smN and Y_[2]!=Z:cnt['lay.multi']+=1
+                        elif not sm and not smN:cnt['lay.single']+=1
+                        elif Y_==E0:cnt['lay.crossE0']+=1
+                        else:bad('lay.crossOther',(len(M),ms(M),n,i))
             if (True,i) not in D or (False,i) in D:continue
             CLi=C.CL(i)
             if not CLi or (True,CLi[-1]) not in D:continue
@@ -93,6 +108,9 @@ if __name__=='__main__':
     npr=int(sys.argv[1]);out=open(sys.argv[2],'a')
     for f in sys.argv[3:]:
         t=time.time();mats=pickle.load(open(f,'rb'))
+        CAP=int(os.environ.get('CAP','0'))
+        if CAP and len(mats)>CAP:
+            import random;random.seed(1);mats=random.sample(list(mats),CAP)
         cnt=collections.Counter();ex={}
         with Pool(npr) as pool:
             for c,e in pool.imap_unordered(work,(mats[i:i+50] for i in range(0,len(mats),50))):

@@ -109,3 +109,13 @@ theorem qr_chainG (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
 end
 
 end Ytosk.WfQrH5
+
+namespace Ytosk.WfQrH5
+open T Ytosk
+
+/-- `σ.o c ≠ 0` for every valuation satisfying the equations (the `≠ 0` conjunct of `hLocE`). -/
+theorem o_ne_z_of_cons {N : Mat} {σ : Valn} (hC : Cons N σ) {c : Nat} (hc : c < N.length) : σ.o c ≠ z := by
+  obtain ⟨s, y, h⟩ := o_psi_form hC hc
+  rw [h]; simp
+
+end Ytosk.WfQrH5
