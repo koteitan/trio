@@ -29,11 +29,11 @@ WfCofL3.lean
 - `evalFSNZ2_of_path`
 
 WfCofL4.lean
-- `HCount ⇐ Desc3 ∧ HNotSucc ∧ HCBase ∧ HCRec` (`hCount_of`)
+- `HCount ⇐ Desc3 ∧ HNotSucc ∧ HCountS` (`hCount_of`)
   - `HNotSucc` : nonzero last column ⇒ cof tA ≠ succ
-  - `HCBase`   : SuccAt ⇒ fsD(tA, 0) ≤ val(A[2])
-  - `HCRec`    : SuccAt, n ≥ 2: fsD(tA, m) ≤ val(A[n]) ⇒ fsD(tA, m+1) ≤ val(A[n+1])
-- `evalFSNZ2_of_facts : Desc3 → HEngD → HRootD → HShiftD → HPathRD → HCID → HNotSucc → HCBase → HCRec → EvalFSNZ 2`
+  - `HCountS`  : SuccAt a b tA ⇒ fsD(tA, k) = frame(ψ_a(init b) · k) ≤ val(A[k+2])
+- `evalFSNZ2_of_facts : Desc3 → HEngD → HRootD → HShiftD → HPathRD → HCID → HNotSucc → HCountS → EvalFSNZ 2`
+- (first version had HCBase + HCRec "one more copy adds one summand"; HCRec is FALSE, see below; removed)
 
 ## Measurements
 
@@ -54,7 +54,25 @@ probe2.py, all 73 files (handoff sets, the families of WfCof/files.txt, graftF, 
            and γ_1 ≤ Y_2 fails in 47,540 — so the base of the induction must be at n = 2, γ_0 = 0.
     counting type (t = 0, 2): C0 = HCount 278,271 / 278,271.
 
-probe3.py (counting type; m_n = max m with fsD(tA, m) ≤ val(A[n])): see out3/ (results below).
+probe3.py, all 73 files (counting type; m_n = max m ≤ 14 with fsD(tA, m) ≤ val(A[n]), n = 1..5):
+
+    t = 0: 39,052 matrices, t = 2: 53,705; never a `none` path (so HNotSucc holds on all of them)
+      C0   m_n ≥ n − 2 (= HCountS)           278,271 / 278,271
+      BASE m_2 ≥ 0                             92,757 / 92,757
+      REC  m_{n+1} ≥ m_n + 1 (n ≥ 2)          FALSE: t = 2, 70 pairs (WfAbsW graft36b/c, graftD, graftM36, g36_2);
+           by n (NMAX 4 rerun of graft36b/c): n = 2: 39 + 21, n = 3: 5 + 1, n = 4: 0.
+           Example (one of these families, n = 2): SuccAt at ψ_0(1) deep inside (index ψ(1) + ω); m_n = 2, 2, 2, 3, 4, 5 for n = 1..6:
+           for small n the value is decided by a larger branch outside the hole, the hole count is n − 1 only later.
+      REC1 (n = 1) false in 6,442.
+    So the counting part is left as HCountS (direct), not as a per-copy recurrence.
+
+## Graft attack (graftG.py → graftG.pkl, 56,699 matrices)
+
+Seeds (30 each, smallest of std_a / ext1 / WfAbsW graft36c): diagonal type with γ_1 > Y_2 (tight seed), diagonal type
+with fsD(tA, Y_2) < val(A[2]) (strict engine bound), counting type with m_2 = 0; their A[2], A[3], prefixes;
+WfCof graftF generator (gen 1 + 300-sample gen 2, bms -s = 1, < SRO). Random 8,000 measured (n = 2..4):
+diagonal type 2,217 matrices / 6,651 pairs: E, S, R1 (= equality), SH, CH, CI all 0 failures;
+counting type 1,606 matrices: C0 (HCountS) 4,818 / 4,818 (here REC also holds; its failures are in WfAbsW graft36b/c).
 
 ## Next
 
@@ -62,4 +80,4 @@ probe3.py (counting type; m_n = max m with fsD(tA, m) ≤ val(A[n])): see out3/ 
   (desc.md) at h = root and h = r; (E3) of WfQnE gives the lower half off the q = r bad shape.
   HShiftD is structural (the columns from x on in A[n+1] are the columns from r on in A[n], shifted in row 0).
   HCID: the Ω_{μ+1} of tA is the hole of the last column.
-- HCount: HCRec = "one more copy adds one more ψ_a(init b) summand at the hole".
+- HCountS: needs the position of the hole copies (n − 1 copies of ψ_a(init b) appear only for larger n); a per-copy recurrence on the max count is false.
