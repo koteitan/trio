@@ -330,4 +330,59 @@ theorem bad_parent_lhd {M N : Mat} {ρ σ : Valn} {i j m : Nat} {L Lc : List Nat
   exact o_frame_lhdV hC hG hCN hGN hmM hmN hvm hclN hclM hsame (by simpa [vOpt] using hol)
     ⟨_, hoM⟩ ⟨_, hoN⟩ hpN0
 
+/-! ## The replacement field `AbsWNx` -/
+
+/-- The weak absorption of `AbsWN` at one column `i`. -/
+def AbsAt (M N : Mat) (ρ σ : Valn) (i : Nat) : Prop :=
+  ∀ q ∈ summands (vOpt ρ (par M 1 i)), ¬ q < psi z two z → ¬ q < bumpW N σ i → q < bumpW M ρ i →
+    Lhd z q (bumpW M ρ i)
+
+/-- **The shape of a column where the absorption may fail** (measured: every failure of `AbsWN M M[n]` on the
+t = 2 sets and the graft families around the 36-column matrix has this shape): `m = P₀ i = P₁ i`, `i` has no
+counted children in `M` and `N`, `i` is the last counted child of `m` in both, the earlier counted children of `m`
+and `v(m)` do not change, and no column upgrades to `i`. -/
+def BadAbsShape (M N : Mat) (ρ σ : Valn) (i : Nat) : Prop :=
+  ∃ m Lc, par M 0 i = some m ∧ par M 1 i = some m ∧ CL M i = [] ∧ CL N i = [] ∧
+    CL M m = Lc ++ [i] ∧ CL N m = Lc ++ [i] ∧ (∀ d ∈ Lc, σ.o d = ρ.o d) ∧ σ.v m = ρ.v m ∧
+    (∀ j, upg M j ≠ some i)
+
+/-- **The replacement of `AbsWN`**: at every bump-type column before `bnd`, the absorption or the bad shape. -/
+def AbsWNx (M N : Mat) (bnd : Nat) (ρ σ : Valn) : Prop :=
+  ∀ i, i < bnd → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 → AbsAt M N ρ σ i ∨ BadAbsShape M N ρ σ i
+
+theorem AbsWN.toX {M N : Mat} {bnd : Nat} {ρ σ : Valn} (h : AbsWN M N bnd ρ σ) : AbsWNx M N bnd ρ σ :=
+  fun i hi h1 h2 => Or.inl (h i hi h1 h2)
+
+/-- **The two outcomes at a bump-type column under `AbsWNx`**: `v(i)` goes down by `◁` (absorption), or the
+parent `m` of the bad shape has `o(m)` going down by `◁` and `v(i)`, `o(i)` go down with the allowance `v(m)`. -/
+theorem bump_col_of_absWNx {M N : Mat} {ρ σ : Valn} {i j : Nat} {L : List Nat} {G' G : T}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hCN : Cons N σ) (hGN : GoodOT N σ)
+    (hiM : i < M.length) (hiN : i < N.length) (hlenN : M.length ≤ N.length)
+    (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i ≠ 0) (he1 : entry N 1 i = entry M 1 i)
+    (he2 : entry N 2 i = entry M 2 i) (hV : vOpt σ (par N 1 i) = vOpt ρ (par M 1 i))
+    (hchM : children M i = L ++ [j]) (hchN : children N i = L ++ [j])
+    (hbL : ∀ d ∈ L, bumpTerm N σ i d = bumpTerm M ρ i d)
+    (hbjM : bumpTerm M ρ i j = omega G) (hbjN : bumpTerm N σ i j = omega G')
+    (hGot : isOT G = true) (hG'ot : isOT G' = true) (hS : BRelS G' G) (hlt : G' < G)
+    (hTD : BumpTermDec M ρ)
+    (hpN : ∀ m, m < N.length → ((CL N m).map σ.o).Pairwise (fun a b => b ≤ a))
+    (hA : AbsAt M N ρ σ i ∨ BadAbsShape M N ρ σ i) :
+    Lhd z (σ.v i) (ρ.v i) ∨
+      ∃ m, par M 0 i = some m ∧ par M 1 i = some m ∧ Lhd z (σ.o m) (ρ.o m) ∧
+        Lhd (ρ.v m) (σ.v i) (ρ.v i) ∧ Lhd (ρ.v m) (σ.o i) (ρ.o i) := by
+  rcases hA with hA | ⟨m, Lc, hp0, hp1, hclMi, hclNi, hclM, hclN, hsame, hvm, _⟩
+  · exact Or.inl (v_bump_lhdW hC hG hCN hiM hiN h1 h2 he1 he2 hV hchM hchN hbL hbjM hbjN hGot hG'ot hS hlt
+      hTD hA)
+  · right
+    have hmi : m < i := par_lt M 0 i m hp0
+    have hvl := v_bump_lhdV hC hG hCN hiM hiN h1 h2 he1 he2 hV hchM hchN hbL hbjM hbjN hGot hG'ot hS hlt hTD
+    rw [hp1] at hvl
+    have hoM : ρ.o i = psi (ρ.v i) z z :=
+      o_of_no_counted hC hiM (hG.ot_v i hiM) (no_cnt_of_cl_nil hclMi)
+    have hoN : σ.o i = psi (σ.v i) z z :=
+      o_of_no_counted hCN hiN (hGN.ot_v i hiN) (no_cnt_of_cl_nil hclNi)
+    refine ⟨m, hp0, hp1, ?_, by simpa [vOpt] using hvl, by simpa [vOpt] using o_noarg_lhdV hvl hoM hoN⟩
+    exact bad_parent_lhd hC hG hCN hGN hiM hiN (by omega) (by omega) h1 h2 he1 he2 hV hchM hchN hbL hbjM hbjN
+      hGot hG'ot hS hlt hTD hp1 hclMi hclNi hclM hclN hvm hsame (hpN m (by omega))
+
 end Ytosk.WfAbsW
