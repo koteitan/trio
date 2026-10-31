@@ -28,3 +28,25 @@ Remaining: UAwR is a residual (not derived from UAw2: WCSP2 is relative to v(P0 
 `g_levelB2`, `bump_relB2`, `bump_dropB2`: copies of V3BumpDropB with PV2 / WCSP2 / WeakCS2 / BumpAbsCB2 and
 `BumpWeakSrcB2 = BumpWeakShapeSrcB and WeakCS2`. `drop_all_hardW2B`: drop_all_hardW2 with hBump := bump_dropB2.
 (BumpWeakSrcB does not give BumpWeakSrcB2 without one <= v'(i); not needed: the hypothesis is taken in the new form.)
+
+## (1) the producers of the carried property and the shared interface (WfSdP3-6, green)
+Live producers (expdeps.lean: constants under trio_terminates_main_V2_cur whose type mentions ExpStepT1/HoleData):
+18 producers (expStep_vrleS, frameClosedOmN_t1S, expStep_frameClosed_t1S, expStep_frameOT(_t1), G.frameQROmN_t1S,
+G.expStep_ph3c_t1S, G.expStep_fc3_t1S, expStep_rootP_t1, expStep_bumpDec_t1, mu_lt_viS, vsf_frameS, expStep_vsmallF2S,
+expStep_frameMapT1, expStep_closure/core/vsmallF_pass/core_vsmallF_pass_inv3V2). Readers of HoleData.S among them:
+frameClosedOmN_t1S, G.frameQROmN_t1S (only SeedOK v(r)), vsf_frameS (hole_dom: needs fsD(t, gamma_k) lhd t at the
+diagonal points, i.e. SeedOK at every diagonal point). The producers named in the task (V3ExpT1A AbsD/AbsUW/AbsDN at
+271/369/466, V3ExpT1L, V3PT1, V3ExpT1SL) are NOT live under the current top.
+Finding: ExpStepT1W/HoleDataW (WfSdH1) is too weak for vsf_frameS: HokQ gives only the descent fsD(t, gamma_k) < t,
+hole_dom needs the domination (Lhd). New interface (WfSdP3):
+- OkD mu br vr seed := forall a' <= vr, DiagAt a' br mu t, isOT t, (k = 0 -> SeedOK a' br mu seed) ->
+  isOT (fsD t gamma_k) and fsD t gamma_k lhd t.  okD_of_S (old hS), okD_of_S1 (SeedOK at gamma_1 everywhere),
+  okD_of_seedC2W (SeedC2: strong -> old hS, weak -> gamma_1 via seedOK1_of_lhd).
+- ExpStepT1D: witness HoleDataW and OkD, index-0 condition "SeedOK a' at every diagonal point a' <= vr of the D value"
+  (q = r: only point is v(r), qr_only_mu_col + SeedOK v(r); q != r: old hS).
+- expStepT1_of_D: ExpStepT1D P -> ExpStepT1 P. This is how the q != r chain (V3ChainT1.t1_chain, old HoleData, no
+  index-0 witness) shares the producers: every D producer is an old producer.
+- hokQ_of_okD, hole_domD.
+WfSdP4: the 18 live producers copied over ExpStepT1D (suffix D); WfSdP5: qr_chainD .. qr_final4SGD, qr_final4SGD2
+(no hseedC); WfSdP6: qr_t1_D = the q = r branch of V3T1Bad.badOutT1 with PV2 drop, SeedC2 from UAwR, D producers
+(base hP1 still a hypothesis, as in badOutT1).

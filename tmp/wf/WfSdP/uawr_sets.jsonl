@@ -1,0 +1,8 @@
+{"set": "Cprime.pkl", "n": 404051, "sec": 109, "cnt": {"cases": 79217, "strong": 79217}, "ex": {}}
+{"set": "b2grow1.pkl", "n": 6517, "sec": 6, "cnt": {"cases": 6517, "weak": 6517, "weak.UAwR=1.domV=1.UAw2=1": 6517}, "ex": {}}
+{"set": "b2grow2.pkl", "n": 10081, "sec": 17, "cnt": {"cases": 10081, "weak": 10081, "weak.UAwR=1.domV=1.UAw2=1": 10081}, "ex": {}}
+{"set": "b2t0test.pkl", "n": 135, "sec": 0, "cnt": {"cases": 135, "weak": 135, "weak.UAwR=1.domV=1.UAw2=1": 135}, "ex": {}}
+{"set": "cbadext.pkl", "n": 3756, "sec": 1, "cnt": {"cases": 489, "strong": 443, "weak": 46, "weak.UAwR=1.domV=1.UAw2=1": 46}, "ex": {}}
+{"set": "d3s.pkl", "n": 15000, "sec": 11, "cnt": {"cases": 4112, "strong": 4112}, "ex": {}}
+{"set": "deep2.pkl", "n": 128150, "sec": 82, "cnt": {"cases": 34810, "strong": 34809, "weak": 1, "weak.UAwR=1.domV=1.UAw2=1": 1}, "ex": {}}
+{"set": "deep3.pkl", "n": 123493, "sec": 76, "cnt": {"cases": 33331, "strong": 33331}, "ex": {}}
