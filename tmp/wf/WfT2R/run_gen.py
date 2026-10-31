@@ -17,6 +17,7 @@ ren=[(n,n+'XR') for n in copies]+[
 opens={'V3FDCopyRoot.lean':'T FDCopy','V3PT2G.lean':'T','V3PSeedAllG.lean':'T','V3ExpT2V2.lean':'T','V3T2VSFC.lean':'T','V3T2SeedFrV2.lean':'T','V3FDCopy.lean':'T'}
 H1=open('/home/koteitan/proofs/trio/tmp/wf/WfT2R/h1.lean').read()
 H2=open('/home/koteitan/proofs/trio/tmp/wf/WfT2R/h2.lean').read()
+H6=open('/home/koteitan/proofs/trio/tmp/wf/WfT2R/h6.lean').read()
 H3=open('/home/koteitan/proofs/trio/tmp/wf/WfT2R/h3.lean').read()
 f=lambda names: [ (fn,[n]) for fn,n in names]
 g1=[('V3T2VRAPre.lean','pathLvAll_pre_t2'),('V3T2VRASV.lean','seed_C_data'),('V3T2VRASV.lean','t2SeedPreShapeC_of'),('V3T2VRA.lean','vsmallRAll_expand_t2'),
@@ -31,7 +32,9 @@ g3=[('V3ExpT2BD.lean','bumpFields_expand_t2'),('V3ExpT2RP.lean','rootP_expand_t2
  ('V3ExpT2Inv2.lean','t2_val_expand'),
  ('V3T2VSF.lean','vsmallF_expand_t2'),('V3T2VSF.lean','vsmallF_expand_t2V'),('V3RwClCopy.lean','clField_expand_t2SK'),
  ('V3T2VSFC.lean','frameClosed_expand_t2K'),('V3T2VSFC.lean','t2VSFCV2_of'),('V3T2SeedFrV2.lean','t2VSFCV2_of2')]
+g6=[('V3ExpT2Inv2.lean','hExp_t2_inv3V2'),('V3ExpT2V2.lean','expT2V2_of')]
 which=sys.argv[1]
+if which=='6': gen('WfT2R6.lean',H6,f(g6),ren,opens)
 if which=='1': gen('WfT2R1.lean',H1,f(g1),ren,opens)
 if which=='2': gen('WfT2R2.lean',H2,f(g2),ren,opens)
 if which=='3': gen('WfT2R3.lean',H3,f(g3),ren,opens)
@@ -91,8 +94,43 @@ PATCH={'1':[
     (hSeed : T2SeedFrames Q M) (hKM"""),
 ("WfT2X.clField_of_shapeSX hQlow I.cons","WfT2X.clField_of_shapeSX hQlow hQlowV I.cons"),
 ("qFCo_low hB","qFCo_low WfT2X.qFCo_lowV hB"),
+]
+,'6':[
+("""  have R2 := hR2_t2_ofWXR hB hM IW RW hz h2
+  have hge := t2_drops_ge2 IW RW R2 hX hJ hz h2
+    (fun m hm _ _ => t2_val_expandXR hB hM hS IW RW hz h2 m hm)
+  obtain ⟨t', ⟨ρ', rk', hC', hR', hroot⟩, hot, hlt⟩ := hge n hn
+  have heq : root (expand M n) σ = t' := by
+    rw [← hroot]
+    exact root_congr (fun i hi => (agree_of_cons hCN hC' hRN i hi).1)
+  rw [heq]
+  exact ⟨hot, hlt⟩""","""  have hGall := good3_expand_t2 hM hS IW RW hz h2 (WfT2X.t2BelowXE_ofX hB hM hS IW RW hz h2)
+    (t2CopyResAll_holds M ρ rk hM hS IW RW hz h2)
+  have hzT : ¬ (TRIO.entry M 0 (M.length - 1) = 0 ∧ TRIO.entry M 1 (M.length - 1) = 0 ∧
+      TRIO.entry M 2 (M.length - 1) = 0) := fun h => hz ((col_zero_iff M _).mpr h)
+  obtain ⟨r, hr⟩ := parLast_of hX.e00 hX.r01 hX.r12 hz
+  rw [h2] at hr
+  have hrx : r < M.length - 1 := par_lt M 2 _ r hr
+  have hlen2 : 2 ≤ M.length := by omega
+  obtain ⟨L, hL⟩ : ∃ L, M.length - 1 = r + L := ⟨M.length - 1 - r, by omega⟩
+  have hlen : r + L + 1 = M.length := by omega
+  rw [hL] at hr
+  have hexp : ∀ m, expand M m = TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r)
+      (entry M 1 (r + L) - entry M 1 r) m := by
+    intro m
+    have h := expand_eq_gexp M m hlen2 hzT (by rw [h2]; rw [hL]; exact hr)
+    rw [h2, hL] at h
+    simp only [show (0 < 2) from by omega, show (1 < 2) from by omega, if_true,
+      Nat.add_sub_cancel_left] at h
+    exact h
+  have key := WfT2X.t2_root_ofX hB hM hS IW RW hz h2 hlen hr n hn
+    (fun m hm1 _ τ hτ => by rw [← hexp m] at hτ ⊢; exact hGall m hm1 τ hτ) σ
+    (by rw [← hexp n]; exact hCN)
+    (fun j _ hj => by rw [← hexp n] at hj; exact ⟨hGN.ot_o j hj, hGN.ot_v j hj⟩)
+    (by rw [← hexp n]; exact hGN)
+  rw [hexp n]; exact key"""),
 ]}
-fn={'1':'WfT2R1.lean','2':'WfT2R2.lean','3':'WfT2R3.lean'}[which]
+fn={'1':'WfT2R1.lean','2':'WfT2R2.lean','3':'WfT2R3.lean','6':'WfT2R6.lean'}[which]
 P='/home/koteitan/proofs/trio/Ytosk/lean/Ytosk/'+fn
 t=open(P).read()
 for a,b in PATCH.get(which,[]):
