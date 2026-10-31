@@ -1,0 +1,6 @@
+{"set": "graftD.pkl", "n": 37749, "sec": 23, "cnt": {"cases": 16502, "strong": 5482, "weak": 11020, "weak.UAwR=1.domV=0.UAw2=1": 17, "weak.UAwR=1.domV=1.UAw2=1": 11003}, "ex": {}}
+{"set": "graftE.pkl", "n": 54990, "sec": 44, "cnt": {"cases": 24110, "strong": 7159, "weak": 16951, "weak.UAwR=1.domV=0.UAw2=1": 786, "weak.UAwR=1.domV=1.UAw2=1": 16165}, "ex": {}}
+{"set": "graftA.pkl", "n": 13876, "sec": 4, "cnt": {"cases": 3307, "strong": 2370, "weak": 937, "weak.UAwR=1.domV=1.UAw2=1": 937}, "ex": {}}
+{"set": "graftB.pkl", "n": 155926, "sec": 52, "cnt": {"cases": 80228, "strong": 79472, "weak": 756, "weak.UAwR=1.domV=1.UAw2=1": 756}, "ex": {}}
+{"set": "ext2.pkl", "n": 1497986, "sec": 386, "cnt": {"cases": 248916, "strong": 248916}, "ex": {}}
+{"set": "expP.pkl", "n": 614584, "sec": 146, "cnt": {"cases": 105898, "strong": 105865, "weak": 33, "weak.UAwR=1.domV=1.UAw2=1": 33}, "ex": {}}
