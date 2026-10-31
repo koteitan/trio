@@ -4,6 +4,14 @@
 
 ## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個）
 
+**12 回目（2026-11-01）**: すべて緑（1290 jobs）。
+- 新しい偽の欄: AbsUWL（Inv3V2.auwl）が標準の 39 列の行列で偽（WfExQ12、Lean）。上げの枠の悪い呼び出し（W = last v(k) = o(r)）。新しい束 Inv3V3（WfExQ1: adn→AbsDN0、tplow→TPLoQ、ads→AbsDSX、tplos→TPLoSX、adw・auwl を外す）は、すべての接ぎ木（69 万個）と新しい族で全欄例外 0。
+- t = 2: 偽の SrcC3Res を使わない新しいトップの版 trio_terminates_main_V2_curYR（WfT2R9）。T2BadRes の第 1 欄の代わりに AbsWNx の欄だけを持つ T2BelowRV2Y を受け取る。NotBumpKidX と hQlowV は証明済み。Res3T2.absN（= 偽の AbsWN M M[n]）は X 版で T2Drop2X に置き換えた。残りは T2CBadOut の枝。
+- q ≠ r: 悪い閉包つきのエンジンを最後まで組み立てた（t1_main_vlocSX3、WfQnA18）。残りは不変条件の段（真の値づけでの StepT1B）と、測って例外 0 の位置の残り（hVlt・hBr・hKr・TPLoSXIn の半分・hRwin）。
+- q = r: Bachmann 型の下界 DQG を証明し、o の枠の欄を PreG・LastG（測って例外 0）から出した。v_{M[1]}(r) ≤ v(r) は PV2 から証明。不変条件の段は VSFResQ と新しい枠の 8 欄が残り（WfExQ11）。
+- 種: PV2 から SeedC2 を出した（qr_final4SGW2）。新しい残り UAwRA（1850 万個と接ぎ木 graftR で例外 0）。
+- 全射: t = 0 の数え上げで r が根の場合を証明。HCID を 1 辺の補題（HDiagLoc・HDiagStep）に帰着。残りは 1 辺の項の補題と HCntRoot2。
+
 **11 回目（2026-11-01）**: すべて緑（1235 jobs）。
 - q = r（WfQrH1〜8）: 連鎖の仮定 hLocE を名前つきの欄に置き換えた（qr_chainH3）。hX・o(x) = Ω_{v(r)+1} などを証明。DQ の値の標準形 C_strip を DQC として形式化（DQC.ot）。古い OmSide は 1 層で満たせない（not_omSide_single）ので OmSide1 に直した。残りは、o の枠の欄（TrigN・Last・葉の判定）を M の側の事実から出すこと（試した M の側の形はすべて偽）、ω の層の 1 層の成分、v_{M[1]}(r) ≤ v(r)、Inv3V2A の展開の段 ExpStepQ。
 - q ≠ r（WfQnH1〜8）: 構造の残り hu0 を証明。閉包の外で OLocal・VLocal を TPLoSX から出した（olocal_t1B、vlocal_t1_atXB）。悪い葉で (E3) を証明（leaf_E3）。入れ子の悪い呼び出しは測ったどこにもない。閉包の中の ◁ の伝播エンジン deps_lhd_otU を用意。残りはその構造の仮定と最終の組み立て。
