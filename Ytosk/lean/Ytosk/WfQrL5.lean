@@ -9,6 +9,7 @@
 -/
 import Ytosk.WfQrL4
 import Ytosk.V3T1
+import Ytosk.V3Root
 
 namespace Ytosk.WfQrL5
 open T Ytosk Ytosk.WfQrL1
@@ -74,6 +75,72 @@ theorem cons_N_t1Q (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
     have := cons_copy hlen hL hA hd0e hn hpath hz2 hCP hagree (i - (r + L)) (by omega)
     rw [show r + L + (i - (r + L)) = i by omega] at this
     exact this
+
+/-- **The value of `M[n]` drops** for the glue with given `D` values (copy of `root_N_t1`). -/
+theorem root_N_t1Q {ρ ρN : Valn} {oq vq : Nat → T} {Rt : Nat} (hRA : Anc0 M Rt (r + L))
+    (hR0 : col M Rt = (0, 0, 0)) (hRlast : ∀ j, Rt < j → j ≤ r + L → entry M 0 j ≠ 0)
+    (hRd : DepX M (r + L) true Rt)
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    (hsR : Single (oq Rt)) (hlt : oq Rt < ρ.o Rt) :
+    isOT (root (TRIO.gexp M r L d0 0 n) (glueQ M (r + L) ρ ρN oq vq)) = true ∧
+      root (TRIO.gexp M r L d0 0 n) (glueQ M (r + L) ρ ρN oq vq) < root M ρ := by
+  have hR0e : entry M 0 Rt = 0 := by unfold entry; unfold col at hR0; rw [hR0]; rfl
+  have hRx := hRA.le
+  have hsplit := roots_split hlen hRA hR0
+  set pre := (roots M).filter (fun c => decide (c < Rt)) with hpre
+  have hpre_lt : ∀ c ∈ pre, c < Rt := by
+    intro c hc; rw [hpre, List.mem_filter] at hc; simpa using hc.2
+  have hpre_nd : ∀ c ∈ pre, ¬ DepX M (r + L) true c := by
+    intro c hc hd
+    have := depX_ge (by omega) hR0e hRx hRlast hd
+    have := hpre_lt c hc; omega
+  have hglue : (roots M).map (glueQ M (r + L) ρ ρN oq vq).o = pre.map ρ.o ++ [oq Rt] := by
+    rw [hsplit, List.map_append, List.map_singleton, glueQ_o_dep (by
+      rcases Nat.eq_or_lt_of_le hRx with h | h
+      · exfalso
+        have h1 : entry M 0 (r + L) ≠ 0 := by
+          have := anc0_interval hA (r + L) (by omega) (Nat.le_refl _); omega
+        rw [h] at hR0e
+        exact h1 hR0e
+      · exact h) hRd]
+    congr 1
+    apply List.map_congr_left
+    intro c hc
+    exact glueQ_o_lt (by have := hpre_lt c hc; omega) (hpre_nd c hc)
+  have hMl : (roots M).map ρ.o = pre.map ρ.o ++ [ρ.o Rt] := by
+    rw [hsplit, List.map_append, List.map_singleton]
+  rw [hMl] at hpM
+  have hsl : ∀ t ∈ pre.map ρ.o ++ [ρ.o Rt], Single t := by
+    intro t ht
+    rw [← hMl] at ht
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp ht
+    exact hsM i hi
+  have hsl' : ∀ t ∈ pre.map ρ.o ++ [oq Rt], Single t := by
+    intro t ht
+    rcases List.mem_append.mp ht with ht | ht
+    · exact hsl t (List.mem_append_left _ ht)
+    · rw [List.mem_singleton] at ht; subst ht; exact hsR
+  have hpl' : (pre.map ρ.o ++ [oq Rt]).Pairwise (fun a b => b ≤ a) := by
+    rw [List.pairwise_append] at hpM ⊢
+    refine ⟨hpM.1, List.pairwise_singleton _ _, fun a ha b hb => ?_⟩
+    rw [List.mem_singleton] at hb; subst hb
+    exact le_trans (le_of_lt hlt) (hpM.2.2 a ha _ (List.mem_singleton_self _))
+  have hrootN : root (TRIO.gexp M r L d0 0 n) (glueQ M (r + L) ρ ρN oq vq) =
+      sumN (pre.map ρ.o ++ [oq Rt]) := by
+    rw [root_eq_roots, roots_N_t1 hlen hL hA hd0e hn, hglue]
+    · intro i hi
+      rw [roots_N_t1 hlen hL hA hd0e hn] at hi
+      have : (glueQ M (r + L) ρ ρN oq vq).o i ∈ (roots M).map (glueQ M (r + L) ρ ρN oq vq).o :=
+        List.mem_map.mpr ⟨i, hi, rfl⟩
+      rw [hglue] at this
+      exact hsl' _ this
+    · rw [roots_N_t1 hlen hL hA hd0e hn, hglue]; exact hpl'
+  have hrootM : root M ρ = sumN (pre.map ρ.o ++ [ρ.o Rt]) := by
+    rw [root_eq_roots hsM (by rw [hMl]; exact hpM), hMl]
+  rw [hrootN, hrootM]
+  refine ⟨(sumN_dec _ hsl' hpl').1, ?_⟩
+  rw [sumN_snoc_dec hsl' hpl', sumN_snoc_dec hsl hpM]
+  exact app_lt_app_left _ hlt
 
 end
 
