@@ -19,6 +19,7 @@ H1=open('/home/koteitan/proofs/trio/tmp/wf/WfT2R/h1.lean').read()
 H2=open('/home/koteitan/proofs/trio/tmp/wf/WfT2R/h2.lean').read()
 H6=open('/home/koteitan/proofs/trio/tmp/wf/WfT2R/h6.lean').read()
 H7=open('/home/koteitan/proofs/trio/tmp/wf/WfT2R/h7.lean').read()
+H8=open('/home/koteitan/proofs/trio/tmp/wf/WfT2R/h8.lean').read()
 H3=open('/home/koteitan/proofs/trio/tmp/wf/WfT2R/h3.lean').read()
 f=lambda names: [ (fn,[n]) for fn,n in names]
 g1=[('V3T2VRAPre.lean','pathLvAll_pre_t2'),('V3T2VRASV.lean','seed_C_data'),('V3T2VRASV.lean','t2SeedPreShapeC_of'),('V3T2VRA.lean','vsmallRAll_expand_t2'),
@@ -36,7 +37,10 @@ g3=[('V3ExpT2BD.lean','bumpFields_expand_t2'),('V3ExpT2RP.lean','rootP_expand_t2
 g6=[('V3ExpT2Inv2.lean','hExp_t2_inv3V2'),('V3ExpT2V2.lean','expT2V2_of')]
 g7=[('V3T2R2.lean','hR2_t2'),('V3MainV2.lean','t2_dropsC'),('V3MainV2.lean','hT2_V2'),('V3MainV2.lean','desc3_V2O'),('V3TopT2B.lean','badOutT2B_of')]
 ren7=[(a,b) for a,b in ren if a not in ('hR2_t2','t2_dropsC','hT2_V2','desc3_V2O','badOutT2B_of')]+[('hR2_t2','r2X_t2XR'),('t2_dropsC','t2_dropsCX'),('hT2_V2','hT2_V2XR'),('desc3_V2O','desc3_V2OXR'),('badOutT2B_of','badOutT2B_ofXR')]
+g8=[('V3TopV2.lean','trio_terminates_main_V2_base'),('V3TopT2B.lean','trio_terminates_main_V2_cur')]
+ren8=ren7+[('trio_terminates_main_V2_base','trio_terminates_main_V2_baseXR'),('trio_terminates_main_V2_cur','trio_terminates_main_V2_curXR')]
 which=sys.argv[1]
+if which=='8': gen('WfT2R8.lean',H8,f(g8),ren8,opens)
 if which=='7': gen('WfT2R7.lean',H7,f(g7),ren7,opens)
 if which=='6': gen('WfT2R6.lean',H6,f(g6),ren,opens)
 if which=='1': gen('WfT2R1.lean',H1,f(g1),ren,opens)
@@ -134,7 +138,7 @@ PATCH={'1':[
     (by rw [← hexp n]; exact hGN)
   rw [hexp n]; exact key"""),
 ]}
-fn={'1':'WfT2R1.lean','2':'WfT2R2.lean','3':'WfT2R3.lean','6':'WfT2R6.lean','7':'WfT2R7.lean'}[which]
+fn={'1':'WfT2R1.lean','2':'WfT2R2.lean','3':'WfT2R3.lean','6':'WfT2R6.lean','7':'WfT2R7.lean','8':'WfT2R8.lean'}[which]
 P='/home/koteitan/proofs/trio/Ytosk/lean/Ytosk/'+fn
 t=open(P).read()
 for a,b in PATCH.get(which,[]):
