@@ -40,6 +40,11 @@ def one(M):
                 lhd_eta(CN.v(i),C.v(i),V) if CN.v(i)!=C.v(i) else 'eq',
                 lhd_eta(CN.o(i),C.o(i),V) if CN.o(i)!=C.o(i) else 'eq',
                 (lhd(CN.o(m),C.o(m)) if CN.o(m)!=C.o(m) else 'eq') if m is not None else '-')
+            if m is not None:
+                pm=E.par(0,m); q=E.par(0,x); r=E.par(2,x)
+                key+=' mBumpKid=%s iInSeeds=%s mInSeeds=%s mBad=%s'%(
+                    pm is not None and M[m]==E.bump(pm), i in (q,r,x-1), m in (q,r,x-1,E.par(0,q) if q is not None else None),
+                    'na')
             cnt[key]+=1; ex.setdefault(key,(mt(M),n,i))
     return cnt,ex
 def run(b):

@@ -1,0 +1,35 @@
+graft36.pkl 100
+  3955 abs.ok
+  21 absfail shape=True  vLhdz=False vLhdV=True oLhdV=True om=True
+  200 pairs
+EX absfail shape=True  vLhdz=False vLhdV=True oLhdV=True om=True ('(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,1)(7,2,1)(8,1,0)(9,2,1)(10,2,1)(11,2,0)(9,2,1)(10,2,1)(11,1,0)(12,2,0)(12,0,0)(13,1,1)(14,1,1)(10,2,0)(11,3,1)(12,3,1)(13,1,0)(14,2,1)', 2, 32)
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/graftBb2St.pkl 5384
+  174598 abs.ok
+  10768 pairs
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/b2grow1.pkl 1879
+  101922 abs.ok
+  3758 pairs
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/b2grow2.pkl 3131
+  234886 abs.ok
+  6262 pairs
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/cbadext.pkl 3447
+  115042 abs.ok
+  6888 pairs
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/ext2b2.pkl 2609
+  94812 abs.ok
+  5218 pairs
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/shapegrow.pkl 299
+  12020 abs.ok
+  598 pairs
+/home/koteitan/proofs/trio/tmp/wf/WfB2S/graft4.pkl 3147
+  143898 abs.ok
+  6294 pairs
+/home/koteitan/proofs/trio/tmp/wf/WfB2S/graft5.pkl 3493
+  134008 abs.ok
+  6986 pairs
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/graftBb2.pkl 13854
+  450910 abs.ok
+  27708 pairs
+/home/koteitan/proofs/trio/tmp/ytosk-handoff/sets/Cprime.pkl 103956
+  1794116 abs.ok
+  207912 pairs
