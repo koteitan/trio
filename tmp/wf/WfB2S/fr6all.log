@@ -1,0 +1,20 @@
+{"set": "cbadext", "mode": "all", "n": 3756, "cnt": {"S.i0": 180, "S.i1": 201, "S.zero": 6069, "i1.U.VTrue": 201}, "ex": {}}
+{"set": "graft2.pkl", "mode": "all", "n": 9680, "cnt": {"S.i0": 26548, "S.i1": 3004, "S.zero": 31801, "i1.U.VTrue": 2819, "i1.noU": 185}, "ex": {}}
+{"set": "graft3.pkl", "mode": "all", "n": 6638, "cnt": {"S.i0": 21780, "S.i1": 1436, "S.zero": 18545, "i1.noU": 1436}, "ex": {}}
+{"set": "graft_b2.pkl", "mode": "all", "n": 7977, "cnt": {"S.i0": 30845, "S.i1": 6, "S.zero": 27161, "i1.noU": 6}, "ex": {}}
+{"set": "graft_sib.pkl", "mode": "all", "n": 3474, "cnt": {"S.i0": 14825, "S.i1": 5, "S.zero": 10382, "i1.noU": 5}, "ex": {}}
+{"set": "b2grow1", "mode": "all", "n": 6517, "cnt": {"S.i0": 15745, "S.zero": 22977}, "ex": {}}
+{"set": "b2grow2", "mode": "all", "n": 10081, "cnt": {"S.i0": 50204, "S.zero": 48702}, "ex": {}}
+{"set": "t2src_a_wide_grafts_trio_codex.pkl", "mode": "all", "n": 3545, "cnt": {"S.i0": 10466, "S.zero": 18679}, "ex": {}}
+{"set": "t2src_a_upgrade_paired_grafts_trio_codex.pkl", "mode": "all", "n": 400, "cnt": {"S.i0": 1650, "S.zero": 978}, "ex": {}}
+{"set": "huac_fresh_grafts_trio_codex.pkl", "mode": "all", "n": 1728, "cnt": {"S.i0": 3892, "S.zero": 6229}, "ex": {}}
+{"set": "huac_consumers_t0_grafts_trio_codex.pkl", "mode": "all", "n": 4989, "cnt": {"S.i0": 10703, "S.zero": 20458}, "ex": {}}
+{"set": "huac_consumers_deep_t0_grafts_trio_codex.pkl", "mode": "all", "n": 446, "cnt": {"S.i0": 739, "S.zero": 1281}, "ex": {}}
+{"set": "huac_consumers_embedded_t0_grafts_trio_codex.pkl", "mode": "all", "n": 0, "cnt": {}, "ex": {}}
+{"set": "t2src_a_last_grafts_trio_codex.pkl", "mode": "all", "n": 399, "cnt": {"S.zero": 3977}, "ex": {}}
+{"set": "t2src_a_parent_grafts_trio_codex.pkl", "mode": "all", "n": 6, "cnt": {"S.i0": 60, "S.zero": 6}, "ex": {}}
+{"set": "t2src_a_real_grafts_trio_codex.pkl", "mode": "all", "n": 619, "cnt": {"S.i0": 1011, "S.zero": 656}, "ex": {}}
+{"set": "t2src_a_upgrade_argument_grafts_trio_codex.pkl", "mode": "all", "n": 0, "cnt": {}, "ex": {}}
+{"set": "t2src_a_delete_return_trio_codex.pkl", "mode": "all", "n": 137, "cnt": {"S.i0": 286, "S.zero": 525}, "ex": {}}
+{"set": "graftBb2St", "mode": "all", "n": 30669, "cnt": {"S.i0": 403, "S.zero": 50387}, "ex": {}}
+{"set": "graftB", "mode": "all", "n": 155926, "cnt": {"S.i0": 1407, "S.zero": 155280}, "ex": {}}

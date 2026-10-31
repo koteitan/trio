@@ -36,3 +36,25 @@
     r < W that is not lhd W), which is why B2Step needed Bad2.
 - Without the bump parent (fr3, hsf.pkl = the HUACStep counterexample): ab = True with i = 2, two U-steps and
   StepDom false occurs (n = 37, k = 33). The bump parent (given by Bad2) is needed.
+
+## B2StepAb split (Lean `Ytosk/lean/Ytosk/WfB2S2.lean`, green)
+- `B2LevS` (structural, no valuation): n + 2 = |M|, upg n = k < n, m = P0 k, P0 n = p a bump child of g = P0 p ->
+  every child of a bump child of k has row 1 = 0, or the last bump child j of k WITH children has a first child c
+  with e1 m <= e1 c + 1 (level of c on the chain of m is m or P1 m; R1S makes chain levels unit steps).
+- `B2UpgV` (value): same frame under Bad2/Inv3V2, e1 c + 1 = e1 m, upg m = t -> bumpW(k) <= last v(t).
+- `b2StepAb_of : B2LevS -> B2UpgV -> B2StepAb`: a chain column y above a with Up1 y m has e1 y = e1 m, so y = m;
+  then v(m) = v(P1 m) + last v(t) has every summand >= last v(t) >= W (`summands_add_ge`, `last_form`), which
+  contradicts the absorption premise. So StepDom holds vacuously.
+- Splice: `(hStep : WfB2S.B2StepAb)` can be fed by `WfB2S.b2StepAb_of hLev hUpgV`; HUACB2 = `WfB2S.huacB2_of_ab`.
+
+## Measurements of B2LevS / B2UpgV (fr6.py; every position n with bump parent, no Bad2; 0 exceptions)
+- cbadext (i1 201, U 201), graft2 (i0 26548, i1 3004, U 2819), graft3 (i1 1436), graft_b2, graft_sib, b2grow1,
+  b2grow2, wide, paired, huac_fresh, huac_consumers_t0/deep_t0, t2src_a_last/parent/real/delete_return,
+  graftBb2St, graftB: fr6all.log.
+- graft4.py: 260 seeds (200 with an i1 frame cut at n+2, 60 i0), one column +-1/delete/duplicate/append, bms-standard:
+  17293 grafts. all positions: i0 21233, i1 24702 (U 5830, all bumpW(k) <= last v(t)); x-1 only: i1 2801 (U 891).
+  0 exceptions (fr6g4.log).
+- B2UpgV: bumpW(k) = last v(t) in most frames, bumpW(k) < last v(t) in the rest (fr4.py on graft2: 2015 eq, 804 lt);
+  t is always an ancestor of m (t < m).
+- Bad2 is not needed for either (measured at all positions). Without the bump parent, B2LevS fails (hsf.pkl,
+  i = 2 at n = 37 of the HUACStep counterexample).
