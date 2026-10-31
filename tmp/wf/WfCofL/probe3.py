@@ -47,11 +47,14 @@ if __name__ == '__main__':
             S[('M1', t, ms[1])] += 1
             S[('BASE', t, ms[2] >= 0)] += 1
             S[('REC1', t, ms[2] >= ms[1] + 1)] += 1
+            S[('BASE3', t, ms[3] >= 1)] += 1
+            S[('M2', t, ms[2])] += 1
             for n in range(2, NMAX + 1):
                 c0 = ms[n] >= n - 2; S[('C0', t, c0)] += 1
                 if not c0: ex(('C0', t), A, n)
                 rec = ms[n + 1] >= ms[n] + 1 or ms[n] >= MM
                 S[('REC', t, rec)] += 1
+                S[('RECn', t, n, rec)] += 1
                 if not rec: ex(('REC', t), A, n)
     json.dump({'stats': {str(k): v for k, v in sorted(S.items(), key=str)},
                'ex': {str(k): v for k, v in EX.items()}}, open(out, 'w'), indent=1)
