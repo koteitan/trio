@@ -1,0 +1,34 @@
+{"set": "graftAb.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "ext2b2Sf.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "std_ab2S.pkl", "n": 26, "sec": 0, "cnt": {"guard": 145, "n": 26}, "ex": {}}
+{"set": "std_ab2G.pkl", "n": 41, "sec": 0, "cnt": {"guard": 246, "n": 41}, "ex": {}}
+{"set": "std_ab2.pkl", "n": 67, "sec": 0, "cnt": {"guard": 391, "n": 67}, "ex": {}}
+{"set": "b2t0test.pkl", "n": 135, "sec": 0, "cnt": {"guard": 2271, "n": 135}, "ex": {}}
+{"set": "graftBb2Sf.pkl", "n": 468, "sec": 0, "cnt": {"guard": 8424, "n": 468}, "ex": {}}
+{"set": "graftBb.pkl", "n": 756, "sec": 1, "cnt": {"guard": 13644, "n": 756}, "ex": {}}
+{"set": "ext2b2G.pkl", "n": 1940, "sec": 1, "cnt": {"guard": 33120, "n": 1940}, "ex": {}}
+{"set": "shapegrow.pkl", "n": 2372, "sec": 3, "cnt": {"guard": 47670, "n": 2372}, "ex": {}}
+{"set": "ext2b2S.pkl", "n": 2133, "sec": 2, "cnt": {"guard": 39746, "n": 2133}, "ex": {}}
+{"set": "ext2b2St.pkl", "n": 2133, "sec": 4, "cnt": {"guard": 39746, "n": 2133}, "ex": {}}
+{"set": "graftBb2St_x2.pkl", "n": 2673, "sec": 2, "cnt": {"CB.ok": 3, "CB2.ok": 3, "absfail": 3, "guard": 46059, "n": 2673}, "ex": {}}
+{"set": "graftBb2St_x0.pkl", "n": 2708, "sec": 3, "cnt": {"guard": 43853, "n": 2708}, "ex": {}}
+{"set": "graftBb2St_g2.pkl", "n": 2711, "sec": 2, "cnt": {"guard": 46624, "n": 2711}, "ex": {}}
+{"set": "graftBb2St_p0.pkl", "n": 2711, "sec": 3, "cnt": {"guard": 43913, "n": 2711}, "ex": {}}
+{"set": "cbadext.pkl", "n": 3756, "sec": 2, "cnt": {"guard": 65179, "n": 3750}, "ex": {}}
+{"set": "graftBb2St_g0.pkl", "n": 2738, "sec": 2, "cnt": {"guard": 44316, "n": 2738}, "ex": {}}
+{"set": "graftBb2St_p1.pkl", "n": 3064, "sec": 3, "cnt": {"guard": 50126, "n": 3064}, "ex": {}}
+{"set": "ext2b2.pkl", "n": 4073, "sec": 3, "cnt": {"guard": 72866, "n": 4073}, "ex": {}}
+{"set": "graftBb2St_x1.pkl", "n": 5772, "sec": 5, "cnt": {"CB.ok": 6, "CB2.ok": 6, "absfail": 6, "guard": 93979, "n": 5772}, "ex": {}}
+{"set": "graftBb2St_g1.pkl", "n": 8292, "sec": 10, "cnt": {"guard": 136056, "n": 8292}, "ex": {}}
+{"set": "b2grow1.pkl", "n": 6517, "sec": 11, "cnt": {"guard": 184476, "n": 6517}, "ex": {}}
+{"set": "graftA.pkl", "n": 13876, "sec": 10, "cnt": {"guard": 201131, "n": 13875}, "ex": {}}
+{"set": "graftAn.pkl", "n": 13876, "sec": 12, "cnt": {"guard": 201131, "n": 13875}, "ex": {}}
+{"set": "d3s.pkl", "n": 15000, "sec": 15, "cnt": {"guard": 156892, "n": 14999}, "ex": {}}
+{"set": "b2grow2.pkl", "n": 10081, "sec": 42, "cnt": {"guard": 393957, "n": 10081}, "ex": {}}
+{"set": "graftBb2St.pkl", "n": 30669, "sec": 30, "cnt": {"CB.ok": 9, "CB2.ok": 9, "absfail": 9, "guard": 504926, "n": 30669}, "ex": {}}
+{"set": "graftBb2S.pkl", "n": 31137, "sec": 30, "cnt": {"CB.ok": 9, "CB2.ok": 9, "absfail": 9, "guard": 513350, "n": 31137}, "ex": {}}
+{"set": "std_a.pkl", "n": 79201, "sec": 8, "cnt": {"guard": 353779, "n": 79201}, "ex": {}}
+{"set": "std_an2.pkl", "n": 79134, "sec": 7, "cnt": {"guard": 353388, "n": 79134}, "ex": {}}
+{"set": "graftBb2G.pkl", "n": 49091, "sec": 57, "cnt": {"guard": 823977, "n": 49091}, "ex": {}}
+{"set": "graftBn2.pkl", "n": 75698, "sec": 72, "cnt": {"guard": 1261246, "n": 75698}, "ex": {}}
+{"set": "graftBb2.pkl", "n": 80228, "sec": 86, "cnt": {"CB.ok": 9, "CB2.ok": 9, "absfail": 9, "guard": 1337327, "n": 80228}, "ex": {}}
