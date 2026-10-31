@@ -67,6 +67,10 @@ def meas(M):
                 if p is not None and (False,p) in DB: c['VP.inDB']+=1; e.setdefault('VPin',(M,n,i))
                 js=[j for j in C.ch(i) if C.M[j]==C.e.bump(i)]
                 ks=[k for j in js for k in C.ch(j) if (True,k) in D]
+                c['B.gtr' if i>r else 'B.ltr']+=1
+                kall=[k for j in js for k in C.ch(j)]
+                c['B.kr' if (js and C.ch(js[-1]) and C.ch(js[-1])[-1]==r) else 'B.knotr']+=1
+                if not (js and C.ch(js[-1]) and C.ch(js[-1])[-1]==r): e.setdefault('Bknotr',(M,n,i))
                 if any((True,k) in DB for k in ks):
                     c['NEST']+=1; e.setdefault('NEST',(M,n,i))
                 else: c['NEST.no']+=1
