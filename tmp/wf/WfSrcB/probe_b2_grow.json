@@ -1,0 +1,200 @@
+{
+  "seconds": 303.67,
+  "sets": {
+    "grow": {
+      "input": 404218,
+      "counts": {
+        "input": 404218,
+        "B.frames": 14782,
+        "B.r_is_prev": 14782,
+        "Wchg": 159907,
+        "Wchg.fail": 1192,
+        "Wchg.fail.i_is_g": 1192,
+        "P.all": 87408,
+        "P.e1c_lt_e1m": 31249,
+        "P.e1c_lt_e1m.bighead": 94,
+        "c.pending.ok.prevdesc": 30496,
+        "pending.c_eq_p": 0,
+        "pending.i_eq_g": 0,
+        "pending.e1c_eq_e1m": 0,
+        "O.all": 57717,
+        "O.cp_lt_x": 57717,
+        "O.upg_next": 57717,
+        "O.mp_eq_m": 57717,
+        "O.mp_strict_anc_m": 0,
+        "O.e1c_gt_e1m": 57717,
+        "c.high.ok.outside": 57717,
+        "c.nonlost_return.ok.prevdesc": 56159,
+        "c.lost.ok.prevdesc": 13590,
+        "c.earlier_return.ok.prevdesc": 753,
+        "c.lost.fail.prevdesc": 1192
+      },
+      "examples": {
+        "pending.prevdesc": {
+          "matrix_text": "(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,0,0)(6,1,1)(7,1,1)(8,1,0)(6,1,1)(7,1,1)(8,1,0)(6,1,1)(7,1,0)(8,2,1)(9,2,1)(10,1,0)(11,2,1)",
+          "n": 27,
+          "x": 26,
+          "i": 12,
+          "j": 13,
+          "c": 14,
+          "m": 8,
+          "p": 24,
+          "g": 23,
+          "k": 21,
+          "V": "p(1)",
+          "W": "p(p_{p_{p_{p(1)}(0)}(0)}(0)+p_{p(1)}(p_{p_{p(1)}(p_{p(1)+p(1)}(0))}(0)))",
+          "WT": "p(p_{p_{p_{p(1)}(0)}(0)}(0)+p_{p(1)}(p_{p_{1}(0)}(0)))",
+          "oc": "p(p_{p_{p_{p(1)}(0)}(0)}(0)+p_{p(1)}(p_{p_{p(1)}(p_{p(1)+p(1)}(0))}(0)))",
+          "ocT": "p(p_{p_{p_{p(1)}(0)}(0)}(0)+p_{p(1)}(p_{p_{1}(0)}(0)))"
+        },
+        "P.lt.bighead": {
+          "matrix_text": "(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,1)(7,2,1)(8,1,0)(9,2,1)(10,2,1)(11,2,0)(9,2,1)(10,2,1)(11,1,0)(12,0,0)(13,1,1)(14,1,1)(10,2,0)(11,3,1)(12,3,1)(13,1,0)(14,2,1)(7,2,0)(8,3,1)(9,3,1)(10,1,0)(11,2,1)(12,2,1)(13,2,0)(11,2,1)(12,2,1)(13,1,0)(14,2,1)",
+          "n": 46,
+          "x": 45,
+          "i": 36,
+          "j": 37,
+          "c": 38,
+          "m": 35,
+          "V": "p_{p(1)}(p_{p_{p_{p(1)}(p_{p(1)}(p_{p(1)}(p(p_{p(1+1)}(0)))))}(0)}(0)+p_{p_{p(1)}(p_{p(1)}(p_{p(1)}(p(p_{p(1+1)}(0)))))}(p_{p_{p(1)}(p_{p(1)+p(1)}(0))}(0)))",
+          "W": "p_{p(1)}(p_{p_{p_{p(1)}(p_{p(1)+p(1)}(0))}(0)}(0))",
+          "WT": "p_{p(1)}(p_{p_{p_{1}(0)}(0)}(0))",
+          "fail": false
+        }
+      }
+    },
+    "graftBb2St_x2": {
+      "input": 2673,
+      "counts": {
+        "input": 2673,
+        "B.frames": 2673,
+        "B.r_is_prev": 2673,
+        "Wchg": 5706,
+        "Wchg.fail": 3,
+        "Wchg.fail.i_is_g": 3,
+        "c.lost.ok.prevdesc": 2670,
+        "P.all": 1643,
+        "P.e1c_lt_e1m": 7,
+        "P.e1c_lt_e1m.bighead": 0,
+        "c.nonlost_return.ok.prevdesc": 1636,
+        "c.pending.ok.prevdesc": 7,
+        "pending.c_eq_p": 0,
+        "pending.i_eq_g": 0,
+        "pending.e1c_eq_e1m": 0,
+        "O.all": 1390,
+        "O.cp_lt_x": 1390,
+        "O.upg_next": 1390,
+        "O.mp_eq_m": 1390,
+        "O.mp_strict_anc_m": 0,
+        "O.e1c_gt_e1m": 1390,
+        "c.high.ok.outside": 1390,
+        "c.lost.fail.prevdesc": 3
+      },
+      "examples": {
+        "pending.prevdesc": {
+          "matrix_text": "(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,1,0)(4,1,1)(5,1,1)(6,0,0)(7,1,1)(8,1,1)(9,1,0)(7,1,1)(8,1,1)(9,1,0)(7,1,0)(8,2,1)(9,2,1)(10,0,0)(11,1,1)(12,1,1)(13,1,0)(11,1,1)(12,1,1)(12,1,0)(13,2,1)(14,2,1)(15,1,0)(16,2,1)",
+          "n": 39,
+          "x": 38,
+          "i": 26,
+          "j": 27,
+          "c": 28,
+          "m": 25,
+          "p": 36,
+          "g": 35,
+          "k": 32,
+          "V": "1",
+          "W": "p(p_{p_{p(1+1)}(p_{p(1+1)+p(1)}(0))}(0))",
+          "WT": "p(p_{p_{p(1+1)}(0)}(0)+p_{p(1+1)}(p_{p_{1}(0)}(0)))",
+          "oc": "p(p_{p_{p(1+1)}(p_{p(1+1)+p(1)}(0))}(0))",
+          "ocT": "p(p_{p_{p(1+1)}(0)}(0)+p_{p(1+1)}(p_{p_{1}(0)}(0)))"
+        }
+      }
+    },
+    "b2grow2": {
+      "input": 10081,
+      "counts": {
+        "input": 10081,
+        "B.frames": 27,
+        "B.r_is_prev": 27,
+        "Wchg": 63,
+        "Wchg.fail": 0,
+        "Wchg.fail.i_is_g": 0,
+        "c.lost.ok.prevdesc": 27,
+        "O.all": 18,
+        "O.cp_lt_x": 18,
+        "O.upg_next": 18,
+        "O.mp_eq_m": 18,
+        "O.mp_strict_anc_m": 0,
+        "O.e1c_gt_e1m": 18,
+        "c.high.ok.outside": 18,
+        "P.all": 18,
+        "P.e1c_lt_e1m": 0,
+        "P.e1c_lt_e1m.bighead": 0,
+        "c.nonlost_return.ok.prevdesc": 18
+      },
+      "examples": {}
+    },
+    "expPt2": {
+      "input": 2460115,
+      "counts": {
+        "input": 2460115,
+        "B.frames": 94,
+        "B.r_is_prev": 94,
+        "Wchg": 98,
+        "Wchg.fail": 0,
+        "Wchg.fail.i_is_g": 0,
+        "c.lost.ok.prevdesc": 94,
+        "P.all": 4,
+        "P.e1c_lt_e1m": 0,
+        "P.e1c_lt_e1m.bighead": 0,
+        "c.nonlost_return.ok.prevdesc": 4
+      },
+      "examples": {}
+    },
+    "ext2": {
+      "input": 1497986,
+      "counts": {
+        "input": 1497986,
+        "B.frames": 980,
+        "B.r_is_prev": 980,
+        "Wchg": 4234,
+        "Wchg.fail": 0,
+        "Wchg.fail.i_is_g": 0,
+        "c.lost.ok.prevdesc": 980,
+        "P.all": 1760,
+        "P.e1c_lt_e1m": 113,
+        "P.e1c_lt_e1m.bighead": 0,
+        "c.nonlost_return.ok.prevdesc": 1647,
+        "O.all": 1494,
+        "O.cp_lt_x": 1494,
+        "O.upg_next": 1494,
+        "O.mp_eq_m": 1494,
+        "O.mp_strict_anc_m": 0,
+        "O.e1c_gt_e1m": 1494,
+        "c.high.ok.outside": 1494,
+        "c.pending.ok.prevdesc": 113,
+        "pending.c_eq_p": 0,
+        "pending.i_eq_g": 0,
+        "pending.e1c_eq_e1m": 0
+      },
+      "examples": {
+        "pending.prevdesc": {
+          "matrix_text": "(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,0)(4,3,1)(5,3,1)(6,1,0)(7,2,1)(8,2,1)(9,1,0)(10,2,1)",
+          "n": 17,
+          "x": 16,
+          "i": 10,
+          "j": 11,
+          "c": 12,
+          "m": 9,
+          "p": 14,
+          "g": 13,
+          "k": 4,
+          "V": "p(1)+1",
+          "W": "p_{p(1)}(p_{p_{p(1)}(p_{p(1)+p(1)}(0))}(0))",
+          "WT": "p_{p(1)}(p_{p_{1}(0)}(0))",
+          "oc": "p_{p(1)}(p_{p_{p(1)}(p_{p(1)+p(1)}(0))}(0))",
+          "ocT": "p_{p(1)}(p_{p_{1}(0)}(0))"
+        }
+      }
+    }
+  }
+}
