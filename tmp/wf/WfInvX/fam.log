@@ -1,0 +1,25 @@
+maximal 381230
+{"shard": 0, "n": 21368, "sec": 13, "fails": {}}
+{"shard": 10000, "n": 20409, "sec": 16, "fails": {}}
+{"shard": 20000, "n": 19647, "sec": 16, "fails": {"adn.fail": 1}}
+{"shard": 30000, "n": 19285, "sec": 19, "fails": {"tplow.fail": 2, "adw.fail": 1}}
+{"shard": 40000, "n": 23205, "sec": 23, "fails": {"tplow.fail": 8, "adw.fail": 4}}
+{"shard": 50000, "n": 19250, "sec": 18, "fails": {"tplow.fail": 4, "adw.fail": 2}}
+{"shard": 60000, "n": 21881, "sec": 23, "fails": {"adn.fail": 1, "tplow.fail": 2, "adw.fail": 1}}
+{"shard": 70000, "n": 26638, "sec": 31, "fails": {"tplow.fail": 44, "adw.fail": 22}}
+{"shard": 80000, "n": 33495, "sec": 37, "fails": {"tplow.fail": 26, "adw.fail": 13}}
+{"shard": 90000, "n": 47270, "sec": 51, "fails": {"adn.fail": 2}}
+{"shard": 100000, "n": 54994, "sec": 77, "fails": {"ads.fail": 1, "tplos.fail": 2, "adn.fail": 2}}
+{"shard": 110000, "n": 63154, "sec": 94, "fails": {"ads.fail": 1, "tplos.fail": 2, "adn.fail": 1}}
+{"shard": 120000, "n": 84111, "sec": 133, "fails": {"adn.fail": 1}}
+{"shard": 130000, "n": 91289, "sec": 147, "fails": {"adn.fail": 3}}
+{"shard": 140000, "n": 99480, "sec": 144, "fails": {"adn.fail": 4, "tplow.fail": 2, "adw.fail": 1}}
+{"shard": 150000, "n": 118555, "sec": 178, "fails": {"adn.fail": 3}}
+{"shard": 160000, "n": 126609, "sec": 203, "fails": {"adn.fail": 2}}
+{"shard": 170000, "n": 128801, "sec": 213, "fails": {"adn.fail": 6, "ads.fail": 1, "tplos.fail": 2}}
+{"shard": 180000, "n": 149269, "sec": 264, "fails": {}}
+{"shard": 190000, "n": 153825, "sec": 208, "fails": {"adn.fail": 5, "ads.fail": 1, "tplos.fail": 2}}
+{"shard": 200000, "n": 156879, "sec": 239, "fails": {"adn.fail": 7, "tplow.fail": 2, "adw.fail": 2}}
+{"shard": 210000, "n": 163230, "sec": 280, "fails": {"adn.fail": 10}}
+{"shard": 220000, "n": 157624, "sec": 256, "fails": {"adn.fail": 6}}
+{"shard": 230000, "n": 155092, "sec": 276, "fails": {"adn.fail": 10}}
