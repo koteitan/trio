@@ -42,3 +42,7 @@ Shared definition (for the q = r agent too): `Ytosk/lean/Ytosk/WfBad.lean`
    vRhs_glue_bad at the leaves (bad_v_lt: < A; >= A[ζ] = glue) and monotonicity of oRhs / vRhs.
 3. Good3 / Pn on DepXB from (E2)/(E3); then assemble `t1_main_vlocSX` from t1_main_vlocSG with
    AbsDSX / TPLoSX: hV -> vlocal_t1_atX, val via E1_M + root_N_E3 instead of cons_N_t1 + root_N_t1.
+
+### Results so far (runs still going in background, logs tmp/wf/WfQnL/hu0_*.log; PIDs in pid1..pid4)
+- graftQ1 (4540 t = 1 q != r frames, n = 2..4): hu0 0 failures / 5085 antecedents, hndN 0 failures / 67770.
+- Cprime+graftB, ext1, expP, remaining grafts (graftQ2, graftD/E/F, graftA1-3, graftA, d3s, deep2/3): running.
