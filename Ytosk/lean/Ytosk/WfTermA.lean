@@ -58,7 +58,31 @@ theorem up1_take {M : Mat} {k a b : Nat} (h : Up1 M a b) (hb : b < k) : Up1 (M.t
     have hyx := par_lt M 1 x y hp
     exact Up1.step (by rw [par_take M 1 x hb]; exact hp) (ih (by omega))
 
-/-- **Residual**: the origins strictly above `q` on the row-1 chain of `m` are not in the failing window. -/
+
+theorem anc0_take {M : Mat} {k a b : Nat} (h : Anc0 M a b) (hb : b < k) : Anc0 (M.take k) a b := by
+  induction h with
+  | refl => exact Anc0.refl _
+  | @step b c hp _ ih =>
+    have hbc := par_lt M 0 c b hp
+    exact Anc0.step (by rw [par_take M 0 c hb]; exact hp) (ih (by omega))
+
+theorem anc0_of_take {M : Mat} {k a b : Nat} (h : Anc0 (M.take k) a b) (hb : b < k) : Anc0 M a b := by
+  induction h with
+  | refl => exact Anc0.refl _
+  | @step b c hp _ ih =>
+    have hbc := par_lt (M.take k) 0 c b hp
+    rw [par_take M 0 c hb] at hp
+    exact Anc0.step hp (ih (by omega))
+
+theorem hiR_take {M : Mat} {k q c : Nat} (h : HiR M q c) (hc : c < k) : HiR (M.take k) q c := by
+  intro s h1 h2 hne
+  have hsc := h2.le
+  have hqs := h1.le
+  rw [entry_take M 1 (by omega), entry_take M 1 (by omega)]
+  exact h s (anc0_of_take h1 (by omega)) (anc0_of_take h2 hc) hne
+
+/-- **Residual**: the origins strictly above `q` on the row-1 chain of `m` whose index exceeds `v(q)` are not in the
+failing window (origins with index `≤ v(q)` are below `τ.o(c)`, proved in `not_dropFail_of_hi`). -/
 def TermHi : Prop :=
   ∀ M ρ rk, StepCtxT2 M ρ rk → Bad2 M → ∀ x, x + 1 = M.length → (∃ r, par M 2 x = some r) →
     ∀ τ, Cons (M.take x) τ → ∀ i m j c, i < x → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
@@ -67,7 +91,7 @@ def TermHi : Prop :=
       ¬ Anc0 M c (x - 1) → WfSrcO.Term M x m c →
       ∀ c' q, NextC M c c' → c' < x → upg M (c' - 1) = some c' → ChgX M x false c' →
         par M 0 c' = some q → par M 1 (c' - 1) = some q → Anc0 M q m → q ≠ m →
-        ∀ b k, Up1 M q b → b ≠ q → Up1 M b m → upg M b = some k →
+        ∀ b k, Up1 M q b → b ≠ q → Up1 M b m → upg M b = some k → ρ.v q < lev (bumpW M ρ k) →
           ¬ bumpW M ρ k < psi z two z → ¬ bumpW M ρ k < bumpW (M.take x) τ i →
           bumpW M ρ k < bumpW M ρ i → Lhd z (bumpW M ρ k) (bumpW M ρ i)
 
@@ -149,6 +173,9 @@ theorem not_dropFail_of_hi (H : TermHi) {M : Mat} {ρ : Valn} {rk : Bool → Nat
   have hlenT : (M.take x).length = x := by rw [List.length_take]; omega
   have hvqc : τ.v q ≤ τ.v c :=
     T2SrcReturn.chain_value_le hT hGT (up1_take hUc hcT) (by rw [hlenT]; exact hcT)
+  have hvqcs : τ.v q < τ.v c :=
+    v_chain_lt hT hGT hRT c (by have := hqc.1.le; have := hqc.2; omega) (by rw [hlenT]; exact hcT)
+      (anc0_take hqc.1 hcT) (hiR_take hHc hcT)
   have hvco : τ.v c < τ.o c := by
     obtain ⟨y, hy⟩ := o_psi_sub hT (show c < (M.take x).length by rw [hlenT]; exact hcT)
     rw [hy, sf_ot (hGT.ot_v c (by rw [hlenT]; exact hcT))]
@@ -191,8 +218,25 @@ theorem not_dropFail_of_hi (H : TermHi) {M : Mat} {ρ : Valn} {rk : Bool → Nat
         rw [HUACSupport.value_at_target S C.I.cons C.I.good hbN hu]
         exact le_add_single _ (omega_single _)
       exact lt_of_le_of_lt hkb hqW
-    · exact H M ρ rk C hB x hx hr τ hT i m j c hi h1 h2 hmi hm1 hj hb hc hcx hce hrow hnA hTerm
-        c' q hN hc'x hup hchg' hph hq1 hAm hme b k hqb hbq hbm hu hs2 hnT hsM
+    · by_cases hlev : lev (bumpW M ρ k) ≤ ρ.v q
+      · -- index at most `v(q)`: below `τ.o(c)`
+        exfalso
+        apply hnT
+        obtain ⟨s0, y0, hW0⟩ := omega_psi_form (sumN (one :: (children M k).map (bumpTerm M ρ k)))
+        change bumpW M ρ k = psi s0 y0 z at hW0
+        obtain ⟨y, hy⟩ := o_psi_sub hT (show c < (M.take x).length by rw [hlenT]; exact hcT)
+        rw [sf_ot (hGT.ot_v c (by rw [hlenT]; exact hcT))] at hy
+        have hs0 : s0 < τ.v c := by
+          rw [hW0] at hlev
+          exact lt_of_le_of_lt (hvq ▸ hlev) hvqcs
+        have hlt : bumpW M ρ k < τ.o c := by
+          rw [hW0, hy, T.psi_lt_psi]; exact Or.inl hs0
+        exact lt_of_lt_of_le hlt hoW
+      · exact H M ρ rk C hB x hx hr τ hT i m j c hi h1 h2 hmi hm1 hj hb hc hcx hce hrow hnA hTerm
+          c' q hN hc'x hup hchg' hph hq1 hAm hme b k hqb hbq hbm hu
+          (by rcases lt_or_ge (ρ.v q) (lev (bumpW M ρ k)) with h | h
+              · exact h
+              · exact absurd h hlev) hs2 hnT hsM
 
 /-- **Bridge (a)**. -/
 theorem aTerm_of (H : TermHi) : WfSrcR5.ATerm := by
