@@ -79,7 +79,7 @@ graftH.py (new graft family: 15 seeds = 5 trigsub (PreB false) + 5 leafpar + 5 n
   3,610 q = r frames), full run n = 2, 3: OX/RX/S1/V1 0 fail; TrigN 14,012, lNz, lastNotOne, Last 12,518,
   Leaf add 3,610 / leafpar 3,610 0 fail; forms only sub / arg / leaf; DQ 98,666, C_strip 200,904, OT_S 200,904,
   OT_Q 12,850 0 fail.  PreB 4,988 fail, PreS 4 fail, lNgeEta 26 fail (still false).
-famframes.pkl through mside.py: mside_fam.jsonl (if present).
+famframes.pkl (208,964 family frames) through mside.py: OX/RX/S1/V1 0 fail (mside_fam.jsonl).
 
 ## Remaining hypotheses of WfQrH7.qr_chainH3 (exact)
 1. hLocH (per n ≥ 2, true valuation σ of M[n], given ρP.o r < o(x), ρP.o r ≠ 0):
