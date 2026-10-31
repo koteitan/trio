@@ -2,6 +2,7 @@
  OX  : o(x) = psi(a+1, 0, 0)  (hOx)
  RX  : o(r) <= o(x)           (hrx)
  S1  : seed = o_{M.take x}(r) < o(x) and seed != 0  (hr1, hr1z)
+ V1  : v_{M.take x}(r) <= v(r)  (hv1 of WfQrH7.qr_chainH3)
  CHn : (n = 2, 3 if EXP) true o_{M[n]}(x) == o_{M[n-1]}(r) (sanity of the copy), o_{M[n]}(r) < o(r)
 usage: nice -n 15 python3 mside.py NPROC EXP OUT.jsonl PKL..."""
 import sys,os,pickle,json,collections,time
@@ -31,6 +32,7 @@ def check(M,cnt,ex):
     if not T.ok:cnt['evalfail1']+=1;return
     sd=T.o(r)
     note('S1',sd!=Z and lt(sd,ox))
+    note('V1',T.v(r)==C.v(r) or lt(T.v(r),C.v(r)))
     if EXP:
         prev=T
         for n in (2,3):

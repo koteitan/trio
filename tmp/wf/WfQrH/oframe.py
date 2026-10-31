@@ -14,7 +14,7 @@ from multiprocessing import Pool
 sys.path.insert(0,'/home/koteitan/proofs/trio/tools');sys.path.insert(0,'/home/koteitan/proofs/trio/tmp/wf/WfInvA')
 import trio
 from probe_inv3_prefix import Z, lt, isOT, split, succ, last, isSucc
-from probe_adn import dependencies, Ctx, ms
+from probe_adn import dependencies, Ctx, ms, gamS, lift_counts
 import ytosk_eval as YE
 from probe_inv3_prefix import ONE, sumN
 E0=(Z,(ONE,Z,Z),Z)
@@ -40,6 +40,7 @@ def check(M,cnt,ex):
     r=C.e.par(1,x)
     if r is None or C.e.par(0,x)!=r:return
     D=dependencies(C,x);cnt['frames']+=1
+    A=C.o(r);mu,br,_=A;seed=Ctx(M[:x]).o(r);dl=lift_counts(C,x,A)
     for n in (2,3):
         N=[tuple(c) for c in trio.expand([list(c) for c in M],n)];CN=Ctx(N)
         if not CN.ok:cnt['Nevalfail']+=1;continue
@@ -88,6 +89,12 @@ def check(M,cnt,ex):
                 (ok if lt(pre,mk(sy[:-1]+[(l[0],Z,Z)])) else bad)('PreS',key)
                 (ok if (lN[0]==l[0] or le(pre,B)) else bad)('lNsub',key)
                 (ok if lN!=Z else bad)('lNz',key)
+                (ok if l!=ONE else bad)('lastNotOne',key)
+                eta=gamS(mu,br,seed,n-2+dl[c])
+                (ok if lt(pre,seed) else bad)('PreSeed',key)
+                (ok if lt(pre,eta) else bad)('PreEta',key)
+                (ok if le(eta,lN) else bad)('lNgeEta',key)
+                (ok if (le(pre,B) or lt(pre,eta)) else bad)('PreBorEta',key)
                 (ok if tN else bad)('TrigN',key)
                 th=(succ(s),Z,Z)
                 if split(y,th)[1]==Z:
