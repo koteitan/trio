@@ -157,4 +157,9 @@ theorem frame_step_trigArg {η v pre s y yN : T} (hy : isOT (psi s y z) = true) 
       rw [e1]; exact fun he => hYz (app_eq_z he).2
     exact ⟨η, frame_DQ_trig_lo hy hyN hd ht htN hlo hloN hhi⟩
 
+/-- **The side condition `hlNz` of `WfQrL3.hi_keep_DQ` is unsatisfiable** (`b_N = 0 ++ (b_N ++ 0)`), so that lemma
+never applies; `frame_step_trigArg` proves the kept high part for the single-last decomposition instead. -/
+theorem hi_keep_hlNz_false (b bN : T) : ¬ (∀ B l lN Q, b = app B l → bN = app B (app Q lN) → lN ≠ z) :=
+  fun h => h z b z bN (by simp [app]) (by simp [app]) rfl
+
 end Ytosk.WfQrH2
