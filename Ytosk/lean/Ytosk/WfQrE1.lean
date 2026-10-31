@@ -198,4 +198,27 @@ theorem tpLoQ_of_le {P s a b : T} (hP : s ≤ P) :
   · exact lt_irrefl' _ (lt_of_lt_of_le h1 (lt_succ_iff.mp h2))
   · exact absurd h3 (T.not_lt_z z)
 
+/-- **VLocQ, upgrade frame**: the new value of a `v` call is a `DQ` of the old one as soon as the last summand of
+`v(k)` is (no absorption hypothesis). -/
+theorem v_upgDQ {M : Mat} {ρ σ : Valn} (hC : Cons M ρ) {i k : Nat} (hiM : i < M.length) {η : T}
+    (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i = 0) (hu : upg M i = some k)
+    (hA : vOpt σ (par M 1 i) = vOpt ρ (par M 1 i)) (hAot : isOT (vOpt ρ (par M 1 i)) = true)
+    (hV : Single (last (ρ.v k))) (hV' : Single (last (σ.v k)))
+    (hD : DQ η false (last (ρ.v k)) (last (σ.v k))) :
+    DQ η true (ρ.v i) (vRhs M σ i) := by
+  obtain ⟨B, Q, hB, hB', hQ⟩ := v_upgQ hC hiM h1 h2 hu hA hAot hV hV' (le_of_lt hD.lt)
+  rw [hB, hB']
+  exact DQ.source hV.2 hD hQ
+
+/-- **VLocQ, bump frame**: as `v_upgDQ` with the bump term `bumpW`. -/
+theorem v_bumpDQ {M : Mat} {ρ σ : Valn} (hC : Cons M ρ) {i : Nat} (hiM : i < M.length) {η : T}
+    (h1 : entry M 1 i ≠ 0) (h2 : entry M 2 i ≠ 0)
+    (hA : vOpt σ (par M 1 i) = vOpt ρ (par M 1 i)) (hAot : isOT (vOpt ρ (par M 1 i)) = true)
+    (hW : Single (bumpW M ρ i)) (hW' : Single (bumpW M σ i))
+    (hD : DQ η false (bumpW M ρ i) (bumpW M σ i)) :
+    DQ η true (ρ.v i) (vRhs M σ i) := by
+  obtain ⟨B, Q, hB, hB', hQ⟩ := v_bumpQ hC hiM h1 h2 hA hAot hW hW' (le_of_lt hD.lt)
+  rw [hB, hB']
+  exact DQ.source hW.2 hD hQ
+
 end Ytosk
