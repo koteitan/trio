@@ -4,6 +4,12 @@
 
 ## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個）
 
+**9 回目（2026-11-01）**: t = 1 の偽の欄（adn・tplow・adw・ads・tplos）はすべて 1 つの現象から来る。悪い形の bump の呼び出し i（P₀ i = P₁ i = m、CL i = []、i へ上げる列なし）で bump 項 W が A = o(r) そのもの、v(P₁ i) の項 q が [A[ζ], A) にあると、M では A に吸収された q が M[n] では残る。
+- q = r: 真の値は fsD に残る項 Q を差し込んだ DQ（WfQrE1、例外 0）。tplow → TPLoQ（0/285 万）、adw は不要、adn → AbsDN0。
+- q ≠ r: 悪い集合 B_ζ の外は今までの glue、B_ζ の上は v = v(P₁ i) + A[ζ]（WfQnE1〜3）。ads・tplos → AbsDSX・TPLoSX。古い出力の形が偽であることは Lean で示した（not_cons_glue2/3）。
+- 落とす補題: PV は不変条件の欄をすべて満たす 19 個で偽。成分の条件を弱めた PV2 で落とす補題が緑（drop_all_hardW2、WfDrE1）。SeedC → SeedC2（WfDrE2）。
+- 目標 5（全射）: Desc3 と EvalFSNZ 2（最後の列が 0 でないとき eval(A)[k] ≤ eval(A[k+2])）に帰着（WfCof、緑）。EvalFSNZ 2 は 72 万個と接ぎ木で例外 0。EvalFS 1 は偽。
+
 **8 回目（2026-11-01）の監査**: Inv3V2 の全 25 欄と構造の不変条件 13 欄を Lean の形どおりに 2320 万個の行列（既存の集合と新しい族、その M[2]・M[3] の接頭辞）で検査した（tmp/wf/WfInvX/audit.py）。SRO 未満で偽なのは 5 欄だけ: adn・tplow・adw（q = r の最後の列の枠）と ads・tplos（q ≠ r の枠）。ads・tplos は 26 列の標準形で Lean で反証（WfInvX1）。tplow・adw の最小の反例は std_b の 13 列 M13 = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,0,0)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,0) で、使う側の結論 VLocZ（qr_vloc）そのものが偽（bump 項 W が A そのもので d ≥ 1 のとき、良い部分の項 q が [A[η], A) に残る）。ほかの欄はすべて例外 0。値づけは族の展開 426 万組ですべて下がる。
 - adn は使う側の形 AbsDN0（WfInvA1、種での吸収）に替えられる（0/20 万、接ぎ木 0/58 万、q = r エンジンも緑）。
 - hClR は WfInvC.T2SeedClV2W（s′ の成分を B + Ω_{s′} で押さえる）に替えられる（720 万件で例外 0、差し替えたトップの版も緑）。
