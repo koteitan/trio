@@ -25,3 +25,26 @@ N = M[3] of the 36-column WfSrcC3Cex.M (37 columns, standard, Std.exp 3 of the 9
 So the core refutations of WfSrcC3Cex are refutations of the full residuals, as far as Python measures.
 
 ## (1) graft family graftM36.pkl (graft.py)
+- graft.py: seeds = M36, its frame F35, and every t=2 prefix with a column c != r, v(c) = v(r) of samples of
+  graftBb2St / b2grow1 / b2grow2 (4000 each). Gen 1: child (e0 c + 1, a, b) of c (a <= e1 c + 2) as first or last
+  child; for M36/F35 also every column c and graft4 mutations. Gen 2: the same on 1500 gen-1 matrices.
+  bms -s = 1 and < SRO. 24690 matrices (gen1 7255, gen2 new 17435).
+
+## PRIORITY 2: T2SeedClV2R (hClR) is false in its qn field (Lean, Ytosk/lean/Ytosk/WfReM2.lean, green)
+N (46 columns, 236-step trace, qn46_trace.json):
+(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)
+(7,2,1)(8,2,0)(6,2,1)(7,2,1)(8,1,0)(9,2,1)(10,2,1)(11,2,0)(9,2,1)(7,2,0)(8,3,1)(9,3,1)(10,2,0)(11,0,0)(10,1,0)
+(11,2,1)(12,2,1)(13,2,0)(11,2,1)(12,2,1)(13,1,0)(14,2,1)(15,2,1)(16,2,0)(14,2,1)(12,2,0)(13,3,1)(14,3,1)(15,2,0)(14,3,1)
+- Bad2, t = 2, x = 45, r = 41, q = 42, CL r = [42], Lc = [] (qn branch, not T2CBad).
+- X1 = psi_{t1}(0), t1 = psi_{psi(1)+1}(0). Path level u = v(30) = psi(1) (30 -> 34 -> 41), u <= v(r).
+  g = psi_{psi_{psi(1)+psi(1)}(0)}(0) in comps u qnS, g not < X1: third conjunct of T2SeedQNBaseR fails.
+- Lean: qnBase_core_false (Std ∧ Cons, axioms propext), not_T2SeedClV2R_of_ctx (∃ rk, StepCtxT2 N rho rk).
+- Python (chk_one.py): all Inv3V2 fields on N and every prefix hold (VSmallF in the Lean form, vsmallf.py; the
+  inv_fields VSmallF is the old stronger form), drop fields hold, not T2CBad.
+- qnpath.py: 163 of the graftM36 matrices fail this clause (smallest 46 columns); 0 on the earlier sets.
+
+## Notes on the probes
+- tools/probe_hframe measures TPLoW / AbsDW at the old lower bound gamS mu b 1 k (false on grafts). The Lean
+  TakeFrameV2 / Inv3V2 use the seed forms TPLoWs / AbsDWs; hframe_s.py patches the seed to o_{M.take x}(r).
+  The 2 TPLoW / 1 AbsDW failures of probe_hframe on graftM36 hold in the seed form.
+- tools/probe_inv3_prefix.inv_fields VSmallF is the old form; use vsmallf.py (Lean form).
