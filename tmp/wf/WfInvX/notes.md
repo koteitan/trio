@@ -47,3 +47,18 @@ Axioms: propext, Classical.choice, Quot.sound.
 - tplow: qr_lkeep (V3QRLocV, section variable hTPL, at k = m + dOf c >= 1) and qr_oloc (V3QRLocOA:208).
 - adw: qr_vloc (V3QRLocV:431, at k = m + dOf i when it is >= 1).
 All other uses are transport (TakeFrameV2 fields, V3TakeInv2, V3ExpT1Inv2, V3ExpT2Inv2, V3T0Bad, V3ExpInv2).
+
+## Old sets run (sets.jsonl, summary_sets.json): all 52 pkls of tmp/ytosk-handoff/sets, 18,509,666 matrices
+- tplow (TPLoWs) 8 cases / 4 matrices, adw (AbsDWs) 4 / 4, all in std_b; smallest standard witness 13 columns:
+  (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,0,0)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,0)
+  (TPLoWs at c = 4, AbsDWs at i = 9). Much smaller than the 35/37-column family witnesses. Python only.
+- Structural failures BumpLeaf 6, UAB 5, UAT 4, Z1C 1, rank 5 (eval cycle 5), all in cbadext / t0ext: every failing
+  matrix is >= SRO (SRO itself or above it), so outside Std \ {SRO}; no structural field fails below SRO.
+- Every other field: 0 failures.
+
+## Combined (summary.json): 23,201,229 matrices. False fields of Inv3V2 below SRO:
+adn (27 col), ads (26, Lean WfInvX1), tplos (26, Lean WfInvX1), tplow (13), adw (13). Everything else holds on all.
+
+## (4) Descent (descent.py, descent.json)
+Every family member and every prefix (1,418,779 matrices), n = 1, 2, 3: 4,256,337 pairs, all with
+Ev(M[n]).value() < Ev(M).value() (tools/ytosk_eval.Ev, tools/trio.expand); no evaluation failure.

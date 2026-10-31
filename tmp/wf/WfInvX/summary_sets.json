@@ -1,0 +1,356 @@
+{
+ "matrices": 18509666,
+ "sets": {
+  "graftAb.pkl": 0,
+  "ext2b2Sf.pkl": 0,
+  "std_ab2S.pkl": 26,
+  "std_ab2G.pkl": 41,
+  "std_ab2.pkl": 67,
+  "b2t0test.pkl": 135,
+  "graftBb2Sf.pkl": 468,
+  "graftBb.pkl": 756,
+  "ext2b2G.pkl": 1940,
+  "shapegrow.pkl": 2372,
+  "ext2b2S.pkl": 2133,
+  "ext2b2St.pkl": 2133,
+  "graftBb2St_x2.pkl": 2673,
+  "graftBb2St_x0.pkl": 2708,
+  "graftBb2St_g2.pkl": 2711,
+  "graftBb2St_p0.pkl": 2711,
+  "cbadext.pkl": 3756,
+  "graftBb2St_g0.pkl": 2738,
+  "graftBb2St_p1.pkl": 3064,
+  "ext2b2.pkl": 4073,
+  "graftBb2St_x1.pkl": 5772,
+  "graftBb2St_g1.pkl": 8292,
+  "b2grow1.pkl": 6517,
+  "graftA.pkl": 13876,
+  "graftAn.pkl": 13876,
+  "d3s.pkl": 15000,
+  "b2grow2.pkl": 10081,
+  "graftBb2St.pkl": 30669,
+  "graftBb2S.pkl": 31137,
+  "std_a.pkl": 79201,
+  "std_an2.pkl": 79134,
+  "graftBb2G.pkl": 49091,
+  "graftBn2.pkl": 75698,
+  "graftBb2.pkl": 80228,
+  "deep3.pkl": 123493,
+  "deep2.pkl": 128150,
+  "t0ext.pkl": 181290,
+  "ext1x.pkl": 119974,
+  "graftBn.pkl": 155170,
+  "graftB.pkl": 155926,
+  "e3exp.pkl": 347644,
+  "Cprime.pkl": 404051,
+  "ext3s.pkl": 592841,
+  "ext1.pkl": 1082667,
+  "expP.pkl": 614584,
+  "t2ext.pkl": 1207960,
+  "ext2.pkl": 1497986,
+  "ext2n2.pkl": 1493913,
+  "expPt2.pkl": 2460115,
+  "std_b.pkl": 7410825
+ },
+ "other": {
+  "input": 18509666,
+  "eval_failed": 5
+ },
+ "fields": {
+  "BumpE2": {
+   "cases": 50480062,
+   "fail": 0,
+   "mats": 15509413,
+   "fmats": 0
+  },
+  "BumpLeaf": {
+   "cases": 18518507,
+   "fail": 6,
+   "mats": 10982408,
+   "fmats": 6,
+   "witness": "(0,0,0)(1,1,1)(2,1,1)(3,1,1)",
+   "nonstd_smaller": 0,
+   "witness_len": 4,
+   "witness_info": "(1, 2, 3)",
+   "fail_by_set": {
+    "cbadext.pkl": 3,
+    "t0ext.pkl": 3
+   }
+  },
+  "E00": {
+   "cases": 18509666,
+   "fail": 0,
+   "mats": 18509666,
+   "fmats": 0
+  },
+  "R01": {
+   "cases": 348596285,
+   "fail": 0,
+   "mats": 18509666,
+   "fmats": 0
+  },
+  "R0P": {
+   "cases": 327575639,
+   "fail": 0,
+   "mats": 18509645,
+   "fmats": 0
+  },
+  "R12": {
+   "cases": 348596285,
+   "fail": 0,
+   "mats": 18509666,
+   "fmats": 0
+  },
+  "R1S": {
+   "cases": 327575639,
+   "fail": 0,
+   "mats": 18509645,
+   "fmats": 0
+  },
+  "RowJ": {
+   "cases": 144723321,
+   "fail": 0,
+   "mats": 18232373,
+   "fmats": 0
+  },
+  "SibDec": {
+   "cases": 82757711,
+   "fail": 0,
+   "mats": 17950538,
+   "fmats": 0
+  },
+  "UAB": {
+   "cases": 15144874,
+   "fail": 5,
+   "mats": 5813279,
+   "fmats": 5,
+   "witness": "(0,0,0)(1,1,1)(2,1,1)(3,1,0)(2,0,0)",
+   "nonstd_smaller": 0,
+   "witness_len": 5,
+   "witness_info": "(3, 1, 2)",
+   "fail_by_set": {
+    "cbadext.pkl": 2,
+    "t0ext.pkl": 3
+   }
+  },
+  "UAT": {
+   "cases": 46060221,
+   "fail": 4,
+   "mats": 12807107,
+   "fmats": 4,
+   "witness": "(0,0,0)(1,1,1)(2,1,1)(3,1,0)(2,1,1)",
+   "nonstd_smaller": 0,
+   "witness_len": 5,
+   "witness_info": "(3, 1)",
+   "fail_by_set": {
+    "cbadext.pkl": 2,
+    "t0ext.pkl": 2
+   }
+  },
+  "Z1C": {
+   "cases": 140348762,
+   "fail": 1,
+   "mats": 18110403,
+   "fmats": 1,
+   "witness": "(0,0,0)(1,1,1)(2,2,1)",
+   "nonstd_smaller": 0,
+   "witness_len": 3,
+   "witness_info": "(1, 2)",
+   "fail_by_set": {
+    "cbadext.pkl": 1
+   }
+  },
+  "Z2": {
+   "cases": 348596285,
+   "fail": 0,
+   "mats": 18509666,
+   "fmats": 0
+  },
+  "adn": {
+   "cases": 1806585,
+   "fail": 0,
+   "mats": 659256,
+   "fmats": 0
+  },
+  "ads": {
+   "cases": 1213910,
+   "fail": 0,
+   "mats": 396907,
+   "fmats": 0
+  },
+  "adw": {
+   "cases": 536628,
+   "fail": 4,
+   "mats": 180646,
+   "fmats": 4,
+   "witness": "(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,0,0)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,0)",
+   "nonstd_smaller": 0,
+   "witness_len": 13,
+   "witness_info": "{'matrix': [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0), (1, 1, 1), (2, 1, 1), (3, 0, 0), (4, 0, 0), (2, 1, 0), (3, 2, 1), (4, 2, 1), (5, 0, 0), (6, 1, 0)], 'i': 9, 'summand': ((), ((), ((), ((), (), ()), ()), ()), ())}",
+   "fail_by_set": {
+    "std_b.pkl": 4
+   }
+  },
+  "aus": {
+   "cases": 83681,
+   "fail": 0,
+   "mats": 38803,
+   "fmats": 0
+  },
+  "auw0": {
+   "cases": 13182,
+   "fail": 0,
+   "mats": 5876,
+   "fmats": 0
+  },
+  "auwl": {
+   "cases": 37593,
+   "fail": 0,
+   "mats": 17204,
+   "fmats": 0
+  },
+  "cons": {
+   "cases": 348596260,
+   "fail": 0,
+   "mats": 18509661,
+   "fmats": 0
+  },
+  "fc": {
+   "cases": 90247331,
+   "fail": 0,
+   "mats": 16766776,
+   "fmats": 0
+  },
+  "fc3": {
+   "cases": 36912711,
+   "fail": 0,
+   "mats": 10910896,
+   "fmats": 0
+  },
+  "fo": {
+   "cases": 270057856,
+   "fail": 0,
+   "mats": 18509640,
+   "fmats": 0
+  },
+  "good": {
+   "cases": 348596260,
+   "fail": 0,
+   "mats": 18509661,
+   "fmats": 0
+  },
+  "kd": {
+   "cases": 50480056,
+   "fail": 0,
+   "mats": 15509408,
+   "fmats": 0
+  },
+  "ph": {
+   "cases": 6347660,
+   "fail": 0,
+   "mats": 3709241,
+   "fmats": 0
+  },
+  "rank": {
+   "cases": 18509666,
+   "fail": 5,
+   "mats": 18509666,
+   "fmats": 5,
+   "witness": "(0,0,0)(1,1,1)(2,1,1)(3,1,0)(2,0,0)",
+   "nonstd_smaller": 0,
+   "witness_len": 5,
+   "witness_info": "()",
+   "fail_by_set": {
+    "cbadext.pkl": 2,
+    "t0ext.pkl": 3
+   }
+  },
+  "rootP": {
+   "cases": 18509661,
+   "fail": 0,
+   "mats": 18509661,
+   "fmats": 0
+  },
+  "rootS": {
+   "cases": 21020641,
+   "fail": 0,
+   "mats": 18509661,
+   "fmats": 0
+  },
+  "td": {
+   "cases": 144723309,
+   "fail": 0,
+   "mats": 18232368,
+   "fmats": 0
+  },
+  "tp1": {
+   "cases": 48748074,
+   "fail": 0,
+   "mats": 9594952,
+   "fmats": 0
+  },
+  "tp1w": {
+   "cases": 25632536,
+   "fail": 0,
+   "mats": 5155790,
+   "fmats": 0
+  },
+  "tplon": {
+   "cases": 820426,
+   "fail": 0,
+   "mats": 322554,
+   "fmats": 0
+  },
+  "tplos": {
+   "cases": 3705460,
+   "fail": 0,
+   "mats": 1178769,
+   "fmats": 0
+  },
+  "tplow": {
+   "cases": 1997724,
+   "fail": 8,
+   "mats": 737184,
+   "fmats": 4,
+   "witness": "(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,0,0)(4,0,0)(2,1,0)(3,2,1)(4,2,1)(5,0,0)(6,1,0)",
+   "nonstd_smaller": 0,
+   "witness_len": 13,
+   "witness_info": "{'matrix': [(0, 0, 0), (1, 1, 1), (2, 1, 1), (3, 1, 0), (1, 1, 1), (2, 1, 1), (3, 0, 0), (4, 0, 0), (2, 1, 0), (3, 2, 1), (4, 2, 1), (5, 0, 0), (6, 1, 0)], 'c': 4}",
+   "fail_by_set": {
+    "std_b.pkl": 8
+   }
+  },
+  "trigs": {
+   "cases": 430339,
+   "fail": 0,
+   "mats": 430339,
+   "fmats": 0
+  },
+  "vra": {
+   "cases": 159784166,
+   "fail": 0,
+   "mats": 8687145,
+   "fmats": 0
+  },
+  "vs": {
+   "cases": 270057856,
+   "fail": 0,
+   "mats": 18509640,
+   "fmats": 0
+  }
+ },
+ "groups": {
+  "SInv": {
+   "fail": 10
+  },
+  "SInvX": {
+   "fail": 7
+  },
+  "RowJ": {
+   "fail": 0
+  },
+  "Inv3V2": {
+   "fail": 17
+  }
+ }
+}
