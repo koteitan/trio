@@ -9,6 +9,7 @@ the column has the shape `WfAbsW.BadAbsShape M (M.take x)` (the same shape as th
 import Ytosk.WfInvD1
 import Ytosk.WfAbsWEta
 import Ytosk.V3T2Top
+import Ytosk.V3T0AbW
 
 namespace Ytosk
 
@@ -44,6 +45,16 @@ theorem absWNx_of_absCX {M : Mat} {x q : Nat} {ρ σ' : Valn} (hAbsC : BumpAbsCX
   · exact Or.inl fun s hs _ hn hlt => h s hs hn hlt
   · exact Or.inr h
 
+/-- **`AbsWNx` for the drop at `t = 0`** from `BumpAbsCX` (as `absWN_take_t0`). -/
+theorem absWNx_take_t0 {M : Mat} {x bnd : Nat} {ρ τ : Valn} (hAbsC : BumpAbsCX M x ρ) (hC : Cons M ρ)
+    (hx : x < M.length) (he1 : entry M 1 x = 0) (hτ : Cons (M.take x) τ) :
+    WfAbsW.AbsWNx M (M.take x) bnd ρ τ := by
+  have hvx : ρ.v x = z := by rw [(hC x hx).2]; unfold vRhs; rw [if_pos he1]
+  intro i _ h1 h2
+  rcases hAbsC τ hτ i h1 h2 (fun _ _ _ _ => hvx) (Or.inr (Or.inr hvx)) with h | h
+  · exact Or.inl fun q hq _ hn hlt => h q hq hn hlt
+  · exact Or.inr h
+
 /-- **The repaired drop residual with the bad shape** (2026-10-31): `DropResHBg` everywhere, and `BumpAbsCX` at
 `t = 0` and at `t = 2` outside `Bad2`. -/
 def HDropUx : Prop :=
@@ -70,5 +81,41 @@ theorem hdrop_of_Ux (h : HDropUx) {M : Mat} {ρ : Valn} {rk : Bool → Nat → N
   have hC1 := cons_of_rk hRk1
   exact drop_all_hardW hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.vs R.vst I.fc I.fo
     R.hard (bump_dropB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.kd I.td R.ab R.ws) R.ua.x1
+
+/-- **The absorption at `x − 1` without the component condition** (what every drop lemma reads). -/
+def UAw (N : Mat) (x : Nat) (σ : Valn) : Prop :=
+  ∀ i k W, i + 1 = x → upg N i = some k → σ.v k = add (vOpt σ (par N 1 i)) W → W ≠ z →
+    (∀ r ∈ summands (vOpt σ (par N 1 i)), r < W → Lhd z r W) ∨ WCSP N σ i (add (vOpt σ (par N 1 i)) one)
+
+theorem UAg.toW {N : Mat} {x : Nat} {σ : Valn} (h : UAg N x σ) : UAw N x σ := h.x1
+
+/-- **`DropResHB` with `UAw`.** -/
+structure DropResHBw (N : Mat) (x : Nat) (σ σ' : Valn) : Prop where
+  hard : HardArg N x σ σ'
+  vst : VSmallNew N x σ σ'
+  ws : BumpWeakSrcB N x σ σ'
+  ua : UAw N x σ
+  ab : BumpAbsCB N x σ
+
+/-- **The weakest measured form** (2026-10-31): `DropResHBw` and `BumpAbsCX` at every standard matrix, with no
+`Bad2` or type guard (on the families every failure of `BumpAbsC`, also on `Bad2` and at `t = 1`, has the bad
+shape). The `t = 1` readers of the component condition (`qr_dropSeed`, `frameMapT1_take`) then need their own
+residual. -/
+def HDropUw : Prop :=
+  ∀ M ρ rk, Std M → M ≠ SRO → M ≠ [] → Inv3V2 M ρ rk →
+    DropResHBw M (M.length - 1) ρ (drop1 M (M.length - 1) rk) ∧ BumpAbsCX M (M.length - 1) ρ
+
+theorem hdrop_of_Uw (h : HDropUw) {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO)
+    (hl : 2 ≤ M.length) (I : Inv3V2 M ρ rk) :
+    ∀ i, i < M.length - 1 → PO ρ (drop1 M (M.length - 1) rk) i ∧ PV M ρ (drop1 M (M.length - 1) rk) i := by
+  have hE : M ≠ [] := by intro he; rw [he] at hl; simp at hl
+  obtain ⟨R, _⟩ := h M ρ rk hM hS hE I
+  have S := sInv_std hM hS
+  have hx : M.length - 1 + 1 = M.length := by omega
+  have hcnt := counted_take_last (M := M) (by omega) S.r0p S.z2 S.sibDec S.z1c S.uat
+  have hRk1 : Rk (M.take (M.length - 1)) rk := rk_take (by omega) I.rank hcnt
+  have hC1 := cons_of_rk hRk1
+  exact drop_all_hardW hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.vs R.vst I.fc I.fo
+    R.hard (bump_dropB hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab I.cons I.good hC1 hRk1 I.kd I.td R.ab R.ws) R.ua
 
 end Ytosk

@@ -136,11 +136,39 @@ def probe(M):
         if not ok:
             bb=bad2(M) if b2 is None else b2
             X('qrSeedC.FAIL.bad2=%s.L1=%d'%(bb,r_==x-1),(r_,Y.tstr(o1)[:80]))
+        # VrDomQ (V3T1VSRAll): forall u, g in comps u v'(r): g <= psi(v'(r)) or g <= some d in comps u v(r)
+        a1,a=T.v(r_),C.v(r_);us={Z};D.indices(a1,us);D.indices(a,us);okv=True
+        for u in us:
+            cu=comps(u,a)
+            for g in comps(u,a1):
+                if not (le(g,(a1,Z,Z)) or any(le(g,d) for d in cu)):okv=False;break
+            if not okv:break
+        cnt['vrDomQ.cases']+=1
+        if not okv:
+            bb=bad2(M) if b2 is None else b2
+            X('vrDomQ.FAIL.bad2=%s.L1=%d'%(bb,r_==x-1),r_)
     # PV everywhere (drop conclusion) - only report failures
     for i in range(x):
         if not pv(i):X('PV.FAIL.bad2=%s'%(bad2(M) if b2 is None else b2),i);break
     return cnt,ex
+def spar(M,r,i):
+    if M[i][r]==0 and r>0:return None
+    j=i
+    while True:
+        j=spar(M,r-1,j) if r>0 else next((k for k in range(j-1,-1,-1) if M[k][0]<M[j][0]),None)
+        if j is None:return None
+        if M[j][r]<M[i][r]:return j
+def pref(M):
+    M=[tuple(c) for c in M];x=len(M)-1
+    if x<2:return False
+    if M[x-1][1] and not M[x-1][2]:return True
+    p0=spar(M,0,x)
+    if p0==x-1 and M[x][1]:return True
+    if M[x][1] and not M[x][2] and p0 is not None and spar(M,1,x)==p0:return True
+    return False
+PREF=os.environ.get('PREF')=='1'
 def work(b):
+    if PREF:b=[M for M in b if pref(M)]
     cnt=collections.Counter();ex={}
     for M in b:
         try:c,e=probe(M)
