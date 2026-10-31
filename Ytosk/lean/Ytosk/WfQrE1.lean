@@ -186,4 +186,16 @@ theorem DQ.om {η v vN : T} (h : DQ η true v vN) : DQ η true (psi v z z) (psi 
   have := DQ.mk (B := z) (Q := z) (s := v) (y := z) rfl (DQ.sub h) (by simp [summands])
   simpa using this
 
+/-- **(L)(ii) with the re-exposed summands** (`TPLoQ`, replaces `TPLoW`): at an `o` call `c` with
+`o(c) = ψ_s(y)`, `last y = Ω_a`, `a = v(i) = P + W` (`P = v(P_1 i)`), the value of `a` in `N` is `P + W'`
+(`v_bumpQ` / `v_upgQ`). If `s ≤ P`, then `Ω_{P + W'} ≥ Ω_{s+1}`, whatever `W'` is: the low part of the argument
+stays empty. (On M13, `c = 4`: `s = P = ψ(ψ(ψ(1)))`, `W' = ψ(ψ(ψ(1)))`; `TPLoW` asks `W' > s` and fails.) -/
+theorem tpLoQ_of_le {P s a b : T} (hP : s ≤ P) :
+    ¬ psi (add P (psi a b z)) z z < psi (succ s) z z := by
+  have h1 : s < add P (psi a b z) := lt_of_le_of_lt hP (lt_add_principal a b P)
+  intro h
+  rcases psi_lt_psi_z_iff.mp h with h2 | ⟨_, h3⟩
+  · exact lt_irrefl' _ (lt_of_lt_of_le h1 (lt_succ_iff.mp h2))
+  · exact absurd h3 (T.not_lt_z z)
+
 end Ytosk
