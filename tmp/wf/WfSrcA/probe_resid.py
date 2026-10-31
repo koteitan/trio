@@ -9,6 +9,11 @@ sys.path.insert(0,'/home/koteitan/proofs/trio/tmp/codex')
 from pathlib import Path
 from multiprocessing import Pool
 from t2src_a_trio_codex import *
+def anc0(E,a,d):
+    while d is not None:
+        if d==a:return True
+        d=E.par(0,d)
+    return False
 def cands(M,E,x):
     out=[]
     for i in range(x):
@@ -67,6 +72,11 @@ def run(batch):
                     W=C.bumpW(i);WT=T.bumpW(i)
                     df=any(not lt(q,W2) and not lt(q,WT) and lt(q,W) and not lhd(q,W) for q in H.summ(C.vOpt1(i)))
                     cnt[v+'.FALSE.dropfail.'+str(df)]+=1
+                    A=C.vOpt1(i);lo=Y.split(A,W)[1];head=Z if not lo else (lo[0],lo[1],Z)
+                    cert=('A_le_newv' if le(A,T.v(c)) else 'A_lt_newo' if lt(A,T.o(c)) else 'head_small' if lt(head,W2) else 'head_lt_WT' if lt(head,WT) else 'other')
+                    cnt[v+'.FALSE.cert.'+cert]+=1
+                    cnt[v+'.FALSE.anc.'+str(anc0(E,c,x-1))+'.e1lt.'+str(M[c][1]<M[m][1])]+=1
+                    if cert=='other':save(v+'.FALSE.other',M,dict(x=x,i=i,m=m,j=j,c=c))
                     if df:save(v+'.FALSE.DROPFAIL',M,dict(x=x,i=i,m=m,j=j,c=c))
                     save(v+'.FALSE',M,dict(x=x,i=i,m=m,j=j,c=c))
                 else: save(v+'.true',M,dict(x=x,i=i,m=m,j=j,c=c))

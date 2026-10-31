@@ -10,12 +10,13 @@ child `c` with `τ.o c ≠ ρ.o c`. Proved cases:
 - `e1 c = e1 m` and the next column `c + 1` inside `m`'s subtree: `nonlost_return_value` gives
   `τ.v c = ρ.v m`, and `not_dropFail_of_parent_le_child` closes it.
 
-Residual `SrcAShape` (the two general subcases (i), (ii) of the codex handoff): the remaining
-shape does not occur, i.e. `e1 c = e1 m ∧ e0 m < e0 (c + 1)`.
+Residual `SrcARem` (the two general subcases (i), (ii) of the codex handoff): in the remaining
+shape (not `e1 c = e1 m ∧ e0 m < e0 (c + 1)`) the drop absorption does not fail. It follows from the
+structural `SrcAShape` (the remaining shape does not occur), `srcARem_of_shape`.
 Measured (tmp/wf/WfSrcA/notes.md): no exception; it is false without the Bad2 (a) frame
 (non-frame counterexample in std_a), so the frame premises are necessary.
 
-`t2AbsNSrcW_of`: `SrcAShape → T2AbsNSrcWBC → WfT2Src.T2AbsNSrcW`, where `T2AbsNSrcWBC` is
+`t2AbsNSrcW_of`: `SrcARem → T2AbsNSrcWBC → WfT2Src.T2AbsNSrcW`, where `T2AbsNSrcWBC` is
 `T2AbsNSrcW` restricted to `P0 x = P1 x = x − 1` (parts (b) and (c)).
 -/
 import Ytosk.V3T2SrcReturn
@@ -54,8 +55,30 @@ def SrcAShape : Prop :=
         (∀ d ∈ K, entry M 1 d < entry M 1 m) → entry M 1 c ≤ entry M 1 m →
         entry M 1 c = entry M 1 m ∧ entry M 0 m < entry M 0 (c + 1)
 
-/-- **Part (a)**: with `SrcAShape`, the drop absorption does not fail in case (a). -/
-theorem not_dropFail_of_case_a (hS : SrcAShape) {M : Mat} {ρ τ : Valn}
+/-- **Residual, weaker form**: in the remaining shape (not a return at `m`'s row with the next column
+inside `m`'s subtree) the drop absorption does not fail. Implied by `SrcAShape` (`srcARem_of_shape`). -/
+def SrcARem : Prop :=
+  ∀ M ρ rk, StepCtxT2 M ρ rk → Bad2 M → col M (M.length - 1) ≠ (0, 0, 0) →
+    TRIO.srow M (M.length - 1) = 2 →
+    ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
+      (par M 0 (r + L) ≠ some (r + L - 1) ∨ par M 1 (r + L) ≠ some (r + L - 1)) →
+      ∀ τ, Cons (M.take (r + L)) τ →
+      ∀ i m j c (B K : List Nat), i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+        par M 0 i = some m → par M 1 i = some m →
+        j ∈ children M i → col M j = bump M i → children (M.take (r + L)) i = B ++ [j] →
+        children M j = K ++ [c] → c < r + L - 1 → τ.o c ≠ ρ.o c →
+        (∀ d ∈ K, entry M 1 d < entry M 1 m) → entry M 1 c ≤ entry M 1 m →
+        ¬ (entry M 1 c = entry M 1 m ∧ entry M 0 m < entry M 0 (c + 1)) →
+        ¬ WfT2Abs.DropFail M ρ τ (r + L) i
+
+theorem srcARem_of_shape (hS : SrcAShape) : SrcARem := by
+  intro M ρ rk C hB2 hz hs r L hx hr ha τ hT i m j c B K hi h1 h2 hmi hm1 hj hb hBj hK hcl hce
+    hearly hrow hn
+  exact absurd (hS M ρ rk C hB2 hz hs r L hx hr ha τ hT i m j c B K hi h1 h2 hmi hm1 hj hb hBj hK
+    hcl hce hearly hrow) hn
+
+/-- **Part (a)**: with `SrcARem`, the drop absorption does not fail in case (a). -/
+theorem not_dropFail_of_case_a (hS : SrcARem) {M : Mat} {ρ τ : Valn}
     {rk : Bool → Nat → Nat} (C : StepCtxT2 M ρ rk) (hB2 : Bad2 M)
     (hz : col M (M.length - 1) ≠ (0, 0, 0)) (hs : TRIO.srow M (M.length - 1) = 2)
     {r L i : Nat} (hx : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
@@ -92,8 +115,11 @@ theorem not_dropFail_of_case_a (hS : SrcAShape) {M : Mat} {ρ τ : Valn}
       exact (List.pairwise_append.mp hs).2.2 d hd c (by simp)
     exact T2SrcQuiet.failed_drop_earlier_row_lt hX hJ C.I.cons C.I.good hx hT hRT hGT
       hmi hm1 hj hb hc hcx hdj hdc hf
-  obtain ⟨hc1, hnext⟩ := hS M ρ rk C hB2 hz hs r L hx hr ha τ hT i m j c B K hi h1 h2 hmi hm1
-    hj hb hBj hK hcl' hce hearly hrow
+  have hshape' : entry M 1 c = entry M 1 m ∧ entry M 0 m < entry M 0 (c + 1) := by
+    by_contra hn
+    exact hS M ρ rk C hB2 hz hs r L hx hr ha τ hT i m j c B K hi h1 h2 hmi hm1
+      hj hb hBj hK hcl' hce hearly hrow hn hf
+  obtain ⟨hc1, hnext⟩ := hshape'
   have hiN : i < M.length := by omega
   have hm2 : entry M 2 m = 0 := by
     by_contra hn
@@ -122,8 +148,8 @@ def T2AbsNSrcWBC : Prop :=
           ∀ s ∈ summands (vOpt ρ (par M 1 i)), ¬ s < psi z two z → s < bumpW M ρ i →
             ¬ Lhd z s (bumpW M ρ i) → s < WfT2Abs.Bnd (ρ.v r)
 
-/-- **Bridge**: part (a) from `SrcAShape`, parts (b), (c) from `T2AbsNSrcWBC`. -/
-theorem t2AbsNSrcW_of (hS : SrcAShape) (hBC : T2AbsNSrcWBC) : WfT2Src.T2AbsNSrcW := by
+/-- **Bridge**: part (a) from `SrcARem`, parts (b), (c) from `T2AbsNSrcWBC`. -/
+theorem t2AbsNSrcW_of (hS : SrcARem) (hBC : T2AbsNSrcWBC) : WfT2Src.T2AbsNSrcW := by
   intro M ρ rk C hB2 hz hs r L hlen hr τ hτ i hi h1 h2 hfail hfacts
   by_cases ha : par M 0 (r + L) ≠ some (r + L - 1) ∨ par M 1 (r + L) ≠ some (r + L - 1)
   · exact absurd hfail (not_dropFail_of_case_a hS C hB2 hz hs hlen hr ha hi h1 h2 hτ)
