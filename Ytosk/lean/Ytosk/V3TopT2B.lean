@@ -46,6 +46,8 @@ import Ytosk.WfSrcABC
 import Ytosk.WfH7WSib
 import Ytosk.WfSrcR5
 import Ytosk.WfH7W2Ret
+import Ytosk.WfB2S
+import Ytosk.WfTermA
 
 namespace Ytosk
 
@@ -68,7 +70,7 @@ outside `Bad2`. 2026-10-29: the first field is the M-side `WfT2Abs.T2AbsNSrc`; t
 2026-10-31 (round 5): the first field is `WfSrcP.PLowRes` (the lower-row case shared by (a) and (b)), `WfSrcR5.ATerm`,
 `WfSrcR5.BTerm` (the terminal shapes of the next-column change chain), `WfSrcC2.SrcC3Res` (bridge
 `WfSrcR5.t2AbsNSrcW_of`). -/
-def T2BadRes : Prop := (WfSrcP.PLowRes ∧ WfSrcR5.ATerm ∧ WfSrcR5.BTerm ∧ WfSrcC2.SrcC3Res) ∧ T2QNDomBad2
+def T2BadRes : Prop := (WfSrcP.PLowRes ∧ WfTerm.TermHi ∧ WfSrcC2.SrcC3Res) ∧ T2QNDomBad2
 
 /-- **`BadOutT2B` from the `t = 2` engines** (2026-10-25): the context `StepCtxB` holds on `Bad2` too, the engines run
 on it (`ExpT2V2`, `R2V2`, and `T2CBadOut` at the bad C shape), and the descent for `n ≥ 2` is `t2_drops_ge2`. -/
@@ -142,8 +144,12 @@ The count is 14.
 2026-10-31: T0BadSeedsH7W and T2QNDomBad need HUAC only at x - 1 of a Bad2 matrix (`WfH7W.HUACB2`), plus
 `WfH7W.H7WSib` (the preceding sibling in the lost-tail frame is a copy of x - 1) and `T2QNDomBad2`. T2AbsNSrcW is split
 into (a), (b), (c). The count is 15 hypotheses (T2BadRes holds 4 parts).
-Round 5: HUACB2 is narrowed to `WfH7W2.B2Step` (StepDom under Bad2; `WfH7W2.huacB2_of_step`). T2BadRes holds 5 parts. -/
-theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hStep : WfH7W2.B2Step) (hSib : WfH7W.H7WSib)
+Round 5: HUACB2 is narrowed to `WfH7W2.B2Step` (StepDom under Bad2; `WfH7W2.huacB2_of_step`). T2BadRes holds 5 parts.
+Round 6: B2Step is FALSE (WfB2SFalse.not_B2Step_of, 28-column standard Bad2); replaced by the weaker `WfB2S.B2StepAb`
+(j = the last bump child with children). ATerm/BTerm narrowed to `WfTerm.TermHi`.
+WARNING (round 6): `WfSrcC2.SrcC3Res` is false in its core form, and so are T2AbsNSrc (c), T2AbsNBad and
+`AbsWN M M[2]` (WfSrcC3Cex, standard 36-column Bad2 matrix). The Bad2 t = 2 route through `T2BelowRV2` needs a redesign. -/
+theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hStep : WfB2S.B2StepAb) (hSib : WfH7W.H7WSib)
     (hF : HFrameV2) (hLf : HLeafV2)
     (hBE : HBumpExt) (hCB : T2CBadOut)
     (hVU : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
@@ -158,7 +164,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hStep : Wf
   have hDW : HDropV2W := hDropV2W_of_U hDU
   have hDB : DropBadV2B := dropBadB_of_U hDU (rootBad_of_T2 hDU (rootBadV2T2_holds hDU))
   have hDomB : T2SeedDomV2B := t2SeedDomV2B_of_Q hDomQ
-  have hPRB : T2SeedPResRCV2B := t2SeedPResRCV2B_of_C (t2SeedPResRCV2C_of_D (t2SeedPResRCV2D_of_E (WfH7W.t2QNDomBad_of_B2 (WfH7W2.huacB2_of_step hStep) hTB2.2) hPRE))
+  have hPRB : T2SeedPResRCV2B := t2SeedPResRCV2B_of_C (t2SeedPResRCV2C_of_D (t2SeedPResRCV2D_of_E (WfH7W.t2QNDomBad_of_B2 (WfB2S.huacB2_of_ab hStep) hTB2.2) hPRE))
   have hSV0 : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
         T2SVCase M r L → T2SVc0 M ρ r L := fun M ρ rk C hz h2 r L hlen hr hc =>
@@ -184,7 +190,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hStep : Wf
   have hPR : T2SeedPResRCV2 := t2SeedPResRCV2_of_B hCl hPRB
   have hPRV : T2SeedPResRV2 := t2SeedPResR_of_canon hCan hPR
   have hP : T2SeedPResV2 := t2SeedPResV2_of hPRV
-  have hBX : T2BelowXResV2 := t2BelowXResV2_of (WfT2Exp.t2BelowRV2_of_src hP (t2SeedClV2_of_B hCl hP) (t2BumpMonoV2_of_ext hBE) (WfT2Src.t2AbsNSrc_of_W (WfSrcR5.t2AbsNSrcW_of hTB2.1.1 hTB2.1.2.1 hTB2.1.2.2.1 hTB2.1.2.2.2))) hP (t2SeedOTV2_of hP (t2SeedOTRestV2_of_B hCl hP))
+  have hBX : T2BelowXResV2 := t2BelowXResV2_of (WfT2Exp.t2BelowRV2_of_src hP (t2SeedClV2_of_B hCl hP) (t2BumpMonoV2_of_ext hBE) (WfT2Src.t2AbsNSrc_of_W (WfSrcR5.t2AbsNSrcW_of hTB2.1.1 (WfTerm.aTerm_of hTB2.1.2.1) (WfTerm.bTerm_of hTB2.1.2.1) hTB2.1.2.2))) hP (t2SeedOTV2_of hP (t2SeedOTRestV2_of_B hCl hP))
   have hVPrC : ∀ M ρ rk, StepCtxT2 M ρ rk → col M (M.length - 1) ≠ (0, 0, 0) →
       TRIO.srow M (M.length - 1) = 2 → T2SeedPreShapeC M ρ := fun M ρ rk C hz h2 =>
     t2SeedPreShapeC_of (hBX M ρ rk C) C.std C.ne (Inv3W.ofV2 C.S C.I) C.toW hz h2 (hP M ρ rk C hz h2)
@@ -215,7 +221,7 @@ theorem trio_terminates_main_V2_cur (hDU : HDropU) (hTB2 : T2BadRes) (hStep : Wf
   have hBR : BadOutT2B := badOutT2B_of hDU (hDropV2_of' hDW) (hTake_of_glob hF hLf)
     (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hE2 (r2V2_of hBX) hCB
   trio_terminates_main_V2_base hDU (hDropV2_of' hDW) (takeBad_of_drop (dropBad_of_B hDB) hF hLf)
-    (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf (t0BadSeeds_of hDU (t0BadSeedsH_of hDU (t0BadSeedsH2_of hDU hBE (t0BadSeedsH3_of hDU (t0BadSeedsH4_of hDU hBE (t0BadSeedsH5_of hDU (t0BadSeedsH6_of_W (WfH7W.t0BadSeedsH7W_of_sib hDU (WfH7W2.huacB2_of_step hStep) hSib))))))))) (badOutRest_of (badOutT12_of hDU (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf hBR))) hF hLf
+    (badOutV2_of (badOutT0_of hDU hBE (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf (t0BadSeeds_of hDU (t0BadSeedsH_of hDU (t0BadSeedsH2_of hDU hBE (t0BadSeedsH3_of hDU (t0BadSeedsH4_of hDU hBE (t0BadSeedsH5_of hDU (t0BadSeedsH6_of_W (WfH7W.t0BadSeedsH7W_of_sib hDU (WfB2S.huacB2_of_ab hStep) hSib))))))))) (badOutRest_of (badOutT12_of hDU (takeBad_of_drop (dropBad_of_B hDB) hF hLf) hF hLf hBR))) hF hLf
     (t0AbWRes_of_ext (hDropV2_of' hDW) hBE)
     hCB hBX
     hPRV hDom hFD hQNG hSVCG
