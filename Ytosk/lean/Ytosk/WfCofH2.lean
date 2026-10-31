@@ -62,7 +62,8 @@ theorem shift_step {m : Nat} (hm : 1 ≤ m) {ρP σ : Valn} {rkN : Bool → Nat 
       (par (TRIO.gexp M r L d0 0 m) 1 (r + a) = some g ∨ upg (TRIO.gexp M r L d0 0 m) (r + a) = some g) →
       ρ.v g = ρP.v g)
     (hCN : Cons (TRIO.gexp M r L d0 0 (m + 1)) σ) (hRN : Rk (TRIO.gexp M r L d0 0 (m + 1)) rkN) :
-    σ.o (r + L) = ρP.o r ∧ ∀ g, g < r + L → ¬ DepX M (r + L) false g → σ.v g = ρ.v g := by
+    σ.o (r + L) = ρP.o r ∧ (∀ g, g < r + L → ¬ DepX M (r + L) false g → σ.v g = ρ.v g) ∧
+      (∀ c, c < r + L → ¬ DepX M (r + L) true c → σ.o c = ρ.o c) := by
   have hn : 2 ≤ m + 1 := by omega
   have hsub : m + 1 - 1 = m := by omega
   have hiu := hiu_t1 hlen hL hA hd0e hpath hx2 hz2 hn
@@ -80,11 +81,12 @@ theorem shift_step {m : Nat} (hm : 1 ≤ m) {ρP σ : Valn} {rkN : Bool → Nat 
     hCN hRN hagree
   have hlN := len_N (d0 := d0) (n := m + 1) hlen hn
   have hpos : 0 < (m + 1 - 1) * L := Nat.mul_pos (by omega) hL
-  refine ⟨?_, fun g hg hd => ?_⟩
+  refine ⟨?_, fun g hg hd => ?_, fun c hc hd => ?_⟩
   · rw [(hag (r + L) (by omega)).1, glueQ_o_ge (le_refl _)]
     show ρP.o (r + L - L) = ρP.o r
     rw [Nat.add_sub_cancel]
   · rw [(hag g (by omega)).2, glueQ_v_lt hg hd]
+  · rw [(hag c (by omega)).1, glueQ_o_lt hc hd]
 
 end
 
@@ -95,9 +97,16 @@ theorem e2_zero_of_lastTy {A : Mat} (h : lastTy A = 1) : entry A 2 (A.length - 1
   cases h
 
 
-/-- **The copy shift for `t = 1`** from `Desc3` and `Good3`. -/
-theorem hShift1 (hD : Desc3) (hG : HGood3) : HShift1 := by
-  intro A hAs hS hE hz ht r hr n hn ρN rkN ρN' rkN' hCN hRN hCN' hRN'
+/-- **The true valuation of `A[n+1]` for `t = 1`** (`n ≥ 1`), from `Desc3` and `Good3`: at `x` it is the value of
+`A[n]` at `r`, and off `DepX` (o side) it is the valuation of `A`. -/
+theorem t1_core (hD : Desc3) (hG : HGood3) (A : Mat) (hAs : Std A) (hS : A ≠ SRO) (hE : A ≠ [])
+    (hz : col A (A.length - 1) ≠ (0, 0, 0)) (ht : lastTy A = 1) (r : Nat) (hr : BRoot A r)
+    (ρ : Valn) (rkA : Bool → Nat → Nat) (hC : Cons A ρ) (hRA : Rk A rkA) :
+    ∀ n, 1 ≤ n → ∀ ρN rkN ρN' rkN', Cons (expand A n) ρN → Rk (expand A n) rkN →
+      Cons (expand A (n + 1)) ρN' → Rk (expand A (n + 1)) rkN' →
+      ρN'.o (A.length - 1) = ρN.o r ∧
+      ∀ c, c < A.length - 1 → ¬ DepX A (A.length - 1) true c → ρN'.o c = ρ.o c := by
+  intro n hn ρN rkN ρN' rkN' hCN hRN hCN' hRN'
   have I := sInv_std hAs hS
   have hpos : 0 < A.length := List.length_pos_of_ne_nil hE
   have hr1 : par A 1 (A.length - 1) = some r := by
@@ -127,9 +136,6 @@ theorem hShift1 (hD : Desc3) (hG : HGood3) : HShift1 := by
   have hexp : ∀ k, expand A k = TRIO.gexp A r L d0 0 k := by
     intro k
     rw [expand_eq_gexp_t1 A k (by omega) hzT hpar hsrow, ← hLd, ← hd0d]
-  -- the valuation of `A`
-  obtain ⟨tA, _, hvA, _, _, _⟩ := hD A 0 hAs hS hE
-  obtain ⟨ρ, rkA, hC, hRA, _⟩ := hvA
   have hGA := hG A ρ rkA hAs hS hE hC hRA
   have hval : ∀ k, ∃ ρk rkk, Cons (TRIO.gexp A r L d0 0 k) ρk ∧ Rk (TRIO.gexp A r L d0 0 k) rkk := by
     intro k
@@ -153,11 +159,18 @@ theorem hShift1 (hD : Desc3) (hG : HGood3) : HShift1 := by
       obtain ⟨ρQ, rkQ, hCQ, hRQ⟩ := hval m
       have hst := shift_step hlen hL hA0 hd0e hpath hx2 hz2 hxnb hnd hC hm hCQ (ih ρQ rkQ hCQ hRQ) hCP hRP
       have hndg := hnd (m + 1 + 1) (by omega) g hg a (by simpa using ha) (by simpa using hrd)
-      exact (hst.2 g (by omega) hndg).symm
+      exact (hst.2.1 g (by omega) hndg).symm
   rw [hexp] at hCN hRN hCN' hRN'
-  have hst := shift_step hlen hL hA0 hd0e hpath hx2 hz2 hxnb hnd hC (m := n) (by omega) hCN
-    (Q n (by omega) ρN rkN hCN hRN) hCN' hRN'
-  rw [hxe]; exact hst.1
+  have hst := shift_step hlen hL hA0 hd0e hpath hx2 hz2 hxnb hnd hC (m := n) hn hCN
+    (Q n hn ρN rkN hCN hRN) hCN' hRN'
+  rw [hxe]; exact ⟨hst.1, hst.2.2⟩
+
+/-- **The copy shift for `t = 1`** from `Desc3` and `Good3`. -/
+theorem hShift1 (hD : Desc3) (hG : HGood3) : HShift1 := by
+  intro A hAs hS hE hz ht r hr n hn ρN rkN ρN' rkN' hCN hRN hCN' hRN'
+  obtain ⟨tA, _, hvA, _, _, _⟩ := hD A 0 hAs hS hE
+  obtain ⟨ρ, rkA, hC, hRA, _⟩ := hvA
+  exact (t1_core hD hG A hAs hS hE hz ht r hr ρ rkA hC hRA n (by omega) ρN rkN ρN' rkN' hCN hRN hCN' hRN').1
 
 /-- **`HShiftD`** from `Desc3`, `Good3` on standard matrices, and `t = 1` on the diagonal type. -/
 theorem hShiftD_of (hD : Desc3) (hG : HGood3) (hT : HDiagT1) : HShiftD := by
