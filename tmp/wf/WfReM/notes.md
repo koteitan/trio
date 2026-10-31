@@ -79,3 +79,24 @@ N (38 columns, 150-step trace, adn38.txt), an expansion prefix in graftM36x:
 - 38 = the prefix (14,0,0)(15,1,1)(16,1,1)(17,1,0) after the 34-column frame of the 36-column M: a t = 0 step.
 
 ## graftM36x (expand_fam.py): M[2], M[3] of 1594 graftM36 matrices, prefixes past the bad root: 18227.
+
+## Counts (rm2_graftM36.jsonl = graftM36 24690 with fixed harness; rm_graftM36.jsonl for t2/vraesc/qndom/canon/b2s/
+## sib/plow/term/vanc; rm_graftM36x.jsonl = graftM36x 18227), failures / cases
+- HDropU: ab 2 (graftM36) + 2 (x); ua 23/12597 and 75/6504; wsB 0/0 and 0/349; HardArg 0/109081, VSmallNew 0/141085,
+  WeakCS 0/4475. FALSE (WfReM1, WfReM3).
+- HFrameV2: AbsDN 0 / 2 (x) FALSE (WfReM4); seed TPLoWs 0/64, 2/17343 (x, 37 columns
+  ...(12,1,0)(12,0,0)(13,1,1)(14,1,1)(15,0,0)(10,2,0)(11,3,1)(12,3,1)(13,1,0)(14,2,0), Python only); AbsDWs 0/39, 1/7585 (same).
+- HLeafV2 (TP1LeafG, TP1WLeafG): 0 antecedents.
+- HBumpExt: 0/68990241 (graftM36).
+- hClR (T2SeedClV2R): SeedCl.qn.path 255/121945 and 3 (x) FALSE (WfReM2). Smaller witness (28 columns, Python premises
+  hold incl. exact ua/wsB): (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)
+  (4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,0)(7,3,1)(8,3,1)(9,2,0)(10,3,1)(4,2,0)(5,3,1)(6,3,1)(7,2,0)(6,3,1).
+  Other SeedCl fields: 0.
+- hPRE / hDomQ seeds (SeedPR.qn.*, Seed.qr/qn/sv/C.*): 0 (SeedPR.qn.iter 21780, Seed.qr.dom 32644, Seed.qn.dom2 7262).
+- hVU T2VAncUse (usefld): vdomf 0/120673, edge 0/49192; x: 0/32495, 0/19828. (T2VAncStep is a diagnostic: 3592 fails.)
+- hCan (canon.py): 0/3137, 0/1870.  hVCp T2VRACopyEsc: 0/130, 0/30.  hAG KAG: KA 0/100960, KG 0/27591.
+- T2QNDomBad2 (qndom.py): weak simple frames 316 and 101, dom true in all.
+- B2LevS / B2UpgV (fr6 all): S.FAIL 0 (i0 76526, zero 181218); i1 frames 0, so B2UpgV has no antecedent.
+- H7WSib (probe_sib): 0 frames / 4 frames (x), 0 fail.  TermHi (WfTerm/probe_v): 0 frames.
+- PLowRes (WfPLow/probe_o): frames a.B2 1935 / 270, b.B2 42 / 202; no failure tag.
+- T2CBadOut: T2CBad sources 2; not measured further (its conclusion is Inv3V2 of M[n], which WfReM4 shows can fail).
