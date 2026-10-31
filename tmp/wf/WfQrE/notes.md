@@ -38,7 +38,18 @@ The source of Q is always a v frame:  v(i) = A + W = B ++ W,  v_N(i) = A + W' = 
   DQ form should apply to the q != r glue (not measured).
 
 ## 4. Measurements
-(see section 6, filled in from tpsrc.jsonl / runq.jsonl)
+- tpsrc.py (tpsrc.jsonl), 66 q=r frame sets of WfInvA/frames + frames_g (graftA1, graftA2, graftA3 = the grafting
+  attack: inserted children / larger siblings / row-1 lifts / M[2], M[3] prefixes), 1,528,225 frames; NOT run:
+  t2ext and std_b frames (stopped for time; M13 from std_b was checked separately):
+  TPLoQ 0 / 2,849,106 cases (m = 0, 1, 2).  TPLoW fails in 148 patterns; there PgeS (s <= v(P_1 i)) holds 148 / 148
+  and TPLoQ 148 / 148.  Every pattern has a source column (nosrc 0).  PgeS alone fails often where TPLoW holds, so
+  the field is TPLoQ (or TPLoW or PgeS), not PgeS.
+- runq.py (runq.jsonl): true values of M[2], M[3] (trio.expand + evaluator) vs DQ at every D column, on m13, g36_2,
+  graftM36x, graftA1, graftA2 (all frames where some absorption/TPLoW test fails at m <= 2, plus 1/300 sample):
+  DQ FAIL 0. Non-fsD values: 1280, all DQ with one Q level (depth 0..9), 50 of them at m = 1.
+  The sandwich fsD(t, g_k) < tN < fsD(t, g_{k+1}) fails 50 times (graftA1/2): not usable as an invariant.
+- mfail.py (mfail.jsonl, 61 sets, stopped before ext1..std_b): AbsW / TPLoW fail at max level m = 0 (g36_2, graftM36x,
+  graftA1/2) and m = 1 (graftA1/2, 1 + 2 cases).
 
 ## 5. What remains (Lean)
 1. A glue with given D values (glueQ M x ρ ρN vq oq) and the path theorem qr_pathQ: the local equations
