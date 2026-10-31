@@ -4,7 +4,7 @@
 `t2_sv_belowX`, `t2_qr_belowX`, `t2_qn_belowX`: copies of `t2_sv_below` (V3ExpT2SB), `t2_qr_below` (V3ExpT2QB),
 `t2_qn_below` (V3ExpT2NB) with
 - `AbsWN M M[n]` replaced by `AbsWNx M M[n]` (absorption, or the bad shape `BadAbsShape`) and `NotBumpKidX`
-  (at a column where the absorption fails, the parent `m = P₀ i` is not a bump child; measured: 821 failing
+  (at a column where the absorption fails, the parent `m = P₀ i` is not a bump child; measured: 926 failing
   columns on graft36/36b/36c and graftM36/graftM36x, 0 exceptions; vacuous where `AbsWN` holds),
 - `FrameShape` replaced by `FrameShapeX` in the conclusion.
 The bad columns are `BdX M N ρ σ bnd i := i < bnd ∧ e₁ i ≠ 0 ∧ e₂ i ≠ 0 ∧ ¬ AbsAt i ∧ BadAbsShape i`.
