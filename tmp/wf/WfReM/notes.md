@@ -48,3 +48,18 @@ N (46 columns, 236-step trace, qn46_trace.json):
   TakeFrameV2 / Inv3V2 use the seed forms TPLoWs / AbsDWs; hframe_s.py patches the seed to o_{M.take x}(r).
   The 2 TPLoW / 1 AbsDW failures of probe_hframe on graftM36 hold in the seed form.
 - tools/probe_inv3_prefix.inv_fields VSmallF is the old form; use vsmallf.py (Lean form).
+
+## PRIORITY 3: the `ua` field of HDropU is false too (Lean, Ytosk/lean/Ytosk/WfReM3.lean, green)
+N (35 columns, 487-step trace, ua35.txt), not Bad2:
+(0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)
+(7,2,1)(8,2,0)(6,2,1)(7,2,1)(4,2,0)(5,3,1)(6,3,1)(7,2,0)(6,3,0)(7,4,1)(8,4,1)(9,2,0)(7,2,0)(5,3,0)(6,4,1)(7,4,1)
+(8,2,0)(7,4,0)(8,5,1)
+- i = x-1 = 33 = (7,4,0) upgrades to k = 30 = P0 i. V = v(29) = r0 + 1, r0 = psi_{psi(1)}(psi_{psi_{psi(2)}(0)}(0)),
+  v(k) = psi_{r0}(0) = V + v(k). r0 not lhd v(k) (c = psi_{psi(1)+1}(0), u = 0), and the component
+  psi_{psi_{psi(2)}(0)}(0) of V+1 is not < psi_{V+1}(0). Both disjuncts of ua fail.
+- Lean: ua_core_false (Std, Cons; axioms propext), not_HDropU_of_inv, not_HDropU_of.
+- hdropB.py: exact Lean ua and BumpWeakShapeSrcB. On graftM36: ua 23 failures / 12597 cases; wsB 0 cases.
+  The codex UpgAbsXW0 (with NBParX, stronger) fails 1958 times there.
+- remeasure.py bug fixed: importing residual_extension_t2 replaces residual_extension_local.run (A.run = run);
+  the 'local' probe now keeps the original as run_local. rm_graftM36.jsonl's 'local' counts are the t2 run;
+  use rm2_graftM36.jsonl.

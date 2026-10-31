@@ -33,8 +33,11 @@ def mod(k):
     if k in _M:return _M[k]
     if k=='D':import probe_dropres as m
     elif k=='HF':import probe_hframe as m
-    elif k=='A':import residual_extension_local_trio_codex as m
-    elif k=='T2':import residual_extension_t2_trio_codex as m
+    elif k=='A':
+        import residual_extension_local_trio_codex as m
+        if not hasattr(m,'run_local'):m.run_local=m.run
+    elif k=='T2':
+        mod('A');import residual_extension_t2_trio_codex as m
     elif k=='VE':import probe_t2vra_esc as m
     elif k=='QN':m=load_mod(W+'WfScout/qndom.py','qndom_w')
     elif k=='CA':m=load_mod(W+'WfScout/canon.py','canon_w')
@@ -69,12 +72,29 @@ def run_one(probe,M,cnt,ex):
                 cnt['BumpWeakSrc.old.fail.bad2=%s'%b2]+=1
                 t='BumpWeakSrc.old.fail.bad2=%s'%b2
                 if t not in ex or len(M)<ex[t][0]:ex[t]=(len(M),ms(M),str(ee.get('BumpWeakSrc'))[:400])
+        import hdropB
+        from probe_inv3_prefix import Ctx as PC
+        C_=PC(M);T_=PC(M[:-1]);a_=hdropB.ua(C_);b_=hdropB.wsB(C_,T_)
+        cnt['HDropU.ua.cases']+=len(a_);cnt['HDropU.wsB.cases']+=len(b_)
+        for tag,bad in (('HDropU.ua.FAIL',[t for t in a_ if not t]),('HDropU.wsB.FAIL',[t for t in b_ if not t[1]])):
+            if bad:
+                cnt[tag]+=1
+                if tag not in ex or len(M)<ex[tag][0]:ex[tag]=(len(M),ms(M),str(bad)[:300])
         for f in ('HardArg','VSmallNew','WeakCS'):
             if cc.get(f+'.failures',0):
                 t='HDropU.%s.FAIL'%f
                 if t not in ex or len(M)<ex[t][0]:ex[t]=(len(M),ms(M),str(ee.get(f))[:400])
-    elif probe=='hframe':cc,ee=mod('HF').measure(M);add(cc,ee,'')
-    elif probe=='local':cc,ee=mod('A').run([bytes(v for c in M for v in c)]);add(cc,ee,'')
+    elif probe=='hframe':
+        cc,ee=mod('HF').measure(M);add({k:v for k,v in cc.items() if not k.startswith(('TPLoW','AbsDW'))},None,'')
+        from hframe_s import measure_s
+        c2,e2=measure_s(M);add({k:v for k,v in c2.items() if k.startswith(('TPLoW','AbsDW'))},{k:v for k,v in e2.items() if k.startswith(('TPLoW','AbsDW'))},'seed.')
+    elif probe=='vsf':
+        from vsmallf import vsmallf
+        b=vsmallf(M);cnt['VSmallF.cases']+=1
+        if b:
+            cnt['VSmallF.failures']+=1
+            if 'VSmallF' not in ex or len(M)<ex['VSmallF'][0]:ex['VSmallF']=(len(M),ms(M),str(b))
+    elif probe=='local':cc,ee=mod('A').run_local([bytes(v for c in M for v in c)]);add(cc,ee,'')
     elif probe=='t2':cc,ee=mod('T2').run([bytes(v for c in M for v in c)]);add(cc,ee,'')
     elif probe=='vraesc':cc,ee=mod('VE').measure(M);add(cc,ee,'')
     elif probe=='qndom':cc,ee=mod('QN').go(M);add(cc,ee,'')

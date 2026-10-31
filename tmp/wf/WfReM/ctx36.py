@@ -6,6 +6,7 @@ import sys,json,collections
 sys.path.insert(0,'/home/koteitan/proofs/trio/tmp/codex');sys.path.insert(0,'/home/koteitan/proofs/trio/tools')
 sys.path.insert(0,'/home/koteitan/proofs/trio/tmp/lead/probes')
 import residual_extension_local_trio_codex as A
+RUN_LOCAL=A.run
 import t0_upg_direct_synthetic_trio_codex as S
 from bad2_exact_trio_codex import bad2
 from huac_structure_trio_codex import Ctx as HC
@@ -18,7 +19,7 @@ def t2cbad(M):
  cl=C.CL(r);return (not cl or cl[-1]!=q) and C.upg(x-1) is not None
 def one(N,tag,rep):
  key=bytes(v for c in N for v in c)
- cnt,ex=A.run([key])
+ cnt,ex=RUN_LOCAL([key])
  fails={k:v for k,v in cnt.items() if k.endswith('.failures') or k.endswith('fail') or 'exception' in k}
  try:
   ck=S.check(N);st=ck['structural_failures'];nf=ck['new_frame_failures'];oi=ck['OLD_inv_probe_failures']
