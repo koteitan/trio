@@ -67,6 +67,14 @@ every leaf-parent frame satisfies the hypotheses of frame_DQ_leafpar, every ω l
 Caveat: the Python hQ0 test checks "Y single → Y_N single" (slightly weaker than Lean's Q = 0); hB tested with
 η = Zf(k) only.
 
+## Measurement results (final, this round)
+compq.jsonl: m13, g36_2, graftM36x, graftA1, graftA2, graftA3 (113k frames), n = 2..4: DQ failures 0, C_ot 0 fail,
+  C_strip 0 fail (1475 levels with new components per graftA set), C_lN / C_Qq fail (not usable).
+frames.jsonl: m13, g36_2, graftM36x, graftA1, graftA2 (n = 2, 3; graftA3 not run, ~45 min): 0 FAIL of any kind:
+  hSo, hSv, hPre, hUpgL, hBW; every o-frame is add | trig | triglo | node | leafpar (leafpar lemma hypotheses hold on
+  all 41,772 leaf-parent frames); every changed ω layer is OmSide | ε0 crossing (614) | node (8,124).
+Not yet attacked by new grafts (graftA1-3 are the grafts of round 9).
+
 ## Next
 1-3. Done as shape lemmas (WfQrL12-17).  Remaining: derive the shape predicates (OFrameOK, LayerOK) from invariant
    fields of M (TPLoQ / lo_keep_DQ / hi_keep_DQ / old omega_fsD_hole_Q / the chain term shape at x), i.e. state the
