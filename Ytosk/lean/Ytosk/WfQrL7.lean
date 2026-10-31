@@ -120,6 +120,71 @@ theorem qr_chainQ (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
     intro g hg a ha hr
     exact (hPd g (by omega) (hnd (n + 1) (by omega) g hg a ha hr)).symm
 
+/-- **All `n ≥ 2` from the local conditions in `DQ` form** (`qr_mainQ`): at each level the `D` values satisfy
+the local conditions `OLocQ` / `VLocQ` (raw frame equations), the `o` values are `DQ`s of the old ones (so they
+drop: `DQ.lt`), and they are standard.  No absorption, no `TPLoW`. -/
+theorem qr_mainQ (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
+      entry M 1 r < entry M 1 s) (hx2 : entry M 2 (r + L) = 0)
+    (hxnb : ∀ n, 2 ≤ n → ∀ c, par M 0 (r + L) = some c →
+      col (TRIO.gexp M r L d0 0 n) (r + L) ≠ bump (TRIO.gexp M r L d0 0 n) c)
+    (hz2 : entry M 2 r ≤ 1)
+    (hiu : ∀ n, 2 ≤ n → ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 0 n) c = isUpg M c)
+    (hiux : ∀ n, 2 ≤ n → isUpg (TRIO.gexp M r L d0 0 n) (r + L) = false)
+    (hnd : ∀ n, 2 ≤ n → ∀ g, g ≤ r → ∀ a, a < (n - 1) * L →
+      (par (TRIO.gexp M r L d0 0 (n - 1)) 1 (r + a) = some g ∨
+        upg (TRIO.gexp M r L d0 0 (n - 1)) (r + a) = some g) → ¬ DepX M (r + L) false g)
+    {ρ : Valn} {rkM : Bool → Nat → Nat}
+    (hC : Cons M ρ) (hG : Good3 M ρ) (hRM : Rk M rkM)
+    (hOS : ∀ i, i < r + L → DepX M (r + L) true i → OShape M (r + L) i)
+    (γ : Nat → T) (hgam : ∀ m, γ m ≤ ρ.o (r + L) ∧ γ m ≠ z)
+    (hrD : DepX M (r + L) true r)
+    {Rt : Nat} (hRA : Anc0 M Rt (r + L))
+    (hR0 : col M Rt = (0, 0, 0)) (hRlast : ∀ j, Rt < j → j ≤ r + L → entry M 0 j ≠ 0)
+    (hRd : DepX M (r + L) true Rt)
+    (hsM : ∀ i ∈ roots M, Single (ρ.o i)) (hpM : ((roots M).map ρ.o).Pairwise (fun a b => b ≤ a))
+    (Ex : Nat → Valn → (Nat → T) → (Nat → T) → Prop)
+    (hVal : ∀ n, 2 ≤ n → ∀ ρP : Valn, Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
+      ρP.o r = γ (n - 2) → ∃ oq vq : Nat → T, oq r = γ (n - 1) ∧
+        (shiftV ρP L).o (r + L) = oq (r + L) ∧
+        (∀ i, i < r + L → DepX M (r + L) true i → OLocQ M (r + L) ρ oq vq i) ∧
+        (∀ i, i < r + L → DepX M (r + L) false i → VLocQ M (r + L) ρ oq vq i) ∧
+        (∀ c, c < r + L → DepX M (r + L) true c → ∃ η k, DQ η k (ρ.o c) (oq c)) ∧
+        Single (oq Rt) ∧
+        (∀ i, i < r + L → DepX M (r + L) true i → isOT (oq i) = true) ∧
+        (∀ i, i < r + L → DepX M (r + L) false i → isOT (vq i) = true) ∧
+        (∀ c, c < r + L → DepX M (r + L) true c → oq c ≠ z) ∧
+        Ex n ρP oq vq)
+    {ρ1 : Valn} {rk1 : Bool → Nat → Nat}
+    (hC1 : Cons (TRIO.gexp M r L d0 0 1) ρ1) (hR1 : Rk (TRIO.gexp M r L d0 0 1) rk1)
+    (hG1 : Good3 (TRIO.gexp M r L d0 0 1) ρ1)
+    (hr1 : ρ1.o r = γ 0)
+    (hPv1 : ∀ g, g ≤ r → ∀ a, a < L →
+      (par (TRIO.gexp M r L d0 0 1) 1 (r + a) = some g ∨
+        upg (TRIO.gexp M r L d0 0 1) (r + a) = some g) → ρ.v g = ρ1.v g)
+    (Pn : Mat → Valn → Prop) (hP1 : Pn (TRIO.gexp M r L d0 0 1) ρ1) (hPs : ExpStepQ Pn Ex M r L d0 ρ) :
+    ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
+      Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = γ (n - 1) ∧
+      (∀ g, g < r + L → ¬ DepX M (r + L) false g → ρN.v g = ρ.v g) ∧
+      isOT (root (TRIO.gexp M r L d0 0 n) ρN) = true ∧ root (TRIO.gexp M r L d0 0 n) ρN < root M ρ := by
+  have hx : r + L + 1 = M.length := hlen
+  have hRx : Rt < r + L := by
+    rcases Nat.eq_or_lt_of_le hRA.le with h | h
+    · exfalso
+      have hR0e : entry M 0 Rt = 0 := by unfold entry; unfold col at hR0; rw [hR0]; rfl
+      have h1 : entry M 0 (r + L) ≠ 0 := by
+        have := anc0_interval hA (r + L) (by omega) (Nat.le_refl _); omega
+      rw [h] at hR0e; exact h1 hR0e
+    · exact h
+  refine qr_chainQ hlen hL hA hd0e hpath hx2 hxnb hz2 hiu hiux hnd hC hG hRM hOS γ hgam hrD hRA hR0 hRlast hRd
+    hsM hpM Ex ?_ hC1 hR1 hG1 hr1 hPv1 Pn hP1 hPs
+  intro n hn ρP hCP hPr
+  obtain ⟨oq, vq, hZr, hxN, hO, hV, hDQ, hsR, hoto, hotv, hnz, hEx⟩ := hVal n hn ρP hCP hPr
+  refine ⟨oq, vq, hZr, qr_pathQ hC hG hx hxN hO hV, hsR, ?_, hoto, hotv, ?_, hEx⟩
+  · obtain ⟨η, k, h⟩ := hDQ Rt hRx hRd; exact h.lt
+  · intro c hc hd
+    obtain ⟨η, k, h⟩ := hDQ c hc hd
+    exact ⟨le_of_lt h.lt, hnz c hc hd⟩
+
 end
 
 end Ytosk.WfQrL7
