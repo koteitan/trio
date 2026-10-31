@@ -6,6 +6,10 @@ o(c) = ψ_{v(c)}(spArg_{v(c)}(0, X))、X = Σ（数える子 d の o(d)）。
 - v(c) = V で X < B(V) なら、sp の各段は Ω_{V+1} 未満にとどまる（引き金の段は添字 V・引数 Ω_{V+1} 未満の項で、
   その H は Ω_{V+1} 未満、`spArg_lt_om`）。よって o(c) < B(V)（`o_lt_bnd_of_children`）。
 X < B(V) は数える子ごとの o(d) < B(V) から（`WfSrcC2.sumN_lt_single`）。
+
+残りの鎖: `SrcC5Res`（k の bump 子の子 c で v(c) ≤ v(r)、c の数える子 d で v(d) < v(r)）→ `SrcC3Res`（SmallB）
+→ `SrcC2Res`（o(c) < B(v(r))）→ `WfSrcB.SrcC`（`srcC_of_c5`）。
+部分木全体の上界 ∀ e ⊒ c, v(e) ≤ v(r) は偽（grow の 1192 枠すべてで、v = 0 の子の下で v が v(r) を超える）。
 -/
 import Ytosk.WfSrcC2a
 
@@ -127,27 +131,18 @@ theorem c2_of_c3 (h : SrcC3Res) : SrcC2Res := by
     (h M ρ rk C hB2 hz hs r hlen hr h0 h1x τ hτ p i hp hpi h1 h2 hfail hfacts s hsm hs2 hlt hnl m b k hm hb hu hk
       j hj hjb c hc)
 
-/-- **`SmallB` from a bound on the whole subtree**: if every column of the row-0 subtree of `c` has `v ≤ V`. -/
-theorem smallB_of_sub {M : Mat} {ρ : Valn} {V : T} {c : Nat}
-    (h : ∀ e, Anc0 M c e → e < M.length → ρ.v e ≤ V) : c < M.length → SmallB M ρ V c := by
-  suffices key : ∀ n e, M.length - e = n → Anc0 M c e → e < M.length → SmallB M ρ V e from
-    fun hc => key _ c rfl (Anc0.refl c) hc
-  intro n
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    intro e hn hce heN
-    by_cases hlt : ρ.v e < V
-    · exact SmallB.lo hlt
-    · have hv : ρ.v e = V := le_antisymm (h e hce heN) (not_lt.mp hlt)
-      refine SmallB.eq hv ?_
-      intro d hd _
-      have hed := mem_children hd
-      have hpd := (mem_children_iff.mp hd).2
-      exact ih (M.length - d) (by omega) d rfl (hce.trans (anc0_of_par M 0 e d hpd)) hed.2
+/-- **`SmallB` at depth one**: `v(c) ≤ V` and every counted child has `v < V`. -/
+theorem smallB_of_depth1 {M : Mat} {ρ : Valn} {V : T} {c : Nat} (hc : ρ.v c ≤ V)
+    (hd : ∀ d ∈ children M c, Counted M c d → ρ.v d < V) : SmallB M ρ V c := by
+  rcases lt_or_eq_of_le hc with h | h
+  · exact SmallB.lo h
+  · exact SmallB.eq h (fun d hdc hcd => SmallB.lo (hd d hdc hcd))
 
-/-- **Residual (c), as a subtree bound on `v`**: as `SrcC3Res`, with `v(e) ≤ v(r)` for every column `e` of the
-row-0 subtree of each child `c` of a bump child of the origin target `k`. -/
-def SrcC4Res : Prop :=
+/-- **Residual (c), depth one**: as `SrcC3Res`, with `v(c) ≤ v(r)` for each child `c` of a bump child of the origin
+target `k`, and `v(d) < v(r)` for each counted child `d` of `c`.
+(The subtree form `∀ e ⊒ c, v(e) ≤ v(r)` is false on all 1192 grow frames: below a child with `v = 0` the values
+rise above `v(r)` again.) -/
+def SrcC5Res : Prop :=
   ∀ M ρ rk, StepCtxT2 M ρ rk → Bad2 M → col M (M.length - 1) ≠ (0, 0, 0) → TRIO.srow M (M.length - 1) = 2 →
     ∀ r, r + 2 = M.length → par M 2 (r + 1) = some r → par M 0 (r + 1) = some r → par M 1 (r + 1) = some r →
       ∀ τ, Cons (M.take (r + 1)) τ →
@@ -157,17 +152,18 @@ def SrcC4Res : Prop :=
           ¬ Lhd z s (bumpW M ρ i) →
           ∀ m b k, par M 1 i = some m → WfHUACDeep.Up1 M b m → upg M b = some k → s = bumpW M ρ k →
             ∀ j ∈ children M k, col M j = bump M k → ∀ c ∈ children M j,
-              ∀ e, Anc0 M c e → e < M.length → ρ.v e ≤ ρ.v r
+              ρ.v c ≤ ρ.v r ∧ ∀ d ∈ children M c, Counted M c d → ρ.v d < ρ.v r
 
-/-- **Bridge**: `SrcC3Res` from `SrcC4Res`. -/
-theorem c3_of_c4 (h : SrcC4Res) : SrcC3Res := by
+/-- **Bridge**: `SrcC3Res` from `SrcC5Res`. -/
+theorem c3_of_c5 (h : SrcC5Res) : SrcC3Res := by
   intro M ρ rk C hB2 hz hs r hlen hr h0 h1x τ hτ p i hp hpi h1 h2 hfail hfacts s hsm hs2 hlt hnl m b k hm hb hu
     hk j hj hjb c hc
-  exact smallB_of_sub
-    (h M ρ rk C hB2 hz hs r hlen hr h0 h1x τ hτ p i hp hpi h1 h2 hfail hfacts s hsm hs2 hlt hnl m b k hm hb hu hk
-      j hj hjb c hc) (mem_children hc).2
+  obtain ⟨h1c, h2c⟩ :=
+    h M ρ rk C hB2 hz hs r hlen hr h0 h1x τ hτ p i hp hpi h1 h2 hfail hfacts s hsm hs2 hlt hnl m b k hm hb hu hk
+      j hj hjb c hc
+  exact smallB_of_depth1 h1c h2c
 
-/-- **Bridge**: `WfSrcB.SrcC` from `SrcC4Res`. -/
-theorem srcC_of_c4 (h : SrcC4Res) : WfSrcB.SrcC := srcC_of_c2 (c2_of_c3 (c3_of_c4 h))
+/-- **Bridge**: `WfSrcB.SrcC` from `SrcC5Res`. -/
+theorem srcC_of_c5 (h : SrcC5Res) : WfSrcB.SrcC := srcC_of_c2 (c2_of_c3 (c3_of_c5 h))
 
 end Ytosk.WfSrcC2
