@@ -5,6 +5,8 @@ import sys,pickle,random,collections,json,subprocess
 sys.path.insert(0,'/home/koteitan/proofs/trio/tmp/codex');sys.path.insert(0,'/home/koteitan/proofs/trio/tools')
 from multiprocessing import Pool
 from stepfacts3_core_trio_codex import Ctx,SRO
+import os
+BMIN=int(os.environ.get('BMIN','2'))
 import trio
 BMS='/home/koteitan/proofs/trio/bms'
 def s(M):return ''.join('(%d,%d,%d)'%t for t in M)
@@ -23,7 +25,7 @@ def bframes(M,bmin):
 def seeds_of(M):
  M=[tuple(c) for c in M]
  if len(M)<3 or tuple(M)>=SRO:return []
- return bframes(M,2)
+ return bframes(M,BMIN)
 def grow(S):
  S=list(S);out=[]
  last=S[-1]
@@ -34,7 +36,7 @@ def grow(S):
     if not std(T):continue
     for nn in (2,3):
      E=trio.expand(T,nn)
-     if len(E)<=90:out.append(tuple(E))
+     if len(E)<=110:out.append(tuple(E))
  return out
 if __name__=='__main__':
  out=sys.argv[1];srcs=sys.argv[3:];NS=int(sys.argv[2])

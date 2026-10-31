@@ -1,0 +1,9 @@
+lift1.pkl {"Vp i1 True": 18039, "Vp i2 True": 185, "Vp i3 True": 66, "i0 Uin0": 52229, "i1 Uin0": 25081, "i2 Uin0": 537, "i2 Uin1": 238, "i3 Uin0": 115, "i3 Uin1": 119, "zero": 62201}
+lift2.pkl {"Vp i1 True": 14254, "Vp i2 True": 3197, "Vp i3 True": 459, "Vp i4 True": 11, "i0 Uin0": 7255, "i1 Uin0": 24796, "i2 Uin0": 9136, "i2 Uin1": 7615, "i3 Uin0": 1340, "i3 Uin1": 2104, "i4 Uin0": 80, "i4 Uin1": 98, "zero": 45290}
+graft4.pkl {"Vp i1 True": 5830, "i0 Uin0": 21233, "i1 Uin0": 24702, "zero": 39132}
+graft5.pkl {"Vp i1 True": 18755, "i0 Uin0": 150, "i1 Uin0": 18755, "zero": 32542}
+graft2.pkl {"Vp i1 True": 2819, "i0 Uin0": 26548, "i1 Uin0": 3004, "zero": 31801}
+graft3.pkl {"i0 Uin0": 21780, "i1 Uin0": 1436, "zero": 18545}
+hsf.pkl {"i0 Uin0": 7, "zero": 1}
+g36_2.pkl {"i0 Uin0": 13, "zero": 20524}
+cbadext.pkl {"Vp i1 True": 201, "i0 Uin0": 180, "i1 Uin0": 201, "zero": 6069}

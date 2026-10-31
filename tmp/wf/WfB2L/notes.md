@@ -37,7 +37,23 @@
 - g36.py / g36b.py: all prefixes + one mutation (g36_1, 1102) and a second generation (g36_2, 5962): fr6 all gives only
   S.zero / S.i0 frames, 0 exceptions (vacuous for B2LevS/B2UpgV).
 
+## New split (Lean `Ytosk/lean/Ytosk/WfB2L.lean`, green, full build 1155 jobs; axioms propext, choice, Quot.sound)
+- `B2UpgVG` (value): B2UpgV with `e1 c + 1 = e1 m` relaxed to `e1 c < e1 m`. split2.py (all positions with a bump
+  parent, zero case skipped, no Bad2): 0 exceptions on lift1 (i1 18039, i2 185, i3 66), lift2 (i1 14254, i2 3197,
+  i3 459, i4 11), graft2/4/5, cbadext (split2.log). `b2UpgV_of_G : B2UpgVG -> WfB2S.B2UpgV`.
+- `B2NoInner` (Bad2): B2StepAb frame with absorption -> no column y on the row-1 chain of m with y != m and
+  e1 c < e1 y upgrades. ab.py (x-1 of every prefix, Bad2 frames): every Bad2 frame has U0 (no upgrade on the chain
+  strictly above a, m included): lift1 55665, lift2 20213, graft4 34740, graft3 22379, graft5 115, g36_2 8,
+  cbadext 180 (ab_more.log). False without Bad2: split2 finds inner upgrades (i2/i3/i4 Uin1) in lift1/lift2, and fr3
+  on lift1 finds absorption + inner upgrade + StepDom false in non-Bad2 frames.
+- `b2StepAb_of_inner : B2UpgVG -> B2NoInner -> WfB2S.B2StepAb`. c comes from `zero_or_lastK` (all bump grandchildren
+  row 1 = 0 gives lev 0; otherwise the last bump child with children, `exists_last`). For y = m the absorption
+  contradicts W <= last v(t) (`WfB2S.summands_add_ge`); for y != m there is no upgrade.
+- Splice: `(hStep : WfB2S.B2StepAb)` can be fed by `WfB2L.b2StepAb_of_inner hVG hNI`.
+- Observation: in Bad2 frames with i >= 1, m itself never upgrades (mUFalse everywhere), so B2UpgVG is used there
+  only vacuously; B2NoInner extended to y = m also has 0 exceptions on Bad2 frames.
+
 ## Next
-- Replace the split. Measured form to try: under Bad2 + absorption (the B2StepAb premises) there is no upgrade on the
-  row-1 chain of m strictly above a (U0). This mixes Bad2 (value) and structure; test it on lift1/lift2 and grafts
-  before stating it. B2UpgV is unaffected but is no longer useful on its own.
+- B2NoInner is a value statement (Bad2 = failure of UpgAbsX / BumpAbsC). Its contrapositive is the target: an inner
+  upgrade on the chain of m gives UpgAbsX at x-1 (and BumpAbsC). Non-standard grafts that satisfy all current
+  invariants still break B2StepAb (above), so this needs a Std-only fact; ArgDomCore (core_of_std) is the candidate.
