@@ -1,0 +1,19 @@
+{
+ "n": 29364,
+ "cnt": {
+  "B": 18496,
+  "E3.ge": 301980,
+  "E3.lt": 301980,
+  "E3.rootsingle": 18496,
+  "E3.single": 268750,
+  "LEAF.eqform": 18496,
+  "LEAF.geAz": 18496,
+  "LEAF.ltA": 18496,
+  "NEST.no": 18496,
+  "TZ.fail": 36992,
+  "TZ.inDB": 36992,
+  "frames": 29364,
+  "frames.hit": 17273
+ },
+ "ex": {}
+}

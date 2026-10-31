@@ -51,6 +51,9 @@ def meas(M):
             B=[i for i in cand if any(lt(q,A_) and not lt(q,Az) for q in summ(C.vOpt1(i)))]
             DB=A.closure(C,{(False,i) for i in B},x)
             c['B']+=len(B)
+            for i in B:
+                c['B.Vlt' if lt(C.vOpt1(i),A_) else 'B.VgeA']+=1
+                if C.v(i)!=A_: c['B.vneA']+=1; e.setdefault('vneA',(M,n,i))
             for (cc,s,a) in tcases:
                 if lt((fsD(a,zeta),Z,Z),(succ(s),Z,Z)):
                     c['TZ.fail']+=1
