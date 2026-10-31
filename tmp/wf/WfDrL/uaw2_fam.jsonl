@@ -1,0 +1,15 @@
+{"set": "cex36.pkl", "n": 1, "sec": 0, "cnt": {"cases": 1, "strong": 1}, "ex": {}}
+{"set": "hunt_found.pkl", "n": 10, "sec": 0, "cnt": {"cases": 10, "weak": 10}, "ex": {}}
+{"set": "graft36.pkl", "n": 100, "sec": 0, "cnt": {"cases": 36, "strong": 35, "weak": 1}, "ex": {}}
+{"set": "g36_1.pkl", "n": 1102, "sec": 1, "cnt": {"cases": 226, "strong": 206, "weak": 20}, "ex": {}}
+{"set": "graft36b.pkl", "n": 3461, "sec": 4, "cnt": {"cases": 1182, "strong": 1146, "weak": 36}, "ex": {}}
+{"set": "g36_2.pkl", "n": 5962, "sec": 11, "cnt": {"cases": 1730, "strong": 1460, "weak": 270}, "ex": {}}
+{"set": "graft3.pkl", "n": 6638, "sec": 10, "cnt": {"cases": 5353, "strong": 835, "weak": 4518}, "ex": {}}
+{"set": "graft5.pkl", "n": 12214, "sec": 8, "cnt": {"cases": 4873, "strong": 4341, "weak": 532}, "ex": {}}
+{"set": "graft2.pkl", "n": 9680, "sec": 16, "cnt": {"cases": 7187, "strong": 1302, "weak": 5885}, "ex": {}}
+{"set": "graft36c.pkl", "n": 11451, "sec": 18, "cnt": {"cases": 4293, "strong": 4178, "weak": 115}, "ex": {}}
+{"set": "graft4.pkl", "n": 17293, "sec": 26, "cnt": {"cases": 7640, "strong": 2385, "weak": 5255}, "ex": {}}
+{"set": "lift2.pkl", "n": 7279, "sec": 14, "cnt": {"cases": 7037, "strong": 4684, "weak": 2353}, "ex": {}}
+{"set": "lift1.pkl", "n": 15190, "sec": 47, "cnt": {"cases": 14550, "strong": 5636, "weak": 8914}, "ex": {}}
+{"set": "graftM36x.pkl", "n": 18227, "sec": 49, "cnt": {"cases": 6504, "strong": 4493, "weak": 2011}, "ex": {}}
+{"set": "graftM36.pkl", "n": 24690, "sec": 61, "cnt": {"cases": 12597, "strong": 9371, "weak": 3226}, "ex": {}}

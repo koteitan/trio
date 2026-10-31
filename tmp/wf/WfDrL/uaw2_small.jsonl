@@ -1,0 +1,26 @@
+{"set": "graftAb.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "ext2b2Sf.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "std_ab2S.pkl", "n": 26, "sec": 0, "cnt": {"cases": 26, "strong": 26}, "ex": {}}
+{"set": "std_ab2G.pkl", "n": 41, "sec": 0, "cnt": {"cases": 41, "strong": 41}, "ex": {}}
+{"set": "std_ab2.pkl", "n": 67, "sec": 0, "cnt": {"cases": 67, "strong": 67}, "ex": {}}
+{"set": "b2t0test.pkl", "n": 135, "sec": 0, "cnt": {"cases": 135, "weak": 135}, "ex": {}}
+{"set": "graftBb2Sf.pkl", "n": 468, "sec": 0, "cnt": {"cases": 468, "weak": 468}, "ex": {}}
+{"set": "graftBb.pkl", "n": 756, "sec": 0, "cnt": {"cases": 756, "weak": 756}, "ex": {}}
+{"set": "ext2b2G.pkl", "n": 1940, "sec": 1, "cnt": {"cases": 1940, "strong": 1940}, "ex": {}}
+{"set": "shapegrow.pkl", "n": 2372, "sec": 2, "cnt": {"cases": 2372, "weak": 2372}, "ex": {}}
+{"set": "ext2b2S.pkl", "n": 2133, "sec": 1, "cnt": {"cases": 2133, "strong": 2133}, "ex": {}}
+{"set": "ext2b2St.pkl", "n": 2133, "sec": 1, "cnt": {"cases": 2133, "strong": 2133}, "ex": {}}
+{"set": "graftBb2St_x2.pkl", "n": 2673, "sec": 1, "cnt": {"cases": 2673, "strong": 2673}, "ex": {}}
+{"set": "graftBb2St_x0.pkl", "n": 2708, "sec": 1, "cnt": {"cases": 2708, "strong": 2708}, "ex": {}}
+{"set": "graftBb2St_g2.pkl", "n": 2711, "sec": 1, "cnt": {"cases": 2711, "strong": 2711}, "ex": {}}
+{"set": "graftBb2St_p0.pkl", "n": 2711, "sec": 1, "cnt": {"cases": 2711, "strong": 2711}, "ex": {}}
+{"set": "cbadext.pkl", "n": 3756, "sec": 1, "cnt": {"cases": 489, "strong": 443, "weak": 46}, "ex": {}}
+{"set": "graftBb2St_g0.pkl", "n": 2738, "sec": 1, "cnt": {"cases": 2738, "strong": 2738}, "ex": {}}
+{"set": "graftBb2St_p1.pkl", "n": 3064, "sec": 2, "cnt": {"cases": 3064, "strong": 3064}, "ex": {}}
+{"set": "ext2b2.pkl", "n": 4073, "sec": 1, "cnt": {"cases": 4073, "strong": 4073}, "ex": {}}
+{"set": "graftBb2St_x1.pkl", "n": 5772, "sec": 5, "cnt": {"cases": 5772, "strong": 5772}, "ex": {}}
+{"set": "graftBb2St_g1.pkl", "n": 8292, "sec": 5, "cnt": {"cases": 8292, "strong": 8292}, "ex": {}}
+{"set": "b2grow1.pkl", "n": 6517, "sec": 6, "cnt": {"cases": 6517, "weak": 6517}, "ex": {}}
+{"set": "graftA.pkl", "n": 13876, "sec": 6, "cnt": {"cases": 3307, "strong": 2370, "weak": 937}, "ex": {}}
+{"set": "graftAn.pkl", "n": 13876, "sec": 6, "cnt": {"cases": 3307, "strong": 2370, "weak": 937}, "ex": {}}
+{"set": "d3s.pkl", "n": 15000, "sec": 12, "cnt": {"cases": 4112, "strong": 4112}, "ex": {}}

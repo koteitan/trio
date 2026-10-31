@@ -1,0 +1,10 @@
+leanman: check started — leanman-id: d18937  [lean]  WfDrL4.lean
+leanman: stop it with  ->  leanman kill d18937
+/home/koteitan/proofs/trio/Ytosk/lean/Ytosk/WfDrL4.lean:2881:23: warning: This simp argument is unused:
+  Nat.add_sub_cancel
+
+Hint: Omit it from the simp argument list.
+  simp [hfdef,̵ ̵N̵a̵t̵.̵a̵d̵d̵_̵s̵u̵b̵_̵c̵a̵n̵c̵e̵l̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+leanman: green  [lean]  13s  leanman-id d18937  exit 0

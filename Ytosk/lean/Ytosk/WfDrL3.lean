@@ -51,6 +51,18 @@ theorem diag_only_mu {μ b t : T} (h : DiagAt μ (app b (psi (succ μ) z z)) μ 
     ∀ a', DiagAt a' (app b (psi (succ μ) z z)) μ t → a' = μ :=
   fun _ h' => (DiagAt.unique_br h h').symm
 
+/-- **`hok_of_seedC2` with the index-0 condition as "`μ` is a diagonal point"** (the form the `q = r` chain can supply:
+`qr_diag0` and the inversions `DiagAt.rest_inv` / `arg_inv` / `last'` along the path). -/
+theorem hok_of_seedC2_diag {μ b seed t : T}
+    (hrot : isOT (psi μ (app b (psi (succ μ) z z)) z) = true)
+    (hSr : SeedOK μ (app b (psi (succ μ) z z)) μ seed)
+    (hl : Lhd z (psi μ (app b seed) z) (psi μ (app b (psi (succ μ) z z)) z))
+    (hot : isOT t = true) (hH : HoleT μ (app b (psi (succ μ) z z)) μ t) (k : Nat)
+    (h0 : k = 0 → DiagAt μ (app b (psi (succ μ) z z)) μ t) :
+    isOT (fsD t (gamS μ (app b (psi (succ μ) z z)) seed k)) = true ∧
+      fsD t (gamS μ (app b (psi (succ μ) z z)) seed k) < t :=
+  hok_of_seedC2 hrot hSr hl hot hH k (fun hk => diag_only_mu (h0 hk))
+
 section
 variable {M : Mat} {x r : Nat} {ρ : Valn} {μ b : T} (hx : x + 1 = M.length)
   (hC : Cons M ρ) (hG : Good3 M ρ) (hKD : BumpKidsDec M ρ) (hTD : BumpTermDec M ρ)
