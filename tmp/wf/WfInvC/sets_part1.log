@@ -1,0 +1,33 @@
+graftAb.pkl 0 0 {}
+ext2b2Sf.pkl 0 0 {}
+std_ab2S.pkl 26 3 {'S.BV.cases': 21, 'S.BV.fail': 7, 'S.OS.cases': 21, 'S.cand.cases': 21, 'S.le.cases': 21, 'S.lt.cases': 21, 'S.ltX1orBV.cases': 21, 'cons.Dom0.cases': 21, 'cons.QNCl.cases': 266, 'cons.QNClV.cases': 84, 'qn.sources': 3, 't1.lt.cases': 14}
+std_ab2G.pkl 41 0 {}
+std_ab2.pkl 67 3 {'S.BV.cases': 21, 'S.BV.fail': 7, 'S.OS.cases': 21, 'S.cand.cases': 21, 'S.le.cases': 21, 'S.lt.cases': 21, 'S.ltX1orBV.cases': 21, 'cons.Dom0.cases': 21, 'cons.QNCl.cases': 266, 'cons.QNClV.cases': 84, 'qn.sources': 3, 't1.lt.cases': 14}
+b2t0test.pkl 135 0 {}
+graftBb2Sf.pkl 468 36 {'S.BV.cases': 495, 'S.BV.fail': 36, 'S.OS.cases': 495, 'S.cand.cases': 495, 'S.le.cases': 495, 'S.lt.cases': 495, 'S.lt.fail': 57, 'S.ltX1orBV.cases': 495, 'cons.Dom0.cases': 495, 'cons.QNCl.cases': 5382, 'cons.QNClV.cases': 1980, 'qn.sources': 36, 't1.lt.cases': 108}
+graftBb.pkl 756 36 {'S.BV.cases': 495, 'S.BV.fail': 36, 'S.OS.cases': 495, 'S.cand.cases': 495, 'S.le.cases': 495, 'S.lt.cases': 495, 'S.lt.fail': 57, 'S.ltX1orBV.cases': 495, 'cons.Dom0.cases': 495, 'cons.QNCl.cases': 5382, 'cons.QNClV.cases': 1980, 'qn.sources': 36, 't1.lt.cases': 108}
+ext2b2G.pkl 1940 13 {'S.BV.cases': 84, 'S.BV.fail': 38, 'S.OS.cases': 84, 'S.cand.cases': 84, 'S.le.cases': 84, 'S.lt.cases': 84, 'S.ltX1orBV.cases': 84, 'cons.Dom0.cases': 95, 'cons.QNCl.cases': 1120, 'cons.QNClV.cases': 336, 'qn.sources': 12, 't1.lt.cases': 70}
+shapegrow.pkl 2372 143 {'S.BV.cases': 6992, 'S.BV.fail': 493, 'S.OS.cases': 6992, 'S.cand.cases': 6992, 'S.le.cases': 6992, 'S.lt.cases': 6992, 'S.ltX1orBV.cases': 6992, 'cons.Dom0.cases': 6659, 'cons.QNCl.cases': 87564, 'cons.QNClV.cases': 27968, 'qn.sources': 143, 't1.lt.cases': 5351}
+ext2b2S.pkl 2133 32 {'S.BV.cases': 36, 'S.BV.fail': 13, 'S.OS.cases': 36, 'S.cand.cases': 36, 'S.le.cases': 36, 'S.lt.cases': 36, 'S.ltX1orBV.cases': 36, 'cons.Dom0.cases': 51, 'cons.QNCl.cases': 428, 'cons.QNClV.cases': 144, 'qn.sources': 30, 't1.lt.cases': 17}
+ext2b2St.pkl 2133 32 {'S.BV.cases': 36, 'S.BV.fail': 13, 'S.OS.cases': 36, 'S.cand.cases': 36, 'S.le.cases': 36, 'S.lt.cases': 36, 'S.ltX1orBV.cases': 36, 'cons.Dom0.cases': 51, 'cons.QNCl.cases': 428, 'cons.QNClV.cases': 144, 'qn.sources': 30, 't1.lt.cases': 17}
+graftBb2St_x2.pkl 2673 0 {}
+graftBb2St_x0.pkl 2708 0 {}
+graftBb2St_g2.pkl 2711 2711 {'S.BV.cases': 61523, 'S.BV.fail': 1525, 'S.OS.cases': 61523, 'S.cand.cases': 61523, 'S.le.cases': 61523, 'S.lt.cases': 61523, 'S.lt.fail': 1462, 'S.ltX1orBV.cases': 61523, 'cons.Dom0.cases': 61523, 'cons.QNCl.cases': 452158, 'cons.QNClV.cases': 246092, 'qn.sources': 2711, 't1.lt.cases': 34052}
+graftBb2St_p0.pkl 2711 0 {}
+cbadext.pkl 3756 773 {'S.BV.cases': 961, 'S.BV.fail': 250, 'S.OS.cases': 961, 'S.cand.cases': 961, 'S.le.cases': 961, 'S.lt.cases': 961, 'S.ltX1orBV.cases': 961, 'cons.Dom0.cases': 1171, 'cons.QNCl.cases': 13214, 'cons.QNClV.cases': 3844, 'qn.sources': 365, 't1.lt.cases': 901}
+graftBb2St_g0.pkl 2738 0 {}
+graftBb2St_p1.pkl 3064 0 {}
+ext2b2.pkl 4073 45 {'S.BV.cases': 120, 'S.BV.fail': 51, 'S.OS.cases': 120, 'S.cand.cases': 120, 'S.le.cases': 120, 'S.lt.cases': 120, 'S.ltX1orBV.cases': 120, 'cons.Dom0.cases': 146, 'cons.QNCl.cases': 1548, 'cons.QNClV.cases': 480, 'qn.sources': 42, 't1.lt.cases': 87}
+graftBb2St_x1.pkl 5772 0 {}
+graftBb2St_g1.pkl 8292 0 {}
+b2grow1.pkl 6517 587 {'S.BV.cases': 18762, 'S.BV.fail': 1357, 'S.OS.cases': 18762, 'S.cand.cases': 18762, 'S.le.cases': 18762, 'S.lt.cases': 18762, 'S.lt.fail': 430, 'S.ltX1orBV.cases': 18762, 'cons.Dom0.cases': 18762, 'cons.QNCl.cases': 234976, 'cons.QNClV.cases': 75048, 'qn.sources': 587, 't1.lt.cases': 11839}
+graftA.pkl 13876 2960 {'S.BV.cases': 30907, 'S.BV.fail': 6, 'S.OS.cases': 30907, 'S.cand.cases': 30907, 'S.le.cases': 30907, 'S.lt.cases': 30907, 'S.ltX1orBV.cases': 30907, 'cons.Dom0.cases': 30981, 'cons.QNCl.cases': 137738, 'cons.QNClV.cases': 123628, 'qn.sources': 2930, 't1.lt.cases': 30907}
+graftAn.pkl 13876 2960 {'S.BV.cases': 30907, 'S.BV.fail': 6, 'S.OS.cases': 30907, 'S.cand.cases': 30907, 'S.le.cases': 30907, 'S.lt.cases': 30907, 'S.ltX1orBV.cases': 30907, 'cons.Dom0.cases': 30981, 'cons.QNCl.cases': 137738, 'cons.QNClV.cases': 123628, 'qn.sources': 2930, 't1.lt.cases': 30907}
+d3s.pkl 15000 682 {'S.BV.cases': 1624, 'S.OS.cases': 1624, 'S.cand.cases': 1624, 'S.le.cases': 1624, 'S.lt.cases': 1624, 'S.ltX1orBV.cases': 1624, 'cons.Dom0.cases': 2678, 'cons.QNCl.cases': 9916, 'cons.QNClV.cases': 6496, 'qn.sources': 621, 't1.lt.cases': 1624}
+b2grow2.pkl 10081 821 {'S.BV.cases': 24471, 'S.BV.fail': 1406, 'S.OS.cases': 24471, 'S.cand.cases': 24471, 'S.le.cases': 24471, 'S.lt.cases': 24471, 'S.lt.fail': 489, 'S.ltX1orBV.cases': 24471, 'cons.Dom0.cases': 23253, 'cons.QNCl.cases': 280164, 'cons.QNClV.cases': 97884, 'qn.sources': 821, 't1.lt.cases': 17451}
+graftBb2St.pkl 30669 2711 {'S.BV.cases': 61523, 'S.BV.fail': 1525, 'S.OS.cases': 61523, 'S.cand.cases': 61523, 'S.le.cases': 61523, 'S.lt.cases': 61523, 'S.lt.fail': 1462, 'S.ltX1orBV.cases': 61523, 'cons.Dom0.cases': 61523, 'cons.QNCl.cases': 452158, 'cons.QNClV.cases': 246092, 'qn.sources': 2711, 't1.lt.cases': 34052}
+graftBb2S.pkl 31137 2747 {'S.BV.cases': 62018, 'S.BV.fail': 1561, 'S.OS.cases': 62018, 'S.cand.cases': 62018, 'S.le.cases': 62018, 'S.lt.cases': 62018, 'S.lt.fail': 1519, 'S.ltX1orBV.cases': 62018, 'cons.Dom0.cases': 62018, 'cons.QNCl.cases': 457540, 'cons.QNClV.cases': 248072, 'qn.sources': 2747, 't1.lt.cases': 34160}
+std_a.pkl 79201 1113 {'S.BV.cases': 92, 'S.BV.fail': 29, 'S.OS.cases': 92, 'S.cand.cases': 92, 'S.le.cases': 92, 'S.lt.cases': 92, 'S.ltX1orBV.cases': 92, 'cons.Dom0.cases': 1472, 'cons.QNCl.cases': 1202, 'cons.QNClV.cases': 368, 'qn.sources': 960, 't1.lt.cases': 83}
+std_an2.pkl 79134 1110 {'S.BV.cases': 71, 'S.BV.fail': 22, 'S.OS.cases': 71, 'S.cand.cases': 71, 'S.le.cases': 71, 'S.lt.cases': 71, 'S.ltX1orBV.cases': 71, 'cons.Dom0.cases': 1451, 'cons.QNCl.cases': 936, 'cons.QNClV.cases': 284, 'qn.sources': 957, 't1.lt.cases': 69}
+graftBb2G.pkl 49091 644 {'S.BV.cases': 25345, 'S.BV.fail': 9432, 'S.OS.cases': 25345, 'S.cand.cases': 25345, 'S.le.cases': 25345, 'S.lt.cases': 25345, 'S.ltX1orBV.cases': 25345, 'cons.Dom0.cases': 27276, 'cons.QNCl.cases': 350886, 'cons.QNClV.cases': 101380, 'qn.sources': 617, 't1.lt.cases': 24359}
+graftBn2.pkl 75698 3261 {'S.BV.cases': 52956, 'S.BV.fail': 7975, 'S.OS.cases': 52956, 'S.cand.cases': 52956, 'S.le.cases': 52956, 'S.lt.cases': 52956, 'S.ltX1orBV.cases': 52956, 'cons.Dom0.cases': 56094, 'cons.QNCl.cases': 448524, 'cons.QNClV.cases': 211824, 'qn.sources': 1666, 't1.lt.cases': 52956}
