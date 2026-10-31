@@ -110,4 +110,49 @@ theorem expStepQR_fc {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (S : SInv
   exact frameClosed_N_t1Q hlen hL hA hd0e hn hpath hx2 hxnb (S.z2 r) hiu hiux hCP hOS I.cons I.good I.fc
     (hOm n hn ρP oq vq hCP hGP hCN hGN hEx) hGo J.fc hEx.1.1 hEx.2 hox
 
+/-- **FrameOT through the DQ copy**: the field only reads `v(i)` and the earlier counted children of a frame, which
+the frame heads keep (`frameHead_ltQ`, `frameHead_copyQ`); no value fact is used. -/
+theorem frameOT_N_t1Q {M : Mat} {r L d0 n : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hA : Anc0 M r (r + L)) (hd0e : entry M 0 (r + L) = entry M 0 r + d0) (hn : 2 ≤ n)
+    (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r → s ≠ r + L →
+      entry M 1 r < entry M 1 s) (hx2 : entry M 2 (r + L) = 0)
+    (hxnb : ∀ c, par M 0 (r + L) = some c →
+      col (TRIO.gexp M r L d0 0 n) (r + L) ≠ bump (TRIO.gexp M r L d0 0 n) c)
+    (hz2 : entry M 2 r ≤ 1)
+    (hiu : ∀ c, c < r + L → isUpg (TRIO.gexp M r L d0 0 n) c = isUpg M c)
+    (hiux : isUpg (TRIO.gexp M r L d0 0 n) (r + L) = false)
+    {ρ ρP : Valn} {oq vq : Nat → T} (hCP : Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP)
+    (hFO : FrameOT M ρ) (hFOP : FrameOT (TRIO.gexp M r L d0 0 (n - 1)) ρP)
+    (hOS : ∀ i, i < r + L → DepX M (r + L) true i → OShape M (r + L) i) :
+    FrameOT (TRIO.gexp M r L d0 0 n) (glueQ M (r + L) ρ (shiftV ρP L) oq vq) := by
+  have hlN := len_N (d0 := d0) hlen hn
+  have hlP := len_P (d0 := d0) (n := n) hlen
+  intro i hi Lc c R hCL
+  rcases Nat.lt_or_ge i (r + L) with h | h
+  · obtain ⟨hCLM, hv, hLo⟩ := frameHead_ltQ (oq := oq) (vq := vq) hlen hL hA hd0e hn hpath hx2 hxnb hz2 hiu hiux
+      hCP hOS h hCL
+    rw [hv, hLo]
+    exact hFO i (by omega) Lc c R hCLM
+  · obtain ⟨a, rfl⟩ : ∃ a, i = r + L + a := ⟨i - (r + L), by omega⟩
+    have ha : a < (n - 1) * L := by omega
+    obtain ⟨Lc', c', R', hsp, hv, hLo, _⟩ :=
+      frameHead_copyQ (oq := oq) (vq := vq) hlen hL hA hd0e hn hpath hx2 hxnb hz2 hiu hiux hCP hOS ha hCL
+    rw [hv, hLo]
+    exact hFOP (r + a) (by rw [hlP]; omega) Lc' c' R' hsp
+
+/-- **FrameOT is carried through the DQ copy** (no residual). -/
+theorem expStepQR_fo {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (S : SInv M) (I : Inv3V3 M ρ rk)
+    {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
+    (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
+    (h1 : par M 1 (r + L) = some r) (hx2 : entry M 2 (r + L) = 0) (Ex : Nat → Valn → (Nat → T) → (Nat → T) → Prop) :
+    ExpStepQR PnV3 (fun N σ => FrameOT N σ) Ex M r L d0 ρ := by
+  have hA : Anc0 M r (r + L) := anc0_of_par M 1 r (r + L) h1
+  have hpath := hpath_of_par1 h1 hA (by omega)
+  obtain ⟨q, hq⟩ := par0_of_anc hA (by omega)
+  intro n hn ρP oq vq hCP _ hPP _ _ _
+  obtain ⟨_, J⟩ := hPP
+  exact frameOT_N_t1Q hlen hL hA hd0e hn hpath hx2 (hxnb_t1 hlen hL hA hd0e S.z2 S.z1c h1 n hn) (S.z2 r)
+    (hiu_t1 hlen hL hA hd0e hpath hx2 (S.z2 r) hn) (hiux_t1 hlen hL hA hd0e hpath hx2 (S.z2 r) hn) hCP I.fo J.fo
+    (hOS_t1 hlen S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hx2 hq)
+
 end Ytosk.WfExQ5
