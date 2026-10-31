@@ -2,14 +2,19 @@
 
 接ぎ木の標準形（tmp/ytosk-handoff/sets/graftA.pkl・graftB.pkl、作り方 tmp/claude/gen_graft.py）で、最上位の残り HFrameV2・HDropV2W と不変条件 Inv3V2 の欄 TPLoW・AbsDW が偽だった。
 
-## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 14 個）
+## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個。T2BadRes は 4 つの欄）
 
 | 残り | 中身 | 測定 | 消すのに要るもの |
 |---|---|---|---|
 | HDropU | 落とす補題の仮定（形 B）と条件のない ua | 全集合で例外 0 | 落とす補題の仮定を値の不変条件から出す（核） |
-| T2BadRes | Bad2 の t = 2: WfT2Src.T2AbsNSrcW ∧ T2QNDomBad。T2AbsNSrcW は M と M.take x だけの主張で、欄 (a)（P₀ x ≠ x−1 ∨ P₁ x ≠ x−1 なら DropFail なし）・(b)（P₀ x = P₁ x = x−1 なら DropFail は祖父 g だけ）・(c)（g の吸収されない親の項 s は s < Bnd(v(r)) = ψ_{v(r)}(Ω_{v(r)+1})）。(a) のうち窓の先頭が ω² 未満・前の同じ行 1 の写し・消える最後の孫 x−1 の場合は証明済み（V3T2SrcWindow〜V3T2SrcReturn、2026-10-30〜31）。展開の側は WfT2Exp で証明済み。T2QNDomBad: 種の t = 2 の qn の枠で、ωT の各段の成分が qnS の成分 ∪ {0} に支配される（旧 HUAC の t = 2 での使い道） | (a) は b2grow1・b2grow2・wide・接ぎ木 400 で例外 0。T2QNDomBad は HUAC の反例 34 件が前件に入らない | (a) の残り: 消えない孫 c < x−1 の o が変わる場合（c の次の列が m の部分木を出る、または e1 c < e1 m）。(b)・(c) は未着手 |
+| T2BadRes (a) WfSrcA.SrcARem2 | Bad2 の t = 2、P₀ x ≠ x−1 ∨ P₁ x ≠ x−1 の場合に DropFail がないこと（旧 T2AbsNSrcW の欄 (a)）の残り。i の最後の bump 枝 j の最後の子 c < x−1 の o が変わり、e1 c ≤ e1 m（m = P₀ i = P₁ i）。形 (A): c は x−1 の行 0 の祖先で e1 c < e1 m。形 (B): c の部分木の次の列 c′ が upg(c′−1) = c′ で、その行 1 の親が m の真の祖先。c = x−1・e1 c > e1 m・e1 c = e1 m（次の列が c の部分木の中）は証明済み | 全集合と接ぎ木で例外 0。形 (B) は一度も現れない。形 (A) は Bad2 の枠では現れない（Bad2 でない枠でも DropFail なし） | (B) を構造から否定（(b) の O′ と同じ形）。(A) は m の行 1 の鎖上の ArgDomCore か Lhd で |
+| T2BadRes (b) WfSrcB.SrcBNonlost2 | P₀ x = P₁ x = x−1 の場合の残り。L = 1・r = x−1 と、c = x−1 なら i = P₀(P₀ r) は証明済み。残りは c < x−1 で (P) x−1 が c の下・e1 c < e1 m、(O′) x−1 が c の部分木の外で、次の列 c′ が upg(c′−1) = c′、その行 1 の親が m の真の祖先 | O′ は約 8.3 万枠で 0 回。P は窓が空でない枠が 234 あるが Lhd で閉じる（窓が空という主張は偽） | O′ は ChgX の逆転と x−1 までの距離の帰納法。P は v(m) = ψ_{v(c)}(A) の Lhd 補題 |
+| T2BadRes (c) WfSrcC.SrcCRes | 形 L = 1・P₀ r = p・P₀ p = i で、吸収されない v(P₁ i) の項 s（ψ(2) ≤ s < W_M(i)）について (i) s < o(r)、(ii) s の添字が v(r) なら引数 < Ω_{v(r)+1}。添字が v(r) 未満なら s < Bnd は証明済み | DropFail の 1195 枠すべてで p は i のただ 1 つの bump 子、r は p のただ 1 つの子 | (ii) は Origins で s = bumpW(k′) とし、c1（k′ の最初の bump 子の最初の子）が r の写しであることから |
+| T2BadRes (d) T2QNDomBad2 | 既存の V3QNDomS の残り（単純でない形） | 例外 0 | — |
+| WfH7W.HUACB2 | HUAC を Bad2 の行列の x−1 だけに制限したもの: n + 2 = |M|・upg n = k < n なら comps u v(P₁ n) は comps u v(n) ∪ {0} に支配される。Bad2 は P₀(x−1) が bump 子であることを強いるので、32 列の HUAC の反例はここに入らない | 約 13 万枠と反例の周りの接ぎ木 6550 個の Bad2 で例外 0 | W = ω^(1+Σ bump 項) が v(P₁ n) を吸収することを、k の bump 子から示す |
+| WfH7W.H7WSib | t = 0 の Bad2 の消える尾の枠で、x−1 の直前の兄弟 c は x−1 の写し（col c = col(x−1)、upg c = upg(x−1)） | Bad2 の枠 3441 で例外 0。Bad2 なしでは偽 | 展開の構造から（上げる最後の葉の前の子は写し） |
 | ~~T0H10Core.T0BadSeedsH10Big~~ | **最上位から外した（2026-10-29）**。偽（WfH10Cex.h10_core_false、29 列の標準の Bad2 の行列） | — | 使う側 t0_S1N_cnt（V3T0BadNode）を作り直した: v(r) > v(g) の枝は数える写しが 0 個（m = 0）でもよい（weak_seed_hiG。m = 0 では古い枠が書き換えない t0IVResC_holds ので、写しだけの状態 B は古い引数の接頭辞）。v(r) ≤ v(g) の枝では r − 1 → r の上げは起きない（v_par0_lt_of_upg_prev: P₁(r) = P₀(r) = g なので v(g) < v(r)）ので counted_first0G で数える。T0BadSeedsH2〜H6 の数える欄は「r − 1 が r へ上げ r が頭打ち」でないときだけに弱め、構造から証明（t0BadSeedsH6_of_W）。残りの 2 欄は HDropU と HUAC だけから（WfH10b.t0BadSeedsH7W_of）。置き換える残りはない |
-| T0BadSeedsH7W | Bad2 の t = 0 の種の 2 つの成分の欄（旧 T0BadSeedsH7 から偽の第 3 欄を外したもの）。以前は HDropU と HUAC から出していた（WfH10b.t0BadSeedsH7W_of）が、HUAC が偽なので直接の残りにした（5606d012） | T0 第 1 欄 703 枠・第 2 欄 2216 枠の接ぎ木で例外 0 | 成分の比較を、HUAC を使わずに Bad2 の場面の構造から出す |
+| ~~T0BadSeedsH7W・T2QNDomBad~~ | **2026-10-31 に置き換えた**: HUACB2・H7WSib・T2QNDomBad2 から証明（WfH7W.t0BadSeedsH7W_of_sib・t2QNDomBad_of_B2） | — | — |
 | ~~HUAC（HUACPositive・StepFacts3）~~ | **最上位から外した（2026-10-30、5606d012）**。HUAC そのものが偽（V3HUACFalse.not_HUAC、32 列の標準形）。StepFacts3 も偽（V3StepFacts3False、40 列） | — | 使う側 2 か所の要求を直接の残り T2QNDomBad・T0BadSeedsH7W にした |
 | HFrameV2・HLeafV2 | 標準形の 1 列落としの枠・葉の欄 | 例外 0 | 欄ごとの値の議論 |
 | HBumpExt | 接頭辞で bump 項が増える | 例外 0 | M[n]（不変条件のない行列）について言うので落とす補題から出ない |
