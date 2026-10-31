@@ -14,6 +14,43 @@ import Ytosk.V3ChainT1
 namespace Ytosk.WfQnA8
 open T Ytosk Ytosk.WfQnE3
 
+/-- **The engine residuals at each level** (for the true valuation `σ` of `M[n]`, equal to the glue off the
+closure `B n`): the seeds, `hVSN`, `hHard`, `hAbsW` of `WfQnA3.engine_t1B`. -/
+def ResT1B (M : Mat) (r L d0 : Nat) (ρ : Valn) (μ br seed : T) (B : Nat → Nat → Prop) : Prop :=
+  ∀ n, 2 ≤ n → ∀ ρP σ : Valn, Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
+    Good3 (TRIO.gexp M r L d0 0 (n - 1)) ρP → ρP.o r = gamS μ br seed (n - 2) →
+    Cons (TRIO.gexp M r L d0 0 n) σ →
+    (∀ i, i < (TRIO.gexp M r L d0 0 n).length → ¬ (i < r + L ∧ DepXB M (B n) true i) →
+      σ.o i = (glueZ M (r + L) ρ (shiftV ρP L) (fun _ => gamS μ br seed (n - 2))).o i) →
+    (∀ i, i < (TRIO.gexp M r L d0 0 n).length → ¬ (i < r + L ∧ DepXB M (B n) false i) →
+      σ.v i = (glueZ M (r + L) ρ (shiftV ρP L) (fun _ => gamS μ br seed (n - 2))).v i) →
+    (∀ i, B n i → i < r + L → Lhd z (σ.v i) (ρ.v i) ∧ isOT (σ.v i) = true) ∧
+    (∀ i (Lc : List Nat) c, i < r + L → DepXB M (B n) true i → CL (TRIO.gexp M r L d0 0 n) i = Lc ++ [c] →
+      σ.v c ≠ ρ.v c →
+      ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))) ∧
+    (∀ i (Lc : List Nat) c s y y', i < r + L → DepXB M (B n) true i →
+      CL (TRIO.gexp M r L d0 0 n) i = Lc ++ [c] → ρ.o c = psi s y z →
+      σ.o c = psi s y' z → lt (ρ.v i) s = true →
+      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s y' z) = true) →
+      (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
+      (split y' (psi (succ s) z z)).1 < (split y (psi (succ s) z z)).1 →
+      ∀ g ∈ comps (ρ.v i) y', g ≤ H s y') ∧
+    (∀ i, i < r + L → DepXB M (B n) false i → ¬ B n i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+      ∀ q ∈ summands (vOpt ρ (par M 1 i)), ¬ q < psi z two z →
+        ¬ q < bumpW (TRIO.gexp M r L d0 0 n) σ i → q < bumpW M ρ i → Lhd z q (bumpW M ρ i))
+
+/-- **The step of the carried property for the true valuation.** -/
+def StepT1B (Pn : Mat → Valn → Prop) (M : Mat) (r L d0 : Nat) (ρ : Valn) (μ br seed : T)
+    (B : Nat → Nat → Prop) : Prop :=
+  ∀ n, 2 ≤ n → ∀ ρP σ : Valn, Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
+    Good3 (TRIO.gexp M r L d0 0 (n - 1)) ρP → Pn (TRIO.gexp M r L d0 0 (n - 1)) ρP →
+    Cons (TRIO.gexp M r L d0 0 n) σ → Good3 (TRIO.gexp M r L d0 0 n) σ →
+    (∀ i, i < (TRIO.gexp M r L d0 0 n).length → ¬ (i < r + L ∧ DepXB M (B n) true i) →
+      σ.o i = (glueZ M (r + L) ρ (shiftV ρP L) (fun _ => gamS μ br seed (n - 2))).o i) →
+    (∀ i, i < (TRIO.gexp M r L d0 0 n).length → ¬ (i < r + L ∧ DepXB M (B n) false i) →
+      σ.v i = (glueZ M (r + L) ρ (shiftV ρP L) (fun _ => gamS μ br seed (n - 2))).v i) →
+    Pn (TRIO.gexp M r L d0 0 n) σ
+
 section
 variable {M : Mat} {r L d0 : Nat} (hlen : r + L + 1 = M.length) (hL : 0 < L)
   (hA : Anc0 M r (r + L)) (hd0e : entry M 0 (r + L) = entry M 0 r + d0)
@@ -47,9 +84,9 @@ theorem t1_chainB (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
     (hro : ρ.o r = psi vr br z) (hrD : DepX M (r + L) true r)
     {B : Nat → Nat → Prop} (hB : ∀ n i, B n i → DepX M (r + L) false i)
     (hrB : ∀ n, 2 ≤ n → ¬ DepXB M (B n) true r)
-    (hO : ∀ n i, i < r + L → DepX M (r + L) true i → ¬ DepXB M (B n) true i →
+    (hO : ∀ n, 2 ≤ n → ∀ i, i < r + L → DepX M (r + L) true i → ¬ DepXB M (B n) true i →
       OLocal M (r + L) ρ (gamS μ br seed (n - 2)) μ vr br i)
-    (hV : ∀ n i, i < r + L → DepX M (r + L) false i → ¬ DepXB M (B n) false i →
+    (hV : ∀ n, 2 ≤ n → ∀ i, i < r + L → DepX M (r + L) false i → ¬ DepXB M (B n) false i →
       VLocal M (r + L) ρ (gamS μ br seed (n - 2)) μ i)
     (hHole : ∀ b i, DepX M (r + L) b i → i < r + L → HoleT μ br vr (valB ρ b i))
     {Rt : Nat} (hRA : Anc0 M Rt (r + L))
@@ -69,36 +106,9 @@ theorem t1_chainB (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
     (hgS : ∀ m, ∃ a X, gamS μ br seed m = psi a X z)
     (hG1 : Good3 (TRIO.gexp M r L d0 0 1) ρ1)
     -- the engine residuals at each level, for the true valuation `σ` of `M[n]`
-    (hRes : ∀ n, 2 ≤ n → ∀ ρP σ : Valn, Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
-      Good3 (TRIO.gexp M r L d0 0 (n - 1)) ρP → ρP.o r = gamS μ br seed (n - 2) →
-      Cons (TRIO.gexp M r L d0 0 n) σ →
-      (∀ i, i < (TRIO.gexp M r L d0 0 n).length → ¬ (i < r + L ∧ DepXB M (B n) true i) →
-        σ.o i = (glueZ M (r + L) ρ (shiftV ρP L) (fun _ => gamS μ br seed (n - 2))).o i) →
-      (∀ i, i < (TRIO.gexp M r L d0 0 n).length → ¬ (i < r + L ∧ DepXB M (B n) false i) →
-        σ.v i = (glueZ M (r + L) ρ (shiftV ρP L) (fun _ => gamS μ br seed (n - 2))).v i) →
-      (∀ i, B n i → i < r + L → Lhd z (σ.v i) (ρ.v i) ∧ isOT (σ.v i) = true) ∧
-      (∀ i (Lc : List Nat) c, i < r + L → DepXB M (B n) true i → CL (TRIO.gexp M r L d0 0 n) i = Lc ++ [c] →
-        σ.v c ≠ ρ.v c →
-        ∀ g ∈ comps (ρ.v i) (σ.v c), g ≤ psi (σ.v c) z z ∨ g ≤ spArg (ρ.v i) z (sumN (Lc.map ρ.o))) ∧
-      (∀ i (Lc : List Nat) c s y y', i < r + L → DepXB M (B n) true i →
-        CL (TRIO.gexp M r L d0 0 n) i = Lc ++ [c] → ρ.o c = psi s y z →
-        σ.o c = psi s y' z → lt (ρ.v i) s = true →
-        (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y' = true ∧ lt (psi (ρ.v i) z z) (psi s y' z) = true) →
-        (lt (spArg (ρ.v i) z (sumN (Lc.map ρ.o))) y = true ∧ lt (psi (ρ.v i) z z) (psi s y z) = true) →
-        (split y' (psi (succ s) z z)).1 < (split y (psi (succ s) z z)).1 →
-        ∀ g ∈ comps (ρ.v i) y', g ≤ H s y') ∧
-      (∀ i, i < r + L → DepXB M (B n) false i → ¬ B n i → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
-        ∀ q ∈ summands (vOpt ρ (par M 1 i)), ¬ q < psi z two z →
-          ¬ q < bumpW (TRIO.gexp M r L d0 0 n) σ i → q < bumpW M ρ i → Lhd z q (bumpW M ρ i)))
+    (hRes : ResT1B M r L d0 ρ μ br seed B)
     (Pn : Mat → Valn → Prop) (hP1 : Pn (TRIO.gexp M r L d0 0 1) ρ1)
-    (hPsB : ∀ n, 2 ≤ n → ∀ ρP σ : Valn, Cons (TRIO.gexp M r L d0 0 (n - 1)) ρP →
-      Good3 (TRIO.gexp M r L d0 0 (n - 1)) ρP → Pn (TRIO.gexp M r L d0 0 (n - 1)) ρP →
-      Cons (TRIO.gexp M r L d0 0 n) σ → Good3 (TRIO.gexp M r L d0 0 n) σ →
-      (∀ i, i < (TRIO.gexp M r L d0 0 n).length → ¬ (i < r + L ∧ DepXB M (B n) true i) →
-        σ.o i = (glueZ M (r + L) ρ (shiftV ρP L) (fun _ => gamS μ br seed (n - 2))).o i) →
-      (∀ i, i < (TRIO.gexp M r L d0 0 n).length → ¬ (i < r + L ∧ DepXB M (B n) false i) →
-        σ.v i = (glueZ M (r + L) ρ (shiftV ρP L) (fun _ => gamS μ br seed (n - 2))).v i) →
-      Pn (TRIO.gexp M r L d0 0 n) σ) :
+    (hPsB : StepT1B Pn M r L d0 ρ μ br seed B) :
     ∀ n, 2 ≤ n → ∃ ρN rkN, Cons (TRIO.gexp M r L d0 0 n) ρN ∧ Rk (TRIO.gexp M r L d0 0 n) rkN ∧
       Good3 (TRIO.gexp M r L d0 0 n) ρN ∧ Pn (TRIO.gexp M r L d0 0 n) ρN ∧ ρN.o r = gamS μ br seed (n - 1) ∧
       (∀ g, g < r + L → ¬ DepX M (r + L) false g → ρN.v g = ρ.v g) ∧
@@ -139,7 +149,7 @@ theorem t1_chainB (hpath : ∀ s, Anc0 M r s → Anc0 M s (r + L) → s ≠ r �
       (rkN M (r + L) L rkM rkP (rkBound M rkM) (rkBound M rkM + rkBound (TRIO.gexp M r L d0 0 (n - 1)) rkP)))
       with hσ
     have hE := WfQnH5.t1_E1B hlen hL hA hd0e hn hpath hx2 (hxnb n hn) (hiu n hn) (hiux n hn) hRM (hB n)
-      (hndN n hn) hz2 hC hG hCP hagree hCN hRN hrot hcb hμr hbr hS hHx hxN (hO n) (hV n)
+      (hndN n hn) hz2 hC hG hCP hagree hCN hRN hrot hcb hμr hbr hS hHx hxN (hO n hn) (hV n hn)
     obtain ⟨hSeedB, hVSN, hHard, hAbsW⟩ := hRes n hn ρP σ hCP hGP hPr hCN hE.1 hE.2
     have hok : ∀ t, isOT t = true → HoleT μ br vr t → isOT (fsD t ζ) = true ∧ fsD t ζ < t :=
       fun t hot hH => hok_of_holeT hrot hcb hμ hS hot hH (n - 2)

@@ -71,6 +71,8 @@ def meas(M):
                     c['NEST']+=1; e.setdefault('NEST',(M,n,i))
                 else: c['NEST.no']+=1
             if not DB: continue
+            c['R.inDB' if (True,r) in DB else 'R.outDB']+=1
+            if (True,r) in DB: e.setdefault('RinDB',(M,n))
             E=[tuple(cl) for cl in trio.expand([list(cl) for cl in M],n)]
             CE=Ctx(E)
             if not CE.ok: c['exp_fail']+=1; continue
