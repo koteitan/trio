@@ -1,0 +1,1 @@
+{"('cmin', 2, 'omega', 1)": 2711, "('maxdef_n>=2', 2, 'omega', 0)": 3, "('maxdef_n>=2', 2, 'omega', 1)": 2708, "('mono_n>=1', 2, 'omega', True)": 2711}

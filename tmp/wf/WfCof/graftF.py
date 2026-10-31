@@ -48,7 +48,7 @@ if __name__ == '__main__':
         for j in range(4, len(A) + 1): base.add(A[:j])
     print('seeds', len(seeds), 'bases', len(base), flush=True)
     g1 = set()
-    with Pool(3) as p:
+    with Pool(2) as p:
         for o in p.imap_unordered(gen, sorted(base)): g1 |= o
         print('gen1', len(g1), flush=True)
         random.seed(11); s2 = random.sample(sorted(g1), min(300, len(g1)))

@@ -44,7 +44,24 @@ For A and n: L(n) = max k with tA[k] ≤ val(A[n]); deficit def(n) = n − L(n).
   for t = 1, 2) + seed lag 1 (the last copy has no upgrader, so its diagonal seed is o_{A[1]}(r),
   the fsD chain c_n = fsD(c_∞, c_{n−1}) from c_1).
 
-Results over all sets/families (out/*.txt, CAP 150000 per file, NMAX 6): see the table at the end.
+Results over all sets and families (2026-10-31):
+
+- out/ (fsprobe.py, CAP 150000, NMAX 6; 13 family files: WfAbsW, WfB2L, WfB2S, WfH7W2, WfInvD, WfSib, ...):
+  128,312 matrices; max def over n >= 1 is <= 2; val(A[n]) < tA in every case.
+- out2/ (fsprobe2.py, CAP 20000 per file, NMAX 5; all 50 handoff sets incl. std_b, ext1, ext2, expP, expPt2, t2ext,
+  the graftA1..3 / graftM36 / graftM36x families, the descent set desc1.pkl (271k random deep descents from
+  SRO[2..5], len <= 40), and the new graft family graftF.pkl (48,754: 60 smallest deficit-2 seeds, their M[2]/M[3]
+  and prefixes, gen_all + row-1 lift to 4..6 + larger sibling, 2 generations, bms -s = 1)):
+  nonzero last column, minimal uniform c per type t of the last column:
+
+      t   c=0      c=1      c=2      c>=3
+      0   75,253   50,927   36,281   0
+      1   17,142  209,357  153,941   0
+      2    9,483   73,412   98,939   0
+
+  zero last column: 10,172, all with val(A[1]) + 1 = tA. val(A[n]) strictly increasing in n >= 1: 724,735/724,735.
+  Large n (graftF_b sample 1500, NMAX 9): c <= 2 still (out2/large_n.json).
+  Not evaluated: 2 matrices of sets/cbadext.pkl (no value) and 1 A[n] there (no value); outside the claim.
 
 ## What remains for goal 5
 

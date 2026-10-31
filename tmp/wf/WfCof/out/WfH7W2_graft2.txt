@@ -1,0 +1,1 @@
+{"cof": {"omega": 9665, "L_not_strict_mono_n>=1": 450, "succ": 15}, "maxdef": {"('omega', -1)": 14, "('omega', 0)": 861, "('omega', 1)": 4171, "('omega', 2)": 4619, "('succ', None)": 15}, "minshift": {"('omega', -1)": 4171, "('omega', -2)": 4619, "('omega', 0)": 861, "('omega', 1)": 14, "('succ', None)": 15}, "n_notdec": 0}

@@ -1,0 +1,1 @@
+{"cof": {"omega": 1, "L_not_strict_mono_n>=1": 1}, "maxdef": {"('omega', 1)": 1}, "minshift": {"('omega', -1)": 1}, "n_notdec": 0}
