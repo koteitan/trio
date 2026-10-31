@@ -59,7 +59,11 @@ argument o frames (c < x): og_all.jsonl, 71,710 matrices, 646,554 frames:
   i.e. even the cut form `pre ≤ y with the base summand deleted` holds there (ocut.py PreCut 1906/1906).
 - M[1] forms: `Trig in M.take x` fails at c = r (M[1] changes v(r)) and twice at c ≠ r (36 columns, i = 20, c = 24;
   there PreB holds); `o_{M[1]}(c) ≤ o_{M[n]}(c)` 1935/1935 on g36_2 CAP 600; `y1 ≤ cut(y)` false (40/808).
-layer.py (single layers ≥ ε₀, non-node, η ∈ gamS(…, k ≤ 4) with DQ): see layer_all.jsonl. [RESULT LINE BELOW]
+layer.py (single layers ≥ ε₀, η ∈ gamS(…, k ≤ 4) with DQ; 72 sets = sets1 + graftH, CAP 2000): layer_all.jsonl,
+  69,710 matrices, 349,734 single layers (56,018 node layers skipped): YNsingle 349,734, Arg 199,580, LoNot1 199,580,
+  LoG 182,622, HB 293,308: 0 failures.
+Not done (time): the second-generation graft graftO.py (seeds with PreB false from graftH / famframes) was written but
+not run; run `nice -n 15 python3 graftO.py graftO.pkl 10 ../WfQrH/graftH.pkl ../WfQrH/famframes.pkl`, then og.py on it.
 
 ## Remaining (exact)
 1. OG at every triggered-arg o frame: PreG and LastG (measured; they are restatements of TrigN / Last as "the first

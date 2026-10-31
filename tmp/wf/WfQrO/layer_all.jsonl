@@ -1,0 +1,72 @@
+{"set": "t0ext.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "hunt_found.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_x2.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_x0.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_p1.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_p0.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_g2.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_g1.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftBb2St_g0.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftAb.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graft36c.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graft36b.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graft36.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "ext2b2Sf.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "expPt2.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "cex36.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "b2t0test.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "std_ab2S.pkl", "n": 2, "sec": 0, "cnt": {"YNsingle.ok": 8, "layers": 8, "mats": 2, "node": 8}, "ex": {}}
+{"set": "std_ab2G.pkl", "n": 3, "sec": 0, "cnt": {"mats": 3}, "ex": {}}
+{"set": "std_ab2.pkl", "n": 5, "sec": 0, "cnt": {"YNsingle.ok": 8, "layers": 8, "mats": 5, "node": 8}, "ex": {}}
+{"set": "graftM36.pkl", "n": 14, "sec": 0, "cnt": {"Arg.ok": 56, "HB.ok": 128, "LoG.ok": 56, "LoNot1.ok": 56, "YNsingle.ok": 160, "layer.eta": 128, "layers": 160, "mats": 14, "node": 32}, "ex": {}}
+{"set": "ext2b2G.pkl", "n": 54, "sec": 0, "cnt": {"Arg.ok": 28, "HB.ok": 56, "LoG.ok": 24, "LoNot1.ok": 28, "YNsingle.ok": 108, "layer.eta": 56, "layers": 108, "mats": 54, "node": 52}, "ex": {}}
+{"set": "b2grow2.pkl", "n": 27, "sec": 0, "cnt": {"Arg.ok": 72, "HB.ok": 144, "LoG.ok": 72, "LoNot1.ok": 72, "YNsingle.ok": 252, "layer.eta": 144, "layers": 252, "mats": 27, "node": 108}, "ex": {}}
+{"set": "graftBb2Sf.pkl", "n": 36, "sec": 0, "cnt": {"Arg.ok": 96, "HB.ok": 192, "LoG.ok": 96, "LoNot1.ok": 96, "YNsingle.ok": 336, "layer.eta": 192, "layers": 336, "mats": 36, "node": 144}, "ex": {}}
+{"set": "cbadext.pkl", "n": 46, "sec": 0, "cnt": {"Arg.ok": 12, "HB.ok": 36, "LoG.ok": 12, "LoNot1.ok": 12, "YNsingle.ok": 48, "layer.eta": 36, "layers": 48, "mats": 46, "node": 12}, "ex": {}}
+{"set": "b2grow1.pkl", "n": 31, "sec": 0, "cnt": {"Arg.ok": 16, "HB.ok": 32, "LoG.ok": 16, "LoNot1.ok": 16, "YNsingle.ok": 156, "layer.eta": 32, "layers": 156, "mats": 31, "node": 124}, "ex": {}}
+{"set": "graftBb.pkl", "n": 72, "sec": 0, "cnt": {"Arg.ok": 192, "HB.ok": 384, "LoG.ok": 192, "LoNot1.ok": 192, "YNsingle.ok": 528, "layer.eta": 384, "layers": 528, "mats": 72, "node": 144}, "ex": {}}
+{"set": "g36_1.pkl", "n": 121, "sec": 1, "cnt": {"Arg.ok": 220, "HB.ok": 600, "LoG.ok": 200, "LoNot1.ok": 220, "YNsingle.ok": 768, "layer.eta": 600, "layers": 768, "mats": 121, "node": 168}, "ex": {}}
+{"set": "graft3.pkl", "n": 88, "sec": 1, "cnt": {"Arg.ok": 250, "HB.ok": 442, "LoG.ok": 196, "LoNot1.ok": 250, "YNsingle.ok": 446, "layer.eta": 442, "layers": 446, "mats": 88, "node": 4}, "ex": {}}
+{"set": "graftAn.pkl", "n": 232, "sec": 1, "cnt": {"Arg.ok": 1624, "HB.ok": 2728, "LoG.ok": 1596, "LoNot1.ok": 1624, "YNsingle.ok": 2828, "layer.eta": 2728, "layers": 2828, "mats": 232, "node": 100}, "ex": {}}
+{"set": "graftA.pkl", "n": 232, "sec": 1, "cnt": {"Arg.ok": 1624, "HB.ok": 2728, "LoG.ok": 1596, "LoNot1.ok": 1624, "YNsingle.ok": 2828, "layer.eta": 2728, "layers": 2828, "mats": 232, "node": 100}, "ex": {}}
+{"set": "shapegrow.pkl", "n": 162, "sec": 1, "cnt": {"Arg.ok": 314, "HB.ok": 618, "LoG.ok": 304, "LoNot1.ok": 314, "YNsingle.ok": 618, "layer.eta": 618, "layers": 618, "mats": 162}, "ex": {}}
+{"set": "graft2.pkl", "n": 184, "sec": 2, "cnt": {"Arg.ok": 454, "HB.ok": 714, "LoG.ok": 296, "LoNot1.ok": 454, "YNsingle.ok": 822, "layer.eta": 714, "layers": 822, "mats": 184, "node": 108}, "ex": {}}
+{"set": "ext2b2St.pkl", "n": 529, "sec": 3, "cnt": {"Arg.ok": 3972, "HB.ok": 7720, "LoG.ok": 3908, "LoNot1.ok": 3972, "YNsingle.ok": 9836, "layer.eta": 7720, "layers": 9836, "mats": 529, "node": 2116}, "ex": {}}
+{"set": "ext2b2S.pkl", "n": 529, "sec": 3, "cnt": {"Arg.ok": 3972, "HB.ok": 7720, "LoG.ok": 3908, "LoNot1.ok": 3972, "YNsingle.ok": 9836, "layer.eta": 7720, "layers": 9836, "mats": 529, "node": 2116}, "ex": {}}
+{"set": "ext2b2.pkl", "n": 583, "sec": 3, "cnt": {"Arg.ok": 4000, "HB.ok": 7776, "LoG.ok": 3932, "LoNot1.ok": 4000, "YNsingle.ok": 9944, "layer.eta": 7776, "layers": 9944, "mats": 583, "node": 2168}, "ex": {}}
+{"set": "g36_2.pkl", "n": 727, "sec": 10, "cnt": {"Arg.ok": 1684, "HB.ok": 4196, "LoG.ok": 1588, "LoNot1.ok": 1684, "YNsingle.ok": 5140, "layer.eta": 4204, "layers": 5140, "mats": 727, "node": 936}, "ex": {}}
+{"set": "graft5.pkl", "n": 1000, "sec": 4, "cnt": {"Arg.ok": 174, "HB.ok": 174, "LoG.ok": 168, "LoNot1.ok": 174, "YNsingle.ok": 922, "layer.eta": 174, "layers": 922, "mats": 1000, "node": 748}, "ex": {}}
+{"set": "lift2.pkl", "n": 551, "sec": 6, "cnt": {"Arg.ok": 180, "HB.ok": 272, "LoG.ok": 92, "LoNot1.ok": 180, "YNsingle.ok": 1192, "layer.eta": 272, "layers": 1192, "mats": 551, "node": 920}, "ex": {}}
+{"set": "lift1.pkl", "n": 962, "sec": 7, "cnt": {"Arg.ok": 2532, "HB.ok": 4012, "LoG.ok": 1644, "LoNot1.ok": 2532, "YNsingle.ok": 5636, "layer.eta": 4012, "layers": 5636, "mats": 962, "node": 1624}, "ex": {}}
+{"set": "graft4.pkl", "n": 1674, "sec": 18, "cnt": {"Arg.ok": 2558, "HB.ok": 4046, "LoG.ok": 1338, "LoNot1.ok": 2558, "YNsingle.ok": 4646, "layer.eta": 4046, "layers": 4646, "mats": 1674, "node": 600}, "ex": {}}
+{"set": "graftBb2St_x1.pkl", "n": 2000, "sec": 7, "cnt": {"Arg.ok": 5080, "HB.ok": 9268, "LoG.ok": 5056, "LoNot1.ok": 5080, "YNsingle.ok": 17268, "layer.eta": 9268, "layers": 17268, "mats": 2000, "node": 8000}, "ex": {}}
+{"set": "graftBb2St.pkl", "n": 2000, "sec": 7, "cnt": {"Arg.ok": 5116, "HB.ok": 9404, "LoG.ok": 5096, "LoNot1.ok": 5116, "YNsingle.ok": 17404, "layer.eta": 9404, "layers": 17404, "mats": 2000, "node": 8000}, "ex": {}}
+{"set": "graftBb2S.pkl", "n": 2000, "sec": 7, "cnt": {"Arg.ok": 5064, "HB.ok": 9248, "LoG.ok": 5044, "LoNot1.ok": 5064, "YNsingle.ok": 17248, "layer.eta": 9248, "layers": 17248, "mats": 2000, "node": 8000}, "ex": {}}
+{"set": "d3s.pkl", "n": 2000, "sec": 16, "cnt": {"Arg.ok": 12726, "HB.ok": 15702, "LoG.ok": 12472, "LoNot1.ok": 12726, "YNsingle.ok": 15858, "layer.eta": 15702, "layers": 15858, "mats": 2000, "node": 156}, "ex": {}}
+{"set": "graftBb2G.pkl", "n": 2000, "sec": 10, "cnt": {"Arg.ok": 4276, "HB.ok": 8104, "LoG.ok": 4264, "LoNot1.ok": 4276, "YNsingle.ok": 9036, "layer.eta": 8104, "layers": 9036, "mats": 2000, "node": 932}, "ex": {}}
+{"set": "graftM36x.pkl", "n": 1846, "sec": 38, "cnt": {"Arg.ok": 15284, "HB.ok": 25252, "LoG.ok": 8448, "LoNot1.ok": 15284, "YNsingle.ok": 27272, "layer.eta": 25260, "layers": 27272, "mats": 1846, "node": 2012}, "ex": {}}
+{"set": "std_an2.pkl", "n": 2000, "sec": 1, "cnt": {"Arg.ok": 30, "HB.ok": 94, "LoG.ok": 12, "LoNot1.ok": 30, "YNsingle.ok": 118, "layer.eta": 94, "layers": 118, "mats": 2000, "node": 24}, "ex": {}}
+{"set": "std_a.pkl", "n": 2000, "sec": 1, "cnt": {"Arg.ok": 24, "HB.ok": 60, "LoG.ok": 20, "LoNot1.ok": 24, "YNsingle.ok": 96, "layer.eta": 60, "layers": 96, "mats": 2000, "node": 36}, "ex": {}}
+{"set": "graftBb2.pkl", "n": 2000, "sec": 11, "cnt": {"Arg.ok": 4600, "HB.ok": 8488, "LoG.ok": 4576, "LoNot1.ok": 4600, "YNsingle.ok": 11656, "layer.eta": 8488, "layers": 11656, "mats": 2000, "node": 3168}, "ex": {}}
+{"set": "graftBn2.pkl", "n": 2000, "sec": 9, "cnt": {"Arg.ok": 2468, "HB.ok": 5784, "LoG.ok": 2384, "LoNot1.ok": 2468, "YNsingle.ok": 7988, "layer.eta": 5784, "layers": 7988, "mats": 2000, "node": 2204}, "ex": {}}
+{"set": "graftBn.pkl", "n": 2000, "sec": 9, "cnt": {"Arg.ok": 3452, "HB.ok": 7212, "LoG.ok": 3380, "LoNot1.ok": 3452, "YNsingle.ok": 9716, "layer.eta": 7212, "layers": 9716, "mats": 2000, "node": 2504}, "ex": {}}
+{"set": "graftB.pkl", "n": 2000, "sec": 9, "cnt": {"Arg.ok": 3372, "HB.ok": 6832, "LoG.ok": 3316, "LoNot1.ok": 3372, "YNsingle.ok": 9256, "layer.eta": 6832, "layers": 9256, "mats": 2000, "node": 2424}, "ex": {}}
+{"set": "deep3.pkl", "n": 2000, "sec": 16, "cnt": {"Arg.ok": 12952, "HB.ok": 16172, "LoG.ok": 12792, "LoNot1.ok": 12952, "YNsingle.ok": 16276, "layer.eta": 16172, "layers": 16276, "mats": 2000, "node": 104}, "ex": {}}
+{"set": "ext1x.pkl", "n": 2000, "sec": 3, "cnt": {"Arg.ok": 2100, "HB.ok": 2296, "LoG.ok": 1778, "LoNot1.ok": 2100, "YNsingle.ok": 2408, "layer.eta": 2296, "layers": 2408, "mats": 2000, "node": 112}, "ex": {}}
+{"set": "deep2.pkl", "n": 2000, "sec": 15, "cnt": {"Arg.ok": 12078, "HB.ok": 15074, "LoG.ok": 11940, "LoNot1.ok": 12078, "YNsingle.ok": 15206, "layer.eta": 15074, "layers": 15206, "mats": 2000, "node": 132}, "ex": {}}
+{"set": "e3exp.pkl", "n": 2000, "sec": 6, "cnt": {"Arg.ok": 2572, "HB.ok": 2660, "LoG.ok": 2324, "LoNot1.ok": 2572, "YNsingle.ok": 2826, "layer.eta": 2660, "layers": 2826, "mats": 2000, "node": 166}, "ex": {}}
+{"set": "ext3s.pkl", "n": 2000, "sec": 4, "cnt": {"Arg.ok": 1570, "HB.ok": 1666, "LoG.ok": 1496, "LoNot1.ok": 1570, "YNsingle.ok": 2422, "layer.eta": 1666, "layers": 2422, "mats": 2000, "node": 756}, "ex": {}}
+{"set": "Cprime.pkl", "n": 2000, "sec": 4, "cnt": {"Arg.ok": 4372, "HB.ok": 5176, "LoG.ok": 4096, "LoNot1.ok": 4372, "YNsingle.ok": 5318, "layer.eta": 5176, "layers": 5318, "mats": 2000, "node": 142}, "ex": {}}
+{"set": "ext1.pkl", "n": 2000, "sec": 2, "cnt": {"Arg.ok": 792, "HB.ok": 916, "LoG.ok": 744, "LoNot1.ok": 792, "YNsingle.ok": 1444, "layer.eta": 916, "layers": 1444, "mats": 2000, "node": 528}, "ex": {}}
+{"set": "expP.pkl", "n": 2000, "sec": 7, "cnt": {"Arg.ok": 5940, "HB.ok": 7656, "LoG.ok": 5730, "LoNot1.ok": 5940, "YNsingle.ok": 7884, "layer.eta": 7656, "layers": 7884, "mats": 2000, "node": 228}, "ex": {}}
+{"set": "ext2.pkl", "n": 2000, "sec": 9, "cnt": {"Arg.ok": 6008, "HB.ok": 8312, "LoG.ok": 5944, "LoNot1.ok": 6008, "YNsingle.ok": 9060, "layer.eta": 8312, "layers": 9060, "mats": 2000, "node": 748}, "ex": {}}
+{"set": "ext2n2.pkl", "n": 2000, "sec": 10, "cnt": {"Arg.ok": 5942, "HB.ok": 7994, "LoG.ok": 5880, "LoNot1.ok": 5942, "YNsingle.ok": 8746, "layer.eta": 7994, "layers": 8746, "mats": 2000, "node": 752}, "ex": {}}
+{"set": "t2ext.pkl", "n": 2000, "sec": 7, "cnt": {"Arg.ok": 5252, "HB.ok": 6600, "LoG.ok": 5046, "LoNot1.ok": 5252, "YNsingle.ok": 6770, "layer.eta": 6600, "layers": 6770, "mats": 2000, "node": 170}, "ex": {}}
+{"set": "std_b.pkl", "n": 2000, "sec": 4, "cnt": {"Arg.ok": 42, "HB.ok": 142, "LoG.ok": 24, "LoNot1.ok": 42, "YNsingle.ok": 192, "layer.eta": 142, "layers": 192, "mats": 2000, "node": 50}, "ex": {}}
+{"set": "graftF.pkl", "n": 2000, "sec": 0, "cnt": {"HB.ok": 8, "YNsingle.ok": 8, "layer.eta": 8, "layers": 8, "mats": 2000}, "ex": {}}
+{"set": "graftG.pkl", "n": 2000, "sec": 1, "cnt": {"Arg.ok": 18, "HB.ok": 18, "LoNot1.ok": 18, "YNsingle.ok": 26, "layer.eta": 18, "layers": 26, "mats": 2000, "node": 8}, "ex": {}}
+{"set": "graftE.pkl", "n": 2000, "sec": 3, "cnt": {"Arg.ok": 232, "HB.ok": 520, "LoG.ok": 222, "LoNot1.ok": 232, "YNsingle.ok": 654, "layer.eta": 520, "layers": 654, "mats": 2000, "node": 134}, "ex": {}}
+{"set": "graftA1.pkl", "n": 2000, "sec": 33, "cnt": {"Arg.ok": 17082, "HB.ok": 21922, "LoG.ok": 15724, "LoNot1.ok": 17082, "YNsingle.ok": 22642, "layer.eta": 21938, "layers": 22642, "mats": 2000, "node": 704}, "ex": {}}
+{"set": "graftA2.pkl", "n": 2000, "sec": 25, "cnt": {"Arg.ok": 15382, "HB.ok": 19210, "LoG.ok": 14032, "LoNot1.ok": 15382, "YNsingle.ok": 19814, "layer.eta": 19234, "layers": 19814, "mats": 2000, "node": 580}, "ex": {}}
+{"set": "graftA3.pkl", "n": 2000, "sec": 86, "cnt": {"Arg.ok": 20662, "HB.ok": 24910, "LoG.ok": 18644, "LoNot1.ok": 20662, "YNsingle.ok": 25246, "layer.eta": 24918, "layers": 25246, "mats": 2000, "node": 328}, "ex": {}}
+{"set": "graftH.pkl", "n": 2000, "sec": 5, "cnt": {"Arg.ok": 1062, "HB.ok": 1890, "LoG.ok": 904, "LoNot1.ok": 1062, "YNsingle.ok": 2810, "layer.eta": 2234, "layers": 2810, "mats": 2000, "node": 576}, "ex": {}}
