@@ -66,6 +66,21 @@ def run(batch):
                         continue
                     t=tag0+'.P'
                     cnt[t]+=1
+                    if not lt(C.v(m),T.o(c)):
+                        r=t+'.RES'
+                        cnt[r]+=1
+                        cnt[r+'.e1c=%d'%M[c][1]]+=1
+                        cnt[r+'.e1m-e1c=%d'%(M[m][1]-M[c][1])]+=1
+                        cnt[r+'.nK=%d'%(len(C.ch(j))-1)]+=1
+                        cnt[r+'.nB=%d'%(len(T.ch(i))-1)]+=1
+                        cnt[r+'.Vsingle']+=len(H.summ(C.v(m)))==1
+                        Wl=lev(C.bumpW(i));Vl=lev(hd(C.v(m)))
+                        cnt[r+'.levV_gt_levW']+=lt(Wl,Vl)
+                        cnt[r+'.levV_eq_levW']+=Wl==Vl
+                        cnt[r+'.V_ge_W']+=not lt(C.v(m),C.bumpW(i))
+                        cnt[r+'.V_lt_WT']+=lt(C.v(m),T.bumpW(i))
+                        cnt[r+'.c_eq_Pg']+=C.e.par(0,g)==c
+                        cnt[r+'.c_eq_PPg']+=C.e.par(0,C.e.par(0,g))==c
                     oc=C.o(c);ocT=T.o(c);vc=C.v(c);vcT=T.v(c)
                     cnt[t+'.vc_eq_vcT']+=vc==vcT
                     cnt[t+'.c_anc_g']+=anc0(C,c,g)
