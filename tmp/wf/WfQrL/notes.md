@@ -50,12 +50,27 @@ frames.py (frame hypotheses of qr_engineDQ, true values, n = 2, 3):
       chain term γ(n-2) = o_N(x));
   frames.py now classifies add / trig / node / leafpar / other (frames.jsonl).
 
+## Added after the first measurements (WfQrL12-18, all green)
+- WfQrL12 `DQ.last` (hUpgL from the DQ of v(k) when the new last summand is single).
+- WfQrL13 `omega_DQ_true` (DQ on a sum through ω), `OmSide`, `bumpW_DQ` (two ω layers).
+- WfQrL14 `omega_DQ_E0` (ε0 crossing: Y = ε0, Y_N < ε0; the bad call of M13), `omega_DQ_node` (low part appears
+  at an ω layer: DQ form of omega_lift), `frame_DQ_trig_lo` (trigger in both, low part in both).
+- WfQrL15 `frame_DQ_leafpar` (parent of x: o(x) = Ω_{a+1}, trigger only in N, hi(y') = B + Q).
+- WfQrL16 `qr_engineDQ2` (engine with per-frame steps), `OFrameOK`/`oframe_DQ` (5 o-frame shapes: add, trig,
+  triglo, node, leafpar), `LayerOK`/`layer_DQ` (3 ω-layer shapes: OmSide, ε0 crossing, node), `bumpW_DQ2`.
+- WfQrL17 `bumpW_eq_bumpWQ`, `bumpWQ_app`, `bump_step` (hBW2 from the two layer shapes + the VLocZ list conditions).
+- WfQrL18 `true_glue_eq`, `qr_chainE`: the q = r chain for all n >= 2 where the root drop and o(c) bounds come from
+  the DQ engine; hypotheses (hLocE): chain term at r, Single σ.o Rt, standard form on D, σ.o c != 0, hX, the
+  o-frame step, hUpgL, the bump step (each supplied by the shape lemmas above), Pn via ExpStepQ.
+frames.py now classifies every o-frame / ω-layer by shape; on m13 + g36_2 (n = 2, 3): 0 unclassified frames,
+every leaf-parent frame satisfies the hypotheses of frame_DQ_leafpar, every ω layer is OmSide | ε0 | node.
+Caveat: the Python hQ0 test checks "Y single → Y_N single" (slightly weaker than Lean's Q = 0); hB tested with
+η = Zf(k) only.
+
 ## Next
-1. Generalize the o-last case of qr_engineDQ: replace hTrig by the disjunction add | trig | node | leaf-parent and
-   prove the leaf-parent frame (c = x, o(x) = Ω_{μ+1}-type leaf, σ.o x = γ(n-2)).
-2. Discharge hBW with omega_DQ (two ω layers: ω^Y with Y = K-sum + o_N(k), then ω of P' + ω^Y); side conditions
-   isOT / ≥ ε0 / hLo (lo_keep_DQ + TPLoQ) / hHi (hi_keep_DQ) / base exchange (old omega_fsD_hole_Q).
-3. hUpgL from DQ.true_inv when the new last summand is single.
+1-3. Done as shape lemmas (WfQrL12-17).  Remaining: derive the shape predicates (OFrameOK, LayerOK) from invariant
+   fields of M (TPLoQ / lo_keep_DQ / hi_keep_DQ / old omega_fsD_hole_Q / the chain term shape at x), i.e. state the
+   fields on M, measure them on all sets + grafts, and prove field -> shape.
 4. Standard form (hSo, hSv): formalize C_strip (DQ carrying the stripped term; isOT of B ++ Q ++ lN, and comps).
 5. σ.o r = γ(n-1) (Q = [] at r) and hX (DQ.base at x: fsD(o(x), γ) = γ).
 6. Then qr_chainT gives all n >= 2 with Pn = Inv3V2A via ExpStepQ (the invariant step for the DQ glue is the large
