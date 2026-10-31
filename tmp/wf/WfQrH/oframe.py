@@ -15,6 +15,7 @@ sys.path.insert(0,'/home/koteitan/proofs/trio/tools');sys.path.insert(0,'/home/k
 import trio
 from probe_inv3_prefix import Z, lt, isOT, split, succ, last, isSucc
 from probe_adn import dependencies, Ctx, ms
+import ytosk_eval as YE
 def summ(t):
     r=[]
     while t:r.append((t[0],t[1],Z));t=t[2]
@@ -51,7 +52,15 @@ def check(M,cnt,ex):
             if oN==oc:cnt['form.same']+=1;continue
             if y==Z and s2!=s and y2==Z and not (c==x):cnt['form.sub']+=1;continue
             if y==Z and isSucc(s) if s else False:
-                cnt['form.base.leaf'+('.x' if c==x else '.notx')]+=1;continue
+                cnt['form.base.leaf'+('.x' if c==x else '.notx')]+=1
+                if c!=x:bad('form.base.leaf.notx',key);continue
+                (ok if lt(oN,oc) and oN!=Z and not oN[2] else bad)('Leaf.lt',key)
+                if not trig(v,pre,s2,y2):ok('Leaf.add');continue
+                th=(succ(s2),Z,Z);hi,lo=split(y2,th)
+                ad=summ(YE.add(pre,oc));Bl=ad[:-1];hil=summ(hi)
+                okL=lo!=Z and ad[-1]==oc and hil[:len(Bl)]==Bl and all(not lt(q,oN) and lt(q,oc) for q in hil[len(Bl):])
+                (ok if okL else bad)('Leaf.leafpar',key)
+                continue
             if s2==s and y2!=y and y!=Z:
                 sy=summ(y);sN=summ(y2)
                 if not(len(sN)>=len(sy) and sN[:len(sy)-1]==sy[:-1]):cnt['form.other']+=1;bad('form.other',key);continue
