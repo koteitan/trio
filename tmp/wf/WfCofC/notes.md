@@ -53,3 +53,18 @@ WfCofC4.lean (green)
 - `evalFSNZ2_of_C4`, `surj_of_C4`: residuals now
   Desc3, HGood3, HDiagT1, HEngPath, HRootSP (earlier rounds) +
   HDiagLoc, HDiagStep (HCID), HCntPath0 (t = 0), HNoSucc1, HCntRoot2 (t = 2).
+
+WfCofC5.lean (green)
+- `hCntPath0_of : HCntAtG0 → HCntStep0 → HCntPath0` (up the path from g = P_0(r) to the last root).
+  - `HCntAtG0`: t = 0, g = P_0(r): fsD(o_A(g), k) ≤ o_{A[k+2]}(g)  (the copies r + jL are children of g in A[k+2]).
+  - `HCntStep0`: edge c = P_0(d), d a strict ancestor of r: bound at d ⇒ bound at c.
+- `surj_of_C5`: residuals Desc3, HGood3, HDiagT1, HEngPath, HRootSP, HDiagLoc, HDiagStep, HCntAtG0, HCntStep0,
+  HNoSucc1, HCntRoot2.
+
+CAP 6000 per file (out2/, summary2.txt), all 0 failures:
+- HCntPath0 (P0) 65,322 × 3 n; root case 5,845 × 3; F0 71,167 × 3.
+- HDiagLoc (DL) 176,057; CI 176,057; HDiagStep (DB): Rt 134,418, mid 1,193,750, r 176,057.
+- HRootKeep2 (now proved) R2roots / R2pre 93,335 × 3; HCntRoot2 (C2) 93,335 × 3; F2 93,335 × 3.
+- HCntV2 (VP) 103,998 × 3. HNoSucc1: no t = 1 matrix of successor type among 176,057 t = 1 diagonal + others.
+- False forms: V2 21,673 / 25,043 / 28,317; DT mid 91,932, r 56,062 (smallest
+  (0,0,0)(1,1,1)(2,1,0)(3,2,0)(4,3,0)(5,3,0)(6,3,0)(7,0,0)(5,3,0)).

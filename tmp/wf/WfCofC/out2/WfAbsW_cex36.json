@@ -1,0 +1,25 @@
+{
+ "stats": {
+  "('C2', 2, True)": 1,
+  "('C2', 3, True)": 1,
+  "('C2', 4, True)": 1,
+  "('F2', 2, True)": 1,
+  "('F2', 3, True)": 1,
+  "('F2', 4, True)": 1,
+  "('R2pre', 2, True)": 1,
+  "('R2pre', 3, True)": 1,
+  "('R2pre', 4, True)": 1,
+  "('R2roots', 2, True)": 1,
+  "('R2roots', 3, True)": 1,
+  "('R2roots', 4, True)": 1,
+  "('V2', 2, True)": 1,
+  "('V2', 3, True)": 1,
+  "('V2', 4, True)": 1,
+  "('VL', 2, True)": 1,
+  "('VP', 2, True)": 1,
+  "('VP', 3, True)": 1,
+  "('VP', 4, True)": 1,
+  "('mat', 2, 'succ')": 1
+ },
+ "ex": {}
+}
