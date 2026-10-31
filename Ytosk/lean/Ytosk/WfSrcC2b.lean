@@ -9,6 +9,7 @@ X < B(V) は数える子ごとの o(d) < B(V) から（`WfSrcC2.sumN_lt_single`�
 
 残りの鎖: `SrcC5Res`（k の bump 子の子 c で v(c) ≤ v(r)、c の数える子 d で v(d) < v(r)）→ `SrcC3Res`（SmallB）
 → `SrcC2Res`（o(c) < B(v(r))）→ `WfSrcB.SrcC`（`srcC_of_c5`）。
+SrcC5Res は DropFail の枠でだけ成り立つ（形の枠全体では graftBb2St・b2grow1/2 で 1230 件偽）。SmallB（SrcC3Res）は形の枠全体でも例外 0。
 部分木全体の上界 ∀ e ⊒ c, v(e) ≤ v(r) は偽（grow の 1192 枠すべてで、v = 0 の子の下で v が v(r) を超える）。
 -/
 import Ytosk.WfSrcC2a
@@ -162,6 +163,14 @@ theorem c3_of_c5 (h : SrcC5Res) : SrcC3Res := by
     h M ρ rk C hB2 hz hs r hlen hr h0 h1x τ hτ p i hp hpi h1 h2 hfail hfacts s hsm hs2 hlt hnl m b k hm hb hu hk
       j hj hjb c hc
   exact smallB_of_depth1 h1c h2c
+
+/-- **Bridge**: `WfSrcB.SrcC` from `SrcC3Res`. -/
+theorem srcC_of_c3 (h : SrcC3Res) : WfSrcB.SrcC := srcC_of_c2 (c2_of_c3 h)
+
+/-- **Bridge**: `T2AbsNSrcW` from (a) `SrcARem2`, (b) `SrcBNonlost2`, (c) `SrcC3Res`. -/
+theorem t2AbsNSrcW_of_c3 (hA : WfSrcA.SrcARem2) (hB : WfSrcB.SrcBNonlost2) (hC : SrcC3Res) :
+    WfT2Src.T2AbsNSrcW :=
+  t2AbsNSrcW_of_c2 hA hB (c2_of_c3 hC)
 
 /-- **Bridge**: `WfSrcB.SrcC` from `SrcC5Res`. -/
 theorem srcC_of_c5 (h : SrcC5Res) : WfSrcB.SrcC := srcC_of_c2 (c2_of_c3 (c3_of_c5 h))
