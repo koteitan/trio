@@ -60,6 +60,6 @@ Measurement (uawra.py, exact enumeration as uaw2.py):
   (uawra_graft.jsonl).
 - graft attack graftR (graftR.py: 40 smallest seeds with domV false, gen1+gen2, 31558 matrices): 4717 weak cases
   (2626 with domV false), 0 fail (uawra_graftR.jsonl).
-- 50 handoff sets: uawra_sets.jsonl (started 2026-11-01 ~03:40, smallest first; earlier uawr_sets.jsonl: 8 sets, 0 fail).
+- 50 handoff sets (18,509,666 matrices incl. std_b): 25769 weak cases, 0 fail (uawra_sets.jsonl).
 Not derived in Lean: PV2/UAw2 give WCS2 relative to v(P0(x-1)); UAwRA is relative to v(x-1) = sf(V + last v(k)),
 where sf may absorb summands of V (domV false), so the bound g <= Om_{V+1} is needed there.
