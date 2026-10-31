@@ -1,0 +1,43 @@
+cbadext 3756
+   -.i0.U0.mUTrue.sdTrue.kP0nFalse 156
+   -.i1.U1.mUTrue.sdFalse.kP0nFalse 59
+   -.i1.U1.mUTrue.sdTrue.kP0nFalse 118
+   B2nua.i0.U0.mUTrue.sdTrue.kP0nFalse 24
+   levzero 6069
+   nbua.i1.U1.mUTrue.sdFalse.kP0nFalse 8
+   nbua.i1.U1.mUTrue.sdTrue.kP0nFalse 16
+b2grow1 6517
+   -.i0.U0.mUFalse.sdTrue.kP0nFalse 456
+   -.i0.U0.mUTrue.sdTrue.kP0nFalse 8772
+   B2nua.i0.U0.mUFalse.sdTrue.kP0nFalse 416
+   B2nua.i0.U0.mUTrue.sdTrue.kP0nFalse 6101
+   levzero 22977
+graft2.pkl 9680
+   -.i0.U0.mUFalse.sdTrue.kP0nFalse 1567
+   -.i0.U0.mUTrue.sdTrue.kP0nFalse 20256
+   -.i1.U0.mUFalse.sdTrue.kP0nFalse 138
+   -.i1.U1.mUTrue.sdFalse.kP0nFalse 1232
+   -.i1.U1.mUTrue.sdTrue.kP0nFalse 1343
+   B2nua.i0.U0.mUFalse.sdTrue.kP0nFalse 283
+   B2nua.i0.U0.mUTrue.sdTrue.kP0nFalse 4096
+   B2nua.i1.U0.mUFalse.sdTrue.kP0nFalse 44
+   levzero 31801
+   nbnua.i0.U0.mUFalse.sdTrue.kP0nFalse 25
+   nbnua.i0.U0.mUTrue.sdTrue.kP0nFalse 321
+   nbnua.i1.U0.mUFalse.sdTrue.kP0nFalse 3
+   nbua.i1.U1.mUTrue.sdFalse.kP0nFalse 132
+   nbua.i1.U1.mUTrue.sdTrue.kP0nFalse 112
+graft3.pkl 6638
+   -.i0.U0.mUFalse.sdTrue.kP0nFalse 779
+   -.i0.U0.mUTrue.sdTrue.kP0nFalse 18101
+   -.i1.U0.mUFalse.sdTrue.kP0nFalse 1108
+   B2nua.i0.U0.mUFalse.sdTrue.kP0nFalse 95
+   B2nua.i0.U0.mUTrue.sdTrue.kP0nFalse 2658
+   B2nua.i1.U0.mUFalse.sdTrue.kP0nFalse 285
+   NOCANON 1
+   levzero 18545
+   nbnua.i0.U0.mUFalse.sdTrue.kP0nFalse 12
+   nbnua.i0.U0.mUTrue.sdTrue.kP0nFalse 134
+   nbnua.i1.U0.mUFalse.sdTrue.kP0nFalse 43
+graftA 13876
+   levzero 6468
