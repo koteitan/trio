@@ -1,0 +1,69 @@
+{"set": "famframes.pkl", "shard": 0, "n": 50000, "sec": 50, "fails": {"tplow.old.fail": 88}}
+{"set": "famframes.pkl", "shard": 50000, "n": 50000, "sec": 79, "fails": {"tplow.old.fail": 2}}
+{"set": "famframes.pkl", "shard": 100000, "n": 50000, "sec": 113, "fails": {}}
+{"set": "famframes.pkl", "shard": 150000, "n": 50000, "sec": 213, "fails": {}}
+{"set": "famframes.pkl", "shard": 200000, "n": 8964, "sec": 120, "fails": {}}
+{"set": "std_b.pkl", "shard": 0, "n": 50000, "sec": 12, "fails": {}}
+{"set": "std_b.pkl", "shard": 50000, "n": 50000, "sec": 10, "fails": {}}
+{"set": "std_b.pkl", "shard": 100000, "n": 50000, "sec": 9, "fails": {}}
+{"set": "std_b.pkl", "shard": 150000, "n": 50000, "sec": 8, "fails": {}}
+{"set": "std_b.pkl", "shard": 200000, "n": 50000, "sec": 10, "fails": {}}
+{"set": "std_b.pkl", "shard": 250000, "n": 50000, "sec": 8, "fails": {}}
+{"set": "std_b.pkl", "shard": 300000, "n": 50000, "sec": 8, "fails": {}}
+{"set": "std_b.pkl", "shard": 350000, "n": 50000, "sec": 9, "fails": {}}
+{"set": "std_b.pkl", "shard": 400000, "n": 50000, "sec": 10, "fails": {}}
+{"set": "std_b.pkl", "shard": 450000, "n": 50000, "sec": 8, "fails": {}}
+{"set": "std_b.pkl", "shard": 500000, "n": 50000, "sec": 9, "fails": {}}
+{"set": "std_b.pkl", "shard": 550000, "n": 50000, "sec": 11, "fails": {}}
+{"set": "std_b.pkl", "shard": 600000, "n": 50000, "sec": 9, "fails": {}}
+{"set": "std_b.pkl", "shard": 650000, "n": 50000, "sec": 10, "fails": {}}
+{"set": "std_b.pkl", "shard": 700000, "n": 50000, "sec": 10, "fails": {}}
+{"set": "std_b.pkl", "shard": 750000, "n": 50000, "sec": 9, "fails": {}}
+{"set": "std_b.pkl", "shard": 800000, "n": 50000, "sec": 9, "fails": {}}
+{"set": "std_b.pkl", "shard": 850000, "n": 50000, "sec": 10, "fails": {}}
+{"set": "std_b.pkl", "shard": 900000, "n": 50000, "sec": 11, "fails": {}}
+{"set": "std_b.pkl", "shard": 950000, "n": 50000, "sec": 9, "fails": {}}
+{"set": "std_b.pkl", "shard": 1000000, "n": 50000, "sec": 8, "fails": {}}
+{"set": "std_b.pkl", "shard": 1050000, "n": 50000, "sec": 9, "fails": {}}
+{"set": "std_b.pkl", "shard": 1100000, "n": 50000, "sec": 10, "fails": {}}
+{"set": "std_b.pkl", "shard": 1150000, "n": 50000, "sec": 8, "fails": {}}
+{"set": "std_b.pkl", "shard": 1200000, "n": 50000, "sec": 9, "fails": {}}
+{"set": "std_b.pkl", "shard": 1250000, "n": 50000, "sec": 8, "fails": {"tplow.old.fail": 6}}
+{"set": "std_b.pkl", "shard": 1300000, "n": 50000, "sec": 8, "fails": {"tplow.old.fail": 2}}
+{"set": "std_b.pkl", "shard": 1350000, "n": 50000, "sec": 8, "fails": {}}
+{"set": "std_b.pkl", "shard": 1400000, "n": 50000, "sec": 8, "fails": {}}
+{"set": "std_b.pkl", "shard": 1450000, "n": 50000, "sec": 9, "fails": {}}
+{"set": "std_b.pkl", "shard": 1500000, "n": 50000, "sec": 8, "fails": {}}
+{"set": "std_b.pkl", "shard": 1550000, "n": 14945, "sec": 2, "fails": {}}
+{"set": "t2ext.pkl", "shard": 0, "n": 50000, "sec": 7, "fails": {}}
+{"set": "t2ext.pkl", "shard": 50000, "n": 50000, "sec": 10, "fails": {}}
+{"set": "t2ext.pkl", "shard": 100000, "n": 50000, "sec": 15, "fails": {}}
+{"set": "t2ext.pkl", "shard": 150000, "n": 50000, "sec": 18, "fails": {}}
+{"set": "t2ext.pkl", "shard": 200000, "n": 50000, "sec": 25, "fails": {}}
+{"set": "t2ext.pkl", "shard": 250000, "n": 50000, "sec": 39, "fails": {}}
+{"set": "t2ext.pkl", "shard": 300000, "n": 50000, "sec": 57, "fails": {}}
+{"set": "t2ext.pkl", "shard": 350000, "n": 12681, "sec": 17, "fails": {}}
+{"set": "graftM36x.pkl", "shard": 0, "n": 1846, "sec": 7, "fails": {"tplow.old.fail": 2}}
+{"set": "g36_2.pkl", "shard": 0, "n": 727, "sec": 1, "fails": {"tplow.old.fail": 2}}
+{"set": "graftQ1.pkl", "shard": 0, "n": 4540, "sec": 15, "fails": {"ads.fail": 304, "tplos.fail": 608, "ads.old.fail": 304, "tplos.old.fail": 608}}
+{"set": "graftH.pkl", "shard": 0, "n": 21905, "sec": 29, "fails": {"tplow.fail": 910, "adw.fail": 455, "tplow.old.fail": 910}}
+{"set": "graftD.pkl", "shard": 0, "n": 37749, "sec": 65, "fails": {"tplow.fail": 12, "adw.fail": 6, "tplow.old.fail": 12}}
+{"set": "graftF.pkl", "shard": 0, "n": 48754, "sec": 25, "fails": {}}
+{"set": "graftG.pkl", "shard": 0, "n": 50000, "sec": 24, "fails": {}}
+{"set": "graftG.pkl", "shard": 50000, "n": 6699, "sec": 4, "fails": {}}
+{"set": "graftE.pkl", "shard": 0, "n": 50000, "sec": 85, "fails": {"auwl.fail": 5, "adn.fail": 6}}
+{"set": "graftE.pkl", "shard": 50000, "n": 4990, "sec": 16, "fails": {}}
+{"set": "graftw1.pkl", "shard": 0, "n": 9306, "sec": 18, "fails": {}}
+{"set": "graftw2.pkl", "shard": 0, "n": 34209, "sec": 73, "fails": {}}
+{"set": "graftQ2.pkl", "shard": 0, "n": 29364, "sec": 102, "fails": {"ads.fail": 15048, "tplos.fail": 30096, "ads.old.fail": 15048, "tplos.old.fail": 30096}}
+{"set": "graftA1.pkl", "shard": 0, "n": 50000, "sec": 218, "fails": {"adn.fail": 2}}
+{"set": "graftA1.pkl", "shard": 50000, "n": 9793, "sec": 37, "fails": {"adn.fail": 15, "tplow.fail": 48, "adw.fail": 24, "tplow.old.fail": 48}}
+{"set": "graftA2.pkl", "shard": 0, "n": 50000, "sec": 168, "fails": {}}
+{"set": "graftA2.pkl", "shard": 50000, "n": 27059, "sec": 104, "fails": {"adn.fail": 17, "tplow.fail": 48, "adw.fail": 24, "tplow.old.fail": 48}}
+{"set": "graftA3.pkl", "shard": 0, "n": 50000, "sec": 404, "fails": {}}
+{"set": "graftA3.pkl", "shard": 50000, "n": 50000, "sec": 797, "fails": {}}
+{"set": "graftA3.pkl", "shard": 100000, "n": 50000, "sec": 354, "fails": {}}
+{"set": "graftA3.pkl", "shard": 150000, "n": 50000, "sec": 326, "fails": {}}
+{"set": "graftA3.pkl", "shard": 200000, "n": 50000, "sec": 419, "fails": {"adn.fail": 17, "tplow.fail": 48, "adw.fail": 24, "tplow.old.fail": 48}}
+{"set": "graftA3.pkl", "shard": 250000, "n": 8623, "sec": 51, "fails": {}}
+RUN_DONE
