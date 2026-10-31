@@ -1,5 +1,7 @@
 # WfQrO: q = r engine, o frames — Bachmann-type lower bound for DQ (2026-11-01)
 
+`WfQrO3.preG_of_preB`: PreB is the special case of PreG.
+
 Lean (green, no sorry, axioms propext / Classical.choice / Quot.sound; roots in the lakefile):
 Ytosk/lean/Ytosk/WfQrO1.lean, WfQrO2.lean, WfQrO3.lean.  Scripts here: explore.py, trail.py, m1.py, ocut.py (first
 tries), og.py (the OG fields, exact search), layer.py (OmSide1 single-layer fields), axcheck.lean.
@@ -46,7 +48,9 @@ independent residual; it is a consequence of the drop lemma, whose own hypothese
 
 ## Measurements (0 failures unless stated)
 og.py, CAP = 2000 per set, n = 2, 3, all 71 sets of WfQrH/sets1.txt + graftH + famframes (73 sets), triggered
-argument o frames (c < x): see og_all.jsonl.  [RESULT LINE BELOW]
+argument o frames (c < x): og_all.jsonl, 71,710 matrices, 646,554 frames:
+  PreG 646,554 / LastG 436,328 (all decompositions) / LastNot1 646,554 / EtaNz 646,554 / DQ 1,006,494: 0 failures.
+  PreB.old 101,134 failures (as in WfQrH).
 - PreB.old (`pre ≤ init y`) fails as before (about 1/6 of the frames) — PreG replaces it.
 - CR.pre0 (`c = r -> pre = 0`) is FALSE (only an observation; not used).
 - First try LastCut (witness `g = 0`, no Q) failed 4/946 (θ passes the base below η); LastG with base `g < fsD`

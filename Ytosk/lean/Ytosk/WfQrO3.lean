@@ -29,4 +29,10 @@ theorem hB_lo0 {η a b bN : T} (hx : isOT (psi a b z) = true) (h : ¬ psi a b z 
   rw [omega_self hx h hlo, ← hYN, omega_self hxN hN hloN]
   exact ⟨rfl, hlt⟩
 
+/-- **PreB is a special case of PreG**: `pre ≤ init(y)` and any witness `lc` of the last summand give `PreG`. -/
+theorem preG_of_preB {η B l lN lc Q s y pre : T} (hl : l = psi s y z) (hG : DQG η false l lN lc)
+    (hQ : ∀ q ∈ summands Q, lN ≤ q ∧ q < l) (hp : pre ≤ B) :
+    ∃ yc, DQG η true (app B l) (app B (app Q lN)) yc ∧ pre ≤ yc :=
+  ⟨app B lc, DQG.mk hl hG hQ, le_trans hp (le_app_self B lc)⟩
+
 end Ytosk.WfQrO3
