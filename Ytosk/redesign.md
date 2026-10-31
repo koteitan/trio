@@ -2,16 +2,20 @@
 
 接ぎ木の標準形（tmp/ytosk-handoff/sets/graftA.pkl・graftB.pkl、作り方 tmp/claude/gen_graft.py）で、最上位の残り HFrameV2・HDropV2W と不変条件 Inv3V2 の欄 TPLoW・AbsDW が偽だった。
 
-## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個。T2BadRes は 5 つの欄）
+## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個）
+
+**注意（2026-10-31、6 回目）**: 標準の 36 列の Bad2 の行列（WfSrcC3Cex）で、SrcC3Res・SrcCRes・T2AbsNSrc の (c)・T2AbsNBad・AbsWN M M[2] が偽（StepCtxT2 を Std ∧ Cons に替えた形で Lean で反証。Python では M と M[2] で Inv3V2 の欄はすべて真）。AbsWN は T2BelowRV2 の欄で、T2BelowXResV2（トップの hBX）に入る。したがって今のトップの T2BadRes は偽の欄 SrcC3Res を含み、Bad2 の t = 2 の道（t2BelowRV2_of_src → T2BelowRV2 → T2BelowXResV2）は作り直しが要る。B2Step も偽（WfB2SFalse、28 列）で、弱い B2StepAb に替えた。
+M = (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(6,2,1)(7,2,1)(8,2,0)(6,2,1)(7,2,1)(8,1,0)(9,2,1)(10,2,1)(11,2,0)(9,2,1)(10,2,1)(11,1,0)(12,2,0)(12,0,0)(13,1,1)(14,1,1)(10,2,0)(11,3,1)(12,3,1)(13,1,0)(14,2,1)
+（x = 35、r = 34、i = 32、m = 31、k = upg m = 24、c = 26。v(c) = v(r) = ψ(1) で、c の数える子 27 は v(27) > v(r)。s = bumpW(24) は M[2] で W_{M[2]}(32) ≤ s < W_M(32) かつ s ◁ W_M(32) でない。）
 
 | 残り | 中身 | 測定 | 消すのに要るもの |
 |---|---|---|---|
 | HDropU | 落とす補題の仮定（形 B）と条件のない ua | 全集合で例外 0 | 落とす補題の仮定を値の不変条件から出す（核） |
 | T2BadRes WfSrcP.PLowRes | (a) と (b) に共通の低い行の場合: i の最後の bump 枝 j の最後の子 c < x−1 の o が変わり、x−1 が c の下、e1 c < e1 m（m = P₀ i = P₁ i）、かつ v(m) < τ.o(c) でない。v(m) < τ.o(c) の場合は証明済み（not_dropFail_of_lt_o） | Bad2 の (a) では毎回 j の前の子 d が e1 d ≥ e1 m（既存の補題で除かれる）。(b) の残る枠は i の子が j だけ・j の子が c だけで、v(m) ≥ W_M(i) か v(m) < W_T(i)。窓が空でない枠は 0（前回の「窓が空という主張は偽」は Bad2 でない枠だけの話だった） | m の行 1 の鎖の写し a（e1 a = e1 c）と ArgDomCore |
-| T2BadRes WfSrcR5.ATerm・BTerm | (a)・(b) の次の列の場合を、変化の鎖の終端の形 WfSrcO.Term・TermB だけに減らしたもの（chain_term: 鎖を x − c′ の帰納法でたどる）。この形は構造だけでは否定できない（7 列と 41 列の標準形の証人） | b2fam 240 万個で形は 578 枠、うち Bad2 の構造部分 169、厳密な Bad2 は 0、DropFail は 0 | 値の議論: 失敗する項を bumpW(k) として新しい bump 項と比べる、または形から Bad2 の値の部分が破れることを示す |
-| T2BadRes WfSrcC2.SrcC3Res | (c): 失敗する項 s = bumpW(k)（Origins）について、k の bump 子の子 c がすべて SmallB(v(r))（v(c) < v(r)、または v(c) = v(r) で数える子がすべて SmallB）。B(V) = ψ_V(Ω_{V+1}) が add・sumN・ω で閉じることと、SmallB ⇒ o < B は証明済み | DropFail の 1195 枠と形の枠 1993 の起点すべてで成り立つ | v(c) ≤ v(P₁ k) ≤ v(r) と、数える子の行 1 が下がること |
+| T2BadRes WfTerm.TermHi | (a)・(b) の次の列の場合の終端の形（WfSrcO.Term・TermB）。q より下の起点と、q より上で添字 ≤ v(q) の起点は証明済み（v(q) は TopC で変わらない）。残りは q より上で添字 > v(q) の起点 t が窓 [W_T(i), W(i)) に入らないこと | b2fam で 790 項すべて t ≥ W(i) | （道全体の作り直し待ち） |
+| T2BadRes WfSrcC2.SrcC3Res | **偽**（上の 36 列の行列）。(c) の上界 s < Bnd(v(r)) そのものが偽 | — | Bad2 の t = 2 の道を作り直す |
 | T2BadRes (d) T2QNDomBad2 | 既存の V3QNDomS の残り（単純でない形） | 例外 0 | — |
-| WfH7W2.B2Step | HUACB2（HUAC を Bad2 の x−1 だけに）の残り: lev bumpW(k) = 0 か、k の最後の bump 子 j の最初の子 c の段 a（m の行 1 の鎖上）で StepDom。値の部分（lev 0 の場合など）は証明済み（lev_bumpW_zero・canon_struct・dom_of_deep） | Bad2 の枠で a = m か P₁ m、a より上の鎖の列は上げない（StepDom は空）。構造だけの形 B2NoU は cbadext で偽 | m が t へ上げるなら UpgAbsX が x で成り立ち Bad2 に反する、を示す |
+| WfB2S.B2StepAb | HUACB2 の残り。旧 B2Step は偽（最後の bump 子が葉の 28 列の行列）なので、j を「子を持つ最後の bump 子」にした形。吸収がない場合は HUACB2 を証明済み（huacB2_noabs）。B2StepAb は構造の B2LevS（c の段は m か P₁ m）と値の B2UpgV（m が t へ上げるなら bumpW(k) ≤ last v(t)）から証明済み | B2LevS・B2UpgV は bump の親を持つすべての位置で例外 0（graft4・graft5 を含む） | B2LevS を構造の不変条件から、B2UpgV を写しの関係から |
 | WfH7W.H7WSib | t = 0 の Bad2 の消える尾の枠で、x−1 の直前の兄弟 c は x−1 の写し。より狭い WfH7W2.SibMCol（Bad2 なし、値なし、行 1 の m ≠ 0 の条件で col c = col n）から証明済み（h7wSib_of_col）。SibMCol は大きな集合の一部でまだ測っていないので、トップは H7WSib のまま | Bad2 の枠 3441 で例外 0。SibMCol は接ぎ木で例外 0 | SibMCol を展開で運ぶ不変条件として |
 | ~~T0H10Core.T0BadSeedsH10Big~~ | **最上位から外した（2026-10-29）**。偽（WfH10Cex.h10_core_false、29 列の標準の Bad2 の行列） | — | 使う側 t0_S1N_cnt（V3T0BadNode）を作り直した: v(r) > v(g) の枝は数える写しが 0 個（m = 0）でもよい（weak_seed_hiG。m = 0 では古い枠が書き換えない t0IVResC_holds ので、写しだけの状態 B は古い引数の接頭辞）。v(r) ≤ v(g) の枝では r − 1 → r の上げは起きない（v_par0_lt_of_upg_prev: P₁(r) = P₀(r) = g なので v(g) < v(r)）ので counted_first0G で数える。T0BadSeedsH2〜H6 の数える欄は「r − 1 が r へ上げ r が頭打ち」でないときだけに弱め、構造から証明（t0BadSeedsH6_of_W）。残りの 2 欄は HDropU と HUAC だけから（WfH10b.t0BadSeedsH7W_of）。置き換える残りはない |
 | ~~T0BadSeedsH7W・T2QNDomBad~~ | **2026-10-31 に置き換えた**: HUACB2・H7WSib・T2QNDomBad2 から証明（WfH7W.t0BadSeedsH7W_of_sib・t2QNDomBad_of_B2） | — | — |
