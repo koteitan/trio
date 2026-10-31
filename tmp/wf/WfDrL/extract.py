@@ -15,7 +15,7 @@ def blocks(path):
             j=i+1
             while j<len(L) and L[j].startswith('  '):j+=1
             stack[-1].append('\n'.join(L[i:j]));i=j;continue
-        if l.startswith('/--') or l.startswith('omit') or l.startswith('@[') or l.startswith('set_option') and l.rstrip().endswith(' in'):
+        if l.startswith('/--') or (l.startswith('open') and l.rstrip().endswith(' in')) or l.startswith('omit') or l.startswith('@[') or l.startswith('set_option') and l.rstrip().endswith(' in'):
             if l.startswith('/--'):
                 j=i
                 while '-/' not in L[j]:j+=1
