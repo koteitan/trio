@@ -42,4 +42,18 @@ theorem omega_DQ_node {a B bN : T} (hY : isOT (psi a (app B (psi (succ a) z z)) 
   have := DQ.mk (B := B) (Q := z) rfl (DQ_om_succ hlt) (by simp [summands])
   simpa [app] using DQ.arg this
 
+/-- **Trigger in both with a low part in both** (the last `o`-frame shape of frames.py): `H(s, y) = hi(y) + ψ_s(y)`,
+`H(s, y_N) = hi(y_N) + ψ_s(y_N)`; with the high part kept (`WfQrL3.hi_keep_DQ`) this is `DQ.arg` under `hi`. -/
+theorem frame_DQ_trig_lo {η v pre s y yN : T} (hy : isOT (psi s y z) = true) (hyN : isOT (psi s yN z) = true)
+    (hd : DQ η true y yN)
+    (ht : lt pre y = true ∧ lt (psi v z z) (psi s y z) = true)
+    (htN : lt pre yN = true ∧ lt (psi v z z) (psi s yN z) = true)
+    (hlo : (split y (psi (succ s) z z)).2 ≠ z) (hloN : (split yN (psi (succ s) z z)).2 ≠ z)
+    (hhi : (split yN (psi (succ s) z z)).1 = (split y (psi (succ s) z z)).1) :
+    DQ η false (psi v (spArg v pre (psi s y z)) z) (psi v (spArg v pre (psi s yN z)) z) := by
+  rw [WfQrL4.spArg_single, WfQrL4.spArg_single]
+  unfold step
+  rw [if_pos ht, if_pos htN, H_eq hy, H_eq hyN, if_neg hlo, if_neg hloN, hhi]
+  exact DQ.arg (DQ.snoc _ ⟨s, y, rfl⟩ (DQ.arg hd))
+
 end Ytosk.WfQrL14
