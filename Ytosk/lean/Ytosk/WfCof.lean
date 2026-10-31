@@ -471,8 +471,18 @@ def EvalFSNZ (c : Nat) : Prop :=
 theorem evalFSNZ_of {c : Nat} (h : EvalFS c) : EvalFSNZ c :=
   fun A hA hS hE _ => h A hA hS hE
 
-/-- **EvalCof from step 1 and `EvalFSNZ c`** (nonzero last column only). -/
-theorem evalCof_of_NZ {c : Nat} (hD : Desc3) (hF : EvalFSNZ c) : EvalCof := by
+/-- The weakest form: every `tA[k]` is reached by some expansion (nonzero last column). -/
+def EvalFSE : Prop :=
+  ∀ A, Std A → A ≠ SRO → A ≠ [] → col A (A.length - 1) ≠ (0, 0, 0) →
+    ∀ tA, Val A tA → ∀ k, ∃ n tN, Val (expand A n) tN ∧ fs tA (natT k) ≤ tN
+
+theorem evalFSE_of_NZ {c : Nat} (hD : Desc3) (hF : EvalFSNZ c) : EvalFSE := by
+  intro A hA hAS hAE hz tA hv k
+  obtain ⟨_, tN, _, hvN, _, _⟩ := hD A (k + c) hA hAS hAE
+  exact ⟨k + c, tN, hvN, hF A hA hAS hAE hz tA hv k tN hvN⟩
+
+/-- **EvalCof from step 1 and `EvalFSE`.** -/
+theorem evalCof_of_E (hD : Desc3) (hF : EvalFSE) : EvalCof := by
   intro A hA hAS hAE tA t hv hot hlt
   obtain ⟨tA', tN0, hv', hvN0, hAot, _⟩ := hD A 0 hA hAS hAE
   cases val_unique hv hv'
@@ -496,8 +506,12 @@ theorem evalCof_of_NZ {c : Nat} (hD : Desc3) (hF : EvalFSNZ c) : EvalCof := by
       · obtain ⟨k, hk⟩ := fs_cof_omega tA hAot hc t hot hlt
         exact ⟨k, Or.inl hk⟩
     obtain ⟨k, hk⟩ := hle
-    obtain ⟨_, tN, _, hvN, _, _⟩ := hD A (k + c) hA hAS hAE
-    exact ⟨k + c, tN, hvN, le_trans hk (hF A hA hAS hAE hz tA hv k tN hvN)⟩
+    obtain ⟨n, tN, hvN, hkN⟩ := hF A hA hAS hAE hz tA hv k
+    exact ⟨n, tN, hvN, le_trans hk hkN⟩
+
+/-- **EvalCof from step 1 and `EvalFSNZ c`** (nonzero last column only). -/
+theorem evalCof_of_NZ {c : Nat} (hD : Desc3) (hF : EvalFSNZ c) : EvalCof :=
+  evalCof_of_E hD (evalFSE_of_NZ hD hF)
 
 /-- **Surjectivity** from step 1 and `EvalFSNZ c`. -/
 theorem surj_of_evalFSNZ {c : Nat} (hD : Desc3) (hF : EvalFSNZ c) {t : T}
