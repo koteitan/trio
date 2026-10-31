@@ -10,6 +10,7 @@
 -/
 import Ytosk.V3Surj
 import Ytosk.V3SeedTop
+import Ytosk.V3N0T1
 
 namespace Ytosk
 
@@ -421,6 +422,88 @@ theorem evalCof_of {c : Nat} (hD : Desc3) (hF : EvalFS c) (hW : ValCtbl) : EvalC
 /-- `EvalCof` from step 1 and `EvalFS c` alone. -/
 theorem evalCof_of_evalFS {c : Nat} (hD : Desc3) (hF : EvalFS c) : EvalCof :=
   evalCof_of hD hF valCtbl
+
+/-! ## 最後の列が 0 の場合（無条件）: 値は前者 + 1 -/
+
+/-- **A zero last column adds `1`**: the value of `M` is the value of `M.take x` plus one. -/
+theorem val_zero_last {M : Mat} (hne : M ≠ []) (hz : col M (M.length - 1) = (0, 0, 0)) {tA tN : T}
+    (hA : Val M tA) (hN : Val (M.take (M.length - 1)) tN) (hot : isOT tN = true) : tA = app tN one := by
+  classical
+  obtain ⟨ρ, rk, hC, hR, rfl⟩ := hA
+  obtain ⟨ρ', rk', hC', hR', rfl⟩ := hN
+  have hpos : 0 < M.length := List.length_pos_of_ne_nil hne
+  set x := M.length - 1 with hxdef
+  have hkl : x < M.length := by omega
+  have hlen : (M.take x).length = x := by rw [List.length_take]; omega
+  have hag := take_root_agree hz hkl hC hC' hR'
+  set f : Nat → T := fun i => if col M i = (0, 0, 0) then ρ.o i else z with hf
+  have hroot' : root (M.take x) ρ' = sumN ((List.range x).map f) := by
+    unfold root
+    rw [hlen]
+    congr 1
+    apply List.map_congr_left
+    intro i hi
+    have hik := List.mem_range.mp hi
+    rw [col_take M hik, (hag i hik).1]
+  have hroot : root M ρ = sumN ((List.range (x + 1)).map f) := by
+    unfold root; rw [show M.length = x + 1 by omega]
+  have hox : ρ.o x = one := by
+    obtain ⟨ho, hv⟩ := hC x hkl
+    have he : entry M 1 x = 0 := by
+      have : col M x = M.getD x (0, 0, 0) := rfl
+      simp only [entry]
+      rw [← this, hz]; rfl
+    have hvz : ρ.v x = z := by rw [hv]; simp [vRhs, he]
+    rw [ho]
+    unfold oRhs
+    rw [hvz, children_last (show x + 1 = M.length by omega)]
+    rfl
+  have hfx : f x = one := by simp only [hf]; rw [if_pos hz, hox]
+  rw [hroot, List.range_succ, List.map_append, List.map_singleton, sumN_snoc, hfx,
+    add_one_eq_app, ← hroot']
+  exact sf_ot (isOT_succ hot)
+
+/-- `EvalFS` restricted to a nonzero last column (the zero case is `val_zero_last`). -/
+def EvalFSNZ (c : Nat) : Prop :=
+  ∀ A, Std A → A ≠ SRO → A ≠ [] → col A (A.length - 1) ≠ (0, 0, 0) →
+    ∀ tA, Val A tA → ∀ k tN, Val (expand A (k + c)) tN → fs tA (natT k) ≤ tN
+
+theorem evalFSNZ_of {c : Nat} (h : EvalFS c) : EvalFSNZ c :=
+  fun A hA hS hE _ => h A hA hS hE
+
+/-- **EvalCof from step 1 and `EvalFSNZ c`** (nonzero last column only). -/
+theorem evalCof_of_NZ {c : Nat} (hD : Desc3) (hF : EvalFSNZ c) : EvalCof := by
+  intro A hA hAS hAE tA t hv hot hlt
+  obtain ⟨tA', tN0, hv', hvN0, hAot, _⟩ := hD A 0 hA hAS hAE
+  cases val_unique hv hv'
+  by_cases hz : col A (A.length - 1) = (0, 0, 0)
+  · -- the value is `tN0 + 1`
+    have hN0ot : isOT tN0 = true := by
+      by_cases hE : expand A 0 = []
+      · rw [hE] at hvN0; rw [val_unique hvN0 val_nil]; rfl
+      · have hst : Step' (expand A 0) A := ⟨hA, hAE, 0, rfl⟩
+        obtain ⟨t1, _, h1, _, hot1, _⟩ := hD (expand A 0) 0 (Std.exp 0 hA) (step_ne_sro hD hst) hE
+        rw [val_unique hvN0 h1]; exact hot1
+    have hvN0' : Val (A.take (A.length - 1)) tN0 := by
+      rw [← expand_zero_last hAE hz 0]; exact hvN0
+    have heq := val_zero_last hAE hz hv hvN0' hN0ot
+    rw [heq] at hlt
+    exact ⟨0, tN0, hvN0, le_of_lt_app_one _ hlt⟩
+  · have hne : tA ≠ z := by rintro rfl; exact T.not_lt_z _ hlt
+    have hle : ∃ k, t ≤ fs tA (natT k) := by
+      rcases cof_of_lt_Om1 tA hAot (val_lt_Om1 hv) hne with hc | hc
+      · exact ⟨0, le_fs_of_cof_succ hc hlt _⟩
+      · obtain ⟨k, hk⟩ := fs_cof_omega tA hAot hc t hot hlt
+        exact ⟨k, Or.inl hk⟩
+    obtain ⟨k, hk⟩ := hle
+    obtain ⟨_, tN, _, hvN, _, _⟩ := hD A (k + c) hA hAS hAE
+    exact ⟨k + c, tN, hvN, le_trans hk (hF A hA hAS hAE hz tA hv k tN hvN)⟩
+
+/-- **Surjectivity** from step 1 and `EvalFSNZ c`. -/
+theorem surj_of_evalFSNZ {c : Nat} (hD : Desc3) (hF : EvalFSNZ c) {t : T}
+    (hot : isOT t = true) {n : Nat} {tN : T} (hvN : Val (expand SRO n) tN) (hlt : t < tN) :
+    ∃ B, Std B ∧ B ≠ SRO ∧ Val B t :=
+  surj hD (evalCof_of_NZ hD hF) hot hvN hlt
 
 /-- **Surjectivity** from step 1 and `EvalFS c`. -/
 theorem surj_of_evalFS {c : Nat} (hD : Desc3) (hF : EvalFS c) {t : T}
