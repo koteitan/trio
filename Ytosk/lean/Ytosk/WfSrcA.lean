@@ -16,6 +16,12 @@ structural `SrcAShape` (the remaining shape does not occur), `srcARem_of_shape`.
 Measured (tmp/wf/WfSrcA/notes.md): no exception; it is false without the Bad2 (a) frame
 (non-frame counterexample in std_a), so the frame premises are necessary.
 
+Narrowed (`SrcARem2`, `srcARem_of_rem2` via `caseB_next`): the remaining shape is
+(A) `c` an ancestor of `x − 1` with `e1 c < e1 m`, or (B) the change enters through the next column
+`c′` after `c`'s subtree (`upg(c′ − 1) = c′`) whose row-0 parent `q = P1(c′ − 1)` is a strict
+ancestor of `m` (`q = m` is impossible: it would give `e1 c > e1 m`).
+
+`t2AbsNSrcW_of_rem2 : SrcARem2 → T2AbsNSrcWBC → WfT2Src.T2AbsNSrcW`.
 `t2AbsNSrcW_of`: `SrcARem → T2AbsNSrcWBC → WfT2Src.T2AbsNSrcW`, where `T2AbsNSrcWBC` is
 `T2AbsNSrcW` restricted to `P0 x = P1 x = x − 1` (parts (b) and (c)).
 -/
@@ -55,6 +61,82 @@ def SrcAShape : Prop :=
         (∀ d ∈ K, entry M 1 d < entry M 1 m) → entry M 1 c ≤ entry M 1 m →
         entry M 1 c = entry M 1 m ∧ entry M 0 m < entry M 0 (c + 1)
 
+/-- **Case (B)**: a changing bump grandchild `c` off the path to `x − 1`, at or below `m`'s row.
+The change enters through the next column `c′` after the subtree of `c` (ICC), an upgrade target of
+`c′ − 1`, whose row-0 parent `q = P1(c′ − 1)` is a strict ancestor of `m`. The case `q = m` would put
+`c` above `m`'s row, and `q` cannot be `c`, a column below `c`, `j` or `i`. -/
+theorem caseB_next {M : Mat} {ρ τ : Valn} {rkT : Bool → Nat → Nat} (S : SInv M) (hC : Cons M ρ)
+    (hG : Good3 M ρ) {x i m j c : Nat} (hx : x + 1 = M.length)
+    (hT : Cons (M.take x) τ) (hRT : Rk (M.take x) rkT)
+    (hmi : par M 0 i = some m) (hm1 : par M 1 i = some m)
+    (hj : j ∈ children M i) {B K : List Nat} (hBj : children (M.take x) i = B ++ [j])
+    (hK : children M j = K ++ [c]) (hcx : c < x) (hce : τ.o c ≠ ρ.o c)
+    (hnA : ¬ Anc0 M c (x - 1)) (hrow : entry M 1 c ≤ entry M 1 m) :
+    ∃ c' q, NextC M c c' ∧ c' < x ∧ upg M (c' - 1) = some c' ∧ ChgX M x false c' ∧
+      par M 0 c' = some q ∧ par M 1 (c' - 1) = some q ∧ Anc0 M q m ∧ q ≠ m := by
+  have hch : ChgX M x true c := by
+    by_contra hn
+    exact hce ((chg_off hx hC hG hT hRT c hcx).1 hn)
+  obtain ⟨c', ⟨hcc', hall', hnot'⟩, hc'x, hup', hchg'⟩ :=
+    (chg_struct hx S.r0p S.z2 S.sibDec S.z1c S.uat S.uab hch).2 c hcx (Anc0.refl c) hnA
+  have hc1 : Anc0 M c (c' - 1) := hall' (c' - 1) (by omega) (by omega)
+  obtain ⟨q, hq1, hq2, hcol, _⟩ := upg_spec hup'
+  have he0 : entry M 0 c' = entry M 0 q + 1 := by
+    have : entry M 0 c' = (col M c').1 := rfl
+    rw [this, hcol]
+  have hqc := par_lt M 1 _ _ hq2
+  obtain ⟨hh, hph⟩ := par0_some_of (M := M) hqc (by omega)
+  have hR := S.r0p c' hh hph
+  have hhc := par_lt M 0 c' hh hph
+  have hAh : Anc0 M hh (c' - 1) :=
+    anc_between (Anc0.step hph (Anc0.refl hh)) (c' - 1) (by omega) (by omega)
+  have hAq : Anc0 M q (c' - 1) := anc0_of_par M 1 q (c' - 1) hq1
+  have hhq : hh = q := anc0_eq_of_e0 hAh hAq (by omega)
+  subst hhq
+  have hc'N : c' < M.length := by omega
+  have hjc : par M 0 c = some j := (mem_children_iff.mp (by rw [hK]; simp : c ∈ children M j)).2
+  have hij : par M 0 j = some i := (mem_children_iff.mp hj).2
+  have hjx : j < x := by have := par_lt M 0 c j hjc; omega
+  rcases anc0_total hAh hc1 with hqc' | hcq
+  · -- `q` is a strict ancestor of `c`
+    have hqne : hh ≠ c := by
+      intro he; subst he; exact hnot' (Anc0.step hph (Anc0.refl _))
+    have hqj := anc0_par hqc' hqne hjc
+    have hqnj : hh ≠ j := by
+      intro he; subst he
+      have hmem : c' ∈ children M hh := mem_children_iff.mpr ⟨hc'N, hph⟩
+      rw [hK] at hmem
+      rcases List.mem_append.mp hmem with hk | hk
+      · have hs := children_sorted M hh
+        rw [hK] at hs
+        have := (List.pairwise_append.mp hs).2.2 c' hk c (by simp)
+        omega
+      · simp at hk; omega
+    have hqi := anc0_par hqj hqnj hij
+    have hqni : hh ≠ i := by
+      intro he; subst he
+      have hmem : c' ∈ children (M.take x) hh := mem_take_children (mem_children_iff.mpr ⟨hc'N, hph⟩) hc'x
+      rw [hBj] at hmem
+      rcases List.mem_append.mp hmem with hk | hk
+      · have hs := children_sorted (M.take x) hh
+        rw [hBj] at hs
+        have h1 := (List.pairwise_append.mp hs).2.2 c' hk j (by simp)
+        have h2 := par_lt M 0 c j hjc
+        omega
+      · simp at hk
+        have h2 := par_lt M 0 c j hjc
+        omega
+    have hqm := anc0_par hqi hqni hmi
+    refine ⟨c', hh, ⟨hcc', hall', hnot'⟩, hc'x, hup', hchg', hph, hq1, hqm, ?_⟩
+    intro he; subst he
+    -- `P1(c′ − 1) = m` puts `c` strictly above `m`'s row
+    have hmc : hh < c := by
+      have := par_lt M 0 c j hjc; have := par_lt M 0 j i hij; have := par_lt M 0 i hh hmi; omega
+    have hb := par1_between hq1 c hc1 hmc
+    have hl := par1_entry_lt hq1
+    omega
+  · exact absurd (Anc0.step hph hcq) hnot'
+
 /-- **Residual, weaker form**: in the remaining shape (not a return at `m`'s row with the next column
 inside `m`'s subtree) the drop absorption does not fail. Implied by `SrcAShape` (`srcARem_of_shape`). -/
 def SrcARem : Prop :=
@@ -76,6 +158,51 @@ theorem srcARem_of_shape (hS : SrcAShape) : SrcARem := by
     hearly hrow hn
   exact absurd (hS M ρ rk C hB2 hz hs r L hx hr ha τ hT i m j c B K hi h1 h2 hmi hm1 hj hb hBj hK
     hcl hce hearly hrow) hn
+
+/-- **Residual, narrowed**: `SrcARem` with the two remaining shapes made explicit:
+(A) `c` is an ancestor of `x − 1` strictly below `m`'s row, or
+(B) the change enters through the next column `c′` after `c`'s subtree, an upgrade target whose
+row-0 parent `q = P1(c′ − 1)` is a strict ancestor of `m`. -/
+def SrcARem2 : Prop :=
+  ∀ M ρ rk, StepCtxT2 M ρ rk → Bad2 M → col M (M.length - 1) ≠ (0, 0, 0) →
+    TRIO.srow M (M.length - 1) = 2 →
+    ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r →
+      (par M 0 (r + L) ≠ some (r + L - 1) ∨ par M 1 (r + L) ≠ some (r + L - 1)) →
+      ∀ τ, Cons (M.take (r + L)) τ →
+      ∀ i m j c (B K : List Nat), i < r + L → entry M 1 i ≠ 0 → entry M 2 i ≠ 0 →
+        par M 0 i = some m → par M 1 i = some m →
+        j ∈ children M i → col M j = bump M i → children (M.take (r + L)) i = B ++ [j] →
+        children M j = K ++ [c] → c < r + L - 1 → τ.o c ≠ ρ.o c →
+        (∀ d ∈ K, entry M 1 d < entry M 1 m) → entry M 1 c ≤ entry M 1 m →
+        ((Anc0 M c (r + L - 1) ∧ entry M 1 c < entry M 1 m) ∨
+          ∃ c' q, NextC M c c' ∧ c' < r + L ∧ upg M (c' - 1) = some c' ∧ ChgX M (r + L) false c' ∧
+            par M 0 c' = some q ∧ par M 1 (c' - 1) = some q ∧ Anc0 M q m ∧ q ≠ m) →
+        ¬ WfT2Abs.DropFail M ρ τ (r + L) i
+
+theorem srcARem_of_rem2 (h : SrcARem2) : SrcARem := by
+  intro M ρ rk C hB2 hz hs r L hx hr ha τ hT i m j c B K hi h1 h2 hmi hm1 hj hb hBj hK hcl hce
+    hearly hrow hn
+  apply h M ρ rk C hB2 hz hs r L hx hr ha τ hT i m j c B K hi h1 h2 hmi hm1 hj hb hBj hK hcl hce
+    hearly hrow
+  have hRT : Rk (M.take (r + L)) rk := rk_take (by omega) C.I.rank
+    (by have := counted_take_last (M := M) (by omega) C.S.r0p C.S.z2 C.S.sibDec C.S.z1c C.S.uat
+        simpa only [show M.length - 1 = r + L from by omega] using this)
+  by_cases hA : Anc0 M c (r + L - 1)
+  · left
+    refine ⟨hA, ?_⟩
+    have hjc : par M 0 c = some j := (mem_children_iff.mp (by rw [hK]; simp : c ∈ children M j)).2
+    have hij : par M 0 j = some i := (mem_children_iff.mp hj).2
+    have hmc : Anc0 M m c := Anc0.step hjc (Anc0.step hij (Anc0.step hmi (Anc0.refl m)))
+    have hmne : m ≠ c := by
+      have := par_lt M 0 c j hjc; have := par_lt M 0 j i hij; have := par_lt M 0 i m hmi; omega
+    have h0 := anc0_e0_lt hmc hmne
+    have hc1 : Anc0 M c (c + 1) := anc_between hA (c + 1) (by omega) (by omega)
+    have h0' := anc0_e0_lt hc1 (by omega)
+    by_contra hge
+    exact hn ⟨by omega, by omega⟩
+  · right
+    exact caseB_next C.S C.I.cons C.I.good (x := r + L) (by omega) hT hRT hmi hm1 hj hBj hK
+      (by omega) hce hA hrow
 
 /-- **Part (a)**: with `SrcARem`, the drop absorption does not fail in case (a). -/
 theorem not_dropFail_of_case_a (hS : SrcARem) {M : Mat} {ρ τ : Valn}
@@ -155,5 +282,9 @@ theorem t2AbsNSrcW_of (hS : SrcARem) (hBC : T2AbsNSrcWBC) : WfT2Src.T2AbsNSrcW :
   · exact absurd hfail (not_dropFail_of_case_a hS C hB2 hz hs hlen hr ha hi h1 h2 hτ)
   · push Not at ha
     exact hBC M ρ rk C hB2 hz hs r L hlen hr ha.1 ha.2 τ hτ i hi h1 h2 hfail hfacts
+
+/-- **Bridge with the narrowed residual** `SrcARem2`. -/
+theorem t2AbsNSrcW_of_rem2 (hS : SrcARem2) (hBC : T2AbsNSrcWBC) : WfT2Src.T2AbsNSrcW :=
+  t2AbsNSrcW_of (srcARem_of_rem2 hS) hBC
 
 end Ytosk.WfSrcA
