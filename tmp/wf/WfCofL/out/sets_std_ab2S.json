@@ -1,0 +1,20 @@
+{
+ "stats": {
+  "('C0', 0, 'succ', True)": 24,
+  "('C0', 2, 'succ', True)": 15,
+  "('CH', 1, True)": 39,
+  "('CHle', 1, True)": 39,
+  "('CI', 1, True)": 13,
+  "('E', 1, True)": 39,
+  "('R1', 1, True)": 39,
+  "('R1b', 1, False)": 13,
+  "('R1eq', 1, True)": 39,
+  "('S', 1, True)": 39,
+  "('S2slack', 1, False)": 11,
+  "('S2slack', 1, True)": 2,
+  "('SH', 1, True)": 39,
+  "('SH1', 1, True)": 13,
+  "('mat', 1)": 13
+ },
+ "ex": {}
+}
