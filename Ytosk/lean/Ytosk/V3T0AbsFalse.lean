@@ -117,6 +117,34 @@ theorem not_t0AbsW : ¬ T0AbsW M 37 1 ρ := by
   exact not_lhd (h 2 (by omega) σ hCN 34 (by omega) (by decide) (by decide) q
     (by decide) (by decide) (by decide) (by decide))
 
+/-- Every consistent source valuation with a ranking has the same obstruction. -/
+theorem not_t0AbsW_of_cons {ρ' : Valn} {rk : Bool → Nat → Nat}
+    (hC : Cons M ρ') (hR : Rk M rk) : ¬ T0AbsW M 37 1 ρ' := by
+  intro h
+  have hag := agree_of_cons hC cons hR
+  have hW := bumpW_congr hag 34
+  have hV := vOpt_par_congr hag (r := 1) (i := 34) (by decide)
+  have he : expand M 2 = TRIO.gexp M 37 1 0 0 2 :=
+    expand_eq_gexp M 2 (by decide) (by decide) (by decide)
+  have hCN : Cons (TRIO.gexp M 37 1 0 0 2) σ := by rw [← he,expand_two]; exact consN
+  have hm : q ∈ summands (vOpt ρ' (par M 1 34)) := by rw [hV]; decide
+  have hqW : q < bumpW M ρ' 34 := by rw [hW]; decide
+  have hh := h 2 (by omega) σ hCN 34 (by omega) (by decide) (by decide) q hm
+    (by decide) (by decide) hqW
+  rw [hW] at hh
+  exact not_lhd hh
+
+/-- This obstruction is separate from the false QR input: any invariant-producing
+engine outputs together with the current t0 absorption input are inconsistent. -/
+theorem inconsistent_abs_input
+    (hD : V3Main.HDropV3) (hF : WfExQ2.HFrameV3)
+    (h0 : V3Main.ExpOutV3 0) (h1 : V3Main.ExpOutV3 1) (h2 : V3Main.ExpOutV3 2)
+    (hAbs : V3Main.T0AtV3 (fun M ρ r L => T0AbsW M r L ρ)) : False := by
+  obtain ⟨ρ',rk,I⟩ := V3Main.inv3V3_all hD hF h0 h1 h2 M standard ne_sro (by decide)
+  have C := V3Main.ctx3 hD hF standard ne_sro (by decide) I
+  have H := hAbs M ρ' rk C 37 1 (by decide) (by omega) (by decide) (by decide)
+  exact not_t0AbsW_of_cons I.cons I.rank H
+
 /-- The failed t0 call has exactly the already named bad-absorption shape. -/
 theorem bad_shape : WfAbsW.BadAbsShape M N ρ σ 34 := by
   refine ⟨33, [], by decide, by decide, by decide, by decide, by decide, by decide,
