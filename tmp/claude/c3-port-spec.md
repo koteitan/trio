@@ -39,3 +39,27 @@
   コミットメッセージ案を chm で trio-claude に送る。git は使わない。
 - 詰まったら、どのファイルのどの定理のどのゴールかを送って止まる。形の定義（UpgAbsShape など）は変えずに、
   まず trio-claude に相談する。
+
+## 改訂（2026-11-02 01:50、codex の指摘を受けて）
+codex の指摘のとおり、good_below_ofX の結論 FrameShapeX の 4 つ目の形は子の ◁ の許容を v(i) に固定しているので、
+上げの形（許容 v(P1 c) ≠ v(i)）では作れない。結論の形を広げる。
+
+もうあるもの（7f39d412、V3AbsUpgFrame.lean）:
+- FrameShape5: 4 つ目の形の許容を任意の V にし、(∀ u, ∀ g ∈ comps u V, g < σ.o c) を足したもの。
+- FrameShapeXU := FrameShapeX ∨ FrameShape5、FrameShapeX.toU。
+- WfT2X.vs_changed_boundVG: vs_changed_boundV の許容一般版（qVSF_of_shapeX の 5 つ目の形で使う）。
+
+C3 の追加の規則:
+- 鎖の中の結論・仮定の FrameShapeX は FrameShapeXU に替える。
+- good_below_ofXU の bad-final-child の枝: hBdF の左（par M 1 c = some i）は今までどおり FrameShapeX の 4 つ目
+  （Or.inl）。右（成分の上界）は FrameShape5（Or.inr）で、V := vOpt ρ (par M 1 c)、子の ◁ は IH の PX の右の枝
+  （v・o とも許容 vOpt ρ (par M 1 c)。左の枝なら lhd_mono_eta）、上界は hBdF、Lhd z (σ.o i) (ρ.o i) は bad_frameG。
+- 読む側の U 版（WfT2X5・X6・X7・R1 の該当定理）: rcases hS with hS | h5。左は既存の X 版をそのまま呼ぶ。
+  右（FrameShape5）は 4 つ目の形の証明の写しで、
+  - shape4_split はそのまま使える（構造の欄は同じ）。
+  - clField_of_shapeX / clField_of_shapeSX: hQlowV の代わりに
+    hQlowVG : ∀ V a Lv s s', Q a Lv (psi s z z) → Lhd V (psi s' z z) (psi s z z) →
+      (∀ u, ∀ g ∈ comps u V, g < psi s' z z) → isOT (psi s' z z) = true → Q a Lv (psi s' z z)
+    をとる。QFC・QFCo・QVRAt・QFO の hQlowVG は WfT2X7 の qFC_lowV などと同じ証明（◁ を使っていない）。
+  - qVSF_of_shapeX の右: vs_changed_boundV を vs_changed_boundVG（hsm は上界の u := ρ.v i）に替える。
+  - frame_of_shapeX・rw_frame_of_shapeX・pathLv_of_shapeXR: 右は 4 つ目の形と同じ証明（◁ を使わない）。
