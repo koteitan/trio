@@ -211,4 +211,16 @@ theorem values_decrease36420 : ∃ a b, Val M1 a ∧ Val N1 b ∧ b < a := by
   exact ⟨root M1 ρ1,root N1 σ1,⟨ρ1,rk,cons36420,hR,rfl⟩,
     ⟨σ1,rkN,consN36420,hRN,rfl⟩,root_decreases36420⟩
 
+/-- The positive leaf witness is attached to an actual BadCall at this source. -/
+theorem badCall36407 : WfBad.BadCall M0 ρ0 36 z 34 := by
+  refine ⟨?_,by decide,by decide,by decide,head (ρ0.v 33),by decide,by decide,by decide⟩
+  refine ⟨33,[],by decide,by decide,by decide,by decide,?_⟩
+  decide
+
+/-- The positive leaf witness is attached to an actual BadCall at this source. -/
+theorem badCall36420 : WfBad.BadCall M1 ρ1 37 z 35 := by
+  refine ⟨?_,by decide,by decide,by decide,head (ρ1.v 34),by decide,by decide,by decide⟩
+  refine ⟨34,[],by decide,by decide,by decide,by decide,?_⟩
+  decide
+
 end Ytosk.DQXSanity
