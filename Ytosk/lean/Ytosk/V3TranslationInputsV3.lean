@@ -47,7 +47,7 @@ theorem expOut2_of_inputs (hF : HFrameV3)
   exact ⟨σ, rkN, IN, hlt⟩
 
 section
-variable (hD : HDropInputsV3) (hF : HFrameV3)
+variable (hD : HDropV3) (hF : HFrameV3)
     (hAbs : T0AtV3 (fun M ρ r L => T0AbsW M r L ρ))
     (hSeeds : T0AtV3 (fun M ρ r L => ∀ n, 2 ≤ n → ∀ σ,
       Cons (TRIO.gexp M r L 0 0 n) σ → T0SeedsN M ρ r L n σ))
@@ -62,7 +62,7 @@ include hD hF hAbs hSeeds hQR hQN hBX hFO hSF hSP hN
 
 /-- The repaired induction with the three actual expansion engines connected. -/
 theorem desc3_of_enginesV3 : Desc3 :=
-  desc3_of_inputs hD hF (expOutV3_of_core hF (expCore0_of_seeds hAbs hSeeds))
+  desc3_V3 hD hF (expOutV3_of_core hF (expCore0_of_seeds hAbs hSeeds))
     (expOut1_of_inputs hF hQR hQN) (expOut2_of_inputs hF hBX hFO hSF hSP hN)
 
 /-- Order preservation of the translation below SRO, conditional on the listed inputs. -/
