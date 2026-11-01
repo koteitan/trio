@@ -4,6 +4,17 @@
 
 ## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個）
 
+**13 回目（2026-11-01、codex）**: Inv3V3 の上に新しいトップの入口を組んだ（すべて緑、1315 jobs）。
+- V3MainV3: inv3V3_all・desc3_V3・order_pres_V3・surj_V3。V3TranslationInputsV3: desc3_of_enginesV3・translation_order_of_enginesV3・translation_surj_of_enginesV3。古いトップ V3TopT2B は使わず、変えていない。
+- 入口は 11 個の入力をとる: HDropV3（落とす補題の結論）、HFrameV3、t = 0 の hAbs（T0AbsW）・hSeeds、t = 1 の hQR・hQN、t = 2 の hBX（AbsWNx）・hFO・hSF・hSP・hN。全射はさらに EvalFSNZ 2。
+- **このうち 3 つは偽で、それぞれ単独で入口を矛盾させる**（Lean で反証）:
+  - hQR: 欄 OFields が項のすべての分解を量化していた。3 列の標準形 (0,0,0)(1,1,0)(2,2,0) で偽（V3QRLocFalse）。実際の単一末尾の証人 1 つだけに条件を課す TailFields・HQRInputsTailV3 を用意した（V3QRCanonical・V3QRCanonicalChain・V3QRQuantifiers）。まだトップには使わない。
+  - hAbs（T0AbsW）: 39 列の標準形、n = 2、i = 34 で偽。悪い吸収の形 BadAbsShape に入る（V3T0AbsFalse）。
+  - hBX（AbsWNx）: 41 列の標準形、i = 37 で偽。upg M 36 = 37 なので BadAbsShape から外れる（V3T2AbsXFalse）。
+- 残りの入力 hSeeds・hFO・hSF・hSP・hN は、監査の途中（399 万件）で例外 0。
+- 前の DQ の測定は、値が変わらない列を飛ばし、1 → 1 を返す枝を持っていた。Lean の DQC は真に小さくなることを含むので、その記録は DQC を仮定する入力の証拠にならない。測り直している。
+- 次: 直した測定で HQRInputsTailV3 を全データで測り（退化した分解と η = 0 を含める）、3 列・39 列・41 列で新しい入力の束が成り立つことを Lean で先に示す。t = 0・t = 2 のエンジンも吸収の仮定のない DQ 形で書けるかを測る。
+
 **12 回目（2026-11-01）**: すべて緑（1290 jobs）。
 - 新しい偽の欄: AbsUWL（Inv3V2.auwl）が標準の 39 列の行列で偽（WfExQ12、Lean）。上げの枠の悪い呼び出し（W = last v(k) = o(r)）。新しい束 Inv3V3（WfExQ1: adn→AbsDN0、tplow→TPLoQ、ads→AbsDSX、tplos→TPLoSX、adw・auwl を外す）は、すべての接ぎ木（69 万個）と新しい族で全欄例外 0。
 - t = 2: 偽の SrcC3Res を使わない新しいトップの版 trio_terminates_main_V2_curYR（WfT2R9）。T2BadRes の第 1 欄の代わりに AbsWNx の欄だけを持つ T2BelowRV2Y を受け取る。NotBumpKidX と hQlowV は証明済み。Res3T2.absN（= 偽の AbsWN M M[n]）は X 版で T2Drop2X に置き換えた。残りは T2CBadOut の枝。
