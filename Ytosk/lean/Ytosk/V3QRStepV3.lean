@@ -1,6 +1,6 @@
 /- QR producer chain with the actual FStep conclusion. Conditional only;
 its matrix inputs must still be measured before adopting a new top. -/
-import Ytosk.V3QRCanonical
+import Ytosk.V3QRCanonicalChain
 import Ytosk.V3T1V3
 
 namespace Ytosk.QRStepChain
@@ -279,5 +279,35 @@ theorem expOut1_of_step_inputs (hF : HFrameV3) (hQR : HQRInputsStepV3) (hQN : HQ
     rw [sf_ot (C.I.good.ot_v r (by omega))] at hro
     have F := hQN M ρ rk C r L hlen hL0 hr hx2 hq br hro
     exact qn_carrierV3 C hlen hL0 hd0e hr hx2 hq hro F.inn F.vlt F.before F.kids F.window F.rest F.step n hn
+
+/-- The optional canonical-tail witness is sufficient for the actual step
+interface. The step interface does not require that additional witness. -/
+theorem qrLocStep_of_tail {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (C : StepCtx3 M ρ rk) {r L d0 : Nat} (hlen : r+L+1=M.length) (hL : 0<L)
+    (hTail : QrLocTailV3 M ρ r L d0) : QrLocStepV3 M ρ r L d0 := by
+  intro n hn ρP σ hCP hlt hne hCN
+  obtain ⟨ho,hv,hFr,hU,hB⟩ := hTail n hn ρP σ hCP hlt hne hCN
+  refine ⟨ho,hv,?_,hU,hB⟩
+  intro i A c R hi hd hch hdc
+  have hcm : c < M.length := by
+    apply (mem_children (show c ∈ children M i by rw [hch]; simp)).2
+  have hcx : c ≤ r+L := by omega
+  have hclen := len_N (d0 := d0) (n := n) hlen hn
+  have hcN : c < (TRIO.gexp M r L d0 0 n).length := by
+    rw [hclen]
+    have hprod := Nat.mul_le_mul_right L (show 1 ≤ n-1 by omega)
+    simp only [Nat.one_mul] at hprod; omega
+  obtain ⟨η,tS,hD⟩ := ho c hcx hdc
+  have hSingle : Single (σ.o c) := ⟨hD.ot (C.I.good.ot_o c hcm),o_psi_form hCN hcN⟩
+  exact QRCanonical.frame_step_fields_tail
+    (preState_ot_of_good C.I.good (fun d hdA => by
+      have hdM : d ∈ children M i := by rw [hch]; simp [hdA]
+      exact (mem_children hdM).2))
+    (single_o C.I.cons C.I.good hcm) hSingle hD.toDQ (hFr i A c R hi hd hch hdc η hD.toDQ)
+
+theorem hQRInputsStep_of_tail (h : HQRInputsTailV3) : HQRInputsStepV3 := by
+  intro M ρ rk C r L hlen hL h1 h2 hq
+  have F := h M ρ rk C r L hlen hL h1 h2 hq
+  exact ⟨F.ua,qrLocStep_of_tail C hlen hL F.loc,F.vsf⟩
 
 end Ytosk.V3Main

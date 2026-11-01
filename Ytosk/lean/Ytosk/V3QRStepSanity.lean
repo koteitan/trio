@@ -135,4 +135,16 @@ theorem changed_child_input : WfExQ10.VSFResQ M 1 1 1 ρ := by
   intro n hn ρP oq vq hCP hGP hCN hGN hEx i hi A c R hCL hdc hc g hg
   exact False.elim (no_v hc hdc)
 
+/-- The checked local slice is definitionally the one required by the new input. -/
+theorem fields_from_input (h : V3Main.QrLocStepV3 M ρ 1 1 1) : LocalFields M ρ σ 2 := by
+  have hCP : Cons (TRIO.gexp M 1 1 1 0 (2-1)) τ := by
+    rw [gexp_one_gen (by decide : 1+1+1=M.length)]; exact consP
+  have hCN : Cons (TRIO.gexp M 1 1 1 0 2) σ := by rw [gexp_two]; exact consN
+  exact h 2 (by omega) τ σ hCP (by decide) (by decide) hCN
+
+/-- All QR inputs at this finite regression instance; VSFResQ and UAwRA are
+proved fully at this source, and the five local fields at expansion length two. -/
+theorem bundle_two : UAwRA M ρ 2 ∧ LocalFields M ρ σ 2 ∧ WfExQ10.VSFResQ M 1 1 1 ρ :=
+  ⟨seed_component_input,local_two,changed_child_input⟩
+
 end Ytosk.QRStepSanity
