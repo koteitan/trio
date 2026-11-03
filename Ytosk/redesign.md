@@ -4,6 +4,15 @@
 
 ## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個）
 
+**14 回目（2026-11-01〜03、claude と codex）**: 入口の偽の入力 3 つをすべて置き換えた。新しい入口は V3TranslationAllUV3（desc3_of_step_enginesV3UU・translation_order_of_step_enginesV3UU・translation_surj_of_step_enginesV3UU、すべて緑、公理は標準 3 つ、1351 jobs）。
+- hQR: 項のすべての分解を量化する OFields をやめ、展開で実際に使う段の形 FStep だけを受ける HQRInputsStepV3 にした（V3QRStepV3）。3 列の標準形で局所の欄が成り立つことを示した（V3QRStepSanity）。
+- 値の変化の形: 悪い bump の呼び出しの枠では、v・o・W の変化 ψ_w(L + L) → ψ_w(L + R)（L = Ω_{w+w}、R = ψ_{w+1}(L)）が DQ の形にない。どの η でも fsD(L, η) = Ω_{w+k} なので（V3DQNotBadLeaf、Lean で証明）。悪い葉 fsD(l, η) ≤ q < l を足した DQX で書ける（V3DQX、V3DQXSanity）。
+- 吸収が破れた 226 枠を列ごとに測った（tmp/claude/abs_slack.py）。◁ でなく許容 v(m) の ◁ でしか下がらない列は、悪い列 i と、6 枠での c = i − 1（i へ上げる列）だけ。回収は親の o。上げの形では許容 v(m) が親 p の添字 v(p) と違い、Lhd_{v(p)} は 6 枠中 4 枠で偽だが、v(m) の成分はすべて新しい o(c) より小さい。
+- この形を Lean にした: lhd_psi_disG（許容の成分が新しい引数以下なら ψ_v で解消、V3AbsUpgLemma）、上げの形 UpgAbsShape と悪い集合 BdXU（V3AbsUpgShape）、エンジン deps_lhd_otXU（WfT2X1U）、枠の形の 5 つ目 FrameShape5（V3AbsUpgFrame）。
+- hBX（t = 2）: AbsWNx を AbsWNxU（吸収 ∨ BadAbsShape ∨ UpgAbsShape）に替え、使う側の鎖を U 版に写した（WfT2X2U〜V3TranslationAbsUV3）。古い入力を反証した 41 列の行列で新しい入力が成り立つ（V3AbsUpgSanity）。
+- hAbs（t = 0）: T0AbsW を T0AbsWU に替え、t = 0 のエンジンの結論を許容つきの形 PX にした（V3T0DepAbsU〜V3T0CarrierAbsU）。値が標準形であることはエンジンの順位の帰納法で同時に出す。39 列の反例で新しい入力が成り立つ（V3T0AbsUpgSanity）。
+- 残り: 入口の 11 入力はどれも偽と分かっていないが、どれも測定だけで、Lean で証明していない。全射はさらに EvalFSNZ 2。
+
 **13 回目（2026-11-01、codex）**: Inv3V3 の上に新しいトップの入口を組んだ（すべて緑、1315 jobs）。
 - V3MainV3: inv3V3_all・desc3_V3・order_pres_V3・surj_V3。V3TranslationInputsV3: desc3_of_enginesV3・translation_order_of_enginesV3・translation_surj_of_enginesV3。古いトップ V3TopT2B は使わず、変えていない。
 - 入口は 11 個の入力をとる: HDropV3（落とす補題の結論）、HFrameV3、t = 0 の hAbs（T0AbsW）・hSeeds、t = 1 の hQR・hQN、t = 2 の hBX（AbsWNx）・hFO・hSF・hSP・hN。全射はさらに EvalFSNZ 2。
