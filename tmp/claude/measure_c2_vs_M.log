@@ -23,3 +23,13 @@ PART3 {
  "last.lhd0": 4924,
  "notlast.eq": 4
 }
+PART4 {
+ "M_argfree.True": 4576,
+ "N_argfree.True": 4576,
+ "CL_M_d_empty.True": 4576,
+ "CL_N_d_empty.True": 4576,
+ "M_argfree.False": 348,
+ "N_argfree.False": 348,
+ "CL_M_d_empty.False": 348,
+ "CL_N_d_empty.False": 348
+}

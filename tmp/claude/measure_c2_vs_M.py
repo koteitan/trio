@@ -87,3 +87,25 @@ for row in rows:
             rel = 'eq' if old == new else ('lhd0' if lhdV((), new, old) else ('lt' if B.lt(new, old) else 'not_lt'))
             cnt3['%s.%s' % ('last' if pos == len(clT) - 1 else 'notlast', rel)] += 1
 print('PART3', json.dumps(dict(cnt3), indent=1))
+
+# --- part 4: is the last child of CL_T(r) argument-free (o = psi s 0) in M and in N? ---
+cnt4 = collections.Counter()
+seen4 = set()
+for row in rows:
+    M = list(map(tuple, row['matrix'])); x = row['x']; r = row['r']
+    for n in (2, 3):
+        key = (tuple(M), n)
+        if key in seen4: continue
+        seen4.add(key)
+        try:
+            C = A.ctx(M); T = A.ctx(M[:x])
+            N = list(map(tuple, B.trio.expand([list(c) for c in M], n))); CN = A.ctx(N)
+            if not all(c.ok for c in (C, T, CN)): continue
+        except Exception: continue
+        d = T.CL(r)[-1]
+        oM, oN = C.o(d), CN.o(d)
+        cnt4['M_argfree.%s' % (oM[1] == () and oM[2] == ())] += 1
+        cnt4['N_argfree.%s' % (oN[1] == () and oN[2] == ())] += 1
+        cnt4['CL_M_d_empty.%s' % (C.CL(d) == [])] += 1
+        cnt4['CL_N_d_empty.%s' % (CN.CL(d) == [])] += 1
+print('PART4', json.dumps(dict(cnt4), indent=1))
