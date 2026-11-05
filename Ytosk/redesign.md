@@ -4,6 +4,13 @@
 
 ## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個）
 
+**15 回目（2026-11-04〜05、claude と codex）**: 入口の入力 hFO・hSF・hSP を、狭い残りに帰着させた（すべて緑、1356 jobs、公理は標準 3 つ）。
+- hFO（t = 2 の種の枠の途中の状態の標準形）: 「Good3 だけから途中の状態の標準形」は項の反例で偽（a = 0、子の o = [ψ_1(ψ_0(Ω_2)), ψ_0(Ω_2)]）。種の配置ごとに既存の補題から QFO だけを抜き出し、古い束 Res3W と旧 PV を使わない形にした（V3SeedFO）。qr・qn・sv は残りなし。
+- C の配置（q ≠ r で q が r の最後の数える子でない）の条件 un（upg M (x−1) = none）は偽（151844 枠中 2666、上げ先は祖先）。C を un の真偽で分け、真（C1）は閉じた（V3SeedFO2）。
+- un が偽の C2 では、x − 1 は T = M.take x の最後の列なので上げを持てず、v(x−1) が M と T で違う。N = M[n] を T でなく M と比べると、r の数える子は CL_N(r) = CL_M(r) ++ [q]、v(r) は不変、最後の子の o は ◁ で下がり、前の子は等しい。各途中の状態の引数は M と等しいか ◁ で下で、M の状態の標準形が ◁ で移る（V3SeedFOC2、残り T2C2RootRel）。
+- hSF・hSP: PH3c・FC3 の種の補題を配置ごとに今の文脈へ移し（V3SeedPF）、読む欄だけの束 SeedPFResV3 と、C2 の種の枠から入力を出した（V3SeedPFAll）。SeedPFResV3 は SRO 未満の全データで失敗 0。
+- 残り: hFO・hSF・hSP は T2C2RootRel と SeedPFResV3（どちらも測定で失敗 0）に帰着。ほかの 8 入力は測定だけ。
+
 **14 回目（2026-11-01〜03、claude と codex）**: 入口の偽の入力 3 つをすべて置き換えた。新しい入口は V3TranslationAllUV3（desc3_of_step_enginesV3UU・translation_order_of_step_enginesV3UU・translation_surj_of_step_enginesV3UU、すべて緑、公理は標準 3 つ、1351 jobs）。
 - hQR: 項のすべての分解を量化する OFields をやめ、展開で実際に使う段の形 FStep だけを受ける HQRInputsStepV3 にした（V3QRStepV3）。3 列の標準形で局所の欄が成り立つことを示した（V3QRStepSanity）。
 - 値の変化の形: 悪い bump の呼び出しの枠では、v・o・W の変化 ψ_w(L + L) → ψ_w(L + R)（L = Ω_{w+w}、R = ψ_{w+1}(L)）が DQ の形にない。どの η でも fsD(L, η) = Ω_{w+k} なので（V3DQNotBadLeaf、Lean で証明）。悪い葉 fsD(l, η) ≤ q < l を足した DQX で書ける（V3DQX、V3DQXSanity）。
