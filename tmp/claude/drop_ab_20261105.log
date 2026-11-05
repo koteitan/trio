@@ -1,0 +1,86 @@
+{"set": "graftM36.pkl", "n": 24690, "sec": 105, "cnt": {"CB.ok": 46, "CB2.ok": 46, "absfail": 46, "guard": 1250277, "n": 24690}, "ex": {}}
+{"set": "graftM36x.pkl", "n": 18227, "sec": 73, "cnt": {"CB.ok": 160, "CB2.ok": 160, "absfail": 160, "guard": 822631, "n": 18227}, "ex": {}}
+{"set": "lift1.pkl", "n": 15190, "sec": 52, "cnt": {"guard": 510647, "n": 15190}, "ex": {}}
+{"set": "lift2.pkl", "n": 7279, "sec": 15, "cnt": {"guard": 342253, "n": 7279}, "ex": {}}
+{"set": "g36_1.pkl", "n": 1102, "sec": 1, "cnt": {"CB.ok": 5, "CB2.ok": 5, "absfail": 5, "guard": 16579, "n": 1102}, "ex": {}}
+{"set": "g36_2.pkl", "n": 5962, "sec": 15, "cnt": {"CB.ok": 19, "CB2.ok": 19, "absfail": 19, "guard": 124360, "n": 5962}, "ex": {}}
+{"set": "hunt_found.pkl", "n": 10, "sec": 0, "cnt": {"guard": 194, "n": 10}, "ex": {}}
+{"set": "graft36.pkl", "n": 100, "sec": 0, "cnt": {"CB.ok": 20, "CB2.ok": 20, "absfail": 20, "guard": 2088, "n": 100}, "ex": {}}
+{"set": "graft36b.pkl", "n": 3461, "sec": 6, "cnt": {"CB.ok": 234, "CB2.ok": 234, "absfail": 234, "guard": 73137, "n": 3461}, "ex": {}}
+{"set": "graft36c.pkl", "n": 11451, "sec": 23, "cnt": {"CB.ok": 414, "CB2.ok": 414, "absfail": 414, "guard": 247139, "n": 11451}, "ex": {}}
+{"set": "cex36.pkl", "n": 1, "sec": 0, "cnt": {"CB.ok": 1, "CB2.ok": 1, "absfail": 1, "guard": 22, "n": 1}, "ex": {}}
+{"set": "graft4.pkl", "n": 17293, "sec": 30, "cnt": {"guard": 397523, "n": 17293}, "ex": {}}
+{"set": "graft5.pkl", "n": 12214, "sec": 11, "cnt": {"guard": 240209, "n": 12214}, "ex": {}}
+{"set": "graft2.pkl", "n": 9680, "sec": 16, "cnt": {"guard": 267436, "n": 9680}, "ex": {}}
+{"set": "graft3.pkl", "n": 6638, "sec": 12, "cnt": {"guard": 171034, "n": 6638}, "ex": {}}
+{"set": "graftQ1.pkl", "n": 4540, "sec": 11, "cnt": {"guard": 178912, "n": 4540}, "ex": {}}
+{"set": "graftH.pkl", "n": 21905, "sec": 32, "cnt": {"CB.ok": 546, "CB2.ok": 546, "absfail": 546, "guard": 356929, "n": 21905}, "ex": {}}
+{"set": "graftD.pkl", "n": 37749, "sec": 70, "cnt": {"CB.ok": 555, "CB2.ok": 555, "absfail": 555, "guard": 765146, "n": 37749}, "ex": {}}
+{"set": "graftF.pkl", "n": 48754, "sec": 7, "cnt": {"guard": 370480, "n": 48754}, "ex": {}}
+{"set": "graftG.pkl", "n": 56699, "sec": 9, "cnt": {"guard": 237455, "n": 56699}, "ex": {}}
+{"set": "graftE.pkl", "n": 54990, "sec": 107, "cnt": {"CB.ok": 492, "CB2.ok": 492, "absfail": 492, "guard": 1282078, "n": 54990}, "ex": {}}
+{"set": "graftw1.pkl", "n": 9306, "sec": 22, "cnt": {"guard": 342124, "n": 9306}, "ex": {}}
+{"set": "graftw2.pkl", "n": 34209, "sec": 72, "cnt": {"guard": 1163984, "n": 34209}, "ex": {}}
+{"set": "graftQ2.pkl", "n": 29364, "sec": 76, "cnt": {"guard": 1387805, "n": 29364}, "ex": {}}
+{"set": "graftA1.pkl", "n": 59793, "sec": 201, "cnt": {"CB.ok": 34, "CB2.ok": 34, "absfail": 34, "guard": 1574188, "n": 59793}, "ex": {}}
+{"set": "graftA2.pkl", "n": 77059, "sec": 192, "cnt": {"CB.ok": 24, "CB2.ok": 24, "absfail": 24, "guard": 1724106, "n": 77059}, "ex": {}}
+{"set": "graftA3.pkl", "n": 258623, "sec": 2556, "cnt": {"CB.ok": 26, "CB2.ok": 26, "absfail": 26, "guard": 7971166, "n": 258623}, "ex": {}}
+{"set": "graftU.pkl", "n": 32339, "sec": 68, "cnt": {"CB.ok": 2354, "CB2.ok": 2354, "absfail": 2354, "guard": 773196, "n": 32339}, "ex": {}}
+{"set": "graftF_a.pkl", "n": 24377, "sec": 7, "cnt": {"guard": 185322, "n": 24377}, "ex": {}}
+{"set": "graftF_b.pkl", "n": 24377, "sec": 4, "cnt": {"guard": 185158, "n": 24377}, "ex": {}}
+{"set": "graftC.pkl", "n": 11486, "sec": 1, "cnt": {"guard": 21679, "n": 11486}, "ex": {}}
+{"set": "graft_b2.pkl", "n": 7977, "sec": 40, "cnt": {"CB.ok": 1, "CB2.ok": 1, "absfail": 1, "guard": 234872, "n": 7977}, "ex": {}}
+{"set": "graft_sib.pkl", "n": 3474, "sec": 6, "cnt": {"guard": 89374, "n": 3474}, "ex": {}}
+{"set": "graftQ3.pkl", "n": 215650, "sec": 649, "cnt": {"guard": 10974424, "n": 215650}, "ex": {}}
+{"set": "graftR.pkl", "n": 31558, "sec": 99, "cnt": {"CB.ok": 480, "CB2.ok": 480, "absfail": 480, "guard": 913910, "n": 31558}, "ex": {}}
+{"set": "grafts_ab.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "Cprime.pkl", "n": 404051, "sec": 113, "cnt": {"guard": 2798401, "n": 404046}, "ex": {}}
+{"set": "b2grow1.pkl", "n": 6517, "sec": 11, "cnt": {"guard": 184476, "n": 6517}, "ex": {}}
+{"set": "b2grow2.pkl", "n": 10081, "sec": 25, "cnt": {"guard": 393957, "n": 10081}, "ex": {}}
+{"set": "b2t0test.pkl", "n": 135, "sec": 0, "cnt": {"guard": 2271, "n": 135}, "ex": {}}
+{"set": "cbadext.pkl", "n": 3756, "sec": 1, "cnt": {"guard": 65179, "n": 3750}, "ex": {}}
+{"set": "d3s.pkl", "n": 15000, "sec": 13, "cnt": {"guard": 156892, "n": 14999}, "ex": {}}
+{"set": "deep2.pkl", "n": 128150, "sec": 90, "cnt": {"guard": 1327327, "n": 128146}, "ex": {}}
+{"set": "deep3.pkl", "n": 123493, "sec": 90, "cnt": {"guard": 1288291, "n": 123489}, "ex": {}}
+{"set": "e3exp.pkl", "n": 347644, "sec": 131, "cnt": {"guard": 2220353, "n": 347644}, "ex": {}}
+{"set": "expP.pkl", "n": 614584, "sec": 234, "cnt": {"guard": 6501070, "n": 614583}, "ex": {}}
+{"set": "expPt2.pkl", "n": 2460115, "sec": 1320, "cnt": {"guard": 32761117, "n": 2460115}, "ex": {}}
+{"set": "ext1.pkl", "n": 1082667, "sec": 136, "cnt": {"guard": 4573101, "n": 1082662}, "ex": {}}
+{"set": "ext1x.pkl", "n": 119974, "sec": 35, "cnt": {"guard": 906960, "n": 119974}, "ex": {}}
+{"set": "ext2.pkl", "n": 1497986, "sec": 716, "cnt": {"guard": 10674769, "n": 1497981}, "ex": {}}
+{"set": "ext2b2.pkl", "n": 4073, "sec": 2, "cnt": {"guard": 72866, "n": 4073}, "ex": {}}
+{"set": "ext2b2G.pkl", "n": 1940, "sec": 1, "cnt": {"guard": 33120, "n": 1940}, "ex": {}}
+{"set": "ext2b2S.pkl", "n": 2133, "sec": 1, "cnt": {"guard": 39746, "n": 2133}, "ex": {}}
+{"set": "ext2b2Sf.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "ext2b2St.pkl", "n": 2133, "sec": 1, "cnt": {"guard": 39746, "n": 2133}, "ex": {}}
+{"set": "ext2n2.pkl", "n": 1493913, "sec": 719, "cnt": {"guard": 10601903, "n": 1493908}, "ex": {}}
+{"set": "ext3s.pkl", "n": 592841, "sec": 162, "cnt": {"guard": 2772730, "n": 592841}, "ex": {}}
+{"set": "graftA.pkl", "n": 13876, "sec": 7, "cnt": {"guard": 201131, "n": 13875}, "ex": {}}
+{"set": "graftAb.pkl", "n": 0, "sec": 0, "cnt": {}, "ex": {}}
+{"set": "graftAn.pkl", "n": 13876, "sec": 7, "cnt": {"guard": 201131, "n": 13875}, "ex": {}}
+{"set": "graftB.pkl", "n": 155926, "sec": 106, "cnt": {"CB.ok": 9, "CB2.ok": 9, "absfail": 9, "guard": 2598573, "n": 155926}, "ex": {}}
+{"set": "graftBb.pkl", "n": 756, "sec": 0, "cnt": {"guard": 13644, "n": 756}, "ex": {}}
+{"set": "graftBb2.pkl", "n": 80228, "sec": 58, "cnt": {"CB.ok": 9, "CB2.ok": 9, "absfail": 9, "guard": 1337327, "n": 80228}, "ex": {}}
+{"set": "graftBb2G.pkl", "n": 49091, "sec": 38, "cnt": {"guard": 823977, "n": 49091}, "ex": {}}
+{"set": "graftBb2S.pkl", "n": 31137, "sec": 21, "cnt": {"CB.ok": 9, "CB2.ok": 9, "absfail": 9, "guard": 513350, "n": 31137}, "ex": {}}
+{"set": "graftBb2Sf.pkl", "n": 468, "sec": 0, "cnt": {"guard": 8424, "n": 468}, "ex": {}}
+{"set": "graftBb2St.pkl", "n": 30669, "sec": 19, "cnt": {"CB.ok": 9, "CB2.ok": 9, "absfail": 9, "guard": 504926, "n": 30669}, "ex": {}}
+{"set": "graftBb2St_g0.pkl", "n": 2738, "sec": 2, "cnt": {"guard": 44316, "n": 2738}, "ex": {}}
+{"set": "graftBb2St_g1.pkl", "n": 8292, "sec": 7, "cnt": {"guard": 136056, "n": 8292}, "ex": {}}
+{"set": "graftBb2St_g2.pkl", "n": 2711, "sec": 2, "cnt": {"guard": 46624, "n": 2711}, "ex": {}}
+{"set": "graftBb2St_p0.pkl", "n": 2711, "sec": 2, "cnt": {"guard": 43913, "n": 2711}, "ex": {}}
+{"set": "graftBb2St_p1.pkl", "n": 3064, "sec": 2, "cnt": {"guard": 50126, "n": 3064}, "ex": {}}
+{"set": "graftBb2St_x0.pkl", "n": 2708, "sec": 2, "cnt": {"guard": 43853, "n": 2708}, "ex": {}}
+{"set": "graftBb2St_x1.pkl", "n": 5772, "sec": 4, "cnt": {"CB.ok": 6, "CB2.ok": 6, "absfail": 6, "guard": 93979, "n": 5772}, "ex": {}}
+{"set": "graftBb2St_x2.pkl", "n": 2673, "sec": 2, "cnt": {"CB.ok": 3, "CB2.ok": 3, "absfail": 3, "guard": 46059, "n": 2673}, "ex": {}}
+{"set": "graftBn.pkl", "n": 155170, "sec": 106, "cnt": {"CB.ok": 9, "CB2.ok": 9, "absfail": 9, "guard": 2584929, "n": 155170}, "ex": {}}
+{"set": "graftBn2.pkl", "n": 75698, "sec": 50, "cnt": {"guard": 1261246, "n": 75698}, "ex": {}}
+{"set": "shapegrow.pkl", "n": 2372, "sec": 2, "cnt": {"guard": 47670, "n": 2372}, "ex": {}}
+{"set": "std_a.pkl", "n": 79201, "sec": 5, "cnt": {"guard": 353779, "n": 79201}, "ex": {}}
+{"set": "std_ab2.pkl", "n": 67, "sec": 0, "cnt": {"guard": 391, "n": 67}, "ex": {}}
+{"set": "std_ab2G.pkl", "n": 41, "sec": 0, "cnt": {"guard": 246, "n": 41}, "ex": {}}
+{"set": "std_ab2S.pkl", "n": 26, "sec": 0, "cnt": {"guard": 145, "n": 26}, "ex": {}}
+{"set": "std_an2.pkl", "n": 79134, "sec": 5, "cnt": {"guard": 353388, "n": 79134}, "ex": {}}
+{"set": "std_b.pkl", "n": 7410825, "sec": 795, "cnt": {"guard": 43853715, "n": 7410825}, "ex": {}}
+{"set": "t0ext.pkl", "n": 181290, "sec": 62, "cnt": {"guard": 1310099, "n": 181287}, "ex": {}}
+{"set": "t2ext.pkl", "n": 1207960, "sec": 410, "cnt": {"guard": 10745323, "n": 1207957}, "ex": {}}
