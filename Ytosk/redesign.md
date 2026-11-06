@@ -19,7 +19,10 @@
 - C2 の形 2 で道の長さ 1（q − 1 が c0 の最後の数える子で葉、upg(q − 1) = q、170 枠）を証明した（V3C2Shape2）。依存の閉包の不変条件 depS_C2_inv（種 = q の部分木と o(r)、閉包は q の子孫・o(r) 以上の順位・v(q−1)・o(q−1)・o(c0)）、閉包の外での一致 C_dep_agree、v_N(q−1) ≤ v_M(q−1)（C2_vw_le: v(q) の最後の項が ω^S と ω^{S+1}）、組み立て C2_len1（c0 の最後の子の引数が 0 なので引き金が立たず、引数 B + Ω_{v(q−1)} が大きくならない）。残り C2Kids5 はこの形でない枠だけ。
 - QNRelR3（qn の配置の M.take x の状態の形）を証明した（V3QNBase）: 10 月の qn_take_t1L を今の文脈へ移した（qn_take_t1LV3）。状態 = B + Ω_{V+ω_T}、ω_T は単一の項なので V < V + ω_T。束 SeedPFResV3R4・SeedVFResV3R4 から qn の欄が消えた。
 - T2SeedCDom の第 1 欄は t2SeedCDom1_holds で証明済みなので、第 2 欄だけの T2SeedCDomR に（V3CDomR）。
-- 今の最上位は translation_order_res10・translation_surj_res10（V3CDomR）。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
+- QRRelR.w1（¬ B < σ X）を X ≤ B に帰着した（V3QRW1）: σ B = B（tame_sigmaB_std）。CL_T(r) = Lc で、最後の子 c の前は値が同じ。T で引き金が立つなら t2SVc0'_of_dropV3 で M も同じ添字で引数が大きく、trig_mono・H_mono。どちらも立たないなら PO と add の単調性。残りは切り替わりがないこと（QRNoSwitch、測定では 0 件）。
+- sv・C の rw を k によらない形にした（V3RwFree）: SVRel.rw ⟸ T2SVStrict（X₁ < σX₁、sv_rw_of を移した）、CRelR.rw ⟸ X₁ < σX₁ と σX₁ の加数の下界（c_rw_ofV3）。下界は decP から出る（c_hi_of_decP）。
+- T2SeedQNDom の第 2 欄は T2VRAQNDom の段 u = V の場合（comps_V(V) = []）なので、第 1 欄だけの T2SeedQNDomF に（V3QNDomF）。
+- 今の最上位は translation_order_res13・translation_surj_res13（V3QNDomF）。種まわりの残りは SeedVFResV3R8: qr の QRNoSwitch、sv の T2SVStrict、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF、T2SeedCDomR。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
 - 最上位 translation_order_res2・translation_surj_res2（V3C2Root）の残り 17 個（res5 では上の 3 つが狭い形に替わる）: HDropInputsV3、HFrameV3、T0AbsWU、T0SeedsN、HQRInputsStepV3、HQNInputsV3、T2BelowAtV3U、HCanon、SeedVFResV3R3、C2Kids3、T2C2RootRel3、FDshAt、T2VRAQNDom、T2VRASeedC、CopyEsc2、VDomU、KAG2（全射はさらに EvalFSNZ 2）。すべて 86 集合で失敗 0（T2VRAQNDom 88.6 万枠、T2VRASeedC 72.2 万件、HCanon は M で 121 万件・M.take(len−1) で 107 万件）。
 
 **16 回目（2026-11-06、claude）**: 入力 hN の写しと VSmallRAll の残りを 86 集合で測り、偽だった 3 つを弱い形に替え、2 つを狭い残りに帰着させた（すべて緑、1257 jobs、公理は標準 3 つ）。
