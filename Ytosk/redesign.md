@@ -12,7 +12,7 @@
 - hN: N の VSmallF・FrameClosed・VSmallRAll の橋を U の鎖へ写し（V3T2SmallV3U・V3T2LocalV3U）、種の枠の QVSF・QFCo の補題を今の文脈へ移した（V3SeedVF、V3SeedVFAll）。hN ⟸ hBXU、SeedVFResV3（SeedPFResV3・T2SeedQNDom・T2SeedCDom と C2 の種の枠）、写しと VSmallRAll の 6 つの残り（T2CopyK FDshAt・T2VRASeed・T2VRAPre・T2VRACopyEsc・T2CopyK CopyVDomK・T2VRAK KAG）。T2SeedQNDom・T2SeedCDom は SRO 未満の全データで失敗 0。
 - hD: 既存の hDropV3_of_inputs の 5 つの入力 DropInputsV3（HardArg・VSmallNew・BumpWeakSrcB2・BumpAbsCB2・ua）を 86 集合で測り、すべて失敗 0（HardArg 1736 万件、BumpAbsCB2 の吸収の破れ 5465 件はすべて WCSP2 の側、ua の弱い場合 14.5 万件もすべて WCSP2 の側）。
 - hF: 不変条件 Inv3V3 の全欄の監査を 86 集合で走らせ、hF の枠の 8 欄（adsx・aus・tplosx・tploq・auw0・trigs・tplon・adn0）は失敗 0。葉の 2 欄（TP1LeafG・TP1WLeafG）は未測定。
-- 注意: hN の残り T2VRAK KAG の第 2 欄 KG は、10 月の測定（段 u を V 以下のすべてで取った形）で 24 件偽だった。今の残りは u を LevAt の段に限るので反例とは限らないが、今の形で測り直しが要る。
+- hN の残り T2VRAK KAG は今の形（段 u を LevAt に限る）でも偽だった（86 集合、graft の 5 集合で 2643 件、tmp/claude/measure_t2vrak86.py）。例は V = v_P(r) = 0、s = a = v_P(i) で、s − V の動く位置の成分 g = ψ_{ψ_{p(1)+1}(0)}(0) は Ω_s より大きく、B = 0。QVRAt はこの枠で第 3 の選択肢（g ≤ comps u a の成分）で成り立つ。KG に第 3 の選択肢「g ≤ d、d は a − V の動く位置の成分」を足した KAG2 は失敗 0（tmp/claude/measure_kag2.py）。σ g ≤ σ d で、σ d は f(a) の成分（compsAN_sh_fwdK）。σ 移送 qVRAshK_KVRA2 と入口 hN_of2（KAG の代わりに KAG2）を示した（V3T2VRAK2・V3SeedVFAll2、緑）。
 - 残り: hFO・hSF・hSP は T2C2RootRel と SeedPFResV3（どちらも測定で失敗 0）に帰着。hN は上の残りに帰着（写しと VSmallRAll の 6 つは未測定）。hD は DropInputsV3（測定で失敗 0）に帰着。ほかの 6 入力は測定だけ。
 
 **14 回目（2026-11-01〜03、claude と codex）**: 入口の偽の入力 3 つをすべて置き換えた。新しい入口は V3TranslationAllUV3（desc3_of_step_enginesV3UU・translation_order_of_step_enginesV3UU・translation_surj_of_step_enginesV3UU、すべて緑、公理は標準 3 つ、1351 jobs）。
