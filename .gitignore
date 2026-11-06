@@ -1,3 +1,5 @@
+# measurement data (pickle) is never committed
+*.pkl
 lean/.lake/
 .lake/
 __pycache__/
