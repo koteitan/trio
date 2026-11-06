@@ -299,4 +299,103 @@ theorem C_dep_agree {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 #print axioms C_dep_agree
 
+/-- **Step 3: `v_N(w) ≤ v_M(w)` for `w = q − 1` upgraded to `q`.**  `v(w) = v(r) + last(v(q))` in both (`P_1 w = P_1 q = r`),
+`v_N(q) = v(r) + ω^S` (`vq_eq_gexp`) and `v_M(q) = v(r) + ω^{S+1}` (the bump term `1` of `x`, as in `qn_vqlt`). -/
+theorem C2_vw_le {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) {n : Nat} (hn : 2 ≤ n) {σ : Valn}
+    (hCN : Cons (TRIO.gexp M r L (entry M 0 (r + L) - entry M 0 r) (entry M 1 (r + L) - entry M 1 r) n) σ)
+    {w : Nat} (hwq : w + 1 = q) (hu : upg M w = some q) : σ.v w ≤ ρ.v w := by
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  have hpq := par0_q_t2 hM hS I hlen hr hq hqr
+  have hrq : r < q := par_lt M 0 q r hpq
+  have hqx : q < r + L := par_lt M 0 _ _ hq
+  have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
+  have hpq' : par M 0 (r + (q - r)) = some r := by rw [show r + (q - r) = q by omega]; exact hpq
+  obtain ⟨Txb, _, _, _, _⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+  rw [show r + (q - r) = q by omega] at Txb
+  have hxq : r + L ∈ children M q := mem_children_iff.mpr ⟨by omega, hq⟩
+  have he2q : entry M 2 q = 1 := I.be q (r + L) hxq Txb
+  have he1q : entry M 1 (r + L) = entry M 1 q :=
+    e1_of_col (show col M (r + L) = (entry M 0 q + 1, entry M 1 q, 1) from Txb)
+  have h1lt := (par2_facts I.z2 (show r + L < M.length by omega) hr).2
+  have hp1q : par M 1 q = some r := par1_of_child hpq (by omega)
+  have hsplit := split_last_max _ _ (children_sorted M q) hxq
+    (fun d hd => by have := (mem_children hd).2; omega)
+  set Lq := (children M q).filter (fun d => decide (d < r + L)) with hLqd
+  have hbx : bumpTerm M ρ q (r + L) = one := by
+    unfold bumpTerm; rw [if_pos Txb, children_last (by omega)]; rfl
+  have hqM : q < M.length := by omega
+  have hv := (I.cons q hqM).2
+  unfold vRhs at hv
+  rw [if_neg (by omega), if_neg (by omega), hp1q, hsplit, List.map_append, List.map_singleton, hbx] at hv
+  change ρ.v q = sf (add (ρ.v r) (omega (sumN (one :: (Lq.map (bumpTerm M ρ q) ++ [one]))))) at hv
+  set S := sumN (one :: Lq.map (bumpTerm M ρ q)) with hSdef
+  have hOT : ∀ t ∈ one :: Lq.map (bumpTerm M ρ q), isOT t = true := by
+    intro t ht
+    rcases List.mem_cons.mp ht with rfl | ht
+    · rfl
+    · obtain ⟨d, _, rfl⟩ := List.mem_map.mp ht
+      exact isOT_bumpTerm I.good q d
+  have hSot : isOT S = true := isOT_sumN _ hOT
+  have hS1 : sumN (one :: (Lq.map (bumpTerm M ρ q) ++ [one])) = sf (add S one) := by
+    simp only [hSdef, sumN, List.foldl_cons, List.foldl_append, List.foldl_nil]
+  rw [hS1] at hv
+  have hA1 : isOT (add S one) = true := isOT_add hSot rfl
+  rw [sf_ot hA1] at hv
+  have hVot : isOT (ρ.v r) = true := I.good.ot_v r (by omega)
+  have hW : isOT (add (ρ.v r) (omega (add S one))) = true := isOT_add hVot (isOT_omega hA1)
+  rw [sf_ot hW] at hv
+  -- the last summands of `v(q)`
+  have hvqN : σ.v q = qnS M ρ r L q := vq_eq_gexp hM hS I hz h2 hlen hr hn hCN hq hqr
+  have hlastN : last (σ.v q) = omega S := by
+    rw [hvqN]; unfold qnS
+    obtain ⟨s0, y0, hw0⟩ := omega_psi_form S
+    rw [show sumN (one :: ((children M q).filter (fun d => decide (d < r + L))).map (bumpTerm M ρ q)) = S from rfl,
+      hw0, last_add_single]
+  have hlastM : last (ρ.v q) = omega (add S one) := by
+    rw [hv]
+    obtain ⟨s0, y0, hw0⟩ := omega_psi_form (add S one)
+    rw [hw0, last_add_single]
+  have hlast : last (σ.v q) ≤ last (ρ.v q) := by
+    rw [hlastN, hlastM]
+    apply le_of_lt
+    apply omega_lt_omega hSot hA1
+    have := add_lt_add_left S (show z < one from rfl)
+    rwa [add_z_right] at this
+  -- `v(w)` in `N` and `M`
+  have hwx : w + 1 < r + L := by omega
+  have hwM : w < M.length := by omega
+  obtain ⟨he1w, he2w'⟩ := upg_e12 hu
+  have he2w : entry M 2 w = 0 := by have := I.z2 w; omega
+  obtain ⟨m, hm1, hmq, _, _⟩ := upg_spec hu
+  rw [hp1q] at hmq; cases hmq
+  set d0 := entry M 0 (r + L) - entry M 0 r with hd0def
+  set d1 := entry M 1 (r + L) - entry M 1 r with hd1def
+  set N := TRIO.gexp M r L d0 d1 n with hN
+  have hm1n : 1 ≤ n := by omega
+  have hlN : N.length = r + n * L := TRIO.gexp_length hlen
+  have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L (by omega)
+  have hT : N.take (r + L) = M.take (r + L) := gexp_take_x hlen hm1n
+  have hvr : σ.v r = ρ.v r := (C_root hM hS I hz h2 hlen hr hq hqr hn hCN).1
+  have hpar : par N 1 w = par M 1 w := by
+    rw [← par_take N 1 w (show w < r + L by omega), hT, par_take M 1 w (show w < r + L by omega)]
+  have hupg : upg N w = upg M w := by rw [← upg_take _ hwx, hT, upg_take M hwx]
+  have hvN : σ.v w = sf (add (σ.v r) (last (σ.v q))) := by
+    rw [(hCN w (by omega)).2]; unfold vRhs
+    rw [entry_gexp_pre hlen hm1n 1 (by omega), entry_gexp_pre hlen hm1n 2 (by omega), if_neg he1w, if_pos he2w,
+      hpar, hupg, hm1, hu]
+    rfl
+  have hvM : ρ.v w = sf (add (ρ.v r) (last (ρ.v q))) := by
+    rw [(I.cons w hwM).2]; unfold vRhs
+    rw [if_neg he1w, if_pos he2w, hm1, hu]
+    rfl
+  have hlqN : isOT (last (σ.v q)) = true := by rw [hlastN]; exact isOT_omega hSot
+  have hlqM : isOT (last (ρ.v q)) = true := by rw [hlastM]; exact isOT_omega hA1
+  rw [hvN, hvM, hvr, sf_ot (isOT_add hVot hlqN), sf_ot (isOT_add hVot hlqM)]
+  exact add_le_add_left _ hlast
+
+#print axioms C2_vw_le
+
 end Ytosk.V3Main.SeedPF
