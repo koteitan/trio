@@ -5,6 +5,10 @@
 from the parent and upgrade structure of `x′` in `N`.  With `σ.v r = ρ.v r` (a field of `T2C2Kids`) and
 `v_N(q) = qnS` (`vq_eq_gexp`), `v_N(x) = v_N(q)`.  So the C2 residual `T2C2QKids` follows from `T2C2Kids`, and
 `hN_of5` takes neither `T2VRASeed` nor `T2VRAPre` as an input.
+
+The C2 seed frames of `q` (QVF for hN, QPF for hSF/hSP) use only these facts, as in C1 (`seed_frames_C3V3`,
+`seed_frames_CV3`): `seedFr_q_C2`, `seedFrPF_q_C2`.  The bundles `SeedPFResV3R`, `SeedVFResV3R` keep the C2 seed
+frames of `r` only; entry points `hSF_of2`, `hSP_of2`, `hN_of6`.
 -/
 import Ytosk.V3VRASeedU
 import Ytosk.V3T2SmallV3U3
@@ -177,6 +181,144 @@ theorem t2C2QKids_of_kids {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
 
 #print axioms t2C2QKids_of_kids
 
+/-- **C2: the seed frame of `q`** (VSmallF, FrameOT, FrameClosed) from `T2C2Kids`: its only frame is `x′` with
+`v(x′) = v(q) = qnS`, as in the C1 proof (`seed_frames_C3V3`). -/
+theorem seedFr_q_C2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hK : T2C2Kids M ρ r L q) : SeedFr QVF M r L q := by
+  have hqC := t2C2QKids_of_kids hM hS I hz h2 hlen hr hq hqr hK
+  have hrx : r < r + L := par_lt M 2 _ _ hr
+  have hrM : r < M.length := by omega
+  have hs'ot : isOT (qnS M ρ r L q) = true := qnS_ot I hrM L q
+  intro n hn _ σ hCN hGN Lc c R hcl
+  obtain ⟨hCLq, hvxq⟩ := hqC n hn σ hCN hGN
+  have hvq : σ.v q = qnS M ρ r L q := vq_eq_gexp hM hS I hz h2 hlen hr hn hCN hq hqr
+  have hxN : r + L < (G2 M r L n).length := by
+    rw [TRIO.gexp_length hlen]
+    have : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn
+    omega
+  have hc : Lc = [] ∧ c = r + L := by
+    rw [hCLq] at hcl
+    rcases Lc with _ | ⟨a, l⟩
+    · simp at hcl; exact ⟨rfl, hcl.1.symm⟩
+    · simp at hcl
+  obtain ⟨rfl, rfl⟩ := hc
+  obtain ⟨y0, hy0⟩ := o_psi_sub hCN hxN
+  rw [sf_ot (hGN.ot_v _ hxN), hvxq, hvq] at hy0
+  refine ⟨?_, hGN.ot_o _ hxN, ?_⟩
+  · show QVSF (σ.v q) ([] : List T) (σ.o (r + L))
+    rw [hy0, hvq]
+    intro s y hsy g hg
+    simp only [psi.injEq] at hsy
+    obtain ⟨rfl, -⟩ := hsy
+    rw [comps_eq_nil_of_lev (fun q hq => lev_lt_of_summand hs'ot hq)] at hg; simp at hg
+  · show QFC (σ.v q) ([] : List T) (σ.o (r + L))
+    rw [hy0, hvq]
+    intro s y hsy _
+    simp only [psi.injEq] at hsy
+    obtain ⟨rfl, -⟩ := hsy
+    exact frameDom_self (fun u _ => by rw [spArg_nil]; rfl)
+
+#print axioms seedFr_q_C2
+
+/-- **C2: the PH/FC3 seed frame of `q`** from `T2C2Kids`, as in the C1 proof (`seed_frames_CV3`). -/
+theorem seedFrPF_q_C2 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (hK : T2C2Kids M ρ r L q) : SeedFr QPF M r L q := by
+  have hqC := t2C2QKids_of_kids hM hS I hz h2 hlen hr hq hqr hK
+  have hrx : r < r + L := par_lt M 2 _ _ hr
+  have hVs' : ρ.v r < qnS M ρ r L q := qnS_gt M ρ r L q
+  intro n hn _ σ hCN hGN Lc c R hcl
+  obtain ⟨hCLq, hvxq⟩ := hqC n hn σ hCN hGN
+  have hvq : σ.v q = qnS M ρ r L q := vq_eq_gexp hM hS I hz h2 hlen hr hn hCN hq hqr
+  have hxN : r + L < (G2 M r L n).length := by
+    rw [TRIO.gexp_length hlen]
+    have : 2 * L ≤ n * L := Nat.mul_le_mul_right L hn
+    omega
+  have hc : Lc = [] ∧ c = r + L := by
+    rw [hCLq] at hcl
+    rcases Lc with _ | ⟨a, l⟩
+    · simp at hcl; exact ⟨rfl, hcl.1.symm⟩
+    · simp at hcl
+  obtain ⟨rfl, rfl⟩ := hc
+  obtain ⟨y0, hy0⟩ := o_psi_sub hCN hxN
+  rw [sf_ot (hGN.ot_v _ hxN), hvxq, hvq] at hy0
+  refine ⟨fun s y c0 _ _ hB => absurd (spArg_nil _) (by simpa using hB), fun s y c0 hc _ _ _ => ?_⟩
+  rw [hy0] at hc
+  simp only [psi.injEq] at hc
+  obtain ⟨rfl, _, _⟩ := hc
+  rw [hvq]
+  exact ⟨fun _ => ⟨ne_of_gt (lt_of_le_of_lt (z_le (ρ.v r)) hVs'), qnS_last_ne_one I r L q⟩, fun h => absurd rfl h⟩
+
+#print axioms seedFrPF_q_C2
+
+/-- The C2 residual `T2C2Kids` at every C2 configuration of `M`. -/
+def C2Kids (M : Mat) (ρ : Valn) : Prop :=
+  ∀ r L q k, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+    (¬ ∃ Lc, CL M r = Lc ++ [q]) → upg M (r + L - 1) = some k → T2C2Kids M ρ r L q
+
+/-- `SeedPFResV3` with the C2 seed frames of `r` only (those of `q` follow from `T2C2Kids`). -/
+structure SeedPFResV3R (M : Mat) (ρ : Valn) : Prop where
+  qr : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
+    (∀ i, upg M i ≠ some (r + L)) → ∀ Lc, CL M r = Lc ++ [r + L] → QRRel M ρ r L Lc
+  sv : ∀ r L, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some r →
+    upg M (r + L - 1) = some (r + L) → SVRel M ρ r L
+  qn : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+    ∀ Lc, CL M r = Lc ++ [q] → QNRel M ρ r L q Lc
+  C1 : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+    (¬ ∃ Lc, CL M r = Lc ++ [q]) → upg M (r + L - 1) = none → CRel M ρ r L q ∧ T2SeedCBig M ρ r L q
+  C2r : ∀ r L q k, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+    (¬ ∃ Lc, CL M r = Lc ++ [q]) → upg M (r + L - 1) = some k → SeedFr QPF M r L r
+
+theorem seedPFResV3_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (h : SeedPFResV3R M ρ) (hK : C2Kids M ρ) : SeedPFResV3 M ρ :=
+  ⟨h.qr, h.sv, h.qn, h.C1, fun r L q k hlen hr hq hqr hcl hu i hi => by
+    rcases hi with rfl | rfl
+    · exact h.C2r _ L q k hlen hr hq hqr hcl hu
+    · exact seedFrPF_q_C2 hM hS I hz h2 hlen hr hq hqr (hK r L _ k hlen hr hq hqr hcl hu)⟩
+
+/-- `SeedVFResV3` with the C2 seed frames of `r` only. -/
+structure SeedVFResV3R (M : Mat) (ρ : Valn) : Prop where
+  pf : SeedPFResV3R M ρ
+  qnDom : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+    ∀ Lc, CL M r = Lc ++ [q] → T2SeedQNDom M ρ r L q Lc
+  cDom : ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+    (¬ ∃ Lc, CL M r = Lc ++ [q]) → upg M (r + L - 1) = none → T2SeedCDom M ρ r L q
+  C2r : ∀ r L q k, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+    (¬ ∃ Lc, CL M r = Lc ++ [q]) → upg M (r + L - 1) = some k → SeedFr QVF M r L r
+
+theorem seedVFResV3_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (h : SeedVFResV3R M ρ) (hK : C2Kids M ρ) : SeedVFResV3 M ρ :=
+  ⟨seedPFResV3_of hM hS I hz h2 h.pf hK, h.qnDom, h.cDom, fun r L q k hlen hr hq hqr hcl hu i hi => by
+    rcases hi with rfl | rfl
+    · exact h.C2r _ L q k hlen hr hq hqr hcl hu
+    · exact seedFr_q_C2 hM hS I hz h2 hlen hr hq hqr (hK r L _ k hlen hr hq hqr hcl hu)⟩
+
+/-- **The inputs hSF and hSP** with the C2 seed frames of `q` proved. -/
+theorem hSF_of2 (hRes : T2AtV3 (fun M ρ => SeedPFResV3R M ρ)) (hK : T2AtV3 (fun M ρ => C2Kids M ρ))
+    (hC2 : T2AtV3 (fun M ρ => ∀ r L q k,
+      r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+      (¬ ∃ Lc, CL M r = Lc ++ [q]) → upg M (r + L - 1) = some k → SeedFO.T2C2RootRel M ρ r L q)) :
+    T2AtV3 (fun M _ => T2SeedFrames G.QT2F M) :=
+  hSF_of (fun M ρ rk C hz h2 => seedPFResV3_of C.std C.ne (coreW C.S C.I) hz h2 (hRes M ρ rk C hz h2)
+    (hK M ρ rk C hz h2)) hC2
+
+theorem hSP_of2 (hRes : T2AtV3 (fun M ρ => SeedPFResV3R M ρ)) (hK : T2AtV3 (fun M ρ => C2Kids M ρ))
+    (hC2 : T2AtV3 (fun M ρ => ∀ r L q k,
+      r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+      (¬ ∃ Lc, CL M r = Lc ++ [q]) → upg M (r + L - 1) = some k → SeedFO.T2C2RootRel M ρ r L q)) :
+    T2AtV3 (fun M _ => T2SeedFrames G.QT2P M) :=
+  hSP_of (fun M ρ rk C hz h2 => seedPFResV3_of C.std C.ne (coreW C.S C.I) hz h2 (hRes M ρ rk C hz h2)
+    (hK M ρ rk C hz h2)) hC2
+
 /-- **The input hN** without `T2VRASeed` and `T2VRAPre`: they come from `SeedPFResV3`, `T2C2Kids`, `T2VRAQNDom` and
 `T2VRASeedC` (`hPre_of`, `t2VRASeed_ofV3`, `t2C2QKids_of_kids`). -/
 theorem hN_of5 (hBXU : T2AtV3 T2BelowAtV3U) (hVF : T2AtV3 (fun M ρ => SeedVFResV3 M ρ))
@@ -202,5 +344,24 @@ theorem hN_of5 (hBXU : T2AtV3 T2BelowAtV3U) (hVF : T2AtV3 (fun M ρ => SeedVFRes
   exact hN_of4 hBXU hVF hFD hSeed hPre hCopy hVD hAG
 
 #print axioms hN_of5
+
+/-- **The input hN** with the C2 seed frames of `q` proved: residuals `SeedVFResV3R` (C2 only at `r`) and
+`C2Kids`. -/
+theorem hN_of6 (hBXU : T2AtV3 T2BelowAtV3U) (hVF : T2AtV3 (fun M ρ => SeedVFResV3R M ρ))
+    (hFD : T2AtV3 (fun M _ => T2CopyK FDshAt M))
+    (hK : T2AtV3 (fun M ρ => C2Kids M ρ))
+    (hQN : T2AtV3 (fun M ρ => ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
+      par M 0 (r + L) = some q → q ≠ r → ∀ Lc, CL M r = Lc ++ [q] → T2VRAQNDom M ρ r L q Lc))
+    (hC : T2AtV3 (fun M _ => T2VRASeedC M))
+    (hCopy : T2AtV3 (fun M _ => T2VRACopyEsc2 M))
+    (hVD : T2AtV3 (fun M _ => T2VRAK (fun V V' a Lv _ u => VDomU V V' a Lv u) M))
+    (hAG : T2AtV3 (fun M _ => T2VRAK KAG2 M)) :
+    T2SmallV3 :=
+  hN_of5 hBXU (fun M ρ rk C hz h2 => seedVFResV3_of C.std C.ne (coreW C.S C.I) hz h2 (hVF M ρ rk C hz h2)
+    (hK M ρ rk C hz h2)) hFD hK hQN hC hCopy hVD hAG
+
+#print axioms hSF_of2
+#print axioms hSP_of2
+#print axioms hN_of6
 
 end Ytosk.V3Main.SeedPF
