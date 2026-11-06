@@ -15,7 +15,9 @@
 - hBXU（T2BelowAtV3U）を狭めた（V3T2BelowNarrow）: 種 p はいつも r で、T2HardA = T2HardB ∧ v_N(r) = v_M(r)。T2HardB の VSmallRA は不変条件 vra から、PH3cG は ph から出る。v は既存の vr_N（V3ExpT2X、q = r も含む）で出る。残り T2BelowAtV3U2 は種の RClaimU・REr、種の ◁ と標準形と子の値の減少、q の o の標準形と減少、AbsWNxU、NotBumpKidXU。入口 translation_order_res3・translation_surj_res3。
 - HCanon の葉の場合（a に子がない）を証明した（V3CanonLeaf）: S1（S1_std）で subT(b) ≤ subT(a) = [col a] なので b にも子がなく v(b) = v(a)。残りは a に子がある場合だけ（HCanonHard）。std_a の前件 7205 件のうち 4005 件が葉の場合だった。
 - C2Kids3 の形 1（c0 に数える子がない、C2 の 2462 枠のうち 2288 枠）を証明した（V3C2Shape）: x より前で r・q 以外の列は CL_N(i) = CL_M(i)（C_cl_eq）なので o_N(c0) = ψ_v(0) で、最後の子の欄の前提（引数 ≠ 0）が成り立たない。残りは C2Kids4（前の子の等しさと、c0 に数える子がある場合）。
-- 今の最上位は translation_order_res5・translation_surj_res5（V3C2Shape）。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
+- HCanonHard の b に bump の子がない場合（E(b) = 1 ≤ E(a)）を証明し HCanonHard2 に（V3CanonBump）。T2C2RootRel3 の前の子の範囲の状態は C2Kids4 から出るので、全部の子のあとの状態だけの T2C2RootRel4 に。
+- C2 の形 2 で道の長さ 1（q − 1 が c0 の最後の数える子で葉、upg(q − 1) = q、170 枠）を証明した（V3C2Shape2）。依存の閉包の不変条件 depS_C2_inv（種 = q の部分木と o(r)、閉包は q の子孫・o(r) 以上の順位・v(q−1)・o(q−1)・o(c0)）、閉包の外での一致 C_dep_agree、v_N(q−1) ≤ v_M(q−1)（C2_vw_le: v(q) の最後の項が ω^S と ω^{S+1}）、組み立て C2_len1（c0 の最後の子の引数が 0 なので引き金が立たず、引数 B + Ω_{v(q−1)} が大きくならない）。残り C2Kids5 はこの形でない枠だけ。
+- 今の最上位は translation_order_res8・translation_surj_res8（V3C2Shape2）。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
 - 最上位 translation_order_res2・translation_surj_res2（V3C2Root）の残り 17 個（res5 では上の 3 つが狭い形に替わる）: HDropInputsV3、HFrameV3、T0AbsWU、T0SeedsN、HQRInputsStepV3、HQNInputsV3、T2BelowAtV3U、HCanon、SeedVFResV3R3、C2Kids3、T2C2RootRel3、FDshAt、T2VRAQNDom、T2VRASeedC、CopyEsc2、VDomU、KAG2（全射はさらに EvalFSNZ 2）。すべて 86 集合で失敗 0（T2VRAQNDom 88.6 万枠、T2VRASeedC 72.2 万件、HCanon は M で 121 万件・M.take(len−1) で 107 万件）。
 
 **16 回目（2026-11-06、claude）**: 入力 hN の写しと VSmallRAll の残りを 86 集合で測り、偽だった 3 つを弱い形に替え、2 つを狭い残りに帰着させた（すべて緑、1257 jobs、公理は標準 3 つ）。
