@@ -22,7 +22,8 @@
 - QRRelR.w1（¬ B < σ X）を X ≤ B に帰着した（V3QRW1）: σ B = B（tame_sigmaB_std）。CL_T(r) = Lc で、最後の子 c の前は値が同じ。T で引き金が立つなら t2SVc0'_of_dropV3 で M も同じ添字で引数が大きく、trig_mono・H_mono。どちらも立たないなら PO と add の単調性。残りは切り替わりがないこと（QRNoSwitch、測定では 0 件）。
 - sv・C の rw を k によらない形にした（V3RwFree）: SVRel.rw ⟸ T2SVStrict（X₁ < σX₁、sv_rw_of を移した）、CRelR.rw ⟸ X₁ < σX₁ と σX₁ の加数の下界（c_rw_ofV3）。下界は decP から出る（c_hi_of_decP）。
 - T2SeedQNDom の第 2 欄は T2VRAQNDom の段 u = V の場合（comps_V(V) = []）なので、第 1 欄だけの T2SeedQNDomF に（V3QNDomF）。
-- 今の最上位は translation_order_res13・translation_surj_res13（V3QNDomF）。種まわりの残りは SeedVFResV3R8: qr の QRNoSwitch、sv の T2SVStrict、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF、T2SeedCDomR。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
+- T2SeedCDomR を T2VRASeedC から出した（V3CDomVRA）: n = 2 の r の最後の枠 q で o_N(q) = ψ_{s'}(σX₁)。strict が引き金（X₁ ≠ 0 もここから）、c_hi_of_decP が高い部分、段 u = V で comps_V(V) = []。
+- 今の最上位は translation_order_res14・translation_surj_res14（V3CDomVRA）。種まわりの残りは SeedVFResV3R9: qr の QRNoSwitch、sv の T2SVStrict、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF。測定: QRNoSwitch は前件 144 万件、T2SVStrict 23.8 万件、C の strict 14.9 万件で失敗 0。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
 - 最上位 translation_order_res2・translation_surj_res2（V3C2Root）の残り 17 個（res5 では上の 3 つが狭い形に替わる）: HDropInputsV3、HFrameV3、T0AbsWU、T0SeedsN、HQRInputsStepV3、HQNInputsV3、T2BelowAtV3U、HCanon、SeedVFResV3R3、C2Kids3、T2C2RootRel3、FDshAt、T2VRAQNDom、T2VRASeedC、CopyEsc2、VDomU、KAG2（全射はさらに EvalFSNZ 2）。すべて 86 集合で失敗 0（T2VRAQNDom 88.6 万枠、T2VRASeedC 72.2 万件、HCanon は M で 121 万件・M.take(len−1) で 107 万件）。
 
 **16 回目（2026-11-06、claude）**: 入力 hN の写しと VSmallRAll の残りを 86 集合で測り、偽だった 3 つを弱い形に替え、2 つを狭い残りに帰着させた（すべて緑、1257 jobs、公理は標準 3 つ）。
