@@ -13,7 +13,10 @@
 - unc と T2SeedCBig は、10/24 の CanonicalNeed（行 2 の根の隣り合う同じ列の子 a < b、a は a − 1 から上げられ topped、b は数える子なら v(b) ≤ v(a)）から出る（qnUncRes_of_canonical、t2SeedCBig_of_canonical を V3 の文脈へ移した t2SeedCBig_of_canonicalV3）。全標準形の残り HCanon にまとめた（V3SeedCanon）。
 - C2 の構造の欄を証明した（V3C2Root）: v_N(r) = v_M(r)。M と N で式が違う呼び出し（o(r)、o(q)、v(q)、列 x）はどれも v(r) に依存する（P_1 q = P_1 x = r）ので、例外の集合を「順位が v(r) より上」にとって agree_by_rank で出る。C の配置では CL_N(r) = CL_M(r) ++ [q]。CL_M(r) = CL_{M.take x}(r) も un なしで出る（cl_C_any）。C2Kids・T2C2RootRel は値の関係の欄だけ（C2Kids3・T2C2RootRel3）になった。
 - hBXU（T2BelowAtV3U）を狭めた（V3T2BelowNarrow）: 種 p はいつも r で、T2HardA = T2HardB ∧ v_N(r) = v_M(r)。T2HardB の VSmallRA は不変条件 vra から、PH3cG は ph から出る。v は既存の vr_N（V3ExpT2X、q = r も含む）で出る。残り T2BelowAtV3U2 は種の RClaimU・REr、種の ◁ と標準形と子の値の減少、q の o の標準形と減少、AbsWNxU、NotBumpKidXU。入口 translation_order_res3・translation_surj_res3。
-- 最上位 translation_order_res2・translation_surj_res2（V3C2Root）の残り 17 個（res3 では T2BelowAtV3U が T2BelowAtV3U2 に替わる）: HDropInputsV3、HFrameV3、T0AbsWU、T0SeedsN、HQRInputsStepV3、HQNInputsV3、T2BelowAtV3U、HCanon、SeedVFResV3R3、C2Kids3、T2C2RootRel3、FDshAt、T2VRAQNDom、T2VRASeedC、CopyEsc2、VDomU、KAG2（全射はさらに EvalFSNZ 2）。HCanon 以外は 86 集合で失敗 0（T2VRAQNDom 88.6 万枠、T2VRASeedC 72.2 万件）。HCanon は測定中。
+- HCanon の葉の場合（a に子がない）を証明した（V3CanonLeaf）: S1（S1_std）で subT(b) ≤ subT(a) = [col a] なので b にも子がなく v(b) = v(a)。残りは a に子がある場合だけ（HCanonHard）。std_a の前件 7205 件のうち 4005 件が葉の場合だった。
+- C2Kids3 の形 1（c0 に数える子がない、C2 の 2462 枠のうち 2288 枠）を証明した（V3C2Shape）: x より前で r・q 以外の列は CL_N(i) = CL_M(i)（C_cl_eq）なので o_N(c0) = ψ_v(0) で、最後の子の欄の前提（引数 ≠ 0）が成り立たない。残りは C2Kids4（前の子の等しさと、c0 に数える子がある場合）。
+- 今の最上位は translation_order_res5・translation_surj_res5（V3C2Shape）。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
+- 最上位 translation_order_res2・translation_surj_res2（V3C2Root）の残り 17 個（res5 では上の 3 つが狭い形に替わる）: HDropInputsV3、HFrameV3、T0AbsWU、T0SeedsN、HQRInputsStepV3、HQNInputsV3、T2BelowAtV3U、HCanon、SeedVFResV3R3、C2Kids3、T2C2RootRel3、FDshAt、T2VRAQNDom、T2VRASeedC、CopyEsc2、VDomU、KAG2（全射はさらに EvalFSNZ 2）。HCanon 以外は 86 集合で失敗 0（T2VRAQNDom 88.6 万枠、T2VRASeedC 72.2 万件）。HCanon は測定中。
 
 **16 回目（2026-11-06、claude）**: 入力 hN の写しと VSmallRAll の残りを 86 集合で測り、偽だった 3 つを弱い形に替え、2 つを狭い残りに帰着させた（すべて緑、1257 jobs、公理は標準 3 つ）。
 - KAG（V3T2VRAK）は偽: graft の 5 集合で 2643 件。KG に第 3 の選択肢（a − V の動く位置の成分以下）を足した KAG2 は失敗 0。σ 移送 qVRAshK_KVRA2（V3T2VRAK2）。
