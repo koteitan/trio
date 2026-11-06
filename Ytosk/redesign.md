@@ -16,7 +16,7 @@
 - HCanon の葉の場合（a に子がない）を証明した（V3CanonLeaf）: S1（S1_std）で subT(b) ≤ subT(a) = [col a] なので b にも子がなく v(b) = v(a)。残りは a に子がある場合だけ（HCanonHard）。std_a の前件 7205 件のうち 4005 件が葉の場合だった。
 - C2Kids3 の形 1（c0 に数える子がない、C2 の 2462 枠のうち 2288 枠）を証明した（V3C2Shape）: x より前で r・q 以外の列は CL_N(i) = CL_M(i)（C_cl_eq）なので o_N(c0) = ψ_v(0) で、最後の子の欄の前提（引数 ≠ 0）が成り立たない。残りは C2Kids4（前の子の等しさと、c0 に数える子がある場合）。
 - 今の最上位は translation_order_res5・translation_surj_res5（V3C2Shape）。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
-- 最上位 translation_order_res2・translation_surj_res2（V3C2Root）の残り 17 個（res5 では上の 3 つが狭い形に替わる）: HDropInputsV3、HFrameV3、T0AbsWU、T0SeedsN、HQRInputsStepV3、HQNInputsV3、T2BelowAtV3U、HCanon、SeedVFResV3R3、C2Kids3、T2C2RootRel3、FDshAt、T2VRAQNDom、T2VRASeedC、CopyEsc2、VDomU、KAG2（全射はさらに EvalFSNZ 2）。HCanon 以外は 86 集合で失敗 0（T2VRAQNDom 88.6 万枠、T2VRASeedC 72.2 万件）。HCanon は測定中。
+- 最上位 translation_order_res2・translation_surj_res2（V3C2Root）の残り 17 個（res5 では上の 3 つが狭い形に替わる）: HDropInputsV3、HFrameV3、T0AbsWU、T0SeedsN、HQRInputsStepV3、HQNInputsV3、T2BelowAtV3U、HCanon、SeedVFResV3R3、C2Kids3、T2C2RootRel3、FDshAt、T2VRAQNDom、T2VRASeedC、CopyEsc2、VDomU、KAG2（全射はさらに EvalFSNZ 2）。すべて 86 集合で失敗 0（T2VRAQNDom 88.6 万枠、T2VRASeedC 72.2 万件、HCanon は M で 121 万件・M.take(len−1) で 107 万件）。
 
 **16 回目（2026-11-06、claude）**: 入力 hN の写しと VSmallRAll の残りを 86 集合で測り、偽だった 3 つを弱い形に替え、2 つを狭い残りに帰着させた（すべて緑、1257 jobs、公理は標準 3 つ）。
 - KAG（V3T2VRAK）は偽: graft の 5 集合で 2643 件。KG に第 3 の選択肢（a − V の動く位置の成分以下）を足した KAG2 は失敗 0。σ 移送 qVRAshK_KVRA2（V3T2VRAK2）。
