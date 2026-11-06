@@ -398,4 +398,187 @@ theorem C2_vw_le {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) 
 
 #print axioms C2_vw_le
 
+/-- **Step 4: the C2 frames of shape 2 with a path of length 1.**  `w = q − 1` is the last counted child of `c₀`,
+a leaf, upgraded to `q`.  The earlier counted children of `r` keep their `o`; `o(c₀)` keeps its subscript and its
+argument `B + Ω_{v(w)}` does not grow. -/
+theorem C2_len1 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r)
+    {Lc0 : List Nat} {c0 : Nat} (hT : CL M r = Lc0 ++ [c0])
+    {w : Nat} {Le : List Nat} (hwq : w + 1 = q) (hpw : par M 0 w = some c0) (hwleaf : children M w = [])
+    (hu : upg M w = some q) (hLe : CL M c0 = Le ++ [w])
+    {n : Nat} (hn : 2 ≤ n) {σ : Valn} (hCN : Cons (G2 M r L n) σ) (hGN : Good3 (G2 M r L n) σ) :
+    (∀ d ∈ Lc0, σ.o d = ρ.o d) ∧
+      ∀ s y, σ.o c0 = psi s y z → y ≠ z → ∃ yM, ρ.o c0 = psi s yM z ∧ y ≤ yM := by
+  obtain ⟨hX, hJ⟩ := sInvXJ_std hM hS
+  have hpq := par0_q_t2 hM hS I hlen hr hq hqr
+  have hrq : r < q := par_lt M 0 q r hpq
+  have hqx : q < r + L := par_lt M 0 _ _ hq
+  have hrM : r < M.length := by omega
+  have hq' : par M 0 (r + L) = some (r + (q - r)) := by rw [show r + (q - r) = q by omega]; exact hq
+  have hpq' : par M 0 (r + (q - r)) = some r := by rw [show r + (q - r) = q by omega]; exact hpq
+  obtain ⟨_, Tqb, _, _, _⟩ := t2_qn_struct hX hJ hlen hr hq' (by omega) hpq'
+  rw [show r + (q - r) = q by omega] at Tqb
+  have he2r : entry M 2 r = 0 := (par2_facts I.z2 (show r + L < M.length by omega) hr).1
+  obtain ⟨he1w, he2w'⟩ := upg_e12 hu
+  have he2w : entry M 2 w = 0 := by have := I.z2 w; omega
+  have hc0CL : c0 ∈ CL M r := by rw [hT]; simp
+  have hc0c := cl_mem_children hc0CL
+  have hpc0 : par M 0 c0 = some r := (mem_children_iff.mp hc0c).2
+  have hc0cnt : Counted M r c0 := by simpa using (List.mem_filter.mp hc0CL).2
+  have hrc0 : r < c0 := par_lt M 0 c0 r hpc0
+  have hc0w : c0 < w := par_lt M 0 w c0 hpw
+  have hwM : w < M.length := by omega
+  have hc0M : c0 < M.length := by omega
+  have hag := C_dep_agree hM hS I hz h2 hlen hr hq hqr hn hCN
+  have hnd : ∀ b i, i < M.length → i < q → rk b i < rk true r → ¬ (b = false ∧ i = w) →
+      ¬ (b = true ∧ (i = w ∨ i = c0)) → ¬ DepS M (SC2 M q r) b i := by
+    intro b i hi hiq hrk h3 h4 hD
+    rcases depS_C2_inv I.rank hpq Tqb he2r hpc0 hc0cnt.1 hpw hwq hwleaf he2w hD hi with h | h | h | h
+    · have := h.le; omega
+    · omega
+    · exact h3 h
+    · exact h4 h
+  -- the order of the counted children
+  have hsortR : (CL M r).Pairwise (· < ·) := (children_sorted M r).filter _
+  have hsortC : (CL M c0).Pairwise (· < ·) := (children_sorted M c0).filter _
+  rw [hT] at hsortR
+  rw [hLe] at hsortC
+  have hRc0 := (I.rank r hrM).2.1 c0 hc0c hc0cnt.1 hc0cnt.2
+  refine ⟨fun d hd => ?_, fun s y hsy _ => ?_⟩
+  · have hdc0 : d < c0 := (List.pairwise_append.mp hsortR).2.2 d hd c0 (by simp)
+    have hdCL : d ∈ CL M r := by rw [hT]; exact List.mem_append_left _ hd
+    have hdcnt : Counted M r d := by simpa using (List.mem_filter.mp hdCL).2
+    have hRd := (I.rank r hrM).2.1 d (cl_mem_children hdCL) hdcnt.1 hdcnt.2
+    have hdM : d < M.length := by omega
+    exact (hag d hdM).1 (hnd true d hdM (by omega) hRd (fun h => by cases h.1)
+      (fun ⟨_, h⟩ => by rcases h with h | h <;> omega))
+  · -- `v(c₀)` and the earlier children of `c₀` agree
+    have hvc0 : σ.v c0 = ρ.v c0 := (hag c0 hc0M).2 (hnd false c0 hc0M (by omega)
+      (lt_trans (I.rank c0 hc0M).1 hRc0) (fun ⟨_, h⟩ => by omega) (fun ⟨h, _⟩ => by cases h))
+    have hLeo : ∀ e ∈ Le, σ.o e = ρ.o e := by
+      intro e he
+      have hew : e < w := (List.pairwise_append.mp hsortC).2.2 e he w (by simp)
+      have heCL : e ∈ CL M c0 := by rw [hLe]; exact List.mem_append_left _ he
+      have hecnt : Counted M c0 e := by simpa using (List.mem_filter.mp heCL).2
+      have hpe : par M 0 e = some c0 := (mem_children_iff.mp (cl_mem_children heCL)).2
+      have hc0e : c0 < e := par_lt M 0 e c0 hpe
+      have hRe := (I.rank c0 hc0M).2.1 e (cl_mem_children heCL) hecnt.1 hecnt.2
+      have heM : e < M.length := by omega
+      exact (hag e heM).1 (hnd true e heM (by omega) (lt_trans hRe hRc0) (fun h => by cases h.1)
+        (fun ⟨_, h⟩ => by rcases h with h | h <;> omega))
+    -- the leaf `w`
+    have hlN : (G2 M r L n).length = r + n * L := TRIO.gexp_length hlen
+    have hnL : L ≤ n * L := Nat.le_mul_of_pos_left L (by omega)
+    have hwN : w < (G2 M r L n).length := by omega
+    have hc0N : c0 < (G2 M r L n).length := by omega
+    have hCLw : CL M w = [] := by unfold CL; rw [hwleaf]; rfl
+    have hCLNw : CL (G2 M r L n) w = [] := by
+      rw [C_cl_eq hM hS I hz h2 hlen hr hq hqr hn (show w < r + L by omega) (by omega) (by omega), hCLw]
+    have hCLNc0 : CL (G2 M r L n) c0 = Le ++ [w] := by
+      rw [C_cl_eq hM hS I hz h2 hlen hr hq hqr hn (show c0 < r + L by omega) (by omega) (by omega), hLe]
+    have howN : σ.o w = psi (σ.v w) z z := by
+      have := o_cl_eq hCN hGN hwN; rw [hCLNw] at this; exact this
+    have howM : ρ.o w = psi (ρ.v w) z z := by
+      have := o_cl_eq I.cons I.good hwM; rw [hCLw] at this; exact this
+    obtain ⟨hsN, hpN⟩ := cl_vals hCN hGN hc0N
+    obtain ⟨hsM, hpM⟩ := cl_vals I.cons I.good hc0M
+    have hoN := o_last_form hCN hc0N (hGN.ot_v c0 hc0N) hCLNc0
+      (fun c hc => hsN _ (List.mem_map_of_mem hc)) hpN howN
+    have hoM := o_last_form I.cons hc0M (I.good.ot_v c0 hc0M) hLe
+      (fun c hc => hsM _ (List.mem_map_of_mem hc)) hpM howM
+    rw [step_leaf] at hoN hoM
+    rw [hoN] at hsy
+    simp only [psi.injEq] at hsy
+    obtain ⟨rfl, rfl, -⟩ := hsy
+    have hmap : Le.map σ.o = Le.map ρ.o := List.map_congr_left hLeo
+    refine ⟨add (spArg (ρ.v c0) z (sumN (Le.map ρ.o))) (psi (ρ.v w) z z), by rw [hoM, hvc0], ?_⟩
+    rw [hvc0, hmap]
+    apply add_le_add_left
+    have hvw := C2_vw_le hM hS I hz h2 hlen hr hq hqr hn hCN hwq hu
+    rcases (le_iff _ _).mp hvw with h | h
+    · exact psi_le_psi_of (Or.inl h)
+    · rw [h]
+
+#print axioms C2_len1
+
+/-- The shape of `C2_len1`: `q − 1` is a leaf, the last counted child of `c₀`, upgraded to `q`. -/
+def C2Len1 (M : Mat) (q c0 : Nat) : Prop :=
+  ∃ w Le, w + 1 = q ∧ par M 0 w = some c0 ∧ children M w = [] ∧ upg M w = some q ∧ CL M c0 = Le ++ [w]
+
+/-- `T2C2Kids4` off the shape `C2Len1`. -/
+def T2C2Kids5 (M : Mat) (ρ : Valn) (r L q : Nat) : Prop :=
+  ∀ n, 2 ≤ n → ∀ σ, Cons (G2 M r L n) σ → Good3 (G2 M r L n) σ →
+    ∀ Lc0 c0, CL M r = Lc0 ++ [c0] → ¬ C2Len1 M q c0 → (∀ d ∈ Lc0, σ.o d = ρ.o d) ∧
+      (CL M c0 ≠ [] → ∀ s y, σ.o c0 = psi s y z → y ≠ z → ∃ yM, ρ.o c0 = psi s yM z ∧ y ≤ yM)
+
+theorem t2C2Kids4_of5 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    {r L q : Nat} (hlen : r + L + 1 = M.length) (hr : par M 2 (r + L) = some r)
+    (hq : par M 0 (r + L) = some q) (hqr : q ≠ r) (h : T2C2Kids5 M ρ r L q) : T2C2Kids4 M ρ r L q := by
+  intro n hn σ hCN hGN Lc0 c0 hT
+  by_cases hc : C2Len1 M q c0
+  · obtain ⟨w, Le, hwq, hpw, hwleaf, hu, hLe⟩ := hc
+    obtain ⟨h1, h2'⟩ := C2_len1 hM hS I hz h2 hlen hr hq hqr hT hwq hpw hwleaf hu hLe hn hCN hGN
+    exact ⟨h1, fun _ => h2'⟩
+  · exact h n hn σ hCN hGN Lc0 c0 hT hc
+
+def C2Kids5 (M : Mat) (ρ : Valn) : Prop :=
+  ∀ r L q k, r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+    (¬ ∃ Lc, CL M r = Lc ++ [q]) → upg M (r + L - 1) = some k → T2C2Kids5 M ρ r L q
+
+theorem c2Kids4_of5 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat}
+    (hM : Std M) (hS : M ≠ SRO) (I : Inv3W M ρ rk)
+    (hz : col M (M.length - 1) ≠ (0, 0, 0)) (h2 : TRIO.srow M (M.length - 1) = 2)
+    (h : C2Kids5 M ρ) : C2Kids4 M ρ := fun r L q k hlen hr hq hqr hncl hu =>
+  t2C2Kids4_of5 hM hS I hz h2 hlen hr hq hqr (h r L q k hlen hr hq hqr hncl hu)
+
+section
+variable (hDI : HDropInputsV3) (hF : HFrameV3)
+    (hAbsU : T0AtV3 (fun M ρ r L => T0AbsWU M r L ρ))
+    (hSeeds : T0AtV3 (fun M ρ r L => ∀ n, 2 ≤ n → ∀ σ,
+      Cons (TRIO.gexp M r L 0 0 n) σ → T0SeedsN M ρ r L n σ))
+    (hQR : HQRInputsStepV3) (hQN : HQNInputsV3)
+    (hBXU2 : T2AtV3 (fun M ρ => T2BelowAtV3U2 M ρ))
+    (hCanH2 : HCanonHard2)
+    (hVF : T2AtV3 (fun M ρ => SeedVFResV3R3 M ρ))
+    (hK5 : T2AtV3 (fun M ρ => C2Kids5 M ρ))
+    (hC2R4 : T2AtV3 (fun M ρ => ∀ r L q k,
+      r + L + 1 = M.length → par M 2 (r + L) = some r → par M 0 (r + L) = some q → q ≠ r →
+      (¬ ∃ Lc, CL M r = Lc ++ [q]) → upg M (r + L - 1) = some k → T2C2RootRel4 M ρ r L q))
+    (hFD : T2AtV3 (fun M _ => T2CopyK FDshAt M))
+    (hQNd : T2AtV3 (fun M ρ => ∀ r L q, r + L + 1 = M.length → par M 2 (r + L) = some r →
+      par M 0 (r + L) = some q → q ≠ r → ∀ Lc, CL M r = Lc ++ [q] → T2VRAQNDom M ρ r L q Lc))
+    (hSC : T2AtV3 (fun M _ => T2VRASeedC M))
+    (hCopy : T2AtV3 (fun M _ => T2VRACopyEsc2 M))
+    (hVD : T2AtV3 (fun M _ => T2VRAK (fun V V' a Lv _ u => VDomU V V' a Lv u) M))
+    (hAG : T2AtV3 (fun M _ => T2VRAK KAG2 M))
+
+include hDI hF hAbsU hSeeds hQR hQN hBXU2 hCanH2 hVF hK5 hC2R4 hFD hQNd hSC hCopy hVD hAG
+
+/-- **Order preservation of the translation below SRO** from the current residuals (`C2Kids5`). -/
+theorem translation_order_res8
+    {A B : Mat} (hA : Std A) (hB : Std B) (hAS : A ≠ SRO)
+    (hBE : B ≠ []) (hlt : TRIO.seqlex B A) :
+    ∃ tA tB, Val A tA ∧ Val B tB ∧ isOT tA = true ∧ isOT tB = true ∧ tB < tA :=
+  translation_order_res7 hDI hF hAbsU hSeeds hQR hQN hBXU2 hCanH2 hVF
+    (fun M ρ rk C hz h2 => c2Kids4_of5 C.std C.ne (coreW C.S C.I) hz h2 (hK5 M ρ rk C hz h2))
+    hC2R4 hFD hQNd hSC hCopy hVD hAG hA hB hAS hBE hlt
+
+/-- **Surjectivity of the translation below SRO** from the current residuals and `EvalFSNZ 2`. -/
+theorem translation_surj_res8 (hFS : EvalFSNZ 2)
+    {t : T} (hot : isOT t = true) {n : Nat} {tN : T}
+    (hvN : Val (expand SRO n) tN) (hlt : t < tN) :
+    ∃ B, Std B ∧ B ≠ SRO ∧ Val B t :=
+  translation_surj_res7 hDI hF hAbsU hSeeds hQR hQN hBXU2 hCanH2 hVF
+    (fun M ρ rk C hz h2 => c2Kids4_of5 C.std C.ne (coreW C.S C.I) hz h2 (hK5 M ρ rk C hz h2))
+    hC2R4 hFD hQNd hSC hCopy hVD hAG hFS hot hvN hlt
+
+end
+
+#print axioms translation_order_res8
+#print axioms translation_surj_res8
+
 end Ytosk.V3Main.SeedPF
