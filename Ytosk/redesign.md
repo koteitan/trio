@@ -4,6 +4,14 @@
 
 ## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個）
 
+**16 回目（2026-11-06、claude）**: 入力 hN の写しと VSmallRAll の残りを 86 集合で測り、偽だった 3 つを弱い形に替え、2 つを狭い残りに帰着させた（すべて緑、1257 jobs、公理は標準 3 つ）。
+- KAG（V3T2VRAK）は偽: graft の 5 集合で 2643 件。KG に第 3 の選択肢（a − V の動く位置の成分以下）を足した KAG2 は失敗 0。σ 移送 qVRAshK_KVRA2（V3T2VRAK2）。
+- T2VRACopyEsc は偽: 同じ 5 集合で 6467 件。どれも g が comps u v_N(i+L) のどれか以下（QVRAt の第 3 の選択肢）。それを先に場合分けする CopyEsc2 は失敗 0（V3T2SmallV3U2、hN_of3）。
+- T2CopyK CopyVDomK は graftE で 9 件偽（段が枠の段 LevAt にないか V より上）。qVRAshK は VDomF を枠の段 u ≤ V でしか使わない。段 u だけの VDomU（σ B の選択肢つき）は失敗 0、VDomF ⇒ VDomU。KVRA3 = VDomU ∧ KAG2 と qVRAshK_KVRA3（V3T2VRAK3）、入口 hN_of4（V3T2SmallV3U3）。
+- T2VRAPre ⟸ hBXU ∧ SeedPFResV3 ∧ T2C2Kids（V3VRAPreU・V3VRAPreC、hPre_of）。T2C2Kids は C2 の r の子: CL_N(r) = CL_M(r) ++ [q]、v(r) と最後より前の子の o は M と同じ、最後の子は添字が同じで引数が大きくならない（C2 の全 7386 枠で失敗 0）。sv の残り T2SVc0 は落とす補題の PO から証明した（t2SVc0_ofV3）。
+- T2VRASeed ⟸ SeedPFResV3 ∧ T2VRAPre ∧ T2VRAQNDom ∧ T2VRASeedC ∧ T2C2QKids（V3VRASeedU）。sv の枠は証明済み。T2C2QKids は C2 の q の枠: CL_N(q) = [x]、v_N(x) = v_N(q)。
+- 残り（hN）: hBXU、SeedVFResV3、T2CopyK FDshAt、T2VRAPre・T2VRASeed の上の残り、CopyEsc2、T2VRAK VDomU、T2VRAK KAG2。
+
 **15 回目（2026-11-04〜05、claude と codex）**: 入口の入力 hFO・hSF・hSP を、狭い残りに帰着させた（すべて緑、1356 jobs、公理は標準 3 つ）。
 - hFO（t = 2 の種の枠の途中の状態の標準形）: 「Good3 だけから途中の状態の標準形」は項の反例で偽（a = 0、子の o = [ψ_1(ψ_0(Ω_2)), ψ_0(Ω_2)]）。種の配置ごとに既存の補題から QFO だけを抜き出し、古い束 Res3W と旧 PV を使わない形にした（V3SeedFO）。qr・qn・sv は残りなし。
 - C の配置（q ≠ r で q が r の最後の数える子でない）の条件 un（upg M (x−1) = none）は偽（151844 枠中 2666、上げ先は祖先）。C を un の真偽で分け、真（C1）は閉じた（V3SeedFO2）。
