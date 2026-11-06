@@ -3,7 +3,8 @@
 
 `SVRel.rw` (for every `k`, the frame of `r` keeps `σ^{k+1} X₁`) follows from `X₁ < σ X₁` (`T2SVStrict`, `sv_rw_of`).
 `CRelR.rw` follows from `X₁ < σ X₁` and the lower bound `Ω_{s'+1}` of the summands of `σ X₁` (`c_rw_of_base` reads only
-these and the standard form of `X₁`, which is the argument of `o(r)` in `M.take x`).
+these and the standard form of `X₁`, which is the argument of `o(r)` in `M.take x`).  The lower bound follows from `decP`
+(`c_hi_of_decP`).
 -/
 import Ytosk.V3QRW1
 
@@ -116,13 +117,75 @@ theorem c_rw_ofV3 {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M
   rw [if_pos ⟨lt_of_lt_of_le hlt0 (hchain k), psi_lt_psi_z_iff.mpr (Or.inl hVV)⟩]
   exact H_of_high hs hhigh
 
-/-- `CRelR` with the `k`-free fields. -/
+/-- **The summands of `σ X₁` are at least `Ω_{s'+1}`, from `decP`**: every counted child `d` of `r` in `M.take x` has
+`o(d) ≥ o(c₀)`, so `s' < v(d)`; `summands_spArg_ge` and `summands_sh_ge` as in the sv case (`sv_rw_of`). -/
+theorem c_hi_of_decP {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (I : Inv3W M ρ rk) (Ctx : StepCtx3 M ρ rk)
+    {r L q : Nat} (hlen : r + L + 1 = M.length) (hrL : 0 < L)
+    (hdecP : ∀ τ, Cons (M.take (r + L)) τ → ∀ Lc c0, CL (M.take (r + L)) r = Lc ++ [c0] →
+      ∃ s y, τ.o c0 = psi s y z ∧ qnS M ρ r L q < s) :
+    ∀ τ, Cons (M.take (r + L)) τ → ∀ g ∈ summands (sh (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ)),
+      ¬ g < psi (succ (qnS M ρ r L q)) z z := by
+  intro τ hτ
+  have hrM : r < M.length := by omega
+  have hV : isOT (ρ.v r) = true := I.good.ot_v r hrM
+  have hs : isOT (qnS M ρ r L q) = true := qnS_ot I hrM L q
+  have hVV := qnS_gt M ρ r L q
+  have hx1 : M.length - 1 = r + L := by omega
+  have hτ' : Cons (M.take (M.length - 1)) τ := by rw [hx1]; exact hτ
+  have hG := good3_take_anyV3U I (Ctx.drop (by omega)) (by omega) hτ'
+  rw [hx1] at hG
+  have hrT : r < (M.take (r + L)).length := by rw [List.length_take]; omega
+  have hX1 : isOT (t2X1 M r L τ) = true := by
+    have := hG.ot_o r hrT
+    rw [o_cl_eq hτ hG hrT] at this
+    exact isOT_arg this
+  -- the counted children are above `s'`
+  have hcntd : ∀ d ∈ CL (M.take (r + L)) r, qnS M ρ r L q < τ.v d := by
+    intro d hdCL
+    obtain ⟨hsing, hdec⟩ := cl_vals hτ hG hrT
+    rcases (CL (M.take (r + L)) r).eq_nil_or_concat with hnil | ⟨Lc, c0, hLc⟩
+    · rw [hnil] at hdCL; simp at hdCL
+    rw [List.concat_eq_append] at hLc
+    obtain ⟨s, y, hc0, hs0⟩ := hdecP τ hτ Lc c0 hLc
+    have hc0T : c0 < (M.take (r + L)).length :=
+      (mem_children (cl_mem_children (show c0 ∈ CL (M.take (r + L)) r by rw [hLc]; simp))).2
+    have hdT := (mem_children (cl_mem_children hdCL)).2
+    have hvc0 : τ.v c0 = s := by
+      rw [o_cl_eq hτ hG hc0T] at hc0; simp only [psi.injEq] at hc0; exact hc0.1
+    have hle : τ.o c0 ≤ τ.o d := by
+      rw [hLc] at hdCL hdec
+      rcases List.mem_append.mp hdCL with h | h
+      · exact (List.pairwise_append.mp (List.pairwise_map.mp hdec)).2.2 d h c0 (by simp)
+      · simp at h; rw [h]
+    have hl := lev_le_of_le hle
+    rw [o_cl_eq hτ hG hc0T, o_cl_eq hτ hG hdT] at hl
+    simp only [lev_psi] at hl
+    rw [hvc0] at hl
+    exact lt_of_lt_of_le hs0 hl
+  have hq1 : ∀ g ∈ summands (t2X1 M r L τ), ¬ g < Om (succ (qnS M ρ r L q)) := by
+    unfold t2X1
+    have hsing : ∀ t ∈ (CL (M.take (r + L)) r).map τ.o, Single t := by
+      intro t ht
+      obtain ⟨d, hd, rfl⟩ := List.mem_map.mp ht
+      exact single_o hτ hG (mem_children (cl_mem_children hd)).2
+    apply summands_spArg_ge _ z (isOT_sumN _ (fun t ht => (hsing t ht).1)) (by simp [summands])
+    intro g hg hlt
+    obtain ⟨d, hd, rfl⟩ := List.mem_map.mp (summands_sumN_sub hsing g hg)
+    have hdT := (mem_children (cl_mem_children hd)).2
+    have hlt' := hcntd d hd
+    obtain ⟨y, hy⟩ := o_psi_sub hτ hdT
+    rw [sf_ot (hG.ot_v d hdT)] at hy
+    rw [hy, Om] at hlt
+    rcases psi_lt_psi_z_iff.mp hlt with h | ⟨_, h⟩
+    · exact lt_irrefl' _ (lt_of_lt_of_le h (succ_le_of_lt hlt'))
+    · exact not_lt_z _ h
+  exact summands_sh_ge hV hs hVV (lt_trans hVV (lt_succ_self _)) _ hX1 hq1
+
+/-- `CRelR` with the `k`-free field `strict`. -/
 structure CRelR2 (M : Mat) (ρ : Valn) (r L q : Nat) : Prop where
   decP : ∀ τ, Cons (M.take (r + L)) τ → ∀ Lc c0, CL (M.take (r + L)) r = Lc ++ [c0] →
     ∃ s y, τ.o c0 = psi s y z ∧ qnS M ρ r L q < s
   strict : ∀ τ, Cons (M.take (r + L)) τ → t2X1 M r L τ < sh (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ)
-  hi : ∀ τ, Cons (M.take (r + L)) τ → ∀ g ∈ summands (sh (ρ.v r) (qnS M ρ r L q) (t2X1 M r L τ)),
-    ¬ g < psi (succ (qnS M ρ r L q)) z z
 
 /-- `SeedPFResV3R6` with the `k`-free fields. -/
 structure SeedPFResV3R7 (M : Mat) (ρ : Valn) : Prop where
@@ -140,7 +203,8 @@ theorem seedPFResV3R6_of {M : Mat} {ρ : Valn} {rk : Bool → Nat → Nat} (hM :
   ⟨h.qr, fun r L hlen hr hq hux => ⟨sv_rw_ofV3 hM hS I Ctx hlen hr hq hux (h.sv r L hlen hr hq hux)⟩,
     fun r L q hlen hr hq hqr hncl hun => ⟨(h.C1 r L q hlen hr hq hqr hncl hun).decP,
       c_rw_ofV3 I Ctx hlen (by have := par_lt M 2 _ _ hr; omega) (h.C1 r L q hlen hr hq hqr hncl hun).strict
-        (h.C1 r L q hlen hr hq hqr hncl hun).hi⟩, h.C2r⟩
+        (c_hi_of_decP I Ctx hlen (by have := par_lt M 2 _ _ hr; omega)
+          (h.C1 r L q hlen hr hq hqr hncl hun).decP)⟩, h.C2r⟩
 
 /-- `SeedVFResV3R6` with `SeedPFResV3R7`. -/
 structure SeedVFResV3R7 (M : Mat) (ρ : Valn) : Prop where
