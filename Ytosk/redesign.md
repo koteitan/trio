@@ -4,6 +4,14 @@
 
 ## 残りの地図（2026-10-31、最上位 trio_terminates_main_V2_cur の 15 個）
 
+**17 回目（2026-11-06 午後、claude）**: 入力 hN・hSF・hSP の残りを狭めた（すべて緑、1370 jobs、公理は標準 3 つ）。
+- 86 集合の測定（tmp/claude/hn86_20261106.log）: T2VRAPre 1.05 億件・T2VRASeed 2877 万件・FDshAt 1875 万件で失敗 0。CopyEsc・CopyVDomK の失敗は graft の 5 集合だけで、そこでは CopyEsc2・VDomU は失敗 0。ほかの集合では強い形が成り立つので、hN の写しの残り（FDshAt・CopyEsc2・VDomU・KAG2）は 86 集合で失敗 0。
+- codex の監査（tmp/codex/inv3v3_frame_qn_full_20261101.jsonl、11/01〜03、86 集合のうち重複でない 83 集合、入力 1969 万個）は hF の葉の 2 欄（TP1LeafG 3934 件・TP1WLeafG 3788 件）・hQN の 7 欄・hQR を測っていて失敗 0。表の「未測定」は古い記述だった。
+- C2 の q の枠（V3C2QKids）: C_frameV3 の CL_N(q) = [x] は un を使わない。v_N(x) = v_N(r) + last(v_N(q)) に T2C2Kids の v_N(r) = v_M(r) と v_N(q) = qnS（vq_eq_gexp）を足すと v_N(x) = v_N(q)。よって T2C2QKids ⟸ T2C2Kids、さらに C2 の q の種の枠（hN の QVF、hSF・hSP の QPF）も T2C2Kids から出る（C1 の証明と同じ: 枠は x′ だけで v(x′) = v(q) = qnS）。T2VRASeed・T2VRAPre は入口から消えた（hPre_of・t2VRASeed_ofV3 を中に入れた hN_of5・hN_of6）。
+- T2C2Kids を「N と M は q より前で等しい」で示す案は偽: C2 の全 2462 枠で r の数える子の o がずれる。C2 では x が M で q の bump の子（col x = bump q、全枠）なので v_M(q) に項が 1 つ多く、upg(q−1) = q（全枠）を通して r の最後の子の部分木に伝わる。例 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,0)(3,2,1)(4,2,1)(5,2,0)(3,2,1)(4,2,1)(5,1,0)(4,2,1)、x = 15、r = 8、q = 12。示すには v_N(q) ≤ v_M(q) からの ◁ の伝播が要る。
+- 種の束の欄のうち 10 月に証明済みのもの（V3SeedPFNarrow）: QRRel.ks（v(x) = v(r) + ω、v_x_qr・app_natT_lt_add_w）、QNRel.Bc（qn_Bc）、CRel.un（C1 の前件そのもの）、CRel.vqP（c_vqP_of_un）。QNRel.σB は qn_sigmaB で狭い値の残り unc（q より前の数えない r の子 d で qnS < v(d)）に帰着。入口 hSF_of3・hSP_of3・hN_of7。
+- 残り（hN）: hBXU、SeedVFResV3R2（C2 は r の枠だけ）、FDshAt、C2Kids（T2C2Kids）、T2VRAQNDom、T2VRASeedC、CopyEsc2、VDomU、KAG2。T2VRAQNDom・T2VRASeedC・unc は測定中。
+
 **16 回目（2026-11-06、claude）**: 入力 hN の写しと VSmallRAll の残りを 86 集合で測り、偽だった 3 つを弱い形に替え、2 つを狭い残りに帰着させた（すべて緑、1257 jobs、公理は標準 3 つ）。
 - KAG（V3T2VRAK）は偽: graft の 5 集合で 2643 件。KG に第 3 の選択肢（a − V の動く位置の成分以下）を足した KAG2 は失敗 0。σ 移送 qVRAshK_KVRA2（V3T2VRAK2）。
 - T2VRACopyEsc は偽: 同じ 5 集合で 6467 件。どれも g が comps u v_N(i+L) のどれか以下（QVRAt の第 3 の選択肢）。それを先に場合分けする CopyEsc2 は失敗 0（V3T2SmallV3U2、hN_of3）。
