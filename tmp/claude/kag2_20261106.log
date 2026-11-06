@@ -1,0 +1,7 @@
+graft4.pkl {"KG.cases": 31432, "KG.failures": 93}
+graft5.pkl {"KG.cases": 69203, "KG.failures": 141}
+graft2.pkl {"KG.cases": 100372, "KG.failures": 161}
+graftD.pkl {"KG.cases": 175166, "KG.failures": 1219}
+graftE.pkl {"KG.cases": 261245, "KG.failures": 2643}
+FINAL {"KG.cases": 261245, "KG.failures": 2643}
+EX {"KG": {"matrix": [[0, 0, 0], [1, 1, 1], [2, 1, 1], [3, 1, 0], [1, 1, 1], [2, 1, 1], [3, 1, 0], [1, 1, 1], [2, 1, 0], [3, 2, 1], [4, 2, 1], [5, 2, 0], [3, 2, 1], [4, 2, 1], [5, 1, 0], [6, 2, 1], [7, 2, 1], [8, 2, 0], [4, 2, 0], [5, 3, 1], [6, 3, 1], [7, 2, 0], [6, 3, 0], [1, 1, 1]], "n": 2, "i": 12, "c": 18, "u": "0"}}

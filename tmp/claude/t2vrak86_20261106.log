@@ -1,0 +1,88 @@
+graftM36.pkl {"input": 24690, "t2": 24596, "VD.cases": 422856, "KA.cases": 106253, "KG.cases": 101861, "VD.failures": 1824}
+graftM36x.pkl {"input": 42917, "t2": 34510, "VD.cases": 546957, "KA.cases": 140600, "KG.cases": 136190, "VD.failures": 1884}
+lift1.pkl {"input": 58107, "t2": 39573, "VD.cases": 725364, "KA.cases": 164380, "KG.cases": 159910, "VD.failures": 2032}
+lift2.pkl {"input": 65386, "t2": 43444, "VD.cases": 783578, "KA.cases": 172375, "KG.cases": 167905, "VD.failures": 2032}
+g36_1.pkl {"input": 66488, "t2": 43751, "VD.cases": 796197, "KA.cases": 173868, "KG.cases": 169370, "VD.failures": 2032}
+g36_2.pkl {"input": 72450, "t2": 44914, "VD.cases": 902120, "KA.cases": 180167, "KG.cases": 175635, "VD.failures": 2032}
+hunt_found.pkl {"input": 72460, "t2": 44914, "VD.cases": 902120, "KA.cases": 180167, "KG.cases": 175635, "VD.failures": 2032}
+graft36.pkl {"input": 72560, "t2": 45014, "VD.cases": 908728, "KA.cases": 180604, "KG.cases": 176072, "VD.failures": 2032}
+graft36b.pkl {"input": 76021, "t2": 48475, "VD.cases": 1240335, "KA.cases": 200621, "KG.cases": 196001, "VD.failures": 2032}
+graft36c.pkl {"input": 87472, "t2": 59926, "VD.cases": 2524227, "KA.cases": 273670, "KG.cases": 268644, "VD.failures": 2032}
+cex36.pkl {"input": 87473, "t2": 59927, "VD.cases": 2524230, "KA.cases": 273671, "KG.cases": 268645, "VD.failures": 2032}
+graft4.pkl {"input": 104766, "t2": 63074, "VD.cases": 2729854, "KA.cases": 305939, "KG.cases": 300077, "VD.failures": 2048, "KG.failures": 93}
+graft5.pkl {"input": 116980, "t2": 66567, "VD.cases": 2935371, "KA.cases": 344182, "KG.cases": 337848, "VD.failures": 2048, "KG.failures": 141}
+graft2.pkl {"input": 126660, "t2": 69365, "VD.cases": 3132382, "KA.cases": 376371, "KG.cases": 369017, "VD.failures": 2568, "KG.failures": 161}
+graft3.pkl {"input": 133298, "t2": 69930, "VD.cases": 3158331, "KA.cases": 380195, "KG.cases": 372635, "VD.failures": 2948, "KG.failures": 161}
+graftQ1.pkl {"input": 137838, "t2": 69930, "VD.cases": 3158331, "KA.cases": 380195, "KG.cases": 372635, "VD.failures": 2948, "KG.failures": 161}
+graftH.pkl {"input": 159743, "t2": 73252, "VD.cases": 3389000, "KA.cases": 398676, "KG.cases": 390864, "VD.failures": 2948, "KG.failures": 161}
+graftD.pkl {"input": 197492, "t2": 80322, "VD.cases": 3967072, "KA.cases": 481843, "KG.cases": 465658, "VD.failures": 3004, "KG.failures": 1219}
+graftF.pkl {"input": 246246, "t2": 94295, "VD.cases": 4132483, "KA.cases": 532724, "KG.cases": 515333, "VD.failures": 3004, "KG.failures": 1219}
+graftG.pkl {"input": 302945, "t2": 103780, "VD.cases": 4267848, "KA.cases": 602989, "KG.cases": 580890, "VD.failures": 3004, "KG.failures": 1219}
+graftE.pkl {"input": 357935, "t2": 117196, "VD.cases": 4859157, "KA.cases": 690131, "KG.cases": 666969, "VD.failures": 3065, "KG.failures": 2643}
+graftw1.pkl {"input": 367241, "t2": 126502, "VD.cases": 5384207, "KA.cases": 763789, "KG.cases": 740627, "VD.failures": 3065, "KG.failures": 2643}
+graftw2.pkl {"input": 401450, "t2": 160711, "VD.cases": 7309724, "KA.cases": 1045575, "KG.cases": 1022413, "VD.failures": 3065, "KG.failures": 2643}
+graftQ2.pkl {"input": 430814, "t2": 160711, "VD.cases": 7309724, "KA.cases": 1045575, "KG.cases": 1022413, "VD.failures": 3065, "KG.failures": 2643}
+graftA1.pkl {"input": 490607, "t2": 160711, "VD.cases": 7309724, "KA.cases": 1045575, "KG.cases": 1022413, "VD.failures": 3065, "KG.failures": 2643}
+graftA2.pkl {"input": 567666, "t2": 160711, "VD.cases": 7309724, "KA.cases": 1045575, "KG.cases": 1022413, "VD.failures": 3065, "KG.failures": 2643}
+graftA3.pkl {"input": 826289, "t2": 160711, "VD.cases": 7309724, "KA.cases": 1045575, "KG.cases": 1022413, "VD.failures": 3065, "KG.failures": 2643}
+graftU.pkl {"input": 858628, "t2": 166096, "VD.cases": 7880722, "KA.cases": 1090545, "KG.cases": 1066079, "VD.failures": 3065, "KG.failures": 2643}
+graftF_a.pkl {"input": 883005, "t2": 173205, "VD.cases": 7965064, "KA.cases": 1116363, "KG.cases": 1091316, "VD.failures": 3065, "KG.failures": 2643}
+graftF_b.pkl {"input": 907382, "t2": 180069, "VD.cases": 8046133, "KA.cases": 1141426, "KG.cases": 1115754, "VD.failures": 3065, "KG.failures": 2643}
+graftC.pkl {"input": 918868, "t2": 181062, "VD.cases": 8061322, "KA.cases": 1150525, "KG.cases": 1124159, "VD.failures": 3065, "KG.failures": 2643}
+graft_b2.pkl {"input": 926845, "t2": 185375, "VD.cases": 8299008, "KA.cases": 1199745, "KG.cases": 1172835, "VD.failures": 3495, "KG.failures": 2643}
+graft_sib.pkl {"input": 930319, "t2": 185375, "VD.cases": 8299008, "KA.cases": 1199745, "KG.cases": 1172835, "VD.failures": 3495, "KG.failures": 2643}
+graftQ3.pkl {"input": 1145969, "t2": 185375, "VD.cases": 8299008, "KA.cases": 1199745, "KG.cases": 1172835, "VD.failures": 3495, "KG.failures": 2643}
+graftR.pkl {"input": 1177527, "t2": 194354, "VD.cases": 8717637, "KA.cases": 1241491, "KG.cases": 1213945, "VD.failures": 3495, "KG.failures": 2643}
+grafts_ab.pkl {"input": 1177527, "t2": 194354, "VD.cases": 8717637, "KA.cases": 1241491, "KG.cases": 1213945, "VD.failures": 3495, "KG.failures": 2643}
+Cprime.pkl {"input": 1581578, "t2": 298311, "VD.cases": 9254550, "KA.cases": 1542792, "KG.cases": 1495144, "VD.failures": 3495, "KG.failures": 2643}
+b2grow1.pkl {"input": 1588095, "t2": 300190, "VD.cases": 9350946, "KA.cases": 1560336, "KG.cases": 1512256, "VD.failures": 5335, "KG.failures": 2643}
+b2grow2.pkl {"input": 1598176, "t2": 303321, "VD.cases": 9544594, "KA.cases": 1592862, "KG.cases": 1542646, "VD.failures": 7647, "KG.failures": 2643}
+b2t0test.pkl {"input": 1598311, "t2": 303321, "VD.cases": 9544594, "KA.cases": 1592862, "KG.cases": 1542646, "VD.failures": 7647, "KG.failures": 2643}
+cbadext.pkl {"input": 1602067, "t2": 306765, "VD.cases": 9762509, "KA.cases": 1627707, "KG.cases": 1577491, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+d3s.pkl {"input": 1617067, "t2": 310201, "VD.cases": 9780203, "KA.cases": 1636504, "KG.cases": 1585858, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+deep2.pkl {"input": 1745217, "t2": 339501, "VD.cases": 9929165, "KA.cases": 1710738, "KG.cases": 1656943, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+deep3.pkl {"input": 1868710, "t2": 368066, "VD.cases": 10076336, "KA.cases": 1783455, "KG.cases": 1726017, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+e3exp.pkl {"input": 2216354, "t2": 467575, "VD.cases": 10623031, "KA.cases": 2061425, "KG.cases": 1995883, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+expP.pkl {"input": 2830938, "t2": 668431, "VD.cases": 11764051, "KA.cases": 2761035, "KG.cases": 2660521, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+expPt2.pkl {"input": 5291053, "t2": 3128546, "VD.cases": 79171655, "KA.cases": 22668074, "KG.cases": 20944791, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+ext1.pkl {"input": 6373720, "t2": 3271169, "VD.cases": 81213885, "KA.cases": 23671569, "KG.cases": 21796615, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+ext1x.pkl {"input": 6493694, "t2": 3295391, "VD.cases": 81334242, "KA.cases": 23736348, "KG.cases": 21857103, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+ext2.pkl {"input": 7991680, "t2": 3482622, "VD.cases": 84168167, "KA.cases": 24985405, "KG.cases": 22997961, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+ext2b2.pkl {"input": 7995753, "t2": 3485231, "VD.cases": 84200493, "KA.cases": 24995823, "KG.cases": 23008379, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+ext2b2G.pkl {"input": 7997693, "t2": 3486828, "VD.cases": 84229189, "KA.cases": 25005100, "KG.cases": 23017656, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+ext2b2S.pkl {"input": 7999826, "t2": 3487840, "VD.cases": 84232819, "KA.cases": 25006241, "KG.cases": 23018797, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+ext2b2Sf.pkl {"input": 7999826, "t2": 3487840, "VD.cases": 84232819, "KA.cases": 25006241, "KG.cases": 23018797, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+ext2b2St.pkl {"input": 8001959, "t2": 3488852, "VD.cases": 84236449, "KA.cases": 25007382, "KG.cases": 23019938, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+ext2n2.pkl {"input": 9495872, "t2": 3673474, "VD.cases": 87038048, "KA.cases": 26246021, "KG.cases": 24150378, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+ext3s.pkl {"input": 10088713, "t2": 3757150, "VD.cases": 88694059, "KA.cases": 27039643, "KG.cases": 24866890, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+graftA.pkl {"input": 10102589, "t2": 3763278, "VD.cases": 88795738, "KA.cases": 27068122, "KG.cases": 24895369, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+graftAb.pkl {"input": 10102589, "t2": 3763278, "VD.cases": 88795738, "KA.cases": 27068122, "KG.cases": 24895369, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+graftAn.pkl {"input": 10116465, "t2": 3769406, "VD.cases": 88897417, "KA.cases": 27096601, "KG.cases": 24923848, "VD.failures": 7647, "KG.failures": 2643, "outside_SRO": 4}
+graftB.pkl {"input": 10272391, "t2": 3793298, "VD.cases": 90317151, "KA.cases": 27337194, "KG.cases": 25164441, "VD.failures": 10139, "KG.failures": 2643, "outside_SRO": 4}
+graftBb.pkl {"input": 10273147, "t2": 3793406, "VD.cases": 90320562, "KA.cases": 27337752, "KG.cases": 25164999, "VD.failures": 10231, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2.pkl {"input": 10353375, "t2": 3807260, "VD.cases": 91064810, "KA.cases": 27473587, "KG.cases": 25300834, "VD.failures": 12723, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2G.pkl {"input": 10402466, "t2": 3815658, "VD.cases": 91650819, "KA.cases": 27581336, "KG.cases": 25408583, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2S.pkl {"input": 10433603, "t2": 3821114, "VD.cases": 91809058, "KA.cases": 27609422, "KG.cases": 25436669, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2Sf.pkl {"input": 10434071, "t2": 3821186, "VD.cases": 91811221, "KA.cases": 27609764, "KG.cases": 25437011, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2St.pkl {"input": 10464740, "t2": 3826570, "VD.cases": 91967297, "KA.cases": 27637508, "KG.cases": 25464755, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2St_g0.pkl {"input": 10467478, "t2": 3826570, "VD.cases": 91967297, "KA.cases": 27637508, "KG.cases": 25464755, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2St_g1.pkl {"input": 10475770, "t2": 3826570, "VD.cases": 91967297, "KA.cases": 27637508, "KG.cases": 25464755, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2St_g2.pkl {"input": 10478481, "t2": 3829281, "VD.cases": 92103036, "KA.cases": 27662579, "KG.cases": 25489826, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2St_p0.pkl {"input": 10481192, "t2": 3829281, "VD.cases": 92103036, "KA.cases": 27662579, "KG.cases": 25489826, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2St_p1.pkl {"input": 10484256, "t2": 3829281, "VD.cases": 92103036, "KA.cases": 27662579, "KG.cases": 25489826, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2St_x0.pkl {"input": 10486964, "t2": 3829281, "VD.cases": 92103036, "KA.cases": 27662579, "KG.cases": 25489826, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2St_x1.pkl {"input": 10492736, "t2": 3829281, "VD.cases": 92103036, "KA.cases": 27662579, "KG.cases": 25489826, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBb2St_x2.pkl {"input": 10495409, "t2": 3831954, "VD.cases": 92123373, "KA.cases": 27665252, "KG.cases": 25492499, "VD.failures": 15215, "KG.failures": 2643, "outside_SRO": 4}
+graftBn.pkl {"input": 10650579, "t2": 3855738, "VD.cases": 93539696, "KA.cases": 27905287, "KG.cases": 25732534, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 4}
+graftBn2.pkl {"input": 10726277, "t2": 3865776, "VD.cases": 94215182, "KA.cases": 28010045, "KG.cases": 25837292, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 4}
+shapegrow.pkl {"input": 10728649, "t2": 3866075, "VD.cases": 94231601, "KA.cases": 28013037, "KG.cases": 25840256, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 4}
+std_a.pkl {"input": 10807850, "t2": 3878037, "VD.cases": 94377965, "KA.cases": 28054576, "KG.cases": 25880537, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 4}
+std_ab2.pkl {"input": 10807917, "t2": 3878068, "VD.cases": 94378495, "KA.cases": 28054731, "KG.cases": 25880692, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 4}
+std_ab2G.pkl {"input": 10807958, "t2": 3878094, "VD.cases": 94378959, "KA.cases": 28054862, "KG.cases": 25880823, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 4}
+std_ab2S.pkl {"input": 10807984, "t2": 3878099, "VD.cases": 94379025, "KA.cases": 28054886, "KG.cases": 25880847, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 4}
+std_an2.pkl {"input": 10887118, "t2": 3890030, "VD.cases": 94524859, "KA.cases": 28096270, "KG.cases": 25920973, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 4}
+std_b.pkl {"input": 18297943, "t2": 4955687, "VD.cases": 109816009, "KA.cases": 32038624, "KG.cases": 29655817, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 4}
+t0ext.pkl {"input": 18479233, "t2": 4955687, "VD.cases": 109816009, "KA.cases": 32038624, "KG.cases": 29655817, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 7}
+t2ext.pkl {"input": 19687193, "t2": 5352019, "VD.cases": 111709717, "KA.cases": 33218570, "KG.cases": 30780180, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 7}
+FINAL {"input": 19687193, "t2": 5352019, "VD.cases": 111709717, "KA.cases": 33218570, "KG.cases": 30780180, "VD.failures": 17615, "KG.failures": 2643, "outside_SRO": 7}
+EX {"VD": {"matrix": [[0, 0, 0], [1, 1, 1], [2, 1, 1], [3, 1, 0], [1, 1, 1], [2, 1, 1], [3, 1, 0], [1, 1, 1], [2, 1, 0], [3, 2, 1], [4, 2, 1], [5, 2, 0], [3, 2, 1], [4, 2, 1], [5, 1, 0], [6, 2, 1], [7, 2, 1], [8, 2, 0], [6, 2, 0], [7, 3, 1], [8, 3, 1], [9, 2, 0], [10, 3, 1], [4, 2, 0], [5, 3, 1], [6, 3, 1], [7, 2, 0], [8, 3, 0], [7, 2, 0], [7, 2, 0], [7, 1, 0], [8, 2, 1], [9, 2, 1], [10, 2, 0], [8, 2, 1], [9, 2, 1], [10, 1, 0], [11, 2, 1], [12, 2, 1], [13, 2, 0], [11, 2, 0], [12, 3, 1], [13, 3, 1], [14, 2, 0], [15, 3, 1], [9, 2, 0], [10, 3, 1], [11, 3, 1], [12, 2, 0], [10, 3, 1]], "n": 2, "i": 46, "u": "p(1)"}, "KG": {"matrix": [[0, 0, 0], [1, 1, 1], [2, 1, 1], [3, 1, 0], [1, 1, 1], [2, 1, 1], [3, 1, 0], [1, 1, 1], [2, 1, 0], [3, 2, 1], [4, 2, 1], [5, 2, 0], [3, 2, 1], [4, 2, 1], [5, 1, 0], [6, 2, 1], [7, 2, 1], [8, 2, 0], [4, 2, 0], [5, 3, 1], [6, 3, 1], [7, 3, 0], [5, 3, 1], [6, 3, 1], [7, 1, 0], [8, 2, 1], [9, 2, 1], [10, 1, 0], [6, 3, 0], [7, 4, 1], [8, 4, 1], [9, 3, 0], [10, 4, 1], [11, 4, 1], [12, 3, 0], [10, 4, 1], [1, 1, 1]], "n": 2, "i": 12, "c": 18, "u": "0"}}
