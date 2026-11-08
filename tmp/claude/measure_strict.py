@@ -2,7 +2,7 @@
 sigma = sigma_{V, V'}:
   sv (q = r, upg(x-1) = x, V' = V + 1): T2SVStrict  X1 < sigma X1
   C1 (q != r, CL_M(r) not ending with q, upg(x-1) = none, V' = qnS): CRelR2.strict  X1 < sigma X1,
-     CRelR2.hi  the summands of sigma X1 are not below Omega_{qnS + 1}."""
+     (the lower bound of the summands of sigma X1 follows from decP in Lean, measured here as a check)."""
 import sys, json, collections
 from multiprocessing import Pool
 for p in ['/home/koteitan/proofs/trio/tmp/claude', '/home/koteitan/proofs/trio/tools',
