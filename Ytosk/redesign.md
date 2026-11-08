@@ -23,7 +23,13 @@
 - sv・C の rw を k によらない形にした（V3RwFree）: SVRel.rw ⟸ T2SVStrict（X₁ < σX₁、sv_rw_of を移した）、CRelR.rw ⟸ X₁ < σX₁ と σX₁ の加数の下界（c_rw_ofV3）。下界は decP から出る（c_hi_of_decP）。
 - T2SeedQNDom の第 2 欄は T2VRAQNDom の段 u = V の場合（comps_V(V) = []）なので、第 1 欄だけの T2SeedQNDomF に（V3QNDomF）。
 - T2SeedCDomR を T2VRASeedC から出した（V3CDomVRA）: n = 2 の r の最後の枠 q で o_N(q) = ψ_{s'}(σX₁)。strict が引き金（X₁ ≠ 0 もここから）、c_hi_of_decP が高い部分、段 u = V で comps_V(V) = []。
-- 今の最上位は translation_order_res14・translation_surj_res14（V3CDomVRA）。種まわりの残りは SeedVFResV3R9: qr の QRNoSwitch、sv の T2SVStrict、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF。測定: QRNoSwitch は前件 144 万件、T2SVStrict 23.8 万件、C の strict 14.9 万件で失敗 0。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
+- **T2SVStrict を証明した**（11/08、V3SVFlow〜V3SVStrictTop、t2SVStrict_holds）: σ = σ_{V,V+1}、T = M.take x で X₁ = arg_T(r) < σX₁。
+  - 基: x − 1 は T の最後の列なので上げられず、upg_spec と Z2 から v_T(x−1) = V + 1。f(V+1) = V+2 で狭義に増える。
+  - 流れ: 列 w の子を右から見る。数える子なら引数が増える（spArg の最後の 1 段、step_lt_sh）。bump の子なら v(w) = A + ω^W が増える（最後の子の o → 子の和 → ω^… → W、shf_lt_of_omega）。上げ先で topped の子 u なら、u を上げる列は u−1 だけ（no_anc_upg）で v(u−1) = v(u)、そこが前の兄弟の部分木の終わり（endAt_sib）。
+  - 歩きが途切れない理由は既存の変化の集合 ChgX の構造: v が変わる列は数える子を持たない（chg_struct の TopC）ので引数が 0 で、親の sp で引き金が立たない。水準 V < v(w)、V ≤ v(P1 w) は「r からの道の e1 がすべて e1 r より大きい」列（HighD）で出る。
+  - 組み合わせの部分（flow_sib・flow_top）は増え方を任意の述語にして規則を仮定に取る形で書いた。86 集合の sv 238345 件で規則を確かめた（tmp/claude/sv_flow86_20261108.log、道の形 127 種）。
+- 今の最上位は translation_order_res15・translation_surj_res15（V3SVStrictTop、1390 jobs、公理は標準 3 つ）。種まわりの残りは SeedVFResV3R10: qr の QRNoSwitch、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
+- （res14 の時点）種まわりの残りは SeedVFResV3R9: qr の QRNoSwitch、sv の T2SVStrict、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF。測定: QRNoSwitch は前件 144 万件、T2SVStrict 23.8 万件、C の strict 14.9 万件で失敗 0。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
 - 最上位 translation_order_res2・translation_surj_res2（V3C2Root）の残り 17 個（res5 では上の 3 つが狭い形に替わる）: HDropInputsV3、HFrameV3、T0AbsWU、T0SeedsN、HQRInputsStepV3、HQNInputsV3、T2BelowAtV3U、HCanon、SeedVFResV3R3、C2Kids3、T2C2RootRel3、FDshAt、T2VRAQNDom、T2VRASeedC、CopyEsc2、VDomU、KAG2（全射はさらに EvalFSNZ 2）。すべて 86 集合で失敗 0（T2VRAQNDom 88.6 万枠、T2VRASeedC 72.2 万件、HCanon は M で 121 万件・M.take(len−1) で 107 万件）。
 
 **16 回目（2026-11-06、claude）**: 入力 hN の写しと VSmallRAll の残りを 86 集合で測り、偽だった 3 つを弱い形に替え、2 つを狭い残りに帰着させた（すべて緑、1257 jobs、公理は標準 3 つ）。
