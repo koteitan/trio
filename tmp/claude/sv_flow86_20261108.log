@@ -1,0 +1,215 @@
+graftM36.pkl {"cases": 4842, "ok": 4842}
+graftM36x.pkl {"cases": 6121, "ok": 6121}
+lift1.pkl {"cases": 6121, "ok": 6121}
+lift2.pkl {"cases": 6121, "ok": 6121}
+g36_1.pkl {"cases": 6149, "ok": 6149}
+g36_2.pkl {"cases": 6219, "ok": 6219}
+hunt_found.pkl {"cases": 6219, "ok": 6219}
+graft36.pkl {"cases": 6221, "ok": 6221}
+graft36b.pkl {"cases": 6418, "ok": 6418}
+graft36c.pkl {"cases": 7241, "ok": 7241}
+cex36.pkl {"cases": 7241, "ok": 7241}
+graft4.pkl {"cases": 7395, "ok": 7395}
+graft5.pkl {"cases": 7490, "ok": 7490}
+graft2.pkl {"cases": 7598, "ok": 7598}
+graft3.pkl {"cases": 7622, "ok": 7622}
+graftQ1.pkl {"cases": 7622, "ok": 7622}
+graftH.pkl {"cases": 7798, "ok": 7798}
+graftD.pkl {"cases": 8207, "ok": 8207}
+graftF.pkl {"cases": 11169, "ok": 11169}
+graftG.pkl {"cases": 12427, "ok": 12427}
+graftE.pkl {"cases": 14002, "ok": 14002}
+graftw1.pkl {"cases": 14002, "ok": 14002}
+graftw2.pkl {"cases": 14002, "ok": 14002}
+graftQ2.pkl {"cases": 14002, "ok": 14002}
+graftA1.pkl {"cases": 14002, "ok": 14002}
+graftA2.pkl {"cases": 14002, "ok": 14002}
+graftA3.pkl {"cases": 14002, "ok": 14002}
+graftU.pkl {"cases": 14375, "ok": 14375}
+graftF_a.pkl {"cases": 15894, "ok": 15894}
+graftF_b.pkl {"cases": 17337, "ok": 17337}
+graftC.pkl {"cases": 17531, "ok": 17531}
+graft_b2.pkl {"cases": 17531, "ok": 17531}
+graft_sib.pkl {"cases": 17531, "ok": 17531}
+graftQ3.pkl {"cases": 17531, "ok": 17531}
+graftR.pkl {"cases": 18786, "ok": 18786}
+grafts_ab.pkl {"cases": 18786, "ok": 18786}
+Cprime.pkl {"cases": 22029, "ok": 22029}
+b2grow1.pkl {"cases": 22029, "ok": 22029}
+b2grow2.pkl {"cases": 22029, "ok": 22029}
+b2t0test.pkl {"cases": 22029, "ok": 22029}
+cbadext.pkl {"cases": 22245, "ok": 22245}
+d3s.pkl {"cases": 22398, "ok": 22398}
+deep2.pkl {"cases": 23741, "ok": 23741}
+deep3.pkl {"cases": 25065, "ok": 25065}
+e3exp.pkl {"cases": 26903, "ok": 26903}
+expP.pkl {"cases": 32369, "ok": 32369}
+expPt2.pkl {"cases": 114967, "ok": 114967}
+ext1.pkl {"cases": 122872, "ok": 122872}
+ext1x.pkl {"cases": 123138, "ok": 123138}
+ext2.pkl {"cases": 131259, "ok": 131259}
+ext2b2.pkl {"cases": 132795, "ok": 132795}
+ext2b2G.pkl {"cases": 134331, "ok": 134331}
+ext2b2S.pkl {"cases": 134331, "ok": 134331}
+ext2b2Sf.pkl {"cases": 134331, "ok": 134331}
+ext2b2St.pkl {"cases": 134331, "ok": 134331}
+ext2n2.pkl {"cases": 140916, "ok": 140916}
+ext3s.pkl {"cases": 147997, "ok": 147997}
+graftA.pkl {"cases": 148050, "ok": 148050}
+graftAb.pkl {"cases": 148050, "ok": 148050}
+graftAn.pkl {"cases": 148103, "ok": 148103}
+graftB.pkl {"cases": 150877, "ok": 150877}
+graftBb.pkl {"cases": 150877, "ok": 150877}
+graftBb2.pkl {"cases": 153651, "ok": 153651}
+graftBb2G.pkl {"cases": 156425, "ok": 156425}
+graftBb2S.pkl {"cases": 156425, "ok": 156425}
+graftBb2Sf.pkl {"cases": 156425, "ok": 156425}
+graftBb2St.pkl {"cases": 156425, "ok": 156425}
+graftBb2St_g0.pkl {"cases": 156425, "ok": 156425}
+graftBb2St_g1.pkl {"cases": 156425, "ok": 156425}
+graftBb2St_g2.pkl {"cases": 156425, "ok": 156425}
+graftBb2St_p0.pkl {"cases": 156425, "ok": 156425}
+graftBb2St_p1.pkl {"cases": 156425, "ok": 156425}
+graftBb2St_x0.pkl {"cases": 156425, "ok": 156425}
+graftBb2St_x1.pkl {"cases": 156425, "ok": 156425}
+graftBb2St_x2.pkl {"cases": 156425, "ok": 156425}
+graftBn.pkl {"cases": 159199, "ok": 159199}
+graftBn2.pkl {"cases": 159199, "ok": 159199}
+shapegrow.pkl {"cases": 159199, "ok": 159199}
+std_a.pkl {"cases": 160043, "ok": 160043}
+std_ab2.pkl {"cases": 160066, "ok": 160066}
+std_ab2G.pkl {"cases": 160089, "ok": 160089}
+std_ab2S.pkl {"cases": 160089, "ok": 160089}
+std_an2.pkl {"cases": 160910, "ok": 160910}
+std_b.pkl {"cases": 229246, "ok": 229246}
+t0ext.pkl {"cases": 229246, "ok": 229246}
+t2ext.pkl {"cases": 238345, "ok": 238345}
+cases 238345
+ok 238345
+steps.BCBCBCCF 3
+steps.BCBCCCCF 11
+steps.BCBCCCF 11
+steps.BCBCCF 66
+steps.BCBUBCCCCCCF 3
+steps.BCBUBCCCCF 2
+steps.BCBUBCCF 4
+steps.BCCBCCF 1
+steps.BCCCBCBCCCCF 124
+steps.BCCCBCBCCCF 96
+steps.BCCCBCBCCF 219
+steps.BCCCBCCCBCCCCF 1
+steps.BCCCBCCCCBCBCCCCF 8
+steps.BCCCBCCCCCCCF 40
+steps.BCCCBCCCCCCF 56
+steps.BCCCBCCCCCF 140
+steps.BCCCBCCCCF 385
+steps.BCCCBCCCF 264
+steps.BCCCBCCF 602
+steps.BCCCBUBCBUBCCF 165
+steps.BCCCBUBCCF 52
+steps.BCCCCBCBCCCCCCCF 12
+steps.BCCCCBCBCCCCCF 12
+steps.BCCCCBCCCCBCCCCF 1
+steps.BCCCCCBCBCCF 3
+steps.BCCCCCBCCF 1
+steps.BCCCCCBUBCBUBCCF 1
+steps.BCCCCCCBCBCCCCF 20
+steps.BCCCCCCCCCF 112
+steps.BCCCCCCCCF 125
+steps.BCCCCCCCF 359
+steps.BCCCCCCF 661
+steps.BCCCCCF 543
+steps.BCCCCF 1188
+steps.BCCCF 60
+steps.BCCF 6725
+steps.BF 37601
+steps.BUBCBCCCBCCCCF 1
+steps.BUBCBCCCCF 2
+steps.BUBCBUBCBUBCCF 7
+steps.BUBCBUBCCF 77
+steps.BUBCCCCCBUBCBUBCCF 1
+steps.BUBCCCCCCBUBCBUBCCF 1
+steps.BUBCCCCCCCCF 2
+steps.BUBCCCCCCF 9
+steps.BUBCCCCF 6
+steps.BUBCCF 99
+steps.BUBF 2031
+steps.BUBUBF 185
+steps.BUBUBUBF 4
+steps.BUCCCCBUBCBUBCCF 71
+steps.BUCCCCCBUBCBUBCCF 1
+steps.CBCBCBCCF 2
+steps.CBCBCCCCF 3
+steps.CBCBCCCF 5
+steps.CBCBCCF 18
+steps.CBCCCBUBCBUBCCF 74
+steps.CBCCCCCCCBUBCBUBCCF 1
+steps.CBCCCCCCCCBUBCBUBCCF 1
+steps.CBCCCCCCF 3
+steps.CBCCCCCF 1
+steps.CBCCCCF 9
+steps.CBCCCF 9
+steps.CBCCF 120
+steps.CBUBCBUBCBUBCCF 1
+steps.CBUBCBUBCCF 52
+steps.CBUBCCF 55
+steps.CBUCCCCBUBCBUBCCF 59
+steps.CBUCCCCCBUBCBUBCCF 1
+steps.CCBCBCBCCF 6
+steps.CCBCBCCCF 2
+steps.CCBCBCCF 9
+steps.CCBCCCBUBCBUBCCF 39
+steps.CCBCCCCCCF 6
+steps.CCBCCCCF 20
+steps.CCBCCCF 9
+steps.CCBCCF 69
+steps.CCBUBCBUBCBUBCCF 1
+steps.CCBUBCBUBCCF 50
+steps.CCBUBCCF 51
+steps.CCBUCCCCBUBCBUBCCF 27
+steps.CCBUCCCCCBUBCBUBCCF 1
+steps.CCCBCBCBCCF 4
+steps.CCCBCBCCF 6
+steps.CCCBCCCCCCF 3
+steps.CCCBCCCCF 8
+steps.CCCBCCCF 7
+steps.CCCBCCF 40
+steps.CCCBUBCBUBCCF 39
+steps.CCCBUBCCF 4
+steps.CCCBUCCCCBUBCBUBCCF 1
+steps.CCCCBCBCCF 10
+steps.CCCCBCCCCCCF 4
+steps.CCCCBCCCCF 5
+steps.CCCCBCCCF 5
+steps.CCCCBCCF 29
+steps.CCCCBUBCBUBCCF 50
+steps.CCCCCBCBCCF 4
+steps.CCCCCBCCCF 2
+steps.CCCCCBCCF 7
+steps.CCCCCBUBCBUBCCF 33
+steps.CCCCCCBCBCCF 10
+steps.CCCCCCBCCF 14
+steps.CCCCCCBUBCBUBCCF 9
+steps.CCCCCCBUBCCF 1
+steps.CCCCCCCBCCF 13
+steps.CCCCCCCBUBCBUBCCF 3
+steps.CCCCCCCCBCCF 8
+steps.CCCCCCCCBUBCBUBCCF 2
+steps.CCCCCCCCBUBCCF 1
+steps.CCCCCCCCCBCCF 8
+steps.CCCCCCCCCCCCCCCCF 182
+steps.CCCCCCCCCCCCCCCF 210
+steps.CCCCCCCCCCCCCCF 291
+steps.CCCCCCCCCCCCCF 534
+steps.CCCCCCCCCCCCF 629
+steps.CCCCCCCCCCCF 991
+steps.CCCCCCCCCCF 1213
+steps.CCCCCCCCCF 1700
+steps.CCCCCCCCF 1936
+steps.CCCCCCCF 2938
+steps.CCCCCCF 3243
+steps.CCCCCF 5395
+steps.CCCCF 6923
+steps.CCCF 14155
+steps.CCF 23167
+steps.CF 121630
