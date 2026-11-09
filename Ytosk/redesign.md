@@ -32,7 +32,13 @@
   - C の場合、q は r の最後の子で、M でも T でも数えない上げ先。x = bump q（c_q_facts、cl_C_any の証明から取り出した）。C1（upg(x−1) = none）では v_T(q) = qnS（c_vqP_of_un）で、f(V + δ) = qnS + σδ > qnS（c1_src_sv）。v(q) の変化は ChgX.snb。
   - 流れを一般化した（flow_sib2・flow_top2）: 始点 s は部分木の根でよい（C1 では s = q、終わりは x − 1）、x の親 p は r でも s でもよい、終わりの次の列が x でもよい（EndAtX）。値の規則を一般の V' にした写しは codex（V3FlowRulesG）。
   - C1 の全件で q の形を測ってから書いた（scratchpad の c1_flow3.py、30 集合）。
-- 今の最上位は translation_order_res16・translation_surj_res16（V3C1Strict、1396 jobs、公理は標準 3 つ）。種まわりの残りは SeedVFResV3R11: qr の QRNoSwitch、C1 の decP、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
+- **decP（C1）を狭めた**（11/10、codex と分担: V3DecPTop・V3DecPStep・V3DecPShape・V3DecPTopWire・V3DecPTopWire2 は codex、V3DecPSplit・V3DecPSplit2 は claude）:
+  - r の子 c0（最後の数える子）から q までの兄弟の連なりで、隣り合う w < w' ごとに w の bump の子 b の子が w' − 1（w' を上げる列、UAT で次の列の型）。右から v(q) = qnS、v(w'−1) = v(w')、B の段で v(w) > v(w'−1) ≥ qnS（decP_step: v(w) = V + ω^{…ω^{…+ψ_{≥qnS}(…)}}）。
+  - 最初の形（q − 1 が c0 の bump の子の子）は、U の兄弟が挟まる例 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1) で偽だった。
+  - 形は隣り合う兄弟の列が等しいこと（DecPColEq）と BumpLeaf から出る（decPShape2_of_colEq）。DecPColEq は R1S から出る（e1 r < e1(w'−1) ≤ e1 w ≤ e1 r + 1）。
+  - 残りは c0 が topped でない場合の値 DecPUntop だけ（S1 の比較を値に移す種類、HCanonHard2 と同じ型）。
+- 今の最上位は translation_order_res18・translation_surj_res18（V3DecPTopWire2）。種まわりの残りは QRNoSwitch、DecPUntop、DecPColEq（証明中）、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
+- （res16 の時点）種まわりの残りは SeedVFResV3R11: qr の QRNoSwitch、C1 の decP、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
 - （res15 の時点）種まわりの残りは SeedVFResV3R10: qr の QRNoSwitch、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
 - （res14 の時点）種まわりの残りは SeedVFResV3R9: qr の QRNoSwitch、sv の T2SVStrict、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF。測定: QRNoSwitch は前件 144 万件、T2SVStrict 23.8 万件、C の strict 14.9 万件で失敗 0。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
 - 最上位 translation_order_res2・translation_surj_res2（V3C2Root）の残り 17 個（res5 では上の 3 つが狭い形に替わる）: HDropInputsV3、HFrameV3、T0AbsWU、T0SeedsN、HQRInputsStepV3、HQNInputsV3、T2BelowAtV3U、HCanon、SeedVFResV3R3、C2Kids3、T2C2RootRel3、FDshAt、T2VRAQNDom、T2VRASeedC、CopyEsc2、VDomU、KAG2（全射はさらに EvalFSNZ 2）。すべて 86 集合で失敗 0（T2VRAQNDom 88.6 万枠、T2VRASeedC 72.2 万件、HCanon は M で 121 万件・M.take(len−1) で 107 万件）。
