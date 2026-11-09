@@ -28,7 +28,12 @@
   - 流れ: 列 w の子を右から見る。数える子なら引数が増える（spArg の最後の 1 段、step_lt_sh）。bump の子なら v(w) = A + ω^W が増える（最後の子の o → 子の和 → ω^… → W、shf_lt_of_omega）。上げ先で topped の子 u なら、u を上げる列は u−1 だけ（no_anc_upg）で v(u−1) = v(u)、そこが前の兄弟の部分木の終わり（endAt_sib）。
   - 歩きが途切れない理由は既存の変化の集合 ChgX の構造: v が変わる列は数える子を持たない（chg_struct の TopC）ので引数が 0 で、親の sp で引き金が立たない。水準 V < v(w)、V ≤ v(P1 w) は「r からの道の e1 がすべて e1 r より大きい」列（HighD）で出る。
   - 組み合わせの部分（flow_sib・flow_top）は増え方を任意の述語にして規則を仮定に取る形で書いた。86 集合の sv 238345 件で規則を確かめた（tmp/claude/sv_flow86_20261108.log、道の形 127 種）。
-- 今の最上位は translation_order_res15・translation_surj_res15（V3SVStrictTop、1390 jobs、公理は標準 3 つ）。種まわりの残りは SeedVFResV3R10: qr の QRNoSwitch、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
+- **C の strict を証明した**（11/10、V3FlowG・V3FlowG2・V3C1Src・V3FlowRulesG（codex）・V3C1Strict、c1_strict_holds）: σ = σ_{V,qnS}。
+  - C の場合、q は r の最後の子で、M でも T でも数えない上げ先。x = bump q（c_q_facts、cl_C_any の証明から取り出した）。C1（upg(x−1) = none）では v_T(q) = qnS（c_vqP_of_un）で、f(V + δ) = qnS + σδ > qnS（c1_src_sv）。v(q) の変化は ChgX.snb。
+  - 流れを一般化した（flow_sib2・flow_top2）: 始点 s は部分木の根でよい（C1 では s = q、終わりは x − 1）、x の親 p は r でも s でもよい、終わりの次の列が x でもよい（EndAtX）。値の規則を一般の V' にした写しは codex（V3FlowRulesG）。
+  - C1 の全件で q の形を測ってから書いた（scratchpad の c1_flow3.py、30 集合）。
+- 今の最上位は translation_order_res16・translation_surj_res16（V3C1Strict、1396 jobs、公理は標準 3 つ）。種まわりの残りは SeedVFResV3R11: qr の QRNoSwitch、C1 の decP、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
+- （res15 の時点）種まわりの残りは SeedVFResV3R10: qr の QRNoSwitch、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
 - （res14 の時点）種まわりの残りは SeedVFResV3R9: qr の QRNoSwitch、sv の T2SVStrict、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF。測定: QRNoSwitch は前件 144 万件、T2SVStrict 23.8 万件、C の strict 14.9 万件で失敗 0。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
 - 最上位 translation_order_res2・translation_surj_res2（V3C2Root）の残り 17 個（res5 では上の 3 つが狭い形に替わる）: HDropInputsV3、HFrameV3、T0AbsWU、T0SeedsN、HQRInputsStepV3、HQNInputsV3、T2BelowAtV3U、HCanon、SeedVFResV3R3、C2Kids3、T2C2RootRel3、FDshAt、T2VRAQNDom、T2VRASeedC、CopyEsc2、VDomU、KAG2（全射はさらに EvalFSNZ 2）。すべて 86 集合で失敗 0（T2VRAQNDom 88.6 万枠、T2VRASeedC 72.2 万件、HCanon は M で 121 万件・M.take(len−1) で 107 万件）。
 
