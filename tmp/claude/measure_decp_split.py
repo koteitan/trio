@@ -1,4 +1,4 @@
-"""DecPShape and DecPUntop (V3DecPSplit.lean) on the 86 sets, C1 frames (q != r, CL_M(r) not ending in q, upg(x-1) = none).
+"""DecPShape2 (sibling chain) and DecPUntop (V3DecPSplit.lean) on the 86 sets, C1 frames (q != r, CL_M(r) not ending in q, upg(x-1) = none).
 DecPShape: c0 (last counted child of r in T) topped in T -> exists b child of c0 with col b = bump c0, b < x, q-1 child of b.
 DecPUntop: c0 untopped in T -> qnS < v_T(c0)."""
 import sys, json, collections
@@ -30,9 +30,14 @@ def measure(m):
     c0 = cl[-1]
     if T.e.topped(c0):
         cnt['topped'] += 1
-        ok = any(M[b] == T.e.bump(c0) and b < x and T.e.par(0, q - 1) == b for b in T.ch(c0))
-        if ok: cnt['shape.ok'] += 1
-        else: cnt['shape.FAIL'] += 1; ex = ('shape', M)
+        chs = [w for w in T.ch(r) if c0 <= w <= q]
+        ok = True
+        for w, w2 in zip(chs, chs[1:]):
+            if not any(M[b] == T.e.bump(w) and b < x and T.e.par(0, w2 - 1) == b for b in T.ch(w)) or C.upg(w2 - 1) != w2:
+                ok = False
+        if ok: cnt['shape2.ok'] += 1
+        else: cnt['shape2.FAIL'] += 1; ex = ('shape2', M)
+        cnt['nsib.%d' % len(chs)] += 1
     else:
         cnt['untopped'] += 1
         if lt(W, T.v(c0)): cnt['untop.ok'] += 1
