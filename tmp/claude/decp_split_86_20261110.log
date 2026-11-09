@@ -1,0 +1,88 @@
+graftM36.pkl {"cases": 4329, "topped": 4329, "shape2.ok": 4329, "nsib.2": 4329}
+graftM36x.pkl {"cases": 4777, "topped": 4777, "shape2.ok": 4777, "nsib.2": 4777}
+lift1.pkl {"cases": 4777, "topped": 4777, "shape2.ok": 4777, "nsib.2": 4777}
+lift2.pkl {"cases": 4777, "topped": 4777, "shape2.ok": 4777, "nsib.2": 4777}
+g36_1.pkl {"cases": 4830, "topped": 4826, "shape2.ok": 4826, "nsib.2": 4825, "untopped": 4, "untop.ok": 4, "nsib.3": 1}
+g36_2.pkl {"cases": 5013, "topped": 5008, "shape2.ok": 5008, "nsib.2": 5007, "untopped": 5, "untop.ok": 5, "nsib.3": 1}
+hunt_found.pkl {"cases": 5013, "topped": 5008, "shape2.ok": 5008, "nsib.2": 5007, "untopped": 5, "untop.ok": 5, "nsib.3": 1}
+graft36.pkl {"cases": 5033, "topped": 5028, "shape2.ok": 5028, "nsib.2": 5027, "untopped": 5, "untop.ok": 5, "nsib.3": 1}
+graft36b.pkl {"cases": 5715, "topped": 5710, "shape2.ok": 5710, "nsib.2": 5709, "untopped": 5, "untop.ok": 5, "nsib.3": 1}
+graft36c.pkl {"cases": 7541, "topped": 7534, "shape2.ok": 7534, "nsib.2": 7533, "untopped": 7, "untop.ok": 7, "nsib.3": 1}
+cex36.pkl {"cases": 7541, "topped": 7534, "shape2.ok": 7534, "nsib.2": 7533, "untopped": 7, "untop.ok": 7, "nsib.3": 1}
+graft4.pkl {"cases": 7585, "topped": 7578, "shape2.ok": 7578, "nsib.2": 7577, "untopped": 7, "untop.ok": 7, "nsib.3": 1}
+graft5.pkl {"cases": 7585, "topped": 7578, "shape2.ok": 7578, "nsib.2": 7577, "untopped": 7, "untop.ok": 7, "nsib.3": 1}
+graft2.pkl {"cases": 7585, "topped": 7578, "shape2.ok": 7578, "nsib.2": 7577, "untopped": 7, "untop.ok": 7, "nsib.3": 1}
+graft3.pkl {"cases": 7585, "topped": 7578, "shape2.ok": 7578, "nsib.2": 7577, "untopped": 7, "untop.ok": 7, "nsib.3": 1}
+graftQ1.pkl {"cases": 7585, "topped": 7578, "shape2.ok": 7578, "nsib.2": 7577, "untopped": 7, "untop.ok": 7, "nsib.3": 1}
+graftH.pkl {"cases": 7885, "topped": 7878, "shape2.ok": 7878, "nsib.2": 7877, "untopped": 7, "untop.ok": 7, "nsib.3": 1}
+graftD.pkl {"cases": 8107, "topped": 8097, "shape2.ok": 8097, "nsib.2": 8096, "untopped": 10, "untop.ok": 10, "nsib.3": 1}
+graftF.pkl {"cases": 8308, "topped": 8278, "shape2.ok": 8278, "nsib.2": 8276, "untopped": 30, "untop.ok": 30, "nsib.3": 2}
+graftG.pkl {"cases": 8533, "topped": 8279, "shape2.ok": 8279, "nsib.2": 8277, "untopped": 254, "untop.ok": 254, "nsib.3": 2}
+graftE.pkl {"cases": 9797, "topped": 9250, "shape2.ok": 9250, "nsib.2": 9248, "untopped": 547, "untop.ok": 547, "nsib.3": 2}
+graftw1.pkl {"cases": 9797, "topped": 9250, "shape2.ok": 9250, "nsib.2": 9248, "untopped": 547, "untop.ok": 547, "nsib.3": 2}
+graftw2.pkl {"cases": 9797, "topped": 9250, "shape2.ok": 9250, "nsib.2": 9248, "untopped": 547, "untop.ok": 547, "nsib.3": 2}
+graftQ2.pkl {"cases": 9797, "topped": 9250, "shape2.ok": 9250, "nsib.2": 9248, "untopped": 547, "untop.ok": 547, "nsib.3": 2}
+graftA1.pkl {"cases": 9797, "topped": 9250, "shape2.ok": 9250, "nsib.2": 9248, "untopped": 547, "untop.ok": 547, "nsib.3": 2}
+graftA2.pkl {"cases": 9797, "topped": 9250, "shape2.ok": 9250, "nsib.2": 9248, "untopped": 547, "untop.ok": 547, "nsib.3": 2}
+graftA3.pkl {"cases": 9797, "topped": 9250, "shape2.ok": 9250, "nsib.2": 9248, "untopped": 547, "untop.ok": 547, "nsib.3": 2}
+graftU.pkl {"cases": 11223, "topped": 9691, "shape2.ok": 9691, "nsib.2": 9689, "untopped": 1532, "untop.ok": 1532, "nsib.3": 2}
+graftF_a.pkl {"cases": 11299, "topped": 9757, "shape2.ok": 9757, "nsib.2": 9754, "untopped": 1542, "untop.ok": 1542, "nsib.3": 3}
+graftF_b.pkl {"cases": 11424, "topped": 9872, "shape2.ok": 9872, "nsib.2": 9869, "untopped": 1552, "untop.ok": 1552, "nsib.3": 3}
+graftC.pkl {"cases": 11425, "topped": 9872, "shape2.ok": 9872, "nsib.2": 9869, "untopped": 1553, "untop.ok": 1553, "nsib.3": 3}
+graft_b2.pkl {"cases": 11425, "topped": 9872, "shape2.ok": 9872, "nsib.2": 9869, "untopped": 1553, "untop.ok": 1553, "nsib.3": 3}
+graft_sib.pkl {"cases": 11425, "topped": 9872, "shape2.ok": 9872, "nsib.2": 9869, "untopped": 1553, "untop.ok": 1553, "nsib.3": 3}
+graftQ3.pkl {"cases": 11425, "topped": 9872, "shape2.ok": 9872, "nsib.2": 9869, "untopped": 1553, "untop.ok": 1553, "nsib.3": 3}
+graftR.pkl {"cases": 13271, "topped": 11676, "shape2.ok": 11676, "nsib.2": 11673, "untopped": 1595, "untop.ok": 1595, "nsib.3": 3}
+grafts_ab.pkl {"cases": 13271, "topped": 11676, "shape2.ok": 11676, "nsib.2": 11673, "untopped": 1595, "untop.ok": 1595, "nsib.3": 3}
+Cprime.pkl {"cases": 14437, "topped": 12824, "shape2.ok": 12824, "nsib.2": 12786, "untopped": 1613, "untop.ok": 1613, "nsib.3": 38}
+b2grow1.pkl {"cases": 14437, "topped": 12824, "shape2.ok": 12824, "nsib.2": 12786, "untopped": 1613, "untop.ok": 1613, "nsib.3": 38}
+b2grow2.pkl {"cases": 14437, "topped": 12824, "shape2.ok": 12824, "nsib.2": 12786, "untopped": 1613, "untop.ok": 1613, "nsib.3": 38}
+b2t0test.pkl {"cases": 14437, "topped": 12824, "shape2.ok": 12824, "nsib.2": 12786, "untopped": 1613, "untop.ok": 1613, "nsib.3": 38}
+cbadext.pkl {"cases": 14833, "topped": 13220, "shape2.ok": 13220, "nsib.2": 13134, "untopped": 1613, "untop.ok": 1613, "nsib.3": 85, "nsib.4": 1}
+d3s.pkl {"cases": 14894, "topped": 13281, "shape2.ok": 13281, "nsib.2": 13187, "untopped": 1613, "untop.ok": 1613, "nsib.3": 88, "nsib.4": 6}
+deep2.pkl {"cases": 15434, "topped": 13817, "shape2.ok": 13817, "nsib.2": 13674, "untopped": 1617, "untop.ok": 1617, "nsib.3": 115, "nsib.4": 28}
+deep3.pkl {"cases": 15957, "topped": 14336, "shape2.ok": 14336, "nsib.2": 14145, "untopped": 1621, "untop.ok": 1621, "nsib.3": 141, "nsib.4": 50}
+e3exp.pkl {"cases": 16521, "topped": 14725, "shape2.ok": 14725, "nsib.2": 14508, "untopped": 1796, "untop.ok": 1796, "nsib.3": 167, "nsib.4": 50}
+expP.pkl {"cases": 19023, "topped": 17185, "shape2.ok": 17185, "nsib.2": 16666, "untopped": 1838, "untop.ok": 1838, "nsib.3": 393, "nsib.4": 126}
+expPt2.pkl {"cases": 111411, "topped": 109531, "shape2.ok": 109531, "nsib.2": 88898, "untopped": 1880, "untop.ok": 1880, "nsib.3": 15301, "nsib.4": 5332}
+ext1.pkl {"cases": 112891, "topped": 110998, "shape2.ok": 110998, "nsib.2": 90300, "untopped": 1893, "untop.ok": 1893, "nsib.3": 15363, "nsib.4": 5335}
+ext1x.pkl {"cases": 112931, "topped": 111032, "shape2.ok": 111032, "nsib.2": 90332, "untopped": 1899, "untop.ok": 1899, "nsib.3": 15363, "nsib.4": 5337}
+ext2.pkl {"cases": 115152, "topped": 113253, "shape2.ok": 113253, "nsib.2": 92290, "untopped": 1899, "untop.ok": 1899, "nsib.3": 15599, "nsib.4": 5364}
+ext2b2.pkl {"cases": 115152, "topped": 113253, "shape2.ok": 113253, "nsib.2": 92290, "untopped": 1899, "untop.ok": 1899, "nsib.3": 15599, "nsib.4": 5364}
+ext2b2G.pkl {"cases": 115152, "topped": 113253, "shape2.ok": 113253, "nsib.2": 92290, "untopped": 1899, "untop.ok": 1899, "nsib.3": 15599, "nsib.4": 5364}
+ext2b2S.pkl {"cases": 115152, "topped": 113253, "shape2.ok": 113253, "nsib.2": 92290, "untopped": 1899, "untop.ok": 1899, "nsib.3": 15599, "nsib.4": 5364}
+ext2b2Sf.pkl {"cases": 115152, "topped": 113253, "shape2.ok": 113253, "nsib.2": 92290, "untopped": 1899, "untop.ok": 1899, "nsib.3": 15599, "nsib.4": 5364}
+ext2b2St.pkl {"cases": 115152, "topped": 113253, "shape2.ok": 113253, "nsib.2": 92290, "untopped": 1899, "untop.ok": 1899, "nsib.3": 15599, "nsib.4": 5364}
+ext2n2.pkl {"cases": 117373, "topped": 115474, "shape2.ok": 115474, "nsib.2": 94248, "untopped": 1899, "untop.ok": 1899, "nsib.3": 15835, "nsib.4": 5391}
+ext3s.pkl {"cases": 117929, "topped": 116004, "shape2.ok": 116004, "nsib.2": 94739, "untopped": 1925, "untop.ok": 1925, "nsib.3": 15871, "nsib.4": 5394}
+graftA.pkl {"cases": 117959, "topped": 116034, "shape2.ok": 116034, "nsib.2": 94761, "untopped": 1925, "untop.ok": 1925, "nsib.3": 15877, "nsib.4": 5396}
+graftAb.pkl {"cases": 117959, "topped": 116034, "shape2.ok": 116034, "nsib.2": 94761, "untopped": 1925, "untop.ok": 1925, "nsib.3": 15877, "nsib.4": 5396}
+graftAn.pkl {"cases": 117989, "topped": 116064, "shape2.ok": 116064, "nsib.2": 94783, "untopped": 1925, "untop.ok": 1925, "nsib.3": 15883, "nsib.4": 5398}
+graftB.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2G.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2S.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2Sf.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2St.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2St_g0.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2St_g1.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2St_g2.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2St_p0.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2St_p1.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2St_x0.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2St_x1.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBb2St_x2.pkl {"cases": 119584, "topped": 117659, "shape2.ok": 117659, "nsib.2": 96088, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16084, "nsib.4": 5487}
+graftBn.pkl {"cases": 121179, "topped": 119254, "shape2.ok": 119254, "nsib.2": 97393, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16285, "nsib.4": 5576}
+graftBn2.pkl {"cases": 122774, "topped": 120849, "shape2.ok": 120849, "nsib.2": 98698, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16486, "nsib.4": 5665}
+shapegrow.pkl {"cases": 122774, "topped": 120849, "shape2.ok": 120849, "nsib.2": 98698, "untopped": 1925, "untop.ok": 1925, "nsib.3": 16486, "nsib.4": 5665}
+std_a.pkl {"cases": 122927, "topped": 120975, "shape2.ok": 120975, "nsib.2": 98820, "untopped": 1952, "untop.ok": 1952, "nsib.3": 16490, "nsib.4": 5665}
+std_ab2.pkl {"cases": 122927, "topped": 120975, "shape2.ok": 120975, "nsib.2": 98820, "untopped": 1952, "untop.ok": 1952, "nsib.3": 16490, "nsib.4": 5665}
+std_ab2G.pkl {"cases": 122927, "topped": 120975, "shape2.ok": 120975, "nsib.2": 98820, "untopped": 1952, "untop.ok": 1952, "nsib.3": 16490, "nsib.4": 5665}
+std_ab2S.pkl {"cases": 122927, "topped": 120975, "shape2.ok": 120975, "nsib.2": 98820, "untopped": 1952, "untop.ok": 1952, "nsib.3": 16490, "nsib.4": 5665}
+std_an2.pkl {"cases": 123080, "topped": 121101, "shape2.ok": 121101, "nsib.2": 98942, "untopped": 1979, "untop.ok": 1979, "nsib.3": 16494, "nsib.4": 5665}
+std_b.pkl {"cases": 146438, "topped": 138665, "shape2.ok": 138665, "nsib.2": 116384, "untopped": 7773, "untop.ok": 7773, "nsib.3": 16616, "nsib.4": 5665}
+t0ext.pkl {"cases": 146438, "topped": 138665, "shape2.ok": 138665, "nsib.2": 116384, "untopped": 7773, "untop.ok": 7773, "nsib.3": 16616, "nsib.4": 5665}
+t2ext.pkl {"cases": 149177, "topped": 141335, "shape2.ok": 141335, "nsib.2": 118933, "untopped": 7842, "untop.ok": 7842, "nsib.3": 16717, "nsib.4": 5685}
+FINAL {"cases": 149177, "topped": 141335, "shape2.ok": 141335, "nsib.2": 118933, "untopped": 7842, "untop.ok": 7842, "nsib.3": 16717, "nsib.4": 5685}
+EX {}
