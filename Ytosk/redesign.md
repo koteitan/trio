@@ -37,7 +37,7 @@
   - 最初の形（q − 1 が c0 の bump の子の子）は、U の兄弟が挟まる例 (0,0,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1)(3,1,0)(1,1,1)(2,1,1) で偽だった。
   - 形は隣り合う兄弟の列が等しいこと（DecPColEq）と BumpLeaf から出る（decPShape2_of_colEq）。DecPColEq は R1S から出る（e1 r < e1(w'−1) ≤ e1 w ≤ e1 r + 1）。
   - 残りは c0 が topped でない場合の値 DecPUntop だけ（S1 の比較を値に移す種類、HCanonHard2 と同じ型）。
-- 今の最上位は translation_order_res18・translation_surj_res18（V3DecPTopWire2）。種まわりの残りは QRNoSwitch、DecPUntop、DecPColEq（証明中）、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
+- 今の最上位は translation_order_res19・translation_surj_res19（V3DecPColEq、1404 jobs、公理は標準 3 つ）。DecPColEq は証明済み（decPColEq_holds、codex）。種まわりの残りは QRNoSwitch、DecPUntop、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
 - （res16 の時点）種まわりの残りは SeedVFResV3R11: qr の QRNoSwitch、C1 の decP、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
 - （res15 の時点）種まわりの残りは SeedVFResV3R10: qr の QRNoSwitch、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF。
 - （res14 の時点）種まわりの残りは SeedVFResV3R9: qr の QRNoSwitch、sv の T2SVStrict、C1 の decP・strict、C2 の r の枠 QPF・QVF、T2SeedQNDomF。測定: QRNoSwitch は前件 144 万件、T2SVStrict 23.8 万件、C の strict 14.9 万件で失敗 0。res3 からの差: T2BelowAtV3U → T2BelowAtV3U2、HCanon → HCanonHard、C2Kids3 → C2Kids4。
