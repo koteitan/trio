@@ -1,0 +1,47 @@
+graftM36.pkl {"cases": 982, "yTpos": 982, "B0": 980, "Bpos": 2, "Bpos.eq": 2, "Bpos.trigT=True": 2}
+graftM36x.pkl {"cases": 991, "yTpos": 991, "B0": 989, "Bpos": 2, "Bpos.eq": 2, "Bpos.trigT=True": 2}
+lift1.pkl {"cases": 1044, "yTpos": 1044, "B0": 1042, "Bpos": 2, "Bpos.eq": 2, "Bpos.trigT=True": 2}
+lift2.pkl {"cases": 1044, "yTpos": 1044, "B0": 1042, "Bpos": 2, "Bpos.eq": 2, "Bpos.trigT=True": 2}
+g36_1.pkl {"cases": 1070, "yTpos": 1070, "B0": 1050, "Bpos": 20, "Bpos.eq": 20, "Bpos.trigT=True": 20}
+g36_2.pkl {"cases": 1179, "yTpos": 1179, "B0": 1063, "Bpos": 116, "Bpos.eq": 116, "Bpos.trigT=True": 116}
+hunt_found.pkl {"cases": 1179, "yTpos": 1179, "B0": 1063, "Bpos": 116, "Bpos.eq": 116, "Bpos.trigT=True": 116}
+graft36.pkl {"cases": 1187, "yTpos": 1187, "B0": 1063, "Bpos": 124, "Bpos.eq": 124, "Bpos.trigT=True": 124}
+graft36b.pkl {"cases": 1618, "yTpos": 1618, "B0": 1092, "Bpos": 526, "Bpos.eq": 525, "Bpos.trigT=True": 526, "Bpos.neq": 1, "Bpos.neq.head_same=False": 1}
+graft36c.pkl {"cases": 3377, "yTpos": 3377, "B0": 1173, "Bpos": 2204, "Bpos.eq": 2203, "Bpos.trigT=True": 2204, "Bpos.neq": 1, "Bpos.neq.head_same=False": 1}
+cex36.pkl {"cases": 3377, "yTpos": 3377, "B0": 1173, "Bpos": 2204, "Bpos.eq": 2203, "Bpos.trigT=True": 2204, "Bpos.neq": 1, "Bpos.neq.head_same=False": 1}
+graft4.pkl {"cases": 4275, "yTpos": 4275, "B0": 1506, "Bpos": 2769, "Bpos.eq": 2743, "Bpos.trigT=True": 2769, "Bpos.neq": 26, "Bpos.neq.head_same=False": 18, "Bpos.neq.head_same=True": 8}
+graft5.pkl {"cases": 4975, "yTpos": 4975, "B0": 1682, "Bpos": 3293, "Bpos.eq": 3256, "Bpos.trigT=True": 3293, "Bpos.neq": 37, "Bpos.neq.head_same=False": 22, "Bpos.neq.head_same=True": 15}
+graft2.pkl {"cases": 5797, "yTpos": 5797, "B0": 2047, "Bpos": 3750, "Bpos.eq": 3707, "Bpos.trigT=True": 3750, "Bpos.neq": 43, "Bpos.neq.head_same=False": 28, "Bpos.neq.head_same=True": 15}
+graft3.pkl {"cases": 5894, "yTpos": 5894, "B0": 2144, "Bpos": 3750, "Bpos.eq": 3707, "Bpos.trigT=True": 3750, "Bpos.neq": 43, "Bpos.neq.head_same=False": 28, "Bpos.neq.head_same=True": 15}
+graftQ1.pkl {"cases": 5894, "yTpos": 5894, "B0": 2144, "Bpos": 3750, "Bpos.eq": 3707, "Bpos.trigT=True": 3750, "Bpos.neq": 43, "Bpos.neq.head_same=False": 28, "Bpos.neq.head_same=True": 15}
+graftH.pkl {"cases": 6205, "yTpos": 6205, "B0": 2238, "Bpos": 3967, "Bpos.eq": 3920, "Bpos.trigT=True": 3967, "Bpos.neq": 47, "Bpos.neq.head_same=False": 32, "Bpos.neq.head_same=True": 15}
+graftD.pkl {"cases": 8146, "yTpos": 8146, "B0": 3245, "Bpos": 4901, "Bpos.eq": 4840, "Bpos.trigT=True": 4901, "Bpos.neq": 61, "Bpos.neq.head_same=False": 36, "Bpos.neq.head_same=True": 25}
+graftF.pkl {"cases": 8650, "yTpos": 8650, "B0": 3749, "Bpos": 4901, "Bpos.eq": 4840, "Bpos.trigT=True": 4901, "Bpos.neq": 61, "Bpos.neq.head_same=False": 36, "Bpos.neq.head_same=True": 25}
+graftG.pkl {"cases": 10490, "yTpos": 10490, "B0": 5584, "Bpos": 4906, "Bpos.eq": 4845, "Bpos.trigT=True": 4906, "Bpos.neq": 61, "Bpos.neq.head_same=False": 36, "Bpos.neq.head_same=True": 25}
+graftE.pkl {"cases": 11783, "yTpos": 11783, "B0": 5882, "Bpos": 5901, "Bpos.eq": 5736, "Bpos.trigT=True": 5901, "Bpos.neq": 165, "Bpos.neq.head_same=False": 124, "Bpos.neq.head_same=True": 41}
+graftw1.pkl {"cases": 11783, "yTpos": 11783, "B0": 5882, "Bpos": 5901, "Bpos.eq": 5736, "Bpos.trigT=True": 5901, "Bpos.neq": 165, "Bpos.neq.head_same=False": 124, "Bpos.neq.head_same=True": 41}
+graftw2.pkl {"cases": 11783, "yTpos": 11783, "B0": 5882, "Bpos": 5901, "Bpos.eq": 5736, "Bpos.trigT=True": 5901, "Bpos.neq": 165, "Bpos.neq.head_same=False": 124, "Bpos.neq.head_same=True": 41}
+graftQ2.pkl {"cases": 11783, "yTpos": 11783, "B0": 5882, "Bpos": 5901, "Bpos.eq": 5736, "Bpos.trigT=True": 5901, "Bpos.neq": 165, "Bpos.neq.head_same=False": 124, "Bpos.neq.head_same=True": 41}
+graftA1.pkl {"cases": 11783, "yTpos": 11783, "B0": 5882, "Bpos": 5901, "Bpos.eq": 5736, "Bpos.trigT=True": 5901, "Bpos.neq": 165, "Bpos.neq.head_same=False": 124, "Bpos.neq.head_same=True": 41}
+graftA2.pkl {"cases": 11783, "yTpos": 11783, "B0": 5882, "Bpos": 5901, "Bpos.eq": 5736, "Bpos.trigT=True": 5901, "Bpos.neq": 165, "Bpos.neq.head_same=False": 124, "Bpos.neq.head_same=True": 41}
+graftA3.pkl {"cases": 11783, "yTpos": 11783, "B0": 5882, "Bpos": 5901, "Bpos.eq": 5736, "Bpos.trigT=True": 5901, "Bpos.neq": 165, "Bpos.neq.head_same=False": 124, "Bpos.neq.head_same=True": 41}
+graftU.pkl {"cases": 12519, "yTpos": 12519, "B0": 6258, "Bpos": 6261, "Bpos.eq": 6063, "Bpos.trigT=True": 6261, "Bpos.neq": 198, "Bpos.neq.head_same=False": 149, "Bpos.neq.head_same=True": 49}
+graftF_a.pkl {"cases": 12761, "yTpos": 12761, "B0": 6500, "Bpos": 6261, "Bpos.eq": 6063, "Bpos.trigT=True": 6261, "Bpos.neq": 198, "Bpos.neq.head_same=False": 149, "Bpos.neq.head_same=True": 49}
+graftF_b.pkl {"cases": 13023, "yTpos": 13023, "B0": 6762, "Bpos": 6261, "Bpos.eq": 6063, "Bpos.trigT=True": 6261, "Bpos.neq": 198, "Bpos.neq.head_same=False": 149, "Bpos.neq.head_same=True": 49}
+graftC.pkl {"cases": 13442, "yTpos": 13442, "B0": 7181, "Bpos": 6261, "Bpos.eq": 6063, "Bpos.trigT=True": 6261, "Bpos.neq": 198, "Bpos.neq.head_same=False": 149, "Bpos.neq.head_same=True": 49}
+graft_b2.pkl {"cases": 14449, "yTpos": 14449, "B0": 8188, "Bpos": 6261, "Bpos.eq": 6063, "Bpos.trigT=True": 6261, "Bpos.neq": 198, "Bpos.neq.head_same=False": 149, "Bpos.neq.head_same=True": 49}
+graft_sib.pkl {"cases": 14449, "yTpos": 14449, "B0": 8188, "Bpos": 6261, "Bpos.eq": 6063, "Bpos.trigT=True": 6261, "Bpos.neq": 198, "Bpos.neq.head_same=False": 149, "Bpos.neq.head_same=True": 49}
+graftQ3.pkl {"cases": 14449, "yTpos": 14449, "B0": 8188, "Bpos": 6261, "Bpos.eq": 6063, "Bpos.trigT=True": 6261, "Bpos.neq": 198, "Bpos.neq.head_same=False": 149, "Bpos.neq.head_same=True": 49}
+graftR.pkl {"cases": 15074, "yTpos": 15074, "B0": 8496, "Bpos": 6578, "Bpos.eq": 6378, "Bpos.trigT=True": 6578, "Bpos.neq": 200, "Bpos.neq.head_same=False": 151, "Bpos.neq.head_same=True": 49}
+grafts_ab.pkl {"cases": 15074, "yTpos": 15074, "B0": 8496, "Bpos": 6578, "Bpos.eq": 6378, "Bpos.trigT=True": 6578, "Bpos.neq": 200, "Bpos.neq.head_same=False": 151, "Bpos.neq.head_same=True": 49}
+Cprime.pkl {"cases": 17479, "yTpos": 17479, "B0": 10901, "Bpos": 6578, "Bpos.eq": 6378, "Bpos.trigT=True": 6578, "Bpos.neq": 200, "Bpos.neq.head_same=False": 151, "Bpos.neq.head_same=True": 49}
+b2grow1.pkl {"cases": 17695, "yTpos": 17695, "B0": 11117, "Bpos": 6578, "Bpos.eq": 6378, "Bpos.trigT=True": 6578, "Bpos.neq": 200, "Bpos.neq.head_same=False": 151, "Bpos.neq.head_same=True": 49}
+b2grow2.pkl {"cases": 18484, "yTpos": 18484, "B0": 11906, "Bpos": 6578, "Bpos.eq": 6378, "Bpos.trigT=True": 6578, "Bpos.neq": 200, "Bpos.neq.head_same=False": 151, "Bpos.neq.head_same=True": 49}
+b2t0test.pkl {"cases": 18484, "yTpos": 18484, "B0": 11906, "Bpos": 6578, "Bpos.eq": 6378, "Bpos.trigT=True": 6578, "Bpos.neq": 200, "Bpos.neq.head_same=False": 151, "Bpos.neq.head_same=True": 49}
+cbadext.pkl {"cases": 19385, "yTpos": 19385, "B0": 11954, "Bpos": 7431, "Bpos.eq": 7213, "Bpos.trigT=True": 7431, "Bpos.neq": 218, "Bpos.neq.head_same=False": 163, "Bpos.neq.head_same=True": 55}
+d3s.pkl {"cases": 19433, "yTpos": 19433, "B0": 12002, "Bpos": 7431, "Bpos.eq": 7213, "Bpos.trigT=True": 7431, "Bpos.neq": 218, "Bpos.neq.head_same=False": 163, "Bpos.neq.head_same=True": 55}
+deep2.pkl {"cases": 19788, "yTpos": 19788, "B0": 12357, "Bpos": 7431, "Bpos.eq": 7213, "Bpos.trigT=True": 7431, "Bpos.neq": 218, "Bpos.neq.head_same=False": 163, "Bpos.neq.head_same=True": 55}
+deep3.pkl {"cases": 20152, "yTpos": 20152, "B0": 12721, "Bpos": 7431, "Bpos.eq": 7213, "Bpos.trigT=True": 7431, "Bpos.neq": 218, "Bpos.neq.head_same=False": 163, "Bpos.neq.head_same=True": 55}
+e3exp.pkl {"cases": 23236, "yTpos": 23236, "B0": 15767, "Bpos": 7469, "Bpos.eq": 7251, "Bpos.trigT=True": 7469, "Bpos.neq": 218, "Bpos.neq.head_same=False": 163, "Bpos.neq.head_same=True": 55}
+expP.pkl {"cases": 29140, "yTpos": 29140, "B0": 21671, "Bpos": 7469, "Bpos.eq": 7251, "Bpos.trigT=True": 7469, "Bpos.neq": 218, "Bpos.neq.head_same=False": 163, "Bpos.neq.head_same=True": 55}
+STOPPED (partial: the run was stopped by hand before std_b; the counts above are cumulative up to expP.pkl)
